@@ -130,8 +130,6 @@ func (u *uploadPlugin) InitPlugin(m plugin.BinaryMessenger) error {
 		return nil, nil
 	})
 
-	//plugin.NewBasicMessageChannel(m, "/addFiles", plugin.StandardMessageCodec{}).HandleFunc()
-
 	return nil
 }
 

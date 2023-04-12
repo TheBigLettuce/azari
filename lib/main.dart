@@ -1,25 +1,28 @@
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
+
 //import 'dart:io';
 //import 'dart:math';
+import 'package:gallery/src/models/grid_list.dart';
+import 'package:gallery/src/models/images.dart';
 import 'package:provider/provider.dart';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 //import 'package:async/async.dart' as async;
-import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
-import 'package:path/path.dart' as path;
+
+import 'src/cell/cell.dart';
+import 'src/cell/image_widget.dart';
+import 'src/cell/directory.dart';
+import 'src/cell/image.dart';
+import 'src/models/directory_list.dart';
 //import 'package:permission_handler/permission_handler.dart';
 //import 'package:web_socket_channel/io.dart';
 //import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:mime/mime.dart' as mime;
-import 'package:http_parser/http_parser.dart';
+
 //import 'package:transparent_image/transparent_image.dart';
-import 'package:convert/convert.dart' as convert;
+//import 'package:convert/convert.dart' as convert;
 
 //import 'dart:async';
 //import 'package:transparent_image/transparent_image.dart';
@@ -60,125 +63,6 @@ class MyApp extends StatelessWidget {
       ),
     );
   }
-}
-
-class ImagesModel extends GridListModel<ImageCell> {
-  String dir;
-
-  @override
-  Future<List<ImageCell>> fetchRes() async {
-    http.Response resp;
-    try {
-      resp = await http.get(Uri.http("localhost:8080", "/dirs", {"dir": dir}));
-    } catch (e) {
-      return Future.error(e);
-    }
-
-    return Future((() {
-      var r = resp;
-      if (r.statusCode != 200) {
-        return Future.error("status code is not ok");
-      }
-
-      List<ImageCell> list = [];
-      List<dynamic> j = json.decode(r.body);
-      for (var element in j) {
-        list.add(ImageCell.fromJson(element, onPressed));
-      }
-
-      return list; //Future.error("invalid type for directories");
-    }));
-  }
-
-  @override
-  void onPressed(String dir, BuildContext context) {}
-
-  @override
-  void refresh() {
-    super._refreshF(fetchRes());
-  }
-
-  ImagesModel({required this.dir});
-}
-
-class DirectoryModel extends GridListModel<DirectoryCell> {
-  @override
-  Future<List<DirectoryCell>> fetchRes() async {
-    http.Response resp;
-    try {
-      resp = await http.get(Uri.parse("http://localhost:8080/dirs"));
-    } catch (e) {
-      return Future.error(e);
-    }
-
-    return Future((() {
-      var r = resp;
-      if (r.statusCode != 200) {
-        return Future.error("status code is not ok");
-      }
-
-      List<DirectoryCell> list = [];
-      List<dynamic> j = json.decode(r.body);
-      for (var element in j) {
-        list.add(DirectoryCell.fromJson(element, onPressed));
-      }
-
-      return list; //Future.error("invalid type for directories");
-    }));
-  }
-
-  @override
-  void onPressed(String dir, BuildContext context) {
-    Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => Images(
-                  dir: dir,
-                )));
-    print("pressed: $dir");
-  }
-
-  @override
-  void refresh() {
-    super._refreshF(fetchRes());
-  }
-
-  DirectoryModel();
-}
-
-class GridListModel<T extends Cell> extends ChangeNotifier {
-  final List<T> _list = [];
-
-  //UnmodifiableListView<T> get directories => UnmodifiableListView(_list);
-
-  void replace(List<T> newList) {
-    _list.clear();
-    _list.addAll(newList);
-
-    notifyListeners();
-  }
-
-  void _refreshF(Future<List<T>> f) {
-    f.then((value) {
-      replace(value);
-    }).onError((error, stackTrace) {
-      print(error);
-    });
-  }
-
-  void refresh() {
-    throw ("unimplemented");
-  }
-
-  void onPressed(String dir, BuildContext context) {
-    throw ("unimplemented");
-  }
-
-  Future<List<T>> fetchRes() async {
-    throw ("unimplemented");
-  }
-
-  //GridListModel({required this.list});
 }
 
 class AddImage extends StatelessWidget {
@@ -286,7 +170,14 @@ class Home extends StatelessWidget {
           ],
         ),
       ),
-      body: const ImageGrid(),
+      body: ImageGrid(
+        data: Provider.of<DirectoryModel>(context).copy(),
+        onPressed: (context, cell) {
+          Navigator.push(context, MaterialPageRoute(builder: (context) {
+            return Images(dir: (cell as DirectoryCell).path);
+          }));
+        },
+      ),
     );
   }
 }
@@ -303,218 +194,72 @@ class Settings extends StatelessWidget {
   }
 }
 
-class Images extends StatelessWidget {
+class Images extends StatefulWidget {
   final String dir;
   const Images({super.key, required this.dir});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(dir)),
-      body: const Text("not implemented(uet)"),
-    );
-  }
+  State<Images> createState() => _ImagesState();
 }
 
-class ImageGrid extends StatefulWidget {
-  //final T cell;
-  const ImageGrid({Key? key}) : super(key: key);
-
-  @override
-  State<ImageGrid> createState() => _ImageGridState();
-}
-
-class CellData {
-  final Uint8List thumb;
-  final String name;
-  void Function(BuildContext context) onPressed;
-
-  CellData({required this.thumb, required this.name, required this.onPressed});
-}
-
-class _ImageGridState extends State<ImageGrid> {
-  static const maxExtend = 150.0;
-
+class _ImagesState extends State<Images> {
   @override
   Widget build(BuildContext context) {
-    return Consumer<DirectoryModel>(
-      builder: (context, list, child) {
-        if (list._list.isEmpty) {
-          return const Text("empty list");
-        }
+    return ChangeNotifierProvider(
+      create: (_) {
+        var model = ImagesModel(dir: widget.dir);
+        model.refresh();
 
-        var data = list._list;
-
-        return GridView.builder(
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: maxExtend,
-          ),
-          itemCount: data.length,
-          itemBuilder: (context, indx) {
-            var m = data[indx];
-            return CellImage<DirectoryCell>(
-              a: m,
-              //extend: maxExtend,
-            );
-          },
+        return model;
+      },
+      builder: (context, _) {
+        return Scaffold(
+          appBar: AppBar(title: Text(widget.dir)),
+          body: Consumer<ImagesModel>(builder: (context, data, _) {
+            return data.isListEmpty()
+                ? const Center(
+                    child: CircularProgressIndicator(),
+                  )
+                : ImageGrid(
+                    data: data.copy(),
+                    onPressed: (context, cell) {
+                      print("pressed image ${(cell as ImageCell).alias}");
+                    });
+          }),
         );
       },
     );
   }
 }
 
-class DirectoryCell extends Cell {
-  DirectoryCell.fromJson(Map<String, dynamic> m,
-      void Function(String dir, BuildContext context) onPressed)
-      : super(
-            onPressed: (context) {
-              onPressed(m["path"], context);
-            },
-            alias: path.basename(m["path"]),
-            hash: base64Decode(m["thumbhash"]),
-            path: m["path"]);
-
-  Map<String, dynamic> toJson() => {
-        "path": super.path,
-        "alias": alias,
-        "thumbhash": base64Encode(super.hash)
-      };
-
-  DirectoryCell(
-      {required super.hash,
-      required super.path,
-      required super.alias,
-      required super.onPressed});
-}
-
-class ImageCell extends Cell {
-  Uint8List orighash;
-  int type;
-
-  ImageCell.fromJson(Map<String, dynamic> m,
-      void Function(String dir, BuildContext context) onPressed)
-      : orighash = base64Decode(m["orighash"]),
-        type = int.parse(m["type"]),
-        super(
-            onPressed: (context) {
-              onPressed(m["dir"], context);
-            },
-            alias: m["name"],
-            hash: base64Decode(m["thumbhash"]),
-            path: m["dir"]);
-
-  Map<String, dynamic> toJson() => {
-        "dir": super.path,
-        "alias": super.alias,
-        "thumbhash": base64Encode(super.hash),
-        "orighash": base64Encode(orighash),
-        "type": type.toString(),
-      };
-
-  ImageCell(
-      {required super.alias,
-      required super.hash,
-      required super.path,
-      required this.orighash,
-      required this.type,
-      required super.onPressed});
-}
-
-class Cell {
-  String path;
-  String alias;
-  Uint8List hash;
-  void Function(BuildContext context) onPressed;
-
-  Future<CellData> getFile() async {
-    http.Response resp;
-    try {
-      resp = await http.get(Uri.parse(
-          "http://localhost:8080/static/${convert.hex.encode(hash)}"));
-    } catch (e) {
-      return Future.error(e);
-    }
-
-    return Future((() {
-      if (resp.statusCode != 200) {
-        return Future.error("status code is not ok");
-      }
-
-      return CellData(thumb: resp.bodyBytes, name: alias, onPressed: onPressed);
-    }));
-  }
-
-  Cell(
-      {required this.path,
-      required this.hash,
-      required this.alias,
-      required this.onPressed});
-}
-
-class CellImage<T extends Cell> extends StatefulWidget {
-  final T _directory;
-  //final double _ext;
-
-  const CellImage({Key? key, required T a})
-      : _directory = a,
-        //_ext = extend,
-        super(key: key);
+class ImageGrid<T extends Cell> extends StatefulWidget {
+  final List<T> data;
+  final Null Function(BuildContext context, T cell) onPressed;
+  const ImageGrid({Key? key, required this.data, required this.onPressed})
+      : super(key: key);
 
   @override
-  State<CellImage> createState() => _CellImageState();
+  State<ImageGrid> createState() => _ImageGridState<T>();
 }
 
-class _CellImageState extends State<CellImage> {
+class _ImageGridState<T extends Cell> extends State<ImageGrid<T>> {
+  static const maxExtend = 150.0;
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-        future: widget._directory.getFile(),
-        builder: ((context, snapshot) {
-          if (snapshot.hasData) {
-            var data = snapshot.data as CellData;
-
-            return InkWell(
-              splashColor: Colors.indigo,
-              //focusColor: Colors.purple,
-              hoverColor: Colors.indigoAccent,
-              borderRadius: BorderRadius.circular(15.0),
-              onTap: () {
-                data.onPressed(context);
-              },
-              child: Card(
-                  elevation: 0,
-                  child: ClipPath(
-                    clipper: ShapeBorderClipper(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15.0))),
-                    child: Stack(
-                      children: [
-                        Image.memory(data.thumb),
-                        Container(
-                          alignment: Alignment.bottomCenter,
-                          decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                Colors.black.withAlpha(50),
-                                Colors.black12,
-                                Colors.black45
-                              ])),
-                          child: Text(
-                            data.name,
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )),
-            );
-          } else if (snapshot.hasError) {
-            return Text(snapshot.error.toString());
-          } else {
-            return const CircularProgressIndicator();
-          }
-        }));
+    return GridView.builder(
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: maxExtend,
+      ),
+      itemCount: widget.data.length,
+      itemBuilder: (context, indx) {
+        var m = widget.data[indx];
+        return CellImageWidget<T>(
+          cell: m,
+          onPressed: widget.onPressed,
+          //extend: maxExtend,
+        );
+      },
+    );
   }
 }
