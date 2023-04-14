@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
-import 'package:flutter/material.dart';
-
+import 'package:convert/convert.dart' as convert;
 import 'cell.dart';
 
 class ImageCell extends Cell {
@@ -24,6 +22,10 @@ class ImageCell extends Cell {
         "orighash": base64Encode(orighash),
         "type": type,
       };
+
+  String url() {
+    return "http://localhost:8080/static/${convert.hex.encode(orighash)}";
+  }
 
   ImageCell(
       {required super.alias,

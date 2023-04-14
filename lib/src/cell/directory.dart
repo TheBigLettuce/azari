@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'package:path/path.dart' as path;
 
-import 'package:flutter/material.dart';
-
 import 'cell.dart';
 
 class DirectoryCell extends Cell {

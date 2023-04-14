@@ -1,6 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:gallery/src/models/directory_list.dart';
-import 'package:gallery/src/models/images.dart';
 import 'core.dart';
 
 import '../cell/cell.dart';

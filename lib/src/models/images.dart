@@ -1,6 +1,7 @@
 import 'dart:convert';
+import 'package:hive/hive.dart';
+
 import 'core.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../cell/image.dart';
@@ -14,7 +15,9 @@ class ImagesModel extends CoreModel with GridList<ImageCell> {
     http.Response resp;
     try {
       resp = await http.get(
-          Uri.http("localhost:8080", "/files", {"dir": dir, "types": "image"}));
+          Uri.parse(Hive.box("settings").get("serverAddress") +
+              "/files?dir=$dir&types=${'image'}"),
+          headers: {"deviceId": Hive.box("settings").get("deviceId")});
     } catch (e) {
       return Future.error(e);
     }

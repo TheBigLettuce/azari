@@ -1,7 +1,7 @@
 import 'dart:typed_data';
+import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:convert/convert.dart' as convert;
-import 'package:flutter/material.dart';
 
 import 'data.dart';
 
@@ -14,7 +14,8 @@ class Cell {
     http.Response resp;
     try {
       resp = await http.get(Uri.parse(
-          "http://localhost:8080/static/${convert.hex.encode(hash)}"));
+          Hive.box("settings").get("serverAddress") +
+              "/static/${convert.hex.encode(hash)}"));
     } catch (e) {
       return Future.error(e);
     }

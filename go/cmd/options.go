@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 
 	"github.com/go-flutter-desktop/go-flutter"
 	"github.com/go-flutter-desktop/go-flutter/plugin"
@@ -43,12 +44,33 @@ func (u *uploadPlugin) InitPlugin(m plugin.BinaryMessenger) error {
 			return nil, errors.New("invalid files value in the message map, need []string")
 		}
 
+		deviceId, ok := m["deviceId"].(string)
+		if !ok {
+			return nil, errors.New("invalid deviceId value in the message map, need string")
+		}
+
+		baseDirectory, ok := m["baseDirectory"].(string)
+		if !ok {
+			return nil, errors.New("invalid baseDirectory value in the message map, need string")
+		}
+
+		serverAddr, ok := m["serverAddress"].(string)
+		if !ok {
+			return nil, errors.New("invalid serverAddress value in the message map, need string")
+		}
+
 		filePaths := make([]string, len(filePathsIf))
 		for indx, path := range filePathsIf {
 			filePaths[indx], ok = path.(string)
 			if !ok {
 				return nil, errors.New("one of the files slice is not a string")
 			}
+
+			if !strings.HasPrefix(filePaths[indx], baseDirectory) {
+				return nil, errors.New("path does not begin with the base directory")
+			}
+
+			filePaths[indx] = strings.Trim(strings.TrimPrefix(filePaths[indx], baseDirectory), "/")
 		}
 
 		files := make([]*os.File, len(filePaths))
@@ -62,7 +84,7 @@ func (u *uploadPlugin) InitPlugin(m plugin.BinaryMessenger) error {
 		}
 
 		for indx, path := range filePaths {
-			f, err := os.Open(path)
+			f, err := os.Open(filepath.Join(baseDirectory, path))
 			if err != nil {
 				closeFiles(files)
 				return nil, fmt.Errorf("while opening a file: %w", err)
@@ -98,7 +120,7 @@ func (u *uploadPlugin) InitPlugin(m plugin.BinaryMessenger) error {
 
 			addFiles[indx] = addFile{
 				Name: filepath.Base(f.Name()),
-				Dir:  filepath.Dir(f.Name()),
+				Dir:  filePaths[indx],
 				Size: fstat.Size(),
 				Type: int(typ),
 			}
@@ -112,13 +134,14 @@ func (u *uploadPlugin) InitPlugin(m plugin.BinaryMessenger) error {
 		fio, njson := newFilesW(byt, files)
 		size += int64(njson)
 
-		req, err := http.NewRequest("POST", "http://localhost:8080/add/files", fio)
+		req, err := http.NewRequest("POST", serverAddr+"/add/files", fio)
 		if err != nil {
 			return nil, fmt.Errorf("while making a request: %w", err)
 		}
 
 		req.ContentLength = size
 		req.Header.Add("Content-Type", "application/octet-stream")
+		req.Header.Add("deviceId", deviceId)
 
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
