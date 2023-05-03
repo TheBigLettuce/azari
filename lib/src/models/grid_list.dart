@@ -17,12 +17,18 @@ mixin GridList<T extends Cell> on CoreModel {
   bool isListEmpty() => _list.isEmpty;
 
   List<T> copy() => List.from(_list);
+  int listElements() => _list.length;
+
+  T get(int indx) => _list[indx];
 
   Future refreshFuture(Future<List<T>> f,
-      {Function(Object? error, StackTrace stackTrace) onError =
-          _printToConsole}) {
+      {Function(Object? error, StackTrace stackTrace) onError = _printToConsole,
+      void Function(List<T> list)? onRefresh}) {
     return f.then((value) {
       replace(value);
+      if (onRefresh != null) {
+        onRefresh(value);
+      }
     }).onError((e, s) => onError(e, s));
   }
 }

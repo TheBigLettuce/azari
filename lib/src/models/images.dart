@@ -10,6 +10,8 @@ import 'grid_list.dart';
 class ImagesModel extends CoreModel with GridList<ImageCell> {
   String dir;
 
+  void Function(List<ImageCell>)? onRefresh;
+
   @override
   Future<List<ImageCell>> fetchRes() async {
     http.Response resp;
@@ -39,7 +41,37 @@ class ImagesModel extends CoreModel with GridList<ImageCell> {
   }
 
   @override
-  Future refresh() => super.refreshFuture(fetchRes());
+  Future delete(int indx) async {
+    var e = get(indx);
+
+    var req = http.MultipartRequest(
+      "POST",
+      Uri.parse(Hive.box("settings").get("serverAddress") + "/delete/file"),
+    )
+      ..fields["dir"] = e.path
+      ..fields["file"] = e.alias
+      ..headers["deviceId"] = Hive.box("settings").get("deviceId");
+
+    return Future(() async {
+      try {
+        var resp = await req.send();
+
+        if (resp.statusCode != 200) {
+          return Future.error("status not ok");
+        }
+
+        refresh();
+      } catch (e) {
+        print(e.toString());
+      }
+    });
+  }
+
+  @override
+  Future refresh() => super.refreshFuture(fetchRes(), onRefresh: onRefresh);
+
+  void setOnRefresh(void Function(List<ImageCell> newList) onChange) =>
+      onRefresh = onChange;
 
   ImagesModel({required this.dir});
 }

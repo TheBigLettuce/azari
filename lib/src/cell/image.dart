@@ -1,11 +1,15 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:convert/convert.dart' as convert;
+import 'package:flutter/widgets.dart';
+import 'package:hive/hive.dart';
 import 'cell.dart';
+import 'package:http/http.dart' as http;
 
 class ImageCell extends Cell {
   Uint8List orighash;
   int type;
+  List<Widget>? addInfo;
 
   ImageCell.fromJson(Map<String, dynamic> m)
       : orighash = base64Decode(m["orighash"]),
@@ -24,7 +28,8 @@ class ImageCell extends Cell {
       };
 
   String url() {
-    return "http://localhost:8080/static/${convert.hex.encode(orighash)}";
+    return Hive.box("settings").get("serverAddress") +
+        "/static/${convert.hex.encode(orighash)}";
   }
 
   ImageCell(
@@ -32,5 +37,6 @@ class ImageCell extends Cell {
       required super.hash,
       required super.path,
       required this.orighash,
-      required this.type});
+      required this.type,
+      this.addInfo});
 }

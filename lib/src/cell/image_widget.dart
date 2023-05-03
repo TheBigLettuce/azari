@@ -1,16 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:gallery/src/models/images.dart';
+import 'package:provider/provider.dart';
 
 import 'cell.dart';
 import 'data.dart';
 
 class CellImageWidget<T extends Cell> extends StatefulWidget {
   final T _data;
-  final Null Function(BuildContext context, T cell) onPressed;
-  //final double _ext;
+  final int indx;
+  final Null Function(BuildContext context, int cellIndx) onPressed;
+  final bool hideAlias;
+  final Function()? onLongPress;
 
-  const CellImageWidget({Key? key, required T cell, required this.onPressed})
+  const CellImageWidget(
+      {Key? key,
+      required T cell,
+      required this.indx,
+      required this.onPressed,
+      bool? hidealias,
+      this.onLongPress})
       : _data = cell,
-        //_ext = extend,
+        hideAlias = hidealias ?? false,
         super(key: key);
 
   @override
@@ -32,8 +42,9 @@ class _CellImageWidgetState<T extends Cell> extends State<CellImageWidget<T>> {
               hoverColor: Colors.indigoAccent,
               borderRadius: BorderRadius.circular(15.0),
               onTap: () {
-                widget.onPressed(context, widget._data);
+                widget.onPressed(context, widget.indx);
               },
+              onLongPress: widget.onLongPress,
               child: Card(
                   elevation: 0,
                   child: ClipPath(
@@ -42,7 +53,18 @@ class _CellImageWidgetState<T extends Cell> extends State<CellImageWidget<T>> {
                             borderRadius: BorderRadius.circular(15.0))),
                     child: Stack(
                       children: [
-                        Image.memory(data.thumb),
+                        LayoutBuilder(builder: (context, constraint) {
+                          return Center(
+                            child: Image(
+                              image: data.thumb,
+                              alignment: Alignment.center,
+                              fit: BoxFit.cover,
+                              filterQuality: FilterQuality.high,
+                              width: constraint.maxWidth,
+                              height: constraint.maxHeight,
+                            ),
+                          );
+                        }),
                         Container(
                           alignment: Alignment.bottomCenter,
                           decoration: BoxDecoration(
@@ -54,10 +76,12 @@ class _CellImageWidgetState<T extends Cell> extends State<CellImageWidget<T>> {
                                 Colors.black12,
                                 Colors.black45
                               ])),
-                          child: Text(
-                            data.name,
-                            style: const TextStyle(color: Colors.white),
-                          ),
+                          child: widget.hideAlias
+                              ? null
+                              : Text(
+                                  data.name,
+                                  style: const TextStyle(color: Colors.white),
+                                ),
                         ),
                       ],
                     ),
@@ -66,7 +90,9 @@ class _CellImageWidgetState<T extends Cell> extends State<CellImageWidget<T>> {
           } else if (snapshot.hasError) {
             return Text(snapshot.error.toString());
           } else {
-            return const CircularProgressIndicator();
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
           }
         }));
   }

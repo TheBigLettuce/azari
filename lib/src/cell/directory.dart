@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:path/path.dart' as path;
+import 'package:http/http.dart' as http;
 
 import 'cell.dart';
 
@@ -7,7 +7,7 @@ class DirectoryCell extends Cell {
   DirectoryCell.fromJson(
     Map<String, dynamic> m,
   ) : super(
-            alias: path.basename(m["path"]),
+            alias: m["alias"],
             hash: base64Decode(m["thumbhash"]),
             path: m["path"]);
 
@@ -16,6 +16,9 @@ class DirectoryCell extends Cell {
         "alias": alias,
         "thumbhash": base64Encode(super.hash)
       };
+
+  @override
+  Future delete() async {}
 
   DirectoryCell({
     required super.hash,

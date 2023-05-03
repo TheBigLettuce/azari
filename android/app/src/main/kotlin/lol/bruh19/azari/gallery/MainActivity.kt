@@ -7,34 +7,34 @@ import androidx.annotation.NonNull
 import io.flutter.plugin.common.MethodChannel
 import android.provider.MediaStore
 import android.util.Log
+import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.BinaryMessenger
+import io.flutter.plugin.common.StandardMethodCodec
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "lol.bruh19.azari.gallery/mediastore"
+    private val CHANNEL = "org.gallery"
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-       /* MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL, StandardMethodCodec.INSTANCE, flutterEngine.dartExecutor.binaryMessenger.makeBackgroundTaskQueue()).setMethodCallHandler { call, result ->
             when (call.method) {
-                "populateAlbums" -> {
-                    populateAlbums(applicationContext)
-                    result.success(null)
-                }
-
-                "getFiles" -> {
-                    val albumId = call.argument<Long>("albumId")
-
-                    if (albumId == null) {
-                        result.error("UNAVAILABLE", "albumId argument should be provided", null)
-                    } else {
-                        result.success(getFiles(applicationContext, albumId))
+                "addFiles" -> {
+                    try {
+                        api.Api.uploadFile(call.arguments())
+                        result.success(null)
+                    } catch (e: java.lang.Exception) {
+                        println(e)
+                        result.error("1", e.message, "")
                     }
                 }
 
                 else -> result.notImplemented()
             }
-        }*/
+        }
     }
+
+
 }
 
 
