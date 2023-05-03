@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:gallery/src/models/images.dart';
-import 'package:provider/provider.dart';
 
 import 'cell.dart';
 import 'data.dart';

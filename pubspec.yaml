@@ -49,16 +49,18 @@ dependencies:
   introduction_screen: ^3.1.7
   photo_manager: ^2.6.0
   analyzer: ^5.10.0
-  hive: ^2.2.3
-  hive_flutter: ^1.1.0
   dio: ^5.1.1
   cached_network_image: ^3.2.3
+  flutter_local_notifications: ^14.0.0+1
+  isar: ^3.1.0+1
+  isar_flutter_libs: ^3.1.0+1
+  path_provider: ^2.0.14
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
     
-  build_runner: any
+  build_runner: ^2.4.1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -66,7 +68,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
-  # pigeon: ^4.2.5
+  isar_generator: ^3.1.0+1
  
 
 # For information on the generic Dart part of this file, see the

@@ -4,7 +4,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery/src/models/download_manager.dart';
-import 'package:hive/hive.dart';
+import 'package:gallery/src/schemas/settings.dart';
+import 'package:isar/isar.dart';
+import '../db/isar.dart';
 import 'core.dart';
 import 'package:path/path.dart' as path;
 
@@ -22,8 +24,14 @@ mixin ServerAddr on CoreModel {
     notifyListeners();
   }
 
-  bool isServerAddressSet() =>
-      Hive.box("settings").containsKey("serverAddress");
+  bool isServerAddressSet() {
+    var settings = isar().settings.getSync(0);
+    if (settings == null || settings.serverAddress == "") {
+      return false;
+    }
+
+    return true;
+  }
 
   void setServerAddress(String value) async {
     if (value.isEmpty) {
@@ -42,9 +50,24 @@ mixin ServerAddr on CoreModel {
       return;
     }
 
-    await Hive.box("settings").put("serverAddress", value);
+    _setSettings(serverAddress: value);
+
     notifyListeners();
   }
+}
+
+void _setSettings(
+    {String? serverAddress, String? deviceId, String? path}) async {
+  var settings = isar().settings.getSync(0);
+
+  settings ??= Settings.empty();
+
+  isar().writeTxnSync(() {
+    isar().settings.putSync(Settings(
+        serverAddress: serverAddress ?? settings!.serverAddress,
+        deviceId: deviceId ?? settings!.deviceId,
+        path: path ?? settings!.path));
+  });
 }
 
 mixin DeviceId on CoreModel {
@@ -57,9 +80,12 @@ mixin DeviceId on CoreModel {
   }
 
   bool isDeviceIdSet() {
-    var value = Hive.box("settings").get("deviceId");
+    var settings = isar().settings.getSync(0);
+    if (settings == null || settings.deviceId == "") {
+      return false;
+    }
 
-    return value != null && value != "";
+    return true;
   }
 
   Future setDeviceId(String value) async {
@@ -68,10 +94,14 @@ mixin DeviceId on CoreModel {
       return;
     }
 
+    var settings = isar().settings.getSync(0);
+    if (settings == null || settings.serverAddress == "") {
+      deviceIdSetError = "server address is unset";
+      return;
+    }
+
     var req = http.MultipartRequest(
-        'POST',
-        Uri.parse(
-            Hive.box("settings").get("serverAddress") + "/device/register"))
+        'POST', Uri.parse("${settings.serverAddress}/device/register"))
       ..fields["key"] = value
       ..headers["deviceId"] = value;
 
@@ -86,7 +116,7 @@ mixin DeviceId on CoreModel {
         return Future.error("got empty bytes");
       }
 
-      await Hive.box("settings").put("deviceId", hex.encode(id));
+      _setSettings(deviceId: hex.encode(id));
     }).onError(
       (error, stackTrace) {
         deviceIdSetError = error.toString();
@@ -112,9 +142,15 @@ class DirectoryModel extends CoreModel
   Future<List<DirectoryCell>> fetchRes() async {
     http.Response resp;
     try {
-      resp = await http.get(
-          Uri.parse(Hive.box("settings").get("serverAddress") + "/dirs"),
-          headers: {"deviceId": Hive.box("settings").get("deviceId")});
+      var settings = isar().settings.getSync(0);
+      if (settings!.serverAddress == "") {
+        throw "server address is unset";
+      } else if (settings.deviceId == "") {
+        throw "device id is unset";
+      }
+
+      resp = await http.get(Uri.parse("${settings.serverAddress}/dirs"),
+          headers: {"deviceId": settings.deviceId});
     } catch (e) {
       return Future.error(e);
     }
@@ -141,7 +177,7 @@ class DirectoryModel extends CoreModel
       return;
     }
 
-    await Hive.box("settings").put("directory", value);
+    _setSettings(path: value);
     notifyListeners();
   }
 
@@ -151,11 +187,28 @@ class DirectoryModel extends CoreModel
   @override
   Future refresh() => super.refreshFuture(fetchRes());
 
-  bool isDirectorySet() => Hive.box("settings").containsKey("directory");
+  bool isDirectorySet() {
+    var settings = isar().settings.getSync(0);
+    if (settings == null || settings.path == "") {
+      return false;
+    }
+
+    return true;
+  }
 
   void chooseFilesAndUpload(Function(Object? err) onError,
       {String? childDir, Function()? childOnSuccess, String? forcedDir}) async {
-    var dir = Hive.box("settings").get("directory");
+    var settings = isar().settings.getSync(0);
+    if (settings!.path == "") {
+      onError("path is unset");
+      return;
+    } else if (settings.deviceId == "") {
+      onError("device id is unset");
+      return;
+    } else if (settings.serverAddress == "") {
+      onError("server address is unset");
+      return;
+    }
 
     FilePickerResult? result = await FilePicker.platform.pickFiles(
         lockParentWindow: true,
@@ -164,8 +217,9 @@ class DirectoryModel extends CoreModel
         dialogTitle: "Pick files to upload",
         type: FileType.image,
         withReadStream: false,
-        initialDirectory:
-            childDir == null ? dir : path.joinAll([dir, childDir]));
+        initialDirectory: childDir == null
+            ? settings.path
+            : path.joinAll([settings.path, childDir]));
 
     if (result == null) {
       onError("result is nil");
@@ -176,9 +230,9 @@ class DirectoryModel extends CoreModel
       var map = <String, dynamic>{
         "type": 1,
         "files": result.files.map((e) => e.path!).toList(),
-        "deviceId": Hive.box("settings").get("deviceId"),
-        "baseDirectory": dir,
-        "serverAddress": Hive.box("settings").get("serverAddress"),
+        "deviceId": settings.deviceId,
+        "baseDirectory": settings.path,
+        "serverAddress": settings.serverAddress,
       };
 
       if (forcedDir != null) {

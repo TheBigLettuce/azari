@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:convert/convert.dart' as convert;
 import 'package:flutter/widgets.dart';
-import 'package:hive/hive.dart';
+import 'package:gallery/src/db/isar.dart';
+import 'package:gallery/src/schemas/settings.dart';
 import 'cell.dart';
-import 'package:http/http.dart' as http;
 
 class ImageCell extends Cell {
   Uint8List orighash;
@@ -28,8 +28,12 @@ class ImageCell extends Cell {
       };
 
   String url() {
-    return Hive.box("settings").get("serverAddress") +
-        "/static/${convert.hex.encode(orighash)}";
+    var settings = isar().settings.getSync(0);
+    if (settings!.serverAddress == "") {
+      return "";
+    }
+
+    return "${settings.serverAddress}/static/${convert.hex.encode(orighash)}";
   }
 
   ImageCell(

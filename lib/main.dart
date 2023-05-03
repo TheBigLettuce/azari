@@ -1,68 +1,49 @@
 import 'dart:io';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/booru/booru.dart';
-import 'package:gallery/src/drawer.dart';
-//import 'dart:io';
-//import 'dart:math';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:gallery/src/db/isar.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:provider/provider.dart';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-//import 'package:async/async.dart' as async;
-
-import 'src/image/grid.dart';
-import 'src/image/images.dart';
 import 'src/models/directory.dart';
-import 'src/settings.dart';
-//import 'package:permission_handler/permission_handler.dart';
-//import 'package:web_socket_channel/io.dart';
-//import 'package:web_socket_channel/web_socket_channel.dart';
-
-//import 'package:transparent_image/transparent_image.dart';
-//import 'package:convert/convert.dart' as convert;
-
-//import 'dart:async';
-//import 'package:transparent_image/transparent_image.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initalizeIsar();
 
-  await Hive.initFlutter();
-  await Hive.openBox("settings");
+  FlutterLocalNotificationsPlugin().initialize(
+      const InitializationSettings(
+          android: AndroidInitializationSettings('@mipmap/ic_launcher')),
+      onDidReceiveNotificationResponse: (details) {},
+      onDidReceiveBackgroundNotificationResponse: notifBackground);
 
-  runApp(const MyApp());
-}
+  runApp(ChangeNotifierProvider(
+    create: (_) {
+      var img = DirectoryModel();
+      // img.refresh();
 
-//const platform = MethodChannel('lol.bruh19.azari.gallery/mediastore');
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) {
-        var img = DirectoryModel();
-        // img.refresh();
-
-        return img;
-      },
-      child: MaterialApp(
-        title: 'Welcome to Flutter',
-        theme: ThemeData(
-          useMaterial3: true,
-          /*appBarTheme: const AppBarTheme(
+      return img;
+    },
+    child: MaterialApp(
+      title: 'Welcome to Flutter',
+      theme: ThemeData(
+        useMaterial3: true,
+        /*appBarTheme: const AppBarTheme(
             backgroundColor: Colors.white,
             foregroundColor: Colors.black,
           ),*/
-        ),
-        home: const Entry(),
       ),
-    );
-  }
+      home: const Entry(),
+    ),
+  ));
 }
+
+@pragma('vm:entry-point')
+void notifBackground(NotificationResponse res) {}
+
+//const platform = MethodChannel('lol.bruh19.azari.gallery/mediastore');
 
 class Entry extends StatelessWidget {
   const Entry({super.key});

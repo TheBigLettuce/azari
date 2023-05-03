@@ -6,7 +6,6 @@ import 'package:gallery/src/drawer.dart';
 import 'package:gallery/src/image/grid.dart';
 import 'package:gallery/src/image/view.dart';
 import 'package:gallery/src/models/directory.dart';
-import 'package:photo_view/photo_view.dart';
 import 'package:provider/provider.dart';
 
 import 'interface.dart';
