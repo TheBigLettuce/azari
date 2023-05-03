@@ -72,11 +72,6 @@ class _ImageViewState<T extends ImageCell> extends State<ImageView<T>> {
                                   title: const Text("Path"),
                                   subtitle: Text(currentCell.path),
                                 ),
-                                ListTile(
-                                  title: const Text("Type"),
-                                  subtitle:
-                                      Text(typeToString(currentCell.type)),
-                                )
                               ];
 
                               if (currentCell.addInfo != null) {

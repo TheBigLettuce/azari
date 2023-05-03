@@ -17,19 +17,9 @@ const SettingsSchema = CollectionSchema(
   name: r'Settings',
   id: -8656046621518759136,
   properties: {
-    r'deviceId': PropertySchema(
-      id: 0,
-      name: r'deviceId',
-      type: IsarType.string,
-    ),
     r'path': PropertySchema(
-      id: 1,
+      id: 0,
       name: r'path',
-      type: IsarType.string,
-    ),
-    r'serverAddress': PropertySchema(
-      id: 2,
-      name: r'serverAddress',
       type: IsarType.string,
     )
   },
@@ -53,9 +43,7 @@ int _settingsEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
-  bytesCount += 3 + object.deviceId.length * 3;
   bytesCount += 3 + object.path.length * 3;
-  bytesCount += 3 + object.serverAddress.length * 3;
   return bytesCount;
 }
 
@@ -65,9 +53,7 @@ void _settingsSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeString(offsets[0], object.deviceId);
-  writer.writeString(offsets[1], object.path);
-  writer.writeString(offsets[2], object.serverAddress);
+  writer.writeString(offsets[0], object.path);
 }
 
 Settings _settingsDeserialize(
@@ -77,9 +63,7 @@ Settings _settingsDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = Settings(
-    deviceId: reader.readString(offsets[0]),
-    path: reader.readString(offsets[1]),
-    serverAddress: reader.readString(offsets[2]),
+    path: reader.readString(offsets[0]),
   );
   object.id = id;
   return object;
@@ -93,10 +77,6 @@ P _settingsDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readString(offset)) as P;
-    case 1:
-      return (reader.readString(offset)) as P;
-    case 2:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -192,136 +172,6 @@ extension SettingsQueryWhere on QueryBuilder<Settings, Settings, QWhereClause> {
 
 extension SettingsQueryFilter
     on QueryBuilder<Settings, Settings, QFilterCondition> {
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> deviceIdEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'deviceId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> deviceIdGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'deviceId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> deviceIdLessThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'deviceId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> deviceIdBetween(
-    String lower,
-    String upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'deviceId',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> deviceIdStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'deviceId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> deviceIdEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'deviceId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> deviceIdContains(
-      String value,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'deviceId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> deviceIdMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'deviceId',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> deviceIdIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'deviceId',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> deviceIdIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'deviceId',
-        value: '',
-      ));
-    });
-  }
-
   QueryBuilder<Settings, Settings, QAfterFilterCondition> idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -503,140 +353,6 @@ extension SettingsQueryFilter
       ));
     });
   }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> serverAddressEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'serverAddress',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition>
-      serverAddressGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'serverAddress',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> serverAddressLessThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'serverAddress',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> serverAddressBetween(
-    String lower,
-    String upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'serverAddress',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition>
-      serverAddressStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'serverAddress',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> serverAddressEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'serverAddress',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> serverAddressContains(
-      String value,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'serverAddress',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> serverAddressMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'serverAddress',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition>
-      serverAddressIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'serverAddress',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition>
-      serverAddressIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'serverAddress',
-        value: '',
-      ));
-    });
-  }
 }
 
 extension SettingsQueryObject
@@ -646,18 +362,6 @@ extension SettingsQueryLinks
     on QueryBuilder<Settings, Settings, QFilterCondition> {}
 
 extension SettingsQuerySortBy on QueryBuilder<Settings, Settings, QSortBy> {
-  QueryBuilder<Settings, Settings, QAfterSortBy> sortByDeviceId() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'deviceId', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterSortBy> sortByDeviceIdDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'deviceId', Sort.desc);
-    });
-  }
-
   QueryBuilder<Settings, Settings, QAfterSortBy> sortByPath() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'path', Sort.asc);
@@ -669,34 +373,10 @@ extension SettingsQuerySortBy on QueryBuilder<Settings, Settings, QSortBy> {
       return query.addSortBy(r'path', Sort.desc);
     });
   }
-
-  QueryBuilder<Settings, Settings, QAfterSortBy> sortByServerAddress() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'serverAddress', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterSortBy> sortByServerAddressDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'serverAddress', Sort.desc);
-    });
-  }
 }
 
 extension SettingsQuerySortThenBy
     on QueryBuilder<Settings, Settings, QSortThenBy> {
-  QueryBuilder<Settings, Settings, QAfterSortBy> thenByDeviceId() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'deviceId', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterSortBy> thenByDeviceIdDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'deviceId', Sort.desc);
-    });
-  }
-
   QueryBuilder<Settings, Settings, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -720,41 +400,14 @@ extension SettingsQuerySortThenBy
       return query.addSortBy(r'path', Sort.desc);
     });
   }
-
-  QueryBuilder<Settings, Settings, QAfterSortBy> thenByServerAddress() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'serverAddress', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterSortBy> thenByServerAddressDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'serverAddress', Sort.desc);
-    });
-  }
 }
 
 extension SettingsQueryWhereDistinct
     on QueryBuilder<Settings, Settings, QDistinct> {
-  QueryBuilder<Settings, Settings, QDistinct> distinctByDeviceId(
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'deviceId', caseSensitive: caseSensitive);
-    });
-  }
-
   QueryBuilder<Settings, Settings, QDistinct> distinctByPath(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'path', caseSensitive: caseSensitive);
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QDistinct> distinctByServerAddress(
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'serverAddress',
-          caseSensitive: caseSensitive);
     });
   }
 }
@@ -767,21 +420,9 @@ extension SettingsQueryProperty
     });
   }
 
-  QueryBuilder<Settings, String, QQueryOperations> deviceIdProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'deviceId');
-    });
-  }
-
   QueryBuilder<Settings, String, QQueryOperations> pathProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'path');
-    });
-  }
-
-  QueryBuilder<Settings, String, QQueryOperations> serverAddressProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'serverAddress');
     });
   }
 }

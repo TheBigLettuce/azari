@@ -36,7 +36,7 @@ class _SearchBooruState extends State<SearchBooru> {
           Padding(
             padding: const EdgeInsets.only(left: 5, right: 5),
             child: TextField(
-              decoration: InputDecoration(border: OutlineInputBorder()),
+              decoration: const InputDecoration(border: OutlineInputBorder()),
               onSubmitted: (value) {
                 _tags.addLatest(value);
                 widget.onSubmitted(value);

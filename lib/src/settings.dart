@@ -13,17 +13,9 @@ class Settings extends StatelessWidget {
       appBar: AppBar(title: const Text("Settings")),
       body: ListView(children: [
         ListTile(
-          title: const Text("Device ID"),
-          subtitle: Text(settings!.deviceId),
-        ),
-        ListTile(
           title: const Text("Default Directory"),
-          subtitle: Text(settings.path),
+          subtitle: Text(settings!.path),
         ),
-        ListTile(
-          title: const Text("Server Address"),
-          subtitle: Text(settings.serverAddress),
-        )
       ]),
     );
   }

@@ -6,17 +6,11 @@ part 'settings.g.dart';
 class Settings {
   Id id = 0;
 
-  String serverAddress;
+  //String serverAddress;
   String path;
-  String deviceId;
+  //String deviceId;
 
-  Settings(
-      {required this.serverAddress,
-      required this.deviceId,
-      required this.path});
+  Settings({required this.path});
 
-  Settings.empty()
-      : serverAddress = "",
-        path = "",
-        deviceId = "";
+  Settings.empty() : path = "";
 }

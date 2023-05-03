@@ -28,7 +28,7 @@ class _DirectoriesState extends State<Directories> {
             IconButton(
                 onPressed: () {
                   if (Platform.isAndroid) {
-                    String outputDir = "";
+                    //String outputDir = "";
 
                     Navigator.of(context).push(DialogRoute(
                         context: context,
@@ -36,20 +36,10 @@ class _DirectoriesState extends State<Directories> {
                           return AlertDialog(
                             title: const Text("Choose output directory"),
                             content: TextField(
-                              onSubmitted: (value) {
-                                outputDir = value;
-                                Navigator.of(context).pop();
-                                provider.chooseFilesAndUpload((err) {
-                                  print(err);
-                                }, forcedDir: outputDir);
-                              },
+                              onSubmitted: (value) {},
                             ),
                           );
                         }));
-                  } else {
-                    provider.chooseFilesAndUpload((err) {
-                      print(err);
-                    });
                   }
                 },
                 icon: const Icon(Icons.add)),

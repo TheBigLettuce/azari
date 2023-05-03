@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/cell/data.dart';
@@ -21,7 +19,7 @@ class BooruCell extends ImageCell {
       required super.path,
       required this.originalUrl,
       required tags})
-      : super(hash: Uint8List(0), orighash: Uint8List(0), type: 1, addInfo: [
+      : super(addInfo: [
           ListTile(
             title: const Text("Tags"),
             subtitle: Text(tags),

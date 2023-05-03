@@ -1,12 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../cell/directory.dart';
 import 'grid.dart';
 import 'view.dart';
-import '../models/directory.dart';
 import '../models/images.dart';
 
 class Images extends StatefulWidget {
@@ -69,20 +65,7 @@ class _ImagesState extends State<Images> {
                         }));
                   },
                   icon: const Icon(Icons.info_outline)),
-              IconButton(
-                  onPressed: () {
-                    Provider.of<DirectoryModel>(context, listen: false)
-                        .chooseFilesAndUpload((err) {
-                      print(err);
-                    },
-                            forcedDir:
-                                Platform.isAndroid ? widget.cell.path : null,
-                            childDir: widget.cell.path,
-                            childOnSuccess:
-                                Provider.of<ImagesModel>(context, listen: false)
-                                    .refresh);
-                  },
-                  icon: const Icon(Icons.add))
+              IconButton(onPressed: () {}, icon: const Icon(Icons.add))
             ],
           ),
           body: Consumer<ImagesModel>(builder: (context, data, _) {

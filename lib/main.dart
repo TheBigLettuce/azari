@@ -55,30 +55,7 @@ class Entry extends StatelessWidget {
 
           var provider = Provider.of<DirectoryModel>(context);
 
-          if (!provider.isServerAddressSet()) {
-            list.add(PageViewModel(
-                title: "Set server address",
-                footer: provider.serverAddrSetError != null
-                    ? Text(provider.serverAddrSetError!)
-                    : null,
-                bodyWidget: TextField(
-                  keyboardType: TextInputType.url,
-                  onSubmitted: provider.setServerAddress,
-                )));
-          }
-
-          if (!provider.isDeviceIdSet() && provider.isServerAddressSet()) {
-            list.add(PageViewModel(
-                title: "Set DeviceID",
-                footer: provider.deviceIdSetError != null
-                    ? Text(provider.deviceIdSetError!)
-                    : null,
-                bodyWidget: TextField(
-                  onSubmitted: provider.setDeviceId,
-                )));
-          }
-
-          if (!provider.isDirectorySet() && provider.isServerAddressSet()) {
+          if (!provider.isDirectorySet()) {
             list.add(
               PageViewModel(
                 title: "Choose default directory",

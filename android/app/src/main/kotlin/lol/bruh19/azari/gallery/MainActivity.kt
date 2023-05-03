@@ -19,16 +19,6 @@ class MainActivity : FlutterActivity() {
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL, StandardMethodCodec.INSTANCE, flutterEngine.dartExecutor.binaryMessenger.makeBackgroundTaskQueue()).setMethodCallHandler { call, result ->
             when (call.method) {
-                "addFiles" -> {
-                    try {
-                        api.Api.uploadFile(call.arguments())
-                        result.success(null)
-                    } catch (e: java.lang.Exception) {
-                        println(e)
-                        result.error("1", e.message, "")
-                    }
-                }
-
                 else -> result.notImplemented()
             }
         }
