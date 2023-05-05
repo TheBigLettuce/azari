@@ -1,14 +1,16 @@
-import 'package:flutter/material.dart';
-import 'package:gallery/src/models/download_manager.dart';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
+
 import 'package:gallery/src/schemas/settings.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../cell/directory.dart';
 import '../db/isar.dart';
 import 'core.dart';
 
 import 'grid_list.dart';
 
-class DirectoryModel extends CoreModel
-    with GridList<DirectoryCell>, DownloadManager {
+class DirectoryModel extends CoreModel with GridList<DirectoryCell> {
   //final Function(String dir, BuildContext context) onPressedFunc;
   String? _directorySetError;
 
@@ -29,9 +31,11 @@ class DirectoryModel extends CoreModel
       return;
     }
 
+    var oldSettings = isar().settings.getSync(0) ?? Settings.empty();
+
     isar().writeTxnSync(
       () {
-        isar().settings.putSync(Settings(path: value));
+        isar().settings.putSync(oldSettings.copy(path: value));
       },
     );
     notifyListeners();
@@ -52,16 +56,28 @@ class DirectoryModel extends CoreModel
     return true;
   }
 
+  void pickDirectory() async {
+    var pickedDir = await FilePicker.platform.getDirectoryPath();
+    if (pickedDir == null ||
+        pickedDir == "" ||
+        FileStat.statSync(pickedDir).type == FileSystemEntityType.notFound) {
+      directorySetError = "Path is invalid";
+      return;
+    }
+
+    setDirectory(pickedDir);
+  }
+
   bool _isInitalized = false;
 
-  Future initalize(BuildContext context) async {
+  Future initalize() async {
     if (!_isInitalized) {
       _isInitalized = true;
 
       await refresh();
 
       // ignore: use_build_context_synchronously
-      initDownloadManager(context);
+      await Permission.manageExternalStorage.request();
 
       return Future.value(true);
     }

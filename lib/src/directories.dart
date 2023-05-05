@@ -54,18 +54,22 @@ class _DirectoriesState extends State<Directories> {
         }(),
       ),
       drawer: makeDrawer(context, true),
-      body: ImageGrid(
-        onOverscroll: () {
-          return Future.value(true);
-        },
-        onLongPress: Provider.of<DirectoryModel>(context, listen: false).delete,
-        data: Provider.of<DirectoryModel>(context).copy(),
-        onPressed: (context, indx) {
-          Navigator.push(context, MaterialPageRoute(builder: (context) {
-            return Images(
-                cell: Provider.of<DirectoryModel>(context, listen: false)
-                    .get(indx));
-          }));
+      body: Consumer<DirectoryModel>(
+        builder: (context, model, _) {
+          var cells = model.copy();
+
+          return ImageGrid(
+            refresh: () {
+              return Future.value(cells.length);
+            },
+            onLongPress: model.delete,
+            getCell: (i) => cells[i],
+            overrideOnPress: (context, indx) {
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return Images(cell: model.get(indx));
+              }));
+            },
+          );
         },
       ),
     );

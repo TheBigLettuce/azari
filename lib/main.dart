@@ -1,11 +1,10 @@
-import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/booru/booru.dart';
+import 'package:gallery/src/booru/infinite_scroll.dart';
 import 'package:gallery/src/db/isar.dart';
+import 'package:gallery/src/schemas/settings.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:provider/provider.dart';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'src/models/directory.dart';
 
@@ -28,6 +27,7 @@ void main() async {
     },
     child: MaterialApp(
       title: 'Welcome to Flutter',
+      darkTheme: ThemeData.dark(useMaterial3: true),
       theme: ThemeData(
         useMaterial3: true,
         /*appBarTheme: const AppBarTheme(
@@ -35,7 +35,20 @@ void main() async {
             foregroundColor: Colors.black,
           ),*/
       ),
-      home: const Entry(),
+      initialRoute: "/",
+      routes: {
+        "/": (context) => const Entry(),
+        "/booru": (context) {
+          var settings = isar().settings.getSync(0);
+
+          return settings != null && settings.scrollView
+              ? BooruScroll(
+                  isar: isar(),
+                )
+              : const Booru();
+        }
+      },
+      //home: const Entry(),
     ),
   ));
 }
@@ -63,20 +76,8 @@ class Entry extends StatelessWidget {
                     ? Text(provider.directorySetError!)
                     : null,
                 bodyWidget: TextButton(
+                  onPressed: provider.pickDirectory,
                   child: const Text("pick"),
-                  onPressed: () async {
-                    var pickedDir =
-                        await FilePicker.platform.getDirectoryPath();
-                    if (pickedDir == null ||
-                        pickedDir == "" ||
-                        FileStat.statSync(pickedDir).type ==
-                            FileSystemEntityType.notFound) {
-                      provider.directorySetError = "Path is invalid";
-                      return;
-                    }
-
-                    provider.setDirectory(pickedDir);
-                  },
                 ),
               ),
             );
@@ -92,11 +93,13 @@ class Entry extends StatelessWidget {
                 );
         }() ??
         FutureBuilder(
-            future: Provider.of<DirectoryModel>(context, listen: false)
-                .initalize(context),
+            future:
+                Provider.of<DirectoryModel>(context, listen: false).initalize(),
             builder: (context, snapshot) {
               if (snapshot.hasData) {
-                return const Booru();
+                WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+                  Navigator.of(context).pushReplacementNamed("/booru");
+                });
               }
 
               return const Scaffold(

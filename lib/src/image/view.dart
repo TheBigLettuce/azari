@@ -1,32 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 
-import '../cell/image.dart';
+import '../cell/cell.dart';
 
-class ImageView<T extends ImageCell> extends StatefulWidget {
+class ImageView<T extends Cell> extends StatefulWidget {
   final int startingCell;
-  final List<T> cells;
+  final T Function(int i) getCell;
+  final int cellCount;
+  final Future<int> Function()? onNearEnd;
   final Future Function(int i)? download;
 
   const ImageView(
       {super.key,
+      required this.cellCount,
       required this.startingCell,
-      required this.cells,
+      required this.getCell,
+      required this.onNearEnd,
       this.download});
 
   @override
   State<ImageView> createState() => _ImageViewState();
 }
 
-class _ImageViewState<T extends ImageCell> extends State<ImageView<T>> {
+class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
   late PageController controller;
   late T currentCell;
+  late int cellCount = widget.cellCount;
+  bool refreshing = false;
+  //bool disposed = false;
 
   @override
   void initState() {
     super.initState();
 
-    currentCell = widget.cells[widget.startingCell];
+    currentCell = widget.getCell(widget.startingCell);
     controller = PageController(initialPage: widget.startingCell);
   }
 
@@ -41,6 +48,11 @@ class _ImageViewState<T extends ImageCell> extends State<ImageView<T>> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
+          bottom: refreshing
+              ? const PreferredSize(
+                  preferredSize: Size.fromHeight(4),
+                  child: LinearProgressIndicator())
+              : null,
           title: Text(currentCell.alias),
           actions: () {
             List<Widget> list = [];
@@ -74,8 +86,9 @@ class _ImageViewState<T extends ImageCell> extends State<ImageView<T>> {
                                 ),
                               ];
 
-                              if (currentCell.addInfo != null) {
-                                for (var widget in currentCell.addInfo!) {
+                              var addInfo = currentCell.addInfo();
+                              if (addInfo != null) {
+                                for (var widget in addInfo) {
                                   list.add(widget);
                                 }
                               }
@@ -93,16 +106,34 @@ class _ImageViewState<T extends ImageCell> extends State<ImageView<T>> {
         ),
         body: PhotoViewGallery.builder(
             onPageChanged: (index) {
+              if (index >= cellCount - 2 &&
+                  !refreshing &&
+                  widget.onNearEnd != null) {
+                setState(() {
+                  refreshing = true;
+                });
+                widget.onNearEnd!().then((value) {
+                  if (context.mounted) {
+                    setState(() {
+                      refreshing = false;
+                      cellCount = value;
+                    });
+                  }
+                }).onError((error, stackTrace) {
+                  print(error);
+                });
+              }
+
               setState(() {
-                currentCell = widget.cells[index];
+                currentCell = widget.getCell(index);
               });
             },
             pageController: controller,
-            itemCount: widget.cells.length,
+            itemCount: cellCount,
             builder: (context, indx) {
               return PhotoViewGalleryPageOptions(
                   filterQuality: FilterQuality.high,
-                  imageProvider: NetworkImage(widget.cells[indx].url()));
+                  imageProvider: NetworkImage(widget.getCell(indx).url()));
             }));
   }
 }

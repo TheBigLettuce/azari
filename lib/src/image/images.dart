@@ -73,43 +73,38 @@ class _ImagesState extends State<Images> {
                 ? const Center(
                     child: CircularProgressIndicator(),
                   )
-                : ImageGrid(
-                    onOverscroll: () {
-                      return Future.value(true);
-                    },
-                    data: data.copy(),
-                    onLongPress: (indx) {
-                      return Navigator.of(context).push(DialogRoute(
-                          context: context,
-                          builder: ((context) {
-                            return AlertDialog(
-                              title: const Text("Do you want to delete:"),
-                              content: Text(widget.cell.alias),
-                              actions: [
-                                TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                    child: const Text("no")),
-                                TextButton(
-                                    onPressed: () {
-                                      data.delete(indx);
-                                    },
-                                    child: const Text("yes")),
-                              ],
-                            );
-                          })));
-                    },
-                    onPressed: (context, indx) {
-                      Navigator.push(context, MaterialPageRoute(
-                        builder: (context) {
-                          return ImageView(
-                            startingCell: indx,
-                            cells: data.copy(),
-                          );
-                        },
-                      ));
-                    });
+                : () {
+                    var cells = data.copy();
+
+                    return ImageGrid(
+                      refresh: () {
+                        return Future.value(cells.length);
+                      },
+                      getCell: (i) => cells[i],
+                      onLongPress: (indx) {
+                        return Navigator.of(context).push(DialogRoute(
+                            context: context,
+                            builder: ((context) {
+                              return AlertDialog(
+                                title: const Text("Do you want to delete:"),
+                                content: Text(widget.cell.alias),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                      child: const Text("no")),
+                                  TextButton(
+                                      onPressed: () {
+                                        data.delete(indx);
+                                      },
+                                      child: const Text("yes")),
+                                ],
+                              );
+                            })));
+                      },
+                    );
+                  }();
           }),
         );
       },

@@ -17,10 +17,20 @@ const SettingsSchema = CollectionSchema(
   name: r'Settings',
   id: -8656046621518759136,
   properties: {
-    r'path': PropertySchema(
+    r'booruDefault': PropertySchema(
       id: 0,
+      name: r'booruDefault',
+      type: IsarType.bool,
+    ),
+    r'path': PropertySchema(
+      id: 1,
       name: r'path',
       type: IsarType.string,
+    ),
+    r'scrollView': PropertySchema(
+      id: 2,
+      name: r'scrollView',
+      type: IsarType.bool,
     )
   },
   estimateSize: _settingsEstimateSize,
@@ -53,7 +63,9 @@ void _settingsSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeString(offsets[0], object.path);
+  writer.writeBool(offsets[0], object.booruDefault);
+  writer.writeString(offsets[1], object.path);
+  writer.writeBool(offsets[2], object.scrollView);
 }
 
 Settings _settingsDeserialize(
@@ -63,7 +75,9 @@ Settings _settingsDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = Settings(
-    path: reader.readString(offsets[0]),
+    booruDefault: reader.readBool(offsets[0]),
+    path: reader.readString(offsets[1]),
+    scrollView: reader.readBool(offsets[2]),
   );
   object.id = id;
   return object;
@@ -77,7 +91,11 @@ P _settingsDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
+      return (reader.readBool(offset)) as P;
+    case 1:
       return (reader.readString(offset)) as P;
+    case 2:
+      return (reader.readBool(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -172,6 +190,16 @@ extension SettingsQueryWhere on QueryBuilder<Settings, Settings, QWhereClause> {
 
 extension SettingsQueryFilter
     on QueryBuilder<Settings, Settings, QFilterCondition> {
+  QueryBuilder<Settings, Settings, QAfterFilterCondition> booruDefaultEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'booruDefault',
+        value: value,
+      ));
+    });
+  }
+
   QueryBuilder<Settings, Settings, QAfterFilterCondition> idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -353,6 +381,16 @@ extension SettingsQueryFilter
       ));
     });
   }
+
+  QueryBuilder<Settings, Settings, QAfterFilterCondition> scrollViewEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'scrollView',
+        value: value,
+      ));
+    });
+  }
 }
 
 extension SettingsQueryObject
@@ -362,6 +400,18 @@ extension SettingsQueryLinks
     on QueryBuilder<Settings, Settings, QFilterCondition> {}
 
 extension SettingsQuerySortBy on QueryBuilder<Settings, Settings, QSortBy> {
+  QueryBuilder<Settings, Settings, QAfterSortBy> sortByBooruDefault() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'booruDefault', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> sortByBooruDefaultDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'booruDefault', Sort.desc);
+    });
+  }
+
   QueryBuilder<Settings, Settings, QAfterSortBy> sortByPath() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'path', Sort.asc);
@@ -373,10 +423,34 @@ extension SettingsQuerySortBy on QueryBuilder<Settings, Settings, QSortBy> {
       return query.addSortBy(r'path', Sort.desc);
     });
   }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> sortByScrollView() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'scrollView', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> sortByScrollViewDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'scrollView', Sort.desc);
+    });
+  }
 }
 
 extension SettingsQuerySortThenBy
     on QueryBuilder<Settings, Settings, QSortThenBy> {
+  QueryBuilder<Settings, Settings, QAfterSortBy> thenByBooruDefault() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'booruDefault', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> thenByBooruDefaultDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'booruDefault', Sort.desc);
+    });
+  }
+
   QueryBuilder<Settings, Settings, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -400,14 +474,38 @@ extension SettingsQuerySortThenBy
       return query.addSortBy(r'path', Sort.desc);
     });
   }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> thenByScrollView() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'scrollView', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> thenByScrollViewDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'scrollView', Sort.desc);
+    });
+  }
 }
 
 extension SettingsQueryWhereDistinct
     on QueryBuilder<Settings, Settings, QDistinct> {
+  QueryBuilder<Settings, Settings, QDistinct> distinctByBooruDefault() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'booruDefault');
+    });
+  }
+
   QueryBuilder<Settings, Settings, QDistinct> distinctByPath(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'path', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QDistinct> distinctByScrollView() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'scrollView');
     });
   }
 }
@@ -420,9 +518,21 @@ extension SettingsQueryProperty
     });
   }
 
+  QueryBuilder<Settings, bool, QQueryOperations> booruDefaultProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'booruDefault');
+    });
+  }
+
   QueryBuilder<Settings, String, QQueryOperations> pathProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'path');
+    });
+  }
+
+  QueryBuilder<Settings, bool, QQueryOperations> scrollViewProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'scrollView');
     });
   }
 }

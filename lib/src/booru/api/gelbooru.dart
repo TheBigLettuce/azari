@@ -4,18 +4,29 @@ import 'package:gallery/src/booru/interface.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
+import '../../schemas/post.dart';
+
 class Gelbooru implements BooruAPI {
+  int _page = 0;
+
   @override
   Future<List<Post>> page(int p, String tags) {
-    var req = http.get(Uri.https("gelbooru.com", "/index.php", {
+    _page = p;
+    return _commonPosts(tags, p);
+  }
+
+  Future<List<Post>> _commonPosts(String tags, int p) async {
+    var query = {
       "page": "dapi",
       "s": "post",
       "q": "index",
-      "pid": p.toString(),
+      "pid": (p + 1).toString(),
       "json": "1",
       "tags": tags,
       "limit": "10"
-    }));
+    };
+
+    var req = http.get(Uri.https("gelbooru.com", "/index.php", query));
 
     return Future(() async {
       try {
@@ -31,6 +42,19 @@ class Gelbooru implements BooruAPI {
       }
     });
   }
+
+  @override
+  String name() => "Gelbooru";
+
+  @override
+  String domain() => "gelbooru.com";
+
+  @override
+  Future<List<Post>> fromPost(int _, String tags) =>
+      _commonPosts(tags, _page).then((value) {
+        _page++;
+        return Future.value(value);
+      });
 
   List<Post> _fromJson(Map<String, dynamic> m) {
     List<Post> list = [];

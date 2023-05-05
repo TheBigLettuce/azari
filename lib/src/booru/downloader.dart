@@ -1,0 +1,80 @@
+import 'package:dio/dio.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:gallery/src/schemas/download_file.dart';
+import 'package:gallery/src/schemas/settings.dart';
+import 'package:isar/isar.dart';
+import 'package:path/path.dart' as path;
+
+import '../db/isar.dart';
+
+Future downloadFile(
+    String url, String dir, String name, void Function() onComplete,
+    {int? oldid}) async {
+  if (isar()
+          .files
+          .filter()
+          .nameEqualTo(name)
+          .siteEqualTo(dir)
+          .inProgressEqualTo(false)
+          .findFirstSync() !=
+      null) {
+    if (oldid != null && hasCancelKey(oldid)) {
+      return;
+    }
+  }
+
+  var id = isar().writeTxnSync(() {
+    return isar().files.putSync(File(url, true, dir, name, id: oldid));
+  });
+
+  var token = CancelToken();
+  addToken(id, token);
+
+  return Dio().download(
+      url, path.joinAll([isar().settings.getSync(0)!.path, dir, name]),
+      cancelToken: token,
+      deleteOnError: false, onReceiveProgress: ((count, total) {
+    if (count == total || !hasCancelKey(id)) {
+      FlutterLocalNotificationsPlugin().cancel(id);
+      return;
+    }
+
+    FlutterLocalNotificationsPlugin().show(
+      id,
+      dir,
+      name,
+      NotificationDetails(
+        android: AndroidNotificationDetails("download", "Dowloader",
+            groupKey: dir,
+            ongoing: true,
+            playSound: false,
+            enableLights: false,
+            enableVibration: false,
+            category: AndroidNotificationCategory.progress,
+            maxProgress: total,
+            progress: count,
+            indeterminate: total == -1,
+            showProgress: true),
+      ),
+    );
+  })).then((value) {
+    isar().writeTxnSync(
+      () {
+        removeToken(id);
+        isar().files.deleteSync(id);
+      },
+    );
+    onComplete();
+  }).onError((error, stackTrace) {
+    print(error);
+    isar().writeTxnSync(
+      () {
+        removeToken(id);
+        var file = File(url, false, dir, name);
+        file.id = id;
+        isar().files.putSync(file);
+      },
+    );
+    FlutterLocalNotificationsPlugin().cancel(id);
+  });
+}
