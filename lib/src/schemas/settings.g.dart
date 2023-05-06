@@ -22,15 +22,27 @@ const SettingsSchema = CollectionSchema(
       name: r'booruDefault',
       type: IsarType.bool,
     ),
-    r'path': PropertySchema(
+    r'enableGallery': PropertySchema(
       id: 1,
+      name: r'enableGallery',
+      type: IsarType.bool,
+    ),
+    r'path': PropertySchema(
+      id: 2,
       name: r'path',
       type: IsarType.string,
     ),
-    r'scrollView': PropertySchema(
-      id: 2,
-      name: r'scrollView',
-      type: IsarType.bool,
+    r'quality': PropertySchema(
+      id: 3,
+      name: r'quality',
+      type: IsarType.byte,
+      enumMap: _SettingsqualityEnumValueMap,
+    ),
+    r'selectedBooru': PropertySchema(
+      id: 4,
+      name: r'selectedBooru',
+      type: IsarType.byte,
+      enumMap: _SettingsselectedBooruEnumValueMap,
     )
   },
   estimateSize: _settingsEstimateSize,
@@ -64,8 +76,10 @@ void _settingsSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeBool(offsets[0], object.booruDefault);
-  writer.writeString(offsets[1], object.path);
-  writer.writeBool(offsets[2], object.scrollView);
+  writer.writeBool(offsets[1], object.enableGallery);
+  writer.writeString(offsets[2], object.path);
+  writer.writeByte(offsets[3], object.quality.index);
+  writer.writeByte(offsets[4], object.selectedBooru.index);
 }
 
 Settings _settingsDeserialize(
@@ -76,8 +90,13 @@ Settings _settingsDeserialize(
 ) {
   final object = Settings(
     booruDefault: reader.readBool(offsets[0]),
-    path: reader.readString(offsets[1]),
-    scrollView: reader.readBool(offsets[2]),
+    enableGallery: reader.readBool(offsets[1]),
+    path: reader.readString(offsets[2]),
+    quality: _SettingsqualityValueEnumMap[reader.readByteOrNull(offsets[3])] ??
+        DisplayQuality.original,
+    selectedBooru:
+        _SettingsselectedBooruValueEnumMap[reader.readByteOrNull(offsets[4])] ??
+            Booru.gelbooru,
   );
   object.id = id;
   return object;
@@ -93,13 +112,37 @@ P _settingsDeserializeProp<P>(
     case 0:
       return (reader.readBool(offset)) as P;
     case 1:
-      return (reader.readString(offset)) as P;
-    case 2:
       return (reader.readBool(offset)) as P;
+    case 2:
+      return (reader.readString(offset)) as P;
+    case 3:
+      return (_SettingsqualityValueEnumMap[reader.readByteOrNull(offset)] ??
+          DisplayQuality.original) as P;
+    case 4:
+      return (_SettingsselectedBooruValueEnumMap[
+              reader.readByteOrNull(offset)] ??
+          Booru.gelbooru) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
 }
+
+const _SettingsqualityEnumValueMap = {
+  'original': 0,
+  'sample': 1,
+};
+const _SettingsqualityValueEnumMap = {
+  0: DisplayQuality.original,
+  1: DisplayQuality.sample,
+};
+const _SettingsselectedBooruEnumValueMap = {
+  'gelbooru': 0,
+  'danbooru': 1,
+};
+const _SettingsselectedBooruValueEnumMap = {
+  0: Booru.gelbooru,
+  1: Booru.danbooru,
+};
 
 Id _settingsGetId(Settings object) {
   return object.id;
@@ -195,6 +238,16 @@ extension SettingsQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'booruDefault',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterFilterCondition> enableGalleryEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'enableGallery',
         value: value,
       ));
     });
@@ -382,12 +435,109 @@ extension SettingsQueryFilter
     });
   }
 
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> scrollViewEqualTo(
-      bool value) {
+  QueryBuilder<Settings, Settings, QAfterFilterCondition> qualityEqualTo(
+      DisplayQuality value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'scrollView',
+        property: r'quality',
         value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterFilterCondition> qualityGreaterThan(
+    DisplayQuality value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'quality',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterFilterCondition> qualityLessThan(
+    DisplayQuality value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'quality',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterFilterCondition> qualityBetween(
+    DisplayQuality lower,
+    DisplayQuality upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'quality',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterFilterCondition> selectedBooruEqualTo(
+      Booru value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'selectedBooru',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterFilterCondition>
+      selectedBooruGreaterThan(
+    Booru value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'selectedBooru',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterFilterCondition> selectedBooruLessThan(
+    Booru value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'selectedBooru',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterFilterCondition> selectedBooruBetween(
+    Booru lower,
+    Booru upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'selectedBooru',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
       ));
     });
   }
@@ -412,6 +562,18 @@ extension SettingsQuerySortBy on QueryBuilder<Settings, Settings, QSortBy> {
     });
   }
 
+  QueryBuilder<Settings, Settings, QAfterSortBy> sortByEnableGallery() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'enableGallery', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> sortByEnableGalleryDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'enableGallery', Sort.desc);
+    });
+  }
+
   QueryBuilder<Settings, Settings, QAfterSortBy> sortByPath() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'path', Sort.asc);
@@ -424,15 +586,27 @@ extension SettingsQuerySortBy on QueryBuilder<Settings, Settings, QSortBy> {
     });
   }
 
-  QueryBuilder<Settings, Settings, QAfterSortBy> sortByScrollView() {
+  QueryBuilder<Settings, Settings, QAfterSortBy> sortByQuality() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'scrollView', Sort.asc);
+      return query.addSortBy(r'quality', Sort.asc);
     });
   }
 
-  QueryBuilder<Settings, Settings, QAfterSortBy> sortByScrollViewDesc() {
+  QueryBuilder<Settings, Settings, QAfterSortBy> sortByQualityDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'scrollView', Sort.desc);
+      return query.addSortBy(r'quality', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> sortBySelectedBooru() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'selectedBooru', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> sortBySelectedBooruDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'selectedBooru', Sort.desc);
     });
   }
 }
@@ -448,6 +622,18 @@ extension SettingsQuerySortThenBy
   QueryBuilder<Settings, Settings, QAfterSortBy> thenByBooruDefaultDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'booruDefault', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> thenByEnableGallery() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'enableGallery', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> thenByEnableGalleryDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'enableGallery', Sort.desc);
     });
   }
 
@@ -475,15 +661,27 @@ extension SettingsQuerySortThenBy
     });
   }
 
-  QueryBuilder<Settings, Settings, QAfterSortBy> thenByScrollView() {
+  QueryBuilder<Settings, Settings, QAfterSortBy> thenByQuality() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'scrollView', Sort.asc);
+      return query.addSortBy(r'quality', Sort.asc);
     });
   }
 
-  QueryBuilder<Settings, Settings, QAfterSortBy> thenByScrollViewDesc() {
+  QueryBuilder<Settings, Settings, QAfterSortBy> thenByQualityDesc() {
     return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'scrollView', Sort.desc);
+      return query.addSortBy(r'quality', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> thenBySelectedBooru() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'selectedBooru', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> thenBySelectedBooruDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'selectedBooru', Sort.desc);
     });
   }
 }
@@ -496,6 +694,12 @@ extension SettingsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Settings, Settings, QDistinct> distinctByEnableGallery() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'enableGallery');
+    });
+  }
+
   QueryBuilder<Settings, Settings, QDistinct> distinctByPath(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -503,9 +707,15 @@ extension SettingsQueryWhereDistinct
     });
   }
 
-  QueryBuilder<Settings, Settings, QDistinct> distinctByScrollView() {
+  QueryBuilder<Settings, Settings, QDistinct> distinctByQuality() {
     return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'scrollView');
+      return query.addDistinctBy(r'quality');
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QDistinct> distinctBySelectedBooru() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'selectedBooru');
     });
   }
 }
@@ -524,15 +734,27 @@ extension SettingsQueryProperty
     });
   }
 
+  QueryBuilder<Settings, bool, QQueryOperations> enableGalleryProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'enableGallery');
+    });
+  }
+
   QueryBuilder<Settings, String, QQueryOperations> pathProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'path');
     });
   }
 
-  QueryBuilder<Settings, bool, QQueryOperations> scrollViewProperty() {
+  QueryBuilder<Settings, DisplayQuality, QQueryOperations> qualityProperty() {
     return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'scrollView');
+      return query.addPropertyName(r'quality');
+    });
+  }
+
+  QueryBuilder<Settings, Booru, QQueryOperations> selectedBooruProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'selectedBooru');
     });
   }
 }

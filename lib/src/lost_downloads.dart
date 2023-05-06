@@ -96,9 +96,8 @@ class _LostDownloadsState extends State<LostDownloads> {
                                           cancelAndRemoveToken(file.id!);
                                           Navigator.pop(context);
                                         } else {
-                                          print(file.url);
-                                          downloadFile(file.url, file.site,
-                                              file.name, () {},
+                                          downloadFile(
+                                              file.url, file.site, file.name,
                                               oldid: file.id);
                                           Navigator.pop(context);
                                         }

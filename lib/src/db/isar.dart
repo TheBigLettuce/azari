@@ -1,6 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:gallery/src/booru/api/danbooru.dart';
+import 'package:gallery/src/booru/api/gelbooru.dart';
+import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/post.dart';
+import 'package:gallery/src/schemas/scroll_position.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
@@ -23,6 +27,17 @@ void cancelAndRemoveToken(int key) {
   _tokens.remove(key);
 }
 
+BooruAPI getBooru() {
+  var settings = isar().settings.getSync(0);
+  if (settings!.selectedBooru == Booru.danbooru) {
+    return Danbooru();
+  } else if (settings.selectedBooru == Booru.gelbooru) {
+    return Gelbooru();
+  } else {
+    throw "invalid booru";
+  }
+}
+
 void removeToken(int key) => _tokens.remove(key);
 
 bool hasCancelKey(int id) => _tokens[id] != null;
@@ -33,17 +48,18 @@ Future initalizeIsar() async {
   }
   _initalized = true;
 
-  await Isar.open([SettingsSchema, LastTagSchema, FileSchema, PostSchema],
-          directory: (await getApplicationSupportDirectory()).path,
-          inspector: false)
+  await Isar.open([
+    SettingsSchema,
+    LastTagSchema,
+    FileSchema,
+    PostSchema,
+    ScrollPositionSchema
+  ], directory: (await getApplicationSupportDirectory()).path, inspector: false)
       .then((value) {
     _isar = value;
-    _isar!.writeTxnSync(() {
-      _isar!.posts.clearSync();
-    });
   });
 
-  return Isar.open([PostSchema],
+  return Isar.open([PostSchema, ScrollPositionSchema],
           directory: (await getApplicationSupportDirectory()).path,
           inspector: false,
           name: "postsOnly")

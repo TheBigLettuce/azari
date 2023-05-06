@@ -7,9 +7,7 @@ import 'package:path/path.dart' as path;
 
 import '../db/isar.dart';
 
-Future downloadFile(
-    String url, String dir, String name, void Function() onComplete,
-    {int? oldid}) async {
+Future downloadFile(String url, String dir, String name, {int? oldid}) async {
   if (isar()
           .files
           .filter()
@@ -64,7 +62,6 @@ Future downloadFile(
         isar().files.deleteSync(id);
       },
     );
-    onComplete();
   }).onError((error, stackTrace) {
     print(error);
     isar().writeTxnSync(

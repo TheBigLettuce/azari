@@ -1,34 +1,42 @@
 import 'package:flutter/material.dart';
-import 'package:gallery/src/booru/api/gelbooru.dart';
 import 'package:gallery/src/booru/downloader.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/booru/search.dart';
 import 'package:gallery/src/cell/booru.dart';
 import 'package:gallery/src/db/isar.dart';
-//import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/drawer.dart';
 import 'package:gallery/src/image/grid.dart';
 import 'package:gallery/src/schemas/post.dart';
+import 'package:gallery/src/schemas/scroll_position.dart' as sc_pos;
 import 'package:isar/isar.dart';
 
 class BooruScroll extends StatefulWidget {
   final Isar isar;
   final String tags;
+  final void Function(double pos)? updateScrollPosition;
+  final double initalScroll;
 
-  const BooruScroll({super.key, required this.isar, this.tags = ""});
+  const BooruScroll(
+      {super.key,
+      required this.initalScroll,
+      required this.isar,
+      this.tags = "",
+      this.updateScrollPosition});
 
   @override
   State<BooruScroll> createState() => _BooruScrollState();
 }
 
 class _BooruScrollState extends State<BooruScroll> {
-  BooruAPI booru = Gelbooru();
+  BooruAPI booru = getBooru();
   late String tags = widget.tags;
   late Isar isar = widget.isar;
 
   Future<int> _clearAndRefresh() async {
     try {
       var list = await booru.page(0, tags);
+      isar.writeTxnSync(
+          () => isar.scrollPositions.putSync(sc_pos.ScrollPosition(0)));
       await isar.writeTxn(() {
         isar.posts.clear();
         return isar.posts.putAllById(list);
@@ -45,8 +53,18 @@ class _BooruScrollState extends State<BooruScroll> {
       return BooruScroll(
         isar: isarPostsOnly(),
         tags: t,
+        initalScroll: 0,
       );
     }), ModalRoute.withName('/booru'));
+  }
+
+  Future<void> _download(int i) async {
+    var p = isar.posts.getSync(i + 1);
+    if (p == null) {
+      return Future.value();
+    }
+
+    return downloadFile(p.fileUrl, booru.domain(), p.filename());
   }
 
   Future<int> _addLast() async {
@@ -113,6 +131,10 @@ class _BooruScrollState extends State<BooruScroll> {
             refresh: _clearAndRefresh,
             numbRow: 2,
             hideAlias: true,
+            onLongPress: _download,
+            updateScrollPosition: widget.updateScrollPosition,
+            initalScrollPosition: widget.initalScroll,
+            initalCellCount: isar.posts.countSync(),
           ),
         ));
   }

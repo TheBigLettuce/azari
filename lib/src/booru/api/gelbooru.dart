@@ -11,7 +11,7 @@ class Gelbooru implements BooruAPI {
 
   @override
   Future<List<Post>> page(int p, String tags) {
-    _page = p;
+    _page = p + 1;
     return _commonPosts(tags, p);
   }
 
@@ -20,7 +20,7 @@ class Gelbooru implements BooruAPI {
       "page": "dapi",
       "s": "post",
       "q": "index",
-      "pid": (p + 1).toString(),
+      "pid": p.toString(),
       "json": "1",
       "tags": tags,
       "limit": "10"

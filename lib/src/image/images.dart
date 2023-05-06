@@ -81,6 +81,7 @@ class _ImagesState extends State<Images> {
                         return Future.value(cells.length);
                       },
                       getCell: (i) => cells[i],
+                      initalScrollPosition: 0,
                       onLongPress: (indx) {
                         return Navigator.of(context).push(DialogRoute(
                             context: context,

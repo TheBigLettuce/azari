@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:gallery/src/booru/booru.dart';
-import 'package:gallery/src/booru/infinite_scroll.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/directories.dart';
 import 'package:gallery/src/models/directory.dart';
 import 'package:gallery/src/schemas/settings.dart' as schema_settings;
 import 'package:provider/provider.dart';
+
+import 'schemas/settings.dart';
 
 class Settings extends StatefulWidget {
   const Settings({super.key});
@@ -19,8 +19,8 @@ class _SettingsState extends State<Settings> {
   final Stream<schema_settings.Settings?> _watcher =
       isar().settings.watchObject(0, fireImmediately: true);
   schema_settings.Settings? _settings = isar().settings.getSync(0);
-  bool viewChanged = false;
   bool defaultChanged = false;
+  bool booruChanged = false;
 
   @override
   void initState() {
@@ -59,10 +59,10 @@ class _SettingsState extends State<Settings> {
               return const Directories();
             }));
           }
-        } else {
-          if (_settings!.booruDefault && viewChanged) {
-            _popBooru();
-          }
+        }
+
+        if (_settings!.booruDefault && booruChanged) {
+          _popBooru();
         }
 
         return Future.value(true);
@@ -80,20 +80,10 @@ class _SettingsState extends State<Settings> {
             ),
           ),
           ListTile(
-            title: const Text("Scrollview Booru"),
-            subtitle: const Text(
-                "If turned on, enables infinite scroll instead of paging."),
+            title: const Text("Enable gallery"),
             trailing: Switch(
-              value: _settings!.scrollView,
-              onChanged: (value) {
-                viewChanged = true;
-                var settings = isar().settings.getSync(0) ??
-                    schema_settings.Settings.empty();
-                isar().writeTxnSync(() {
-                  isar().settings.putSync(
-                      settings.copy(scrollView: !_settings!.scrollView));
-                });
-              },
+              onChanged: null,
+              value: _settings!.enableGallery,
             ),
           ),
           ListTile(
@@ -101,18 +91,75 @@ class _SettingsState extends State<Settings> {
             subtitle: const Text(
                 "If enabled, makes the booru screen the default one, when the app opens."),
             trailing: Switch(
-              onChanged: (value) {
-                defaultChanged = true;
-                var settings = isar().settings.getSync(0) ??
-                    schema_settings.Settings.empty();
-                isar().writeTxnSync(() {
-                  isar().settings.putSync(
-                      settings.copy(booruDefault: !_settings!.booruDefault));
-                });
-              },
+              onChanged: _settings!.enableGallery
+                  ? (value) {
+                      defaultChanged = true;
+                      isar().writeTxnSync(() {
+                        isar().settings.putSync(_settings!
+                            .copy(booruDefault: !_settings!.booruDefault));
+                      });
+                    }
+                  : null,
               value: _settings!.booruDefault,
             ),
-          )
+          ),
+          ListTile(
+            title: const Text("Selected booru"),
+            trailing: DropdownButton<Booru>(
+              value: _settings!.selectedBooru,
+              items: [
+                DropdownMenuItem(
+                  value: Booru.danbooru,
+                  child: Text(Booru.danbooru.string),
+                ),
+                DropdownMenuItem(
+                  value: Booru.gelbooru,
+                  child: Text(Booru.gelbooru.string),
+                )
+              ],
+              onChanged: (value) {
+                if (value != _settings!.selectedBooru) {
+                  booruChanged = true;
+                  isar().writeTxnSync(() => isar()
+                      .settings
+                      .putSync(_settings!.copy(selectedBooru: value)));
+                }
+              },
+            ),
+          ),
+          ListTile(
+              title: const Text("Image display quality"),
+              leading: IconButton(
+                icon: const Icon(Icons.info_outlined),
+                onPressed: () {
+                  Navigator.of(context).push(DialogRoute(
+                      context: context,
+                      builder: (context) {
+                        return const AlertDialog(
+                          content: Text("Download quality is always Original."),
+                        );
+                      }));
+                },
+              ),
+              trailing: DropdownButton<DisplayQuality>(
+                value: _settings!.quality,
+                items: [
+                  DropdownMenuItem(
+                      value: DisplayQuality.original,
+                      child: Text(DisplayQuality.original.string)),
+                  DropdownMenuItem(
+                    value: DisplayQuality.sample,
+                    child: Text(DisplayQuality.sample.string),
+                  )
+                ],
+                onChanged: (value) {
+                  if (value != _settings!.quality) {
+                    isar().writeTxnSync(() => isar()
+                        .settings
+                        .putSync(_settings!.copy(quality: value)));
+                  }
+                },
+              )),
         ]),
       ),
     );

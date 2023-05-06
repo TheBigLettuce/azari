@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import 'cell.dart';
@@ -26,72 +27,59 @@ class CellImageWidget<T extends Cell> extends StatefulWidget {
 }
 
 class _CellImageWidgetState<T extends Cell> extends State<CellImageWidget<T>> {
+  late CellData cellData = widget._data.getCellData();
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-        future: widget._data.getFile(),
-        builder: ((context, snapshot) {
-          if (snapshot.hasData) {
-            var data = snapshot.data as CellData;
-
-            return InkWell(
-              splashColor: Colors.indigo,
-              //focusColor: Colors.purple,
-              hoverColor: Colors.indigoAccent,
-              borderRadius: BorderRadius.circular(15.0),
-              onTap: () {
-                widget.onPressed(context, widget.indx);
-              },
-              onLongPress: widget.onLongPress,
-              child: Card(
-                  elevation: 0,
-                  child: ClipPath(
-                    clipper: ShapeBorderClipper(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15.0))),
-                    child: Stack(
-                      children: [
-                        LayoutBuilder(builder: (context, constraint) {
-                          return Center(
-                            child: Image(
-                              image: data.thumb,
-                              alignment: Alignment.center,
-                              fit: BoxFit.cover,
-                              filterQuality: FilterQuality.high,
-                              width: constraint.maxWidth,
-                              height: constraint.maxHeight,
-                            ),
-                          );
-                        }),
-                        Container(
-                          alignment: Alignment.bottomCenter,
-                          decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                Colors.black.withAlpha(50),
-                                Colors.black12,
-                                Colors.black45
-                              ])),
-                          child: widget.hideAlias
-                              ? null
-                              : Text(
-                                  data.name,
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                        ),
-                      ],
+    return InkWell(
+      splashColor: Colors.indigo,
+      hoverColor: Colors.indigoAccent,
+      borderRadius: BorderRadius.circular(15.0),
+      onTap: () {
+        widget.onPressed(context, widget.indx);
+      },
+      onLongPress: widget.onLongPress,
+      child: Card(
+          elevation: 0,
+          child: ClipPath(
+            clipper: ShapeBorderClipper(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15.0))),
+            child: Stack(
+              children: [
+                LayoutBuilder(builder: (context, constraint) {
+                  return Center(
+                    child: CachedNetworkImage(
+                      imageUrl: cellData.thumbUrl,
+                      alignment: Alignment.center,
+                      fit: BoxFit.cover,
+                      filterQuality: FilterQuality.high,
+                      width: constraint.maxWidth,
+                      height: constraint.maxHeight,
                     ),
-                  )),
-            );
-          } else if (snapshot.hasError) {
-            return Text(snapshot.error.toString());
-          } else {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-        }));
+                  );
+                }),
+                Container(
+                  alignment: Alignment.bottomCenter,
+                  decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                        Colors.black.withAlpha(50),
+                        Colors.black12,
+                        Colors.black45
+                      ])),
+                  child: widget.hideAlias
+                      ? null
+                      : Text(
+                          cellData.name,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                ),
+              ],
+            ),
+          )),
+    );
   }
 }

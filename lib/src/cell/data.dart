@@ -1,8 +1,6 @@
-import 'package:flutter/widgets.dart';
-
 class CellData {
-  final ImageProvider thumb;
+  final String thumbUrl;
   final String name;
 
-  CellData({required this.thumb, required this.name});
+  CellData({required this.thumbUrl, required this.name});
 }

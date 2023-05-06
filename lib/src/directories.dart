@@ -62,6 +62,7 @@ class _DirectoriesState extends State<Directories> {
             refresh: () {
               return Future.value(cells.length);
             },
+            initalScrollPosition: 0,
             onLongPress: model.delete,
             getCell: (i) => cells[i],
             overrideOnPress: (context, indx) {

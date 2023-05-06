@@ -8,11 +8,17 @@ class Cell {
 
   List<Widget>? Function() addInfo;
 
-  String url() => path;
+  List<Widget>? Function() addButtons;
 
-  Future<CellData> getFile() async {
-    throw "unimplimented";
-  }
+  String fileDownloadUrl() => path;
 
-  Cell({required this.path, required this.alias, required this.addInfo});
+  String fileDisplayUrl() => path;
+
+  CellData getCellData() => CellData(thumbUrl: path, name: alias);
+
+  Cell(
+      {required this.path,
+      required this.alias,
+      required this.addInfo,
+      required this.addButtons});
 }

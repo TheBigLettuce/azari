@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/image/view.dart';
@@ -9,9 +8,12 @@ import '../cell/image_widget.dart';
 
 class ImageGrid<T extends Cell> extends StatefulWidget {
   final T Function(int) getCell;
+  final int? initalCellCount;
   final Future<int> Function()? loadNext;
   final Future<void> Function(int indx)? onLongPress;
   final Future<int> Function() refresh;
+  final void Function(double pos)? updateScrollPosition;
+  final double initalScrollPosition;
 
   final int? numbRow;
   final bool? hideAlias;
@@ -20,11 +22,14 @@ class ImageGrid<T extends Cell> extends StatefulWidget {
   const ImageGrid({
     Key? key,
     required this.getCell,
+    required this.initalScrollPosition,
     this.loadNext,
     required this.refresh,
+    this.updateScrollPosition,
     this.numbRow,
     this.onLongPress,
     this.hideAlias,
+    this.initalCellCount,
     this.overrideOnPress,
   }) : super(key: key);
 
@@ -34,7 +39,8 @@ class ImageGrid<T extends Cell> extends StatefulWidget {
 
 class _ImageGridState<T extends Cell> extends State<ImageGrid<T>> {
   static const maxExtend = 150.0;
-  ScrollController controller = ScrollController();
+  late ScrollController controller =
+      ScrollController(initialScrollOffset: widget.initalScrollPosition);
   late int cellCount = 0;
   bool refreshing = true;
 
@@ -42,7 +48,18 @@ class _ImageGridState<T extends Cell> extends State<ImageGrid<T>> {
   void initState() {
     super.initState();
 
-    _refresh();
+    if (widget.initalCellCount != null) {
+      cellCount = widget.initalCellCount!;
+      refreshing = false;
+    } else {
+      _refresh();
+    }
+
+    if (widget.updateScrollPosition != null) {
+      controller.addListener(() {
+        widget.updateScrollPosition!(controller.offset);
+      });
+    }
 
     if (widget.loadNext == null) {
       return;
@@ -85,6 +102,8 @@ class _ImageGridState<T extends Cell> extends State<ImageGrid<T>> {
           refreshing = false;
         });
       }
+    }).onError((error, stackTrace) {
+      print(error);
     });
   }
 

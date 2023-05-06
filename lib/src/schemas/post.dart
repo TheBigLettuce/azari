@@ -27,8 +27,9 @@ class Post {
 
   BooruCell booruCell(void Function(String tag) onTagPressed) => BooruCell(
       alias: id.toString(),
+      sampleUrl: sampleUrl,
       path: previewUrl,
-      originalUrl: sampleUrl,
+      originalUrl: fileUrl,
       tags: tags,
       onTagPressed: onTagPressed);
 

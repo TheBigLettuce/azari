@@ -1,7 +1,8 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:gallery/src/booru/booru.dart';
 import 'package:gallery/src/booru/infinite_scroll.dart';
 import 'package:gallery/src/db/isar.dart';
+import 'package:gallery/src/directories.dart';
+import 'package:gallery/src/schemas/scroll_position.dart' as scroll_pos;
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:provider/provider.dart';
@@ -39,13 +40,16 @@ void main() async {
       routes: {
         "/": (context) => const Entry(),
         "/booru": (context) {
-          var settings = isar().settings.getSync(0);
-
-          return settings != null && settings.scrollView
-              ? BooruScroll(
-                  isar: isar(),
-                )
-              : const Booru();
+          var scroll = isar().scrollPositions.getSync(0);
+          return BooruScroll(
+            initalScroll: scroll != null ? scroll.pos : 0,
+            isar: isar(),
+            updateScrollPosition: (pos) {
+              print("pos set");
+              isar().writeTxn(() =>
+                  isar().scrollPositions.put(scroll_pos.ScrollPosition(pos)));
+            },
+          );
         }
       },
       //home: const Entry(),
@@ -93,12 +97,22 @@ class Entry extends StatelessWidget {
                 );
         }() ??
         FutureBuilder(
-            future:
-                Provider.of<DirectoryModel>(context, listen: false).initalize(),
+            future: Provider.of<DirectoryModel>(context, listen: false)
+                .initalize(Theme.of(context).colorScheme.background),
             builder: (context, snapshot) {
               if (snapshot.hasData) {
                 WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-                  Navigator.of(context).pushReplacementNamed("/booru");
+                  var settings = isar().settings.getSync(0);
+                  if (settings!.enableGallery) {
+                    if (settings.booruDefault) {
+                      Navigator.of(context).pushReplacementNamed("/booru");
+                    } else {
+                      Navigator.of(context).pushReplacement(MaterialPageRoute(
+                          builder: (_) => const Directories()));
+                    }
+                  } else {
+                    Navigator.of(context).pushReplacementNamed("/booru");
+                  }
                 });
               }
 

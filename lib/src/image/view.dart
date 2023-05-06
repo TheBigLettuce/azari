@@ -57,6 +57,11 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
           actions: () {
             List<Widget> list = [];
 
+            var addB = currentCell.addButtons();
+            if (addB != null) {
+              list.addAll(addB);
+            }
+
             if (widget.download != null) {
               list.add(IconButton(
                   onPressed: () {
@@ -82,7 +87,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                                 ),
                                 ListTile(
                                   title: const Text("Path"),
-                                  subtitle: Text(currentCell.path),
+                                  subtitle: Text(currentCell.fileDisplayUrl()),
                                 ),
                               ];
 
@@ -133,7 +138,8 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
             builder: (context, indx) {
               return PhotoViewGalleryPageOptions(
                   filterQuality: FilterQuality.high,
-                  imageProvider: NetworkImage(widget.getCell(indx).url()));
+                  imageProvider:
+                      NetworkImage(widget.getCell(indx).fileDisplayUrl()));
             }));
   }
 }

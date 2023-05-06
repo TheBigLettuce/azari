@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -70,14 +72,18 @@ class DirectoryModel extends CoreModel with GridList<DirectoryCell> {
 
   bool _isInitalized = false;
 
-  Future initalize() async {
+  Future initalize(Color navBarColor) async {
     if (!_isInitalized) {
       _isInitalized = true;
 
-      await refresh();
+      if (isar().settings.getSync(0)!.enableGallery) {
+        await refresh();
+      }
 
-      // ignore: use_build_context_synchronously
       await Permission.manageExternalStorage.request();
+
+      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+          systemNavigationBarColor: navBarColor.withOpacity(0)));
 
       return Future.value(true);
     }

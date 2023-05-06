@@ -1,26 +1,35 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
-import 'package:gallery/src/cell/data.dart';
+import 'package:gallery/src/db/isar.dart';
+import 'package:gallery/src/schemas/settings.dart';
 
 import 'cell.dart';
 
 class BooruCell extends Cell {
   String originalUrl;
+  String sampleUrl;
 
   @override
-  Future<CellData> getFile() async {
-    return CellData(thumb: CachedNetworkImageProvider(path), name: alias);
+  String fileDownloadUrl() => originalUrl;
+
+  @override
+  String fileDisplayUrl() {
+    var settings = isar().settings.getSync(0);
+    if (settings!.quality == DisplayQuality.original) {
+      return originalUrl;
+    } else if (settings.quality == DisplayQuality.sample) {
+      return sampleUrl;
+    } else {
+      throw "invalid display quality";
+    }
   }
-
-  @override
-  String url() => originalUrl;
 
   BooruCell(
       {required super.alias,
       required super.path,
       required this.originalUrl,
       required String tags,
+      required this.sampleUrl,
       required void Function(String tag) onTagPressed})
       : super(addInfo: () {
           var list = [
@@ -41,5 +50,16 @@ class BooruCell extends Cell {
               children: list,
             )
           ];
+        }, addButtons: () {
+          if (tags.contains("original")) {
+            return [
+              const IconButton(
+                icon: Icon(IconData(79)),
+                onPressed: null,
+              )
+            ];
+          }
+
+          return null;
         });
 }
