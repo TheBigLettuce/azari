@@ -1,40 +1,78 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gallery/src/booru/downloader.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/booru/search.dart';
 import 'package:gallery/src/cell/booru.dart';
-import 'package:gallery/src/db/isar.dart';
+import 'package:gallery/src/db/isar.dart' as db;
 import 'package:gallery/src/drawer.dart';
 import 'package:gallery/src/image/grid.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/scroll_position.dart' as sc_pos;
+import 'package:gallery/src/schemas/tags.dart';
 import 'package:isar/isar.dart';
+
+import 'tags/tags.dart';
 
 class BooruScroll extends StatefulWidget {
   final Isar isar;
   final String tags;
   final void Function(double pos)? updateScrollPosition;
   final double initalScroll;
+  final bool clear;
 
-  const BooruScroll(
+  const BooruScroll.primary(
       {super.key,
       required this.initalScroll,
       required this.isar,
-      this.tags = "",
-      this.updateScrollPosition});
+      this.updateScrollPosition})
+      : tags = "",
+        clear = false;
+
+  const BooruScroll.secondary(
+      {super.key, required this.isar, required this.tags})
+      : initalScroll = 0,
+        updateScrollPosition = null,
+        clear = true;
 
   @override
   State<BooruScroll> createState() => _BooruScrollState();
 }
 
 class _BooruScrollState extends State<BooruScroll> {
-  BooruAPI booru = getBooru();
-  late String tags = widget.tags;
+  BooruAPI booru = db.getBooru();
   late Isar isar = widget.isar;
+  late StreamSubscription<void> tagWatcher;
+  List<String> tags = Tags().getLatestStr();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.clear) {
+      isar.writeTxnSync(() => isar.posts.clearSync());
+    }
+
+    tagWatcher = db.isar().lastTags.watchLazy().listen((_) {
+      tags = Tags().getLatestStr();
+    });
+  }
+
+  @override
+  void dispose() {
+    tagWatcher.cancel();
+
+    super.dispose();
+  }
+
+  List<String> _searchFilter(String value) => value.isEmpty
+      ? []
+      : tags.where((element) => element.contains(value)).toList();
 
   Future<int> _clearAndRefresh() async {
     try {
-      var list = await booru.page(0, tags);
+      var list = await booru.page(0, widget.tags);
       isar.writeTxnSync(
           () => isar.scrollPositions.putSync(sc_pos.ScrollPosition(0)));
       await isar.writeTxn(() {
@@ -49,11 +87,11 @@ class _BooruScrollState extends State<BooruScroll> {
   }
 
   void _search(String t) {
+    Tags().addLatest(t);
     Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) {
-      return BooruScroll(
-        isar: isarPostsOnly(),
+      return BooruScroll.secondary(
+        isar: db.isarPostsOnly(),
         tags: t,
-        initalScroll: 0,
       );
     }), ModalRoute.withName('/booru'));
   }
@@ -74,7 +112,7 @@ class _BooruScrollState extends State<BooruScroll> {
     }
 
     try {
-      var list = await booru.fromPost(p.id, tags);
+      var list = await booru.fromPost(p.id, widget.tags);
       isar.writeTxnSync(() => isar.posts.putAllByIdSync(list));
     } catch (e) {
       print(e);
@@ -91,50 +129,24 @@ class _BooruScrollState extends State<BooruScroll> {
             Navigator.of(context).popUntil(ModalRoute.withName("/booru"));
           }
 
-          if (tags.isNotEmpty) {
-            tags = "";
-            _clearAndRefresh();
-            return Future.value(false);
-          }
-
           return Future.value(true);
         },
         child: Scaffold(
-          appBar: AppBar(
-            title: Text(tags.isEmpty ? booru.name() : tags),
-            leading: tags.isNotEmpty
-                ? IconButton(
-                    onPressed: () {
-                      tags = "";
-                      _clearAndRefresh();
-                    },
-                    icon: const Icon(Icons.arrow_back))
-                : null,
-            actions: [
-              IconButton(
-                  onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(
-                      builder: (context) {
-                        return SearchBooru(onSubmitted: (t) {
-                          _search(t);
-                        });
-                      },
-                    ));
-                  },
-                  icon: const Icon(Icons.search))
-            ],
-          ),
           drawer: makeDrawer(context, false),
           body: ImageGrid<BooruCell>(
             getCell: (i) => isar.posts.getSync(i + 1)!.booruCell(_search),
             loadNext: _addLast,
             refresh: _clearAndRefresh,
             numbRow: 2,
+            showBack: widget.tags != "",
+            searchStartingValue: widget.tags,
+            search: _search,
             hideAlias: true,
             onLongPress: _download,
             updateScrollPosition: widget.updateScrollPosition,
             initalScrollPosition: widget.initalScroll,
             initalCellCount: isar.posts.countSync(),
+            searchFilter: _searchFilter,
           ),
         ));
   }

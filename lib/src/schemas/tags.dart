@@ -6,7 +6,10 @@ part 'tags.g.dart';
 class LastTag {
   Id id = Isar.autoIncrement;
 
+  DateTime date;
+
+  @Index(unique: true, replace: true)
   final String tag;
 
-  LastTag(this.tag);
+  LastTag(this.tag) : date = DateTime.now();
 }

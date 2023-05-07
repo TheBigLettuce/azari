@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/directories.dart';
@@ -15,9 +17,7 @@ class Settings extends StatefulWidget {
 }
 
 class _SettingsState extends State<Settings> {
-  bool defunct = false;
-  final Stream<schema_settings.Settings?> _watcher =
-      isar().settings.watchObject(0, fireImmediately: true);
+  late final StreamSubscription<schema_settings.Settings?> _watcher;
   schema_settings.Settings? _settings = isar().settings.getSync(0);
   bool defaultChanged = false;
   bool booruChanged = false;
@@ -26,18 +26,18 @@ class _SettingsState extends State<Settings> {
   void initState() {
     super.initState();
 
-    _watcher.listen((e) {
-      if (!defunct) {
-        setState(() {
-          _settings = e;
-        });
-      }
+    _watcher =
+        isar().settings.watchObject(0, fireImmediately: true).listen((event) {
+      setState(() {
+        print("called");
+        _settings = event;
+      });
     });
   }
 
   @override
   void dispose() {
-    defunct = true;
+    _watcher.cancel();
 
     super.dispose();
   }

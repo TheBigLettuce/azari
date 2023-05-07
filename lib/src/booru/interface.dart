@@ -9,6 +9,8 @@ abstract class BooruAPI {
   Future<List<Post>> page(int p, String tags);
 
   Future<List<Post>> fromPost(int postId, String tags);
+
+  // Future<List<String>> completeTag(String tag);
 }
 
 List<BooruCell> postsToCells(

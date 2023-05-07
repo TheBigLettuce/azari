@@ -36,7 +36,9 @@ class _SearchBooruState extends State<SearchBooru> {
           Padding(
             padding: const EdgeInsets.only(left: 5, right: 5),
             child: TextField(
-              decoration: const InputDecoration(border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(50)))),
               onSubmitted: (value) {
                 _tags.addLatest(value);
                 widget.onSubmitted(value);
@@ -46,21 +48,47 @@ class _SearchBooruState extends State<SearchBooru> {
           const ListTile(
             title: Text("Last Tags"),
           ),
-          Wrap(
-            children: () {
-              List<Widget> list = [];
+          Padding(
+            padding: const EdgeInsets.only(left: 10, right: 10),
+            child: Wrap(
+              spacing: 2,
+              runSpacing: -6,
+              children: () {
+                List<Widget> list = [];
 
-              for (var tag in _lastTags) {
-                list.add(ActionChip(
-                  label: Text(tag.tag),
-                  onPressed: () {
-                    widget.onSubmitted(tag.tag);
-                  },
-                ));
-              }
+                for (var tag in _lastTags) {
+                  list.add(GestureDetector(
+                    onLongPress: () {
+                      Navigator.of(context).push(DialogRoute(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                                title: const Text("Do you want to delete"),
+                                content: Text(tag.tag),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () {
+                                        _tags.deleteTag(tag.id);
+                                        Navigator.of(context).pop();
+                                        setState(() {
+                                          _lastTags = _tags.getLatest();
+                                        });
+                                      },
+                                      child: const Text("yes"))
+                                ],
+                              )));
+                    },
+                    child: ActionChip(
+                      label: Text(tag.tag),
+                      onPressed: () {
+                        widget.onSubmitted(tag.tag);
+                      },
+                    ),
+                  ));
+                }
 
-              return list;
-            }(),
+                return list;
+              }(),
+            ),
           )
         ],
       ),

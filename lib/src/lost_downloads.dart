@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/downloader.dart';
 import 'package:gallery/src/db/isar.dart';
@@ -13,37 +15,25 @@ class LostDownloads extends StatefulWidget {
 
 class _LostDownloadsState extends State<LostDownloads> {
   List<File>? _files;
-  final Stream<void> _updates = isar().files.watchLazy(fireImmediately: true);
-  bool defunct = false;
+  late final StreamSubscription<void> _updates;
+  //bool defunct = false;
 
   @override
   void initState() {
     super.initState();
 
-    _updates.listen(
-      (event) {
-        if (!defunct) {
-          _refresh();
-        }
-      },
-    );
-
-    _refresh();
-  }
-
-  void _refresh() {
-    isar().files.where(sort: Sort.desc).findAll().then((value) {
-      if (!defunct) {
-        setState(() {
-          _files = value;
-        });
-      }
+    _updates = isar().files.watchLazy(fireImmediately: true).listen((_) async {
+      var files = await isar().files.where().sortByDateDesc().findAll();
+      setState(() {
+        _files = files;
+      });
     });
   }
 
   @override
   void dispose() {
-    defunct = true;
+    _updates.cancel();
+
     super.dispose();
   }
 

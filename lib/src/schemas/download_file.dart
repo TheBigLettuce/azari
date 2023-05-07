@@ -9,9 +9,12 @@ class File {
   String url;
   String name;
 
+  DateTime date;
+
   String site;
 
   bool inProgress;
 
-  File(this.url, this.inProgress, this.site, this.name, {this.id});
+  File(this.url, this.inProgress, this.site, this.name, {this.id})
+      : date = DateTime.now();
 }

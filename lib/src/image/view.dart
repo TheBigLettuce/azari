@@ -27,11 +27,14 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
   late T currentCell;
   late int cellCount = widget.cellCount;
   bool refreshing = false;
-  //bool disposed = false;
 
   @override
   void initState() {
     super.initState();
+
+    WidgetsBinding.instance.scheduleFrameCallback((_) {
+      _loadNext(widget.startingCell);
+    });
 
     currentCell = widget.getCell(widget.startingCell);
     controller = PageController(initialPage: widget.startingCell);
@@ -42,6 +45,24 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
     controller.dispose();
 
     super.dispose();
+  }
+
+  void _loadNext(int index) {
+    if (index >= cellCount - 3 && !refreshing && widget.onNearEnd != null) {
+      setState(() {
+        refreshing = true;
+      });
+      widget.onNearEnd!().then((value) {
+        if (context.mounted) {
+          setState(() {
+            refreshing = false;
+            cellCount = value;
+          });
+        }
+      }).onError((error, stackTrace) {
+        print(error);
+      });
+    }
   }
 
   @override
@@ -111,23 +132,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
         ),
         body: PhotoViewGallery.builder(
             onPageChanged: (index) {
-              if (index >= cellCount - 2 &&
-                  !refreshing &&
-                  widget.onNearEnd != null) {
-                setState(() {
-                  refreshing = true;
-                });
-                widget.onNearEnd!().then((value) {
-                  if (context.mounted) {
-                    setState(() {
-                      refreshing = false;
-                      cellCount = value;
-                    });
-                  }
-                }).onError((error, stackTrace) {
-                  print(error);
-                });
-              }
+              _loadNext(index);
 
               setState(() {
                 currentCell = widget.getCell(index);

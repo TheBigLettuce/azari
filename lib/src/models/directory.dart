@@ -67,6 +67,8 @@ class DirectoryModel extends CoreModel with GridList<DirectoryCell> {
       return;
     }
 
+    await Permission.manageExternalStorage.request();
+
     setDirectory(pickedDir);
   }
 
@@ -80,10 +82,13 @@ class DirectoryModel extends CoreModel with GridList<DirectoryCell> {
         await refresh();
       }
 
-      await Permission.manageExternalStorage.request();
+      await Permission.notification.request();
 
-      SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-          systemNavigationBarColor: navBarColor.withOpacity(0)));
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      SystemChrome.setSystemUIOverlayStyle(
+        SystemUiOverlayStyle(
+            systemNavigationBarColor: navBarColor.withOpacity(0)),
+      );
 
       return Future.value(true);
     }

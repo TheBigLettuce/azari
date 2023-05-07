@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/settings.dart';
 
@@ -40,7 +39,6 @@ class BooruCell extends Cell {
           list.addAll(tags.split(' ').map((e) => ListTile(
                 title: Text(e),
                 onTap: () {
-                  Tags().addLatest(e);
                   onTagPressed(e);
                 },
               )));

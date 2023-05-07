@@ -9,5 +9,16 @@ class Tags {
     });
   }
 
-  List<LastTag> getLatest() => isar().lastTags.where().findAllSync();
+  void deleteTag(int tagId) => isar().writeTxnSync(
+        () => isar().lastTags.deleteSync(tagId),
+      );
+
+  List<String> getLatestStr() => getLatest()
+      .map(
+        (e) => e.tag,
+      )
+      .toList();
+
+  List<LastTag> getLatest() =>
+      isar().lastTags.where().sortByDateDesc().findAllSync();
 }

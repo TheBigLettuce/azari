@@ -17,23 +17,28 @@ const FileSchema = CollectionSchema(
   name: r'File',
   id: -3161376545294130050,
   properties: {
-    r'inProgress': PropertySchema(
+    r'date': PropertySchema(
       id: 0,
+      name: r'date',
+      type: IsarType.dateTime,
+    ),
+    r'inProgress': PropertySchema(
+      id: 1,
       name: r'inProgress',
       type: IsarType.bool,
     ),
     r'name': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'name',
       type: IsarType.string,
     ),
     r'site': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'site',
       type: IsarType.string,
     ),
     r'url': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'url',
       type: IsarType.string,
     )
@@ -70,10 +75,11 @@ void _fileSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeBool(offsets[0], object.inProgress);
-  writer.writeString(offsets[1], object.name);
-  writer.writeString(offsets[2], object.site);
-  writer.writeString(offsets[3], object.url);
+  writer.writeDateTime(offsets[0], object.date);
+  writer.writeBool(offsets[1], object.inProgress);
+  writer.writeString(offsets[2], object.name);
+  writer.writeString(offsets[3], object.site);
+  writer.writeString(offsets[4], object.url);
 }
 
 File _fileDeserialize(
@@ -83,12 +89,13 @@ File _fileDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = File(
+    reader.readString(offsets[4]),
+    reader.readBool(offsets[1]),
     reader.readString(offsets[3]),
-    reader.readBool(offsets[0]),
     reader.readString(offsets[2]),
-    reader.readString(offsets[1]),
     id: id,
   );
+  object.date = reader.readDateTime(offsets[0]);
   return object;
 }
 
@@ -100,12 +107,14 @@ P _fileDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDateTime(offset)) as P;
     case 1:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 2:
       return (reader.readString(offset)) as P;
     case 3:
+      return (reader.readString(offset)) as P;
+    case 4:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -200,6 +209,58 @@ extension FileQueryWhere on QueryBuilder<File, File, QWhereClause> {
 }
 
 extension FileQueryFilter on QueryBuilder<File, File, QFilterCondition> {
+  QueryBuilder<File, File, QAfterFilterCondition> dateEqualTo(DateTime value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'date',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<File, File, QAfterFilterCondition> dateGreaterThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'date',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<File, File, QAfterFilterCondition> dateLessThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'date',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<File, File, QAfterFilterCondition> dateBetween(
+    DateTime lower,
+    DateTime upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'date',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<File, File, QAfterFilterCondition> idIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -668,6 +729,18 @@ extension FileQueryObject on QueryBuilder<File, File, QFilterCondition> {}
 extension FileQueryLinks on QueryBuilder<File, File, QFilterCondition> {}
 
 extension FileQuerySortBy on QueryBuilder<File, File, QSortBy> {
+  QueryBuilder<File, File, QAfterSortBy> sortByDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'date', Sort.asc);
+    });
+  }
+
+  QueryBuilder<File, File, QAfterSortBy> sortByDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'date', Sort.desc);
+    });
+  }
+
   QueryBuilder<File, File, QAfterSortBy> sortByInProgress() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'inProgress', Sort.asc);
@@ -718,6 +791,18 @@ extension FileQuerySortBy on QueryBuilder<File, File, QSortBy> {
 }
 
 extension FileQuerySortThenBy on QueryBuilder<File, File, QSortThenBy> {
+  QueryBuilder<File, File, QAfterSortBy> thenByDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'date', Sort.asc);
+    });
+  }
+
+  QueryBuilder<File, File, QAfterSortBy> thenByDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'date', Sort.desc);
+    });
+  }
+
   QueryBuilder<File, File, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -780,6 +865,12 @@ extension FileQuerySortThenBy on QueryBuilder<File, File, QSortThenBy> {
 }
 
 extension FileQueryWhereDistinct on QueryBuilder<File, File, QDistinct> {
+  QueryBuilder<File, File, QDistinct> distinctByDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'date');
+    });
+  }
+
   QueryBuilder<File, File, QDistinct> distinctByInProgress() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'inProgress');
@@ -812,6 +903,12 @@ extension FileQueryProperty on QueryBuilder<File, File, QQueryProperty> {
   QueryBuilder<File, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<File, DateTime, QQueryOperations> dateProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'date');
     });
   }
 

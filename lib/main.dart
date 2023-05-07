@@ -15,7 +15,8 @@ void main() async {
 
   FlutterLocalNotificationsPlugin().initialize(
       const InitializationSettings(
-          android: AndroidInitializationSettings('@mipmap/ic_launcher')),
+          android: AndroidInitializationSettings(
+              '@drawable/ic_launcher_foreground')),
       onDidReceiveNotificationResponse: (details) {},
       onDidReceiveBackgroundNotificationResponse: notifBackground);
 
@@ -41,13 +42,13 @@ void main() async {
         "/": (context) => const Entry(),
         "/booru": (context) {
           var scroll = isar().scrollPositions.getSync(0);
-          return BooruScroll(
+          return BooruScroll.primary(
             initalScroll: scroll != null ? scroll.pos : 0,
             isar: isar(),
             updateScrollPosition: (pos) {
-              print("pos set");
-              isar().writeTxn(() =>
-                  isar().scrollPositions.put(scroll_pos.ScrollPosition(pos)));
+              isar().writeTxnSync(() => isar()
+                  .scrollPositions
+                  .putSync(scroll_pos.ScrollPosition(pos)));
             },
           );
         }
@@ -75,9 +76,13 @@ class Entry extends StatelessWidget {
           if (!provider.isDirectorySet()) {
             list.add(
               PageViewModel(
-                title: "Choose default directory",
+                title: "Choose download directory",
                 footer: provider.directorySetError != null
-                    ? Text(provider.directorySetError!)
+                    ? Center(
+                        child: Text(
+                          provider.directorySetError!,
+                        ),
+                      )
                     : null,
                 bodyWidget: TextButton(
                   onPressed: provider.pickDirectory,

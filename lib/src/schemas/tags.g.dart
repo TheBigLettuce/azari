@@ -17,8 +17,13 @@ const LastTagSchema = CollectionSchema(
   name: r'LastTag',
   id: 8330825648405050146,
   properties: {
-    r'tag': PropertySchema(
+    r'date': PropertySchema(
       id: 0,
+      name: r'date',
+      type: IsarType.dateTime,
+    ),
+    r'tag': PropertySchema(
+      id: 1,
       name: r'tag',
       type: IsarType.string,
     )
@@ -28,7 +33,21 @@ const LastTagSchema = CollectionSchema(
   deserialize: _lastTagDeserialize,
   deserializeProp: _lastTagDeserializeProp,
   idName: r'id',
-  indexes: {},
+  indexes: {
+    r'tag': IndexSchema(
+      id: -8827799455852696894,
+      name: r'tag',
+      unique: true,
+      replace: true,
+      properties: [
+        IndexPropertySchema(
+          name: r'tag',
+          type: IndexType.hash,
+          caseSensitive: true,
+        )
+      ],
+    )
+  },
   links: {},
   embeddedSchemas: {},
   getId: _lastTagGetId,
@@ -53,7 +72,8 @@ void _lastTagSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeString(offsets[0], object.tag);
+  writer.writeDateTime(offsets[0], object.date);
+  writer.writeString(offsets[1], object.tag);
 }
 
 LastTag _lastTagDeserialize(
@@ -63,8 +83,9 @@ LastTag _lastTagDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = LastTag(
-    reader.readString(offsets[0]),
+    reader.readString(offsets[1]),
   );
+  object.date = reader.readDateTime(offsets[0]);
   object.id = id;
   return object;
 }
@@ -77,6 +98,8 @@ P _lastTagDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
+      return (reader.readDateTime(offset)) as P;
+    case 1:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -93,6 +116,60 @@ List<IsarLinkBase<dynamic>> _lastTagGetLinks(LastTag object) {
 
 void _lastTagAttach(IsarCollection<dynamic> col, Id id, LastTag object) {
   object.id = id;
+}
+
+extension LastTagByIndex on IsarCollection<LastTag> {
+  Future<LastTag?> getByTag(String tag) {
+    return getByIndex(r'tag', [tag]);
+  }
+
+  LastTag? getByTagSync(String tag) {
+    return getByIndexSync(r'tag', [tag]);
+  }
+
+  Future<bool> deleteByTag(String tag) {
+    return deleteByIndex(r'tag', [tag]);
+  }
+
+  bool deleteByTagSync(String tag) {
+    return deleteByIndexSync(r'tag', [tag]);
+  }
+
+  Future<List<LastTag?>> getAllByTag(List<String> tagValues) {
+    final values = tagValues.map((e) => [e]).toList();
+    return getAllByIndex(r'tag', values);
+  }
+
+  List<LastTag?> getAllByTagSync(List<String> tagValues) {
+    final values = tagValues.map((e) => [e]).toList();
+    return getAllByIndexSync(r'tag', values);
+  }
+
+  Future<int> deleteAllByTag(List<String> tagValues) {
+    final values = tagValues.map((e) => [e]).toList();
+    return deleteAllByIndex(r'tag', values);
+  }
+
+  int deleteAllByTagSync(List<String> tagValues) {
+    final values = tagValues.map((e) => [e]).toList();
+    return deleteAllByIndexSync(r'tag', values);
+  }
+
+  Future<Id> putByTag(LastTag object) {
+    return putByIndex(r'tag', object);
+  }
+
+  Id putByTagSync(LastTag object, {bool saveLinks = true}) {
+    return putByIndexSync(r'tag', object, saveLinks: saveLinks);
+  }
+
+  Future<List<Id>> putAllByTag(List<LastTag> objects) {
+    return putAllByIndex(r'tag', objects);
+  }
+
+  List<Id> putAllByTagSync(List<LastTag> objects, {bool saveLinks = true}) {
+    return putAllByIndexSync(r'tag', objects, saveLinks: saveLinks);
+  }
 }
 
 extension LastTagQueryWhereSort on QueryBuilder<LastTag, LastTag, QWhere> {
@@ -168,10 +245,106 @@ extension LastTagQueryWhere on QueryBuilder<LastTag, LastTag, QWhereClause> {
       ));
     });
   }
+
+  QueryBuilder<LastTag, LastTag, QAfterWhereClause> tagEqualTo(String tag) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'tag',
+        value: [tag],
+      ));
+    });
+  }
+
+  QueryBuilder<LastTag, LastTag, QAfterWhereClause> tagNotEqualTo(String tag) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'tag',
+              lower: [],
+              upper: [tag],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'tag',
+              lower: [tag],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'tag',
+              lower: [tag],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'tag',
+              lower: [],
+              upper: [tag],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
 }
 
 extension LastTagQueryFilter
     on QueryBuilder<LastTag, LastTag, QFilterCondition> {
+  QueryBuilder<LastTag, LastTag, QAfterFilterCondition> dateEqualTo(
+      DateTime value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'date',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<LastTag, LastTag, QAfterFilterCondition> dateGreaterThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'date',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<LastTag, LastTag, QAfterFilterCondition> dateLessThan(
+    DateTime value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'date',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<LastTag, LastTag, QAfterFilterCondition> dateBetween(
+    DateTime lower,
+    DateTime upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'date',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<LastTag, LastTag, QAfterFilterCondition> idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -362,6 +535,18 @@ extension LastTagQueryLinks
     on QueryBuilder<LastTag, LastTag, QFilterCondition> {}
 
 extension LastTagQuerySortBy on QueryBuilder<LastTag, LastTag, QSortBy> {
+  QueryBuilder<LastTag, LastTag, QAfterSortBy> sortByDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'date', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LastTag, LastTag, QAfterSortBy> sortByDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'date', Sort.desc);
+    });
+  }
+
   QueryBuilder<LastTag, LastTag, QAfterSortBy> sortByTag() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'tag', Sort.asc);
@@ -377,6 +562,18 @@ extension LastTagQuerySortBy on QueryBuilder<LastTag, LastTag, QSortBy> {
 
 extension LastTagQuerySortThenBy
     on QueryBuilder<LastTag, LastTag, QSortThenBy> {
+  QueryBuilder<LastTag, LastTag, QAfterSortBy> thenByDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'date', Sort.asc);
+    });
+  }
+
+  QueryBuilder<LastTag, LastTag, QAfterSortBy> thenByDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'date', Sort.desc);
+    });
+  }
+
   QueryBuilder<LastTag, LastTag, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -404,6 +601,12 @@ extension LastTagQuerySortThenBy
 
 extension LastTagQueryWhereDistinct
     on QueryBuilder<LastTag, LastTag, QDistinct> {
+  QueryBuilder<LastTag, LastTag, QDistinct> distinctByDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'date');
+    });
+  }
+
   QueryBuilder<LastTag, LastTag, QDistinct> distinctByTag(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -417,6 +620,12 @@ extension LastTagQueryProperty
   QueryBuilder<LastTag, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<LastTag, DateTime, QQueryOperations> dateProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'date');
     });
   }
 

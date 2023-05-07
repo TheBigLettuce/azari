@@ -4,10 +4,15 @@ import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:isar/isar.dart';
 import 'package:path/path.dart' as path;
+import 'package:permission_handler/permission_handler.dart';
 
 import '../db/isar.dart';
 
 Future downloadFile(String url, String dir, String name, {int? oldid}) async {
+  if (!await Permission.manageExternalStorage.isGranted) {
+    return;
+  }
+
   if (isar()
           .files
           .filter()
@@ -31,7 +36,7 @@ Future downloadFile(String url, String dir, String name, {int? oldid}) async {
   return Dio().download(
       url, path.joinAll([isar().settings.getSync(0)!.path, dir, name]),
       cancelToken: token,
-      deleteOnError: false, onReceiveProgress: ((count, total) {
+      deleteOnError: true, onReceiveProgress: ((count, total) {
     if (count == total || !hasCancelKey(id)) {
       FlutterLocalNotificationsPlugin().cancel(id);
       return;

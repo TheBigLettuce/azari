@@ -80,6 +80,7 @@ class _ImagesState extends State<Images> {
                       refresh: () {
                         return Future.value(cells.length);
                       },
+                      search: (s) {},
                       getCell: (i) => cells[i],
                       initalScrollPosition: 0,
                       onLongPress: (indx) {

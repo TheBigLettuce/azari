@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:gallery/src/booru/infinite_scroll.dart';
+import 'package:gallery/src/booru/search.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/directories.dart';
 import 'package:gallery/src/lost_downloads.dart';
@@ -42,6 +44,23 @@ Widget makeDrawer(BuildContext context, bool showBooru) {
         }
 
         list.addAll([
+          ListTile(
+            title: const Text("Tags"),
+            leading: const Icon(Icons.tag),
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SearchBooru(
+                    onSubmitted: (tag) => Navigator.of(context)
+                        .push(MaterialPageRoute(builder: (context) {
+                      return BooruScroll.secondary(
+                        isar: isarPostsOnly(),
+                        tags: tag,
+                      );
+                    })),
+                  ),
+                )),
+          ),
           ListTile(
             title: const Text("Downloads"),
             leading: const Icon(Icons.download),
