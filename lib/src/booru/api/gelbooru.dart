@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
 import '../../schemas/post.dart';
+import '../tags/tags.dart';
 
 class Gelbooru implements BooruAPI {
   int _page = 0;
@@ -16,14 +17,24 @@ class Gelbooru implements BooruAPI {
   }
 
   Future<List<Post>> _commonPosts(String tags, int p) async {
+    String excludedTagsString;
+
+    var excludedTags = BooruTags().getExcluded().map((e) => "-$e").toList();
+    if (excludedTags.isNotEmpty) {
+      excludedTagsString =
+          excludedTags.reduce((value, element) => value + element);
+    } else {
+      excludedTagsString = "";
+    }
+
     var query = {
       "page": "dapi",
       "s": "post",
       "q": "index",
       "pid": p.toString(),
       "json": "1",
-      "tags": tags,
-      "limit": "10"
+      "tags": "$excludedTagsString $tags",
+      "limit": numberOfElementsPerRefresh().toString()
     };
 
     var req = http.get(Uri.https("gelbooru.com", "/index.php", query));

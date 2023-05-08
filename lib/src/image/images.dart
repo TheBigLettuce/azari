@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../cell/directory.dart';
-import 'grid.dart';
+import 'cells.dart';
 import 'view.dart';
 import '../models/images.dart';
 
@@ -76,7 +76,7 @@ class _ImagesState extends State<Images> {
                 : () {
                     var cells = data.copy();
 
-                    return ImageGrid(
+                    return CellsWidget(
                       refresh: () {
                         return Future.value(cells.length);
                       },

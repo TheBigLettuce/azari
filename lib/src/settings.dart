@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/directories.dart';
 import 'package:gallery/src/models/directory.dart';
@@ -21,6 +22,8 @@ class _SettingsState extends State<Settings> {
   schema_settings.Settings? _settings = isar().settings.getSync(0);
   bool defaultChanged = false;
   bool booruChanged = false;
+  bool listViewChanged = false;
+  bool elemRowNumbChanged = false;
 
   @override
   void initState() {
@@ -29,7 +32,6 @@ class _SettingsState extends State<Settings> {
     _watcher =
         isar().settings.watchObject(0, fireImmediately: true).listen((event) {
       setState(() {
-        print("called");
         _settings = event;
       });
     });
@@ -43,7 +45,8 @@ class _SettingsState extends State<Settings> {
   }
 
   void _popBooru() {
-    Navigator.of(context).pushReplacementNamed("/booru");
+    Navigator.of(context)
+        .pushReplacementNamed("/booru", arguments: booruChanged);
   }
 
   @override
@@ -61,7 +64,9 @@ class _SettingsState extends State<Settings> {
           }
         }
 
-        if (_settings!.booruDefault && booruChanged) {
+        if (_settings!.booruDefault && booruChanged ||
+            elemRowNumbChanged ||
+            listViewChanged) {
           _popBooru();
         }
 
@@ -160,6 +165,66 @@ class _SettingsState extends State<Settings> {
                   }
                 },
               )),
+          ListTile(
+            title: const Text("List view"),
+            leading: IconButton(
+                onPressed: () {
+                  Navigator.of(context).push(DialogRoute(
+                      context: context,
+                      builder: (context) => const AlertDialog(
+                            content: Text(
+                                "Number of elements is always 20 in the list view."),
+                          )));
+                },
+                icon: const Icon(Icons.info_outline)),
+            subtitle: const Text(
+                "If enabled shows elements as a list instead of a grid."),
+            trailing: Switch(
+              value: _settings!.listViewBooru,
+              onChanged: (value) {
+                if (value != _settings!.listViewBooru) {
+                  listViewChanged = true;
+                  isar().writeTxnSync(() => isar()
+                      .settings
+                      .putSync(_settings!.copy(listViewBooru: value)));
+                }
+              },
+            ),
+          ),
+          ListTile(
+              title: const Text("Number of elements per row"),
+              leading: IconButton(
+                onPressed: () {
+                  Navigator.of(context).push(DialogRoute(
+                      context: context,
+                      builder: (context) => const AlertDialog(
+                          content: Text(
+                              "Number of elements per refresh starts at 20. If number of elements per row is more than two, "
+                              "number of elements per refresh increases by 10 per increase. So, if number of elements "
+                              "per row is three, then number of elements per refresh will be 30."))));
+                },
+                icon: const Icon(Icons.info_outline),
+              ),
+              trailing: DropdownButton<int>(
+                value: _settings!.picturesPerRow,
+                items: const [
+                  DropdownMenuItem(value: 2, child: Text("2")),
+                  DropdownMenuItem(value: 3, child: Text("3")),
+                  DropdownMenuItem(value: 4, child: Text("4")),
+                  DropdownMenuItem(value: 5, child: Text("5")),
+                  DropdownMenuItem(value: 6, child: Text("6"))
+                ],
+                onChanged: _settings!.listViewBooru
+                    ? null
+                    : (value) {
+                        if (value != _settings!.picturesPerRow) {
+                          elemRowNumbChanged = true;
+                          isar().writeTxnSync(() => isar()
+                              .settings
+                              .putSync(_settings!.copy(picturesPerRow: value)));
+                        }
+                      },
+              ))
         ]),
       ),
     );

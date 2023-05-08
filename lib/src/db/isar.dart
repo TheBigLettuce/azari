@@ -3,6 +3,7 @@ import 'package:gallery/src/booru/api/danbooru.dart';
 import 'package:gallery/src/booru/api/gelbooru.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/schemas/download_file.dart';
+import 'package:gallery/src/schemas/excluded_tags.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/scroll_position.dart';
 import 'package:gallery/src/schemas/tags.dart';
@@ -50,10 +51,11 @@ Future initalizeIsar() async {
 
   await Isar.open([
     SettingsSchema,
-    LastTagSchema,
+    LastTagsSchema,
     FileSchema,
     PostSchema,
-    ScrollPositionSchema
+    ScrollPositionSchema,
+    ExcludedTagsSchema,
   ], directory: (await getApplicationSupportDirectory()).path, inspector: false)
       .then((value) {
     _isar = value;

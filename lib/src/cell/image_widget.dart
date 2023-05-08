@@ -7,7 +7,7 @@ import 'data.dart';
 class CellImageWidget<T extends Cell> extends StatefulWidget {
   final T _data;
   final int indx;
-  final Null Function(BuildContext context, int cellIndx) onPressed;
+  final void Function(BuildContext context, int cellIndx) onPressed;
   final bool hideAlias;
   final Function()? onLongPress;
 

@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/image/view.dart';
+import 'package:gallery/src/schemas/settings.dart';
 import '../cell/cell.dart';
 import '../cell/image_widget.dart';
 
-class ImageGrid<T extends Cell> extends StatefulWidget {
+class CellsWidget<T extends Cell> extends StatefulWidget {
   final T Function(int) getCell;
   final int initalCellCount;
   final Future<int> Function()? loadNext;
@@ -17,11 +20,10 @@ class ImageGrid<T extends Cell> extends StatefulWidget {
   final String searchStartingValue;
   final bool showBack;
 
-  final int? numbRow;
   final bool? hideAlias;
   final void Function(BuildContext context, int indx)? overrideOnPress;
 
-  const ImageGrid({
+  const CellsWidget({
     Key? key,
     required this.getCell,
     required this.initalScrollPosition,
@@ -30,7 +32,6 @@ class ImageGrid<T extends Cell> extends StatefulWidget {
     required this.search,
     required this.refresh,
     this.updateScrollPosition,
-    this.numbRow,
     this.onLongPress,
     this.hideAlias,
     this.searchStartingValue = "",
@@ -40,7 +41,7 @@ class ImageGrid<T extends Cell> extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<ImageGrid> createState() => _ImageGridState<T>();
+  State<CellsWidget<T>> createState() => _CellsWidgetState<T>();
 }
 
 class _ScrollHack extends ScrollController {
@@ -48,8 +49,7 @@ class _ScrollHack extends ScrollController {
   bool get hasClients => false;
 }
 
-class _ImageGridState<T extends Cell> extends State<ImageGrid<T>> {
-  static const maxExtend = 150.0;
+class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
   late ScrollController controller =
       ScrollController(initialScrollOffset: widget.initalScrollPosition);
   late TextEditingController textController =
@@ -128,6 +128,31 @@ class _ImageGridState<T extends Cell> extends State<ImageGrid<T>> {
     });
   }
 
+  void _onPressed(BuildContext context, int i) {
+    focus.unfocus();
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return ImageView<T>(
+        getCell: widget.getCell,
+        cellCount: cellCount,
+        download: widget.onLongPress,
+        startingCell: i,
+        onNearEnd: widget.loadNext == null
+            ? null
+            : () async {
+                return widget.loadNext!().then((value) {
+                  if (context.mounted) {
+                    setState(() {
+                      cellCount = value;
+                    });
+                  }
+
+                  return value;
+                });
+              },
+      );
+    }));
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -141,12 +166,15 @@ class _ImageGridState<T extends Cell> extends State<ImageGrid<T>> {
       },
       child: RefreshIndicator(
           onRefresh: () {
-            setState(() {
-              cellCount = 0;
-              refreshing = true;
-            });
+            if (!refreshing) {
+              setState(() {
+                cellCount = 0;
+                refreshing = true;
+              });
+              return _refresh();
+            }
 
-            return _refresh();
+            return Future.value();
           },
           child: Stack(
             children: [
@@ -175,7 +203,14 @@ class _ImageGridState<T extends Cell> extends State<ImageGrid<T>> {
                             scrollController: scrollHack,
                             focusNode: focus,
                             controller: textController,
-                            onSubmitted: widget.search,
+                            onSubmitted: (s) {
+                              if (widget.showBack) {
+                                setState(() {
+                                  cellCount = 0;
+                                });
+                              }
+                              widget.search(s);
+                            },
                             cursorOpacityAnimates: true,
                             onChanged: widget.searchFilter == null
                                 ? null
@@ -234,57 +269,50 @@ class _ImageGridState<T extends Cell> extends State<ImageGrid<T>> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15)),
                       ),
-                      SliverGrid.builder(
-                        gridDelegate: widget.numbRow != null
-                            ? SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: widget.numbRow!)
-                            : const SliverGridDelegateWithMaxCrossAxisExtent(
-                                maxCrossAxisExtent: maxExtend,
-                              ),
-                        itemCount: cellCount,
-                        itemBuilder: (context, indx) {
-                          var m = widget.getCell(indx);
-                          return CellImageWidget<T>(
-                            cell: m,
-                            hidealias: widget.hideAlias,
-                            indx: indx,
-                            onPressed: (context, i) {
-                              focus.unfocus();
-                              Navigator.push(context,
-                                  MaterialPageRoute(builder: (context) {
-                                return ImageView<T>(
-                                  getCell: widget.getCell,
-                                  cellCount: cellCount,
-                                  download: widget.onLongPress,
-                                  startingCell: i,
-                                  onNearEnd: widget.loadNext == null
+                      isar().settings.getSync(0)!.listViewBooru
+                          ? SliverList.builder(
+                              itemCount: cellCount,
+                              itemBuilder: (context, index) {
+                                var cell = widget.getCell(index).getCellData();
+                                return ListTile(
+                                  onTap: () => _onPressed(context, index),
+                                  leading: CircleAvatar(
+                                    backgroundColor: Theme.of(context)
+                                        .colorScheme
+                                        .background,
+                                    backgroundImage: CachedNetworkImageProvider(
+                                        cell.thumbUrl),
+                                  ),
+                                  title: Text(cell.name),
+                                );
+                              },
+                            )
+                          : SliverGrid.builder(
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: isar()
+                                          .settings
+                                          .getSync(0)!
+                                          .picturesPerRow),
+                              itemCount: cellCount,
+                              itemBuilder: (context, indx) {
+                                var m = widget.getCell(indx);
+                                return CellImageWidget<T>(
+                                  cell: m,
+                                  hidealias: widget.hideAlias,
+                                  indx: indx,
+                                  onPressed: _onPressed,
+                                  onLongPress: widget.onLongPress == null
                                       ? null
                                       : () async {
-                                          return widget.loadNext!()
-                                              .then((value) {
-                                            if (context.mounted) {
-                                              setState(() {
-                                                cellCount = value;
-                                              });
-                                            }
-
-                                            return value;
+                                          widget.onLongPress!(indx)
+                                              .onError((error, stackTrace) {
+                                            print(error);
                                           });
-                                        },
+                                        }, //extend: maxExtend,
                                 );
-                              }));
-                            },
-                            onLongPress: widget.onLongPress == null
-                                ? null
-                                : () async {
-                                    widget.onLongPress!(indx)
-                                        .onError((error, stackTrace) {
-                                      print(error);
-                                    });
-                                  }, //extend: maxExtend,
-                          );
-                        },
-                      )
+                              },
+                            )
                     ],
                   ))
             ],

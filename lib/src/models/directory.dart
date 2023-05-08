@@ -78,8 +78,15 @@ class DirectoryModel extends CoreModel with GridList<DirectoryCell> {
     if (!_isInitalized) {
       _isInitalized = true;
 
-      if (isar().settings.getSync(0)!.enableGallery) {
+      var settings = isar().settings.getSync(0)!;
+
+      if (settings.enableGallery) {
         await refresh();
+      }
+
+      if (settings.picturesPerRow <= 0) {
+        isar().writeTxnSync(
+            () => isar().settings.putSync(settings.copy(picturesPerRow: 2)));
       }
 
       await Permission.notification.request();

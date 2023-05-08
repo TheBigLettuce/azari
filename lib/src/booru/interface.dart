@@ -1,4 +1,7 @@
+import 'package:gallery/src/schemas/settings.dart';
+
 import '../cell/booru.dart';
+import '../db/isar.dart';
 import '../schemas/post.dart';
 
 abstract class BooruAPI {
@@ -22,4 +25,13 @@ List<BooruCell> postsToCells(
   }
 
   return list;
+}
+
+int numberOfElementsPerRefresh() {
+  var settings = isar().settings.getSync(0)!;
+  if (settings.listViewBooru) {
+    return 20;
+  }
+
+  return 10 * settings.picturesPerRow;
 }

@@ -6,6 +6,9 @@ part 'settings.g.dart';
 class Settings {
   Id id = 0;
 
+  int picturesPerRow;
+  bool listViewBooru;
+
   String path;
   bool booruDefault;
   bool enableGallery;
@@ -19,20 +22,25 @@ class Settings {
       required this.booruDefault,
       required this.selectedBooru,
       required this.quality,
-      required this.enableGallery});
-  Settings copy({
-    String? path,
-    bool? enableGallery,
-    bool? booruDefault,
-    Booru? selectedBooru,
-    DisplayQuality? quality,
-  }) {
+      required this.enableGallery,
+      required this.listViewBooru,
+      required this.picturesPerRow});
+  Settings copy(
+      {String? path,
+      bool? enableGallery,
+      bool? booruDefault,
+      Booru? selectedBooru,
+      DisplayQuality? quality,
+      bool? listViewBooru,
+      int? picturesPerRow}) {
     return Settings(
         path: path ?? this.path,
         enableGallery: enableGallery ?? this.enableGallery,
         booruDefault: booruDefault ?? this.booruDefault,
         selectedBooru: selectedBooru ?? this.selectedBooru,
-        quality: quality ?? this.quality);
+        quality: quality ?? this.quality,
+        listViewBooru: listViewBooru ?? this.listViewBooru,
+        picturesPerRow: picturesPerRow ?? this.picturesPerRow);
   }
 
   Settings.empty()
@@ -40,7 +48,9 @@ class Settings {
         booruDefault = true,
         selectedBooru = Booru.gelbooru,
         quality = DisplayQuality.sample,
-        enableGallery = false;
+        enableGallery = false,
+        picturesPerRow = 2,
+        listViewBooru = false;
 }
 
 enum Booru {

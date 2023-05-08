@@ -27,19 +27,29 @@ const SettingsSchema = CollectionSchema(
       name: r'enableGallery',
       type: IsarType.bool,
     ),
-    r'path': PropertySchema(
+    r'listViewBooru': PropertySchema(
       id: 2,
+      name: r'listViewBooru',
+      type: IsarType.bool,
+    ),
+    r'path': PropertySchema(
+      id: 3,
       name: r'path',
       type: IsarType.string,
     ),
+    r'picturesPerRow': PropertySchema(
+      id: 4,
+      name: r'picturesPerRow',
+      type: IsarType.long,
+    ),
     r'quality': PropertySchema(
-      id: 3,
+      id: 5,
       name: r'quality',
       type: IsarType.byte,
       enumMap: _SettingsqualityEnumValueMap,
     ),
     r'selectedBooru': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'selectedBooru',
       type: IsarType.byte,
       enumMap: _SettingsselectedBooruEnumValueMap,
@@ -77,9 +87,11 @@ void _settingsSerialize(
 ) {
   writer.writeBool(offsets[0], object.booruDefault);
   writer.writeBool(offsets[1], object.enableGallery);
-  writer.writeString(offsets[2], object.path);
-  writer.writeByte(offsets[3], object.quality.index);
-  writer.writeByte(offsets[4], object.selectedBooru.index);
+  writer.writeBool(offsets[2], object.listViewBooru);
+  writer.writeString(offsets[3], object.path);
+  writer.writeLong(offsets[4], object.picturesPerRow);
+  writer.writeByte(offsets[5], object.quality.index);
+  writer.writeByte(offsets[6], object.selectedBooru.index);
 }
 
 Settings _settingsDeserialize(
@@ -91,11 +103,13 @@ Settings _settingsDeserialize(
   final object = Settings(
     booruDefault: reader.readBool(offsets[0]),
     enableGallery: reader.readBool(offsets[1]),
-    path: reader.readString(offsets[2]),
-    quality: _SettingsqualityValueEnumMap[reader.readByteOrNull(offsets[3])] ??
+    listViewBooru: reader.readBool(offsets[2]),
+    path: reader.readString(offsets[3]),
+    picturesPerRow: reader.readLong(offsets[4]),
+    quality: _SettingsqualityValueEnumMap[reader.readByteOrNull(offsets[5])] ??
         DisplayQuality.original,
     selectedBooru:
-        _SettingsselectedBooruValueEnumMap[reader.readByteOrNull(offsets[4])] ??
+        _SettingsselectedBooruValueEnumMap[reader.readByteOrNull(offsets[6])] ??
             Booru.gelbooru,
   );
   object.id = id;
@@ -114,11 +128,15 @@ P _settingsDeserializeProp<P>(
     case 1:
       return (reader.readBool(offset)) as P;
     case 2:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 3:
+      return (reader.readString(offset)) as P;
+    case 4:
+      return (reader.readLong(offset)) as P;
+    case 5:
       return (_SettingsqualityValueEnumMap[reader.readByteOrNull(offset)] ??
           DisplayQuality.original) as P;
-    case 4:
+    case 6:
       return (_SettingsselectedBooruValueEnumMap[
               reader.readByteOrNull(offset)] ??
           Booru.gelbooru) as P;
@@ -305,6 +323,16 @@ extension SettingsQueryFilter
     });
   }
 
+  QueryBuilder<Settings, Settings, QAfterFilterCondition> listViewBooruEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'listViewBooru',
+        value: value,
+      ));
+    });
+  }
+
   QueryBuilder<Settings, Settings, QAfterFilterCondition> pathEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -431,6 +459,61 @@ extension SettingsQueryFilter
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'path',
         value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterFilterCondition> picturesPerRowEqualTo(
+      int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'picturesPerRow',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterFilterCondition>
+      picturesPerRowGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'picturesPerRow',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterFilterCondition>
+      picturesPerRowLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'picturesPerRow',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterFilterCondition> picturesPerRowBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'picturesPerRow',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
       ));
     });
   }
@@ -574,6 +657,18 @@ extension SettingsQuerySortBy on QueryBuilder<Settings, Settings, QSortBy> {
     });
   }
 
+  QueryBuilder<Settings, Settings, QAfterSortBy> sortByListViewBooru() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'listViewBooru', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> sortByListViewBooruDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'listViewBooru', Sort.desc);
+    });
+  }
+
   QueryBuilder<Settings, Settings, QAfterSortBy> sortByPath() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'path', Sort.asc);
@@ -583,6 +678,18 @@ extension SettingsQuerySortBy on QueryBuilder<Settings, Settings, QSortBy> {
   QueryBuilder<Settings, Settings, QAfterSortBy> sortByPathDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'path', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> sortByPicturesPerRow() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'picturesPerRow', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> sortByPicturesPerRowDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'picturesPerRow', Sort.desc);
     });
   }
 
@@ -649,6 +756,18 @@ extension SettingsQuerySortThenBy
     });
   }
 
+  QueryBuilder<Settings, Settings, QAfterSortBy> thenByListViewBooru() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'listViewBooru', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> thenByListViewBooruDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'listViewBooru', Sort.desc);
+    });
+  }
+
   QueryBuilder<Settings, Settings, QAfterSortBy> thenByPath() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'path', Sort.asc);
@@ -658,6 +777,18 @@ extension SettingsQuerySortThenBy
   QueryBuilder<Settings, Settings, QAfterSortBy> thenByPathDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'path', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> thenByPicturesPerRow() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'picturesPerRow', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> thenByPicturesPerRowDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'picturesPerRow', Sort.desc);
     });
   }
 
@@ -700,10 +831,22 @@ extension SettingsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Settings, Settings, QDistinct> distinctByListViewBooru() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'listViewBooru');
+    });
+  }
+
   QueryBuilder<Settings, Settings, QDistinct> distinctByPath(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'path', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QDistinct> distinctByPicturesPerRow() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'picturesPerRow');
     });
   }
 
@@ -740,9 +883,21 @@ extension SettingsQueryProperty
     });
   }
 
+  QueryBuilder<Settings, bool, QQueryOperations> listViewBooruProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'listViewBooru');
+    });
+  }
+
   QueryBuilder<Settings, String, QQueryOperations> pathProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'path');
+    });
+  }
+
+  QueryBuilder<Settings, int, QQueryOperations> picturesPerRowProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'picturesPerRow');
     });
   }
 

@@ -1,7 +1,87 @@
+import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view_gallery.dart';
-
+import 'package:mime/mime.dart';
+import 'package:video_player/video_player.dart';
 import '../cell/cell.dart';
+
+class PhotoGalleryPageVideo extends StatefulWidget {
+  final String url;
+  const PhotoGalleryPageVideo({super.key, required this.url});
+
+  @override
+  State<PhotoGalleryPageVideo> createState() => _PhotoGalleryPageVideoState();
+}
+
+class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
+  late VideoPlayerController controller = VideoPlayerController.network(
+    widget.url,
+  );
+  ChewieController? chewieController;
+  bool disposed = false;
+  Object? error;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _initController();
+  }
+
+  void _initController() async {
+    controller.initialize().then((value) {
+      if (!disposed) {
+        setState(() {
+          chewieController = ChewieController(
+              videoPlayerController: controller,
+              aspectRatio: controller.value.aspectRatio,
+              autoInitialize: false,
+              looping: true,
+              allowPlaybackSpeedChanging: false,
+              allowMuting: false,
+              showControlsOnInitialize: false,
+              showOptions: false,
+              autoPlay: false);
+        });
+
+        chewieController!.play().onError((e, stackTrace) {
+          if (!disposed) {
+            setState(() {
+              error = e;
+            });
+          }
+        });
+      }
+    }).onError((e, stackTrace) {
+      if (!disposed) {
+        setState(() {
+          error = e;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    disposed = true;
+    controller.dispose();
+    if (chewieController != null) {
+      chewieController!.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return error != null
+        ? const Icon(Icons.error)
+        : chewieController == null
+            ? const Center(
+                child: CircularProgressIndicator(),
+              )
+            : Chewie(controller: chewieController!);
+  }
+}
 
 class ImageView<T extends Cell> extends StatefulWidget {
   final int startingCell;
@@ -43,7 +123,6 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
   @override
   void dispose() {
     controller.dispose();
-
     super.dispose();
   }
 
@@ -131,7 +210,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
           }(),
         ),
         body: PhotoViewGallery.builder(
-            onPageChanged: (index) {
+            onPageChanged: (index) async {
               _loadNext(index);
 
               setState(() {
@@ -141,10 +220,28 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
             pageController: controller,
             itemCount: cellCount,
             builder: (context, indx) {
-              return PhotoViewGalleryPageOptions(
-                  filterQuality: FilterQuality.high,
-                  imageProvider:
-                      NetworkImage(widget.getCell(indx).fileDisplayUrl()));
+              var fileUrl = widget.getCell(indx).fileDisplayUrl();
+              var s = lookupMimeType(fileUrl);
+              if (s == null) {
+                return PhotoViewGalleryPageOptions.customChild(
+                    child: const Icon(Icons.error_outline));
+              }
+
+              var type = s.split("/")[0];
+              if (type == "video") {
+                return PhotoViewGalleryPageOptions.customChild(
+                    tightMode: true,
+                    child: PhotoGalleryPageVideo(
+                      url: fileUrl,
+                    ));
+              } else if (type == "image") {
+                return PhotoViewGalleryPageOptions(
+                    filterQuality: FilterQuality.high,
+                    imageProvider: NetworkImage(fileUrl));
+              } else {
+                return PhotoViewGalleryPageOptions.customChild(
+                    child: const Icon(Icons.error_outline));
+              }
             }));
   }
 }

@@ -4,6 +4,7 @@ import 'package:gallery/src/schemas/post.dart';
 import 'package:http/http.dart' as http;
 
 import '../interface.dart';
+import '../tags/tags.dart';
 
 class Danbooru implements BooruAPI {
   @override
@@ -26,11 +27,20 @@ class Danbooru implements BooruAPI {
       throw "only one should be set";
     }
 
+    String excludedTagsString;
+
+    var excludedTags = BooruTags().getExcluded().map((e) => "-$e").toList();
+    if (excludedTags.isNotEmpty) {
+      excludedTagsString =
+          excludedTags.reduce((value, element) => value + element);
+    } else {
+      excludedTagsString = "";
+    }
+
     Map<String, dynamic> query = {
-      "limit": "10",
-      //"page": i.toString(),
+      "limit": numberOfElementsPerRefresh().toString(),
       "format": "json",
-      "tags": tags,
+      "tags": "$excludedTagsString $tags",
     };
 
     if (postid != null) {

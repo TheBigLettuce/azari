@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'drawer.dart';
-import 'image/grid.dart';
+import 'image/cells.dart';
 import 'image/images.dart';
 import 'models/directory.dart';
 
@@ -58,7 +58,7 @@ class _DirectoriesState extends State<Directories> {
         builder: (context, model, _) {
           var cells = model.copy();
 
-          return ImageGrid(
+          return CellsWidget(
             refresh: () {
               return Future.value(cells.length);
             },

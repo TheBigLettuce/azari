@@ -41,10 +41,12 @@ void main() async {
       routes: {
         "/": (context) => const Entry(),
         "/booru": (context) {
+          var arguments = ModalRoute.of(context)!.settings.arguments;
           var scroll = isar().scrollPositions.getSync(0);
           return BooruScroll.primary(
             initalScroll: scroll != null ? scroll.pos : 0,
             isar: isar(),
+            clear: arguments != null ? arguments as bool : false,
             updateScrollPosition: (pos) {
               isar().writeTxnSync(() => isar()
                   .scrollPositions
