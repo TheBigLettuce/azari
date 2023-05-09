@@ -12,19 +12,9 @@ class Tags {
 
   Id get isarId => fastHash(domain);
 
-  List<Tag> tags;
+  List<String> tags;
 
   Tags(this.domain, this.tags);
-}
-
-@embedded
-class Tag {
-  //@Index(unique: true, replace: true)
-  String tag;
-  DateTime date;
-  //@override
-  //operator ==(covariant Tag other) ;
-  Tag({this.tag = ""}) : date = DateTime.now();
 }
 
 int fastHash(String string) {

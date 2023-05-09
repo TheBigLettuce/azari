@@ -25,8 +25,7 @@ const ExcludedTagsSchema = CollectionSchema(
     r'tags': PropertySchema(
       id: 1,
       name: r'tags',
-      type: IsarType.objectList,
-      target: r'Tag',
+      type: IsarType.stringList,
     )
   },
   estimateSize: _excludedTagsEstimateSize,
@@ -36,7 +35,7 @@ const ExcludedTagsSchema = CollectionSchema(
   idName: r'isarId',
   indexes: {},
   links: {},
-  embeddedSchemas: {r'Tag': TagSchema},
+  embeddedSchemas: {},
   getId: _excludedTagsGetId,
   getLinks: _excludedTagsGetLinks,
   attach: _excludedTagsAttach,
@@ -52,10 +51,9 @@ int _excludedTagsEstimateSize(
   bytesCount += 3 + object.domain.length * 3;
   bytesCount += 3 + object.tags.length * 3;
   {
-    final offsets = allOffsets[Tag]!;
     for (var i = 0; i < object.tags.length; i++) {
       final value = object.tags[i];
-      bytesCount += TagSchema.estimateSize(value, offsets, allOffsets);
+      bytesCount += value.length * 3;
     }
   }
   return bytesCount;
@@ -68,12 +66,7 @@ void _excludedTagsSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeString(offsets[0], object.domain);
-  writer.writeObjectList<Tag>(
-    offsets[1],
-    allOffsets,
-    TagSchema.serialize,
-    object.tags,
-  );
+  writer.writeStringList(offsets[1], object.tags);
 }
 
 ExcludedTags _excludedTagsDeserialize(
@@ -84,13 +77,7 @@ ExcludedTags _excludedTagsDeserialize(
 ) {
   final object = ExcludedTags(
     reader.readString(offsets[0]),
-    reader.readObjectList<Tag>(
-          offsets[1],
-          TagSchema.deserialize,
-          allOffsets,
-          Tag(),
-        ) ??
-        [],
+    reader.readStringList(offsets[1]) ?? [],
   );
   return object;
 }
@@ -105,13 +92,7 @@ P _excludedTagsDeserializeProp<P>(
     case 0:
       return (reader.readString(offset)) as P;
     case 1:
-      return (reader.readObjectList<Tag>(
-            offset,
-            TagSchema.deserialize,
-            allOffsets,
-            Tag(),
-          ) ??
-          []) as P;
+      return (reader.readStringList(offset) ?? []) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -402,6 +383,142 @@ extension ExcludedTagsQueryFilter
   }
 
   QueryBuilder<ExcludedTags, ExcludedTags, QAfterFilterCondition>
+      tagsElementEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'tags',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ExcludedTags, ExcludedTags, QAfterFilterCondition>
+      tagsElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'tags',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ExcludedTags, ExcludedTags, QAfterFilterCondition>
+      tagsElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'tags',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ExcludedTags, ExcludedTags, QAfterFilterCondition>
+      tagsElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'tags',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ExcludedTags, ExcludedTags, QAfterFilterCondition>
+      tagsElementStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'tags',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ExcludedTags, ExcludedTags, QAfterFilterCondition>
+      tagsElementEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'tags',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ExcludedTags, ExcludedTags, QAfterFilterCondition>
+      tagsElementContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'tags',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ExcludedTags, ExcludedTags, QAfterFilterCondition>
+      tagsElementMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'tags',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<ExcludedTags, ExcludedTags, QAfterFilterCondition>
+      tagsElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'tags',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<ExcludedTags, ExcludedTags, QAfterFilterCondition>
+      tagsElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'tags',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<ExcludedTags, ExcludedTags, QAfterFilterCondition>
       tagsLengthEqualTo(int length) {
     return QueryBuilder.apply(this, (query) {
       return query.listLength(
@@ -492,14 +609,7 @@ extension ExcludedTagsQueryFilter
 }
 
 extension ExcludedTagsQueryObject
-    on QueryBuilder<ExcludedTags, ExcludedTags, QFilterCondition> {
-  QueryBuilder<ExcludedTags, ExcludedTags, QAfterFilterCondition> tagsElement(
-      FilterQuery<Tag> q) {
-    return QueryBuilder.apply(this, (query) {
-      return query.object(q, r'tags');
-    });
-  }
-}
+    on QueryBuilder<ExcludedTags, ExcludedTags, QFilterCondition> {}
 
 extension ExcludedTagsQueryLinks
     on QueryBuilder<ExcludedTags, ExcludedTags, QFilterCondition> {}
@@ -554,6 +664,12 @@ extension ExcludedTagsQueryWhereDistinct
       return query.addDistinctBy(r'domain', caseSensitive: caseSensitive);
     });
   }
+
+  QueryBuilder<ExcludedTags, ExcludedTags, QDistinct> distinctByTags() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'tags');
+    });
+  }
 }
 
 extension ExcludedTagsQueryProperty
@@ -570,7 +686,7 @@ extension ExcludedTagsQueryProperty
     });
   }
 
-  QueryBuilder<ExcludedTags, List<Tag>, QQueryOperations> tagsProperty() {
+  QueryBuilder<ExcludedTags, List<String>, QQueryOperations> tagsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'tags');
     });

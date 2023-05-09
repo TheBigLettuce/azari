@@ -25,8 +25,7 @@ const LastTagsSchema = CollectionSchema(
     r'tags': PropertySchema(
       id: 1,
       name: r'tags',
-      type: IsarType.objectList,
-      target: r'Tag',
+      type: IsarType.stringList,
     )
   },
   estimateSize: _lastTagsEstimateSize,
@@ -36,7 +35,7 @@ const LastTagsSchema = CollectionSchema(
   idName: r'isarId',
   indexes: {},
   links: {},
-  embeddedSchemas: {r'Tag': TagSchema},
+  embeddedSchemas: {},
   getId: _lastTagsGetId,
   getLinks: _lastTagsGetLinks,
   attach: _lastTagsAttach,
@@ -52,10 +51,9 @@ int _lastTagsEstimateSize(
   bytesCount += 3 + object.domain.length * 3;
   bytesCount += 3 + object.tags.length * 3;
   {
-    final offsets = allOffsets[Tag]!;
     for (var i = 0; i < object.tags.length; i++) {
       final value = object.tags[i];
-      bytesCount += TagSchema.estimateSize(value, offsets, allOffsets);
+      bytesCount += value.length * 3;
     }
   }
   return bytesCount;
@@ -68,12 +66,7 @@ void _lastTagsSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeString(offsets[0], object.domain);
-  writer.writeObjectList<Tag>(
-    offsets[1],
-    allOffsets,
-    TagSchema.serialize,
-    object.tags,
-  );
+  writer.writeStringList(offsets[1], object.tags);
 }
 
 LastTags _lastTagsDeserialize(
@@ -84,13 +77,7 @@ LastTags _lastTagsDeserialize(
 ) {
   final object = LastTags(
     reader.readString(offsets[0]),
-    reader.readObjectList<Tag>(
-          offsets[1],
-          TagSchema.deserialize,
-          allOffsets,
-          Tag(),
-        ) ??
-        [],
+    reader.readStringList(offsets[1]) ?? [],
   );
   return object;
 }
@@ -105,13 +92,7 @@ P _lastTagsDeserializeProp<P>(
     case 0:
       return (reader.readString(offset)) as P;
     case 1:
-      return (reader.readObjectList<Tag>(
-            offset,
-            TagSchema.deserialize,
-            allOffsets,
-            Tag(),
-          ) ??
-          []) as P;
+      return (reader.readStringList(offset) ?? []) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -389,6 +370,138 @@ extension LastTagsQueryFilter
     });
   }
 
+  QueryBuilder<LastTags, LastTags, QAfterFilterCondition> tagsElementEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'tags',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LastTags, LastTags, QAfterFilterCondition>
+      tagsElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'tags',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LastTags, LastTags, QAfterFilterCondition> tagsElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'tags',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LastTags, LastTags, QAfterFilterCondition> tagsElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'tags',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LastTags, LastTags, QAfterFilterCondition> tagsElementStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'tags',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LastTags, LastTags, QAfterFilterCondition> tagsElementEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'tags',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LastTags, LastTags, QAfterFilterCondition> tagsElementContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'tags',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LastTags, LastTags, QAfterFilterCondition> tagsElementMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'tags',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<LastTags, LastTags, QAfterFilterCondition> tagsElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'tags',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<LastTags, LastTags, QAfterFilterCondition>
+      tagsElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'tags',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<LastTags, LastTags, QAfterFilterCondition> tagsLengthEqualTo(
       int length) {
     return QueryBuilder.apply(this, (query) {
@@ -475,14 +588,7 @@ extension LastTagsQueryFilter
 }
 
 extension LastTagsQueryObject
-    on QueryBuilder<LastTags, LastTags, QFilterCondition> {
-  QueryBuilder<LastTags, LastTags, QAfterFilterCondition> tagsElement(
-      FilterQuery<Tag> q) {
-    return QueryBuilder.apply(this, (query) {
-      return query.object(q, r'tags');
-    });
-  }
-}
+    on QueryBuilder<LastTags, LastTags, QFilterCondition> {}
 
 extension LastTagsQueryLinks
     on QueryBuilder<LastTags, LastTags, QFilterCondition> {}
@@ -536,6 +642,12 @@ extension LastTagsQueryWhereDistinct
       return query.addDistinctBy(r'domain', caseSensitive: caseSensitive);
     });
   }
+
+  QueryBuilder<LastTags, LastTags, QDistinct> distinctByTags() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'tags');
+    });
+  }
 }
 
 extension LastTagsQueryProperty
@@ -552,270 +664,9 @@ extension LastTagsQueryProperty
     });
   }
 
-  QueryBuilder<LastTags, List<Tag>, QQueryOperations> tagsProperty() {
+  QueryBuilder<LastTags, List<String>, QQueryOperations> tagsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'tags');
     });
   }
 }
-
-// **************************************************************************
-// IsarEmbeddedGenerator
-// **************************************************************************
-
-// coverage:ignore-file
-// ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
-
-const TagSchema = Schema(
-  name: r'Tag',
-  id: 4007045862261149568,
-  properties: {
-    r'date': PropertySchema(
-      id: 0,
-      name: r'date',
-      type: IsarType.dateTime,
-    ),
-    r'tag': PropertySchema(
-      id: 1,
-      name: r'tag',
-      type: IsarType.string,
-    )
-  },
-  estimateSize: _tagEstimateSize,
-  serialize: _tagSerialize,
-  deserialize: _tagDeserialize,
-  deserializeProp: _tagDeserializeProp,
-);
-
-int _tagEstimateSize(
-  Tag object,
-  List<int> offsets,
-  Map<Type, List<int>> allOffsets,
-) {
-  var bytesCount = offsets.last;
-  bytesCount += 3 + object.tag.length * 3;
-  return bytesCount;
-}
-
-void _tagSerialize(
-  Tag object,
-  IsarWriter writer,
-  List<int> offsets,
-  Map<Type, List<int>> allOffsets,
-) {
-  writer.writeDateTime(offsets[0], object.date);
-  writer.writeString(offsets[1], object.tag);
-}
-
-Tag _tagDeserialize(
-  Id id,
-  IsarReader reader,
-  List<int> offsets,
-  Map<Type, List<int>> allOffsets,
-) {
-  final object = Tag(
-    tag: reader.readStringOrNull(offsets[1]) ?? "",
-  );
-  object.date = reader.readDateTime(offsets[0]);
-  return object;
-}
-
-P _tagDeserializeProp<P>(
-  IsarReader reader,
-  int propertyId,
-  int offset,
-  Map<Type, List<int>> allOffsets,
-) {
-  switch (propertyId) {
-    case 0:
-      return (reader.readDateTime(offset)) as P;
-    case 1:
-      return (reader.readStringOrNull(offset) ?? "") as P;
-    default:
-      throw IsarError('Unknown property with id $propertyId');
-  }
-}
-
-extension TagQueryFilter on QueryBuilder<Tag, Tag, QFilterCondition> {
-  QueryBuilder<Tag, Tag, QAfterFilterCondition> dateEqualTo(DateTime value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'date',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Tag, Tag, QAfterFilterCondition> dateGreaterThan(
-    DateTime value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'date',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Tag, Tag, QAfterFilterCondition> dateLessThan(
-    DateTime value, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'date',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Tag, Tag, QAfterFilterCondition> dateBetween(
-    DateTime lower,
-    DateTime upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'date',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-      ));
-    });
-  }
-
-  QueryBuilder<Tag, Tag, QAfterFilterCondition> tagEqualTo(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'tag',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Tag, Tag, QAfterFilterCondition> tagGreaterThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'tag',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Tag, Tag, QAfterFilterCondition> tagLessThan(
-    String value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'tag',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Tag, Tag, QAfterFilterCondition> tagBetween(
-    String lower,
-    String upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'tag',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Tag, Tag, QAfterFilterCondition> tagStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'tag',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Tag, Tag, QAfterFilterCondition> tagEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'tag',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Tag, Tag, QAfterFilterCondition> tagContains(String value,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'tag',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Tag, Tag, QAfterFilterCondition> tagMatches(String pattern,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'tag',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<Tag, Tag, QAfterFilterCondition> tagIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'tag',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<Tag, Tag, QAfterFilterCondition> tagIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'tag',
-        value: '',
-      ));
-    });
-  }
-}
-
-extension TagQueryObject on QueryBuilder<Tag, Tag, QFilterCondition> {}

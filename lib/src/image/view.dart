@@ -1,5 +1,6 @@
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:mime/mime.dart';
 import 'package:video_player/video_player.dart';
@@ -87,12 +88,14 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final int startingCell;
   final T Function(int i) getCell;
   final int cellCount;
+  final void Function(int post) scrollUntill;
   final Future<int> Function()? onNearEnd;
   final Future Function(int i)? download;
 
   const ImageView(
       {super.key,
       required this.cellCount,
+      required this.scrollUntill,
       required this.startingCell,
       required this.getCell,
       required this.onNearEnd,
@@ -108,6 +111,9 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
   late int cellCount = widget.cellCount;
   bool refreshing = false;
 
+  bool showInfo = false;
+  bool showAppBar = true;
+
   @override
   void initState() {
     super.initState();
@@ -122,6 +128,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
 
   @override
   void dispose() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     controller.dispose();
     super.dispose();
   }
@@ -147,104 +154,128 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          bottom: refreshing
-              ? const PreferredSize(
-                  preferredSize: Size.fromHeight(4),
-                  child: LinearProgressIndicator())
-              : null,
-          title: Text(currentCell.alias),
-          actions: () {
+        extendBodyBehindAppBar: true,
+        appBar: !showAppBar
+            ? null
+            : AppBar(
+                backgroundColor: Colors.black.withOpacity(0.5),
+                title: Text(currentCell.alias),
+                actions: () {
+                  List<Widget> list = [];
+
+                  var addB = currentCell.addButtons();
+                  if (addB != null) {
+                    list.addAll(addB);
+                  }
+
+                  if (widget.download != null) {
+                    list.add(IconButton(
+                        onPressed: () {
+                          widget.download!(controller.page!.toInt());
+                        },
+                        icon: const Icon(Icons.download)));
+                  }
+
+                  list.add(IconButton(
+                      onPressed: () => setState(() {
+                            showInfo = !showInfo;
+                          }),
+                      icon: const Icon(Icons.info_outline)));
+
+                  return list;
+                }(),
+              ),
+        body: GestureDetector(
+          onTap: () {
+            if (!showAppBar) {
+              SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+            } else {
+              SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+            }
+            setState(() {
+              showAppBar = !showAppBar;
+            });
+          },
+          child: Stack(children: () {
             List<Widget> list = [];
 
-            var addB = currentCell.addButtons();
-            if (addB != null) {
-              list.addAll(addB);
-            }
+            list.add(PhotoViewGallery.builder(
+                onPageChanged: (index) async {
+                  _loadNext(index);
+                  widget.scrollUntill(index);
 
-            if (widget.download != null) {
-              list.add(IconButton(
-                  onPressed: () {
-                    widget.download!(controller.page!.toInt());
-                  },
-                  icon: const Icon(Icons.download)));
-            }
-
-            list.add(IconButton(
-                onPressed: () {
-                  Navigator.of(context).push(DialogRoute(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: Text(currentCell.alias),
-                          content: SizedBox(
-                            width: double.maxFinite,
-                            child: ListView(children: () {
-                              List<Widget> list = [
-                                ListTile(
-                                  title: const Text("Alias"),
-                                  subtitle: Text(currentCell.alias),
-                                ),
-                                ListTile(
-                                  title: const Text("Path"),
-                                  subtitle: Text(currentCell.fileDisplayUrl()),
-                                ),
-                              ];
-
-                              var addInfo = currentCell.addInfo();
-                              if (addInfo != null) {
-                                for (var widget in addInfo) {
-                                  list.add(widget);
-                                }
-                              }
-
-                              return list;
-                            }()),
-                          ),
-                        );
-                      }));
+                  setState(() {
+                    currentCell = widget.getCell(index);
+                  });
                 },
-                icon: const Icon(Icons.info_outline)));
+                pageController: controller,
+                itemCount: cellCount,
+                builder: (context, indx) {
+                  var fileUrl = widget.getCell(indx).fileDisplayUrl();
+                  var s = lookupMimeType(fileUrl);
+                  if (s == null) {
+                    return PhotoViewGalleryPageOptions.customChild(
+                        child: const Icon(Icons.error_outline));
+                  }
+
+                  var type = s.split("/")[0];
+                  if (type == "video") {
+                    return PhotoViewGalleryPageOptions.customChild(
+                        tightMode: true,
+                        child: PhotoGalleryPageVideo(
+                          url: fileUrl,
+                        ));
+                  } else if (type == "image") {
+                    return PhotoViewGalleryPageOptions(
+                        filterQuality: FilterQuality.high,
+                        imageProvider: NetworkImage(fileUrl));
+                  } else {
+                    return PhotoViewGalleryPageOptions.customChild(
+                        child: const Icon(Icons.error_outline));
+                  }
+                }));
+
+            if (showInfo) {
+              list.add(Container(
+                decoration: BoxDecoration(color: Colors.black.withOpacity(0.5)),
+                child: ListView(children: () {
+                  List<Widget> list = [
+                    ListTile(
+                      title: const Text("Alias"),
+                      subtitle: Text(currentCell.alias),
+                    ),
+                    ListTile(
+                      title: const Text("Path"),
+                      subtitle: Text(currentCell.fileDisplayUrl()),
+                    ),
+                  ];
+
+                  var addInfo = currentCell.addInfo();
+                  if (addInfo != null) {
+                    for (var widget in addInfo) {
+                      list.add(widget);
+                    }
+                  }
+
+                  return list;
+                }()),
+              ));
+            }
 
             return list;
-          }(),
-        ),
-        body: PhotoViewGallery.builder(
-            onPageChanged: (index) async {
-              _loadNext(index);
-
-              setState(() {
-                currentCell = widget.getCell(index);
-              });
-            },
-            pageController: controller,
-            itemCount: cellCount,
-            builder: (context, indx) {
-              var fileUrl = widget.getCell(indx).fileDisplayUrl();
-              var s = lookupMimeType(fileUrl);
-              if (s == null) {
-                return PhotoViewGalleryPageOptions.customChild(
-                    child: const Icon(Icons.error_outline));
-              }
-
-              var type = s.split("/")[0];
-              if (type == "video") {
-                return PhotoViewGalleryPageOptions.customChild(
-                    tightMode: true,
-                    child: PhotoGalleryPageVideo(
-                      url: fileUrl,
-                    ));
-              } else if (type == "image") {
-                return PhotoViewGalleryPageOptions(
-                    filterQuality: FilterQuality.high,
-                    imageProvider: NetworkImage(fileUrl));
-              } else {
-                return PhotoViewGalleryPageOptions.customChild(
-                    child: const Icon(Icons.error_outline));
-              }
-            }));
+          }()),
+        ));
   }
 }
+
+/*
+
+refreshing
+                    ? const PreferredSize(
+                        preferredSize: Size.fromHeight(4),
+                        child: LinearProgressIndicator())
+
+*/
 
 const imageType = 1;
 const videoType = 2;

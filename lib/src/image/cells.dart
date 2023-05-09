@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/image/view.dart';
 import 'package:gallery/src/schemas/settings.dart';
@@ -128,10 +129,21 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
     });
   }
 
+  void _scrollUntill(int p) {
+    var picPerRow = isar().settings.getSync(0)!.picturesPerRow;
+    // Get the full content height.
+    final contentSize = controller.position.viewportDimension +
+        controller.position.maxScrollExtent;
+    // Estimate the target scroll position.
+    var target = contentSize * (p / picPerRow - 1) / (cellCount / picPerRow);
+    controller.jumpTo(target);
+  }
+
   void _onPressed(BuildContext context, int i) {
     focus.unfocus();
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return ImageView<T>(
+        scrollUntill: _scrollUntill,
         getCell: widget.getCell,
         cellCount: cellCount,
         download: widget.onLongPress,
@@ -188,15 +200,7 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                     slivers: [
                       SliverAppBar(
                         title: MenuAnchor(
-                          style: MenuStyle(
-                              side: MaterialStatePropertyAll(BorderSide(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .background)),
-                              shape: MaterialStatePropertyAll(
-                                  RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(20)))),
+                          style: tagCompleteMenuStyle(),
                           controller: menuController,
                           menuChildren: menuItems,
                           child: TextField(
@@ -215,23 +219,26 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                             onChanged: widget.searchFilter == null
                                 ? null
                                 : (value) {
-                                    var newItems = widget.searchFilter!(value)
-                                        .map((e) => ListTile(
-                                              title: Text(e),
-                                              onTap: () {
-                                                menuController.close();
-                                                widget.search(e);
-                                              },
-                                            ))
-                                        .toList();
-                                    if (newItems.isEmpty) {
-                                      menuController.close();
-                                    } else {
-                                      setState(() {
-                                        menuItems = newItems;
-                                      });
-                                      menuController.open();
-                                    }
+                                    menuItems.clear();
+
+                                    autoCompleteTag(
+                                            value,
+                                            menuController,
+                                            textController,
+                                            (s) => Future.value(
+                                                widget.searchFilter!(s)))
+                                        .then((newItems) {
+                                      if (newItems.isEmpty) {
+                                        menuController.close();
+                                      } else {
+                                        setState(() {
+                                          menuItems = newItems;
+                                        });
+                                        menuController.open();
+                                      }
+                                    }).onError((error, stackTrace) {
+                                      print(error);
+                                    });
                                   },
                             decoration: InputDecoration(
                                 suffix: InkWell(

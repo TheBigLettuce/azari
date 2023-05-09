@@ -6,7 +6,36 @@ import 'package:http/http.dart' as http;
 import '../interface.dart';
 import '../tags/tags.dart';
 
+List<String> _fromDanbooruTags(List<dynamic> l) =>
+    l.map((e) => e["name"] as String).toList();
+
 class Danbooru implements BooruAPI {
+  @override
+  Future<List<String>> completeTag(String tag) async {
+    var req = http.get(
+      Uri.https("danbooru.donmai.us", " /tags.json", {
+        "search[name_matches]": "$tag*",
+        "order": "count",
+        "limit": "10",
+      }),
+    );
+
+    return Future(() async {
+      try {
+        var resp = await req;
+        if (resp.statusCode != 200) {
+          throw "status code not 200";
+        }
+
+        var tags = _fromDanbooruTags(jsonDecode(resp.body));
+
+        return tags;
+      } catch (e) {
+        return Future.error(e);
+      }
+    });
+  }
+
   @override
   Future<List<Post>> page(int i, String tags) => _commonPosts(tags, page: i);
 

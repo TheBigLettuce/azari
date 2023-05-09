@@ -7,8 +7,41 @@ import 'package:path/path.dart' as path;
 import '../../schemas/post.dart';
 import '../tags/tags.dart';
 
+List<String> _fromGelbooruTags(List<dynamic> l) {
+  return l.map((e) => e["name"] as String).toList();
+}
+
 class Gelbooru implements BooruAPI {
   int _page = 0;
+
+  @override
+  Future<List<String>> completeTag(String t) async {
+    var req = http.get(
+      Uri.https("gelbooru.com", "/index.php", {
+        "page": "dapi",
+        "s": "tag",
+        "q": "index",
+        "limit": "10",
+        "json": "1",
+        "name_pattern": "$t%",
+        "orderby": "count"
+      }),
+    );
+
+    return Future(() async {
+      try {
+        var resp = await req;
+        if (resp.statusCode != 200) {
+          throw "status code not 200";
+        }
+
+        var tags = _fromGelbooruTags(jsonDecode(resp.body)["tag"]);
+        return tags;
+      } catch (e) {
+        return Future.error(e);
+      }
+    });
+  }
 
   @override
   Future<List<Post>> page(int p, String tags) {

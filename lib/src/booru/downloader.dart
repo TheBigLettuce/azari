@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/settings.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:isar/isar.dart';
 import 'package:path/path.dart' as path;
 import 'package:permission_handler/permission_handler.dart';
@@ -68,7 +67,6 @@ Future downloadFile(String url, String dir, String name, {int? oldid}) async {
         isar().files.deleteSync(id);
       },
     );
-    ImageGallerySaver.saveFile(filePath);
   }).onError((error, stackTrace) {
     print(error);
     isar().writeTxnSync(

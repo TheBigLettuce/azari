@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:gallery/src/schemas/settings.dart';
 
 import '../cell/booru.dart';
@@ -13,7 +14,7 @@ abstract class BooruAPI {
 
   Future<List<Post>> fromPost(int postId, String tags);
 
-  // Future<List<String>> completeTag(String tag);
+  Future<List<String>> completeTag(String tag);
 }
 
 List<BooruCell> postsToCells(
@@ -25,6 +26,51 @@ List<BooruCell> postsToCells(
   }
 
   return list;
+}
+
+MenuStyle tagCompleteMenuStyle() => MenuStyle(
+    shape: MaterialStatePropertyAll(
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))));
+
+Future<List<Widget>> autoCompleteTag(
+    String tagString,
+    MenuController menuController,
+    TextEditingController textController,
+    Future<List<String>> Function(String) complF) {
+  if (tagString.isEmpty) {
+    return Future.value([]);
+  } else if (tagString.characters.last == " ") {
+    menuController.close();
+    return Future.value([]);
+  }
+
+  var tags = tagString.trim().split(" ");
+
+  return complF(tags.isEmpty ? "" : tags.last).then((value) => value
+      .map((e) => ListTile(
+            title: Text(e),
+            onTap: () {
+              menuController.close();
+              List<String> tags = List.from(textController.text.split(" "));
+
+              if (tags.isNotEmpty) {
+                tags.removeLast();
+                tags.remove(e);
+              }
+
+              tags.add(e);
+
+              var tagsString =
+                  tags.reduce((value, element) => "$value $element");
+
+              textController.value = TextEditingValue(
+                  text: tagsString,
+                  selection: TextSelection(
+                      baseOffset: tagsString.length,
+                      extentOffset: tagsString.length));
+            },
+          ))
+      .toList());
 }
 
 int numberOfElementsPerRefresh() {

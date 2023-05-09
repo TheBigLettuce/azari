@@ -6,6 +6,7 @@ import 'package:gallery/src/schemas/excluded_tags.dart';
 import 'package:gallery/src/schemas/tags.dart';
 
 import '../db/isar.dart';
+import 'interface.dart';
 
 class SearchBooru extends StatefulWidget {
   final void Function(String) onSubmitted;
@@ -21,6 +22,9 @@ class _SearchBooruState extends State<SearchBooru> {
   late final StreamSubscription<void> _lastTagsWatcher;
   List<String> _excludedTags = [];
   late final StreamSubscription<void> _excludedTagsWatcher;
+  List<Widget> menuItems = [];
+  MenuController menuController = MenuController();
+  TextEditingController textController = TextEditingController();
 
   @override
   void initState() {
@@ -39,6 +43,10 @@ class _SearchBooruState extends State<SearchBooru> {
     });
   }
 
+  List<String> _searchFilter(String value) => value.isEmpty
+      ? []
+      : _lastTags.where((element) => element.contains(value)).toList();
+
   @override
   void dispose() {
     _lastTagsWatcher.cancel();
@@ -56,14 +64,37 @@ class _SearchBooruState extends State<SearchBooru> {
         children: [
           Padding(
             padding: const EdgeInsets.only(left: 5, right: 5),
-            child: TextField(
-              decoration: const InputDecoration(
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(50)))),
-              onSubmitted: (value) {
-                _tags.addLatest(value);
-                widget.onSubmitted(value);
-              },
+            child: MenuAnchor(
+              menuChildren: menuItems,
+              style: tagCompleteMenuStyle(),
+              controller: menuController,
+              child: TextField(
+                controller: textController,
+                onChanged: (value) {
+                  menuItems.clear();
+                  autoCompleteTag(value, menuController, textController,
+                          getBooru().completeTag)
+                      .then((newItems) {
+                    if (newItems.isEmpty) {
+                      menuController.close();
+                    } else {
+                      setState(() {
+                        menuItems = newItems;
+                      });
+                      menuController.open();
+                    }
+                  }).onError((error, stackTrace) {
+                    print(error);
+                  });
+                },
+                decoration: const InputDecoration(
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(50)))),
+                onSubmitted: (value) {
+                  _tags.addLatest(value);
+                  widget.onSubmitted(value);
+                },
+              ),
             ),
           ),
           const ListTile(
