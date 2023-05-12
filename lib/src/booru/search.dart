@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/schemas/excluded_tags.dart';
 import 'package:gallery/src/schemas/tags.dart';
@@ -42,10 +43,6 @@ class _SearchBooruState extends State<SearchBooru> {
       });
     });
   }
-
-  List<String> _searchFilter(String value) => value.isEmpty
-      ? []
-      : _lastTags.where((element) => element.contains(value)).toList();
 
   @override
   void dispose() {
@@ -158,6 +155,7 @@ class TagsWidget extends StatelessWidget {
         children: tags
             .map((tag) => GestureDetector(
                   onLongPress: () {
+                    HapticFeedback.vibrate();
                     Navigator.of(context).push(DialogRoute(
                         context: context,
                         builder: (context) => AlertDialog(

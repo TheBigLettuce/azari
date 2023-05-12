@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:gallery/src/booru/interface.dart';
+import 'package:html_unescape/html_unescape_small.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
@@ -8,11 +10,16 @@ import '../../schemas/post.dart';
 import '../tags/tags.dart';
 
 List<String> _fromGelbooruTags(List<dynamic> l) {
-  return l.map((e) => e["name"] as String).toList();
+  return l.map((e) => HtmlUnescape().convert(e["name"] as String)).toList();
 }
 
 class Gelbooru implements BooruAPI {
   int _page = 0;
+
+  Gelbooru(int page) : _page = page;
+
+  @override
+  int? currentPage() => _page;
 
   @override
   Future<List<String>> completeTag(String t) async {
@@ -80,7 +87,12 @@ class Gelbooru implements BooruAPI {
           throw "status not 200";
         }
 
-        return _fromJson(jsonDecode(r.body));
+        var json = jsonDecode(r.body)["post"];
+        if (json == null) {
+          return Future.value([]);
+        }
+
+        return _fromJson(json);
       } catch (e) {
         return Future.error(e);
       }
@@ -96,14 +108,16 @@ class Gelbooru implements BooruAPI {
   @override
   Future<List<Post>> fromPost(int _, String tags) =>
       _commonPosts(tags, _page).then((value) {
-        _page++;
+        if (value.isNotEmpty) {
+          _page++;
+        }
         return Future.value(value);
       });
 
-  List<Post> _fromJson(Map<String, dynamic> m) {
+  List<Post> _fromJson(List<dynamic> m) {
     List<Post> list = [];
 
-    for (var post in m["post"] as List) {
+    for (var post in m) {
       list.add(Post(
           height: post["height"],
           id: post["id"],
@@ -121,8 +135,3 @@ class Gelbooru implements BooruAPI {
     return list;
   }
 }
-
-/* 
-
-
-*/

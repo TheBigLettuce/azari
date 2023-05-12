@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/directories.dart';
 import 'package:gallery/src/models/directory.dart';
@@ -22,6 +21,7 @@ class _SettingsState extends State<Settings> {
   schema_settings.Settings? _settings = isar().settings.getSync(0);
   bool defaultChanged = false;
   bool booruChanged = false;
+
   bool listViewChanged = false;
   bool elemRowNumbChanged = false;
 
@@ -64,10 +64,16 @@ class _SettingsState extends State<Settings> {
           }
         }
 
-        if (_settings!.booruDefault && booruChanged ||
-            elemRowNumbChanged ||
-            listViewChanged) {
+        if (!_settings!.booruDefault) {
+          return Future.value(true);
+        }
+
+        if (booruChanged) {
           _popBooru();
+        }
+
+        if (elemRowNumbChanged || listViewChanged) {
+          Future.value(true);
         }
 
         return Future.value(true);

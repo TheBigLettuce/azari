@@ -15,6 +15,7 @@ class Images extends StatefulWidget {
 
 class _ImagesState extends State<Images> {
   int? itemCount;
+  final GlobalKey<ScaffoldState> _key = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +33,7 @@ class _ImagesState extends State<Images> {
       },
       builder: (context, _) {
         return Scaffold(
+          key: _key,
           appBar: AppBar(
             title: Text(widget.cell.alias),
             actions: [
@@ -77,8 +79,12 @@ class _ImagesState extends State<Images> {
                     var cells = data.copy();
 
                     return CellsWidget(
+                      scaffoldKey: _key,
                       refresh: () {
                         return Future.value(cells.length);
+                      },
+                      hasReachedEnd: () {
+                        return true;
                       },
                       search: (s) {},
                       getCell: (i) => cells[i],

@@ -185,55 +185,73 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                   return list;
                 }(),
               ),
-        body: GestureDetector(
-          onTap: () {
-            if (!showAppBar) {
-              SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-            } else {
-              SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+        body: WillPopScope(
+          onWillPop: () {
+            if (showInfo) {
+              setState(() {
+                showInfo = false;
+              });
+              return Future.value(false);
             }
-            setState(() {
-              showAppBar = !showAppBar;
-            });
+
+            return Future.value(true);
           },
           child: Stack(children: () {
             List<Widget> list = [];
 
-            list.add(PhotoViewGallery.builder(
-                onPageChanged: (index) async {
-                  _loadNext(index);
-                  widget.scrollUntill(index);
+            list.add(GestureDetector(
+              onLongPress: widget.download == null
+                  ? null
+                  : () {
+                      HapticFeedback.vibrate();
+                      widget.download!(controller.page!.toInt());
+                    },
+              onTap: () {
+                if (!showAppBar) {
+                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+                } else {
+                  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+                }
+                setState(() {
+                  showAppBar = !showAppBar;
+                });
+              },
+              child: PhotoViewGallery.builder(
+                  onPageChanged: (index) async {
+                    _loadNext(index);
+                    widget.scrollUntill(index);
 
-                  setState(() {
-                    currentCell = widget.getCell(index);
-                  });
-                },
-                pageController: controller,
-                itemCount: cellCount,
-                builder: (context, indx) {
-                  var fileUrl = widget.getCell(indx).fileDisplayUrl();
-                  var s = lookupMimeType(fileUrl);
-                  if (s == null) {
-                    return PhotoViewGalleryPageOptions.customChild(
-                        child: const Icon(Icons.error_outline));
-                  }
+                    setState(() {
+                      currentCell = widget.getCell(index);
+                    });
+                  },
+                  pageController: controller,
+                  itemCount: cellCount,
+                  builder: (context, indx) {
+                    var fileUrl = widget.getCell(indx).fileDisplayUrl();
+                    var s = lookupMimeType(fileUrl);
+                    if (s == null) {
+                      return PhotoViewGalleryPageOptions.customChild(
+                          child: const Icon(Icons.error_outline));
+                    }
 
-                  var type = s.split("/")[0];
-                  if (type == "video") {
-                    return PhotoViewGalleryPageOptions.customChild(
-                        tightMode: true,
-                        child: PhotoGalleryPageVideo(
-                          url: fileUrl,
-                        ));
-                  } else if (type == "image") {
-                    return PhotoViewGalleryPageOptions(
-                        filterQuality: FilterQuality.high,
-                        imageProvider: NetworkImage(fileUrl));
-                  } else {
-                    return PhotoViewGalleryPageOptions.customChild(
-                        child: const Icon(Icons.error_outline));
-                  }
-                }));
+                    var type = s.split("/")[0];
+                    if (type == "video") {
+                      return PhotoViewGalleryPageOptions.customChild(
+                          tightMode: true,
+                          child: PhotoGalleryPageVideo(
+                            url: fileUrl,
+                          ));
+                    } else if (type == "image") {
+                      return PhotoViewGalleryPageOptions(
+                          filterQuality: FilterQuality.high,
+                          imageProvider: NetworkImage(fileUrl));
+                    } else {
+                      return PhotoViewGalleryPageOptions.customChild(
+                          child: const Icon(Icons.error_outline));
+                    }
+                  }),
+            ));
 
             if (showInfo) {
               list.add(Container(
@@ -267,15 +285,6 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
         ));
   }
 }
-
-/*
-
-refreshing
-                    ? const PreferredSize(
-                        preferredSize: Size.fromHeight(4),
-                        child: LinearProgressIndicator())
-
-*/
 
 const imageType = 1;
 const videoType = 2;

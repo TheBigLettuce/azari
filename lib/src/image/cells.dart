@@ -20,6 +20,8 @@ class CellsWidget<T extends Cell> extends StatefulWidget {
   final List<String> Function(String value)? searchFilter;
   final String searchStartingValue;
   final bool showBack;
+  final GlobalKey<ScaffoldState> scaffoldKey;
+  final bool Function() hasReachedEnd;
 
   final bool? hideAlias;
   final void Function(BuildContext context, int indx)? overrideOnPress;
@@ -28,6 +30,8 @@ class CellsWidget<T extends Cell> extends StatefulWidget {
     Key? key,
     required this.getCell,
     required this.initalScrollPosition,
+    required this.scaffoldKey,
+    required this.hasReachedEnd,
     this.searchFilter,
     this.loadNext,
     required this.search,
@@ -61,10 +65,26 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
   bool refreshing = true;
   List<Widget> menuItems = [];
   _ScrollHack scrollHack = _ScrollHack();
+  Settings settings = isar().settings.getSync(0)!;
+  late final StreamSubscription<Settings?> settingsWatcher;
+  late int lastGridColCount = settings.picturesPerRow;
 
   @override
   void initState() {
     super.initState();
+
+    settingsWatcher = isar().settings.watchObject(0).listen((event) {
+      // not perfect, but fine
+      if (lastGridColCount != event!.picturesPerRow) {
+        controller.position.jumpTo(
+            controller.offset * lastGridColCount / event.picturesPerRow);
+      }
+
+      setState(() {
+        settings = event;
+        lastGridColCount = event.picturesPerRow;
+      });
+    });
 
     if (widget.initalCellCount != 0) {
       cellCount = widget.initalCellCount;
@@ -86,6 +106,10 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
     }
 
     controller.addListener(() {
+      if (widget.hasReachedEnd()) {
+        return;
+      }
+
       if (!refreshing &&
           cellCount != 0 &&
           (controller.offset / controller.positions.first.maxScrollExtent) >=
@@ -112,6 +136,7 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
     focus.dispose();
     controller.dispose();
     textController.dispose();
+    settingsWatcher.cancel();
 
     super.dispose();
   }
@@ -130,12 +155,22 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
   }
 
   void _scrollUntill(int p) {
-    var picPerRow = isar().settings.getSync(0)!.picturesPerRow;
+    var picPerRow = settings.picturesPerRow;
     // Get the full content height.
     final contentSize = controller.position.viewportDimension +
         controller.position.maxScrollExtent;
     // Estimate the target scroll position.
-    var target = contentSize * (p / picPerRow - 1) / (cellCount / picPerRow);
+    double target;
+    if (settings.listViewBooru) {
+      target = contentSize * p / cellCount;
+    } else {
+      target = contentSize * (p / picPerRow - 1) / (cellCount / picPerRow);
+    }
+
+    if (widget.updateScrollPosition != null) {
+      widget.updateScrollPosition!(target);
+    }
+
     controller.jumpTo(target);
   }
 
@@ -255,6 +290,16 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                                 isDense: true),
                           ),
                         ),
+                        actions: widget.showBack
+                            ? [
+                                IconButton(
+                                    onPressed: () {
+                                      widget.scaffoldKey.currentState!
+                                          .openDrawer();
+                                    },
+                                    icon: const Icon(Icons.menu))
+                              ]
+                            : null,
                         leading: widget.showBack
                             ? IconButton(
                                 onPressed: () {
@@ -263,8 +308,6 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                                 icon: const Icon(Icons.arrow_back))
                             : null,
                         snap: true,
-
-                        //flexibleSpace: FlexibleSpaceBar(title: Text("")),
                         floating: true,
                         bottom: refreshing
                             ? const PreferredSize(
@@ -272,11 +315,10 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                                 child: LinearProgressIndicator(),
                               )
                             : null,
-
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15)),
                       ),
-                      isar().settings.getSync(0)!.listViewBooru
+                      settings.listViewBooru
                           ? SliverList.builder(
                               itemCount: cellCount,
                               itemBuilder: (context, index) {
@@ -297,10 +339,7 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                           : SliverGrid.builder(
                               gridDelegate:
                                   SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: isar()
-                                          .settings
-                                          .getSync(0)!
-                                          .picturesPerRow),
+                                      crossAxisCount: settings.picturesPerRow),
                               itemCount: cellCount,
                               itemBuilder: (context, indx) {
                                 var m = widget.getCell(indx);

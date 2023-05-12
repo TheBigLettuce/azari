@@ -3,7 +3,9 @@ import 'package:gallery/src/booru/infinite_scroll.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/directories.dart';
 import 'package:gallery/src/schemas/scroll_position.dart' as scroll_pos;
+import 'package:gallery/src/schemas/scroll_position_search.dart';
 import 'package:gallery/src/schemas/settings.dart';
+import 'package:gallery/src/schemas/tags.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
@@ -42,16 +44,13 @@ void main() async {
         "/": (context) => const Entry(),
         "/booru": (context) {
           var arguments = ModalRoute.of(context)!.settings.arguments;
-          var scroll = isar().scrollPositions.getSync(0);
+          var scroll = isar()
+              .scrollPositionPrimarys
+              .getSync(fastHash(getBooru().domain()));
           return BooruScroll.primary(
             initalScroll: scroll != null ? scroll.pos : 0,
             isar: isar(),
             clear: arguments != null ? arguments as bool : false,
-            updateScrollPosition: (pos) {
-              isar().writeTxnSync(() => isar()
-                  .scrollPositions
-                  .putSync(scroll_pos.ScrollPosition(pos)));
-            },
           );
         }
       },
@@ -119,6 +118,21 @@ class Entry extends StatelessWidget {
                     }
                   } else {
                     Navigator.of(context).pushReplacementNamed("/booru");
+                    var posTags = isar()
+                        .scrollPositionTags
+                        .getSync(fastHash(getBooru().domain()));
+                    if (posTags != null && posTags.tags.isNotEmpty) {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BooruScroll.restore(
+                              isar: isarPostsOnly(),
+                              tags: posTags.tags,
+                              initalScroll: posTags.pos,
+                              booruPage: posTags.page,
+                            ),
+                          ));
+                    }
                   }
                 });
               }

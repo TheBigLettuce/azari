@@ -16,9 +16,12 @@ class Directories extends StatefulWidget {
 }
 
 class _DirectoriesState extends State<Directories> {
+  final GlobalKey<ScaffoldState> _key = GlobalKey();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _key,
       appBar: AppBar(
         title: const Text("Gallery"),
         actions: () {
@@ -59,6 +62,8 @@ class _DirectoriesState extends State<Directories> {
           var cells = model.copy();
 
           return CellsWidget(
+            scaffoldKey: _key,
+            hasReachedEnd: () => true,
             refresh: () {
               return Future.value(cells.length);
             },

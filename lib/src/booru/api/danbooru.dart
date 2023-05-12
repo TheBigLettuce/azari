@@ -11,9 +11,12 @@ List<String> _fromDanbooruTags(List<dynamic> l) =>
 
 class Danbooru implements BooruAPI {
   @override
+  int? currentPage() => null;
+
+  @override
   Future<List<String>> completeTag(String tag) async {
     var req = http.get(
-      Uri.https("danbooru.donmai.us", " /tags.json", {
+      Uri.https("danbooru.donmai.us", "/tags.json", {
         "search[name_matches]": "$tag*",
         "order": "count",
         "limit": "10",

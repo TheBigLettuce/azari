@@ -8,6 +8,8 @@ import '../schemas/post.dart';
 abstract class BooruAPI {
   String name();
 
+  int? currentPage();
+
   String domain();
 
   Future<List<Post>> page(int p, String tags);

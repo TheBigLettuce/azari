@@ -16,16 +16,28 @@ class LostDownloads extends StatefulWidget {
 class _LostDownloadsState extends State<LostDownloads> {
   List<File>? _files;
   late final StreamSubscription<void> _updates;
-  //bool defunct = false;
+  final Downloader downloader = Downloader();
 
   @override
   void initState() {
     super.initState();
 
     _updates = isar().files.watchLazy(fireImmediately: true).listen((_) async {
-      var files = await isar().files.where().sortByDateDesc().findAll();
+      var filesInProgress = await isar()
+          .files
+          .filter()
+          .inProgressEqualTo(true)
+          .sortByDateDesc()
+          .findAll();
+      var files = await isar()
+          .files
+          .filter()
+          .inProgressEqualTo(false)
+          .sortByDateDesc()
+          .findAll();
+      filesInProgress.addAll(files);
       setState(() {
-        _files = files;
+        _files = filesInProgress;
       });
     });
   }
@@ -37,16 +49,7 @@ class _LostDownloadsState extends State<LostDownloads> {
     super.dispose();
   }
 
-  int _inProcess() {
-    int n = 0;
-    for (var e in _files!) {
-      if (e.inProgress && hasCancelKey(e.id!)) {
-        n++;
-      }
-    }
-
-    return n;
-  }
+  int _inProcess() => isar().files.filter().inProgressEqualTo(true).countSync();
 
   @override
   Widget build(BuildContext context) {
@@ -82,31 +85,19 @@ class _LostDownloadsState extends State<LostDownloads> {
                                       child: const Text("no")),
                                   TextButton(
                                       onPressed: () {
-                                        if (hasCancelKey(file.id!)) {
-                                          cancelAndRemoveToken(file.id!);
-                                          Navigator.pop(context);
-                                        } else {
-                                          downloadFile(
-                                              file.url, file.site, file.name,
-                                              oldid: file.id);
-                                          Navigator.pop(context);
-                                        }
+                                        downloader.retry(file);
+                                        Navigator.pop(context);
                                       },
                                       child: const Text("yes")),
                                 ],
-                                title: Text(hasCancelKey(file.id!)
-                                    ? "Stop the download?"
-                                    : "Retry?"),
+                                title: Text(downloader.downloadAction(file)),
                                 content: Text(file.name),
                               );
                             }));
                   },
                   title: Text("${_files![index].site}: ${_files![index].name}"),
-                  subtitle: Text(!hasCancelKey(_files![index].id!)
-                      ? "Failed"
-                      : _files![index].inProgress
-                          ? "In progress"
-                          : "Failed"),
+                  subtitle:
+                      Text(downloader.downloadDescription(_files![index])),
                 );
               },
             ),

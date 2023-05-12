@@ -27,18 +27,23 @@ const FileSchema = CollectionSchema(
       name: r'inProgress',
       type: IsarType.bool,
     ),
-    r'name': PropertySchema(
+    r'isFailed': PropertySchema(
       id: 2,
+      name: r'isFailed',
+      type: IsarType.bool,
+    ),
+    r'name': PropertySchema(
+      id: 3,
       name: r'name',
       type: IsarType.string,
     ),
     r'site': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'site',
       type: IsarType.string,
     ),
     r'url': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'url',
       type: IsarType.string,
     )
@@ -48,7 +53,34 @@ const FileSchema = CollectionSchema(
   deserialize: _fileDeserialize,
   deserializeProp: _fileDeserializeProp,
   idName: r'id',
-  indexes: {},
+  indexes: {
+    r'url': IndexSchema(
+      id: -5756857009679432345,
+      name: r'url',
+      unique: true,
+      replace: true,
+      properties: [
+        IndexPropertySchema(
+          name: r'url',
+          type: IndexType.hash,
+          caseSensitive: true,
+        )
+      ],
+    ),
+    r'name': IndexSchema(
+      id: 879695947855722453,
+      name: r'name',
+      unique: true,
+      replace: true,
+      properties: [
+        IndexPropertySchema(
+          name: r'name',
+          type: IndexType.hash,
+          caseSensitive: true,
+        )
+      ],
+    )
+  },
   links: {},
   embeddedSchemas: {},
   getId: _fileGetId,
@@ -77,9 +109,10 @@ void _fileSerialize(
 ) {
   writer.writeDateTime(offsets[0], object.date);
   writer.writeBool(offsets[1], object.inProgress);
-  writer.writeString(offsets[2], object.name);
-  writer.writeString(offsets[3], object.site);
-  writer.writeString(offsets[4], object.url);
+  writer.writeBool(offsets[2], object.isFailed);
+  writer.writeString(offsets[3], object.name);
+  writer.writeString(offsets[4], object.site);
+  writer.writeString(offsets[5], object.url);
 }
 
 File _fileDeserialize(
@@ -89,10 +122,11 @@ File _fileDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = File(
-    reader.readString(offsets[4]),
+    reader.readString(offsets[5]),
     reader.readBool(offsets[1]),
+    reader.readBool(offsets[2]),
+    reader.readString(offsets[4]),
     reader.readString(offsets[3]),
-    reader.readString(offsets[2]),
     id: id,
   );
   object.date = reader.readDateTime(offsets[0]);
@@ -111,10 +145,12 @@ P _fileDeserializeProp<P>(
     case 1:
       return (reader.readBool(offset)) as P;
     case 2:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 3:
       return (reader.readString(offset)) as P;
     case 4:
+      return (reader.readString(offset)) as P;
+    case 5:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -131,6 +167,112 @@ List<IsarLinkBase<dynamic>> _fileGetLinks(File object) {
 
 void _fileAttach(IsarCollection<dynamic> col, Id id, File object) {
   object.id = id;
+}
+
+extension FileByIndex on IsarCollection<File> {
+  Future<File?> getByUrl(String url) {
+    return getByIndex(r'url', [url]);
+  }
+
+  File? getByUrlSync(String url) {
+    return getByIndexSync(r'url', [url]);
+  }
+
+  Future<bool> deleteByUrl(String url) {
+    return deleteByIndex(r'url', [url]);
+  }
+
+  bool deleteByUrlSync(String url) {
+    return deleteByIndexSync(r'url', [url]);
+  }
+
+  Future<List<File?>> getAllByUrl(List<String> urlValues) {
+    final values = urlValues.map((e) => [e]).toList();
+    return getAllByIndex(r'url', values);
+  }
+
+  List<File?> getAllByUrlSync(List<String> urlValues) {
+    final values = urlValues.map((e) => [e]).toList();
+    return getAllByIndexSync(r'url', values);
+  }
+
+  Future<int> deleteAllByUrl(List<String> urlValues) {
+    final values = urlValues.map((e) => [e]).toList();
+    return deleteAllByIndex(r'url', values);
+  }
+
+  int deleteAllByUrlSync(List<String> urlValues) {
+    final values = urlValues.map((e) => [e]).toList();
+    return deleteAllByIndexSync(r'url', values);
+  }
+
+  Future<Id> putByUrl(File object) {
+    return putByIndex(r'url', object);
+  }
+
+  Id putByUrlSync(File object, {bool saveLinks = true}) {
+    return putByIndexSync(r'url', object, saveLinks: saveLinks);
+  }
+
+  Future<List<Id>> putAllByUrl(List<File> objects) {
+    return putAllByIndex(r'url', objects);
+  }
+
+  List<Id> putAllByUrlSync(List<File> objects, {bool saveLinks = true}) {
+    return putAllByIndexSync(r'url', objects, saveLinks: saveLinks);
+  }
+
+  Future<File?> getByName(String name) {
+    return getByIndex(r'name', [name]);
+  }
+
+  File? getByNameSync(String name) {
+    return getByIndexSync(r'name', [name]);
+  }
+
+  Future<bool> deleteByName(String name) {
+    return deleteByIndex(r'name', [name]);
+  }
+
+  bool deleteByNameSync(String name) {
+    return deleteByIndexSync(r'name', [name]);
+  }
+
+  Future<List<File?>> getAllByName(List<String> nameValues) {
+    final values = nameValues.map((e) => [e]).toList();
+    return getAllByIndex(r'name', values);
+  }
+
+  List<File?> getAllByNameSync(List<String> nameValues) {
+    final values = nameValues.map((e) => [e]).toList();
+    return getAllByIndexSync(r'name', values);
+  }
+
+  Future<int> deleteAllByName(List<String> nameValues) {
+    final values = nameValues.map((e) => [e]).toList();
+    return deleteAllByIndex(r'name', values);
+  }
+
+  int deleteAllByNameSync(List<String> nameValues) {
+    final values = nameValues.map((e) => [e]).toList();
+    return deleteAllByIndexSync(r'name', values);
+  }
+
+  Future<Id> putByName(File object) {
+    return putByIndex(r'name', object);
+  }
+
+  Id putByNameSync(File object, {bool saveLinks = true}) {
+    return putByIndexSync(r'name', object, saveLinks: saveLinks);
+  }
+
+  Future<List<Id>> putAllByName(List<File> objects) {
+    return putAllByIndex(r'name', objects);
+  }
+
+  List<Id> putAllByNameSync(List<File> objects, {bool saveLinks = true}) {
+    return putAllByIndexSync(r'name', objects, saveLinks: saveLinks);
+  }
 }
 
 extension FileQueryWhereSort on QueryBuilder<File, File, QWhere> {
@@ -204,6 +346,92 @@ extension FileQueryWhere on QueryBuilder<File, File, QWhereClause> {
         upper: upperId,
         includeUpper: includeUpper,
       ));
+    });
+  }
+
+  QueryBuilder<File, File, QAfterWhereClause> urlEqualTo(String url) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'url',
+        value: [url],
+      ));
+    });
+  }
+
+  QueryBuilder<File, File, QAfterWhereClause> urlNotEqualTo(String url) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'url',
+              lower: [],
+              upper: [url],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'url',
+              lower: [url],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'url',
+              lower: [url],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'url',
+              lower: [],
+              upper: [url],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
+
+  QueryBuilder<File, File, QAfterWhereClause> nameEqualTo(String name) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'name',
+        value: [name],
+      ));
+    });
+  }
+
+  QueryBuilder<File, File, QAfterWhereClause> nameNotEqualTo(String name) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'name',
+              lower: [],
+              upper: [name],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'name',
+              lower: [name],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'name',
+              lower: [name],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'name',
+              lower: [],
+              upper: [name],
+              includeUpper: false,
+            ));
+      }
     });
   }
 }
@@ -334,6 +562,15 @@ extension FileQueryFilter on QueryBuilder<File, File, QFilterCondition> {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'inProgress',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<File, File, QAfterFilterCondition> isFailedEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isFailed',
         value: value,
       ));
     });
@@ -753,6 +990,18 @@ extension FileQuerySortBy on QueryBuilder<File, File, QSortBy> {
     });
   }
 
+  QueryBuilder<File, File, QAfterSortBy> sortByIsFailed() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isFailed', Sort.asc);
+    });
+  }
+
+  QueryBuilder<File, File, QAfterSortBy> sortByIsFailedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isFailed', Sort.desc);
+    });
+  }
+
   QueryBuilder<File, File, QAfterSortBy> sortByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -827,6 +1076,18 @@ extension FileQuerySortThenBy on QueryBuilder<File, File, QSortThenBy> {
     });
   }
 
+  QueryBuilder<File, File, QAfterSortBy> thenByIsFailed() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isFailed', Sort.asc);
+    });
+  }
+
+  QueryBuilder<File, File, QAfterSortBy> thenByIsFailedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isFailed', Sort.desc);
+    });
+  }
+
   QueryBuilder<File, File, QAfterSortBy> thenByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -877,6 +1138,12 @@ extension FileQueryWhereDistinct on QueryBuilder<File, File, QDistinct> {
     });
   }
 
+  QueryBuilder<File, File, QDistinct> distinctByIsFailed() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isFailed');
+    });
+  }
+
   QueryBuilder<File, File, QDistinct> distinctByName(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -915,6 +1182,12 @@ extension FileQueryProperty on QueryBuilder<File, File, QQueryProperty> {
   QueryBuilder<File, bool, QQueryOperations> inProgressProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'inProgress');
+    });
+  }
+
+  QueryBuilder<File, bool, QQueryOperations> isFailedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isFailed');
     });
   }
 
