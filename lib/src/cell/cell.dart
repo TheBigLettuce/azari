@@ -6,7 +6,7 @@ class Cell {
   String path;
   String alias;
 
-  List<Widget>? Function() addInfo;
+  List<Widget>? Function(dynamic extra) addInfo;
 
   List<Widget>? Function() addButtons;
 

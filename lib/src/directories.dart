@@ -62,6 +62,8 @@ class _DirectoriesState extends State<Directories> {
           var cells = model.copy();
 
           return CellsWidget(
+            updateScrollPosition: (pos,
+                {double? infoPos, int? selectedCell}) {},
             scaffoldKey: _key,
             hasReachedEnd: () => true,
             refresh: () {

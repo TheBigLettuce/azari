@@ -9,22 +9,24 @@ import 'package:gallery/src/drawer.dart';
 import 'package:gallery/src/image/cells.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/scroll_position.dart' as sc_pos;
-import 'package:gallery/src/schemas/scroll_position_search.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:isar/isar.dart';
 
 import '../schemas/download_file.dart';
-import '../schemas/settings.dart';
+import '../schemas/grid_restore.dart';
+import '../schemas/secondary_grid.dart';
 import 'tags/tags.dart';
 
-void _updateScrollPrimary(double pos, int? page) {
+void _updateScrollPrimary(double pos, int? page, {double? tagPos}) {
   db.isar().writeTxnSync(() => db.isar().scrollPositionPrimarys.putSync(
-      sc_pos.ScrollPositionPrimary(pos, db.getBooru().domain(), page: page)));
+      sc_pos.ScrollPositionPrimary(pos, db.getBooru().domain(),
+          page: page, tagPos: tagPos)));
 }
 
-void _updateScrollSecondary(double pos, String tags, int? page) {
-  db.isar().writeTxnSync(() => db.isar().scrollPositionTags.putSync(
-      ScrollPositionTags(pos, db.getBooru().domain(), tags, page: page)));
+void _updateScrollSecondary(Isar isar, double pos, String tags, int? page,
+    {int? selectedPost, double? scrollPositionTags}) {
+  isar.writeTxnSync(() => isar.secondaryGrids.putSync(
+      SecondaryGrid(tags, scrollPositionTags, selectedPost, pos, page: page)));
 }
 
 class BooruScroll extends StatefulWidget {
@@ -33,14 +35,23 @@ class BooruScroll extends StatefulWidget {
   final double initalScroll;
   final bool clear;
   final int? booruPage;
+  final double? pageViewScrollingOffset;
+  final int? initalPost;
+  final List<GridRestore>? toRestore;
+
+  final void Function(String path)? closeDb;
 
   const BooruScroll.primary({
     super.key,
     required this.initalScroll,
     required this.isar,
     this.clear = false,
+    this.toRestore,
   })  : tags = "",
-        booruPage = null;
+        booruPage = null,
+        pageViewScrollingOffset = null,
+        initalPost = null,
+        closeDb = null;
 
   const BooruScroll.secondary({
     super.key,
@@ -48,15 +59,23 @@ class BooruScroll extends StatefulWidget {
     required this.tags,
   })  : initalScroll = 0,
         clear = true,
-        booruPage = null;
+        booruPage = null,
+        pageViewScrollingOffset = null,
+        initalPost = null,
+        closeDb = db.removeSecondaryGrid,
+        toRestore = null;
 
   const BooruScroll.restore(
       {super.key,
       required this.isar,
+      required this.toRestore,
+      required this.pageViewScrollingOffset,
+      required this.initalPost,
       required this.tags,
       required this.booruPage,
       required this.initalScroll})
-      : clear = false;
+      : clear = false,
+        closeDb = db.removeSecondaryGrid;
 
   @override
   State<BooruScroll> createState() => _BooruScrollState();
@@ -68,19 +87,24 @@ class _BooruScrollState extends State<BooruScroll> {
   late StreamSubscription<void> tagWatcher;
   List<String> tags = BooruTags().getLatest();
   final GlobalKey<ScaffoldState> _key = GlobalKey();
-  late final void Function(double pos) updateScrollPosition;
+  late final void Function(double pos, {double? infoPos, int? selectedCell})
+      updateScrollPosition;
   Downloader downloader = Downloader();
   bool reachedEnd = false;
 
   @override
   void initState() {
     if (widget.tags.isEmpty) {
-      updateScrollPosition =
-          (pos) => _updateScrollPrimary(pos, booru.currentPage());
+      updateScrollPosition = (pos, {double? infoPos, int? selectedCell}) =>
+          _updateScrollPrimary(pos, booru.currentPage(), tagPos: infoPos);
     } else {
-      updateScrollPosition = (pos) =>
-          _updateScrollSecondary(pos, widget.tags, booru.currentPage());
+      updateScrollPosition = (pos, {double? infoPos, int? selectedCell}) =>
+          _updateScrollSecondary(
+              widget.isar, pos, widget.tags, booru.currentPage(),
+              scrollPositionTags: infoPos, selectedPost: selectedCell);
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {});
 
     super.initState();
     if (widget.clear) {
@@ -96,8 +120,8 @@ class _BooruScrollState extends State<BooruScroll> {
   void dispose() {
     tagWatcher.cancel();
 
-    if (widget.tags.isNotEmpty) {
-      _updateScrollSecondary(0, "", 0);
+    if (widget.closeDb != null) {
+      widget.closeDb!(isar.name);
     }
 
     super.dispose();
@@ -125,12 +149,16 @@ class _BooruScrollState extends State<BooruScroll> {
 
   void _search(String t) {
     BooruTags().addLatest(t);
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) {
-      return BooruScroll.secondary(
-        isar: db.isarPostsOnly(),
-        tags: t,
-      );
-    }), ModalRoute.withName('/booru'));
+    db.newSecondaryGrid().then((value) {
+      Navigator.push(context, MaterialPageRoute(builder: (context) {
+        return BooruScroll.secondary(
+          isar: value,
+          tags: t,
+        );
+      }));
+    }).onError((error, stackTrace) {
+      print(error);
+    });
   }
 
   Future<void> _download(int i) async {
@@ -169,10 +197,6 @@ class _BooruScrollState extends State<BooruScroll> {
   Widget build(BuildContext context) {
     return WillPopScope(
         onWillPop: () {
-          if (widget.tags.isNotEmpty) {
-            Navigator.of(context).popUntil(ModalRoute.withName("/booru"));
-          }
-
           return Future.value(true);
         },
         child: Scaffold(
@@ -193,6 +217,9 @@ class _BooruScrollState extends State<BooruScroll> {
             initalScrollPosition: widget.initalScroll,
             initalCellCount: widget.clear ? 0 : isar.posts.countSync(),
             searchFilter: _searchFilter,
+            pageViewScrollingOffset: widget.pageViewScrollingOffset,
+            toRestore: widget.toRestore,
+            initalCell: widget.initalPost,
           ),
         ));
   }

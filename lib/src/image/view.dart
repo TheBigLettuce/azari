@@ -89,16 +89,20 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final T Function(int i) getCell;
   final int cellCount;
   final void Function(int post) scrollUntill;
+  final void Function(double pos, int selectedCell) updateTagScrollPos;
   final Future<int> Function()? onNearEnd;
   final Future Function(int i)? download;
+  final double? infoScrollOffset;
 
   const ImageView(
       {super.key,
+      required this.updateTagScrollPos,
       required this.cellCount,
       required this.scrollUntill,
       required this.startingCell,
       required this.getCell,
       required this.onNearEnd,
+      this.infoScrollOffset,
       this.download});
 
   @override
@@ -108,6 +112,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
 class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
   late PageController controller;
   late T currentCell;
+  late ScrollController scrollController;
   late int cellCount = widget.cellCount;
   bool refreshing = false;
 
@@ -117,6 +122,12 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
   @override
   void initState() {
     super.initState();
+
+    scrollController =
+        ScrollController(initialScrollOffset: widget.infoScrollOffset ?? 0);
+    if (widget.infoScrollOffset != null) {
+      showInfo = true;
+    }
 
     WidgetsBinding.instance.scheduleFrameCallback((_) {
       _loadNext(widget.startingCell);
@@ -129,6 +140,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
   @override
   void dispose() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    widget.updateTagScrollPos(0, 0);
     controller.dispose();
     super.dispose();
   }
@@ -256,27 +268,32 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
             if (showInfo) {
               list.add(Container(
                 decoration: BoxDecoration(color: Colors.black.withOpacity(0.5)),
-                child: ListView(children: () {
-                  List<Widget> list = [
-                    ListTile(
-                      title: const Text("Alias"),
-                      subtitle: Text(currentCell.alias),
-                    ),
-                    ListTile(
-                      title: const Text("Path"),
-                      subtitle: Text(currentCell.fileDisplayUrl()),
-                    ),
-                  ];
+                child: ListView(
+                    controller: scrollController,
+                    children: () {
+                      List<Widget> list = [
+                        ListTile(
+                          title: const Text("Alias"),
+                          subtitle: Text(currentCell.alias),
+                        ),
+                        ListTile(
+                          title: const Text("Path"),
+                          subtitle: Text(currentCell.fileDisplayUrl()),
+                        ),
+                      ];
 
-                  var addInfo = currentCell.addInfo();
-                  if (addInfo != null) {
-                    for (var widget in addInfo) {
-                      list.add(widget);
-                    }
-                  }
+                      var addInfo = currentCell.addInfo(() {
+                        widget.updateTagScrollPos(
+                            scrollController.offset, controller.page!.toInt());
+                      });
+                      if (addInfo != null) {
+                        for (var widget in addInfo) {
+                          list.add(widget);
+                        }
+                      }
 
-                  return list;
-                }()),
+                      return list;
+                    }()),
               ));
             }
 

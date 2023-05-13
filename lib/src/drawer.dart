@@ -45,22 +45,29 @@ Widget makeDrawer(BuildContext context, bool showBooru) {
 
         list.addAll([
           ListTile(
-            title: const Text("Tags"),
-            leading: const Icon(Icons.tag),
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => SearchBooru(
-                    onSubmitted: (tag) => Navigator.of(context)
-                        .push(MaterialPageRoute(builder: (context) {
-                      return BooruScroll.secondary(
-                        isar: isarPostsOnly(),
-                        tags: tag,
-                      );
-                    })),
-                  ),
-                )),
-          ),
+              title: const Text("Tags"),
+              leading: const Icon(Icons.tag),
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SearchBooru(
+                        onSubmitted: (tag) {
+                          newSecondaryGrid().then((value) {
+                            Navigator.of(context)
+                                .push(MaterialPageRoute(builder: (context) {
+                              return BooruScroll.secondary(
+                                isar: value,
+                                tags: tag,
+                              );
+                            }));
+                          }).onError((error, stackTrace) {
+                            print(error);
+                          });
+                        },
+                      ),
+                    ));
+              }),
           ListTile(
             title: const Text("Downloads"),
             leading: const Icon(Icons.download),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/settings.dart';
+import 'package:html_unescape/html_unescape_small.dart';
 
 import 'cell.dart';
 
@@ -30,16 +31,17 @@ class BooruCell extends Cell {
       required String tags,
       required this.sampleUrl,
       required void Function(String tag) onTagPressed})
-      : super(addInfo: () {
+      : super(addInfo: (dynamic extra) {
           var list = [
             const ListTile(
               title: Text("Tags"),
             )
           ];
           list.addAll(tags.split(' ').map((e) => ListTile(
-                title: Text(e),
+                title: Text(HtmlUnescape().convert(e)),
                 onTap: () {
                   onTagPressed(e);
+                  extra();
                 },
               )));
 

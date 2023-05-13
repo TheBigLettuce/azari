@@ -32,6 +32,11 @@ const ScrollPositionPrimarySchema = CollectionSchema(
       id: 2,
       name: r'pos',
       type: IsarType.double,
+    ),
+    r'tagPos': PropertySchema(
+      id: 3,
+      name: r'tagPos',
+      type: IsarType.double,
     )
   },
   estimateSize: _scrollPositionPrimaryEstimateSize,
@@ -67,6 +72,7 @@ void _scrollPositionPrimarySerialize(
   writer.writeString(offsets[0], object.id);
   writer.writeLong(offsets[1], object.page);
   writer.writeDouble(offsets[2], object.pos);
+  writer.writeDouble(offsets[3], object.tagPos);
 }
 
 ScrollPositionPrimary _scrollPositionPrimaryDeserialize(
@@ -79,6 +85,7 @@ ScrollPositionPrimary _scrollPositionPrimaryDeserialize(
     reader.readDouble(offsets[2]),
     reader.readString(offsets[0]),
     page: reader.readLongOrNull(offsets[1]),
+    tagPos: reader.readDoubleOrNull(offsets[3]),
   );
   return object;
 }
@@ -96,6 +103,8 @@ P _scrollPositionPrimaryDeserializeProp<P>(
       return (reader.readLongOrNull(offset)) as P;
     case 2:
       return (reader.readDouble(offset)) as P;
+    case 3:
+      return (reader.readDoubleOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -529,6 +538,90 @@ extension ScrollPositionPrimaryQueryFilter on QueryBuilder<
       ));
     });
   }
+
+  QueryBuilder<ScrollPositionPrimary, ScrollPositionPrimary,
+      QAfterFilterCondition> tagPosIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'tagPos',
+      ));
+    });
+  }
+
+  QueryBuilder<ScrollPositionPrimary, ScrollPositionPrimary,
+      QAfterFilterCondition> tagPosIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'tagPos',
+      ));
+    });
+  }
+
+  QueryBuilder<ScrollPositionPrimary, ScrollPositionPrimary,
+      QAfterFilterCondition> tagPosEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'tagPos',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<ScrollPositionPrimary, ScrollPositionPrimary,
+      QAfterFilterCondition> tagPosGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'tagPos',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<ScrollPositionPrimary, ScrollPositionPrimary,
+      QAfterFilterCondition> tagPosLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'tagPos',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<ScrollPositionPrimary, ScrollPositionPrimary,
+      QAfterFilterCondition> tagPosBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'tagPos',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
 }
 
 extension ScrollPositionPrimaryQueryObject on QueryBuilder<
@@ -578,6 +671,20 @@ extension ScrollPositionPrimaryQuerySortBy
       sortByPosDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'pos', Sort.desc);
+    });
+  }
+
+  QueryBuilder<ScrollPositionPrimary, ScrollPositionPrimary, QAfterSortBy>
+      sortByTagPos() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tagPos', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ScrollPositionPrimary, ScrollPositionPrimary, QAfterSortBy>
+      sortByTagPosDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tagPos', Sort.desc);
     });
   }
 }
@@ -639,6 +746,20 @@ extension ScrollPositionPrimaryQuerySortThenBy
       return query.addSortBy(r'pos', Sort.desc);
     });
   }
+
+  QueryBuilder<ScrollPositionPrimary, ScrollPositionPrimary, QAfterSortBy>
+      thenByTagPos() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tagPos', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ScrollPositionPrimary, ScrollPositionPrimary, QAfterSortBy>
+      thenByTagPosDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'tagPos', Sort.desc);
+    });
+  }
 }
 
 extension ScrollPositionPrimaryQueryWhereDistinct
@@ -661,6 +782,13 @@ extension ScrollPositionPrimaryQueryWhereDistinct
       distinctByPos() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'pos');
+    });
+  }
+
+  QueryBuilder<ScrollPositionPrimary, ScrollPositionPrimary, QDistinct>
+      distinctByTagPos() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'tagPos');
     });
   }
 }
@@ -688,6 +816,13 @@ extension ScrollPositionPrimaryQueryProperty on QueryBuilder<
   QueryBuilder<ScrollPositionPrimary, double, QQueryOperations> posProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'pos');
+    });
+  }
+
+  QueryBuilder<ScrollPositionPrimary, double?, QQueryOperations>
+      tagPosProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'tagPos');
     });
   }
 }

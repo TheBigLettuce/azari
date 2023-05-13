@@ -2,7 +2,6 @@ import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/excluded_tags.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/schemas/tags.dart';
-import 'package:isar/isar.dart';
 
 class BooruTags {
   LastTags _booruTagsLatest() {

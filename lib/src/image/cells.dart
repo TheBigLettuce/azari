@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/image/view.dart';
+import 'package:gallery/src/schemas/secondary_grid.dart';
 import 'package:gallery/src/schemas/settings.dart';
+import '../booru/infinite_scroll.dart';
 import '../cell/cell.dart';
 import '../cell/image_widget.dart';
+import '../schemas/grid_restore.dart';
 
 class CellsWidget<T extends Cell> extends StatefulWidget {
   final T Function(int) getCell;
@@ -14,7 +17,8 @@ class CellsWidget<T extends Cell> extends StatefulWidget {
   final Future<int> Function()? loadNext;
   final Future<void> Function(int indx)? onLongPress;
   final Future<int> Function() refresh;
-  final void Function(double pos)? updateScrollPosition;
+  final void Function(double pos, {double? infoPos, int? selectedCell})
+      updateScrollPosition;
   final double initalScrollPosition;
   final void Function(String value) search;
   final List<String> Function(String value)? searchFilter;
@@ -25,6 +29,9 @@ class CellsWidget<T extends Cell> extends StatefulWidget {
 
   final bool? hideAlias;
   final void Function(BuildContext context, int indx)? overrideOnPress;
+  final double? pageViewScrollingOffset;
+  final int? initalCell;
+  final List<GridRestore>? toRestore;
 
   const CellsWidget({
     Key? key,
@@ -32,11 +39,14 @@ class CellsWidget<T extends Cell> extends StatefulWidget {
     required this.initalScrollPosition,
     required this.scaffoldKey,
     required this.hasReachedEnd,
+    this.toRestore,
     this.searchFilter,
+    this.initalCell,
+    this.pageViewScrollingOffset,
     this.loadNext,
     required this.search,
     required this.refresh,
-    this.updateScrollPosition,
+    required this.updateScrollPosition,
     this.onLongPress,
     this.hideAlias,
     this.searchStartingValue = "",
@@ -86,6 +96,8 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
       });
     });
 
+    widget.updateScrollPosition(0);
+
     if (widget.initalCellCount != 0) {
       cellCount = widget.initalCellCount;
       refreshing = false;
@@ -93,13 +105,74 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
       _refresh();
     }
 
-    if (widget.updateScrollPosition != null) {
-      WidgetsBinding.instance.scheduleFrameCallback((_) {
-        controller.positions.first.isScrollingNotifier.addListener(() {
-          widget.updateScrollPosition!(controller.offset);
-        });
+    WidgetsBinding.instance.scheduleFrameCallback((_) {
+      if (widget.initalCell != null && widget.pageViewScrollingOffset != null) {
+        _onPressed(context, widget.initalCell!,
+            offset: widget.pageViewScrollingOffset);
+      }
+
+      if (widget.toRestore == null || widget.toRestore!.isEmpty) {
+        return;
+      }
+
+      for (true;;) {
+        if (widget.toRestore!.isEmpty) {
+          break;
+        }
+        var restore = widget.toRestore!.removeAt(0);
+
+        var isarR = restoreIsarGrid(restore.path);
+        var state = isarR.secondaryGrids.getSync(0);
+        if (state == null) {
+          removeSecondaryGrid(isarR.name);
+          continue;
+        }
+
+        Navigator.push(context, MaterialPageRoute(
+          builder: (context) {
+            return BooruScroll.restore(
+              isar: isarR,
+              tags: state.tags,
+              toRestore: widget.toRestore!.isEmpty ? null : widget.toRestore,
+              initalScroll: state.scrollPositionGrid,
+              pageViewScrollingOffset: state.scrollPositionTags,
+              initalPost: state.selectedPost,
+              booruPage: state.page,
+            );
+          },
+        ));
+        break;
+      }
+
+      controller.positions.first.isScrollingNotifier.addListener(() {
+        if (!refreshing) {
+          widget.updateScrollPosition(controller.offset);
+        }
+
+        /*if (widget.toRestore != null) {
+          var restore = widget.toRestore!.removeAt(0);
+
+          var isar = restoreIsarGrid(restore.path);
+          var state = isar.secondaryGrids.getSync(0);
+          if (state != null) {
+            Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return BooruScroll.restore(
+                  isar: isar,
+                  tags: state.tags,
+                  toRestore:
+                      widget.toRestore!.isEmpty ? null : widget.toRestore,
+                  initalScroll: state.scrollPositionGrid,
+                  pageViewScrollingOffset: state.scrollPositionTags,
+                  initalPost: state.selectedPost,
+                  booruPage: state.page,
+                );
+              },
+            ));
+          }
+        }*/
       });
-    }
+    });
 
     if (widget.loadNext == null) {
       return;
@@ -167,18 +240,21 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
       target = contentSize * (p / picPerRow - 1) / (cellCount / picPerRow);
     }
 
-    if (widget.updateScrollPosition != null) {
-      widget.updateScrollPosition!(target);
-    }
+    widget.updateScrollPosition(target);
 
     controller.jumpTo(target);
   }
 
-  void _onPressed(BuildContext context, int i) {
+  void _onPressed(BuildContext context, int i, {double? offset}) {
     focus.unfocus();
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return ImageView<T>(
+        updateTagScrollPos: (pos, selectedCell) => widget.updateScrollPosition(
+            controller.offset,
+            infoPos: pos,
+            selectedCell: selectedCell),
         scrollUntill: _scrollUntill,
+        infoScrollOffset: offset,
         getCell: widget.getCell,
         cellCount: cellCount,
         download: widget.onLongPress,
@@ -243,6 +319,10 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                             focusNode: focus,
                             controller: textController,
                             onSubmitted: (s) {
+                              if (refreshing) {
+                                return;
+                              }
+
                               if (widget.showBack) {
                                 setState(() {
                                   cellCount = 0;

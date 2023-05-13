@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../cell/directory.dart';
 import 'cells.dart';
-import 'view.dart';
 import '../models/images.dart';
 
 class Images extends StatefulWidget {
@@ -79,6 +78,8 @@ class _ImagesState extends State<Images> {
                     var cells = data.copy();
 
                     return CellsWidget(
+                      updateScrollPosition: (pos,
+                          {double? infoPos, int? selectedCell}) {},
                       scaffoldKey: _key,
                       refresh: () {
                         return Future.value(cells.length);
