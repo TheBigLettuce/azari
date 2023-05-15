@@ -19,8 +19,7 @@ void main() async {
 
   FlutterLocalNotificationsPlugin().initialize(
       const InitializationSettings(
-          android: AndroidInitializationSettings(
-              '@drawable/ic_launcher_foreground')),
+          android: AndroidInitializationSettings('ic_notification')),
       onDidReceiveNotificationResponse: (details) {},
       onDidReceiveBackgroundNotificationResponse: notifBackground);
 
@@ -50,12 +49,9 @@ void main() async {
               .scrollPositionPrimarys
               .getSync(fastHash(getBooru().domain()));
 
-          //isar().writeTxnSync(() => isar().gridRestores.clearSync());
-
           return BooruScroll.primary(
             initalScroll: scroll != null ? scroll.pos : 0,
             isar: isar(),
-            toRestore: isar().gridRestores.where().findAllSync(),
             clear: arguments != null ? arguments as bool : false,
           );
         }
@@ -67,8 +63,6 @@ void main() async {
 
 @pragma('vm:entry-point')
 void notifBackground(NotificationResponse res) {}
-
-//const platform = MethodChannel('lol.bruh19.azari.gallery/mediastore');
 
 class Entry extends StatelessWidget {
   const Entry({super.key});
@@ -114,16 +108,13 @@ class Entry extends StatelessWidget {
             builder: (context, snapshot) {
               if (snapshot.hasData) {
                 WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-                  var settings = isar().settings.getSync(0);
-                  if (settings!.enableGallery) {
-                    if (settings.booruDefault) {
-                      Navigator.of(context).pushReplacementNamed("/booru");
-                    } else {
-                      Navigator.of(context).pushReplacement(MaterialPageRoute(
-                          builder: (_) => const Directories()));
-                    }
-                  } else {
-                    Navigator.of(context).pushReplacementNamed("/booru");
+                  var settings = isar().settings.getSync(0)!;
+                  restoreState(context, true);
+                  if (settings.enableGallery && !settings.booruDefault) {
+                    Navigator.of(context)
+                        .pushReplacement(MaterialPageRoute(builder: (context) {
+                      return const Directories();
+                    }));
                   }
                 });
               }

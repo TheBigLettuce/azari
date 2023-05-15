@@ -11,7 +11,7 @@ import 'core.dart';
 
 import 'grid_list.dart';
 
-class DirectoryModel extends CoreModel with GridList<DirectoryCell> {
+class DirectoryModel extends CoreModel {
   //final Function(String dir, BuildContext context) onPressedFunc;
   String? _directorySetError;
 
@@ -46,7 +46,7 @@ class DirectoryModel extends CoreModel with GridList<DirectoryCell> {
   Future delete(int indx) async {}
 
   @override
-  Future refresh() => super.refreshFuture(fetchRes());
+  Future refresh() => Future.value(true);
 
   bool isDirectorySet() {
     var settings = isar().settings.getSync(0);

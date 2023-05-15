@@ -94,8 +94,37 @@ class _SearchBooruState extends State<SearchBooru> {
               ),
             ),
           ),
-          const ListTile(
-            title: Text("Last Tags"),
+          ListTile(
+            title: const Text("Last Tags"),
+            trailing: IconButton(
+                onPressed: () {
+                  Navigator.push(
+                      context,
+                      DialogRoute(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: const Text(
+                                "Are you sure you want to delete all the tags?"),
+                            actions: [
+                              TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text("no")),
+                              TextButton(
+                                  onPressed: () {
+                                    isar().writeTxnSync(
+                                        () => isar().lastTags.clearSync());
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text("yes"))
+                            ],
+                          );
+                        },
+                      ));
+                },
+                icon: const Icon(Icons.delete)),
           ),
           TagsWidget(
               tags: _lastTags,

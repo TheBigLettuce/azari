@@ -6,9 +6,11 @@ import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/image/view.dart';
 import 'package:gallery/src/schemas/secondary_grid.dart';
 import 'package:gallery/src/schemas/settings.dart';
+import 'package:isar/isar.dart';
 import '../booru/infinite_scroll.dart';
 import '../cell/cell.dart';
 import '../cell/image_widget.dart';
+import '../directories.dart';
 import '../schemas/grid_restore.dart';
 
 class CellsWidget<T extends Cell> extends StatefulWidget {
@@ -23,7 +25,7 @@ class CellsWidget<T extends Cell> extends StatefulWidget {
   final void Function(String value) search;
   final List<String> Function(String value)? searchFilter;
   final String searchStartingValue;
-  final bool showBack;
+  final void Function()? onBack;
   final GlobalKey<ScaffoldState> scaffoldKey;
   final bool Function() hasReachedEnd;
 
@@ -31,7 +33,10 @@ class CellsWidget<T extends Cell> extends StatefulWidget {
   final void Function(BuildContext context, int indx)? overrideOnPress;
   final double? pageViewScrollingOffset;
   final int? initalCell;
-  final List<GridRestore>? toRestore;
+
+  //final List<GridRestore>? toRestore;
+
+  final Stream<int>? progressTicker;
 
   const CellsWidget({
     Key? key,
@@ -39,7 +44,7 @@ class CellsWidget<T extends Cell> extends StatefulWidget {
     required this.initalScrollPosition,
     required this.scaffoldKey,
     required this.hasReachedEnd,
-    this.toRestore,
+    this.progressTicker,
     this.searchFilter,
     this.initalCell,
     this.pageViewScrollingOffset,
@@ -50,7 +55,7 @@ class CellsWidget<T extends Cell> extends StatefulWidget {
     this.onLongPress,
     this.hideAlias,
     this.searchStartingValue = "",
-    this.showBack = false,
+    this.onBack,
     this.initalCellCount = 0,
     this.overrideOnPress,
   }) : super(key: key);
@@ -79,9 +84,32 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
   late final StreamSubscription<Settings?> settingsWatcher;
   late int lastGridColCount = settings.picturesPerRow;
 
+  StreamSubscription<int>? ticker;
+
   @override
   void initState() {
     super.initState();
+
+    if (widget.progressTicker != null) {
+      ticker = widget.progressTicker!.listen((event) {
+        setState(() {
+          cellCount = event;
+        });
+      });
+    }
+
+    if (widget.pageViewScrollingOffset != null && widget.initalCell != null) {
+      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+        _onPressed(context, widget.initalCell!,
+            offset: widget.pageViewScrollingOffset);
+      });
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      controller.position.isScrollingNotifier.addListener(() {
+        widget.updateScrollPosition(controller.offset);
+      });
+    });
 
     settingsWatcher = isar().settings.watchObject(0).listen((event) {
       // not perfect, but fine
@@ -104,75 +132,6 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
     } else {
       _refresh();
     }
-
-    WidgetsBinding.instance.scheduleFrameCallback((_) {
-      if (widget.initalCell != null && widget.pageViewScrollingOffset != null) {
-        _onPressed(context, widget.initalCell!,
-            offset: widget.pageViewScrollingOffset);
-      }
-
-      if (widget.toRestore == null || widget.toRestore!.isEmpty) {
-        return;
-      }
-
-      for (true;;) {
-        if (widget.toRestore!.isEmpty) {
-          break;
-        }
-        var restore = widget.toRestore!.removeAt(0);
-
-        var isarR = restoreIsarGrid(restore.path);
-        var state = isarR.secondaryGrids.getSync(0);
-        if (state == null) {
-          removeSecondaryGrid(isarR.name);
-          continue;
-        }
-
-        Navigator.push(context, MaterialPageRoute(
-          builder: (context) {
-            return BooruScroll.restore(
-              isar: isarR,
-              tags: state.tags,
-              toRestore: widget.toRestore!.isEmpty ? null : widget.toRestore,
-              initalScroll: state.scrollPositionGrid,
-              pageViewScrollingOffset: state.scrollPositionTags,
-              initalPost: state.selectedPost,
-              booruPage: state.page,
-            );
-          },
-        ));
-        break;
-      }
-
-      controller.positions.first.isScrollingNotifier.addListener(() {
-        if (!refreshing) {
-          widget.updateScrollPosition(controller.offset);
-        }
-
-        /*if (widget.toRestore != null) {
-          var restore = widget.toRestore!.removeAt(0);
-
-          var isar = restoreIsarGrid(restore.path);
-          var state = isar.secondaryGrids.getSync(0);
-          if (state != null) {
-            Navigator.push(context, MaterialPageRoute(
-              builder: (context) {
-                return BooruScroll.restore(
-                  isar: isar,
-                  tags: state.tags,
-                  toRestore:
-                      widget.toRestore!.isEmpty ? null : widget.toRestore,
-                  initalScroll: state.scrollPositionGrid,
-                  pageViewScrollingOffset: state.scrollPositionTags,
-                  initalPost: state.selectedPost,
-                  booruPage: state.page,
-                );
-              },
-            ));
-          }
-        }*/
-      });
-    });
 
     if (widget.loadNext == null) {
       return;
@@ -206,6 +165,10 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
 
   @override
   void dispose() {
+    if (ticker != null) {
+      ticker!.cancel();
+    }
+
     focus.dispose();
     controller.dispose();
     textController.dispose();
@@ -240,12 +203,25 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
       target = contentSize * (p / picPerRow - 1) / (cellCount / picPerRow);
     }
 
+    if (target < controller.position.minScrollExtent) {
+      widget.updateScrollPosition(controller.position.minScrollExtent);
+      return;
+    } else if (target > controller.position.maxScrollExtent) {
+      widget.updateScrollPosition(controller.position.maxScrollExtent);
+      return;
+    }
+
     widget.updateScrollPosition(target);
 
     controller.jumpTo(target);
   }
 
   void _onPressed(BuildContext context, int i, {double? offset}) {
+    if (widget.overrideOnPress != null) {
+      widget.overrideOnPress!(context, i);
+      return;
+    }
+
     focus.unfocus();
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return ImageView<T>(
@@ -323,7 +299,7 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                                 return;
                               }
 
-                              if (widget.showBack) {
+                              if (widget.onBack != null) {
                                 setState(() {
                                   cellCount = 0;
                                 });
@@ -370,7 +346,7 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                                 isDense: true),
                           ),
                         ),
-                        actions: widget.showBack
+                        actions: widget.onBack != null
                             ? [
                                 IconButton(
                                     onPressed: () {
@@ -380,11 +356,9 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                                     icon: const Icon(Icons.menu))
                               ]
                             : null,
-                        leading: widget.showBack
+                        leading: widget.onBack != null
                             ? IconButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
+                                onPressed: widget.onBack,
                                 icon: const Icon(Icons.arrow_back))
                             : null,
                         snap: true,
@@ -406,12 +380,10 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                                 return ListTile(
                                   onTap: () => _onPressed(context, index),
                                   leading: CircleAvatar(
-                                    backgroundColor: Theme.of(context)
-                                        .colorScheme
-                                        .background,
-                                    backgroundImage: CachedNetworkImageProvider(
-                                        cell.thumbUrl),
-                                  ),
+                                      backgroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .background,
+                                      backgroundImage: cell.thumb()),
                                   title: Text(cell.name),
                                 );
                               },

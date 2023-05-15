@@ -2,7 +2,7 @@ import 'core.dart';
 
 import '../cell/cell.dart';
 
-mixin GridList<T extends Cell> on CoreModel {
+/*mixin GridList<T extends Cell> on CoreModel {
   final List<T> _list = [];
 
   //UnmodifiableListView<T> get directories => UnmodifiableListView(_list);
@@ -31,7 +31,7 @@ mixin GridList<T extends Cell> on CoreModel {
       }
     }).onError((e, s) => onError(e, s));
   }
-}
+}*/
 
 void _printToConsole(error, stackTrace) {
   print(error);

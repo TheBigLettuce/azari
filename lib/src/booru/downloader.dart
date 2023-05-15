@@ -136,6 +136,8 @@ class Downloader {
               category: AndroidNotificationCategory.progress,
               maxProgress: total,
               progress: count,
+              importance: Importance.low,
+              visibility: NotificationVisibility.private,
               indeterminate: total == -1,
               showProgress: true),
         ),

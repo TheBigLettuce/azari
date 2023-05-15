@@ -33,7 +33,21 @@ const GridRestoreSchema = CollectionSchema(
   deserialize: _gridRestoreDeserialize,
   deserializeProp: _gridRestoreDeserializeProp,
   idName: r'id',
-  indexes: {},
+  indexes: {
+    r'path': IndexSchema(
+      id: 8756705481922369689,
+      name: r'path',
+      unique: true,
+      replace: true,
+      properties: [
+        IndexPropertySchema(
+          name: r'path',
+          type: IndexType.hash,
+          caseSensitive: true,
+        )
+      ],
+    )
+  },
   links: {},
   embeddedSchemas: {},
   getId: _gridRestoreGetId,
@@ -103,6 +117,61 @@ List<IsarLinkBase<dynamic>> _gridRestoreGetLinks(GridRestore object) {
 void _gridRestoreAttach(
     IsarCollection<dynamic> col, Id id, GridRestore object) {
   object.id = id;
+}
+
+extension GridRestoreByIndex on IsarCollection<GridRestore> {
+  Future<GridRestore?> getByPath(String path) {
+    return getByIndex(r'path', [path]);
+  }
+
+  GridRestore? getByPathSync(String path) {
+    return getByIndexSync(r'path', [path]);
+  }
+
+  Future<bool> deleteByPath(String path) {
+    return deleteByIndex(r'path', [path]);
+  }
+
+  bool deleteByPathSync(String path) {
+    return deleteByIndexSync(r'path', [path]);
+  }
+
+  Future<List<GridRestore?>> getAllByPath(List<String> pathValues) {
+    final values = pathValues.map((e) => [e]).toList();
+    return getAllByIndex(r'path', values);
+  }
+
+  List<GridRestore?> getAllByPathSync(List<String> pathValues) {
+    final values = pathValues.map((e) => [e]).toList();
+    return getAllByIndexSync(r'path', values);
+  }
+
+  Future<int> deleteAllByPath(List<String> pathValues) {
+    final values = pathValues.map((e) => [e]).toList();
+    return deleteAllByIndex(r'path', values);
+  }
+
+  int deleteAllByPathSync(List<String> pathValues) {
+    final values = pathValues.map((e) => [e]).toList();
+    return deleteAllByIndexSync(r'path', values);
+  }
+
+  Future<Id> putByPath(GridRestore object) {
+    return putByIndex(r'path', object);
+  }
+
+  Id putByPathSync(GridRestore object, {bool saveLinks = true}) {
+    return putByIndexSync(r'path', object, saveLinks: saveLinks);
+  }
+
+  Future<List<Id>> putAllByPath(List<GridRestore> objects) {
+    return putAllByIndex(r'path', objects);
+  }
+
+  List<Id> putAllByPathSync(List<GridRestore> objects,
+      {bool saveLinks = true}) {
+    return putAllByIndexSync(r'path', objects, saveLinks: saveLinks);
+  }
 }
 
 extension GridRestoreQueryWhereSort
@@ -179,6 +248,51 @@ extension GridRestoreQueryWhere
         upper: upperId,
         includeUpper: includeUpper,
       ));
+    });
+  }
+
+  QueryBuilder<GridRestore, GridRestore, QAfterWhereClause> pathEqualTo(
+      String path) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'path',
+        value: [path],
+      ));
+    });
+  }
+
+  QueryBuilder<GridRestore, GridRestore, QAfterWhereClause> pathNotEqualTo(
+      String path) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'path',
+              lower: [],
+              upper: [path],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'path',
+              lower: [path],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'path',
+              lower: [path],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'path',
+              lower: [],
+              upper: [path],
+              includeUpper: false,
+            ));
+      }
     });
   }
 }

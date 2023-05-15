@@ -2,7 +2,7 @@ import '../cell/cell.dart';
 import 'core.dart';
 import 'grid_list.dart';
 
-class ImagesModel extends CoreModel with GridList<Cell> {
+/*class ImagesModel extends CoreModel with GridList<Cell> {
   String dir;
 
   void Function(List<Cell>)? onRefresh;
@@ -24,4 +24,4 @@ class ImagesModel extends CoreModel with GridList<Cell> {
       onRefresh = onChange;
 
   ImagesModel({required this.dir});
-}
+}*/

@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:octo_image/octo_image.dart';
 
 import 'cell.dart';
 import 'data.dart';
@@ -49,15 +50,18 @@ class _CellImageWidgetState<T extends Cell> extends State<CellImageWidget<T>> {
               children: [
                 LayoutBuilder(builder: (context, constraint) {
                   return Center(
-                    child: CachedNetworkImage(
-                      imageUrl: cellData.thumbUrl,
-                      alignment: Alignment.center,
-                      fit: BoxFit.cover,
-                      filterQuality: FilterQuality.high,
-                      width: constraint.maxWidth,
-                      height: constraint.maxHeight,
-                    ),
-                  );
+                      child: OctoImage(
+                    fadeOutDuration: const Duration(milliseconds: 1000),
+                    fadeInDuration: const Duration(milliseconds: 500),
+                    fadeInCurve: Curves.easeIn,
+                    fadeOutCurve: Curves.easeOut,
+                    image: cellData.thumb(),
+                    alignment: Alignment.center,
+                    fit: BoxFit.cover,
+                    filterQuality: FilterQuality.high,
+                    width: constraint.maxWidth,
+                    height: constraint.maxHeight,
+                  ));
                 }),
                 Container(
                   alignment: Alignment.bottomCenter,

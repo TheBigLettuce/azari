@@ -8,16 +8,16 @@ import '../cell/cell.dart';
 
 class PhotoGalleryPageVideo extends StatefulWidget {
   final String url;
-  const PhotoGalleryPageVideo({super.key, required this.url});
+  final bool localVideo;
+  const PhotoGalleryPageVideo(
+      {super.key, required this.url, required this.localVideo});
 
   @override
   State<PhotoGalleryPageVideo> createState() => _PhotoGalleryPageVideoState();
 }
 
 class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
-  late VideoPlayerController controller = VideoPlayerController.network(
-    widget.url,
-  );
+  late VideoPlayerController controller;
   ChewieController? chewieController;
   bool disposed = false;
   Object? error;
@@ -25,6 +25,16 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
   @override
   void initState() {
     super.initState();
+
+    if (widget.localVideo) {
+      controller = VideoPlayerController.contentUri(
+        Uri.parse(widget.url),
+      );
+    } else {
+      controller = VideoPlayerController.network(
+        widget.url,
+      );
+    }
 
     _initController();
   }
@@ -89,7 +99,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final T Function(int i) getCell;
   final int cellCount;
   final void Function(int post) scrollUntill;
-  final void Function(double pos, int selectedCell) updateTagScrollPos;
+  final void Function(double? pos, int? selectedCell) updateTagScrollPos;
   final Future<int> Function()? onNearEnd;
   final Future Function(int i)? download;
   final double? infoScrollOffset;
@@ -112,6 +122,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
 class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
   late PageController controller;
   late T currentCell;
+  late int currentPage = widget.startingCell;
   late ScrollController scrollController;
   late int cellCount = widget.cellCount;
   bool refreshing = false;
@@ -140,7 +151,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
   @override
   void dispose() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    widget.updateTagScrollPos(0, 0);
+    widget.updateTagScrollPos(null, null);
     controller.dispose();
     super.dispose();
   }
@@ -183,7 +194,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                   if (widget.download != null) {
                     list.add(IconButton(
                         onPressed: () {
-                          widget.download!(controller.page!.toInt());
+                          widget.download!(currentPage);
                         },
                         icon: const Icon(Icons.download)));
                   }
@@ -216,7 +227,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                   ? null
                   : () {
                       HapticFeedback.vibrate();
-                      widget.download!(controller.page!.toInt());
+                      widget.download!(currentPage);
                     },
               onTap: () {
                 if (!showAppBar) {
@@ -230,6 +241,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
               },
               child: PhotoViewGallery.builder(
                   onPageChanged: (index) async {
+                    currentPage = index;
                     _loadNext(index);
                     widget.scrollUntill(index);
 
@@ -240,24 +252,19 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                   pageController: controller,
                   itemCount: cellCount,
                   builder: (context, indx) {
-                    var fileUrl = widget.getCell(indx).fileDisplayUrl();
-                    var s = lookupMimeType(fileUrl);
-                    if (s == null) {
-                      return PhotoViewGalleryPageOptions.customChild(
-                          child: const Icon(Icons.error_outline));
-                    }
+                    var fileContent = widget.getCell(indx).fileDisplay();
 
-                    var type = s.split("/")[0];
-                    if (type == "video") {
+                    if (fileContent.type == "video") {
                       return PhotoViewGalleryPageOptions.customChild(
                           tightMode: true,
                           child: PhotoGalleryPageVideo(
-                            url: fileUrl,
+                            url: fileContent.videoPath!,
+                            localVideo: fileContent.isVideoLocal,
                           ));
-                    } else if (type == "image") {
+                    } else if (fileContent.type == "image") {
                       return PhotoViewGalleryPageOptions(
                           filterQuality: FilterQuality.high,
-                          imageProvider: NetworkImage(fileUrl));
+                          imageProvider: fileContent.image);
                     } else {
                       return PhotoViewGalleryPageOptions.customChild(
                           child: const Icon(Icons.error_outline));
@@ -278,13 +285,13 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                         ),
                         ListTile(
                           title: const Text("Path"),
-                          subtitle: Text(currentCell.fileDisplayUrl()),
+                          subtitle: Text(currentCell.fileDownloadUrl()),
                         ),
                       ];
 
                       var addInfo = currentCell.addInfo(() {
                         widget.updateTagScrollPos(
-                            scrollController.offset, controller.page!.toInt());
+                            scrollController.offset, currentPage);
                       });
                       if (addInfo != null) {
                         for (var widget in addInfo) {

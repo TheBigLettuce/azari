@@ -15,6 +15,7 @@ import 'package:isar/isar.dart';
 import '../schemas/download_file.dart';
 import '../schemas/grid_restore.dart';
 import '../schemas/secondary_grid.dart';
+import '../schemas/settings.dart';
 import 'tags/tags.dart';
 
 void _updateScrollPrimary(double pos, int? page, {double? tagPos}) {
@@ -37,7 +38,7 @@ class BooruScroll extends StatefulWidget {
   final int? booruPage;
   final double? pageViewScrollingOffset;
   final int? initalPost;
-  final List<GridRestore>? toRestore;
+  final bool toRestore;
 
   final void Function(String path)? closeDb;
 
@@ -46,8 +47,8 @@ class BooruScroll extends StatefulWidget {
     required this.initalScroll,
     required this.isar,
     this.clear = false,
-    this.toRestore,
   })  : tags = "",
+        toRestore = false,
         booruPage = null,
         pageViewScrollingOffset = null,
         initalPost = null,
@@ -59,22 +60,22 @@ class BooruScroll extends StatefulWidget {
     required this.tags,
   })  : initalScroll = 0,
         clear = true,
+        toRestore = false,
         booruPage = null,
         pageViewScrollingOffset = null,
         initalPost = null,
-        closeDb = db.removeSecondaryGrid,
-        toRestore = null;
+        closeDb = db.removeSecondaryGrid;
 
   const BooruScroll.restore(
       {super.key,
       required this.isar,
-      required this.toRestore,
       required this.pageViewScrollingOffset,
       required this.initalPost,
       required this.tags,
       required this.booruPage,
       required this.initalScroll})
       : clear = false,
+        toRestore = true,
         closeDb = db.removeSecondaryGrid;
 
   @override
@@ -84,7 +85,9 @@ class BooruScroll extends StatefulWidget {
 class _BooruScrollState extends State<BooruScroll> {
   late BooruAPI booru = db.getBooru(page: widget.booruPage);
   late Isar isar = widget.isar;
+  late Settings settings = db.isar().settings.getSync(0)!;
   late StreamSubscription<void> tagWatcher;
+  late StreamSubscription<Settings?> settingsWatcher;
   List<String> tags = BooruTags().getLatest();
   final GlobalKey<ScaffoldState> _key = GlobalKey();
   late final void Function(double pos, {double? infoPos, int? selectedCell})
@@ -94,6 +97,8 @@ class _BooruScrollState extends State<BooruScroll> {
 
   @override
   void initState() {
+    super.initState();
+
     if (widget.tags.isEmpty) {
       updateScrollPosition = (pos, {double? infoPos, int? selectedCell}) =>
           _updateScrollPrimary(pos, booru.currentPage(), tagPos: infoPos);
@@ -104,9 +109,6 @@ class _BooruScrollState extends State<BooruScroll> {
               scrollPositionTags: infoPos, selectedPost: selectedCell);
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {});
-
-    super.initState();
     if (widget.clear) {
       isar.writeTxnSync(() => isar.posts.clearSync());
     }
@@ -114,11 +116,18 @@ class _BooruScrollState extends State<BooruScroll> {
     tagWatcher = db.isar().lastTags.watchLazy().listen((_) {
       tags = BooruTags().getLatest();
     });
+
+    settingsWatcher = db.isar().settings.watchObject(0).listen((event) {
+      setState(() {
+        settings = event!;
+      });
+    });
   }
 
   @override
   void dispose() {
     tagWatcher.cancel();
+    settingsWatcher.cancel();
 
     if (widget.closeDb != null) {
       widget.closeDb!(isar.name);
@@ -197,18 +206,32 @@ class _BooruScrollState extends State<BooruScroll> {
   Widget build(BuildContext context) {
     return WillPopScope(
         onWillPop: () {
+          if (widget.tags.isNotEmpty) {
+            if (widget.toRestore) {
+              db.restoreStateNext(context, isar.name);
+            }
+          }
+
           return Future.value(true);
         },
         child: Scaffold(
           key: _key,
-          drawer: makeDrawer(context, false),
+          drawer: makeDrawer(context, false, settings.enableGallery),
           body: CellsWidget<BooruCell>(
             hasReachedEnd: () => reachedEnd,
             scaffoldKey: _key,
             getCell: (i) => isar.posts.getSync(i + 1)!.booruCell(_search),
             loadNext: _addLast,
             refresh: _clearAndRefresh,
-            showBack: widget.tags != "",
+            onBack: widget.tags.isEmpty
+                ? null
+                : () {
+                    if (widget.toRestore) {
+                      db.restoreStateNext(context, isar.name);
+                    } else {
+                      Navigator.pop(context);
+                    }
+                  },
             searchStartingValue: widget.tags,
             search: _search,
             hideAlias: true,
@@ -218,7 +241,6 @@ class _BooruScrollState extends State<BooruScroll> {
             initalCellCount: widget.clear ? 0 : isar.posts.countSync(),
             searchFilter: _searchFilter,
             pageViewScrollingOffset: widget.pageViewScrollingOffset,
-            toRestore: widget.toRestore,
             initalCell: widget.initalPost,
           ),
         ));

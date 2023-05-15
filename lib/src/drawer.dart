@@ -4,12 +4,9 @@ import 'package:gallery/src/booru/search.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/directories.dart';
 import 'package:gallery/src/lost_downloads.dart';
-import 'package:gallery/src/schemas/settings.dart' as scheme_settings;
 import 'settings.dart';
 
-Widget makeDrawer(BuildContext context, bool showBooru) {
-  var settings = isar().settings.getSync(0);
-
+Widget makeDrawer(BuildContext context, bool showBooru, bool showGallery) {
   return Drawer(
     child: ListView(
       padding: EdgeInsets.zero,
@@ -18,14 +15,14 @@ Widget makeDrawer(BuildContext context, bool showBooru) {
           const DrawerHeader(child: Text("Gallery")),
         ];
 
-        if (settings!.enableGallery) {
+        if (showGallery) {
           if (showBooru) {
             list.add(ListTile(
               title: const Text("Booru"),
               leading: const Icon(Icons.image),
               onTap: () {
-                Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, "/booru");
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
               },
             ));
           } else {
@@ -33,9 +30,8 @@ Widget makeDrawer(BuildContext context, bool showBooru) {
               title: const Text("Gallery"),
               leading: const Icon(Icons.photo_album),
               onTap: () {
-                Navigator.pop(context);
-                Navigator.pushReplacement(context,
-                    MaterialPageRoute(builder: (context) {
+                //Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) {
                   return const Directories();
                 }));
               },

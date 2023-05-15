@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/isar.dart';
-import 'package:gallery/src/directories.dart';
 import 'package:gallery/src/models/directory.dart';
 import 'package:gallery/src/schemas/settings.dart' as schema_settings;
 import 'package:provider/provider.dart';
@@ -19,11 +18,7 @@ class Settings extends StatefulWidget {
 class _SettingsState extends State<Settings> {
   late final StreamSubscription<schema_settings.Settings?> _watcher;
   schema_settings.Settings? _settings = isar().settings.getSync(0);
-  bool defaultChanged = false;
   bool booruChanged = false;
-
-  bool listViewChanged = false;
-  bool elemRowNumbChanged = false;
 
   @override
   void initState() {
@@ -53,27 +48,8 @@ class _SettingsState extends State<Settings> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () {
-        if (defaultChanged) {
-          if (_settings!.booruDefault) {
-            _popBooru();
-          } else {
-            Navigator.of(context)
-                .pushReplacement(MaterialPageRoute(builder: (context) {
-              return const Directories();
-            }));
-          }
-        }
-
-        if (!_settings!.booruDefault) {
-          return Future.value(true);
-        }
-
         if (booruChanged) {
           _popBooru();
-        }
-
-        if (elemRowNumbChanged || listViewChanged) {
-          Future.value(true);
         }
 
         return Future.value(true);
@@ -94,6 +70,10 @@ class _SettingsState extends State<Settings> {
             title: const Text("Enable gallery"),
             trailing: Switch(
               onChanged: null,
+              /*  (_) {
+                isar().writeTxnSync(() => isar().settings.putSync(
+                    _settings!.copy(enableGallery: !_settings!.enableGallery)));
+              },*/
               value: _settings!.enableGallery,
             ),
           ),
@@ -104,7 +84,6 @@ class _SettingsState extends State<Settings> {
             trailing: Switch(
               onChanged: _settings!.enableGallery
                   ? (value) {
-                      defaultChanged = true;
                       isar().writeTxnSync(() {
                         isar().settings.putSync(_settings!
                             .copy(booruDefault: !_settings!.booruDefault));
@@ -189,7 +168,6 @@ class _SettingsState extends State<Settings> {
               value: _settings!.listViewBooru,
               onChanged: (value) {
                 if (value != _settings!.listViewBooru) {
-                  listViewChanged = true;
                   isar().writeTxnSync(() => isar()
                       .settings
                       .putSync(_settings!.copy(listViewBooru: value)));
@@ -224,7 +202,6 @@ class _SettingsState extends State<Settings> {
                     ? null
                     : (value) {
                         if (value != _settings!.picturesPerRow) {
-                          elemRowNumbChanged = true;
                           isar().writeTxnSync(() => isar()
                               .settings
                               .putSync(_settings!.copy(picturesPerRow: value)));
