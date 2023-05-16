@@ -58,7 +58,7 @@ class _SettingsState extends State<Settings> {
         appBar: AppBar(title: const Text("Settings")),
         body: ListView(children: [
           ListTile(
-            title: const Text("Default Directory"),
+            title: const Text("Download directory"),
             subtitle: Text(_settings!.path),
             trailing: TextButton(
               onPressed: Provider.of<DirectoryModel>(context, listen: false)

@@ -47,21 +47,7 @@ Widget makeDrawer(BuildContext context, bool showBooru, bool showGallery) {
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => SearchBooru(
-                        onSubmitted: (tag) {
-                          newSecondaryGrid().then((value) {
-                            Navigator.of(context)
-                                .push(MaterialPageRoute(builder: (context) {
-                              return BooruScroll.secondary(
-                                isar: value,
-                                tags: tag,
-                              );
-                            }));
-                          }).onError((error, stackTrace) {
-                            print(error);
-                          });
-                        },
-                      ),
+                      builder: (context) => const SearchBooru(),
                     ));
               }),
           ListTile(

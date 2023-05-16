@@ -11,15 +11,21 @@ import 'package:introduction_screen/introduction_screen.dart';
 import 'package:isar/isar.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
+import 'package:system_theme/system_theme.dart';
 import 'src/models/directory.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initalizeIsar();
 
+  SystemTheme.fallbackColor = Colors.purpleAccent;
+  await SystemTheme.accentColor.load();
+
+  final accentColor = SystemTheme.accentColor.accent;
+
   FlutterLocalNotificationsPlugin().initialize(
       const InitializationSettings(
-          android: AndroidInitializationSettings('ic_notification')),
+          android: AndroidInitializationSettings('@drawable/ic_notification')),
       onDidReceiveNotificationResponse: (details) {},
       onDidReceiveBackgroundNotificationResponse: notifBackground);
 
@@ -32,14 +38,16 @@ void main() async {
     },
     child: MaterialApp(
       title: 'Welcome to Flutter',
-      darkTheme: ThemeData.dark(useMaterial3: true),
-      theme: ThemeData(
-        useMaterial3: true,
-        /*appBarTheme: const AppBarTheme(
+      darkTheme: ThemeData(
+          brightness: Brightness.dark,
+          useMaterial3: true,
+          colorSchemeSeed: accentColor),
+      theme: ThemeData(useMaterial3: true, colorSchemeSeed: accentColor
+          /*appBarTheme: const AppBarTheme(
             backgroundColor: Colors.white,
             foregroundColor: Colors.black,
           ),*/
-      ),
+          ),
       initialRoute: "/",
       routes: {
         "/": (context) => const Entry(),

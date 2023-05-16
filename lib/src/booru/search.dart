@@ -7,11 +7,12 @@ import 'package:gallery/src/schemas/excluded_tags.dart';
 import 'package:gallery/src/schemas/tags.dart';
 
 import '../db/isar.dart';
+import 'infinite_scroll.dart';
 import 'interface.dart';
 
 class SearchBooru extends StatefulWidget {
-  final void Function(String) onSubmitted;
-  const SearchBooru({super.key, required this.onSubmitted});
+  //final void Function(String) onSubmitted;
+  const SearchBooru({super.key});
 
   @override
   State<SearchBooru> createState() => _SearchBooruState();
@@ -41,6 +42,20 @@ class _SearchBooruState extends State<SearchBooru> {
       setState(() {
         _excludedTags = _tags.getExcluded();
       });
+    });
+  }
+
+  void _onTagPressed(String tag) {
+    _tags.addLatest(tag);
+    newSecondaryGrid().then((value) {
+      Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+        return BooruScroll.secondary(
+          isar: value,
+          tags: tag,
+        );
+      }));
+    }).onError((error, stackTrace) {
+      print(error);
     });
   }
 
@@ -87,10 +102,7 @@ class _SearchBooruState extends State<SearchBooru> {
                 decoration: const InputDecoration(
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(50)))),
-                onSubmitted: (value) {
-                  _tags.addLatest(value);
-                  widget.onSubmitted(value);
-                },
+                onSubmitted: _onTagPressed,
               ),
             ),
           ),
@@ -129,7 +141,7 @@ class _SearchBooruState extends State<SearchBooru> {
           TagsWidget(
               tags: _lastTags,
               deleteTag: _tags.deleteTag,
-              onPress: widget.onSubmitted),
+              onPress: _onTagPressed),
           ListTile(
             title: const Text("Excluded Tags"),
             trailing: IconButton(
@@ -203,9 +215,6 @@ class TagsWidget extends StatelessWidget {
                   child: ActionChip(
                     backgroundColor: redBackground
                         ? const Color.fromARGB(255, 243, 0, 113)
-                        : null,
-                    side: redBackground
-                        ? const BorderSide(color: Colors.white60)
                         : null,
                     label: Text(tag),
                     onPressed: onPress == null

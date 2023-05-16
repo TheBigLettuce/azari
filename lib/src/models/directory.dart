@@ -93,7 +93,7 @@ class DirectoryModel extends CoreModel {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       SystemChrome.setSystemUIOverlayStyle(
         SystemUiOverlayStyle(
-            systemNavigationBarColor: navBarColor.withOpacity(0)),
+            systemNavigationBarColor: navBarColor.withOpacity(0.5)),
       );
 
       return Future.value(true);

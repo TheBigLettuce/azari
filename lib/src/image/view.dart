@@ -49,9 +49,10 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
               autoInitialize: false,
               looping: true,
               allowPlaybackSpeedChanging: false,
+              showOptions: false,
+              showControls: false,
               allowMuting: false,
               showControlsOnInitialize: false,
-              showOptions: false,
               autoPlay: false);
         });
 

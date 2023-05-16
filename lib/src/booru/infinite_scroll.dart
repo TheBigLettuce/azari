@@ -157,6 +157,11 @@ class _BooruScrollState extends State<BooruScroll> {
   }
 
   void _search(String t) {
+    t = t.trim();
+    if (t.isEmpty) {
+      return;
+    }
+
     BooruTags().addLatest(t);
     db.newSecondaryGrid().then((value) {
       Navigator.push(context, MaterialPageRoute(builder: (context) {

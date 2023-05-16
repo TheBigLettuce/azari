@@ -107,7 +107,9 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       controller.position.isScrollingNotifier.addListener(() {
-        widget.updateScrollPosition(controller.offset);
+        if (!refreshing) {
+          widget.updateScrollPosition(controller.offset);
+        }
       });
     });
 
@@ -299,11 +301,6 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                                 return;
                               }
 
-                              if (widget.onBack != null) {
-                                setState(() {
-                                  cellCount = 0;
-                                });
-                              }
                               widget.search(s);
                             },
                             cursorOpacityAnimates: true,
