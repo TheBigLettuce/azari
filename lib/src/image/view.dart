@@ -1,8 +1,8 @@
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:photo_view/photo_view_gallery.dart';
-import 'package:mime/mime.dart';
 import 'package:video_player/video_player.dart';
 import '../cell/cell.dart';
 
@@ -181,33 +181,36 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
         extendBodyBehindAppBar: true,
         appBar: !showAppBar
             ? null
-            : AppBar(
-                backgroundColor: Colors.black.withOpacity(0.5),
-                title: Text(currentCell.alias),
-                actions: () {
-                  List<Widget> list = [];
+            : PreferredSize(
+                preferredSize: AppBar().preferredSize,
+                child: AppBar(
+                  backgroundColor: Colors.black.withOpacity(0.5),
+                  title: Text(currentCell.alias),
+                  actions: () {
+                    List<Widget> list = [];
 
-                  var addB = currentCell.addButtons();
-                  if (addB != null) {
-                    list.addAll(addB);
-                  }
+                    var addB = currentCell.addButtons();
+                    if (addB != null) {
+                      list.addAll(addB);
+                    }
 
-                  if (widget.download != null) {
+                    if (widget.download != null) {
+                      list.add(IconButton(
+                          onPressed: () {
+                            widget.download!(currentPage);
+                          },
+                          icon: const Icon(Icons.download)));
+                    }
+
                     list.add(IconButton(
-                        onPressed: () {
-                          widget.download!(currentPage);
-                        },
-                        icon: const Icon(Icons.download)));
-                  }
+                        onPressed: () => setState(() {
+                              showInfo = !showInfo;
+                            }),
+                        icon: const Icon(Icons.info_outline)));
 
-                  list.add(IconButton(
-                      onPressed: () => setState(() {
-                            showInfo = !showInfo;
-                          }),
-                      icon: const Icon(Icons.info_outline)));
-
-                  return list;
-                }(),
+                    return list;
+                  }(),
+                ).animate().fadeIn(),
               ),
         body: WillPopScope(
           onWillPop: () {
@@ -302,7 +305,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
 
                       return list;
                     }()),
-              ));
+              ).animate().fadeIn());
             }
 
             return list;

@@ -9,9 +9,7 @@ import '../cell/directory.dart';
 import '../db/isar.dart';
 import 'core.dart';
 
-import 'grid_list.dart';
-
-class DirectoryModel extends CoreModel {
+class DirectoyModel extends CoreModel {
   //final Function(String dir, BuildContext context) onPressedFunc;
   String? _directorySetError;
 
@@ -87,14 +85,6 @@ class DirectoryModel extends CoreModel {
         isar().writeTxnSync(
             () => isar().settings.putSync(settings.copy(picturesPerRow: 2)));
       }
-
-      await Permission.notification.request();
-
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle(
-            systemNavigationBarColor: navBarColor.withOpacity(0.5)),
-      );
 
       return Future.value(true);
     }

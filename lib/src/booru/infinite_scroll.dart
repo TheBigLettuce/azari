@@ -13,7 +13,6 @@ import 'package:gallery/src/schemas/tags.dart';
 import 'package:isar/isar.dart';
 
 import '../schemas/download_file.dart';
-import '../schemas/grid_restore.dart';
 import '../schemas/secondary_grid.dart';
 import '../schemas/settings.dart';
 import 'tags/tags.dart';

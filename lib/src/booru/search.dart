@@ -46,6 +46,11 @@ class _SearchBooruState extends State<SearchBooru> {
   }
 
   void _onTagPressed(String tag) {
+    tag = tag.trim();
+    if (tag.isEmpty) {
+      return;
+    }
+
     _tags.addLatest(tag);
     newSecondaryGrid().then((value) {
       Navigator.of(context).push(MaterialPageRoute(builder: (context) {

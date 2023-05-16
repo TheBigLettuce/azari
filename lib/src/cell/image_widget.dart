@@ -1,6 +1,5 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:octo_image/octo_image.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import 'cell.dart';
 import 'data.dart';
@@ -33,8 +32,6 @@ class _CellImageWidgetState<T extends Cell> extends State<CellImageWidget<T>> {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      splashColor: Colors.indigo,
-      hoverColor: Colors.indigoAccent,
       borderRadius: BorderRadius.circular(15.0),
       onTap: () {
         widget.onPressed(context, widget.indx);
@@ -50,11 +47,20 @@ class _CellImageWidgetState<T extends Cell> extends State<CellImageWidget<T>> {
               children: [
                 LayoutBuilder(builder: (context, constraint) {
                   return Center(
-                      child: OctoImage(
-                    fadeOutDuration: const Duration(milliseconds: 1000),
-                    fadeInDuration: const Duration(milliseconds: 500),
-                    fadeInCurve: Curves.easeIn,
-                    fadeOutCurve: Curves.easeOut,
+                      child: Image(
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) {
+                        return child.animate().fadeIn();
+                      }
+
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes!
+                                  .toDouble() /
+                              loadingProgress.cumulativeBytesLoaded.toDouble(),
+                        ),
+                      );
+                    },
                     image: cellData.thumb(),
                     alignment: Alignment.center,
                     fit: BoxFit.cover,

@@ -12,6 +12,7 @@ import 'package:gallery/src/schemas/secondary_grid.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_storage/saf.dart';
 import '../booru/infinite_scroll.dart';
 import '../schemas/settings.dart';
 
@@ -161,4 +162,46 @@ void removeSecondaryGrid(String name) {
     }
     isar().writeTxnSync(() => isar().gridRestores.deleteSync(grid.id!));
   }
+}
+
+Future<void> chooseDirectory(void Function(String) onError) async {
+  var settings = isar().settings.getSync(0) ?? Settings.empty();
+
+  var pickedDir = await openDocumentTree();
+  if (pickedDir == null) {
+    onError("Please choose a directory");
+    return;
+  }
+  var perm = await persistedUriPermissions();
+  if (perm == null || perm.isEmpty) {
+    onError("Cannot write in current directory.");
+    return;
+  }
+
+  var exist = false;
+
+  for (var element in perm) {
+    if (element.uri == pickedDir) {
+      exist = true;
+      break;
+    }
+  }
+
+  if (!exist) {
+    onError("Cannot write in current directory");
+  }
+
+  /*var canw = await (await pickedDir.toDocumentFile())!.canWrite();
+  if (canw ?? false) {
+    onError("Cannot write in the current directory");
+    return;
+  }*/
+
+  isar().writeTxnSync(
+    () {
+      isar().settings.putSync(settings.copy(path: pickedDir.toString()));
+    },
+  );
+
+  return Future.value();
 }

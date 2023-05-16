@@ -1,20 +1,15 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/cell/directory.dart';
 import 'package:gallery/src/schemas/directory.dart';
 import 'package:gallery/src/schemas/settings.dart';
-import 'package:gallery/src/schemas/thumbnail.dart';
 import 'package:isar/isar.dart';
 import 'package:photo_manager/photo_manager.dart';
-import 'package:provider/provider.dart';
-
 import 'db/isar.dart' as db;
 import 'drawer.dart';
 import 'image/cells.dart';
 import 'image/images.dart';
-import 'models/directory.dart';
 
 class Directories extends StatefulWidget {
   const Directories({super.key});
@@ -114,32 +109,25 @@ class _DirectoriesState extends State<Directories> {
         return Future.value(true);
       },
       child: Scaffold(
-        key: _key,
-        drawer: makeDrawer(context, true, settings.enableGallery),
-        body: Consumer<DirectoryModel>(
-          builder: (context, model, _) {
-            return CellsWidget<DirectoryCell>(
-              updateScrollPosition: (pos,
-                  {double? infoPos, int? selectedCell}) {},
-              scaffoldKey: _key,
-              progressTicker: thumbnailWatcher,
-              hasReachedEnd: () => true,
-              refresh: _refresh,
-              search: (s) {},
-              initalCellCount: isar.directorys.countSync(),
-              initalScrollPosition: 0,
-              onLongPress: model.delete,
-              getCell: (i) => isar.directorys.getSync(i + 1)!.cell(),
-              overrideOnPress: (context, indx) {
-                Navigator.push(context, MaterialPageRoute(builder: (context) {
-                  return Images(
-                      cell: isar.directorys.getSync(indx + 1)!.cell());
-                }));
-              },
-            );
-          },
-        ),
-      ),
+          key: _key,
+          drawer: makeDrawer(context, true, settings.enableGallery),
+          body: CellsWidget<DirectoryCell>(
+            updateScrollPosition: (pos,
+                {double? infoPos, int? selectedCell}) {},
+            scaffoldKey: _key,
+            progressTicker: thumbnailWatcher,
+            hasReachedEnd: () => true,
+            refresh: _refresh,
+            search: (s) {},
+            initalCellCount: isar.directorys.countSync(),
+            initalScrollPosition: 0,
+            getCell: (i) => isar.directorys.getSync(i + 1)!.cell(),
+            overrideOnPress: (context, indx) {
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return Images(cell: isar.directorys.getSync(indx + 1)!.cell());
+              }));
+            },
+          )),
     );
   }
 }

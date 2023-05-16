@@ -1,11 +1,18 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:gallery/src/schemas/download_file.dart';
+import 'package:gallery/src/schemas/download_file.dart' as dw_file;
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:isar/isar.dart';
+import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_storage/saf.dart';
 import '../db/isar.dart';
+import 'package:http/http.dart' as http;
 
 Downloader? _global;
 
@@ -20,6 +27,7 @@ class Download {
 
 class Downloader {
   int _inWork = 0;
+  final Dio dio = Dio();
   final int maximum;
   //final List<Download> _downloads = [];
   final Map<int, CancelToken> _tokens = {};
@@ -28,7 +36,7 @@ class Downloader {
   void _removeToken(int key) => _tokens.remove(key);
   bool _hasCancelKey(int id) => _tokens[id] != null;
 
-  void retry(File f) {
+  void retry(dw_file.File f) {
     if (f.isOnHold()) {
       isar().writeTxnSync(() => isar().files.putSync(f.failed()));
     } else if (_hasCancelKey(f.id!)) {
@@ -38,7 +46,7 @@ class Downloader {
     }
   }
 
-  String downloadAction(File f) {
+  String downloadAction(dw_file.File f) {
     if (f.isOnHold() || _hasCancelKey(f.id!)) {
       return "Cancel the download?";
     } else {
@@ -46,7 +54,7 @@ class Downloader {
     }
   }
 
-  String downloadDescription(File f) {
+  String downloadDescription(dw_file.File f) {
     if (f.isOnHold()) {
       return "On hold";
     }
@@ -90,7 +98,14 @@ class Downloader {
     }
   }
 
-  void add(File download) {
+  void add(dw_file.File download) async {
+    //var settings = isar().settings.getSync(0)!;
+    /*var canw = await canWrite(Uri.parse(settings.path));
+    if (canw ?? false) {
+      print("cant write");
+      return;
+    }*/
+
     if (download.id != null && _hasCancelKey(download.id!)) {
       return;
     }
@@ -106,13 +121,22 @@ class Downloader {
     }
   }
 
-  void _download(File d) async {
-    if (!await Permission.manageExternalStorage.isGranted) {
+  void _download(dw_file.File d) async {
+    var tempd = await getTemporaryDirectory();
+    var dirpath = path.joinAll([tempd.path, d.site]);
+    try {
+      await Directory(dirpath).create();
+    } catch (e) {
+      print("while creating directory $dirpath: $e");
       return;
     }
 
-    var filePath =
-        path.joinAll([isar().settings.getSync(0)!.path, d.site, d.name]);
+    var filePath = path.joinAll([tempd.path, d.site, d.name]);
+
+    // can it throw 🤔
+    if (File(filePath).existsSync()) {
+      _done();
+    }
 
     Dio().download(d.url, filePath,
         cancelToken: _tokens[d.id],
@@ -136,7 +160,7 @@ class Downloader {
               category: AndroidNotificationCategory.progress,
               maxProgress: total,
               progress: count,
-              // visibility: NotificationVisibility.private,
+              visibility: NotificationVisibility.private,
               indeterminate: total == -1,
               showProgress: true),
         ),
@@ -156,7 +180,66 @@ class Downloader {
         },
       );
       FlutterLocalNotificationsPlugin().cancel(d.id!);
-    }).whenComplete(_done);
+    }).whenComplete(() async {
+      try {
+        var fileFrom = File(filePath).openRead();
+
+        var settings = isar().settings.getSync(0)!;
+        var f = await Uri.parse(settings.path).toDocumentFile();
+        if (f == null) {
+          return;
+        }
+
+        var child = await f.child(d.site, requiresWriteAccess: true);
+        child ??= await f.createDirectory(d.site);
+
+        if (child == null) {
+          return;
+        }
+
+        var fileTo = await child.createFile(
+          displayName: d.name,
+          mimeType: lookupMimeType(d.name)!,
+        );
+        if (fileTo == null) {
+          return;
+        }
+
+        var subsc = fileFrom.listen(null);
+        subsc.onData((event) async {
+          bool? result;
+          try {
+            result = await fileTo.writeToFileAsBytes(
+                bytes: Uint8List.fromList(event), mode: FileMode.append);
+          } catch (_) {
+            subsc.cancel();
+          }
+
+          if (result == null || !result) {
+            subsc.cancel();
+          }
+        });
+        subsc.onDone(() {
+          try {
+            File(filePath).deleteSync();
+          } catch (_) {}
+          _done();
+        });
+      } catch (e) {
+        print("while writting the downloaded file to uri: $e");
+
+        try {
+          File(filePath).deleteSync();
+        } catch (_) {}
+
+        isar().writeTxnSync(
+          () {
+            _removeToken(d.id!);
+            isar().files.putSync(d.failed());
+          },
+        );
+      }
+    });
   }
 
   Downloader._new(this.maximum);

@@ -1,17 +1,12 @@
 import 'dart:async';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/image/view.dart';
-import 'package:gallery/src/schemas/secondary_grid.dart';
 import 'package:gallery/src/schemas/settings.dart';
-import 'package:isar/isar.dart';
-import '../booru/infinite_scroll.dart';
 import '../cell/cell.dart';
 import '../cell/image_widget.dart';
-import '../directories.dart';
-import '../schemas/grid_restore.dart';
 
 class CellsWidget<T extends Cell> extends StatefulWidget {
   final T Function(int) getCell;
@@ -380,9 +375,9 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                                       backgroundColor: Theme.of(context)
                                           .colorScheme
                                           .background,
-                                      backgroundImage: cell.thumb()),
+                                      foregroundImage: cell.thumb()),
                                   title: Text(cell.name),
-                                );
+                                ).animate().fadeIn();
                               },
                             )
                           : SliverGrid.builder(
@@ -405,7 +400,7 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                                             print(error);
                                           });
                                         }, //extend: maxExtend,
-                                );
+                                ).animate().fadeIn();
                               },
                             )
                     ],

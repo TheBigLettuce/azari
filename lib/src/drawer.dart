@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:gallery/src/booru/infinite_scroll.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/search.dart';
-import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/directories.dart';
 import 'package:gallery/src/lost_downloads.dart';
 import 'settings.dart';
@@ -12,7 +11,12 @@ Widget makeDrawer(BuildContext context, bool showBooru, bool showGallery) {
       padding: EdgeInsets.zero,
       children: () {
         List<Widget> list = [
-          const DrawerHeader(child: Text("Gallery")),
+          DrawerHeader(
+              child: Center(
+            child: const Icon(
+              IconData(0x963F),
+            ).animate().shake(),
+          )),
         ];
 
         if (showGallery) {

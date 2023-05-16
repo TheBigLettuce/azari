@@ -1,10 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/isar.dart';
-import 'package:gallery/src/models/directory.dart';
 import 'package:gallery/src/schemas/settings.dart' as schema_settings;
-import 'package:provider/provider.dart';
 
 import 'schemas/settings.dart';
 
@@ -44,6 +44,21 @@ class _SettingsState extends State<Settings> {
         .pushReplacementNamed("/booru", arguments: booruChanged);
   }
 
+  showDialog(String s) {
+    Navigator.of(context).push(DialogRoute(
+        context: context,
+        builder: (context) => AlertDialog(
+              actions: [
+                TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text("ok"))
+              ],
+              content: Text(s),
+            )));
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -61,8 +76,9 @@ class _SettingsState extends State<Settings> {
             title: const Text("Download directory"),
             subtitle: Text(_settings!.path),
             trailing: TextButton(
-              onPressed: Provider.of<DirectoryModel>(context, listen: false)
-                  .pickDirectory,
+              onPressed: () async {
+                await chooseDirectory(showDialog);
+              },
               child: const Text("pick new"),
             ),
           ),

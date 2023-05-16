@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:isar/isar.dart';
-import 'package:transparent_image/transparent_image.dart';
 
 import '../cell/directory.dart';
 
