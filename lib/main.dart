@@ -12,17 +12,16 @@ import 'package:gallery/src/schemas/tags.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_storage/shared_storage.dart';
-import 'package:system_theme/system_theme.dart';
+//import 'package:shared_storage/shared_storage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initalizeIsar();
 
-  SystemTheme.fallbackColor = Colors.purpleAccent;
-  await SystemTheme.accentColor.load();
+  //SystemTheme.fallbackColor = Colors.purpleAccent;
+  //await SystemTheme.accentColor.load();
 
-  final accentColor = SystemTheme.accentColor.accent;
+  final accentColor = Colors.pink;
 
   FlutterLocalNotificationsPlugin().initialize(
       const InitializationSettings(
@@ -100,7 +99,7 @@ class Entry extends StatelessWidget {
       }
     }
 
-    bool validUri(String s) => Uri.tryParse(s) == null;
+    bool validUri(String s) => Uri.tryParse(s) != null;
 
     if (settings.path.isEmpty || !validUri(settings.path)) {
       return IntroductionScreen(

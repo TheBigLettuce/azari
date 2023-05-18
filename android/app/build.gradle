@@ -55,24 +55,24 @@ android {
         applicationId "lol.bruh19.azari.gallery"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-build-configuration.
-        minSdkVersion 19
+        minSdkVersion 21
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
 
     signingConfigs {
-       release {
-           keyAlias keystoreProperties['keyAlias']
-           keyPassword keystoreProperties['keyPassword']
-           storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
-           storePassword keystoreProperties['storePassword']
-       }
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storePassword keystoreProperties['storePassword']
+        }
     }
     buildTypes {
-       release {
-           signingConfig signingConfigs.release
-       }
+        release {
+            signingConfig signingConfigs.release
+        }
         debug {
             applicationIdSuffix 'debug'
         }
@@ -80,6 +80,7 @@ android {
             applicationIdSuffix 'profile'
         }
     }
+    namespace 'lol.bruh19.azari.gallery'
 }
 
 flutter {
@@ -88,7 +89,11 @@ flutter {
 
 dependencies {
     implementation 'androidx.window:window:1.0.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'
     implementation 'androidx.window:window-java:1.0.0'
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
+    implementation "androidx.activity:activity-ktx:1.7.1"
+    implementation "androidx.documentfile:documentfile:1.0.1"
+    implementation "com.squareup.okio:okio:3.3.0"
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs_nio:2.0.3'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }

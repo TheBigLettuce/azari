@@ -57,7 +57,7 @@ class Gelbooru implements BooruAPI {
   Future<List<Post>> _commonPosts(String tags, int p) async {
     String excludedTagsString;
 
-    var excludedTags = BooruTags().getExcluded().map((e) => "-$e").toList();
+    var excludedTags = BooruTags().getExcluded().map((e) => "-$e ").toList();
     if (excludedTags.isNotEmpty) {
       excludedTagsString =
           excludedTags.reduce((value, element) => value + element);

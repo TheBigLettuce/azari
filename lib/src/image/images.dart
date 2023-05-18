@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:photo_manager/photo_manager.dart';
 import '../cell/cell.dart';
 import '../cell/directory.dart';
 import 'cells.dart';
 
-class Images extends StatefulWidget {
+/*class Images extends StatefulWidget {
   final DirectoryCell cell;
   const Images({super.key, required this.cell});
 
@@ -118,4 +117,4 @@ class _ImagesState extends State<Images> {
       ),
     );
   }
-}
+}*/

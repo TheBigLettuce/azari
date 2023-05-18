@@ -1,11 +1,10 @@
 import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
-import 'package:photo_manager/photo_manager.dart';
 
 import 'data.dart';
 
-class ImageCell extends Cell {
+/*class ImageCell extends Cell {
   Uint8List thumb;
   AssetEntity entity;
   String? videoUri;
@@ -39,7 +38,7 @@ class ImageCell extends Cell {
     required super.alias,
     required super.path,
   });
-}
+}*/
 
 class Content {
   String type;

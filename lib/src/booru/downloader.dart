@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:async/async.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/schemas/download_file.dart' as dw_file;
 import 'package:gallery/src/schemas/settings.dart';
@@ -10,7 +12,6 @@ import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_storage/saf.dart';
 import '../db/isar.dart';
 import 'package:http/http.dart' as http;
 
@@ -29,8 +30,8 @@ class Downloader {
   int _inWork = 0;
   final Dio dio = Dio();
   final int maximum;
-  //final List<Download> _downloads = [];
   final Map<int, CancelToken> _tokens = {};
+  final _downloaderPlatform = const MethodChannel("lol.bruh19.azari.gallery");
 
   void _addToken(int key, CancelToken t) => _tokens[key] = t;
   void _removeToken(int key) => _tokens.remove(key);
@@ -121,25 +122,69 @@ class Downloader {
     }
   }
 
+  void removeFailed() {
+    isar().writeTxnSync(() {
+      var failed = isar()
+          .files
+          .filter()
+          .isFailedEqualTo(true)
+          .findAllSync()
+          .map((e) => e.id!)
+          .toList();
+      if (failed.isNotEmpty) {
+        isar().files.deleteAllSync(failed);
+      }
+    });
+  }
+
+  void markStale() {
+    isar().writeTxnSync(() {
+      List<dw_file.File> toUpdate = [];
+
+      var inProgress =
+          isar().files.filter().inProgressEqualTo(true).findAllSync();
+      for (var element in inProgress) {
+        if (_tokens[element.id!] == null) {
+          toUpdate.add(element.failed());
+        }
+      }
+
+      if (toUpdate.isNotEmpty) {
+        isar().files.putAllSync(toUpdate);
+      }
+    });
+  }
+
   void _download(dw_file.File d) async {
-    var tempd = await getTemporaryDirectory();
-    var dirpath = path.joinAll([tempd.path, d.site]);
+    var downloadtd = Directory(
+        path.joinAll([(await getTemporaryDirectory()).path, "downloads"]));
+
+    var dirpath = path.joinAll([downloadtd.path, d.site]);
     try {
+      if (!downloadtd.existsSync()) {
+        downloadtd.createSync();
+      }
       await Directory(dirpath).create();
     } catch (e) {
       print("while creating directory $dirpath: $e");
       return;
     }
 
-    var filePath = path.joinAll([tempd.path, d.site, d.name]);
+    var filePath = path.joinAll([downloadtd.path, d.site, d.name]);
 
     // can it throw 🤔
     if (File(filePath).existsSync()) {
+      print("file exist: $filePath");
       _done();
+      return;
     }
 
-    Dio().download(d.url, filePath,
+    dio.download(d.url, filePath,
         cancelToken: _tokens[d.id],
+        options: Options(headers: {
+          "user-agent":
+              "Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0"
+        }),
         deleteOnError: true, onReceiveProgress: ((count, total) {
       if (count == total || !_hasCancelKey(d.id!)) {
         FlutterLocalNotificationsPlugin().cancel(d.id!);
@@ -165,81 +210,60 @@ class Downloader {
               showProgress: true),
         ),
       );
-    })).then((value) {
-      isar().writeTxnSync(
-        () {
-          _removeToken(d.id!);
-          isar().files.deleteSync(d.id!);
-        },
-      );
-    }).onError((error, stackTrace) {
-      isar().writeTxnSync(
-        () {
-          _removeToken(d.id!);
-          isar().files.putSync(d.failed());
-        },
-      );
-      FlutterLocalNotificationsPlugin().cancel(d.id!);
-    }).whenComplete(() async {
+    })).then((value) async {
       try {
-        var fileFrom = File(filePath).openRead();
-
         var settings = isar().settings.getSync(0)!;
-        var f = await Uri.parse(settings.path).toDocumentFile();
-        if (f == null) {
-          return;
-        }
 
-        var child = await f.child(d.site, requiresWriteAccess: true);
-        child ??= await f.createDirectory(d.site);
+        _downloaderPlatform.invokeMethod("move",
+            {"source": filePath, "rootUri": settings.path, "dir": d.site});
 
-        if (child == null) {
-          return;
-        }
-
-        var fileTo = await child.createFile(
-          displayName: d.name,
-          mimeType: lookupMimeType(d.name)!,
+        isar().writeTxnSync(
+          () {
+            _removeToken(d.id!);
+            isar().files.deleteSync(d.id!);
+          },
         );
-        if (fileTo == null) {
-          return;
-        }
 
-        var subsc = fileFrom.listen(null);
-        subsc.onData((event) async {
-          bool? result;
-          try {
-            result = await fileTo.writeToFileAsBytes(
-                bytes: Uint8List.fromList(event), mode: FileMode.append);
-          } catch (_) {
-            subsc.cancel();
-          }
-
-          if (result == null || !result) {
-            subsc.cancel();
-          }
-        });
-        subsc.onDone(() {
-          try {
-            File(filePath).deleteSync();
-          } catch (_) {}
-          _done();
-        });
+        _done();
       } catch (e) {
         print("while writting the downloaded file to uri: $e");
-
-        try {
-          File(filePath).deleteSync();
-        } catch (_) {}
-
         isar().writeTxnSync(
           () {
             _removeToken(d.id!);
             isar().files.putSync(d.failed());
           },
         );
+
+        _done();
       }
+    }).onError((DioError error, stackTrace) {
+      // print("d: ${error.message}, ${error.response!.data}");
+      isar().writeTxnSync(
+        () {
+          _removeToken(d.id!);
+          isar().files.putSync(d.failed());
+        },
+      );
+
+      FlutterLocalNotificationsPlugin().cancel(d.id!);
     });
+  }
+
+  void _removeTempContentsDownloads() async {
+    try {
+      var tempd = await getTemporaryDirectory();
+      var downld = Directory(path.join(tempd.path, "downloads"));
+      if (!downld.existsSync()) {
+        return;
+      }
+
+      downld.list().map((event) {
+        print("deleted: ${event.path}");
+        event.deleteSync(recursive: true);
+      }).drain();
+    } catch (e) {
+      print("while deleting temp directories: $e");
+    }
   }
 
   Downloader._new(this.maximum);
@@ -249,6 +273,7 @@ class Downloader {
       return _global!;
     } else {
       _global = Downloader._new(6);
+      _global!._removeTempContentsDownloads();
       return _global!;
     }
   }

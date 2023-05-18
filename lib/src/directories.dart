@@ -5,11 +5,9 @@ import 'package:gallery/src/cell/directory.dart';
 import 'package:gallery/src/schemas/directory.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:isar/isar.dart';
-import 'package:photo_manager/photo_manager.dart';
 import 'db/isar.dart' as db;
 import 'drawer.dart';
 import 'image/cells.dart';
-import 'image/images.dart';
 
 class Directories extends StatefulWidget {
   const Directories({super.key});
@@ -61,7 +59,7 @@ class _DirectoriesState extends State<Directories> {
   }
 
   Future<int> _refresh() async {
-    try {
+    /*try {
       await PhotoManager.getAssetPathList(
         hasAll: false,
       ).then((value) async {
@@ -90,7 +88,7 @@ class _DirectoriesState extends State<Directories> {
       });
     } catch (e) {
       print(e);
-    }
+    }*/
 
     return isar.directorys.count();
   }
@@ -123,9 +121,9 @@ class _DirectoriesState extends State<Directories> {
             initalScrollPosition: 0,
             getCell: (i) => isar.directorys.getSync(i + 1)!.cell(),
             overrideOnPress: (context, indx) {
-              Navigator.push(context, MaterialPageRoute(builder: (context) {
-                return Images(cell: isar.directorys.getSync(indx + 1)!.cell());
-              }));
+              //  Navigator.push(context, MaterialPageRoute(builder: (context) {
+              //   return Images(cell: isar.directorys.getSync(indx + 1)!.cell());
+              // }));
             },
           )),
     );

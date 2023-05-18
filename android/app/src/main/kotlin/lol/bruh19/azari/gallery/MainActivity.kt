@@ -1,105 +1,170 @@
 package lol.bruh19.azari.gallery
 
-import android.content.Context
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.ApplicationInfo
+import android.net.Uri
+import android.os.Bundle
+import android.os.StrictMode
+import android.util.Log
+import android.webkit.MimeTypeMap
+import androidx.annotation.NonNull
+import androidx.documentfile.provider.DocumentFile
+import androidx.lifecycle.lifecycleScope
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
-import androidx.annotation.NonNull
 import io.flutter.plugin.common.MethodChannel
-import android.provider.MediaStore
-import android.util.Log
-import io.flutter.embedding.engine.plugins.FlutterPlugin
-import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.StandardMethodCodec
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
+import okio.FileSystem
+import okio.Path.Companion.toPath
+import okio.buffer
+import okio.sink
+import kotlin.coroutines.CoroutineContext
+import kotlin.io.path.Path
+import kotlin.io.path.deleteIfExists
+import kotlin.io.path.extension
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "org.gallery"
+    private val CHANNEL = "lol.bruh19.azari.gallery"
+    private lateinit var mover: Mover
+    var callback: ((String) -> Unit)? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        var appFlags = context.applicationInfo.flags
+        if ((appFlags and ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+            StrictMode.setThreadPolicy(
+                StrictMode.ThreadPolicy.Builder().detectAll().build()
+            )
+            StrictMode.setVmPolicy(
+                StrictMode.VmPolicy.Builder().detectAll().build()
+            )
+        }
+
+        super.onCreate(savedInstanceState)
+        mover = Mover(lifecycleScope.coroutineContext, context)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 1 && resultCode == Activity.RESULT_OK) {
+            callback?.invoke(data!!.data.toString())
+            callback = null
+        }
+    }
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL, StandardMethodCodec.INSTANCE, flutterEngine.dartExecutor.binaryMessenger.makeBackgroundTaskQueue()).setMethodCallHandler { call, result ->
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            CHANNEL,
+            StandardMethodCodec.INSTANCE,
+            flutterEngine.dartExecutor.binaryMessenger.makeBackgroundTaskQueue()
+        ).setMethodCallHandler { call, result ->
             when (call.method) {
+                "move" -> {
+                    val map = call.arguments as HashMap<String, String>
+                    val source = map["source"]
+                    val rootUri = map["rootUri"]
+                    val dir = map["dir"]
+                    if (source == null) {
+                        result.error("source is empty", null, null)
+                    } else if (rootUri == null) {
+                        result.error("dest is empty", null, null)
+                    } else if (dir == null) {
+                        result.error("directory is empty", null, null)
+                    } else {
+                        mover.add(MoveOp(source, Uri.parse(rootUri), dir))
+                        result.success(null)
+                    }
+                }
+
+                "chooseDirectory" -> {
+                    startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), 1)
+                    callback = {
+                        contentResolver.takePersistableUriPermission(
+                            Uri.parse(it),
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                        )
+                        result.success(it)
+
+                    }
+                }
+
                 else -> result.notImplemented()
             }
         }
     }
-
-
 }
 
+data class MoveOp(val source: String, val rootUri: Uri, val dir: String)
 
-/*private fun populateAlbums(context: Context) {
+class Mover(private val coContext: CoroutineContext, private val context: android.content.Context) {
+    private val channel = Channel<MoveOp>()
+    private val scope = CoroutineScope(coContext + Dispatchers.IO)
 
-}
+    init {
+        scope.launch {
+            for (op in channel) {
+                launch {
+                    try {
+                        var ext = Path(op.source).extension
 
-private fun getAlbums(context: Context, binaryMessenger: BinaryMessenger): List<Album> {
-    val projection = arrayOf(
-            MediaStore.Images.Media.BUCKET_ID,
-            MediaStore.Images.Media.BUCKET_DISPLAY_NAME,
-            MediaStore.Images.Media._ID,
-            //MediaStore.Images.Media.ALBUM,
-            MediaStore.Images.Media.DISPLAY_NAME
-    )
+                        var mimeType =
+                            MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext.lowercase())
+                                ?: throw Exception("could not find mimetype")
 
-    var galleryApi = GalleryApi(binaryMessenger)
+                        val docFile = DocumentFile.fromTreeUri(context, op.rootUri)!!
 
-    context.contentResolver.query(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            projection,
-            null,
-            null,
-            null,
-    )?.use { cursor ->
-        val bucketIdCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_ID)
-        val bucketNameCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
-        val id = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-        val displayName = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+                        if (!docFile.exists()) throw Exception("root uri does not exist")
+
+                        if (!docFile.canWrite()) throw Exception("cannot write to the root uri")
+
+                        var dir = docFile.findFile(op.dir)
+                        if (dir == null) {
+                            dir = docFile.createDirectory(op.dir)
+                                ?: throw Exception("could not create a directory for a file")
+                        } else if (!dir.isDirectory) throw Exception("needs to be directory: ${op.dir}")
+                        
+                        val docDest =
+                            dir!!.createFile(mimeType, Path(op.source).fileName!!.toString())
+                                ?: throw Exception("could not create the destination file")
 
 
-        while (cursor.moveToNext()) {
-            val id = cursor.getLong(bucketIdCol)
-            val displayName: String = cursor.getString(bucketNameCol)
+                        var docStream = context.contentResolver.openOutputStream(docDest.uri, "w")
+                            ?: throw Exception("could not get an output stream")
+                        val fileSrc = FileSystem.SYSTEM.openReadOnly(op.source.toPath())
 
-            galleryApi.add(cursor.getLong())
+
+                        var buffer = docStream.sink().buffer()
+                        var src = fileSrc.source()
+                        buffer.writeAll(src)
+                        buffer.flush()
+                        docStream.flush()
+
+                        src.close()
+                        buffer.close()
+                        fileSrc.close()
+                        docStream.close()
+                    } catch (e: Exception) {
+                        Log.e("downloader", e.toString())
+                    }
+
+                    Path(op.source).deleteIfExists()
+                }
+            }
         }
     }
 
-    return albums
-}*/
-
-/*private fun getFiles(context: Context, albumId: Long): List<File> {
-    val projection = arrayOf(
-            MediaStore.Images.Media._ID,
-            //MediaStore.Images.Media.ALBUM,
-            MediaStore.Images.Media.DISPLAY_NAME
-    )
-
-    val selection = "${MediaStore.Images.Media.BUCKET_ID} = ?"
-
-    val selectionArgs = arrayOf(albumId.toString())
-
-    val files = mutableListOf<File>()
-
-    context.contentResolver.query(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            projection,
-            selection,
-            selectionArgs,
-            "${MediaStore.Video.Media.DISPLAY_NAME} ASC"
-    )?.use { cursor ->
-        val idCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-        val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
-
-        while (cursor.moveToNext()) {
-            val id = cursor.getLong(idCol)
-            val name: String = cursor.getString(nameCol)
-
-            files.add(File(id = id, name = name))
-            //files.add(File(id = id, name = name))
+    fun add(op: MoveOp) {
+        scope.launch {
+            channel.send(op)
         }
 
     }
+}
 
-    return files
-}*/
 

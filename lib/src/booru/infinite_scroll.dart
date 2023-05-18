@@ -10,6 +10,7 @@ import 'package:gallery/src/image/cells.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/scroll_position.dart' as sc_pos;
 import 'package:gallery/src/schemas/tags.dart';
+import 'package:gallery/src/system_gestures.dart';
 import 'package:isar/isar.dart';
 
 import '../schemas/download_file.dart';
@@ -209,44 +210,47 @@ class _BooruScrollState extends State<BooruScroll> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-        onWillPop: () {
-          if (widget.tags.isNotEmpty) {
-            if (widget.toRestore) {
-              db.restoreStateNext(context, isar.name);
-            }
+      onWillPop: () {
+        if (widget.tags.isNotEmpty) {
+          if (widget.toRestore) {
+            db.restoreStateNext(context, isar.name);
           }
+        }
 
-          return Future.value(true);
-        },
-        child: Scaffold(
+        return Future.value(true);
+      },
+      child: Scaffold(
           key: _key,
           drawer: makeDrawer(context, false, settings.enableGallery),
-          body: CellsWidget<BooruCell>(
-            hasReachedEnd: () => reachedEnd,
-            scaffoldKey: _key,
-            getCell: (i) => isar.posts.getSync(i + 1)!.booruCell(_search),
-            loadNext: _addLast,
-            refresh: _clearAndRefresh,
-            onBack: widget.tags.isEmpty
-                ? null
-                : () {
-                    if (widget.toRestore) {
-                      db.restoreStateNext(context, isar.name);
-                    } else {
-                      Navigator.pop(context);
-                    }
-                  },
-            searchStartingValue: widget.tags,
-            search: _search,
-            hideAlias: true,
-            onLongPress: _download,
-            updateScrollPosition: updateScrollPosition,
-            initalScrollPosition: widget.initalScroll,
-            initalCellCount: widget.clear ? 0 : isar.posts.countSync(),
-            searchFilter: _searchFilter,
-            pageViewScrollingOffset: widget.pageViewScrollingOffset,
-            initalCell: widget.initalPost,
-          ),
-        ));
+          body: gestureDeadZones(
+            context,
+            child: CellsWidget<BooruCell>(
+              hasReachedEnd: () => reachedEnd,
+              scaffoldKey: _key,
+              getCell: (i) => isar.posts.getSync(i + 1)!.booruCell(_search),
+              loadNext: _addLast,
+              refresh: _clearAndRefresh,
+              onBack: widget.tags.isEmpty
+                  ? null
+                  : () {
+                      if (widget.toRestore) {
+                        db.restoreStateNext(context, isar.name);
+                      } else {
+                        Navigator.pop(context);
+                      }
+                    },
+              searchStartingValue: widget.tags,
+              search: _search,
+              hideAlias: true,
+              onLongPress: _download,
+              updateScrollPosition: updateScrollPosition,
+              initalScrollPosition: widget.initalScroll,
+              initalCellCount: widget.clear ? 0 : isar.posts.countSync(),
+              searchFilter: _searchFilter,
+              pageViewScrollingOffset: widget.pageViewScrollingOffset,
+              initalCell: widget.initalPost,
+            ),
+          )),
+    );
   }
 }

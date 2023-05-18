@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/schemas/excluded_tags.dart';
 import 'package:gallery/src/schemas/tags.dart';
+import 'package:gallery/src/system_gestures.dart';
 
 import '../db/isar.dart';
 import 'infinite_scroll.dart';
@@ -77,104 +78,106 @@ class _SearchBooruState extends State<SearchBooru> {
       appBar: AppBar(
         title: const Text("Search"),
       ),
-      body: ListView(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 5, right: 5),
-            child: MenuAnchor(
-              menuChildren: menuItems,
-              style: tagCompleteMenuStyle(),
-              controller: menuController,
-              child: TextField(
-                controller: textController,
-                onChanged: (value) {
-                  menuItems.clear();
-                  autoCompleteTag(value, menuController, textController,
-                          getBooru().completeTag)
-                      .then((newItems) {
-                    if (newItems.isEmpty) {
-                      menuController.close();
-                    } else {
-                      setState(() {
-                        menuItems = newItems;
+      body: gestureDeadZones(context,
+          child: ListView(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 5, right: 5),
+                child: MenuAnchor(
+                  menuChildren: menuItems,
+                  style: tagCompleteMenuStyle(),
+                  controller: menuController,
+                  child: TextField(
+                    controller: textController,
+                    onChanged: (value) {
+                      menuItems.clear();
+                      autoCompleteTag(value, menuController, textController,
+                              getBooru().completeTag)
+                          .then((newItems) {
+                        if (newItems.isEmpty) {
+                          menuController.close();
+                        } else {
+                          setState(() {
+                            menuItems = newItems;
+                          });
+                          menuController.open();
+                        }
+                      }).onError((error, stackTrace) {
+                        print(error);
                       });
-                      menuController.open();
-                    }
-                  }).onError((error, stackTrace) {
-                    print(error);
-                  });
-                },
-                decoration: const InputDecoration(
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(50)))),
-                onSubmitted: _onTagPressed,
+                    },
+                    decoration: const InputDecoration(
+                        border: OutlineInputBorder(
+                            borderRadius:
+                                BorderRadius.all(Radius.circular(50)))),
+                    onSubmitted: _onTagPressed,
+                  ),
+                ),
               ),
-            ),
-          ),
-          ListTile(
-            title: const Text("Last Tags"),
-            trailing: IconButton(
-                onPressed: () {
-                  Navigator.push(
-                      context,
-                      DialogRoute(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: const Text(
-                                "Are you sure you want to delete all the tags?"),
-                            actions: [
-                              TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text("no")),
-                              TextButton(
-                                  onPressed: () {
-                                    isar().writeTxnSync(
-                                        () => isar().lastTags.clearSync());
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text("yes"))
-                            ],
-                          );
-                        },
-                      ));
-                },
-                icon: const Icon(Icons.delete)),
-          ),
-          TagsWidget(
-              tags: _lastTags,
-              deleteTag: _tags.deleteTag,
-              onPress: _onTagPressed),
-          ListTile(
-            title: const Text("Excluded Tags"),
-            trailing: IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () {
-                Navigator.of(context).push(DialogRoute(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      content: TextField(
-                        onSubmitted: (value) {
-                          _tags.addExcluded(value);
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                    );
+              ListTile(
+                title: const Text("Last Tags"),
+                trailing: IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          DialogRoute(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: const Text(
+                                    "Are you sure you want to delete all the tags?"),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: const Text("no")),
+                                  TextButton(
+                                      onPressed: () {
+                                        isar().writeTxnSync(
+                                            () => isar().lastTags.clearSync());
+                                        Navigator.pop(context);
+                                      },
+                                      child: const Text("yes"))
+                                ],
+                              );
+                            },
+                          ));
+                    },
+                    icon: const Icon(Icons.delete)),
+              ),
+              TagsWidget(
+                  tags: _lastTags,
+                  deleteTag: _tags.deleteTag,
+                  onPress: _onTagPressed),
+              ListTile(
+                title: const Text("Excluded Tags"),
+                trailing: IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: () {
+                    Navigator.of(context).push(DialogRoute(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          content: TextField(
+                            onSubmitted: (value) {
+                              _tags.addExcluded(value);
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        );
+                      },
+                    ));
                   },
-                ));
-              },
-            ),
-          ),
-          TagsWidget(
-              redBackground: true,
-              tags: _excludedTags,
-              deleteTag: _tags.deleteExcludedTag,
-              onPress: (t) {})
-        ],
-      ),
+                ),
+              ),
+              TagsWidget(
+                  redBackground: true,
+                  tags: _excludedTags,
+                  deleteTag: _tags.deleteExcludedTag,
+                  onPress: (t) {})
+            ],
+          )),
     );
   }
 }

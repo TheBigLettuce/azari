@@ -61,7 +61,7 @@ class Danbooru implements BooruAPI {
 
     String excludedTagsString;
 
-    var excludedTags = BooruTags().getExcluded().map((e) => "-$e").toList();
+    var excludedTags = BooruTags().getExcluded().map((e) => "-$e ").toList();
     if (excludedTags.isNotEmpty) {
       excludedTagsString =
           excludedTags.reduce((value, element) => value + element);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gallery/src/booru/api/danbooru.dart';
 import 'package:gallery/src/booru/api/gelbooru.dart';
 import 'package:gallery/src/booru/interface.dart';
@@ -12,7 +13,6 @@ import 'package:gallery/src/schemas/secondary_grid.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:shared_storage/saf.dart';
 import '../booru/infinite_scroll.dart';
 import '../schemas/settings.dart';
 
@@ -20,6 +20,7 @@ Isar? _isar;
 late String _directoryPath;
 //Isar? _isarCopy;
 bool _initalized = false;
+const MethodChannel _channel = MethodChannel("lol.bruh19.azari.gallery");
 
 /// [getBooru] returns a selected *booru API.
 /// Some *booru have no way to retreive posts down
@@ -165,9 +166,12 @@ void removeSecondaryGrid(String name) {
 }
 
 Future<void> chooseDirectory(void Function(String) onError) async {
+  String resp = await _channel.invokeMethod("chooseDirectory");
   var settings = isar().settings.getSync(0) ?? Settings.empty();
+  isar().writeTxnSync(() => isar().settings.putSync(settings.copy(path: resp)));
+  /* 
 
-  var pickedDir = await openDocumentTree();
+  /*var pickedDir = await openDocumentTree();
   if (pickedDir == null) {
     onError("Please choose a directory");
     return;
@@ -176,7 +180,7 @@ Future<void> chooseDirectory(void Function(String) onError) async {
   if (perm == null || perm.isEmpty) {
     onError("Cannot write in current directory.");
     return;
-  }
+  }*/
 
   var exist = false;
 
@@ -201,7 +205,7 @@ Future<void> chooseDirectory(void Function(String) onError) async {
     () {
       isar().settings.putSync(settings.copy(path: pickedDir.toString()));
     },
-  );
+  );*/
 
   return Future.value();
 }
