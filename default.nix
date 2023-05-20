@@ -1,3 +1,5 @@
+# this file is outdated, not expected to work...
+
 { pkgs ? import <nixpkgs> { config.android_sdk.accept_license = true; config.allowUnfree = true; } }:
 
 let
