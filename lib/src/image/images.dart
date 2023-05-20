@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+/*import 'package:flutter/material.dart';
 import '../cell/cell.dart';
 import '../cell/directory.dart';
 import 'cells.dart';
 
-/*class Images extends StatefulWidget {
+class Images extends StatefulWidget {
   final DirectoryCell cell;
   const Images({super.key, required this.cell});
 

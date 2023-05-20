@@ -20,6 +20,9 @@ class _LostDownloadsState extends State<LostDownloads> {
   late final StreamSubscription<void> _updates;
   final Downloader downloader = Downloader();
 
+  AnimationController? refreshController;
+  AnimationController? deleteController;
+
   @override
   void initState() {
     super.initState();
@@ -68,15 +71,30 @@ class _LostDownloadsState extends State<LostDownloads> {
         ),
         actions: [
           IconButton(
-              onPressed: () {
-                downloader.markStale();
-              },
-              icon: const Icon(Icons.refresh)),
+                  onPressed: () {
+                    if (refreshController != null) {
+                      refreshController!.forward(from: 0);
+                    }
+
+                    downloader.markStale();
+                  },
+                  icon: const Icon(Icons.refresh))
+              .animate(
+                  onInit: (controller) => refreshController = controller,
+                  effects: const [RotateEffect()],
+                  autoPlay: false),
           IconButton(
-              onPressed: () {
-                downloader.removeFailed();
-              },
-              icon: const Icon(Icons.close))
+                  onPressed: () {
+                    if (deleteController != null) {
+                      deleteController!.forward(from: 0);
+                    }
+                    downloader.removeFailed();
+                  },
+                  icon: const Icon(Icons.close))
+              .animate(
+                  onInit: (controller) => deleteController = controller,
+                  effects: const [FlipEffect(begin: 1, end: 0)],
+                  autoPlay: false)
         ],
       ),
       body: gestureDeadZones(context,

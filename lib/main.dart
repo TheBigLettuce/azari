@@ -1,27 +1,38 @@
-import 'dart:io';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/booru/infinite_scroll.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/directories.dart';
+import 'package:gallery/src/schemas/grid_restore.dart';
 import 'package:gallery/src/schemas/scroll_position.dart' as scroll_pos;
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/schemas/tags.dart';
+// import 'package:google_fonts/google_fonts.dart';
 import 'package:introduction_screen/introduction_screen.dart';
+import 'package:isar/isar.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
-//import 'package:shared_storage/shared_storage.dart';
+
+ThemeData _buildTheme(Brightness brightness, Color accentColor) {
+  var baseTheme = ThemeData(
+    fontFamily: 'OpenSans',
+    brightness: brightness,
+    useMaterial3: true,
+    colorSchemeSeed: accentColor,
+  );
+
+  return baseTheme;
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initalizeIsar();
 
-  //SystemTheme.fallbackColor = Colors.purpleAccent;
-  //await SystemTheme.accentColor.load();
+  const platform = MethodChannel("lol.bruh19.azari.gallery");
 
-  final accentColor = Colors.pink;
+  int color = await platform.invokeMethod("accentColor");
+
+  final accentColor = Color(color);
 
   FlutterLocalNotificationsPlugin().initialize(
       const InitializationSettings(
@@ -30,17 +41,21 @@ void main() async {
       onDidReceiveBackgroundNotificationResponse: notifBackground);
 
   runApp(MaterialApp(
-    title: 'Welcome to Flutter',
-    darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        useMaterial3: true,
-        colorSchemeSeed: accentColor),
-    theme: ThemeData(useMaterial3: true, colorSchemeSeed: accentColor),
+    title: 'Ācārya',
+    darkTheme: _buildTheme(Brightness.dark, accentColor),
+    theme: _buildTheme(Brightness.light, accentColor),
     initialRoute: "/",
     routes: {
       "/": (context) => const Entry(),
       "/booru": (context) {
         var arguments = ModalRoute.of(context)!.settings.arguments;
+        if (arguments != null) {
+          var list = isar().gridRestores.where().findAllSync();
+          for (var element in list) {
+            removeSecondaryGrid(element.path);
+          }
+        }
+
         var scroll = isar()
             .scrollPositionPrimarys
             .getSync(fastHash(getBooru().domain()));
@@ -48,11 +63,10 @@ void main() async {
         return BooruScroll.primary(
           initalScroll: scroll != null ? scroll.pos : 0,
           isar: isar(),
-          clear: arguments != null ? arguments as bool : false,
+          clear: arguments != null ? true : false,
         );
       }
     },
-    //home: const Entry(),
   ));
 }
 

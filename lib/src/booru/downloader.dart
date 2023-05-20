@@ -1,19 +1,15 @@
+import 'dart:developer';
 import 'dart:io';
-import 'dart:typed_data';
-
-import 'package:async/async.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/schemas/download_file.dart' as dw_file;
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:isar/isar.dart';
-import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
+import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../db/isar.dart';
-import 'package:http/http.dart' as http;
 
 Downloader? _global;
 
@@ -165,8 +161,10 @@ class Downloader {
         downloadtd.createSync();
       }
       await Directory(dirpath).create();
-    } catch (e) {
-      print("while creating directory $dirpath: $e");
+    } catch (e, trace) {
+      log("while creating directory $dirpath",
+          level: Level.SEVERE.value, error: e, stackTrace: trace);
+
       return;
     }
 
@@ -174,7 +172,6 @@ class Downloader {
 
     // can it throw 🤔
     if (File(filePath).existsSync()) {
-      print("file exist: $filePath");
       _done();
       return;
     }
@@ -225,8 +222,9 @@ class Downloader {
         );
 
         _done();
-      } catch (e) {
-        print("while writting the downloaded file to uri: $e");
+      } catch (e, trace) {
+        log("writting downloaded file ${d.name} to uri",
+            level: Level.SEVERE.value, error: e, stackTrace: trace);
         isar().writeTxnSync(
           () {
             _removeToken(d.id!);
@@ -258,11 +256,11 @@ class Downloader {
       }
 
       downld.list().map((event) {
-        print("deleted: ${event.path}");
         event.deleteSync(recursive: true);
       }).drain();
-    } catch (e) {
-      print("while deleting temp directories: $e");
+    } catch (e, trace) {
+      log("deleting temp directories",
+          level: Level.WARNING.value, error: e, stackTrace: trace);
     }
   }
 

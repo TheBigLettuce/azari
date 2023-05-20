@@ -26,7 +26,7 @@ class Post {
   String filename() => "$id - $md5$ext";
 
   BooruCell booruCell(void Function(String tag) onTagPressed) => BooruCell(
-      alias: id.toString(),
+      postNumber: id.toString(),
       sampleUrl: sampleUrl,
       path: previewUrl,
       originalUrl: fileUrl,

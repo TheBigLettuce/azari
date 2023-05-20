@@ -7,6 +7,8 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.StrictMode
 import android.util.Log
+import android.util.TypedValue
+import android.view.ContextThemeWrapper
 import android.webkit.MimeTypeMap
 import androidx.annotation.NonNull
 import androidx.documentfile.provider.DocumentFile
@@ -94,6 +96,22 @@ class MainActivity : FlutterActivity() {
                     }
                 }
 
+                "accentColor" -> {
+                    try {
+                        var value = TypedValue()
+                        ContextThemeWrapper(
+                            this,
+                            android.R.style.Theme_DeviceDefault
+                        ).theme.resolveAttribute(android.R.attr.colorAccent, value, true)
+
+
+                        result.success(value.data)
+                    } catch (_: Exception) {
+                        result.success(0xFF448AFF)
+                    }
+
+                }
+
                 else -> result.notImplemented()
             }
         }
@@ -128,7 +146,7 @@ class Mover(private val coContext: CoroutineContext, private val context: androi
                             dir = docFile.createDirectory(op.dir)
                                 ?: throw Exception("could not create a directory for a file")
                         } else if (!dir.isDirectory) throw Exception("needs to be directory: ${op.dir}")
-                        
+
                         val docDest =
                             dir!!.createFile(mimeType, Path(op.source).fileName!!.toString())
                                 ?: throw Exception("could not create the destination file")

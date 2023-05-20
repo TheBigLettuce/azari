@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:developer';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/image/view.dart';
 import 'package:gallery/src/schemas/settings.dart';
+import 'package:logging/logging.dart';
 import '../cell/cell.dart';
 import '../cell/image_widget.dart';
 
@@ -28,8 +31,6 @@ class CellsWidget<T extends Cell> extends StatefulWidget {
   final void Function(BuildContext context, int indx)? overrideOnPress;
   final double? pageViewScrollingOffset;
   final int? initalCell;
-
-  //final List<GridRestore>? toRestore;
 
   final Stream<int>? progressTicker;
 
@@ -67,17 +68,17 @@ class _ScrollHack extends ScrollController {
 class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
   late ScrollController controller =
       ScrollController(initialScrollOffset: widget.initalScrollPosition);
-  late TextEditingController textController =
-      TextEditingController(text: widget.searchStartingValue);
-  FocusNode focus = FocusNode();
+
   late int cellCount = 0;
-  MenuController menuController = MenuController();
   bool refreshing = true;
-  List<Widget> menuItems = [];
   _ScrollHack scrollHack = _ScrollHack();
   Settings settings = isar().settings.getSync(0)!;
   late final StreamSubscription<Settings?> settingsWatcher;
   late int lastGridColCount = settings.picturesPerRow;
+
+  late TextEditingController textEditingController =
+      TextEditingController(text: widget.searchStartingValue);
+  FocusNode focus = FocusNode();
 
   StreamSubscription<int>? ticker;
 
@@ -154,7 +155,8 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
             });
           }
         }).onError((error, stackTrace) {
-          print(error);
+          log("loading next cells in the grid",
+              level: Level.WARNING.value, error: error, stackTrace: stackTrace);
         });
       }
     });
@@ -166,10 +168,12 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
       ticker!.cancel();
     }
 
-    focus.dispose();
+    textEditingController.dispose();
     controller.dispose();
-    textController.dispose();
     settingsWatcher.cancel();
+    scrollHack.dispose();
+
+    focus.dispose();
 
     super.dispose();
   }
@@ -183,7 +187,8 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
         });
       }
     }).onError((error, stackTrace) {
-      print(error);
+      log("refreshing cells in the grid",
+          level: Level.WARNING.value, error: error, stackTrace: stackTrace);
     });
   }
 
@@ -219,11 +224,17 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
       return;
     }
 
-    focus.unfocus();
+    var offsetGrid = controller.offset;
+    var overlayColor =
+        Theme.of(context).colorScheme.background.withOpacity(0.5);
+
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return ImageView<T>(
+        restoreSystemOverlay: () => SystemChrome.setSystemUIOverlayStyle(
+          SystemUiOverlayStyle(systemNavigationBarColor: overlayColor),
+        ),
         updateTagScrollPos: (pos, selectedCell) => widget.updateScrollPosition(
-            controller.offset,
+            offsetGrid,
             infoPos: pos,
             selectedCell: selectedCell),
         scrollUntill: _scrollUntill,
@@ -253,11 +264,6 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () {
-        if (focus.hasFocus) {
-          focus.unfocus();
-          return Future.value(false);
-        }
-
         return Future.value(true);
       },
       child: RefreshIndicator(
@@ -283,60 +289,17 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
                       SliverAppBar(
-                        title: MenuAnchor(
-                          style: tagCompleteMenuStyle(),
-                          controller: menuController,
-                          menuChildren: menuItems,
-                          child: TextField(
-                            scrollController: scrollHack,
-                            focusNode: focus,
-                            controller: textController,
-                            onSubmitted: (s) {
-                              if (refreshing) {
-                                return;
-                              }
+                        title: autocompleteWidget(
+                          textEditingController,
+                          (s) {
+                            if (refreshing) {
+                              return;
+                            }
 
-                              widget.search(s);
-                            },
-                            cursorOpacityAnimates: true,
-                            onChanged: widget.searchFilter == null
-                                ? null
-                                : (value) {
-                                    menuItems.clear();
-
-                                    autoCompleteTag(
-                                            value,
-                                            menuController,
-                                            textController,
-                                            (s) => Future.value(
-                                                widget.searchFilter!(s)))
-                                        .then((newItems) {
-                                      if (newItems.isEmpty) {
-                                        menuController.close();
-                                      } else {
-                                        setState(() {
-                                          menuItems = newItems;
-                                        });
-                                        menuController.open();
-                                      }
-                                    }).onError((error, stackTrace) {
-                                      print(error);
-                                    });
-                                  },
-                            decoration: InputDecoration(
-                                suffix: InkWell(
-                                  borderRadius: BorderRadius.circular(15),
-                                  onTap: () {
-                                    textController.clear();
-                                    focus.unfocus();
-                                    menuController.close();
-                                  },
-                                  child: const Icon(Icons.delete),
-                                ),
-                                hintText: "Search",
-                                border: InputBorder.none,
-                                isDense: true),
-                          ),
+                            widget.search(s);
+                          },
+                          focus,
+                          scrollHack: scrollHack,
                         ),
                         actions: widget.onBack != null
                             ? [
@@ -365,10 +328,17 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                             borderRadius: BorderRadius.circular(15)),
                       ),
                       settings.listViewBooru
-                          ? SliverList.builder(
+                          ? SliverList.separated(
+                              separatorBuilder: (context, index) =>
+                                  const Divider(
+                                height: 1,
+                              ),
                               itemCount: cellCount,
                               itemBuilder: (context, index) {
-                                var cell = widget.getCell(index).getCellData();
+                                var cell = widget
+                                    .getCell(index)
+                                    .getCellData(settings.listViewBooru);
+
                                 return ListTile(
                                   onTap: () => _onPressed(context, index),
                                   leading: CircleAvatar(
@@ -376,7 +346,11 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                                           .colorScheme
                                           .background,
                                       foregroundImage: cell.thumb()),
-                                  title: Text(cell.name),
+                                  title: Text(
+                                    cell.name,
+                                    softWrap: false,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ).animate().fadeIn();
                               },
                             )
@@ -386,8 +360,10 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                                       crossAxisCount: settings.picturesPerRow),
                               itemCount: cellCount,
                               itemBuilder: (context, indx) {
-                                var m = widget.getCell(indx);
-                                return CellImageWidget<T>(
+                                var m = widget
+                                    .getCell(indx)
+                                    .getCellData(settings.listViewBooru);
+                                return CellImageWidget(
                                   cell: m,
                                   hidealias: widget.hideAlias,
                                   indx: indx,
@@ -397,10 +373,13 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                                       : () async {
                                           widget.onLongPress!(indx)
                                               .onError((error, stackTrace) {
-                                            print(error);
+                                            log("onLongPress in the grid callback to CellImageWidget",
+                                                level: Level.WARNING.value,
+                                                error: error,
+                                                stackTrace: stackTrace);
                                           });
                                         }, //extend: maxExtend,
-                                ).animate().fadeIn();
+                                );
                               },
                             )
                     ],

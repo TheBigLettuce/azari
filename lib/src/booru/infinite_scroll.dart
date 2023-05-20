@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/downloader.dart';
@@ -12,6 +13,7 @@ import 'package:gallery/src/schemas/scroll_position.dart' as sc_pos;
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:gallery/src/system_gestures.dart';
 import 'package:isar/isar.dart';
+import 'package:logging/logging.dart';
 
 import '../schemas/download_file.dart';
 import '../schemas/secondary_grid.dart';
@@ -40,6 +42,9 @@ class BooruScroll extends StatefulWidget {
   final int? initalPost;
   final bool toRestore;
 
+  // ignore: unused_field
+  final String _type; // for debug only
+
   final void Function(String path)? closeDb;
 
   const BooruScroll.primary({
@@ -52,7 +57,8 @@ class BooruScroll extends StatefulWidget {
         booruPage = null,
         pageViewScrollingOffset = null,
         initalPost = null,
-        closeDb = null;
+        closeDb = null,
+        _type = "primary";
 
   const BooruScroll.secondary({
     super.key,
@@ -64,7 +70,8 @@ class BooruScroll extends StatefulWidget {
         booruPage = null,
         pageViewScrollingOffset = null,
         initalPost = null,
-        closeDb = db.removeSecondaryGrid;
+        closeDb = db.removeSecondaryGrid,
+        _type = "secondary";
 
   const BooruScroll.restore(
       {super.key,
@@ -76,7 +83,8 @@ class BooruScroll extends StatefulWidget {
       required this.initalScroll})
       : clear = false,
         toRestore = true,
-        closeDb = db.removeSecondaryGrid;
+        closeDb = db.removeSecondaryGrid,
+        _type = "restore";
 
   @override
   State<BooruScroll> createState() => _BooruScrollState();
@@ -149,8 +157,9 @@ class _BooruScrollState extends State<BooruScroll> {
         return isar.posts.putAllById(list);
       });
       reachedEnd = false;
-    } catch (e) {
-      print(e);
+    } catch (e, trace) {
+      log("refreshing grid on ${settings.selectedBooru.string}",
+          level: Level.WARNING.value, error: e, stackTrace: trace);
     }
 
     return isar.posts.count();
@@ -171,7 +180,8 @@ class _BooruScrollState extends State<BooruScroll> {
         );
       }));
     }).onError((error, stackTrace) {
-      print(error);
+      log("searching on grid ${settings.selectedBooru.string}",
+          level: Level.WARNING.value, error: error, stackTrace: stackTrace);
     });
   }
 
@@ -200,8 +210,9 @@ class _BooruScrollState extends State<BooruScroll> {
       } else {
         isar.writeTxnSync(() => isar.posts.putAllByIdSync(list));
       }
-    } catch (e) {
-      print(e);
+    } catch (e, trace) {
+      log("_addLast on grid ${settings.selectedBooru.string}",
+          level: Level.WARNING.value, error: e, stackTrace: trace);
     }
 
     return isar.posts.count();

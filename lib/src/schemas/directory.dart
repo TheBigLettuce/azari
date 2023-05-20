@@ -22,8 +22,8 @@ class Directory {
       id: id,
       image: MemoryImage(Uint8List.fromList(thumbnail)),
       path: name,
-      alias: name,
-      addInfo: (d) {
+      dirName: name,
+      addInfo: (d, c, fc) {
         return null;
       },
       addButtons: () {

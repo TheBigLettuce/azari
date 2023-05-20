@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-
-import 'cell.dart';
 import 'data.dart';
 
-class CellImageWidget<T extends Cell> extends StatefulWidget {
+class CellImageWidget<T extends CellData> extends StatefulWidget {
   final T _data;
   final int indx;
   final void Function(BuildContext context, int cellIndx) onPressed;
@@ -26,9 +24,8 @@ class CellImageWidget<T extends Cell> extends StatefulWidget {
   State<CellImageWidget> createState() => _CellImageWidgetState();
 }
 
-class _CellImageWidgetState<T extends Cell> extends State<CellImageWidget<T>> {
-  late CellData cellData = widget._data.getCellData();
-
+class _CellImageWidgetState<T extends CellData>
+    extends State<CellImageWidget<T>> {
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -61,7 +58,7 @@ class _CellImageWidgetState<T extends Cell> extends State<CellImageWidget<T>> {
                         ),
                       );
                     },
-                    image: cellData.thumb(),
+                    image: widget._data.thumb(),
                     alignment: Alignment.center,
                     fit: BoxFit.cover,
                     filterQuality: FilterQuality.high,
@@ -82,10 +79,15 @@ class _CellImageWidgetState<T extends Cell> extends State<CellImageWidget<T>> {
                       ])),
                   child: widget.hideAlias
                       ? null
-                      : Text(
-                          cellData.name,
-                          style: const TextStyle(color: Colors.white),
-                        ),
+                      : Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: Text(
+                            widget._data.name,
+                            softWrap: false,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
+                            style: const TextStyle(color: Colors.white),
+                          )),
                 ),
               ],
             ),
@@ -93,3 +95,4 @@ class _CellImageWidgetState<T extends Cell> extends State<CellImageWidget<T>> {
     );
   }
 }
+/* */

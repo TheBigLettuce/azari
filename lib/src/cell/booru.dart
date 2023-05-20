@@ -10,7 +10,12 @@ import 'data.dart';
 
 class BooruCell extends Cell {
   String originalUrl;
+  String postNumber;
+  String tags;
   String sampleUrl;
+
+  @override
+  String alias(bool isList) => isList ? tags : postNumber;
 
   @override
   String fileDownloadUrl() => originalUrl;
@@ -44,32 +49,38 @@ class BooruCell extends Cell {
   }
 
   @override
-  CellData getCellData() => CellData(
+  CellData getCellData(bool isList) => CellData(
       thumb: () {
         return CachedNetworkImageProvider(path);
       },
-      name: alias);
+      name: alias(isList));
 
   BooruCell(
-      {required super.alias,
+      {required this.postNumber,
       required super.path,
       required this.originalUrl,
-      required String tags,
+      required this.tags,
       required this.sampleUrl,
       required void Function(String tag) onTagPressed})
-      : super(addInfo: (dynamic extra) {
-          var list = [
-            const ListTile(
-              title: Text("Tags"),
+      : super(addInfo:
+            (dynamic extra, Color dividerColor, Color foregroundColor) {
+          List<Widget> list = [
+            ListTile(
+              textColor: foregroundColor,
+              title: const Text("Tags"),
             )
           ];
-          list.addAll(tags.split(' ').map((e) => ListTile(
-                title: Text(HtmlUnescape().convert(e)),
-                onTap: () {
-                  onTagPressed(HtmlUnescape().convert(e));
-                  extra();
-                },
-              )));
+
+          list.addAll(ListTile.divideTiles(
+              color: dividerColor,
+              tiles: tags.split(' ').map((e) => ListTile(
+                    textColor: foregroundColor,
+                    title: Text(HtmlUnescape().convert(e)),
+                    onTap: () {
+                      onTagPressed(HtmlUnescape().convert(e));
+                      extra();
+                    },
+                  ))));
 
           return [
             ListBody(

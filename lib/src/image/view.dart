@@ -1,12 +1,17 @@
+import 'dart:developer';
+
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/system_gestures.dart';
+import 'package:logging/logging.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:video_player/video_player.dart';
 import '../cell/cell.dart';
+
+final Color kListTileColorInInfo = Colors.white60.withOpacity(0.8);
 
 class PhotoGalleryPageVideo extends StatefulWidget {
   final String url;
@@ -120,6 +125,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final Future<int> Function()? onNearEnd;
   final Future Function(int i)? download;
   final double? infoScrollOffset;
+  final void Function() restoreSystemOverlay;
 
   const ImageView(
       {super.key,
@@ -129,6 +135,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
       required this.startingCell,
       required this.getCell,
       required this.onNearEnd,
+      required this.restoreSystemOverlay,
       this.infoScrollOffset,
       this.download});
 
@@ -144,8 +151,10 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
   late int cellCount = widget.cellCount;
   bool refreshing = false;
 
-  bool showInfo = false;
-  bool showAppBar = true;
+  AnimationController? downloadButtonController;
+
+  bool isAppbarShown = true;
+  bool isInfoShown = false;
 
   @override
   void initState() {
@@ -154,10 +163,14 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
     scrollController =
         ScrollController(initialScrollOffset: widget.infoScrollOffset ?? 0);
     if (widget.infoScrollOffset != null) {
-      showInfo = true;
+      isInfoShown = true;
     }
 
     WidgetsBinding.instance.scheduleFrameCallback((_) {
+      SystemChrome.setSystemUIOverlayStyle(
+        SystemUiOverlayStyle(
+            systemNavigationBarColor: Colors.black.withOpacity(0.5)),
+      );
       _loadNext(widget.startingCell);
     });
 
@@ -170,6 +183,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     widget.updateTagScrollPos(null, null);
     controller.dispose();
+    widget.restoreSystemOverlay();
     super.dispose();
   }
 
@@ -186,155 +200,141 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
           });
         }
       }).onError((error, stackTrace) {
-        print(error);
+        log("loading next in the image view page",
+            level: Level.WARNING.value, error: error, stackTrace: stackTrace);
       });
     }
   }
 
   void _onTap() {
-    if (!showAppBar) {
+    if (!isAppbarShown) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     } else {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
     }
     setState(() {
-      showAppBar = !showAppBar;
+      isAppbarShown = !isAppbarShown;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    var addB = currentCell.addButtons();
     return Scaffold(
         extendBodyBehindAppBar: true,
-        appBar: !showAppBar
-            ? null
-            : PreferredSize(
-                preferredSize: AppBar().preferredSize,
-                child: AppBar(
-                  backgroundColor: Colors.black.withOpacity(0.5),
-                  title: Text(currentCell.alias),
-                  actions: () {
-                    List<Widget> list = [];
-
-                    var addB = currentCell.addButtons();
-                    if (addB != null) {
-                      list.addAll(addB);
-                    }
-
-                    if (widget.download != null) {
-                      list.add(IconButton(
+        appBar: PreferredSize(
+          preferredSize: AppBar().preferredSize,
+          child: IgnorePointer(
+            ignoring: !isAppbarShown,
+            child: AppBar(
+              foregroundColor: kListTileColorInInfo,
+              backgroundColor: Colors.black.withOpacity(0.5),
+              title: Text(currentCell.alias(false)),
+              actions: [
+                if (addB != null) ...addB,
+                if (widget.download != null)
+                  IconButton(
                           onPressed: () {
+                            if (downloadButtonController != null) {
+                              downloadButtonController!.forward(from: 0);
+                            }
                             widget.download!(currentPage);
                           },
-                          icon: const Icon(Icons.download)));
-                    }
-
-                    list.add(IconButton(
-                        onPressed: () => setState(() {
-                              showInfo = !showInfo;
-                            }),
-                        icon: const Icon(Icons.info_outline)));
-
-                    return list;
-                  }(),
-                ).animate().fadeIn(),
-              ),
-        body: gestureDeadZones(context,
-            child: WillPopScope(
-              onWillPop: () {
-                if (showInfo) {
-                  setState(() {
-                    showInfo = false;
-                  });
-                  return Future.value(false);
-                }
-
-                return Future.value(true);
-              },
-              child: Stack(children: () {
-                List<Widget> list = [];
-
-                list.add(GestureDetector(
-                  onLongPress: widget.download == null
-                      ? null
-                      : () {
-                          HapticFeedback.vibrate();
-                          widget.download!(currentPage);
-                        },
-                  onTap: _onTap,
-                  child: PhotoViewGallery.builder(
-                      enableRotation: true,
-                      onPageChanged: (index) async {
-                        currentPage = index;
-                        _loadNext(index);
-                        widget.scrollUntill(index);
-
-                        setState(() {
-                          currentCell = widget.getCell(index);
-                        });
-                      },
-                      pageController: controller,
-                      itemCount: cellCount,
-                      builder: (context, indx) {
-                        var fileContent = widget.getCell(indx).fileDisplay();
-
-                        if (fileContent.type == "video") {
-                          return PhotoViewGalleryPageOptions.customChild(
-                              disableGestures: true,
-                              tightMode: true,
-                              child: PhotoGalleryPageVideo(
-                                url: fileContent.videoPath!,
-                                localVideo: fileContent.isVideoLocal,
-                              ));
-                        } else if (fileContent.type == "image") {
-                          return PhotoViewGalleryPageOptions(
-                              minScale: PhotoViewComputedScale.contained,
-                              filterQuality: FilterQuality.high,
-                              imageProvider: fileContent.image);
-                        } else {
-                          return PhotoViewGalleryPageOptions.customChild(
-                              disableGestures: true,
-                              child: const Icon(Icons.error_outline));
-                        }
-                      }),
-                ));
-
-                if (showInfo) {
-                  list.add(Container(
-                    decoration:
-                        BoxDecoration(color: Colors.black.withOpacity(0.5)),
-                    child: ListView(
-                        controller: scrollController,
-                        children: () {
-                          List<Widget> list = [
-                            ListTile(
-                              title: const Text("Alias"),
-                              subtitle: Text(currentCell.alias),
-                            ),
-                            ListTile(
-                              title: const Text("Path"),
-                              subtitle: Text(currentCell.fileDownloadUrl()),
-                            ),
-                          ];
-
-                          var addInfo = currentCell.addInfo(() {
-                            widget.updateTagScrollPos(
-                                scrollController.offset, currentPage);
-                          });
-                          if (addInfo != null) {
-                            for (var widget in addInfo) {
-                              list.add(widget);
-                            }
-                          }
-
-                          return list;
-                        }()),
-                  ).animate().fadeIn());
-                }
-
-                return list;
-              }()),
+                          icon: const Icon(Icons.download))
+                      .animate(
+                          onInit: (controller) =>
+                              downloadButtonController = controller,
+                          effects: const [ShakeEffect()],
+                          autoPlay: false),
+                IconButton(
+                    onPressed: () => setState(() {
+                          isInfoShown = !isInfoShown;
+                        }),
+                    icon: const Icon(Icons.info_outline))
+              ],
             ),
+          ).animate(
+            effects: [FadeEffect(begin: 1, end: 0, duration: 500.milliseconds)],
+            autoPlay: false,
+            target: isAppbarShown ? 0 : 1,
+          ),
+        ),
+        body: gestureDeadZones(context,
+            child: Stack(children: [
+              GestureDetector(
+                onLongPress: widget.download == null
+                    ? null
+                    : () {
+                        HapticFeedback.vibrate();
+                        widget.download!(currentPage);
+                      },
+                onTap: _onTap,
+                child: PhotoViewGallery.builder(
+                    enableRotation: true,
+                    onPageChanged: (index) async {
+                      currentPage = index;
+                      _loadNext(index);
+                      widget.scrollUntill(index);
+
+                      setState(() {
+                        currentCell = widget.getCell(index);
+                      });
+                    },
+                    pageController: controller,
+                    itemCount: cellCount,
+                    builder: (context, indx) {
+                      var fileContent = widget.getCell(indx).fileDisplay();
+
+                      if (fileContent.type == "video") {
+                        return PhotoViewGalleryPageOptions.customChild(
+                            disableGestures: true,
+                            tightMode: true,
+                            child: PhotoGalleryPageVideo(
+                              url: fileContent.videoPath!,
+                              localVideo: fileContent.isVideoLocal,
+                            ));
+                      } else if (fileContent.type == "image") {
+                        return PhotoViewGalleryPageOptions(
+                            minScale: PhotoViewComputedScale.contained,
+                            filterQuality: FilterQuality.high,
+                            imageProvider: fileContent.image);
+                      } else {
+                        return PhotoViewGalleryPageOptions.customChild(
+                            disableGestures: true,
+                            child: const Icon(Icons.error_outline));
+                      }
+                    }),
+              ),
+              Animate(
+
+                  //onInit: (controller) => infoAnimController = controller,
+                  effects: [
+                    //FadeEffect(begin: 1, end: 0),
+                    SwapEffect(builder: (_, __) {
+                      var addInfo = currentCell.addInfo(() {
+                        widget.updateTagScrollPos(
+                            scrollController.offset, currentPage);
+                      }, Theme.of(context).colorScheme.outlineVariant,
+                          kListTileColorInInfo);
+
+                      return Container(
+                        decoration:
+                            BoxDecoration(color: Colors.black.withOpacity(0.5)),
+                        child:
+                            ListView(controller: scrollController, children: [
+                          ListTile(
+                            textColor: kListTileColorInInfo,
+                            title: const Text("Path"),
+                            subtitle: Text(currentCell.fileDownloadUrl()),
+                          ),
+                          if (addInfo != null) ...addInfo,
+                        ]),
+                      ).animate().fadeIn();
+                    })
+                  ],
+                  target: isInfoShown ? 1 : 0,
+                  autoPlay: false)
+            ]),
             left: true,
             right: true));
   }

@@ -1,7 +1,4 @@
 import 'dart:async';
-import 'dart:io';
-
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/settings.dart' as schema_settings;
@@ -41,8 +38,11 @@ class _SettingsState extends State<Settings> {
   }
 
   void _popBooru() {
-    Navigator.of(context)
-        .pushReplacementNamed("/booru", arguments: booruChanged);
+    Navigator.of(context).popUntil(ModalRoute.withName("/booru"));
+    Navigator.pop(context);
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      Navigator.of(context).pushNamed("/booru", arguments: true);
+    });
   }
 
   showDialog(String s) {
@@ -114,6 +114,8 @@ class _SettingsState extends State<Settings> {
               ListTile(
                 title: const Text("Selected booru"),
                 trailing: DropdownButton<Booru>(
+                  borderRadius: BorderRadius.circular(25),
+                  underline: Container(),
                   value: _settings!.selectedBooru,
                   items: [
                     DropdownMenuItem(
@@ -151,6 +153,8 @@ class _SettingsState extends State<Settings> {
                     },
                   ),
                   trailing: DropdownButton<DisplayQuality>(
+                    underline: Container(),
+                    borderRadius: BorderRadius.circular(25),
                     value: _settings!.quality,
                     items: [
                       DropdownMenuItem(
@@ -209,6 +213,8 @@ class _SettingsState extends State<Settings> {
                     icon: const Icon(Icons.info_outline),
                   ),
                   trailing: DropdownButton<int>(
+                    underline: Container(),
+                    borderRadius: BorderRadius.circular(25),
                     value: _settings!.picturesPerRow,
                     items: const [
                       DropdownMenuItem(value: 2, child: Text("2")),

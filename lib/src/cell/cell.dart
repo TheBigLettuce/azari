@@ -1,44 +1,6 @@
-import 'dart:typed_data';
-
 import 'package:flutter/widgets.dart';
 
 import 'data.dart';
-
-/*class ImageCell extends Cell {
-  Uint8List thumb;
-  AssetEntity entity;
-  String? videoUri;
-
-  @override
-  Content fileDisplay() {
-    var type = entity.mimeType!.split("/")[0];
-
-    if (type == "image") {
-      return Content(type, true, image: AssetEntityImageProvider(entity));
-    } else if (type == "video") {
-      return Content(type, true, videoPath: videoUri);
-    } else {
-      return Content(type, false);
-    }
-  }
-
-  @override
-  CellData getCellData() => CellData(
-      thumb: () {
-        return MemoryImage(thumb);
-      },
-      name: super.alias);
-
-  ImageCell({
-    this.videoUri,
-    required this.thumb,
-    required this.entity,
-    required super.addButtons,
-    required super.addInfo,
-    required super.alias,
-    required super.path,
-  });
-}*/
 
 class Content {
   String type;
@@ -51,23 +13,21 @@ class Content {
   Content(this.type, this.isVideoLocal, {this.image, this.videoPath});
 }
 
-class Cell {
+abstract class Cell {
   String path;
-  String alias;
 
-  List<Widget>? Function(dynamic extra) addInfo;
+  String alias(bool isList);
+
+  List<Widget>? Function(
+      dynamic extra, Color borderColor, Color foregroundColor) addInfo;
 
   List<Widget>? Function() addButtons;
 
-  Content fileDisplay() => throw "not implemented";
+  Content fileDisplay();
 
-  String fileDownloadUrl() => path;
+  String fileDownloadUrl();
 
-  CellData getCellData() => throw "not implemented";
+  CellData getCellData(bool isList);
 
-  Cell(
-      {required this.path,
-      required this.alias,
-      required this.addInfo,
-      required this.addButtons});
+  Cell({required this.path, required this.addInfo, required this.addButtons});
 }

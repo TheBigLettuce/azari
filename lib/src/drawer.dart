@@ -6,6 +6,8 @@ import 'package:gallery/src/lost_downloads.dart';
 import 'settings.dart';
 
 Widget makeDrawer(BuildContext context, bool showBooru, bool showGallery) {
+  AnimationController? iconController;
+
   return Drawer(
     child: ListView(
       padding: EdgeInsets.zero,
@@ -13,9 +15,18 @@ Widget makeDrawer(BuildContext context, bool showBooru, bool showGallery) {
         List<Widget> list = [
           DrawerHeader(
               child: Center(
-            child: const Icon(
-              IconData(0x963F),
-            ).animate().shake(),
+            child: GestureDetector(
+              onTap: () {
+                if (iconController != null) {
+                  iconController!.forward(from: 0);
+                }
+              },
+              child: const Icon(
+                IconData(0x963F),
+              ),
+            ).animate(
+                onInit: (controller) => iconController = controller,
+                effects: [ShakeEffect(duration: 700.milliseconds, hz: 6)]),
           )),
         ];
 

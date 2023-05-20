@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/schemas/excluded_tags.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:gallery/src/system_gestures.dart';
+import 'package:logging/logging.dart';
 
 import '../db/isar.dart';
 import 'infinite_scroll.dart';
@@ -25,9 +28,16 @@ class _SearchBooruState extends State<SearchBooru> {
   late final StreamSubscription<void> _lastTagsWatcher;
   List<String> _excludedTags = [];
   late final StreamSubscription<void> _excludedTagsWatcher;
-  List<Widget> menuItems = [];
-  MenuController menuController = MenuController();
+
+  FocusNode focus = FocusNode();
+  FocusNode excludedFocus = FocusNode();
+
   TextEditingController textController = TextEditingController();
+  TextEditingController excludedTagsTextController = TextEditingController();
+
+  AnimationController? replaceController;
+  AnimationController? deleteAllExcludedController;
+  AnimationController? deleteAllController;
 
   @override
   void initState() {
@@ -61,14 +71,19 @@ class _SearchBooruState extends State<SearchBooru> {
         );
       }));
     }).onError((error, stackTrace) {
-      print(error);
+      log("opening a secondary grid on tag $tag",
+          level: Level.SEVERE.value, error: error, stackTrace: stackTrace);
     });
   }
 
   @override
   void dispose() {
+    textController.dispose();
+    excludedTagsTextController.dispose();
     _lastTagsWatcher.cancel();
     _excludedTagsWatcher.cancel();
+    focus.dispose();
+    excludedFocus.dispose();
     super.dispose();
   }
 
@@ -82,40 +97,12 @@ class _SearchBooruState extends State<SearchBooru> {
           child: ListView(
             children: [
               Padding(
-                padding: const EdgeInsets.only(left: 5, right: 5),
-                child: MenuAnchor(
-                  menuChildren: menuItems,
-                  style: tagCompleteMenuStyle(),
-                  controller: menuController,
-                  child: TextField(
-                    controller: textController,
-                    onChanged: (value) {
-                      menuItems.clear();
-                      autoCompleteTag(value, menuController, textController,
-                              getBooru().completeTag)
-                          .then((newItems) {
-                        if (newItems.isEmpty) {
-                          menuController.close();
-                        } else {
-                          setState(() {
-                            menuItems = newItems;
-                          });
-                          menuController.open();
-                        }
-                      }).onError((error, stackTrace) {
-                        print(error);
-                      });
-                    },
-                    decoration: const InputDecoration(
-                        border: OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(50)))),
-                    onSubmitted: _onTagPressed,
-                  ),
-                ),
+                padding: const EdgeInsets.only(left: 10, right: 10),
+                child: autocompleteWidget(textController, _onTagPressed, focus,
+                    roundBorders: true, showSearch: true),
               ),
               ListTile(
-                title: const Text("Last Tags"),
+                title: const Text("Recent Tags"),
                 trailing: IconButton(
                     onPressed: () {
                       Navigator.push(
@@ -134,9 +121,19 @@ class _SearchBooruState extends State<SearchBooru> {
                                       child: const Text("no")),
                                   TextButton(
                                       onPressed: () {
-                                        isar().writeTxnSync(
-                                            () => isar().lastTags.clearSync());
                                         Navigator.pop(context);
+                                        if (deleteAllController != null) {
+                                          deleteAllController!
+                                              .forward(from: 0)
+                                              .then((value) {
+                                            isar().writeTxnSync(() =>
+                                                isar().lastTags.clearSync());
+                                            if (deleteAllController != null) {
+                                              deleteAllController!
+                                                  .reverse(from: 1);
+                                            }
+                                          });
+                                        }
                                       },
                                       child: const Text("yes"))
                                 ],
@@ -147,35 +144,82 @@ class _SearchBooruState extends State<SearchBooru> {
                     icon: const Icon(Icons.delete)),
               ),
               TagsWidget(
-                  tags: _lastTags,
-                  deleteTag: _tags.deleteTag,
-                  onPress: _onTagPressed),
+                      tags: _lastTags,
+                      deleteTag: (t) {
+                        if (deleteAllController != null) {
+                          deleteAllController!.forward(from: 0).then((value) {
+                            _tags.deleteTag(t);
+                            if (deleteAllController != null) {
+                              deleteAllController!.reverse(from: 1);
+                            }
+                          });
+                        } else {
+                          _tags.deleteTag(t);
+                        }
+                      },
+                      onPress: _onTagPressed)
+                  .animate(
+                      onInit: (controller) => deleteAllController = controller,
+                      effects: [
+                        FadeEffect(begin: 1, end: 0, duration: 200.milliseconds)
+                      ],
+                      autoPlay: false),
               ListTile(
                 title: const Text("Excluded Tags"),
                 trailing: IconButton(
                   icon: const Icon(Icons.add),
                   onPressed: () {
-                    Navigator.of(context).push(DialogRoute(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          content: TextField(
-                            onSubmitted: (value) {
-                              _tags.addExcluded(value);
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                        );
-                      },
-                    ));
+                    if (replaceController != null) {
+                      replaceController!.forward(from: 0);
+                    }
                   },
                 ),
-              ),
+              ).animate(
+                  onInit: (controller) => replaceController = controller,
+                  effects: [
+                    FadeEffect(begin: 1, end: 0, duration: 200.milliseconds),
+                    SwapEffect(
+                        builder: (_, __) => ListTile(
+                              title: autocompleteWidget(
+                                  excludedTagsTextController,
+                                  _tags.addExcluded,
+                                  excludedFocus,
+                                  submitOnPress: true,
+                                  showSearch: true),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.arrow_back),
+                                onPressed: () {
+                                  if (replaceController != null) {
+                                    replaceController!.reverse(from: 1);
+                                  }
+                                },
+                              ),
+                            ).animate().fadeIn()),
+                  ],
+                  autoPlay: false),
               TagsWidget(
-                  redBackground: true,
-                  tags: _excludedTags,
-                  deleteTag: _tags.deleteExcludedTag,
-                  onPress: (t) {})
+                      redBackground: true,
+                      tags: _excludedTags,
+                      deleteTag: (t) {
+                        if (deleteAllExcludedController != null) {
+                          deleteAllExcludedController!
+                              .forward(from: 0)
+                              .then((value) {
+                            _tags.deleteExcludedTag(t);
+                            if (deleteAllExcludedController != null) {
+                              deleteAllExcludedController!.reverse(from: 1);
+                            }
+                          });
+                        } else {
+                          _tags.deleteExcludedTag(t);
+                        }
+                      },
+                      onPress: (t) {})
+                  .animate(
+                      onInit: (controller) =>
+                          deleteAllExcludedController = controller,
+                      effects: const [FadeEffect(begin: 1, end: 0)],
+                      autoPlay: false)
             ],
           )),
     );
@@ -201,38 +245,44 @@ class TagsWidget extends StatelessWidget {
       child: Wrap(
         spacing: 2,
         runSpacing: -6,
-        children: tags
-            .map((tag) => GestureDetector(
-                  onLongPress: () {
-                    HapticFeedback.vibrate();
-                    Navigator.of(context).push(DialogRoute(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                              title: const Text("Do you want to delete"),
-                              content: Text(tag),
-                              actions: [
-                                TextButton(
-                                    onPressed: () {
-                                      deleteTag(tag);
-                                      Navigator.of(context).pop();
-                                    },
-                                    child: const Text("yes"))
-                              ],
-                            )));
-                  },
-                  child: ActionChip(
-                    backgroundColor: redBackground
-                        ? const Color.fromARGB(255, 243, 0, 113)
-                        : null,
-                    label: Text(tag),
-                    onPressed: onPress == null
-                        ? null
-                        : () {
-                            onPress!(tag);
-                          },
-                  ),
-                ))
-            .toList(),
+        children: tags.map((tag) {
+          return GestureDetector(
+            onLongPress: () {
+              HapticFeedback.vibrate();
+              Navigator.of(context).push(DialogRoute(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                        title: const Text("Do you want to delete"),
+                        content: Text(tag),
+                        actions: [
+                          TextButton(
+                              onPressed: () {
+                                deleteTag(tag);
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text("yes"))
+                        ],
+                      )));
+            },
+            child: ActionChip(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25)),
+              side: redBackground
+                  ? BorderSide(color: Colors.pink.shade200)
+                  : null,
+              backgroundColor: redBackground ? Colors.pink : null,
+              label: Text(tag,
+                  style: redBackground
+                      ? TextStyle(color: Colors.white.withOpacity(0.8))
+                      : null),
+              onPressed: onPress == null
+                  ? null
+                  : () {
+                      onPress!(tag);
+                    },
+            ),
+          );
+        }).toList(),
       ),
     );
   }
