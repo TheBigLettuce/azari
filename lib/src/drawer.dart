@@ -16,85 +16,77 @@ Widget makeDrawer(BuildContext context, bool showBooru, bool showGallery) {
   AnimationController? iconController;
 
   return Drawer(
-    child: ListView(
-      padding: EdgeInsets.zero,
-      children: () {
-        List<Widget> list = [
-          DrawerHeader(
-              child: Center(
-            child: GestureDetector(
-              onTap: () {
-                if (iconController != null) {
-                  iconController!.forward(from: 0);
-                }
-              },
-              child: const Icon(
-                IconData(0x963F),
-              ),
-            ).animate(
-                onInit: (controller) => iconController = controller,
-                effects: [ShakeEffect(duration: 700.milliseconds, hz: 6)]),
-          )),
-        ];
-
-        if (showGallery) {
-          if (showBooru) {
-            list.add(ListTile(
-              title: const Text("Booru"),
-              leading: const Icon(Icons.image),
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-              },
-            ));
-          } else {
-            list.add(ListTile(
-              title: const Text("Gallery"),
-              leading: const Icon(Icons.photo_album),
-              onTap: () {
-                //Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) {
-                  return const Directories();
-                }));
-              },
-            ));
-          }
-        }
-
-        list.addAll([
+    child: ListView(padding: EdgeInsets.zero, children: [
+      DrawerHeader(
+          child: Center(
+        child: GestureDetector(
+          onTap: () {
+            if (iconController != null) {
+              iconController!.forward(from: 0);
+            }
+          },
+          child: const Icon(
+            IconData(0x963F),
+          ),
+        ).animate(
+            onInit: (controller) => iconController = controller,
+            effects: [ShakeEffect(duration: 700.milliseconds, hz: 6)]),
+      )),
+      if (showGallery)
+        if (showBooru)
           ListTile(
-              title: const Text("Tags"),
-              leading: const Icon(Icons.tag),
-              onTap: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SearchBooru(),
-                    ));
-              }),
-          ListTile(
-            title: const Text("Downloads"),
-            leading: const Icon(Icons.download),
+            style: ListTileStyle.drawer,
+            title: const Text("Booru"),
+            leading: const Icon(Icons.image),
             onTap: () {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const LostDownloads(),
-                  ));
+              Navigator.of(context).pop();
+              Navigator.of(context).pop();
             },
           ),
+      if (showGallery)
+        if (!showBooru)
           ListTile(
-            title: const Text("Settings"),
-            leading: const Icon(Icons.settings),
+            style: ListTileStyle.drawer,
+            title: const Text("Gallery"),
+            leading: const Icon(Icons.photo_album),
             onTap: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => const Settings()));
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return const Directories();
+              }));
             },
-          )
-        ]);
-
-        return list;
-      }(),
-    ),
+          ),
+      ListTile(
+          style: ListTileStyle.drawer,
+          title: const Text("Tags"),
+          leading: const Icon(Icons.tag),
+          onTap: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SearchBooru(),
+                ));
+          }),
+      ListTile(
+        style: ListTileStyle.drawer,
+        title: const Text("Downloads"),
+        leading: const Icon(Icons.download),
+        onTap: () {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const LostDownloads(),
+              ));
+        },
+      ),
+      ListTile(
+        style: ListTileStyle.drawer,
+        title: const Text("Settings"),
+        leading: const Icon(Icons.settings),
+        onTap: () {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => const Settings()));
+        },
+      )
+    ]),
   );
 }

@@ -105,6 +105,36 @@ class Gelbooru implements BooruAPI {
   }
 
   @override
+  Future<Post> singlePost(int id) {
+    var req = http.get(Uri.https("gelbooru.com", "/index.php", {
+      "page": "dapi",
+      "s": "post",
+      "q": "index",
+      "id": id.toString(),
+      "json": "1"
+    }));
+
+    return Future(() async {
+      try {
+        var resp = await req;
+
+        if (resp.statusCode != 200) {
+          throw "status is not 200";
+        }
+
+        var json = jsonDecode(resp.body)["post"];
+        if (json == null) {
+          throw "The post has been not found.";
+        }
+
+        return _fromJson([json[0]])[0];
+      } catch (e) {
+        return Future.error(e);
+      }
+    });
+  }
+
+  @override
   String name() => "Gelbooru";
 
   @override

@@ -22,6 +22,8 @@ abstract class BooruAPI {
 
   String domain();
 
+  Future<Post> singlePost(int id);
+
   Future<List<Post>> page(int p, String tags);
 
   Future<List<Post>> fromPost(int postId, String tags);
@@ -39,10 +41,6 @@ List<BooruCell> postsToCells(
 
   return list;
 }
-
-MenuStyle tagCompleteMenuStyle() => MenuStyle(
-    shape: MaterialStatePropertyAll(
-        RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))));
 
 Future<List<String>> autoCompleteTag(
     String tagString, Future<List<String>> Function(String) complF) {

@@ -102,4 +102,3 @@ class _CellImageWidgetState<T extends CellData>
     );
   }
 }
-/* */

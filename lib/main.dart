@@ -37,9 +37,7 @@ void main() async {
 
   const platform = MethodChannel("lol.bruh19.azari.gallery");
 
-  int color = await platform.invokeMethod("accentColor");
-
-  final accentColor = Color(color);
+  final accentColor = Color(await platform.invokeMethod("accentColor"));
 
   FlutterLocalNotificationsPlugin().initialize(
       const InitializationSettings(

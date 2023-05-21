@@ -346,16 +346,3 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
             right: true));
   }
 }
-
-const imageType = 1;
-const videoType = 2;
-const movingImageType = 3;
-
-String typeToString(int t) {
-  switch (t) {
-    case imageType:
-      return "Image";
-    default:
-      return "Unknown";
-  }
-}

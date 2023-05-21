@@ -47,6 +47,30 @@ class Danbooru implements BooruAPI {
   }
 
   @override
+  Future<Post> singlePost(int id) {
+    var req = http.get(Uri.https("danbooru.donmai.us", "/posts/$id.json"));
+
+    return Future(() async {
+      try {
+        var resp = await req;
+
+        if (resp.statusCode != 200) {
+          throw jsonDecode(resp.body)["message"];
+        }
+
+        var json = jsonDecode(resp.body);
+        if (json == null) {
+          throw "no post";
+        }
+
+        return _fromJson([json])[0];
+      } catch (e) {
+        return Future.error(e);
+      }
+    });
+  }
+
+  @override
   Future<List<Post>> page(int i, String tags) => _commonPosts(tags, page: i);
 
   @override

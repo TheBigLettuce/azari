@@ -20,15 +20,6 @@ import '../db/isar.dart';
 
 Downloader? _global;
 
-class Download {
-  String url;
-  String dir;
-  String name;
-  int? id;
-
-  Download(this.url, this.dir, this.name, {this.id});
-}
-
 class Downloader {
   int _inWork = 0;
   final Dio dio = Dio();

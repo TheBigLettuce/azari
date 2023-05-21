@@ -11,6 +11,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/booru/single_post.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/schemas/excluded_tags.dart';
 import 'package:gallery/src/schemas/tags.dart';
@@ -107,6 +108,13 @@ class _SearchBooruState extends State<SearchBooru> {
                 padding: const EdgeInsets.only(left: 10, right: 10),
                 child: autocompleteWidget(textController, _onTagPressed, focus,
                     roundBorders: true, showSearch: true),
+              ),
+              const ListTile(
+                title: Text("Single post"),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(left: 10, right: 10),
+                child: SinglePost(),
               ),
               ListTile(
                 title: const Text("Recent Tags"),
