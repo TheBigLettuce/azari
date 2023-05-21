@@ -8,7 +8,6 @@
 import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
@@ -237,9 +236,7 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
 
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return ImageView<T>(
-        restoreSystemOverlay: () => SystemChrome.setSystemUIOverlayStyle(
-          SystemUiOverlayStyle(systemNavigationBarColor: overlayColor),
-        ),
+        systemOverlayRestoreColor: overlayColor,
         updateTagScrollPos: (pos, selectedCell) => widget.updateScrollPosition(
             offsetGrid,
             infoPos: pos,

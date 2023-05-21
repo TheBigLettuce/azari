@@ -130,9 +130,9 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final void Function(int post) scrollUntill;
   final void Function(double? pos, int? selectedCell) updateTagScrollPos;
   final Future<int> Function()? onNearEnd;
-  final Future Function(int i)? download;
+  final void Function(int i)? download;
   final double? infoScrollOffset;
-  final void Function() restoreSystemOverlay;
+  final Color systemOverlayRestoreColor;
 
   const ImageView(
       {super.key,
@@ -142,7 +142,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
       required this.startingCell,
       required this.getCell,
       required this.onNearEnd,
-      required this.restoreSystemOverlay,
+      required this.systemOverlayRestoreColor,
       this.infoScrollOffset,
       this.download});
 
@@ -190,7 +190,8 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     widget.updateTagScrollPos(null, null);
     controller.dispose();
-    widget.restoreSystemOverlay();
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+        systemNavigationBarColor: widget.systemOverlayRestoreColor));
     super.dispose();
   }
 

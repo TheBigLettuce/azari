@@ -8,12 +8,14 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:logging/logging.dart';
 
 import '../cell/booru.dart';
 import '../db/isar.dart';
 import '../schemas/post.dart';
+import 'infinite_scroll.dart';
 
 abstract class BooruAPI {
   String name();
@@ -163,4 +165,24 @@ int numberOfElementsPerRefresh() {
   }
 
   return 10 * settings.picturesPerRow;
+}
+
+void tagOnPressed(BuildContext context, String t) {
+  t = t.trim();
+  if (t.isEmpty) {
+    return;
+  }
+
+  BooruTags().addLatest(t);
+  newSecondaryGrid().then((value) {
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return BooruScroll.secondary(
+        isar: value,
+        tags: t,
+      );
+    }));
+  }).onError((error, stackTrace) {
+    log("searching for tag $t",
+        level: Level.WARNING.value, error: error, stackTrace: stackTrace);
+  });
 }

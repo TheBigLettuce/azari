@@ -10,9 +10,13 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/booru/downloader.dart';
+import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/image/view.dart';
 import 'package:logging/logging.dart';
+
+import '../schemas/download_file.dart';
 
 class SinglePost extends StatefulWidget {
   const SinglePost({super.key});
@@ -123,18 +127,19 @@ class _SinglePostState extends State<SinglePost> {
                   builder: (context) {
                     return ImageView(
                       updateTagScrollPos: (_, __) {},
+                      download: (_) {
+                        Downloader().add(File.d(value.fileUrl,
+                            getBooru().domain(), value.filename()));
+                      },
                       cellCount: 1,
                       scrollUntill: (_) {},
                       startingCell: 0,
-                      getCell: (_) => value.booruCell((tag) {}),
+                      getCell: (_) =>
+                          value.booruCell((t) => tagOnPressed(context, t)),
                       onNearEnd: () {
                         return Future.value(1);
                       },
-                      restoreSystemOverlay: () =>
-                          SystemChrome.setSystemUIOverlayStyle(
-                        SystemUiOverlayStyle(
-                            systemNavigationBarColor: overlayColor),
-                      ),
+                      systemOverlayRestoreColor: overlayColor,
                     );
                   },
                 ));

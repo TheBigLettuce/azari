@@ -172,25 +172,7 @@ class _BooruScrollState extends State<BooruScroll> {
     return isar.posts.count();
   }
 
-  void _search(String t) {
-    t = t.trim();
-    if (t.isEmpty) {
-      return;
-    }
-
-    BooruTags().addLatest(t);
-    db.newSecondaryGrid().then((value) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) {
-        return BooruScroll.secondary(
-          isar: value,
-          tags: t,
-        );
-      }));
-    }).onError((error, stackTrace) {
-      log("searching on grid ${settings.selectedBooru.string}",
-          level: Level.WARNING.value, error: error, stackTrace: stackTrace);
-    });
-  }
+  void _search(String t) => tagOnPressed(context, t);
 
   Future<void> _download(int i) async {
     var p = isar.posts.getSync(i + 1);
