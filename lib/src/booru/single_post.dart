@@ -31,6 +31,8 @@ class _SinglePostState extends State<SinglePost> {
   MenuController menuController = MenuController();
   FocusNode searchFocus = FocusNode();
 
+  bool inProcessLoading = false;
+
   AnimationController? arrowSpinningController;
 
   @override
@@ -107,6 +109,12 @@ class _SinglePostState extends State<SinglePost> {
                 effects: const [RotateEffect()],
                 autoPlay: false),
             onPressed: () async {
+              if (inProcessLoading) {
+                return;
+              }
+
+              inProcessLoading = true;
+
               try {
                 if (arrowSpinningController != null) {
                   arrowSpinningController!.repeat();
@@ -157,6 +165,8 @@ class _SinglePostState extends State<SinglePost> {
                 arrowSpinningController!.stop();
                 arrowSpinningController!.reverse();
               }
+
+              inProcessLoading = false;
             },
           )
         ],

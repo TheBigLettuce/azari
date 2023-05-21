@@ -22,4 +22,5 @@ Then you you need to create a file in `android/` directory, named `key.propertie
 - keyPassword=*key password*
 - keyAlias=*key alias*
 - storeFile=*path to the store*
-After this the app should build fine.
+
+After this the app should build fine. Use the `flutter build apk --split-per-abi --no-tree-shake-icons` command.
