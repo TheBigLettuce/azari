@@ -115,7 +115,7 @@ class _DirectoriesState extends State<Directories> {
       },
       child: Scaffold(
           key: _key,
-          drawer: makeDrawer(context, true, settings.enableGallery),
+          drawer: makeDrawer(context, -1, false),
           body: CellsWidget<DirectoryCell>(
             updateScrollPosition: (pos,
                 {double? infoPos, int? selectedCell}) {},

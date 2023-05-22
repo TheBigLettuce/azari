@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/lol/bruh19/azari/Gallery">
+    <file alias="app_icon">icon/icon.png</file>
+  </gresource>
+</gresources>

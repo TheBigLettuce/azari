@@ -9,6 +9,8 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:gallery/src/add_rail.dart';
 import 'package:gallery/src/booru/downloader.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/cell/booru.dart';
@@ -221,35 +223,39 @@ class _BooruScrollState extends State<BooruScroll> {
       },
       child: Scaffold(
           key: _key,
-          drawer: makeDrawer(context, false, settings.enableGallery),
+          drawer: makeDrawer(context, 0, true),
           body: gestureDeadZones(
             context,
-            child: CellsWidget<BooruCell>(
-              hasReachedEnd: () => reachedEnd,
-              scaffoldKey: _key,
-              getCell: (i) => isar.posts.getSync(i + 1)!.booruCell(_search),
-              loadNext: _addLast,
-              refresh: _clearAndRefresh,
-              onBack: widget.tags.isEmpty
-                  ? null
-                  : () {
-                      if (widget.toRestore) {
-                        db.restoreStateNext(context, isar.name);
-                      } else {
-                        Navigator.pop(context);
-                      }
-                    },
-              searchStartingValue: widget.tags,
-              search: _search,
-              hideAlias: true,
-              onLongPress: _download,
-              updateScrollPosition: updateScrollPosition,
-              initalScrollPosition: widget.initalScroll,
-              initalCellCount: widget.clear ? 0 : isar.posts.countSync(),
-              searchFilter: _searchFilter,
-              pageViewScrollingOffset: widget.pageViewScrollingOffset,
-              initalCell: widget.initalPost,
-            ),
+            child: addRail(
+                context,
+                0,
+                true,
+                CellsWidget<BooruCell>(
+                  hasReachedEnd: () => reachedEnd,
+                  scaffoldKey: _key,
+                  getCell: (i) => isar.posts.getSync(i + 1)!.booruCell(_search),
+                  loadNext: _addLast,
+                  refresh: _clearAndRefresh,
+                  onBack: widget.tags.isEmpty
+                      ? null
+                      : () {
+                          if (widget.toRestore) {
+                            db.restoreStateNext(context, isar.name);
+                          } else {
+                            Navigator.pop(context);
+                          }
+                        },
+                  searchStartingValue: widget.tags,
+                  search: _search,
+                  hideAlias: true,
+                  onLongPress: _download,
+                  updateScrollPosition: updateScrollPosition,
+                  initalScrollPosition: widget.initalScroll,
+                  initalCellCount: widget.clear ? 0 : isar.posts.countSync(),
+                  searchFilter: _searchFilter,
+                  pageViewScrollingOffset: widget.pageViewScrollingOffset,
+                  initalCell: widget.initalPost,
+                )),
           )),
     );
   }

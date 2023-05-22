@@ -5,6 +5,9 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery/src/booru/api/danbooru.dart';
@@ -172,10 +175,23 @@ void removeSecondaryGrid(String name) {
   }
 }
 
-Future<void> chooseDirectory(void Function(String) onError) async {
-  String resp = await _channel.invokeMethod("chooseDirectory");
+Future<bool> chooseDirectory(void Function(String) onError) async {
+  String resp;
+
+  if (Platform.isAndroid) {
+    resp = await _channel.invokeMethod("chooseDirectory");
+  } else {
+    var r = await FilePicker.platform
+        .getDirectoryPath(dialogTitle: "Pick a directory for downloads");
+    if (r == null) {
+      onError("Please choose a valid directory");
+      return false;
+    }
+    resp = r;
+  }
+
   var settings = isar().settings.getSync(0) ?? Settings.empty();
   isar().writeTxnSync(() => isar().settings.putSync(settings.copy(path: resp)));
 
-  return Future.value();
+  return Future.value(true);
 }

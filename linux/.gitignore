@@ -1,0 +1,8 @@
+flutter/ephemeral
+.cache
+CMakeFiles
+intermediates_do_not_run
+cmake_install.cmake
+plugins
+Makefile
+compile_commands.json

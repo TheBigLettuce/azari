@@ -11,8 +11,10 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/add_rail.dart';
 import 'package:gallery/src/booru/single_post.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
+import 'package:gallery/src/drawer.dart';
 import 'package:gallery/src/schemas/excluded_tags.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:gallery/src/system_gestures.dart';
@@ -97,147 +99,195 @@ class _SearchBooruState extends State<SearchBooru> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Search"),
-      ),
-      body: gestureDeadZones(context,
-          child: ListView(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 10, right: 10),
-                child: autocompleteWidget(textController, _onTagPressed, focus,
-                    roundBorders: true, showSearch: true),
-              ),
-              const ListTile(
-                title: Text("Single post"),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(left: 10, right: 10),
-                child: SinglePost(),
-              ),
-              ListTile(
-                title: const Text("Recent Tags"),
-                trailing: IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          DialogRoute(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: const Text(
-                                    "Are you sure you want to delete all the tags?"),
-                                actions: [
-                                  TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      child: const Text("no")),
-                                  TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                        if (deleteAllController != null) {
-                                          deleteAllController!
-                                              .forward(from: 0)
-                                              .then((value) {
-                                            isar().writeTxnSync(() =>
-                                                isar().lastTags.clearSync());
-                                            if (deleteAllController != null) {
-                                              deleteAllController!
-                                                  .reverse(from: 1);
-                                            }
-                                          });
-                                        }
-                                      },
-                                      child: const Text("yes"))
-                                ],
-                              );
-                            },
-                          ));
-                    },
-                    icon: const Icon(Icons.delete)),
-              ),
-              TagsWidget(
-                      tags: _lastTags,
-                      deleteTag: (t) {
-                        if (deleteAllController != null) {
-                          deleteAllController!.forward(from: 0).then((value) {
-                            _tags.deleteTag(t);
-                            if (deleteAllController != null) {
-                              deleteAllController!.reverse(from: 1);
-                            }
-                          });
-                        } else {
-                          _tags.deleteTag(t);
-                        }
-                      },
-                      onPress: _onTagPressed)
-                  .animate(
-                      onInit: (controller) => deleteAllController = controller,
-                      effects: [
-                        FadeEffect(begin: 1, end: 0, duration: 200.milliseconds)
-                      ],
-                      autoPlay: false),
-              ListTile(
-                title: const Text("Excluded Tags"),
-                trailing: IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () {
-                    if (replaceController != null) {
-                      replaceController!.forward(from: 0);
-                    }
-                  },
+    Map<SingleActivatorDescription, Null Function()> bindings = {
+      const SingleActivatorDescription(
+          "Back", SingleActivator(LogicalKeyboardKey.escape)): () {
+        popUntilSenitel(context);
+      },
+      ...goDigitAndSettings(context, 1)
+    };
+
+    return CallbackShortcuts(
+        bindings: {
+          ...bindings,
+          ...keybindDescription(context, describeKeys(bindings), "Tag search")
+        },
+        child: Focus(
+            autofocus: true,
+            child: WillPopScope(
+              onWillPop: () => popUntilSenitel(context),
+              child: Scaffold(
+                appBar: AppBar(
+                  title: const Text("Search"),
                 ),
-              ).animate(
-                  onInit: (controller) => replaceController = controller,
-                  effects: [
-                    FadeEffect(begin: 1, end: 0, duration: 200.milliseconds),
-                    SwapEffect(
-                        builder: (_, __) => ListTile(
-                              title: autocompleteWidget(
-                                  excludedTagsTextController,
-                                  _tags.addExcluded,
-                                  excludedFocus,
-                                  submitOnPress: true,
-                                  showSearch: true),
+                drawer: makeDrawer(context, 1, false),
+                body: gestureDeadZones(context,
+                    child: addRail(
+                        context,
+                        1,
+                        false,
+                        ListView(
+                          children: [
+                            Padding(
+                              padding:
+                                  const EdgeInsets.only(left: 10, right: 10),
+                              child: autocompleteWidget(
+                                  textController, _onTagPressed, focus,
+                                  roundBorders: true, showSearch: true),
+                            ),
+                            const ListTile(
+                              title: Text("Single post"),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.only(left: 10, right: 10),
+                              child: SinglePost(),
+                            ),
+                            ListTile(
+                              title: const Text("Recent Tags"),
                               trailing: IconButton(
-                                icon: const Icon(Icons.arrow_back),
+                                  onPressed: () {
+                                    Navigator.push(
+                                        context,
+                                        DialogRoute(
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: const Text(
+                                                  "Are you sure you want to delete all the tags?"),
+                                              actions: [
+                                                TextButton(
+                                                    onPressed: () {
+                                                      Navigator.pop(context);
+                                                    },
+                                                    child: const Text("no")),
+                                                TextButton(
+                                                    onPressed: () {
+                                                      Navigator.pop(context);
+                                                      if (deleteAllController !=
+                                                          null) {
+                                                        deleteAllController!
+                                                            .forward(from: 0)
+                                                            .then((value) {
+                                                          isar().writeTxnSync(
+                                                              () => isar()
+                                                                  .lastTags
+                                                                  .clearSync());
+                                                          if (deleteAllController !=
+                                                              null) {
+                                                            deleteAllController!
+                                                                .reverse(
+                                                                    from: 1);
+                                                          }
+                                                        });
+                                                      }
+                                                    },
+                                                    child: const Text("yes"))
+                                              ],
+                                            );
+                                          },
+                                        ));
+                                  },
+                                  icon: const Icon(Icons.delete)),
+                            ),
+                            TagsWidget(
+                                    tags: _lastTags,
+                                    deleteTag: (t) {
+                                      if (deleteAllController != null) {
+                                        deleteAllController!
+                                            .forward(from: 0)
+                                            .then((value) {
+                                          _tags.deleteTag(t);
+                                          if (deleteAllController != null) {
+                                            deleteAllController!
+                                                .reverse(from: 1);
+                                          }
+                                        });
+                                      } else {
+                                        _tags.deleteTag(t);
+                                      }
+                                    },
+                                    onPress: _onTagPressed)
+                                .animate(
+                                    onInit: (controller) =>
+                                        deleteAllController = controller,
+                                    effects: [
+                                      FadeEffect(
+                                          begin: 1,
+                                          end: 0,
+                                          duration: 200.milliseconds)
+                                    ],
+                                    autoPlay: false),
+                            ListTile(
+                              title: const Text("Excluded Tags"),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.add),
                                 onPressed: () {
                                   if (replaceController != null) {
-                                    replaceController!.reverse(from: 1);
+                                    replaceController!.forward(from: 0);
                                   }
                                 },
                               ),
-                            ).animate().fadeIn()),
-                  ],
-                  autoPlay: false),
-              TagsWidget(
-                      redBackground: true,
-                      tags: _excludedTags,
-                      deleteTag: (t) {
-                        if (deleteAllExcludedController != null) {
-                          deleteAllExcludedController!
-                              .forward(from: 0)
-                              .then((value) {
-                            _tags.deleteExcludedTag(t);
-                            if (deleteAllExcludedController != null) {
-                              deleteAllExcludedController!.reverse(from: 1);
-                            }
-                          });
-                        } else {
-                          _tags.deleteExcludedTag(t);
-                        }
-                      },
-                      onPress: (t) {})
-                  .animate(
-                      onInit: (controller) =>
-                          deleteAllExcludedController = controller,
-                      effects: const [FadeEffect(begin: 1, end: 0)],
-                      autoPlay: false)
-            ],
-          )),
-    );
+                            ).animate(
+                                onInit: (controller) =>
+                                    replaceController = controller,
+                                effects: [
+                                  FadeEffect(
+                                      begin: 1,
+                                      end: 0,
+                                      duration: 200.milliseconds),
+                                  SwapEffect(
+                                      builder: (_, __) => ListTile(
+                                            title: autocompleteWidget(
+                                                excludedTagsTextController,
+                                                _tags.addExcluded,
+                                                excludedFocus,
+                                                submitOnPress: true,
+                                                showSearch: true),
+                                            trailing: IconButton(
+                                              icon:
+                                                  const Icon(Icons.arrow_back),
+                                              onPressed: () {
+                                                if (replaceController != null) {
+                                                  replaceController!
+                                                      .reverse(from: 1);
+                                                }
+                                              },
+                                            ),
+                                          ).animate().fadeIn()),
+                                ],
+                                autoPlay: false),
+                            TagsWidget(
+                                    redBackground: true,
+                                    tags: _excludedTags,
+                                    deleteTag: (t) {
+                                      if (deleteAllExcludedController != null) {
+                                        deleteAllExcludedController!
+                                            .forward(from: 0)
+                                            .then((value) {
+                                          _tags.deleteExcludedTag(t);
+                                          if (deleteAllExcludedController !=
+                                              null) {
+                                            deleteAllExcludedController!
+                                                .reverse(from: 1);
+                                          }
+                                        });
+                                      } else {
+                                        _tags.deleteExcludedTag(t);
+                                      }
+                                    },
+                                    onPress: (t) {})
+                                .animate(
+                                    onInit: (controller) =>
+                                        deleteAllExcludedController =
+                                            controller,
+                                    effects: const [
+                                      FadeEffect(begin: 1, end: 0)
+                                    ],
+                                    autoPlay: false)
+                          ],
+                        ))),
+              ),
+            )));
   }
 }
 

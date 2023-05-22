@@ -8,14 +8,18 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:logging/logging.dart';
 
 import '../cell/booru.dart';
 import '../db/isar.dart';
+import '../drawer.dart';
 import '../schemas/post.dart';
 import 'infinite_scroll.dart';
+
+import 'package:gallery/src/settings.dart' as widget;
 
 abstract class BooruAPI {
   String name();
@@ -185,4 +189,119 @@ void tagOnPressed(BuildContext context, String t) {
     log("searching for tag $t",
         level: Level.WARNING.value, error: error, stackTrace: stackTrace);
   });
+}
+
+Future<bool> popUntilSenitel(BuildContext context) {
+  Navigator.of(context).popUntil(ModalRoute.withName("/senitel"));
+  Navigator.pop(context);
+  return Future.value(true);
+}
+
+class CustomIntent extends Intent {
+  const CustomIntent();
+}
+
+Map<SingleActivatorDescription, Null Function()> goDigitAndSettings(
+    BuildContext context, int from) {
+  return {
+    const SingleActivatorDescription(
+            "Go to the booru grid", SingleActivator(LogicalKeyboardKey.digit1)):
+        () {
+      if (from != 0) {
+        selectDestination(context, 0, from, from == 0);
+      }
+    },
+    const SingleActivatorDescription(
+        "Go to the tags page", SingleActivator(LogicalKeyboardKey.digit2)): () {
+      selectDestination(context, 1, from, from == 0);
+    },
+    const SingleActivatorDescription(
+        "Go to the downloads", SingleActivator(LogicalKeyboardKey.digit3)): () {
+      selectDestination(context, 2, from, from == 0);
+    },
+    const SingleActivatorDescription(
+        "Open settings page", SingleActivator(LogicalKeyboardKey.keyS)): () {
+      Navigator.push(context, MaterialPageRoute(builder: (context) {
+        return const widget.Settings();
+      }));
+    }
+  };
+}
+
+Map<SingleActivator, Null Function()> keybindDescription(
+    BuildContext context, List<String> desc, String pageName) {
+  return {
+    const SingleActivator(LogicalKeyboardKey.keyK, shift: true, control: true):
+        () {
+      showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+                title: Text("Keybinds for: $pageName"),
+                content: SizedBox(
+                  width: double.maxFinite,
+                  child: ListView(
+                    children: [
+                      ...desc.map((e) => ListTile(
+                            title: Text(e),
+                          )),
+                      ListTile(
+                        title: Text(describeKey(
+                            const SingleActivatorDescription(
+                                "This menu",
+                                SingleActivator(LogicalKeyboardKey.keyK,
+                                    shift: true, control: true)))),
+                      )
+                    ],
+                  ),
+                ),
+              ));
+    }
+  };
+}
+
+class SingleActivatorDescription implements ShortcutActivator {
+  final String description;
+  final SingleActivator a;
+
+  @override
+  String debugDescribeKeys() => a.debugDescribeKeys();
+
+  @override
+  bool accepts(RawKeyEvent event, RawKeyboard state) => a.accepts(event, state);
+
+  @override
+  Iterable<LogicalKeyboardKey>? get triggers => a.triggers;
+
+  const SingleActivatorDescription(this.description, this.a);
+}
+
+List<String> describeKeys(Map<SingleActivatorDescription, dynamic> bindings) =>
+    bindings.keys.map((e) => describeKey(e)).toList();
+
+String describeKey(SingleActivatorDescription activator) {
+  StringBuffer buffer = StringBuffer();
+
+  buffer.write("'");
+
+  if (activator.a.control) {
+    buffer.write("Control+");
+  }
+
+  if (activator.a.shift) {
+    buffer.write("Shift+");
+  }
+
+  if (activator.a.alt) {
+    buffer.write("Alt+");
+  }
+
+  if (activator.a.meta) {
+    buffer.write("Meta+");
+  }
+
+  buffer.write(activator.a.trigger.keyLabel);
+  buffer.write("': ");
+  buffer.write(activator.description);
+
+  return buffer.toString();
 }

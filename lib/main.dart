@@ -5,9 +5,12 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:io';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/booru/infinite_scroll.dart';
+import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/directories.dart';
 import 'package:gallery/src/schemas/grid_restore.dart';
@@ -37,10 +40,19 @@ void main() async {
 
   const platform = MethodChannel("lol.bruh19.azari.gallery");
 
-  final accentColor = Color(await platform.invokeMethod("accentColor"));
+  int color;
+
+  try {
+    color = await platform.invokeMethod("accentColor");
+  } catch (_) {
+    color = Colors.limeAccent.value;
+  }
+  final accentColor = Color(color);
 
   FlutterLocalNotificationsPlugin().initialize(
       const InitializationSettings(
+          linux:
+              LinuxInitializationSettings(defaultActionName: "Default action"),
           android: AndroidInitializationSettings('@drawable/ic_notification')),
       onDidReceiveNotificationResponse: (details) {},
       onDidReceiveBackgroundNotificationResponse: notifBackground);
@@ -52,6 +64,7 @@ void main() async {
     initialRoute: "/",
     routes: {
       "/": (context) => const Entry(),
+      "/senitel": (context) => Container(),
       "/booru": (context) {
         var arguments = ModalRoute.of(context)!.settings.arguments;
         if (arguments != null) {
@@ -65,11 +78,22 @@ void main() async {
             .scrollPositionPrimarys
             .getSync(fastHash(getBooru().domain()));
 
-        return BooruScroll.primary(
-          initalScroll: scroll != null ? scroll.pos : 0,
-          isar: isar(),
-          clear: arguments != null ? true : false,
-        );
+        return Shortcuts(
+            shortcuts: const {
+              SingleActivator(LogicalKeyboardKey.arrowDown):
+                  ScrollIntent(direction: AxisDirection.down),
+              SingleActivator(LogicalKeyboardKey.arrowUp):
+                  ScrollIntent(direction: AxisDirection.up),
+              SingleActivator(LogicalKeyboardKey.arrowLeft): DoNothingIntent(),
+              SingleActivator(LogicalKeyboardKey.arrowRight): DoNothingIntent(),
+              SingleActivator(LogicalKeyboardKey.enter): DoNothingIntent()
+              // SingleActivator(LogicalKeyboardKey.escape): Unfocus
+            },
+            child: BooruScroll.primary(
+              initalScroll: scroll != null ? scroll.pos : 0,
+              isar: isar(),
+              clear: arguments != null ? true : false,
+            ));
       }
     },
   ));
@@ -100,7 +124,9 @@ class Entry extends StatelessWidget {
     }
 
     restore() {
-      Permission.notification.request();
+      if (Platform.isAndroid) {
+        Permission.notification.request();
+      }
 
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       SystemChrome.setSystemUIOverlayStyle(
@@ -127,7 +153,11 @@ class Entry extends StatelessWidget {
             title: "Choose download directory",
             bodyWidget: TextButton(
               onPressed: () async {
-                await chooseDirectory(showDialog);
+                for (true;;) {
+                  if (await chooseDirectory(showDialog)) {
+                    break;
+                  }
+                }
 
                 restore();
               },
