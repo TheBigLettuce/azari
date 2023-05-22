@@ -15,6 +15,8 @@ import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'db/isar.dart';
 
+import 'package:gallery/src/settings.dart' as widget;
+
 const IconData kAzariIcon = IconData(0x963F);
 
 List<NavigationDrawerDestination> destinations() {
@@ -72,10 +74,10 @@ void selectDestination(
               ),
               ModalRoute.withName("/senitel"))
         },
-      /*  3 => {
+      3 => {
           Navigator.push(context,
               MaterialPageRoute(builder: (context) => const widget.Settings()))
-        },*/
+        },
       int() => throw "unknown value"
     };
 
