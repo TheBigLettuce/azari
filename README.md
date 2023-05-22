@@ -2,7 +2,7 @@
 
 A *booru client app.
 
-## Getting Started
+## Building for Android
 
 To build this at all you need to have this installed on your computer:
 - Android Studio Flamingo (by default Flutter uses Android Studio supplied Java version, if you don't have Android Studio then it will use your system's Java),
@@ -24,3 +24,12 @@ Then you you need to create a file in `android/` directory, named `key.propertie
 - storeFile=*path to the store*
 
 After this the app should build fine. Use the `flutter build apk --split-per-abi --no-tree-shake-icons` command.
+
+## Building for GNU/Linux
+
+All the build requirements are listed on [this](https://docs.flutter.dev/get-started/install/linux) page. 
+
+To run this in the debug mode, just run `flutter run`. Don't forget to deattach the Android device.
+
+You can use `make build-linux`, which will build the release version and put it in `./app/` directory. Note that this moves the x64 version's folder.
+To build by hand just run `flutter build linux --release`. The artifacts will be available at `build/linux/`.

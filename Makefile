@@ -8,3 +8,7 @@ release:
 	adb push app_source_${GIT_REV}.zip /sdcard
 	rm app_source_${GIT_REV}.zip
 	
+build-linux:
+	flutter build linux --release
+	mkdir -p app
+	cp -r build/linux/x64/release/bundle/* app
