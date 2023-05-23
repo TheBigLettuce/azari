@@ -22,6 +22,52 @@ import '../keybinds/keybinds.dart';
 
 final Color kListTileColorInInfo = Colors.white60.withOpacity(0.8);
 
+/*class PhotoGalleryPageVideoLinux extends StatefulWidget {
+  final String url;
+  final bool localVideo;
+  const PhotoGalleryPageVideoLinux(
+      {super.key, required this.url, required this.localVideo});
+
+  @override
+  State<PhotoGalleryPageVideoLinux> createState() =>
+      _PhotoGalleryPageVideoLinuxState();
+}
+
+class _PhotoGalleryPageVideoLinuxState
+    extends State<PhotoGalleryPageVideoLinux> {
+  Player player = Player(
+      configuration: PlayerConfiguration(
+    logLevel: MPVLogLevel.warn,
+    osc: true,
+  ));
+  VideoController? controller;
+
+  @override
+  void initState() {
+    super.initState();
+    VideoController.create(player).then((value) {
+      controller = value;
+      player.open(Media(widget.url));
+      setState(() {});
+    }).onError((error, stackTrace) {
+      log("video player linux",
+          level: Level.SEVERE.value, error: error, stackTrace: stackTrace);
+    });
+  }
+
+  @override
+  void dispose() {
+    controller?.dispose();
+    player.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Video(controller: controller);
+  }
+}*/
+
 class PhotoGalleryPageVideo extends StatefulWidget {
   final String url;
   final bool localVideo;
@@ -261,6 +307,12 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
         setState(() {
           isInfoShown = !isInfoShown;
         });
+      },
+      const SingleActivatorDescription(
+          "Download file", SingleActivator(LogicalKeyboardKey.keyD)): () {
+        if (widget.download != null) {
+          widget.download!(currentPage);
+        }
       },
       const SingleActivatorDescription(
           "Hide app bar", SingleActivator(LogicalKeyboardKey.space)): () {
