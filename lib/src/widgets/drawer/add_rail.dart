@@ -9,11 +9,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/drawer.dart';
-import 'package:gallery/src/settings.dart';
+import 'package:gallery/src/widgets/drawer/drawer.dart';
+import 'package:gallery/src/pages/settings.dart';
 
-Widget addRail(
-    BuildContext context, int selectedIndex, bool pushSenitel, Widget child) {
+Widget addRail(BuildContext context, int selectedIndex, Widget child) {
   if (Platform.isAndroid || Platform.isIOS) {
     return child;
   }
@@ -44,7 +43,7 @@ Widget addRail(
           ),
           labelType: NavigationRailLabelType.selected,
           onDestinationSelected: (value) =>
-              selectDestination(context, value, selectedIndex, pushSenitel),
+              selectDestination(context, value, selectedIndex),
           destinations: [
             ...destinations().map(
                 (e) => NavigationRailDestination(icon: e.icon, label: e.label))

@@ -9,10 +9,9 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:gallery/src/booru/infinite_scroll.dart';
-import 'package:gallery/src/booru/interface.dart';
+import 'package:gallery/src/pages/booru_scroll.dart';
 import 'package:gallery/src/db/isar.dart';
-import 'package:gallery/src/directories.dart';
+import 'package:gallery/src/gallery/directories.dart';
 import 'package:gallery/src/schemas/grid_restore.dart';
 import 'package:gallery/src/schemas/scroll_position.dart' as scroll_pos;
 import 'package:gallery/src/schemas/settings.dart';
@@ -61,9 +60,8 @@ void main() async {
     title: 'Ācārya',
     darkTheme: _buildTheme(Brightness.dark, accentColor),
     theme: _buildTheme(Brightness.light, accentColor),
-    initialRoute: "/",
+    home: const Entry(),
     routes: {
-      "/": (context) => const Entry(),
       "/senitel": (context) => Container(),
       "/booru": (context) {
         var arguments = ModalRoute.of(context)!.settings.arguments;
@@ -78,22 +76,11 @@ void main() async {
             .scrollPositionPrimarys
             .getSync(fastHash(getBooru().domain()));
 
-        return Shortcuts(
-            shortcuts: const {
-              SingleActivator(LogicalKeyboardKey.arrowDown):
-                  ScrollIntent(direction: AxisDirection.down),
-              SingleActivator(LogicalKeyboardKey.arrowUp):
-                  ScrollIntent(direction: AxisDirection.up),
-              SingleActivator(LogicalKeyboardKey.arrowLeft): DoNothingIntent(),
-              SingleActivator(LogicalKeyboardKey.arrowRight): DoNothingIntent(),
-              SingleActivator(LogicalKeyboardKey.enter): DoNothingIntent()
-              // SingleActivator(LogicalKeyboardKey.escape): Unfocus
-            },
-            child: BooruScroll.primary(
-              initalScroll: scroll != null ? scroll.pos : 0,
-              isar: isar(),
-              clear: arguments != null ? true : false,
-            ));
+        return BooruScroll.primary(
+          initalScroll: scroll != null ? scroll.pos : 0,
+          isar: isar(),
+          clear: arguments != null ? true : false,
+        );
       }
     },
   ));

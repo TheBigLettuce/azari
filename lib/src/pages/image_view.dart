@@ -6,18 +6,19 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/booru/interface.dart';
-import 'package:gallery/src/system_gestures.dart';
+import 'package:gallery/src/widgets/system_gestures.dart';
 import 'package:logging/logging.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:video_player/video_player.dart';
 import '../cell/cell.dart';
+import '../keybinds/keybinds.dart';
 
 final Color kListTileColorInInfo = Colors.white60.withOpacity(0.8);
 
@@ -164,6 +165,8 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
   bool isAppbarShown = true;
   bool isInfoShown = false;
 
+  final MethodChannel channel = const MethodChannel("lol.bruh19.azari.gallery");
+
   @override
   void initState() {
     super.initState();
@@ -188,9 +191,14 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
 
   @override
   void dispose() {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    if (Platform.isAndroid) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    } else {
+      channel.invokeMethod("fullscreen_untoggle");
+    }
     widget.updateTagScrollPos(null, null);
     controller.dispose();
+
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
         systemNavigationBarColor: widget.systemOverlayRestoreColor));
     super.dispose();
@@ -232,7 +240,31 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
     Map<SingleActivatorDescription, Null Function()> bindings = {
       const SingleActivatorDescription(
           "Back", SingleActivator(LogicalKeyboardKey.escape)): () {
-        Navigator.pop(context);
+        if (isInfoShown) {
+          setState(() {
+            isInfoShown = !isInfoShown;
+          });
+        } else {
+          Navigator.pop(context);
+        }
+      },
+      const SingleActivatorDescription(
+          "Go fullscreen", SingleActivator(LogicalKeyboardKey.keyF)): () {
+        if (Platform.isAndroid) {
+          _onTap();
+        } else {
+          channel.invokeMethod("fullscreen");
+        }
+      },
+      const SingleActivatorDescription(
+          "Show info", SingleActivator(LogicalKeyboardKey.keyI)): () {
+        setState(() {
+          isInfoShown = !isInfoShown;
+        });
+      },
+      const SingleActivatorDescription(
+          "Hide app bar", SingleActivator(LogicalKeyboardKey.space)): () {
+        _onTap();
       },
       const SingleActivatorDescription(
           "Next image", SingleActivator(LogicalKeyboardKey.arrowRight)): () {

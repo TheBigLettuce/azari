@@ -8,12 +8,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/settings.dart' as schema_settings;
-import 'package:gallery/src/system_gestures.dart';
+import 'package:gallery/src/widgets/system_gestures.dart';
 
-import 'schemas/settings.dart';
+import '../keybinds/keybinds.dart';
+import '../schemas/settings.dart';
 
 class Settings extends StatefulWidget {
   const Settings({super.key});

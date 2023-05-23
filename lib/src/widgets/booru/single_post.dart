@@ -10,13 +10,13 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/booru/downloader.dart';
+import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
-import 'package:gallery/src/image/view.dart';
+import 'package:gallery/src/pages/image_view.dart';
 import 'package:logging/logging.dart';
 
-import '../schemas/download_file.dart';
+import '../../schemas/download_file.dart';
 
 class SinglePost extends StatefulWidget {
   const SinglePost({super.key});

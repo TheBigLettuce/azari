@@ -1,9 +1,11 @@
 #include "my_application.h"
 #include <cstddef>
 #include <cstdio>
+#include <cstdlib>
 #include <flutter_linux/flutter_linux.h>
 #include <linux/limits.h>
 #include <sys/types.h>
+#include <type_traits>
 #include <unistd.h>
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
@@ -14,15 +16,68 @@
 struct _MyApplication {
   GtkApplication parent_instance;
   char **dart_entrypoint_arguments;
+  FlMethodChannel *fullscreen_channel;
+  static bool *in_fullscreen;
+  static GtkWindow *window;
+
+public:
+  static FlMethodResponse *go_fullscreen() {
+    if (*in_fullscreen == FALSE) {
+      gtk_window_fullscreen(window);
+    } else {
+      gtk_window_unfullscreen(window);
+    }
+
+    return FL_METHOD_RESPONSE(fl_method_success_response_new(NULL));
+  }
+
+  static gboolean set_in_fullscreen(GtkWidget *widget, GdkEvent *event,
+                                    gpointer user_data) {
+    GdkEventWindowState wstate = event->window_state;
+    GdkWindowState state = gdk_window_get_state(wstate.window);
+
+    *in_fullscreen = state & GDK_WINDOW_STATE_FULLSCREEN;
+
+    return TRUE;
+  }
+
+  static FlMethodResponse *fullscreen_untoggle() {
+    gtk_window_unfullscreen(window);
+
+    return FL_METHOD_RESPONSE(fl_method_success_response_new(NULL));
+  }
+
+  static void fullscreen_method_call_handler(FlMethodChannel *channel,
+                                             FlMethodCall *method_call,
+                                             gpointer user_data) {
+    g_autoptr(FlMethodResponse) response = nullptr;
+    if (strcmp(fl_method_call_get_name(method_call), "fullscreen") == 0) {
+      response = go_fullscreen();
+    } else if (strcmp(fl_method_call_get_name(method_call),
+                      "fullscreen_untoggle") == 0) {
+      response = fullscreen_untoggle();
+    } else {
+      response = FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
+    }
+
+    g_autoptr(GError) error = nullptr;
+    if (!fl_method_call_respond(method_call, response, &error)) {
+      g_warning("Failed to send response: %s", error->message);
+    }
+  }
 };
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
+bool *_MyApplication::in_fullscreen;
+GtkWindow *_MyApplication::window;
 
 // Implements GApplication::activate.
 static void my_application_activate(GApplication *application) {
   MyApplication *self = MY_APPLICATION(application);
   GtkWindow *window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
+
+  self->window = window;
 
   // Use a header bar when running in GNOME as this is the common style used
   // by applications and is the setup most users will be using (e.g. Ubuntu
@@ -54,17 +109,8 @@ static void my_application_activate(GApplication *application) {
   gtk_window_set_default_size(window, 1280, 720);
   gtk_widget_show(GTK_WIDGET(window));
 
-  // GError *error = NULL;
-
-  /*gtk_window_set_icon(
-      window, gdk_pixbuf_new_from_file(
-                  "/home/rob/Documents/programming/gallery/linux/icon/icon.png",
-                  &error));*/
-
-  // if (error != NULL) {
-  //   g_warning("Unable to load the icon: %s\n", error->message);
-  //   g_error_free(error);
-  // }
+  g_signal_connect(G_OBJECT(window), "window-state-event",
+                   G_CALLBACK(self->set_in_fullscreen), NULL);
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(
@@ -75,6 +121,15 @@ static void my_application_activate(GApplication *application) {
   gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
 
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
+
+  g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
+  self->fullscreen_channel = fl_method_channel_new(
+      fl_engine_get_binary_messenger(fl_view_get_engine(view)),
+      "lol.bruh19.azari.gallery", FL_METHOD_CODEC(codec));
+
+  fl_method_channel_set_method_call_handler(
+      self->fullscreen_channel, self->fullscreen_method_call_handler, self,
+      nullptr);
 
   gtk_widget_grab_focus(GTK_WIDGET(view));
 }
@@ -104,6 +159,8 @@ static gboolean my_application_local_command_line(GApplication *application,
 static void my_application_dispose(GObject *object) {
   MyApplication *self = MY_APPLICATION(object);
   g_clear_pointer(&self->dart_entrypoint_arguments, g_strfreev);
+  g_clear_object(&self->fullscreen_channel);
+  g_clear_object(&self->in_fullscreen);
   G_OBJECT_CLASS(my_application_parent_class)->dispose(object);
 }
 
@@ -114,7 +171,9 @@ static void my_application_class_init(MyApplicationClass *klass) {
   G_OBJECT_CLASS(klass)->dispose = my_application_dispose;
 }
 
-static void my_application_init(MyApplication *self) {}
+static void my_application_init(MyApplication *self) {
+  self->in_fullscreen = new bool(FALSE);
+}
 
 MyApplication *my_application_new() {
   return MY_APPLICATION(g_object_new(my_application_get_type(),

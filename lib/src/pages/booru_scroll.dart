@@ -9,25 +9,24 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:gallery/src/add_rail.dart';
-import 'package:gallery/src/booru/downloader.dart';
+import 'package:gallery/src/widgets/drawer/add_rail.dart';
+import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/cell/booru.dart';
 import 'package:gallery/src/db/isar.dart' as db;
-import 'package:gallery/src/drawer.dart';
-import 'package:gallery/src/image/cells.dart';
+import 'package:gallery/src/widgets/drawer/drawer.dart';
+import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/scroll_position.dart' as sc_pos;
 import 'package:gallery/src/schemas/tags.dart';
-import 'package:gallery/src/system_gestures.dart';
+import 'package:gallery/src/widgets/system_gestures.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 
 import '../schemas/download_file.dart';
 import '../schemas/secondary_grid.dart';
 import '../schemas/settings.dart';
-import 'tags/tags.dart';
+import '../booru/tags/tags.dart';
 
 void _updateScrollPrimary(double pos, int? page, {double? tagPos}) {
   db.isar().writeTxnSync(() => db.isar().scrollPositionPrimarys.putSync(
@@ -223,14 +222,13 @@ class _BooruScrollState extends State<BooruScroll> {
       },
       child: Scaffold(
           key: _key,
-          drawer: makeDrawer(context, 0, true),
+          drawer: makeDrawer(context, kBooruGridDrawerIndex),
           body: gestureDeadZones(
             context,
             child: addRail(
                 context,
-                0,
-                true,
-                CellsWidget<BooruCell>(
+                kBooruGridDrawerIndex,
+                CallbackGrid<BooruCell>(
                   hasReachedEnd: () => reachedEnd,
                   scaffoldKey: _key,
                   getCell: (i) => isar.posts.getSync(i + 1)!.booruCell(_search),

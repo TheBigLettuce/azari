@@ -23,7 +23,7 @@ import 'package:gallery/src/schemas/secondary_grid.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
-import '../booru/infinite_scroll.dart';
+import '../pages/booru_scroll.dart';
 import '../schemas/settings.dart';
 
 Isar? _isar;

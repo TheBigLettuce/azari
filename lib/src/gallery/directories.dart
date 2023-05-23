@@ -12,9 +12,9 @@ import 'package:gallery/src/cell/directory.dart';
 import 'package:gallery/src/schemas/directory.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:isar/isar.dart';
-import 'db/isar.dart' as db;
-import 'drawer.dart';
-import 'image/cells.dart';
+import '../db/isar.dart' as db;
+import '../widgets/drawer/drawer.dart';
+import '../widgets/grid/callback_grid.dart';
 
 class Directories extends StatefulWidget {
   const Directories({super.key});
@@ -115,8 +115,8 @@ class _DirectoriesState extends State<Directories> {
       },
       child: Scaffold(
           key: _key,
-          drawer: makeDrawer(context, -1, false),
-          body: CellsWidget<DirectoryCell>(
+          drawer: makeDrawer(context, -1),
+          body: CallbackGrid<DirectoryCell>(
             updateScrollPosition: (pos,
                 {double? infoPos, int? selectedCell}) {},
             scaffoldKey: _key,

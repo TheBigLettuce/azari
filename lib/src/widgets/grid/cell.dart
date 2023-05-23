@@ -7,16 +7,16 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'data.dart';
+import '../../cell/data.dart';
 
-class CellImageWidget<T extends CellData> extends StatefulWidget {
+class GridCell<T extends CellData> extends StatefulWidget {
   final T _data;
   final int indx;
   final void Function(BuildContext context, int cellIndx) onPressed;
   final bool hideAlias;
   final Function()? onLongPress;
 
-  const CellImageWidget(
+  const GridCell(
       {Key? key,
       required T cell,
       required this.indx,
@@ -28,11 +28,10 @@ class CellImageWidget<T extends CellData> extends StatefulWidget {
         super(key: key);
 
   @override
-  State<CellImageWidget> createState() => _CellImageWidgetState();
+  State<GridCell> createState() => _GridCellState();
 }
 
-class _CellImageWidgetState<T extends CellData>
-    extends State<CellImageWidget<T>> {
+class _GridCellState<T extends CellData> extends State<GridCell<T>> {
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -40,6 +39,7 @@ class _CellImageWidgetState<T extends CellData>
       onTap: () {
         widget.onPressed(context, widget.indx);
       },
+      focusColor: Theme.of(context).colorScheme.primary,
       onLongPress: widget.onLongPress,
       child: Card(
           elevation: 0,

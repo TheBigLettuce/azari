@@ -11,18 +11,20 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/add_rail.dart';
-import 'package:gallery/src/booru/single_post.dart';
+import 'package:gallery/src/widgets/drawer/add_rail.dart';
+import 'package:gallery/src/widgets/booru/single_post.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
-import 'package:gallery/src/drawer.dart';
+import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/schemas/excluded_tags.dart';
 import 'package:gallery/src/schemas/tags.dart';
-import 'package:gallery/src/system_gestures.dart';
+import 'package:gallery/src/widgets/system_gestures.dart';
 import 'package:logging/logging.dart';
 
 import '../db/isar.dart';
-import 'infinite_scroll.dart';
-import 'interface.dart';
+import '../keybinds/keybinds.dart';
+import '../widgets/booru/autocomplete_tag.dart';
+import 'booru_scroll.dart';
+import '../booru/interface.dart';
 
 class SearchBooru extends StatefulWidget {
   //final void Function(String) onSubmitted;
@@ -104,7 +106,7 @@ class _SearchBooruState extends State<SearchBooru> {
           "Back", SingleActivator(LogicalKeyboardKey.escape)): () {
         popUntilSenitel(context);
       },
-      ...goDigitAndSettings(context, 1)
+      ...digitAndSettings(context, kTagsDrawerIndex)
     };
 
     return CallbackShortcuts(
@@ -120,12 +122,11 @@ class _SearchBooruState extends State<SearchBooru> {
                 appBar: AppBar(
                   title: const Text("Search"),
                 ),
-                drawer: makeDrawer(context, 1, false),
+                drawer: makeDrawer(context, kTagsDrawerIndex),
                 body: gestureDeadZones(context,
                     child: addRail(
                         context,
-                        1,
-                        false,
+                        kTagsDrawerIndex,
                         ListView(
                           children: [
                             Padding(

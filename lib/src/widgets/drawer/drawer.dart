@@ -9,15 +9,20 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/booru/search.dart';
-import 'package:gallery/src/lost_downloads.dart';
+import 'package:gallery/src/pages/search_booru.dart';
+import 'package:gallery/src/pages/downloads.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/settings.dart';
-import 'db/isar.dart';
+import '../../db/isar.dart';
 
-import 'package:gallery/src/settings.dart' as widget;
+import 'package:gallery/src/pages/settings.dart' as widget;
 
-const IconData kAzariIcon = IconData(0x963F);
+const int kBooruGridDrawerIndex = 0;
+const int kTagsDrawerIndex = 1;
+const int kDownloadsDrawerIndex = 2;
+const int kSettingsDrawerIndex = 3;
+
+const IconData kAzariIcon = IconData(0x963F); // 阿
 
 List<NavigationDrawerDestination> destinations() {
   return [
@@ -38,11 +43,10 @@ List<NavigationDrawerDestination> destinations() {
   ];
 }
 
-void selectDestination(
-        BuildContext context, int value, int selectedIndex, bool pushSenitel) =>
-    switch (value) {
-      0 => {
-          if (selectedIndex != 0)
+void selectDestination(BuildContext context, int from, int selectedIndex) =>
+    switch (selectedIndex) {
+      kBooruGridDrawerIndex => {
+          if (from != kBooruGridDrawerIndex)
             {
               Navigator.popUntil(context, ModalRoute.withName("/senitel")),
               Navigator.pop(context),
@@ -50,8 +54,8 @@ void selectDestination(
           else
             {Navigator.pop(context)}
         },
-      1 => {
-          if (pushSenitel)
+      kTagsDrawerIndex => {
+          if (from == kBooruGridDrawerIndex)
             {
               Navigator.pushNamed(context, "/senitel"),
             },
@@ -62,26 +66,26 @@ void selectDestination(
               ),
               ModalRoute.withName("/senitel"))
         },
-      2 => {
-          if (pushSenitel)
+      kDownloadsDrawerIndex => {
+          if (from == kBooruGridDrawerIndex)
             {
               Navigator.pushNamed(context, "/senitel"),
             },
           Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(
-                builder: (context) => const LostDownloads(),
+                builder: (context) => const Downloads(),
               ),
               ModalRoute.withName("/senitel"))
         },
-      3 => {
+      kSettingsDrawerIndex => {
           Navigator.push(context,
               MaterialPageRoute(builder: (context) => const widget.Settings()))
         },
       int() => throw "unknown value"
     };
 
-Widget? makeDrawer(BuildContext context, int selectedIndex, bool pushSenitel) {
+Widget? makeDrawer(BuildContext context, int selectedIndex) {
   if (!Platform.isAndroid && !Platform.isIOS) {
     return null;
   }
@@ -90,7 +94,7 @@ Widget? makeDrawer(BuildContext context, int selectedIndex, bool pushSenitel) {
   return NavigationDrawer(
     selectedIndex: selectedIndex,
     onDestinationSelected: (value) =>
-        selectDestination(context, value, selectedIndex, pushSenitel),
+        selectDestination(context, value, selectedIndex),
     children: [
       DrawerHeader(
           child: Center(

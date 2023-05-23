@@ -11,16 +11,17 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
-import 'package:gallery/src/drawer.dart';
-import 'package:gallery/src/image/view.dart';
+import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/schemas/settings.dart';
+import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:logging/logging.dart';
-import '../cell/cell.dart';
-import '../cell/image_widget.dart';
+import '../../cell/cell.dart';
+import '../../keybinds/keybinds.dart';
+import '../booru/autocomplete_tag.dart';
+import 'cell.dart';
 
-class CellsWidget<T extends Cell> extends StatefulWidget {
+class CallbackGrid<T extends Cell> extends StatefulWidget {
   final T Function(int) getCell;
   final int initalCellCount;
   final Future<int> Function()? loadNext;
@@ -43,7 +44,7 @@ class CellsWidget<T extends Cell> extends StatefulWidget {
 
   final Stream<int>? progressTicker;
 
-  const CellsWidget({
+  const CallbackGrid({
     Key? key,
     required this.getCell,
     required this.initalScrollPosition,
@@ -66,7 +67,7 @@ class CellsWidget<T extends Cell> extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<CellsWidget<T>> createState() => _CellsWidgetState<T>();
+  State<CallbackGrid<T>> createState() => _CallbackGridState<T>();
 }
 
 class _ScrollHack extends ScrollController {
@@ -74,7 +75,7 @@ class _ScrollHack extends ScrollController {
   bool get hasClients => false;
 }
 
-class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
+class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   late ScrollController controller =
       ScrollController(initialScrollOffset: widget.initalScrollPosition);
 
@@ -280,7 +281,7 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
           _refresh();
         }
       },
-      ...goDigitAndSettings(context, 0),
+      ...digitAndSettings(context, kBooruGridDrawerIndex),
     };
     return CallbackShortcuts(
         bindings: {
@@ -324,7 +325,8 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                               focus,
                               scrollHack: scrollHack,
                             ),
-                            actions: widget.onBack != null
+                            actions: widget.onBack != null &&
+                                    (Platform.isAndroid || Platform.isIOS)
                                 ? [
                                     IconButton(
                                         onPressed: () {
@@ -389,7 +391,7 @@ class _CellsWidgetState<T extends Cell> extends State<CellsWidget<T>> {
                                     var m = widget
                                         .getCell(indx)
                                         .getCellData(settings.listViewBooru);
-                                    return CellImageWidget(
+                                    return GridCell(
                                       cell: m,
                                       hidealias: widget.hideAlias,
                                       indx: indx,

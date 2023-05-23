@@ -10,23 +10,25 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/add_rail.dart';
-import 'package:gallery/src/booru/downloader.dart';
+import 'package:gallery/src/widgets/drawer/add_rail.dart';
+import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
-import 'package:gallery/src/drawer.dart';
+import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/schemas/download_file.dart';
-import 'package:gallery/src/system_gestures.dart';
+import 'package:gallery/src/widgets/system_gestures.dart';
 import 'package:isar/isar.dart';
 
-class LostDownloads extends StatefulWidget {
-  const LostDownloads({super.key});
+import '../keybinds/keybinds.dart';
+
+class Downloads extends StatefulWidget {
+  const Downloads({super.key});
 
   @override
-  State<LostDownloads> createState() => _LostDownloadsState();
+  State<Downloads> createState() => _DownloadsState();
 }
 
-class _LostDownloadsState extends State<LostDownloads> {
+class _DownloadsState extends State<Downloads> {
   List<File>? _files;
   late final StreamSubscription<void> _updates;
   final Downloader downloader = Downloader();
@@ -86,7 +88,7 @@ class _LostDownloadsState extends State<LostDownloads> {
       },
       const SingleActivatorDescription("Refresh and mark stale downloads",
           SingleActivator(LogicalKeyboardKey.f5)): _refresh,
-      ...goDigitAndSettings(context, 2)
+      ...digitAndSettings(context, kDownloadsDrawerIndex)
     };
 
     return CallbackShortcuts(
@@ -131,12 +133,11 @@ class _LostDownloadsState extends State<LostDownloads> {
                             autoPlay: false)
                   ],
                 ),
-                drawer: makeDrawer(context, 2, false),
+                drawer: makeDrawer(context, kDownloadsDrawerIndex),
                 body: gestureDeadZones(context,
                     child: addRail(
                         context,
-                        2,
-                        false,
+                        kDownloadsDrawerIndex,
                         _files == null
                             ? const Center(
                                 child: CircularProgressIndicator(),

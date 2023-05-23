@@ -16,7 +16,7 @@ import 'package:isar/isar.dart';
 import 'package:path/path.dart' as path;
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
-import '../db/isar.dart';
+import '../../db/isar.dart';
 
 Downloader? _global;
 
