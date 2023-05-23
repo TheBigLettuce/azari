@@ -9,6 +9,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:gallery/src/booru/downloader/file_mover.dart';
 import 'package:gallery/src/pages/booru_scroll.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/gallery/directories.dart';
@@ -21,6 +22,7 @@ import 'package:introduction_screen/introduction_screen.dart';
 import 'package:isar/isar.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
+import 'package:video_player_media_kit/video_player_media_kit.dart';
 
 ThemeData _buildTheme(Brightness brightness, Color accentColor) {
   var baseTheme = ThemeData(
@@ -36,6 +38,14 @@ ThemeData _buildTheme(Brightness brightness, Color accentColor) {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initalizeIsar();
+
+  if (!Platform.isAndroid) {
+    await initalizeMover();
+  }
+
+  if (Platform.isLinux) {
+    initVideoPlayerMediaKitIfNeeded();
+  }
 
   const platform = MethodChannel("lol.bruh19.azari.gallery");
 

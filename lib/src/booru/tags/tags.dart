@@ -5,12 +5,38 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:developer';
+
+import 'package:flutter/material.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/excluded_tags.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/schemas/tags.dart';
+import 'package:logging/logging.dart';
+
+import '../../pages/booru_scroll.dart';
 
 class BooruTags {
+  void onPressed(BuildContext context, String t) {
+    t = t.trim();
+    if (t.isEmpty) {
+      return;
+    }
+
+    addLatest(t);
+    newSecondaryGrid().then((value) {
+      Navigator.push(context, MaterialPageRoute(builder: (context) {
+        return BooruScroll.secondary(
+          isar: value,
+          tags: t,
+        );
+      }));
+    }).onError((error, stackTrace) {
+      log("searching for tag $t",
+          level: Level.WARNING.value, error: error, stackTrace: stackTrace);
+    });
+  }
+
   LastTags _booruTagsLatest() {
     var currentBooru = isar().settings.getSync(0)!.selectedBooru;
     var booruTags = isar().lastTags.getSync(fastHash(currentBooru.string));

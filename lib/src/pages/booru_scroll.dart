@@ -173,7 +173,7 @@ class _BooruScrollState extends State<BooruScroll> {
     return isar.posts.count();
   }
 
-  void _search(String t) => tagOnPressed(context, t);
+  void _search(String t) => BooruTags().onPressed(context, t);
 
   Future<void> _download(int i) async {
     var p = isar.posts.getSync(i + 1);

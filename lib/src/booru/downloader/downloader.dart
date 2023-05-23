@@ -10,6 +10,8 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:gallery/src/booru/downloader/file_mover.dart';
+import 'package:gallery/src/dbus/kde_notification.dart';
 import 'package:gallery/src/schemas/download_file.dart' as dw_file;
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:isar/isar.dart';
@@ -26,6 +28,16 @@ class Downloader {
   final int maximum;
   final Map<int, CancelToken> _tokens = {};
   final _downloaderPlatform = const MethodChannel("lol.bruh19.azari.gallery");
+  final KDENotification? linuxNotification = Platform.isLinux
+      ? () {
+          try {
+            var n = KDENotification();
+            return n;
+          } catch (_) {
+            return null;
+          }
+        }()
+      : null;
 
   void _addToken(int key, CancelToken t) => _tokens[key] = t;
   void _removeToken(int key) => _tokens.remove(key);
@@ -174,6 +186,13 @@ class Downloader {
       return;
     }
 
+    LinuxNotification? linuxProgress;
+    if (Platform.isLinux) {
+      linuxProgress = await linuxNotification!.createJob(
+        d.name,
+      );
+    }
+
     dio.download(d.url, filePath,
         cancelToken: _tokens[d.id],
         options: Options(headers: {
@@ -182,35 +201,54 @@ class Downloader {
         }),
         deleteOnError: true, onReceiveProgress: ((count, total) {
       if (count == total || !_hasCancelKey(d.id!)) {
-        FlutterLocalNotificationsPlugin().cancel(d.id!);
+        if (Platform.isAndroid) {
+          FlutterLocalNotificationsPlugin().cancel(d.id!);
+        } else if (Platform.isLinux) {
+          linuxProgress!.done();
+        }
         return;
       }
 
-      FlutterLocalNotificationsPlugin().show(
-        d.id!,
-        d.site,
-        d.name,
-        NotificationDetails(
-          android: AndroidNotificationDetails("download", "Dowloader",
-              groupKey: d.site,
-              ongoing: true,
-              playSound: false,
-              enableLights: false,
-              enableVibration: false,
-              category: AndroidNotificationCategory.progress,
-              maxProgress: total,
-              progress: count,
-              visibility: NotificationVisibility.private,
-              indeterminate: total == -1,
-              showProgress: true),
-        ),
-      );
+      if (Platform.isAndroid) {
+        FlutterLocalNotificationsPlugin().show(
+          d.id!,
+          d.site,
+          d.name,
+          NotificationDetails(
+            linux: LinuxNotificationDetails(
+              icon: ThemeLinuxIcon("download"),
+              category: LinuxNotificationCategory.transfer,
+              resident: true,
+            ),
+            android: AndroidNotificationDetails("download", "Dowloader",
+                groupKey: d.site,
+                ongoing: true,
+                playSound: false,
+                enableLights: false,
+                enableVibration: false,
+                category: AndroidNotificationCategory.progress,
+                maxProgress: total,
+                progress: count,
+                visibility: NotificationVisibility.private,
+                indeterminate: total == -1,
+                showProgress: true),
+          ),
+        );
+      } else if (Platform.isLinux) {
+        linuxProgress!.setTotal(total);
+        linuxProgress.update(count);
+      }
     })).then((value) async {
       try {
         var settings = isar().settings.getSync(0)!;
 
-        _downloaderPlatform.invokeMethod("move",
-            {"source": filePath, "rootUri": settings.path, "dir": d.site});
+        if (Platform.isAndroid) {
+          _downloaderPlatform.invokeMethod("move",
+              {"source": filePath, "rootUri": settings.path, "dir": d.site});
+        } else {
+          FileMover().move(MoveOp(
+              source: filePath, rootDir: settings.path, targetDir: d.site));
+        }
 
         isar().writeTxnSync(
           () {
@@ -241,7 +279,11 @@ class Downloader {
         },
       );
 
-      FlutterLocalNotificationsPlugin().cancel(d.id!);
+      if (Platform.isAndroid) {
+        FlutterLocalNotificationsPlugin().cancel(d.id!);
+      } else if (Platform.isLinux) {
+        linuxProgress!.error(error.toString());
+      }
     });
   }
 

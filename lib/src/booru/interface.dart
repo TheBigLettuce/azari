@@ -5,16 +5,10 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:developer';
-
-import 'package:flutter/material.dart';
-import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/schemas/settings.dart';
-import 'package:logging/logging.dart';
 import '../cell/booru.dart';
 import '../db/isar.dart';
 import '../schemas/post.dart';
-import '../pages/booru_scroll.dart';
 
 abstract class BooruAPI {
   String name();
@@ -50,30 +44,4 @@ int numberOfElementsPerRefresh() {
   }
 
   return 10 * settings.picturesPerRow;
-}
-
-void tagOnPressed(BuildContext context, String t) {
-  t = t.trim();
-  if (t.isEmpty) {
-    return;
-  }
-
-  BooruTags().addLatest(t);
-  newSecondaryGrid().then((value) {
-    Navigator.push(context, MaterialPageRoute(builder: (context) {
-      return BooruScroll.secondary(
-        isar: value,
-        tags: t,
-      );
-    }));
-  }).onError((error, stackTrace) {
-    log("searching for tag $t",
-        level: Level.WARNING.value, error: error, stackTrace: stackTrace);
-  });
-}
-
-Future<bool> popUntilSenitel(BuildContext context) {
-  Navigator.of(context).popUntil(ModalRoute.withName("/senitel"));
-  Navigator.pop(context);
-  return Future.value(true);
 }

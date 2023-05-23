@@ -43,7 +43,7 @@ Widget addRail(BuildContext context, int selectedIndex, Widget child) {
           ),
           labelType: NavigationRailLabelType.selected,
           onDestinationSelected: (value) =>
-              selectDestination(context, value, selectedIndex),
+              selectDestination(context, selectedIndex, value),
           destinations: [
             ...destinations().map(
                 (e) => NavigationRailDestination(icon: e.icon, label: e.label))

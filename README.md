@@ -28,8 +28,20 @@ After this the app should build fine. Use the `flutter build apk --split-per-abi
 ## Building for GNU/Linux
 
 All the build requirements are listed on [this](https://docs.flutter.dev/get-started/install/linux) page. 
+Together with the build requirements above, needs `libmpv` to build. `video_player` does not work on GNU/Linux yet, so it uses `media_kit` for video playback, it depends on mpv.
 
 To run this in the debug mode, just run `flutter run`. Don't forget to deattach the Android device.
 
 You can use `make build-linux`, which will build the release version and put it in `./app/` directory. Note that this moves the x64 version's folder.
 To build by hand just run `flutter build linux --release`. The artifacts will be available at `build/linux/`.
+
+## Regenerating generated code
+
+All generated Dart code has extension `*.g.dart`. To regenerate DBus generated code, you need to install the `dart-dbus` tool. To install it, run:
+- `dart pub global activate dbus`
+Then you can use Makefile in the `dbus_services/` directory, just `cd dbus_services && make gen` . `dart-dbus` should be in your `path`.
+Note, however, that `dart-dbus` may output invalid code. Then you need to fix it by hand, in the `job_view_server.g.dart` or `job_view.g.dart` file.
+
+To regenerate the Isar schema files, first cd into the directory of this README.md file and run:
+- `flutter pub update`
+You need to get all the dependencies first to start generating, then you need to run `dart run build_runner build` .

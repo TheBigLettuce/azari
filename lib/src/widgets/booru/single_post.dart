@@ -11,11 +11,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
-import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:logging/logging.dart';
 
+import '../../booru/tags/tags.dart';
 import '../../schemas/download_file.dart';
 
 class SinglePost extends StatefulWidget {
@@ -142,8 +142,8 @@ class _SinglePostState extends State<SinglePost> {
                       cellCount: 1,
                       scrollUntill: (_) {},
                       startingCell: 0,
-                      getCell: (_) =>
-                          value.booruCell((t) => tagOnPressed(context, t)),
+                      getCell: (_) => value
+                          .booruCell((t) => BooruTags().onPressed(context, t)),
                       onNearEnd: () {
                         return Future.value(1);
                       },

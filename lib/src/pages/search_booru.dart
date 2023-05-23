@@ -11,6 +11,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/pages/senitel.dart';
 import 'package:gallery/src/widgets/drawer/add_rail.dart';
 import 'package:gallery/src/widgets/booru/single_post.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
@@ -24,7 +25,6 @@ import '../db/isar.dart';
 import '../keybinds/keybinds.dart';
 import '../widgets/booru/autocomplete_tag.dart';
 import 'booru_scroll.dart';
-import '../booru/interface.dart';
 
 class SearchBooru extends StatefulWidget {
   //final void Function(String) onSubmitted;

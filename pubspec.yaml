@@ -59,6 +59,8 @@ dependencies:
   async: ^2.11.0
   dio: ^5.1.2
   logging: ^1.1.1
+  dbus: ^0.7.8
+  video_player_media_kit: ^0.0.10
   #google_fonts: ^4.0.4
 
 dev_dependencies:
