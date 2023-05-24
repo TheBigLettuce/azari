@@ -1,9 +1,25 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//
+// Copyright (C) 2023 Bob
+// This program is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free Software
+// Foundation; version 2. This program is distributed in the hope that it will
+// be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+// Public License for more details. You should have received a copy of the GNU
+// General Public License along with this program; if not, write to the Free
+// Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+// 02110-1301, USA.
+
 #include "my_application.h"
 #include <cstddef>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <flutter_linux/flutter_linux.h>
+#include <libgen.h>
 #include <linux/limits.h>
+#include <string.h>
 #include <sys/types.h>
 #include <type_traits>
 #include <unistd.h>
@@ -21,6 +37,18 @@ struct _MyApplication {
   static GtkWindow *window;
 
 public:
+  static FlMethodResponse *set_title(const gchar *title) {
+    gtk_window_set_title(window, title);
+
+    return FL_METHOD_RESPONSE(fl_method_success_response_new(NULL));
+  }
+
+  static FlMethodResponse *unset_title() {
+    gtk_window_set_title(window, "Ācārya");
+
+    return FL_METHOD_RESPONSE(fl_method_success_response_new(NULL));
+  }
+
   static FlMethodResponse *go_fullscreen() {
     if (*in_fullscreen == FALSE) {
       gtk_window_fullscreen(window);
@@ -38,7 +66,7 @@ public:
 
     *in_fullscreen = state & GDK_WINDOW_STATE_FULLSCREEN;
 
-    return TRUE;
+    return FALSE;
   }
 
   static FlMethodResponse *fullscreen_untoggle() {
@@ -56,6 +84,13 @@ public:
     } else if (strcmp(fl_method_call_get_name(method_call),
                       "fullscreen_untoggle") == 0) {
       response = fullscreen_untoggle();
+    } else if (strcmp(fl_method_call_get_name(method_call), "default_title") ==
+               0) {
+      response = unset_title();
+    } else if (strcmp(fl_method_call_get_name(method_call), "set_title") == 0) {
+      FlValue *value = fl_method_call_get_args(method_call);
+
+      response = set_title(fl_value_get_string(value));
     } else {
       response = FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
     }
@@ -106,8 +141,24 @@ static void my_application_activate(GApplication *application) {
     gtk_window_set_title(window, "Ācārya");
   }
 
+  char res[PATH_MAX];
+  ssize_t count = readlink("/proc/self/exe", res, PATH_MAX);
+  g_assert(count);
+
+  char *dir = dirname(res);
+
   gtk_window_set_default_size(window, 1280, 720);
   gtk_widget_show(GTK_WIDGET(window));
+
+  char *newString;
+
+  asprintf(&newString, "%s%s", dir, "/icon.png");
+
+  gtk_window_set_icon_from_file(window, newString,
+                                NULL); // AppDir image
+
+  // free(dir);
+  free(newString);
 
   g_signal_connect(G_OBJECT(window), "window-state-event",
                    G_CALLBACK(self->set_in_fullscreen), NULL);

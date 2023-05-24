@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Azari
+Comment=A *booru client written with Flutter.
+Exec=gallery
+Icon=icon
+Terminal=false
+Categories=Graphics

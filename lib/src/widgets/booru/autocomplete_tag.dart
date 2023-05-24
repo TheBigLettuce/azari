@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
@@ -25,8 +26,11 @@ Future<List<String>> autoCompleteTag(
   return complF(tags.isEmpty ? "" : tags.last);
 }
 
-Widget autocompleteWidget(TextEditingController controller,
-    void Function(String) onSubmit, FocusNode focus,
+Widget autocompleteWidget(
+    TextEditingController controller,
+    void Function(String) highlightChanged,
+    void Function(String) onSubmit,
+    FocusNode focus,
     {ScrollController? scrollHack,
     bool noSticky = false,
     bool submitOnPress = false,
@@ -36,49 +40,65 @@ Widget autocompleteWidget(TextEditingController controller,
     textEditingController: controller,
     focusNode: focus,
     optionsViewBuilder: (context, onSelected, options) {
+      var tiles = options
+          .map((elem) => ListTile(
+                onTap: () {
+                  if (submitOnPress) {
+                    focus.unfocus();
+                    controller.text = "";
+                    onSubmit(elem);
+                    return;
+                  }
+
+                  if (noSticky) {
+                    onSelected(elem);
+                    return;
+                  }
+
+                  List<String> tags = List.from(controller.text.split(" "));
+
+                  if (tags.isNotEmpty) {
+                    tags.removeLast();
+                    tags.remove(elem);
+                  }
+
+                  tags.add(elem);
+
+                  var tagsString =
+                      tags.reduce((value, element) => "$value $element");
+
+                  onSelected(tagsString);
+                },
+                title: Text(elem),
+              ))
+          .toList();
       return Align(
         alignment: Alignment.topLeft,
         child: Material(
-          clipBehavior: Clip.hardEdge,
+          clipBehavior: Clip.antiAlias,
           borderRadius: BorderRadius.circular(25),
           elevation: 4,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 200, maxWidth: 200),
-            child: ListView(
-              children: ListTile.divideTiles(
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                  context: context,
-                  tiles: options.map((elem) => ListTile(
-                        onTap: () {
-                          if (submitOnPress) {
-                            focus.unfocus();
-                            controller.text = "";
-                            onSubmit(elem);
-                            return;
-                          }
+            child: ListView.builder(
+              itemCount: tiles.length,
+              itemBuilder: (context, index) {
+                return Builder(builder: (context) {
+                  var highlight =
+                      AutocompleteHighlightedOption.of(context) == index;
+                  if (highlight) {
+                    highlightChanged(options.elementAt(index));
+                    WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+                      Scrollable.ensureVisible(context);
+                    });
+                  }
 
-                          if (noSticky) {
-                            onSelected(elem);
-                            return;
-                          }
-
-                          List<String> tags =
-                              List.from(controller.text.split(" "));
-
-                          if (tags.isNotEmpty) {
-                            tags.removeLast();
-                            tags.remove(elem);
-                          }
-
-                          tags.add(elem);
-
-                          var tagsString = tags
-                              .reduce((value, element) => "$value $element");
-
-                          onSelected(tagsString);
-                        },
-                        title: Text(elem),
-                      ))).toList(),
+                  return Container(
+                    color: highlight ? Theme.of(context).focusColor : null,
+                    child: tiles[index],
+                  );
+                });
+              },
             ),
           ),
         ),

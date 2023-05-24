@@ -5,6 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -20,9 +21,10 @@ import 'package:gallery/src/schemas/tags.dart';
 // import 'package:google_fonts/google_fonts.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:isar/isar.dart';
+import 'package:media_kit/media_kit.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
-import 'package:video_player_media_kit/video_player_media_kit.dart';
+import 'package:path/path.dart' as path;
 
 ThemeData _buildTheme(Brightness brightness, Color accentColor) {
   var baseTheme = ThemeData(
@@ -36,15 +38,20 @@ ThemeData _buildTheme(Brightness brightness, Color accentColor) {
 }
 
 void main() async {
+  if (Platform.isLinux) {
+    await Isar.initializeIsarCore(libraries: {
+      Abi.current(): path.joinAll(
+          [path.dirname(Platform.resolvedExecutable), "lib", "libisar.so"])
+    });
+
+    MediaKit.ensureInitialized();
+  }
+
   WidgetsFlutterBinding.ensureInitialized();
   await initalizeIsar();
 
   if (!Platform.isAndroid) {
     await initalizeMover();
-  }
-
-  if (Platform.isLinux) {
-    initVideoPlayerMediaKitIfNeeded();
   }
 
   const platform = MethodChannel("lol.bruh19.azari.gallery");

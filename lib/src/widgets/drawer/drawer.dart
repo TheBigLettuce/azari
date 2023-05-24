@@ -94,7 +94,7 @@ Widget? makeDrawer(BuildContext context, int selectedIndex) {
   return NavigationDrawer(
     selectedIndex: selectedIndex,
     onDestinationSelected: (value) =>
-        selectDestination(context, value, selectedIndex),
+        selectDestination(context, selectedIndex, value),
     children: [
       DrawerHeader(
           child: Center(

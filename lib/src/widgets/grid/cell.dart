@@ -5,6 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../cell/data.dart';
@@ -59,13 +60,13 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
 
                       return Center(
                         child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes!
+                          value: loadingProgress.cumulativeBytesLoaded
                                   .toDouble() /
-                              loadingProgress.cumulativeBytesLoaded.toDouble(),
+                              loadingProgress.expectedTotalBytes!.toDouble(),
                         ),
                       );
                     },
-                    image: widget._data.thumb(),
+                    image: widget._data.thumb,
                     alignment: Alignment.center,
                     fit: BoxFit.cover,
                     filterQuality: FilterQuality.high,

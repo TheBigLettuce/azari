@@ -46,20 +46,27 @@ Map<SingleActivator, Null Function()> keybindDescription(
       showDialog(
           context: context,
           builder: (context) => AlertDialog(
+                backgroundColor:
+                    Theme.of(context).dialogBackgroundColor.withOpacity(0.5),
                 title: Text("Keybinds for: $pageName"),
                 content: SizedBox(
                   width: double.maxFinite,
                   child: ListView(
                     children: [
-                      ...desc.map((e) => ListTile(
-                            title: Text(e),
-                          )),
-                      ListTile(
-                        title: Text(describeKey(
-                            const SingleActivatorDescription(
-                                "This menu",
-                                SingleActivator(LogicalKeyboardKey.keyK,
-                                    shift: true, control: true)))),
+                      ...ListTile.divideTiles(
+                          context: context,
+                          tiles: desc.map((e) => ListTile(
+                                title: Text(e),
+                              ))),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 15),
+                        child: ListTile(
+                          title: Text(describeKey(
+                              const SingleActivatorDescription(
+                                  "This menu",
+                                  SingleActivator(LogicalKeyboardKey.keyK,
+                                      shift: true, control: true)))),
+                        ),
                       )
                     ],
                   ),

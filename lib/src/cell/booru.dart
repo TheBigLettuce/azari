@@ -56,11 +56,8 @@ class BooruCell extends Cell {
   }
 
   @override
-  CellData getCellData(bool isList) => CellData(
-      thumb: () {
-        return CachedNetworkImageProvider(path);
-      },
-      name: alias(isList));
+  CellData getCellData(bool isList) =>
+      CellData(thumb: CachedNetworkImageProvider(path), name: alias(isList));
 
   BooruCell(
       {required this.postNumber,

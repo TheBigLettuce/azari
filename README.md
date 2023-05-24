@@ -28,12 +28,15 @@ After this the app should build fine. Use the `flutter build apk --split-per-abi
 ## Building for GNU/Linux
 
 All the build requirements are listed on [this](https://docs.flutter.dev/get-started/install/linux) page. 
-Together with the build requirements above, needs `libmpv` to build. `video_player` does not work on GNU/Linux yet, so it uses `media_kit` for video playback, it depends on mpv.
+Together with the build requirements above, needs `libmpv` to build and run. `video_player` does not work on GNU/Linux yet, so it uses `media_kit` for video playback, it depends on mpv.
+You must have to install the `libmpv` on your system before building this app. If you wont do so, the .AppImage will work incorrectly. 
 
 To run this in the debug mode, just run `flutter run`. Don't forget to deattach the Android device.
 
-You can use `make build-linux`, which will build the release version and put it in `./app/` directory. Note that this moves the x64 version's folder.
-To build by hand just run `flutter build linux --release`. The artifacts will be available at `build/linux/`.
+To build this as .AppImage, run `make linux-appimage` . You should then get Azari-*git ref*-x86_64.AppImage.
+When you build this app as an .AppImage, then your system's `libmpv` will be automatically included inside. 
+You can build the release version, and then run it, without building .AppImage with `make run` . Delete `app/` folder when you want to rebuild it.  
+To just build the release version, run `make app` .
 
 ## Regenerating generated code
 

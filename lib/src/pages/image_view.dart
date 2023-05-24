@@ -14,6 +14,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/widgets/system_gestures.dart';
 import 'package:logging/logging.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:video_player/video_player.dart';
@@ -22,7 +24,7 @@ import '../keybinds/keybinds.dart';
 
 final Color kListTileColorInInfo = Colors.white60.withOpacity(0.8);
 
-/*class PhotoGalleryPageVideoLinux extends StatefulWidget {
+class PhotoGalleryPageVideoLinux extends StatefulWidget {
   final String url;
   final bool localVideo;
   const PhotoGalleryPageVideoLinux(
@@ -35,19 +37,21 @@ final Color kListTileColorInInfo = Colors.white60.withOpacity(0.8);
 
 class _PhotoGalleryPageVideoLinuxState
     extends State<PhotoGalleryPageVideoLinux> {
-  Player player = Player(
-      configuration: PlayerConfiguration(
-    logLevel: MPVLogLevel.warn,
-    osc: true,
-  ));
+  Player player = Player();
   VideoController? controller;
 
   @override
   void initState() {
     super.initState();
-    VideoController.create(player).then((value) {
+
+    VideoController.create(player, enableHardwareAcceleration: false)
+        .then((value) {
       controller = value;
-      player.open(Media(widget.url));
+      player.open(
+        Media(
+          widget.url,
+        ),
+      );
       setState(() {});
     }).onError((error, stackTrace) {
       log("video player linux",
@@ -57,16 +61,24 @@ class _PhotoGalleryPageVideoLinuxState
 
   @override
   void dispose() {
-    controller?.dispose();
     player.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Video(controller: controller);
+    return controller == null
+        ? const Center(
+            child: CircularProgressIndicator(),
+          )
+        : GestureDetector(
+            onDoubleTap: () {
+              player.playOrPause();
+            },
+            child: Video(controller: controller),
+          );
   }
-}*/
+}
 
 class PhotoGalleryPageVideo extends StatefulWidget {
   final String url;
@@ -206,6 +218,8 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
   late int cellCount = widget.cellCount;
   bool refreshing = false;
 
+  PhotoViewController photoController = PhotoViewController();
+
   AnimationController? downloadButtonController;
 
   bool isAppbarShown = true;
@@ -233,15 +247,23 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
 
     currentCell = widget.getCell(widget.startingCell);
     controller = PageController(initialPage: widget.startingCell);
+
+    if (Platform.isLinux) {
+      channel.invokeMethod("set_title", currentCell.alias(true));
+    }
   }
 
   @override
   void dispose() {
-    if (Platform.isAndroid) {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    } else {
+    if (Platform.isLinux) {
+      channel.invokeMethod("default_title");
       channel.invokeMethod("fullscreen_untoggle");
     }
+
+    if (Platform.isAndroid) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    }
+
     widget.updateTagScrollPos(null, null);
     controller.dispose();
 
@@ -294,6 +316,53 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
           Navigator.pop(context);
         }
       },
+      const SingleActivatorDescription("Move image right",
+          SingleActivator(LogicalKeyboardKey.arrowRight, shift: true)): () {
+        var pos = photoController.position;
+        photoController.position = pos.translate(-20, 0);
+      },
+      const SingleActivatorDescription("Move image left",
+          SingleActivator(LogicalKeyboardKey.arrowLeft, shift: true)): () {
+        var pos = photoController.position;
+        photoController.position = pos.translate(20, 0);
+      },
+      const SingleActivatorDescription("Rotate image right",
+          SingleActivator(LogicalKeyboardKey.arrowRight, control: true)): () {
+        //var pos = photoController.position;
+        //photoController.position = pos.translate(0, 20);
+        photoController.rotation += 0.5;
+      },
+      const SingleActivatorDescription("Rotate image left",
+          SingleActivator(LogicalKeyboardKey.arrowLeft, control: true)): () {
+        //var pos = photoController.position;
+        //photoController.position = pos.translate(0, 20);
+        photoController.rotation -= 0.5;
+      },
+      const SingleActivatorDescription(
+          "Move image up", SingleActivator(LogicalKeyboardKey.arrowUp)): () {
+        var pos = photoController.position;
+        photoController.position = pos.translate(0, 20);
+      },
+      const SingleActivatorDescription(
+              "Move image down", SingleActivator(LogicalKeyboardKey.arrowDown)):
+          () {
+        var pos = photoController.position;
+        photoController.position = pos.translate(0, -20);
+      },
+      const SingleActivatorDescription(
+          "Zoom in", SingleActivator(LogicalKeyboardKey.pageUp)): () {
+        var s = photoController.scale;
+        if (s != null && s < 2.5) {
+          photoController.scale = s + 0.5;
+        }
+      },
+      const SingleActivatorDescription(
+          "Zoom out", SingleActivator(LogicalKeyboardKey.pageDown)): () {
+        var s = photoController.scale;
+        if (s != null && s > 1) {
+          photoController.scale = s - 0.5;
+        }
+      },
       const SingleActivatorDescription(
           "Go fullscreen", SingleActivator(LogicalKeyboardKey.keyF)): () {
         if (Platform.isAndroid) {
@@ -320,11 +389,12 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
       },
       const SingleActivatorDescription(
           "Next image", SingleActivator(LogicalKeyboardKey.arrowRight)): () {
-        controller.nextPage(duration: 500.milliseconds, curve: Curves.ease);
+        controller.nextPage(duration: 500.milliseconds, curve: Curves.linear);
       },
       const SingleActivatorDescription(
           "Previous image", SingleActivator(LogicalKeyboardKey.arrowLeft)): () {
-        controller.previousPage(duration: 500.milliseconds, curve: Curves.ease);
+        controller.previousPage(
+            duration: 500.milliseconds, curve: Curves.linear);
       }
     };
     return CallbackShortcuts(
@@ -389,11 +459,20 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                           enableRotation: true,
                           onPageChanged: (index) async {
                             currentPage = index;
+                            photoController.rotation = 0;
+                            //photoController.scale = 1;
+                            photoController.position = Offset.zero;
                             _loadNext(index);
                             widget.scrollUntill(index);
 
+                            var c = widget.getCell(index);
+
+                            if (Platform.isLinux) {
+                              channel.invokeMethod("set_title", c.alias(true));
+                            }
+
                             setState(() {
-                              currentCell = widget.getCell(index);
+                              currentCell = c;
                             });
                           },
                           pageController: controller,
@@ -406,12 +485,17 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                               return PhotoViewGalleryPageOptions.customChild(
                                   disableGestures: true,
                                   tightMode: true,
-                                  child: PhotoGalleryPageVideo(
-                                    url: fileContent.videoPath!,
-                                    localVideo: fileContent.isVideoLocal,
-                                  ));
+                                  child: Platform.isLinux
+                                      ? PhotoGalleryPageVideoLinux(
+                                          url: fileContent.videoPath!,
+                                          localVideo: fileContent.isVideoLocal)
+                                      : PhotoGalleryPageVideo(
+                                          url: fileContent.videoPath!,
+                                          localVideo: fileContent.isVideoLocal,
+                                        ));
                             } else if (fileContent.type == "image") {
                               return PhotoViewGalleryPageOptions(
+                                  controller: photoController,
                                   minScale: PhotoViewComputedScale.contained,
                                   filterQuality: FilterQuality.high,
                                   imageProvider: fileContent.image);

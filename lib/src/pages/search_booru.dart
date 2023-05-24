@@ -27,7 +27,6 @@ import '../widgets/booru/autocomplete_tag.dart';
 import 'booru_scroll.dart';
 
 class SearchBooru extends StatefulWidget {
-  //final void Function(String) onSubmitted;
   const SearchBooru({super.key});
 
   @override
@@ -43,6 +42,10 @@ class _SearchBooruState extends State<SearchBooru> {
 
   FocusNode focus = FocusNode();
   FocusNode excludedFocus = FocusNode();
+  FocusNode selectionFocus = FocusNode();
+
+  String searchHighlight = "";
+  String excludedHighlight = "";
 
   TextEditingController textController = TextEditingController();
   TextEditingController excludedTagsTextController = TextEditingController();
@@ -96,6 +99,7 @@ class _SearchBooruState extends State<SearchBooru> {
     _excludedTagsWatcher.cancel();
     focus.dispose();
     excludedFocus.dispose();
+    selectionFocus.dispose();
     super.dispose();
   }
 
@@ -132,8 +136,9 @@ class _SearchBooruState extends State<SearchBooru> {
                             Padding(
                               padding:
                                   const EdgeInsets.only(left: 10, right: 10),
-                              child: autocompleteWidget(
-                                  textController, _onTagPressed, focus,
+                              child: autocompleteWidget(textController, (s) {
+                                searchHighlight = s;
+                              }, _onTagPressed, focus,
                                   roundBorders: true, showSearch: true),
                             ),
                             const ListTile(
@@ -240,8 +245,9 @@ class _SearchBooruState extends State<SearchBooru> {
                                       builder: (_, __) => ListTile(
                                             title: autocompleteWidget(
                                                 excludedTagsTextController,
-                                                _tags.addExcluded,
-                                                excludedFocus,
+                                                (s) {
+                                              excludedHighlight = s;
+                                            }, _tags.addExcluded, excludedFocus,
                                                 submitOnPress: true,
                                                 showSearch: true),
                                             trailing: IconButton(

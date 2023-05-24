@@ -16,6 +16,7 @@ import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:logging/logging.dart';
+import '../../booru/tags/tags.dart';
 import '../../cell/cell.dart';
 import '../../keybinds/keybinds.dart';
 import '../booru/autocomplete_tag.dart';
@@ -92,9 +93,17 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
   StreamSubscription<int>? ticker;
 
+  String _currentlyHighlightedTag = "";
+
   @override
   void initState() {
     super.initState();
+
+    focus.addListener(() {
+      if (!focus.hasFocus) {
+        _currentlyHighlightedTag = "";
+      }
+    });
 
     if (widget.progressTicker != null) {
       ticker = widget.progressTicker!.listen((event) {
@@ -281,6 +290,25 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
           _refresh();
         }
       },
+      const SingleActivatorDescription("Select highlighted autocomplete",
+          SingleActivator(LogicalKeyboardKey.enter, shift: true)): () {
+        if (_currentlyHighlightedTag != "") {
+          BooruTags().onPressed(context, _currentlyHighlightedTag);
+        }
+      },
+      const SingleActivatorDescription("Focus search",
+          SingleActivator(LogicalKeyboardKey.keyF, control: true)): () {
+        if (focus.hasFocus) {
+          focus.unfocus();
+        } else {
+          focus.requestFocus();
+        }
+      },
+      if (widget.onBack != null)
+        const SingleActivatorDescription(
+            "Back", SingleActivator(LogicalKeyboardKey.escape)): () {
+          widget.onBack!();
+        },
       ...digitAndSettings(context, kBooruGridDrawerIndex),
     };
     return CallbackShortcuts(
@@ -302,118 +330,120 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
                 return Future.value();
               },
-              child: Stack(
-                children: [
-                  Scrollbar(
-                      interactive: true,
-                      thickness: 6,
-                      controller: controller,
-                      child: CustomScrollView(
-                        controller: controller,
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        slivers: [
-                          SliverAppBar(
-                            title: autocompleteWidget(
-                              textEditingController,
-                              (s) {
-                                if (refreshing) {
-                                  return;
-                                }
+              child: Scrollbar(
+                  interactive: true,
+                  thickness: 6,
+                  controller: controller,
+                  child: CustomScrollView(
+                    controller: controller,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      SliverAppBar(
+                        title: autocompleteWidget(
+                          textEditingController,
+                          (s) {
+                            _currentlyHighlightedTag = s;
+                          },
+                          (s) {
+                            if (refreshing) {
+                              return;
+                            }
 
-                                widget.search(s);
-                              },
-                              focus,
-                              scrollHack: scrollHack,
-                            ),
-                            actions: widget.onBack != null &&
-                                    (Platform.isAndroid || Platform.isIOS)
-                                ? [
-                                    IconButton(
-                                        onPressed: () {
-                                          widget.scaffoldKey.currentState!
-                                              .openDrawer();
-                                        },
-                                        icon: const Icon(Icons.menu))
-                                  ]
-                                : null,
-                            leading: widget.onBack != null
-                                ? IconButton(
-                                    onPressed: widget.onBack,
-                                    icon: const Icon(Icons.arrow_back))
-                                : null,
-                            snap: true,
-                            floating: true,
-                            bottom: refreshing
-                                ? const PreferredSize(
-                                    preferredSize: Size.fromHeight(4),
-                                    child: LinearProgressIndicator(),
-                                  )
-                                : null,
-                            shape: Platform.isAndroid
-                                ? RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(15))
-                                : null,
-                          ),
-                          settings.listViewBooru
-                              ? SliverList.separated(
-                                  separatorBuilder: (context, index) =>
-                                      const Divider(
-                                    height: 1,
+                            widget.search(s);
+                          },
+                          focus,
+                          scrollHack: scrollHack,
+                        ),
+                        actions: widget.onBack != null &&
+                                (Platform.isAndroid || Platform.isIOS)
+                            ? [
+                                IconButton(
+                                    onPressed: () {
+                                      widget.scaffoldKey.currentState!
+                                          .openDrawer();
+                                    },
+                                    icon: const Icon(Icons.menu))
+                              ]
+                            : null,
+                        leading: widget.onBack != null
+                            ? IconButton(
+                                onPressed: widget.onBack,
+                                icon: const Icon(Icons.arrow_back))
+                            : null,
+                        pinned:
+                            Platform.isAndroid || Platform.isIOS ? false : true,
+                        snap:
+                            Platform.isAndroid || Platform.isIOS ? true : false,
+                        floating:
+                            Platform.isAndroid || Platform.isIOS ? true : false,
+                        bottom: refreshing
+                            ? const PreferredSize(
+                                preferredSize: Size.fromHeight(4),
+                                child: LinearProgressIndicator(),
+                              )
+                            : null,
+                        shape: Platform.isAndroid
+                            ? RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15))
+                            : null,
+                      ),
+                      settings.listViewBooru
+                          ? SliverList.separated(
+                              separatorBuilder: (context, index) =>
+                                  const Divider(
+                                height: 1,
+                              ),
+                              itemCount: cellCount,
+                              itemBuilder: (context, index) {
+                                var cell = widget
+                                    .getCell(index)
+                                    .getCellData(settings.listViewBooru);
+
+                                return ListTile(
+                                  onTap: () => _onPressed(context, index),
+                                  leading: CircleAvatar(
+                                      backgroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .background,
+                                      foregroundImage: cell.thumb),
+                                  title: Text(
+                                    cell.name,
+                                    softWrap: false,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  itemCount: cellCount,
-                                  itemBuilder: (context, index) {
-                                    var cell = widget
-                                        .getCell(index)
-                                        .getCellData(settings.listViewBooru);
-
-                                    return ListTile(
-                                      onTap: () => _onPressed(context, index),
-                                      leading: CircleAvatar(
-                                          backgroundColor: Theme.of(context)
-                                              .colorScheme
-                                              .background,
-                                          foregroundImage: cell.thumb()),
-                                      title: Text(
-                                        cell.name,
-                                        softWrap: false,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ).animate().fadeIn();
-                                  },
-                                )
-                              : SliverGrid.builder(
-                                  gridDelegate:
-                                      SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisCount:
-                                              settings.picturesPerRow),
-                                  itemCount: cellCount,
-                                  itemBuilder: (context, indx) {
-                                    var m = widget
-                                        .getCell(indx)
-                                        .getCellData(settings.listViewBooru);
-                                    return GridCell(
-                                      cell: m,
-                                      hidealias: widget.hideAlias,
-                                      indx: indx,
-                                      onPressed: _onPressed,
-                                      onLongPress: widget.onLongPress == null
-                                          ? null
-                                          : () async {
-                                              widget.onLongPress!(indx)
-                                                  .onError((error, stackTrace) {
-                                                log("onLongPress in the grid callback to CellImageWidget",
-                                                    level: Level.WARNING.value,
-                                                    error: error,
-                                                    stackTrace: stackTrace);
-                                              });
-                                            }, //extend: maxExtend,
-                                    );
-                                  },
-                                )
-                        ],
-                      ))
-                ],
-              )),
+                                ).animate().fadeIn();
+                              },
+                            )
+                          : SliverGrid.builder(
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: settings.picturesPerRow),
+                              itemCount: cellCount,
+                              itemBuilder: (context, indx) {
+                                var m = widget
+                                    .getCell(indx)
+                                    .getCellData(settings.listViewBooru);
+                                return GridCell(
+                                  cell: m,
+                                  hidealias: widget.hideAlias,
+                                  indx: indx,
+                                  onPressed: _onPressed,
+                                  onLongPress: widget.onLongPress == null
+                                      ? null
+                                      : () async {
+                                          widget.onLongPress!(indx)
+                                              .onError((error, stackTrace) {
+                                            log("onLongPress in the grid callback to CellImageWidget",
+                                                level: Level.WARNING.value,
+                                                error: error,
+                                                stackTrace: stackTrace);
+                                          });
+                                        }, //extend: maxExtend,
+                                );
+                              },
+                            )
+                    ],
+                  ))),
         ));
   }
 }

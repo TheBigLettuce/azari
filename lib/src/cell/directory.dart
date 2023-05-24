@@ -25,11 +25,8 @@ class DirectoryCell extends Cell {
   String fileDownloadUrl() => path;
 
   @override
-  CellData getCellData(bool isList) => CellData(
-      thumb: () {
-        return image;
-      },
-      name: alias(isList));
+  CellData getCellData(bool isList) =>
+      CellData(thumb: image, name: alias(isList));
 
   DirectoryCell(
       {required this.image,
