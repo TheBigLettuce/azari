@@ -7,9 +7,9 @@ release: linux-appimage
 	zip app_source_${GIT_REV} build/app/outputs/flutter-apk/app-arm64-v8a-release.apk source.tar.gz
 	rm source.tar.gz
 	adb push app_source_${GIT_REV}.zip /sdcard
-	adb push Azari-*-86_64.AppImage /sdcard
+	adb push Azari-*-x86_64.AppImage /sdcard
 	rm app_source_${GIT_REV}.zip
-	rm Azari-*-86_64.AppImage
+	rm Azari-*-x86_64.AppImage
 
 linux-appimage: linuxdeploy-x86_64.AppImage
 	mkdir -p AppDir && cd AppDir && rm -r -f *
