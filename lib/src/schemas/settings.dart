@@ -25,6 +25,7 @@ class Settings {
   Booru selectedBooru;
   @enumerated
   DisplayQuality quality;
+  bool safeMode;
 
   Settings(
       {required this.path,
@@ -33,7 +34,8 @@ class Settings {
       required this.quality,
       required this.enableGallery,
       required this.listViewBooru,
-      required this.picturesPerRow});
+      required this.picturesPerRow,
+      required this.safeMode});
   Settings copy(
       {String? path,
       bool? enableGallery,
@@ -41,7 +43,8 @@ class Settings {
       Booru? selectedBooru,
       DisplayQuality? quality,
       bool? listViewBooru,
-      int? picturesPerRow}) {
+      int? picturesPerRow,
+      bool? safeMode}) {
     return Settings(
         path: path ?? this.path,
         enableGallery: enableGallery ?? this.enableGallery,
@@ -49,7 +52,8 @@ class Settings {
         selectedBooru: selectedBooru ?? this.selectedBooru,
         quality: quality ?? this.quality,
         listViewBooru: listViewBooru ?? this.listViewBooru,
-        picturesPerRow: picturesPerRow ?? this.picturesPerRow);
+        picturesPerRow: picturesPerRow ?? this.picturesPerRow,
+        safeMode: safeMode ?? this.safeMode);
   }
 
   Settings.empty()
@@ -59,7 +63,8 @@ class Settings {
         quality = DisplayQuality.sample,
         enableGallery = false,
         picturesPerRow = (Platform.isAndroid || Platform.isIOS) ? 2 : 6,
-        listViewBooru = false;
+        listViewBooru = false,
+        safeMode = false;
 }
 
 enum Booru {

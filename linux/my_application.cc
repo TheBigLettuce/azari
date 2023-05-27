@@ -22,6 +22,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <type_traits>
+
 #include <unistd.h>
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>

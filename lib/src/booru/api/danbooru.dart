@@ -92,7 +92,8 @@ class Danbooru implements BooruAPI {
 
     String excludedTagsString;
 
-    var excludedTags = BooruTags().getExcluded().map((e) => "-$e ").toList();
+    var excludedTags =
+        BooruTags().excluded.getStrings().map((e) => "-$e ").toList();
     if (excludedTags.isNotEmpty) {
       excludedTagsString =
           excludedTags.reduce((value, element) => value + element);
@@ -103,7 +104,8 @@ class Danbooru implements BooruAPI {
     Map<String, dynamic> query = {
       "limit": numberOfElementsPerRefresh().toString(),
       "format": "json",
-      "tags": "$excludedTagsString $tags",
+      "tags":
+          "${isSafeModeEnabled() ? 'rating:g' : ''} $excludedTagsString $tags",
     };
 
     if (postid != null) {

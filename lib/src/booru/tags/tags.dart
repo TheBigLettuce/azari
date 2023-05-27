@@ -16,14 +16,74 @@ import 'package:logging/logging.dart';
 
 import '../../pages/booru_scroll.dart';
 
+class BooruTagging<T extends Tags> {
+  final T Function(String booru) _getTags;
+  final void Function(List<String> v, String domain) _addTags;
+
+  T get() {
+    var currentBooru = isar().settings.getSync(0)!.selectedBooru;
+
+    return _getTags(currentBooru.string);
+  }
+
+  void add(String t) {
+    var booruTags = get();
+    List<String> tagsCopy = List.from(booruTags.tags);
+    tagsCopy.remove(t);
+    tagsCopy.add(t);
+
+    _addTags(tagsCopy.reversed.toList(), booruTags.domain);
+  }
+
+  void delete(String t) {
+    var booruTags = get();
+    List<String> tags = List.from(booruTags.tags);
+    tags.remove(t);
+
+    _addTags(tags, booruTags.domain);
+  }
+
+  List<String> getStrings() => get().tags;
+
+  const BooruTagging(T Function(String s) getTags,
+      void Function(List<String> v, String domain) addTags)
+      : _addTags = addTags,
+        _getTags = getTags;
+}
+
 class BooruTags {
+  BooruTagging<ExcludedTags> excluded = BooruTagging((s) {
+    var booruTags = isar().excludedTags.getSync(fastHash(s));
+    if (booruTags == null) {
+      booruTags = ExcludedTags(s, []);
+      isar().writeTxnSync(() => isar().excludedTags.putSync(booruTags!));
+    }
+
+    return booruTags;
+  }, (v, domain) {
+    isar().writeTxnSync(
+        () => isar().excludedTags.putSync(ExcludedTags(domain, v)));
+  });
+
+  BooruTagging<LastTags> latest = BooruTagging((s) {
+    var booruTags = isar().lastTags.getSync(fastHash(s));
+    if (booruTags == null) {
+      booruTags = LastTags(s, []);
+      isar().writeTxnSync(() => isar().lastTags.putSync(booruTags!));
+    }
+
+    return booruTags;
+  }, (v, domain) {
+    isar().writeTxnSync(() => isar().lastTags.putSync(LastTags(domain, v)));
+  });
+
   void onPressed(BuildContext context, String t) {
     t = t.trim();
     if (t.isEmpty) {
       return;
     }
 
-    addLatest(t);
+    latest.add(t);
     newSecondaryGrid().then((value) {
       Navigator.push(context, MaterialPageRoute(builder: (context) {
         return BooruScroll.secondary(
@@ -36,72 +96,4 @@ class BooruTags {
           level: Level.WARNING.value, error: error, stackTrace: stackTrace);
     });
   }
-
-  LastTags _booruTagsLatest() {
-    var currentBooru = isar().settings.getSync(0)!.selectedBooru;
-    var booruTags = isar().lastTags.getSync(fastHash(currentBooru.string));
-    if (booruTags == null) {
-      booruTags = LastTags(currentBooru.string, []);
-      isar().writeTxnSync(() => isar().lastTags.putSync(booruTags!));
-    }
-
-    return booruTags;
-  }
-
-  ExcludedTags _booruTagsExcluded() {
-    var currentBooru = isar().settings.getSync(0)!.selectedBooru;
-    var booruTags = isar().excludedTags.getSync(fastHash(currentBooru.string));
-    if (booruTags == null) {
-      booruTags = ExcludedTags(currentBooru.string, []);
-      isar().writeTxnSync(() => isar().excludedTags.putSync(booruTags!));
-    }
-
-    return booruTags;
-  }
-
-  void addLatest(String t) {
-    var booruTags = _booruTagsLatest();
-    List<String> tagsCopy = List.from(booruTags.tags);
-    tagsCopy.remove(t);
-    tagsCopy.add(t);
-
-    isar().writeTxnSync(() {
-      isar()
-          .lastTags
-          .putSync(LastTags(booruTags.domain, tagsCopy.reversed.toList()));
-    });
-  }
-
-  void deleteTag(String tag) {
-    var booruTags = _booruTagsLatest();
-    List<String> tags = List.from(booruTags.tags);
-    tags.remove(tag);
-
-    isar().writeTxnSync(
-        () => isar().lastTags.putSync(LastTags(booruTags.domain, tags)));
-  }
-
-  List<String> getLatest() => _booruTagsLatest().tags;
-
-  void addExcluded(String t) {
-    var booruTags = _booruTagsExcluded();
-    List<String> tagsCopy = List.from(booruTags.tags);
-    tagsCopy.remove(t);
-    tagsCopy.add(t);
-
-    isar().writeTxnSync(() => isar()
-        .excludedTags
-        .putSync(ExcludedTags(booruTags.domain, tagsCopy.reversed.toList())));
-  }
-
-  void deleteExcludedTag(String tag) {
-    var booruTags = _booruTagsExcluded();
-    List<String> tags = List.from(booruTags.tags);
-    tags.remove(tag);
-
-    isar().writeTxnSync(() =>
-        isar().excludedTags.putSync(ExcludedTags(booruTags.domain, tags)));
-  }
-
-  List<String> getExcluded() => _booruTagsExcluded().tags;
 }

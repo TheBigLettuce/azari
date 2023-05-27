@@ -104,7 +104,7 @@ class _BooruScrollState extends State<BooruScroll> {
   late Settings settings = db.isar().settings.getSync(0)!;
   late StreamSubscription<void> tagWatcher;
   late StreamSubscription<Settings?> settingsWatcher;
-  List<String> tags = BooruTags().getLatest();
+  List<String> tags = BooruTags().latest.getStrings();
   final GlobalKey<ScaffoldState> _key = GlobalKey();
   late final void Function(double pos, {double? infoPos, int? selectedCell})
       updateScrollPosition;
@@ -130,7 +130,7 @@ class _BooruScrollState extends State<BooruScroll> {
     }
 
     tagWatcher = db.isar().lastTags.watchLazy().listen((_) {
-      tags = BooruTags().getLatest();
+      tags = BooruTags().latest.getStrings();
     });
 
     settingsWatcher = db.isar().settings.watchObject(0).listen((event) {

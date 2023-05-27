@@ -48,8 +48,13 @@ const SettingsSchema = CollectionSchema(
       type: IsarType.byte,
       enumMap: _SettingsqualityEnumValueMap,
     ),
-    r'selectedBooru': PropertySchema(
+    r'safeMode': PropertySchema(
       id: 6,
+      name: r'safeMode',
+      type: IsarType.bool,
+    ),
+    r'selectedBooru': PropertySchema(
+      id: 7,
       name: r'selectedBooru',
       type: IsarType.byte,
       enumMap: _SettingsselectedBooruEnumValueMap,
@@ -91,7 +96,8 @@ void _settingsSerialize(
   writer.writeString(offsets[3], object.path);
   writer.writeLong(offsets[4], object.picturesPerRow);
   writer.writeByte(offsets[5], object.quality.index);
-  writer.writeByte(offsets[6], object.selectedBooru.index);
+  writer.writeBool(offsets[6], object.safeMode);
+  writer.writeByte(offsets[7], object.selectedBooru.index);
 }
 
 Settings _settingsDeserialize(
@@ -108,8 +114,9 @@ Settings _settingsDeserialize(
     picturesPerRow: reader.readLong(offsets[4]),
     quality: _SettingsqualityValueEnumMap[reader.readByteOrNull(offsets[5])] ??
         DisplayQuality.original,
+    safeMode: reader.readBool(offsets[6]),
     selectedBooru:
-        _SettingsselectedBooruValueEnumMap[reader.readByteOrNull(offsets[6])] ??
+        _SettingsselectedBooruValueEnumMap[reader.readByteOrNull(offsets[7])] ??
             Booru.gelbooru,
   );
   object.id = id;
@@ -137,6 +144,8 @@ P _settingsDeserializeProp<P>(
       return (_SettingsqualityValueEnumMap[reader.readByteOrNull(offset)] ??
           DisplayQuality.original) as P;
     case 6:
+      return (reader.readBool(offset)) as P;
+    case 7:
       return (_SettingsselectedBooruValueEnumMap[
               reader.readByteOrNull(offset)] ??
           Booru.gelbooru) as P;
@@ -571,6 +580,16 @@ extension SettingsQueryFilter
     });
   }
 
+  QueryBuilder<Settings, Settings, QAfterFilterCondition> safeModeEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'safeMode',
+        value: value,
+      ));
+    });
+  }
+
   QueryBuilder<Settings, Settings, QAfterFilterCondition> selectedBooruEqualTo(
       Booru value) {
     return QueryBuilder.apply(this, (query) {
@@ -705,6 +724,18 @@ extension SettingsQuerySortBy on QueryBuilder<Settings, Settings, QSortBy> {
     });
   }
 
+  QueryBuilder<Settings, Settings, QAfterSortBy> sortBySafeMode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'safeMode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> sortBySafeModeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'safeMode', Sort.desc);
+    });
+  }
+
   QueryBuilder<Settings, Settings, QAfterSortBy> sortBySelectedBooru() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'selectedBooru', Sort.asc);
@@ -804,6 +835,18 @@ extension SettingsQuerySortThenBy
     });
   }
 
+  QueryBuilder<Settings, Settings, QAfterSortBy> thenBySafeMode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'safeMode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Settings, Settings, QAfterSortBy> thenBySafeModeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'safeMode', Sort.desc);
+    });
+  }
+
   QueryBuilder<Settings, Settings, QAfterSortBy> thenBySelectedBooru() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'selectedBooru', Sort.asc);
@@ -856,6 +899,12 @@ extension SettingsQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Settings, Settings, QDistinct> distinctBySafeMode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'safeMode');
+    });
+  }
+
   QueryBuilder<Settings, Settings, QDistinct> distinctBySelectedBooru() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'selectedBooru');
@@ -904,6 +953,12 @@ extension SettingsQueryProperty
   QueryBuilder<Settings, DisplayQuality, QQueryOperations> qualityProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'quality');
+    });
+  }
+
+  QueryBuilder<Settings, bool, QQueryOperations> safeModeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'safeMode');
     });
   }
 

@@ -40,9 +40,10 @@ class _SearchBooruState extends State<SearchBooru> {
   List<String> _excludedTags = [];
   late final StreamSubscription<void> _excludedTagsWatcher;
 
+  FocusNode mainFocus = FocusNode();
   FocusNode focus = FocusNode();
   FocusNode excludedFocus = FocusNode();
-  FocusNode selectionFocus = FocusNode();
+  FocusNode singlePostFocus = FocusNode();
 
   String searchHighlight = "";
   String excludedHighlight = "";
@@ -56,17 +57,37 @@ class _SearchBooruState extends State<SearchBooru> {
 
   @override
   void initState() {
+    focus.addListener(() {
+      if (!focus.hasFocus) {
+        searchHighlight = "";
+        mainFocus.requestFocus();
+      }
+    });
+
+    excludedFocus.addListener(() {
+      if (!excludedFocus.hasFocus) {
+        excludedHighlight = "";
+        mainFocus.requestFocus();
+      }
+    });
+
+    singlePostFocus.addListener(() {
+      if (!singlePostFocus.hasFocus) {
+        mainFocus.requestFocus();
+      }
+    });
+
     super.initState();
     _lastTagsWatcher =
         isar().lastTags.watchLazy(fireImmediately: true).listen((event) {
       setState(() {
-        _lastTags = _tags.getLatest();
+        _lastTags = _tags.latest.getStrings();
       });
     });
     _excludedTagsWatcher =
         isar().excludedTags.watchLazy(fireImmediately: true).listen((event) {
       setState(() {
-        _excludedTags = _tags.getExcluded();
+        _excludedTags = _tags.excluded.getStrings();
       });
     });
   }
@@ -77,7 +98,7 @@ class _SearchBooruState extends State<SearchBooru> {
       return;
     }
 
-    _tags.addLatest(tag);
+    _tags.latest.add(tag);
     newSecondaryGrid().then((value) {
       Navigator.of(context).push(MaterialPageRoute(builder: (context) {
         return BooruScroll.secondary(
@@ -99,7 +120,8 @@ class _SearchBooruState extends State<SearchBooru> {
     _excludedTagsWatcher.cancel();
     focus.dispose();
     excludedFocus.dispose();
-    selectionFocus.dispose();
+    singlePostFocus.dispose();
+    mainFocus.dispose();
     super.dispose();
   }
 
@@ -109,6 +131,55 @@ class _SearchBooruState extends State<SearchBooru> {
       const SingleActivatorDescription(
           "Back", SingleActivator(LogicalKeyboardKey.escape)): () {
         popUntilSenitel(context);
+      },
+      const SingleActivatorDescription("Select autocomplete",
+          SingleActivator(LogicalKeyboardKey.enter, shift: true)): () {
+        if (focus.hasFocus) {
+          if (searchHighlight.isNotEmpty) {
+            _onTagPressed(searchHighlight);
+          }
+        } else if (excludedFocus.hasFocus) {
+          if (excludedHighlight.isNotEmpty) {
+            _tags.excluded.add(excludedHighlight);
+            excludedTagsTextController.text = "";
+          }
+        }
+      },
+      const SingleActivatorDescription("Focus search",
+          SingleActivator(LogicalKeyboardKey.keyF, control: true)): () {
+        if (focus.hasFocus) {
+          focus.unfocus();
+        } else {
+          focus.requestFocus();
+        }
+      },
+      const SingleActivatorDescription("Focus single post",
+          SingleActivator(LogicalKeyboardKey.keyF, alt: true)): () {
+        if (singlePostFocus.hasFocus) {
+          singlePostFocus.unfocus();
+        } else {
+          singlePostFocus.requestFocus();
+        }
+      },
+      const SingleActivatorDescription("Focus excluded search",
+          SingleActivator(LogicalKeyboardKey.keyF, shift: true)): () {
+        if (excludedFocus.hasFocus) {
+          if (replaceController != null) {
+            replaceController!
+                .reverse(from: 1)
+                .then((value) => excludedFocus.unfocus());
+          } else {
+            excludedFocus.unfocus();
+          }
+        } else {
+          if (replaceController != null) {
+            replaceController!
+                .forward(from: 0)
+                .then((value) => excludedFocus.requestFocus());
+          } else {
+            excludedFocus.requestFocus();
+          }
+        }
       },
       ...digitAndSettings(context, kTagsDrawerIndex)
     };
@@ -120,6 +191,7 @@ class _SearchBooruState extends State<SearchBooru> {
         },
         child: Focus(
             autofocus: true,
+            focusNode: mainFocus,
             child: WillPopScope(
               onWillPop: () => popUntilSenitel(context),
               child: Scaffold(
@@ -144,9 +216,10 @@ class _SearchBooruState extends State<SearchBooru> {
                             const ListTile(
                               title: Text("Single post"),
                             ),
-                            const Padding(
-                              padding: EdgeInsets.only(left: 10, right: 10),
-                              child: SinglePost(),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.only(left: 10, right: 10),
+                              child: SinglePost(singlePostFocus),
                             ),
                             ListTile(
                               title: const Text("Recent Tags"),
@@ -202,14 +275,14 @@ class _SearchBooruState extends State<SearchBooru> {
                                         deleteAllController!
                                             .forward(from: 0)
                                             .then((value) {
-                                          _tags.deleteTag(t);
+                                          _tags.latest.delete(t);
                                           if (deleteAllController != null) {
                                             deleteAllController!
                                                 .reverse(from: 1);
                                           }
                                         });
                                       } else {
-                                        _tags.deleteTag(t);
+                                        _tags.latest.delete(t);
                                       }
                                     },
                                     onPress: _onTagPressed)
@@ -247,7 +320,8 @@ class _SearchBooruState extends State<SearchBooru> {
                                                 excludedTagsTextController,
                                                 (s) {
                                               excludedHighlight = s;
-                                            }, _tags.addExcluded, excludedFocus,
+                                            }, _tags.excluded.add,
+                                                excludedFocus,
                                                 submitOnPress: true,
                                                 showSearch: true),
                                             trailing: IconButton(
@@ -271,7 +345,7 @@ class _SearchBooruState extends State<SearchBooru> {
                                         deleteAllExcludedController!
                                             .forward(from: 0)
                                             .then((value) {
-                                          _tags.deleteExcludedTag(t);
+                                          _tags.excluded.delete(t);
                                           if (deleteAllExcludedController !=
                                               null) {
                                             deleteAllExcludedController!
@@ -279,7 +353,7 @@ class _SearchBooruState extends State<SearchBooru> {
                                           }
                                         });
                                       } else {
-                                        _tags.deleteExcludedTag(t);
+                                        _tags.excluded.delete(t);
                                       }
                                     },
                                     onPress: (t) {})

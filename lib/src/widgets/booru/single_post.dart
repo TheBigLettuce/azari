@@ -19,7 +19,8 @@ import '../../booru/tags/tags.dart';
 import '../../schemas/download_file.dart';
 
 class SinglePost extends StatefulWidget {
-  const SinglePost({super.key});
+  final FocusNode focus;
+  const SinglePost(this.focus, {super.key});
 
   @override
   State<SinglePost> createState() => _SinglePostState();
@@ -29,7 +30,6 @@ class _SinglePostState extends State<SinglePost> {
   TextEditingController controller = TextEditingController();
   List<Widget> menuItems = [];
   MenuController menuController = MenuController();
-  FocusNode searchFocus = FocusNode();
 
   bool inProcessLoading = false;
 
@@ -38,7 +38,6 @@ class _SinglePostState extends State<SinglePost> {
   @override
   void dispose() {
     arrowSpinningController = null;
-    searchFocus.dispose();
     controller.dispose();
     super.dispose();
   }
@@ -50,7 +49,7 @@ class _SinglePostState extends State<SinglePost> {
       controller: menuController,
       child: SearchBar(
         hintText: "Go to a post",
-        focusNode: searchFocus,
+        focusNode: widget.focus,
         controller: controller,
         leading: const Icon(Icons.search),
         trailing: [

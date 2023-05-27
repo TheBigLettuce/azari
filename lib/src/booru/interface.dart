@@ -45,3 +45,7 @@ int numberOfElementsPerRefresh() {
 
   return 10 * settings.picturesPerRow;
 }
+
+bool isSafeModeEnabled() => isar().settings.getSync(0)!.safeMode;
+
+//enum Rating { questionable, explicit, safe }

@@ -74,7 +74,11 @@ class _SettingsState extends State<Settings> {
     Map<SingleActivatorDescription, Null Function()> bindings = {
       const SingleActivatorDescription(
           "Back", SingleActivator(LogicalKeyboardKey.escape)): () {
-        Navigator.pop(context);
+        if (booruChanged) {
+          _popBooru();
+        } else {
+          Navigator.pop(context);
+        }
       }
     };
 
@@ -255,6 +259,16 @@ class _SettingsState extends State<Settings> {
                                   }
                                 },
                         )),
+                    ListTile(
+                      title: const Text("Safe mode"),
+                      trailing: Switch(
+                        value: _settings!.safeMode,
+                        onChanged: (value) {
+                          isar().writeTxnSync(() => isar().settings.putSync(
+                              _settings!.copy(safeMode: !_settings!.safeMode)));
+                        },
+                      ),
+                    ),
                     const ListTile(
                       enabled: false,
                       leading: Icon(Icons.info_outline),
