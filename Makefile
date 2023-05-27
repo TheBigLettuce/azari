@@ -1,6 +1,6 @@
 GIT_REV = $(shell git rev-parse --short HEAD)
 
-.PHONY: release run linux-appimage mpv_compile
+.PHONY: release run linux-appimage
 release: linux-appimage
 	flutter build apk --split-per-abi --no-tree-shake-icons
 	git archive --format=tar.gz -o source.tar.gz HEAD 
@@ -14,12 +14,13 @@ release: linux-appimage
 linux-appimage: linuxdeploy-x86_64.AppImage
 	mkdir -p AppDir && cd AppDir && rm -r -f *
 	flutter build linux --release
-	./linuxdeploy-x86_64.AppImage --appdir AppDir -e build/linux/x64/release/bundle/gallery -d azari.desktop -i linux/icon/icon.png 
-	cp -r build/linux/x64/release/bundle/lib AppDir/usr/bin/lib
+	mkdir -p AppDir/usr/bin/lib
+	cp -r build/linux/x64/release/bundle/lib/libapp.so AppDir/usr/bin/lib/libapp.so
+	cp -r build/linux/x64/release/bundle/lib/libisar.so AppDir/usr/bin/lib/libisar.so
 	cp -r build/linux/x64/release/bundle/data AppDir/usr/bin/data
 	cp linux/icon/icon.png AppDir/usr/bin/icon.png
-	./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage
-
+	./linuxdeploy-x86_64.AppImage --appdir AppDir -e build/linux/x64/release/bundle/gallery -d azari.desktop -i linux/icon/icon.png --output appimage
+	
 app:
 	flutter build linux --release
 	mkdir -p app

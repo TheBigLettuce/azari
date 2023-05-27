@@ -5,8 +5,11 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:html_unescape/html_unescape_small.dart';
@@ -14,6 +17,9 @@ import 'package:mime/mime.dart';
 
 import 'cell.dart';
 import 'data.dart';
+
+MethodChannel? linuxChannel =
+    Platform.isLinux ? const MethodChannel("lol.bruh19.azari.gallery") : null;
 
 class BooruCell extends Cell {
   String originalUrl;
@@ -82,6 +88,10 @@ class BooruCell extends Cell {
                     title: Text(HtmlUnescape().convert(e)),
                     onTap: () {
                       onTagPressed(HtmlUnescape().convert(e));
+                      if (linuxChannel != null) {
+                        linuxChannel!.invokeMethod("default_title");
+                        linuxChannel!.invokeMethod("fullscreen_untoggle");
+                      }
                       extra();
                     },
                   ))));

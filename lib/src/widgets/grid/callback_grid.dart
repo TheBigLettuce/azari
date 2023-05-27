@@ -90,6 +90,7 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   late TextEditingController textEditingController =
       TextEditingController(text: widget.searchStartingValue);
   FocusNode focus = FocusNode();
+  FocusNode mainFocus = FocusNode();
 
   StreamSubscription<int>? ticker;
 
@@ -102,6 +103,7 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     focus.addListener(() {
       if (!focus.hasFocus) {
         _currentlyHighlightedTag = "";
+        mainFocus.requestFocus();
       }
     });
 
@@ -193,6 +195,7 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     scrollHack.dispose();
 
     focus.dispose();
+    mainFocus.dispose();
 
     super.dispose();
   }
@@ -293,6 +296,7 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       const SingleActivatorDescription("Select highlighted autocomplete",
           SingleActivator(LogicalKeyboardKey.enter, shift: true)): () {
         if (_currentlyHighlightedTag != "") {
+          mainFocus.unfocus();
           BooruTags().onPressed(context, _currentlyHighlightedTag);
         }
       },
@@ -318,6 +322,7 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         },
         child: Focus(
           autofocus: true,
+          focusNode: mainFocus,
           child: RefreshIndicator(
               onRefresh: () {
                 if (!refreshing) {
