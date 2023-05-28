@@ -9,7 +9,6 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/widgets/drawer/add_rail.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/cell/booru.dart';
@@ -19,7 +18,7 @@ import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/scroll_position.dart' as sc_pos;
 import 'package:gallery/src/schemas/tags.dart';
-import 'package:gallery/src/widgets/system_gestures.dart';
+import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 
@@ -181,7 +180,8 @@ class _BooruScrollState extends State<BooruScroll> {
       return Future.value();
     }
 
-    return downloader.add(File.d(p.fileUrl, booru.domain(), p.filename()));
+    return downloader
+        .add(File.d(p.downloadUrl(), booru.domain(), p.filename()));
   }
 
   Future<int> _addLast() async {
@@ -209,9 +209,8 @@ class _BooruScrollState extends State<BooruScroll> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () {
+  Widget build(BuildContext context) =>
+      makeGridSkeleton(context, kBooruGridDrawerIndex, () {
         if (widget.tags.isNotEmpty) {
           if (widget.toRestore) {
             db.restoreStateNext(context, isar.name);
@@ -220,41 +219,33 @@ class _BooruScrollState extends State<BooruScroll> {
 
         return Future.value(true);
       },
-      child: Scaffold(
-          key: _key,
-          drawer: makeDrawer(context, kBooruGridDrawerIndex),
-          body: gestureDeadZones(
-            context,
-            child: addRail(
-                context,
-                kBooruGridDrawerIndex,
-                CallbackGrid<BooruCell>(
-                  hasReachedEnd: () => reachedEnd,
-                  scaffoldKey: _key,
-                  getCell: (i) => isar.posts.getSync(i + 1)!.booruCell(_search),
-                  loadNext: _addLast,
-                  refresh: _clearAndRefresh,
-                  onBack: widget.tags.isEmpty
-                      ? null
-                      : () {
-                          if (widget.toRestore) {
-                            db.restoreStateNext(context, isar.name);
-                          } else {
-                            Navigator.pop(context);
-                          }
-                        },
-                  searchStartingValue: widget.tags,
-                  search: _search,
-                  hideAlias: true,
-                  onLongPress: _download,
-                  updateScrollPosition: updateScrollPosition,
-                  initalScrollPosition: widget.initalScroll,
-                  initalCellCount: widget.clear ? 0 : isar.posts.countSync(),
-                  searchFilter: _searchFilter,
-                  pageViewScrollingOffset: widget.pageViewScrollingOffset,
-                  initalCell: widget.initalPost,
-                )),
-          )),
-    );
-  }
+          _key,
+          CallbackGrid<BooruCell>(
+            description:
+                const GridDescription(kBooruGridDrawerIndex, "Booru grid"),
+            hasReachedEnd: () => reachedEnd,
+            scaffoldKey: _key,
+            getCell: (i) => isar.posts.getSync(i + 1)!.booruCell(_search),
+            loadNext: _addLast,
+            refresh: _clearAndRefresh,
+            onBack: widget.tags.isEmpty
+                ? null
+                : () {
+                    if (widget.toRestore) {
+                      db.restoreStateNext(context, isar.name);
+                    } else {
+                      Navigator.pop(context);
+                    }
+                  },
+            searchStartingValue: widget.tags,
+            search: _search,
+            hideAlias: true,
+            onLongPress: _download,
+            updateScrollPosition: updateScrollPosition,
+            initalScrollPosition: widget.initalScroll,
+            initalCellCount: widget.clear ? 0 : isar.posts.countSync(),
+            searchFilter: _searchFilter,
+            pageViewScrollingOffset: widget.pageViewScrollingOffset,
+            initalCell: widget.initalPost,
+          ));
 }

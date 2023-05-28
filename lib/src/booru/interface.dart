@@ -24,6 +24,8 @@ abstract class BooruAPI {
   Future<List<Post>> fromPost(int postId, String tags);
 
   Future<List<String>> completeTag(String tag);
+
+  Uri browserLink(int id);
 }
 
 List<BooruCell> postsToCells(

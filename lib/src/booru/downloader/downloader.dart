@@ -9,9 +9,9 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/booru/downloader/file_mover.dart';
-import 'package:gallery/src/dbus/kde_notification.dart';
+import 'package:gallery/src/plugs/download_movers.dart';
+import 'package:gallery/src/plugs/notifications.dart';
 import 'package:gallery/src/schemas/download_file.dart' as dw_file;
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:isar/isar.dart';
@@ -22,26 +22,21 @@ import '../../db/isar.dart';
 
 Downloader? _global;
 
-class Downloader {
-  int _inWork = 0;
-  final Dio dio = Dio();
-  final int maximum;
+mixin CancelTokens {
   final Map<int, CancelToken> _tokens = {};
-  final _downloaderPlatform = const MethodChannel("lol.bruh19.azari.gallery");
-  final KDENotification? linuxNotification = Platform.isLinux
-      ? () {
-          try {
-            var n = KDENotification();
-            return n;
-          } catch (_) {
-            return null;
-          }
-        }()
-      : null;
 
   void _addToken(int key, CancelToken t) => _tokens[key] = t;
   void _removeToken(int key) => _tokens.remove(key);
   bool _hasCancelKey(int id) => _tokens[id] != null;
+}
+
+class Downloader with CancelTokens {
+  int _inWork = 0;
+  final Dio dio = Dio();
+  final int maximum;
+
+  NotificationPlug notificationPlug = chooseNotificationPlug();
+  DownloadMoverPlug moverPlug;
 
   void retry(dw_file.File f) {
     if (f.isOnHold()) {
@@ -106,13 +101,6 @@ class Downloader {
   }
 
   void add(dw_file.File download) async {
-    //var settings = isar().settings.getSync(0)!;
-    /*var canw = await canWrite(Uri.parse(settings.path));
-    if (canw ?? false) {
-      print("cant write");
-      return;
-    }*/
-
     if (download.id != null && _hasCancelKey(download.id!)) {
       return;
     }
@@ -186,12 +174,7 @@ class Downloader {
       return;
     }
 
-    LinuxNotification? linuxProgress;
-    if (Platform.isLinux) {
-      linuxProgress = await linuxNotification!.createJob(
-        d.name,
-      );
-    }
+    var progress = await notificationPlug.newProgress(d.name, d.id!, d.site);
 
     dio.download(d.url, filePath,
         cancelToken: _tokens[d.id],
@@ -201,54 +184,18 @@ class Downloader {
         }),
         deleteOnError: true, onReceiveProgress: ((count, total) {
       if (count == total || !_hasCancelKey(d.id!)) {
-        if (Platform.isAndroid) {
-          FlutterLocalNotificationsPlugin().cancel(d.id!);
-        } else if (Platform.isLinux) {
-          linuxProgress!.done();
-        }
+        progress.done();
         return;
       }
 
-      if (Platform.isAndroid) {
-        FlutterLocalNotificationsPlugin().show(
-          d.id!,
-          d.site,
-          d.name,
-          NotificationDetails(
-            linux: LinuxNotificationDetails(
-              icon: ThemeLinuxIcon("download"),
-              category: LinuxNotificationCategory.transfer,
-              resident: true,
-            ),
-            android: AndroidNotificationDetails("download", "Dowloader",
-                groupKey: d.site,
-                ongoing: true,
-                playSound: false,
-                enableLights: false,
-                enableVibration: false,
-                category: AndroidNotificationCategory.progress,
-                maxProgress: total,
-                progress: count,
-                visibility: NotificationVisibility.private,
-                indeterminate: total == -1,
-                showProgress: true),
-          ),
-        );
-      } else if (Platform.isLinux) {
-        linuxProgress!.setTotal(total);
-        linuxProgress.update(count);
-      }
+      progress.setTotal(total);
+      progress.update(count);
     })).then((value) async {
       try {
         var settings = isar().settings.getSync(0)!;
 
-        if (Platform.isAndroid) {
-          _downloaderPlatform.invokeMethod("move",
-              {"source": filePath, "rootUri": settings.path, "dir": d.site});
-        } else {
-          FileMover().move(MoveOp(
-              source: filePath, rootDir: settings.path, targetDir: d.site));
-        }
+        moverPlug.move(MoveOp(
+            source: filePath, rootDir: settings.path, targetDir: d.site));
 
         isar().writeTxnSync(
           () {
@@ -279,11 +226,7 @@ class Downloader {
         },
       );
 
-      if (Platform.isAndroid) {
-        FlutterLocalNotificationsPlugin().cancel(d.id!);
-      } else if (Platform.isLinux) {
-        linuxProgress!.error(error.toString());
-      }
+      progress.error(error.toString());
     });
   }
 
@@ -304,15 +247,23 @@ class Downloader {
     }
   }
 
-  Downloader._new(this.maximum);
+  Downloader._new(this.maximum, this.moverPlug);
 
   factory Downloader() {
     if (_global != null) {
       return _global!;
     } else {
-      _global = Downloader._new(6);
-      _global!._removeTempContentsDownloads();
-      return _global!;
+      throw "downloader isnt initalized";
     }
   }
+}
+
+Future<Downloader> initalizeDownloader() async {
+  if (_global != null) {
+    return _global!;
+  }
+
+  _global = Downloader._new(6, await chooseDownloadMoverPlug());
+  _global!._removeTempContentsDownloads();
+  return _global!;
 }

@@ -135,7 +135,7 @@ class _SinglePostState extends State<SinglePost> {
                     return ImageView(
                       updateTagScrollPos: (_, __) {},
                       download: (_) {
-                        Downloader().add(File.d(value.fileUrl,
+                        Downloader().add(File.d(value.downloadUrl(),
                             getBooru().domain(), value.filename()));
                       },
                       cellCount: 1,

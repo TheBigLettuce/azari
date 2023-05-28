@@ -21,6 +21,9 @@ class Danbooru implements BooruAPI {
   int? currentPage() => null;
 
   @override
+  Uri browserLink(int id) => Uri.https("danbooru.donmai.us", "/posts/$id");
+
+  @override
   Future<List<String>> completeTag(String tag) async {
     var req = http.get(
       Uri.https("danbooru.donmai.us", "/tags.json", {
@@ -104,7 +107,7 @@ class Danbooru implements BooruAPI {
     Map<String, dynamic> query = {
       "limit": numberOfElementsPerRefresh().toString(),
       "format": "json",
-      "tags":
+      "post[tags]":
           "${isSafeModeEnabled() ? 'rating:g' : ''} $excludedTagsString $tags",
     };
 

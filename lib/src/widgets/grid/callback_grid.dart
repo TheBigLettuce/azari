@@ -14,13 +14,19 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/schemas/settings.dart';
-import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:logging/logging.dart';
 import '../../booru/tags/tags.dart';
 import '../../cell/cell.dart';
 import '../../keybinds/keybinds.dart';
 import '../booru/autocomplete_tag.dart';
 import 'cell.dart';
+
+class GridDescription {
+  final int drawerIndex;
+  final String pageDescription;
+
+  const GridDescription(this.drawerIndex, this.pageDescription);
+}
 
 class CallbackGrid<T extends Cell> extends StatefulWidget {
   final T Function(int) getCell;
@@ -43,29 +49,35 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   final double? pageViewScrollingOffset;
   final int? initalCell;
 
+  final Map<SingleActivatorDescription, Null Function()>? additionalKeybinds;
+
   final Stream<int>? progressTicker;
 
-  const CallbackGrid({
-    Key? key,
-    required this.getCell,
-    required this.initalScrollPosition,
-    required this.scaffoldKey,
-    required this.hasReachedEnd,
-    this.progressTicker,
-    this.searchFilter,
-    this.initalCell,
-    this.pageViewScrollingOffset,
-    this.loadNext,
-    required this.search,
-    required this.refresh,
-    required this.updateScrollPosition,
-    this.onLongPress,
-    this.hideAlias,
-    this.searchStartingValue = "",
-    this.onBack,
-    this.initalCellCount = 0,
-    this.overrideOnPress,
-  }) : super(key: key);
+  final GridDescription description;
+
+  const CallbackGrid(
+      {Key? key,
+      this.additionalKeybinds,
+      required this.getCell,
+      required this.initalScrollPosition,
+      required this.scaffoldKey,
+      required this.hasReachedEnd,
+      this.progressTicker,
+      this.searchFilter,
+      this.initalCell,
+      this.pageViewScrollingOffset,
+      this.loadNext,
+      required this.search,
+      required this.refresh,
+      required this.updateScrollPosition,
+      this.onLongPress,
+      this.hideAlias,
+      this.searchStartingValue = "",
+      this.onBack,
+      this.initalCellCount = 0,
+      this.overrideOnPress,
+      required this.description})
+      : super(key: key);
 
   @override
   State<CallbackGrid<T>> createState() => _CallbackGridState<T>();
@@ -131,8 +143,17 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     });
 
     settingsWatcher = isar().settings.watchObject(0).listen((event) {
+      if (settings.selectedBooru != event!.selectedBooru) {
+        cellCount = 0;
+        Navigator.of(context).popUntil(ModalRoute.withName("/booru"));
+        Navigator.pop(context);
+
+        Navigator.of(context).pushNamed("/booru", arguments: true);
+        return;
+      }
+
       // not perfect, but fine
-      if (lastGridColCount != event!.picturesPerRow) {
+      if (lastGridColCount != event.picturesPerRow) {
         controller.position.jumpTo(
             controller.offset * lastGridColCount / event.picturesPerRow);
       }
@@ -282,7 +303,7 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
   @override
   Widget build(BuildContext context) {
-    Map<SingleActivatorDescription, Null Function()> bindings = {
+    var bindings = {
       const SingleActivatorDescription(
           "Refresh", SingleActivator(LogicalKeyboardKey.f5)): () {
         if (!refreshing) {
@@ -313,12 +334,15 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
             "Back", SingleActivator(LogicalKeyboardKey.escape)): () {
           widget.onBack!();
         },
-      ...digitAndSettings(context, kBooruGridDrawerIndex),
+      if (widget.additionalKeybinds != null) ...widget.additionalKeybinds!,
+      ...digitAndSettings(context, widget.description.drawerIndex),
     };
+
     return CallbackShortcuts(
         bindings: {
           ...bindings,
-          ...keybindDescription(context, describeKeys(bindings), "Booru grid")
+          ...keybindDescription(context, describeKeys(bindings),
+              widget.description.pageDescription)
         },
         child: Focus(
           autofocus: true,

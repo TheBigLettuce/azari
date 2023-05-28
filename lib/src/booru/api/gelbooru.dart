@@ -24,6 +24,13 @@ class Gelbooru implements BooruAPI {
   Gelbooru(int page) : _page = page;
 
   @override
+  Uri browserLink(int id) => Uri.https("gelbooru.com", "/index.php", {
+        "page": "post",
+        "s": "view",
+        "id": id.toString(),
+      });
+
+  @override
   int? currentPage() => _page;
 
   @override

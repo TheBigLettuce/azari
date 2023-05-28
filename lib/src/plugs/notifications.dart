@@ -5,37 +5,29 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:typed_data';
+import 'dart:io';
 
-import 'package:flutter/widgets.dart';
-import 'package:isar/isar.dart';
+import 'package:gallery/src/plugs/notifications/android.dart';
+import 'package:gallery/src/plugs/notifications/dummy.dart';
+import 'package:gallery/src/plugs/notifications/kde.dart';
 
-import '../cell/directory.dart';
+abstract class NotificationProgress {
+  void setTotal(int t);
+  void update(int progress);
+  void done();
+  void error(String s);
+}
 
-part 'directory.g.dart';
+abstract class NotificationPlug {
+  Future<NotificationProgress> newProgress(String name, int id, String group);
+}
 
-@collection
-class Directory {
-  Id? isarId;
-
-  @Index(unique: true, replace: true)
-  String id;
-  String name;
-  List<int> thumbnail;
-
-  DateTime updatedAt;
-
-  DirectoryCell cell() => DirectoryCell(
-      id: id,
-      image: MemoryImage(Uint8List.fromList(thumbnail)),
-      path: name,
-      dirName: name,
-      addInfo: (d, c, fc, soc) {
-        return null;
-      },
-      addButtons: () {
-        return null;
-      });
-
-  Directory(this.id, this.name, this.thumbnail, this.updatedAt);
+NotificationPlug chooseNotificationPlug() {
+  if (Platform.isLinux) {
+    return KDENotifications();
+  } else if (Platform.isAndroid) {
+    return AndroidNotifications();
+  } else {
+    return DummyNotifications();
+  }
 }

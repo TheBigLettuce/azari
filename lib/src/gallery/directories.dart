@@ -9,9 +9,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/cell/directory.dart';
-import 'package:gallery/src/schemas/directory.dart';
+import 'package:gallery/src/pages/senitel.dart';
 import 'package:gallery/src/schemas/settings.dart';
-import 'package:isar/isar.dart';
+import 'package:gallery/src/widgets/make_skeleton.dart';
 import '../db/isar.dart' as db;
 import '../widgets/drawer/drawer.dart';
 import '../widgets/grid/callback_grid.dart';
@@ -25,38 +25,40 @@ class Directories extends StatefulWidget {
 
 class _DirectoriesState extends State<Directories> {
   final GlobalKey<ScaffoldState> _key = GlobalKey();
-  late final Isar isar;
-  late Stream<int> thumbnailWatcher;
+  // late final Isar isar;
+  //late Stream<int> thumbnailWatcher;
   late Settings settings = db.isar().settings.getSync(0)!;
   late StreamSubscription<Settings?> settingsWatcher;
+
+  FocusNode mainFocus = FocusNode();
 
   @override
   void initState() {
     super.initState();
 
-    isar = db.openDirectoryIsar();
+    // isar = db.openDirectoryIsar();
 
-    thumbnailWatcher = isar.directorys
-        .watchLazy()
-        .transform(StreamTransformer((stream, cancelOnError) {
-      var c = StreamController<int>(sync: true);
-      c.onListen = () {
-        var subscription = stream.listen(
-          (event) {
-            c.add(isar.directorys.countSync());
-          },
-          onError: c.addError,
-          onDone: c.close,
-          cancelOnError: cancelOnError,
-        );
+    // thumbnailWatcher = isar.directorys
+    //     .watchLazy()
+    //     .transform(StreamTransformer((stream, cancelOnError) {
+    //   var c = StreamController<int>(sync: true);
+    //   c.onListen = () {
+    //     var subscription = stream.listen(
+    //       (event) {
+    //         c.add(isar.directorys.countSync());
+    //       },
+    //       onError: c.addError,
+    //       onDone: c.close,
+    //       cancelOnError: cancelOnError,
+    //     );
 
-        c.onPause = subscription.pause;
-        c.onResume = subscription.resume;
-        c.onCancel = subscription.cancel;
-      };
+    //     c.onPause = subscription.pause;
+    //     c.onResume = subscription.resume;
+    //     c.onCancel = subscription.cancel;
+    //   };
 
-      return c.stream.listen(null);
-    }));
+    //   return c.stream.listen(null);
+    // }));
 
     settingsWatcher = db.isar().settings.watchObject(0).listen((event) {
       setState(() {
@@ -97,42 +99,46 @@ class _DirectoriesState extends State<Directories> {
       print(e);
     }*/
 
-    return isar.directorys.count();
+    return 0; //isar.directorys.count();
   }
 
   @override
   void dispose() {
     settingsWatcher.cancel();
-    db.closeDirectoryIsar();
+    //db.closeDirectoryIsar();
+
+    mainFocus.dispose();
+
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () {
-        return Future.value(true);
-      },
-      child: Scaffold(
-          key: _key,
-          drawer: makeDrawer(context, -1),
-          body: CallbackGrid<DirectoryCell>(
-            updateScrollPosition: (pos,
-                {double? infoPos, int? selectedCell}) {},
-            scaffoldKey: _key,
-            progressTicker: thumbnailWatcher,
-            hasReachedEnd: () => true,
-            refresh: _refresh,
-            search: (s) {},
-            initalCellCount: isar.directorys.countSync(),
-            initalScrollPosition: 0,
-            getCell: (i) => isar.directorys.getSync(i + 1)!.cell(),
-            overrideOnPress: (context, indx) {
-              //  Navigator.push(context, MaterialPageRoute(builder: (context) {
-              //   return Images(cell: isar.directorys.getSync(indx + 1)!.cell());
-              // }));
-            },
-          )),
-    );
+    return makeGridSkeleton(
+        context,
+        kGalleryDrawerIndex,
+        () => popUntilSenitel(context),
+        GlobalKey(),
+        CallbackGrid<DirectoryCell>(
+          description: const GridDescription(
+            kGalleryDrawerIndex,
+            "Gallery",
+          ),
+          updateScrollPosition: (pos, {double? infoPos, int? selectedCell}) {},
+          scaffoldKey: _key,
+          //progressTicker: thumbnailWatcher,
+          hasReachedEnd: () => true,
+          refresh: _refresh,
+          search: (s) {},
+          initalCellCount: 0, //isar.directorys.countSync()
+          initalScrollPosition: 0,
+          getCell: (i) =>
+              throw "unimpl", //isar.directorys.getSync(i + 1)!.cell()
+          overrideOnPress: (context, indx) {
+            //  Navigator.push(context, MaterialPageRoute(builder: (context) {
+            //   return Images(cell: isar.directorys.getSync(indx + 1)!.cell());
+            // }));
+          },
+        ));
   }
 }

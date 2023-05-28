@@ -22,11 +22,15 @@ Map<SingleActivatorDescription, Null Function()> digitAndSettings(
       }
     },
     const SingleActivatorDescription(
-        "Go to the tags page", SingleActivator(LogicalKeyboardKey.digit2)): () {
+        "Go to the gallery", SingleActivator(LogicalKeyboardKey.digit2)): () {
+      selectDestination(context, from, kGalleryDrawerIndex);
+    },
+    const SingleActivatorDescription(
+        "Go to the tags page", SingleActivator(LogicalKeyboardKey.digit3)): () {
       selectDestination(context, from, kTagsDrawerIndex);
     },
     const SingleActivatorDescription(
-        "Go to the downloads", SingleActivator(LogicalKeyboardKey.digit3)): () {
+        "Go to the downloads", SingleActivator(LogicalKeyboardKey.digit4)): () {
       selectDestination(context, from, kDownloadsDrawerIndex);
     },
     const SingleActivatorDescription("Open settings page",

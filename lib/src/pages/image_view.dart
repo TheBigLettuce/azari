@@ -12,6 +12,7 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/plugs/platform_fullscreens.dart';
 import 'package:gallery/src/widgets/system_gestures.dart';
 import 'package:logging/logging.dart';
 import 'package:media_kit/media_kit.dart';
@@ -225,7 +226,8 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
   bool isAppbarShown = true;
   bool isInfoShown = false;
 
-  final MethodChannel channel = const MethodChannel("lol.bruh19.azari.gallery");
+  late PlatformFullscreensPlug fullscreenPlug =
+      choosePlatformFullscreenPlug(widget.systemOverlayRestoreColor);
 
   @override
   void initState() {
@@ -238,37 +240,21 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
     }
 
     WidgetsBinding.instance.scheduleFrameCallback((_) {
-      SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle(
-            systemNavigationBarColor: Colors.black.withOpacity(0.5)),
-      );
+      fullscreenPlug.setTitle(currentCell.alias(true));
       _loadNext(widget.startingCell);
     });
 
     currentCell = widget.getCell(widget.startingCell);
     controller = PageController(initialPage: widget.startingCell);
-
-    if (Platform.isLinux) {
-      channel.invokeMethod("set_title", currentCell.alias(true));
-    }
   }
 
   @override
   void dispose() {
-    if (Platform.isLinux) {
-      channel.invokeMethod("default_title");
-      channel.invokeMethod("fullscreen_untoggle");
-    }
-
-    if (Platform.isAndroid) {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    }
+    fullscreenPlug.unFullscreen();
 
     widget.updateTagScrollPos(null, null);
     controller.dispose();
 
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-        systemNavigationBarColor: widget.systemOverlayRestoreColor));
     super.dispose();
   }
 
@@ -292,14 +278,8 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
   }
 
   void _onTap() {
-    if (!isAppbarShown) {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    } else {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
-    }
-    setState(() {
-      isAppbarShown = !isAppbarShown;
-    });
+    fullscreenPlug.fullscreen();
+    setState(() => isAppbarShown = !isAppbarShown);
   }
 
   @override
@@ -328,14 +308,10 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
       },
       const SingleActivatorDescription("Rotate image right",
           SingleActivator(LogicalKeyboardKey.arrowRight, control: true)): () {
-        //var pos = photoController.position;
-        //photoController.position = pos.translate(0, 20);
         photoController.rotation += 0.5;
       },
       const SingleActivatorDescription("Rotate image left",
           SingleActivator(LogicalKeyboardKey.arrowLeft, control: true)): () {
-        //var pos = photoController.position;
-        //photoController.position = pos.translate(0, 20);
         photoController.rotation -= 0.5;
       },
       const SingleActivatorDescription(
@@ -365,11 +341,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
       },
       const SingleActivatorDescription(
           "Go fullscreen", SingleActivator(LogicalKeyboardKey.keyF)): () {
-        if (Platform.isAndroid) {
-          _onTap();
-        } else {
-          channel.invokeMethod("fullscreen");
-        }
+        fullscreenPlug.fullscreen();
       },
       const SingleActivatorDescription(
           "Show info", SingleActivator(LogicalKeyboardKey.keyI)): () {
@@ -460,16 +432,13 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                           onPageChanged: (index) async {
                             currentPage = index;
                             photoController.rotation = 0;
-                            //photoController.scale = 1;
                             photoController.position = Offset.zero;
                             _loadNext(index);
                             widget.scrollUntill(index);
 
                             var c = widget.getCell(index);
 
-                            if (Platform.isLinux) {
-                              channel.invokeMethod("set_title", c.alias(true));
-                            }
+                            fullscreenPlug.setTitle(c.alias(true));
 
                             setState(() {
                               currentCell = c;
@@ -511,19 +480,16 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                         var addInfo = currentCell.addInfo(() {
                           widget.updateTagScrollPos(
                               scrollController.offset, currentPage);
-                        }, Theme.of(context).colorScheme.outlineVariant,
-                            kListTileColorInInfo);
+                        },
+                            Theme.of(context).colorScheme.outlineVariant,
+                            kListTileColorInInfo,
+                            widget.systemOverlayRestoreColor);
 
                         return Container(
                           decoration: BoxDecoration(
                               color: Colors.black.withOpacity(0.5)),
                           child:
                               ListView(controller: scrollController, children: [
-                            ListTile(
-                              textColor: kListTileColorInInfo,
-                              title: const Text("Path"),
-                              subtitle: Text(currentCell.fileDownloadUrl()),
-                            ),
                             if (addInfo != null) ...addInfo,
                           ]),
                         ).animate().fadeIn();

@@ -10,6 +10,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/booru/downloader/file_mover.dart';
 import 'package:gallery/src/pages/booru_scroll.dart';
 import 'package:gallery/src/db/isar.dart';
@@ -49,10 +50,7 @@ void main() async {
 
   WidgetsFlutterBinding.ensureInitialized();
   await initalizeIsar();
-
-  if (!Platform.isAndroid) {
-    await initalizeMover();
-  }
+  await initalizeDownloader();
 
   const platform = MethodChannel("lol.bruh19.azari.gallery");
 
@@ -130,22 +128,16 @@ class Entry extends StatelessWidget {
     restore() {
       if (Platform.isAndroid) {
         Permission.notification.request();
-      }
 
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle(
-            systemNavigationBarColor:
-                Theme.of(context).colorScheme.background.withOpacity(0.5)),
-      );
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+        SystemChrome.setSystemUIOverlayStyle(
+          SystemUiOverlayStyle(
+              systemNavigationBarColor:
+                  Theme.of(context).colorScheme.background.withOpacity(0.5)),
+        );
+      }
 
       restoreState(context, true);
-      if (settings.enableGallery && !settings.booruDefault) {
-        Navigator.of(context)
-            .pushReplacement(MaterialPageRoute(builder: (context) {
-          return const Directories();
-        }));
-      }
     }
 
     bool validUri(String s) => Uri.tryParse(s) != null;

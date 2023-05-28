@@ -25,8 +25,8 @@ abstract class Cell {
 
   String alias(bool isList);
 
-  List<Widget>? Function(
-      dynamic extra, Color borderColor, Color foregroundColor) addInfo;
+  List<Widget>? Function(dynamic extra, Color borderColor,
+      Color foregroundColor, Color systemOverlayColor) addInfo;
 
   List<Widget>? Function() addButtons;
 

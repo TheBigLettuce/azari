@@ -17,44 +17,34 @@ const SettingsSchema = CollectionSchema(
   name: r'Settings',
   id: -8656046621518759136,
   properties: {
-    r'booruDefault': PropertySchema(
-      id: 0,
-      name: r'booruDefault',
-      type: IsarType.bool,
-    ),
-    r'enableGallery': PropertySchema(
-      id: 1,
-      name: r'enableGallery',
-      type: IsarType.bool,
-    ),
     r'listViewBooru': PropertySchema(
-      id: 2,
+      id: 0,
       name: r'listViewBooru',
       type: IsarType.bool,
     ),
     r'path': PropertySchema(
-      id: 3,
+      id: 1,
       name: r'path',
       type: IsarType.string,
     ),
     r'picturesPerRow': PropertySchema(
-      id: 4,
+      id: 2,
       name: r'picturesPerRow',
       type: IsarType.long,
     ),
     r'quality': PropertySchema(
-      id: 5,
+      id: 3,
       name: r'quality',
       type: IsarType.byte,
       enumMap: _SettingsqualityEnumValueMap,
     ),
     r'safeMode': PropertySchema(
-      id: 6,
+      id: 4,
       name: r'safeMode',
       type: IsarType.bool,
     ),
     r'selectedBooru': PropertySchema(
-      id: 7,
+      id: 5,
       name: r'selectedBooru',
       type: IsarType.byte,
       enumMap: _SettingsselectedBooruEnumValueMap,
@@ -90,14 +80,12 @@ void _settingsSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeBool(offsets[0], object.booruDefault);
-  writer.writeBool(offsets[1], object.enableGallery);
-  writer.writeBool(offsets[2], object.listViewBooru);
-  writer.writeString(offsets[3], object.path);
-  writer.writeLong(offsets[4], object.picturesPerRow);
-  writer.writeByte(offsets[5], object.quality.index);
-  writer.writeBool(offsets[6], object.safeMode);
-  writer.writeByte(offsets[7], object.selectedBooru.index);
+  writer.writeBool(offsets[0], object.listViewBooru);
+  writer.writeString(offsets[1], object.path);
+  writer.writeLong(offsets[2], object.picturesPerRow);
+  writer.writeByte(offsets[3], object.quality.index);
+  writer.writeBool(offsets[4], object.safeMode);
+  writer.writeByte(offsets[5], object.selectedBooru.index);
 }
 
 Settings _settingsDeserialize(
@@ -107,16 +95,14 @@ Settings _settingsDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = Settings(
-    booruDefault: reader.readBool(offsets[0]),
-    enableGallery: reader.readBool(offsets[1]),
-    listViewBooru: reader.readBool(offsets[2]),
-    path: reader.readString(offsets[3]),
-    picturesPerRow: reader.readLong(offsets[4]),
-    quality: _SettingsqualityValueEnumMap[reader.readByteOrNull(offsets[5])] ??
+    listViewBooru: reader.readBool(offsets[0]),
+    path: reader.readString(offsets[1]),
+    picturesPerRow: reader.readLong(offsets[2]),
+    quality: _SettingsqualityValueEnumMap[reader.readByteOrNull(offsets[3])] ??
         DisplayQuality.original,
-    safeMode: reader.readBool(offsets[6]),
+    safeMode: reader.readBool(offsets[4]),
     selectedBooru:
-        _SettingsselectedBooruValueEnumMap[reader.readByteOrNull(offsets[7])] ??
+        _SettingsselectedBooruValueEnumMap[reader.readByteOrNull(offsets[5])] ??
             Booru.gelbooru,
   );
   object.id = id;
@@ -133,19 +119,15 @@ P _settingsDeserializeProp<P>(
     case 0:
       return (reader.readBool(offset)) as P;
     case 1:
-      return (reader.readBool(offset)) as P;
-    case 2:
-      return (reader.readBool(offset)) as P;
-    case 3:
       return (reader.readString(offset)) as P;
-    case 4:
+    case 2:
       return (reader.readLong(offset)) as P;
-    case 5:
+    case 3:
       return (_SettingsqualityValueEnumMap[reader.readByteOrNull(offset)] ??
           DisplayQuality.original) as P;
-    case 6:
+    case 4:
       return (reader.readBool(offset)) as P;
-    case 7:
+    case 5:
       return (_SettingsselectedBooruValueEnumMap[
               reader.readByteOrNull(offset)] ??
           Booru.gelbooru) as P;
@@ -260,26 +242,6 @@ extension SettingsQueryWhere on QueryBuilder<Settings, Settings, QWhereClause> {
 
 extension SettingsQueryFilter
     on QueryBuilder<Settings, Settings, QFilterCondition> {
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> booruDefaultEqualTo(
-      bool value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'booruDefault',
-        value: value,
-      ));
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterFilterCondition> enableGalleryEqualTo(
-      bool value) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'enableGallery',
-        value: value,
-      ));
-    });
-  }
-
   QueryBuilder<Settings, Settings, QAfterFilterCondition> idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -652,30 +614,6 @@ extension SettingsQueryLinks
     on QueryBuilder<Settings, Settings, QFilterCondition> {}
 
 extension SettingsQuerySortBy on QueryBuilder<Settings, Settings, QSortBy> {
-  QueryBuilder<Settings, Settings, QAfterSortBy> sortByBooruDefault() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'booruDefault', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterSortBy> sortByBooruDefaultDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'booruDefault', Sort.desc);
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterSortBy> sortByEnableGallery() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'enableGallery', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterSortBy> sortByEnableGalleryDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'enableGallery', Sort.desc);
-    });
-  }
-
   QueryBuilder<Settings, Settings, QAfterSortBy> sortByListViewBooru() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'listViewBooru', Sort.asc);
@@ -751,30 +689,6 @@ extension SettingsQuerySortBy on QueryBuilder<Settings, Settings, QSortBy> {
 
 extension SettingsQuerySortThenBy
     on QueryBuilder<Settings, Settings, QSortThenBy> {
-  QueryBuilder<Settings, Settings, QAfterSortBy> thenByBooruDefault() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'booruDefault', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterSortBy> thenByBooruDefaultDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'booruDefault', Sort.desc);
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterSortBy> thenByEnableGallery() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'enableGallery', Sort.asc);
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QAfterSortBy> thenByEnableGalleryDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'enableGallery', Sort.desc);
-    });
-  }
-
   QueryBuilder<Settings, Settings, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -862,18 +776,6 @@ extension SettingsQuerySortThenBy
 
 extension SettingsQueryWhereDistinct
     on QueryBuilder<Settings, Settings, QDistinct> {
-  QueryBuilder<Settings, Settings, QDistinct> distinctByBooruDefault() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'booruDefault');
-    });
-  }
-
-  QueryBuilder<Settings, Settings, QDistinct> distinctByEnableGallery() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'enableGallery');
-    });
-  }
-
   QueryBuilder<Settings, Settings, QDistinct> distinctByListViewBooru() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'listViewBooru');
@@ -917,18 +819,6 @@ extension SettingsQueryProperty
   QueryBuilder<Settings, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
-    });
-  }
-
-  QueryBuilder<Settings, bool, QQueryOperations> booruDefaultProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'booruDefault');
-    });
-  }
-
-  QueryBuilder<Settings, bool, QQueryOperations> enableGalleryProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'enableGallery');
     });
   }
 

@@ -14,24 +14,33 @@ import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 import 'package:mime/mime.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:path/path.dart' as path_util;
 
+import '../plugs/platform_fullscreens.dart';
 import 'cell.dart';
 import 'data.dart';
 
-MethodChannel? linuxChannel =
-    Platform.isLinux ? const MethodChannel("lol.bruh19.azari.gallery") : null;
+String _fileDownloadUrl(String sampleUrl, String originalUrl) {
+  if (path_util.extension(originalUrl) == ".zip") {
+    return sampleUrl;
+  } else {
+    return originalUrl;
+  }
+}
 
 class BooruCell extends Cell {
   String originalUrl;
-  String postNumber;
+  //String postNumber;
   String tags;
   String sampleUrl;
+  int postId;
 
   @override
-  String alias(bool isList) => isList ? tags : postNumber;
+  String alias(bool isList) => isList ? tags : postId.toString();
 
   @override
-  String fileDownloadUrl() => originalUrl;
+  String fileDownloadUrl() => _fileDownloadUrl(sampleUrl, originalUrl);
 
   @override
   Content fileDisplay() {
@@ -66,51 +75,60 @@ class BooruCell extends Cell {
       CellData(thumb: CachedNetworkImageProvider(path), name: alias(isList));
 
   BooruCell(
-      {required this.postNumber,
+      {required int post,
       required super.path,
       required this.originalUrl,
       required this.tags,
       required this.sampleUrl,
       required void Function(String tag) onTagPressed})
-      : super(addInfo:
-            (dynamic extra, Color dividerColor, Color foregroundColor) {
-          List<Widget> list = [
-            ListTile(
-              textColor: foregroundColor,
-              title: const Text("Tags"),
-            )
-          ];
+      : postId = post,
+        super(
+            addInfo: (dynamic extra, Color dividerColor, Color foregroundColor,
+                Color systemOverlayColor) {
+              var downloadUrl = _fileDownloadUrl(sampleUrl, originalUrl);
+              List<Widget> list = [
+                ListTile(
+                  textColor: foregroundColor,
+                  title: const Text("Path"),
+                  subtitle: Text(downloadUrl),
+                  onTap: () => launchUrl(Uri.parse(downloadUrl),
+                      mode: LaunchMode.externalApplication),
+                ),
+                ListTile(
+                  textColor: foregroundColor,
+                  title: const Text("Tags"),
+                )
+              ];
 
-          list.addAll(ListTile.divideTiles(
-              color: dividerColor,
-              tiles: tags.split(' ').map((e) => ListTile(
-                    textColor: foregroundColor,
-                    title: Text(HtmlUnescape().convert(e)),
-                    onTap: () {
-                      onTagPressed(HtmlUnescape().convert(e));
-                      if (linuxChannel != null) {
-                        linuxChannel!.invokeMethod("default_title");
-                        linuxChannel!.invokeMethod("fullscreen_untoggle");
-                      }
-                      extra();
-                    },
-                  ))));
+              var plug = choosePlatformFullscreenPlug(systemOverlayColor);
 
-          return [
-            ListBody(
-              children: list,
-            )
-          ];
-        }, addButtons: () {
-          if (tags.contains("original")) {
-            return [
-              const IconButton(
-                icon: Icon(IconData(79)),
-                onPressed: null,
-              )
-            ];
-          }
+              list.addAll(ListTile.divideTiles(
+                  color: dividerColor,
+                  tiles: tags.split(' ').map((e) => ListTile(
+                        textColor: foregroundColor,
+                        title: Text(HtmlUnescape().convert(e)),
+                        onTap: () {
+                          onTagPressed(HtmlUnescape().convert(e));
+                          plug.unFullscreen();
+                          extra();
+                        },
+                      ))));
 
-          return null;
-        });
+              return [
+                ListBody(
+                  children: list,
+                )
+              ];
+            },
+            addButtons: () => [
+                  if (tags.contains("original"))
+                    const IconButton(
+                      icon: Icon(IconData(79)),
+                      onPressed: null,
+                    ),
+                  IconButton(
+                      icon: const Icon(Icons.public),
+                      onPressed: () => launchUrl(getBooru().browserLink(post),
+                          mode: LaunchMode.externalApplication)),
+                ]);
 }

@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:isar/isar.dart';
+import 'package:path/path.dart' as path;
 
 import '../cell/booru.dart';
 
@@ -30,10 +31,18 @@ class Post {
 
   final String ext;
 
-  String filename() => "$id - $md5$ext";
+  String filename() =>
+      "$id - $md5${ext != '.zip' ? ext : path.extension(sampleUrl)}";
+  String downloadUrl() {
+    if (path.extension(fileUrl) == ".zip") {
+      return sampleUrl;
+    } else {
+      return fileUrl;
+    }
+  }
 
   BooruCell booruCell(void Function(String tag) onTagPressed) => BooruCell(
-      postNumber: id.toString(),
+      post: id,
       sampleUrl: sampleUrl,
       path: previewUrl,
       originalUrl: fileUrl,

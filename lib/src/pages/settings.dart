@@ -25,7 +25,6 @@ class Settings extends StatefulWidget {
 class _SettingsState extends State<Settings> {
   late final StreamSubscription<schema_settings.Settings?> _watcher;
   schema_settings.Settings? _settings = isar().settings.getSync(0);
-  bool booruChanged = false;
 
   @override
   void initState() {
@@ -44,14 +43,6 @@ class _SettingsState extends State<Settings> {
     _watcher.cancel();
 
     super.dispose();
-  }
-
-  void _popBooru() {
-    Navigator.of(context).popUntil(ModalRoute.withName("/booru"));
-    Navigator.pop(context);
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      Navigator.of(context).pushNamed("/booru", arguments: true);
-    });
   }
 
   showDialog(String s) {
@@ -74,11 +65,7 @@ class _SettingsState extends State<Settings> {
     Map<SingleActivatorDescription, Null Function()> bindings = {
       const SingleActivatorDescription(
           "Back", SingleActivator(LogicalKeyboardKey.escape)): () {
-        if (booruChanged) {
-          _popBooru();
-        } else {
-          Navigator.pop(context);
-        }
+        Navigator.pop(context);
       }
     };
 
@@ -89,194 +76,155 @@ class _SettingsState extends State<Settings> {
         },
         child: Focus(
           autofocus: true,
-          child: WillPopScope(
-            onWillPop: () {
-              if (booruChanged) {
-                _popBooru();
-              }
-
-              return Future.value(true);
-            },
-            child: Scaffold(
-              appBar: AppBar(title: const Text("Settings")),
-              body: gestureDeadZones(context,
-                  child: ListView(children: [
-                    ListTile(
-                      title: const Text("Download directory"),
-                      subtitle: Text(_settings!.path),
-                      trailing: TextButton(
-                        onPressed: () async {
-                          await chooseDirectory(showDialog);
+          child: Scaffold(
+            appBar: AppBar(title: const Text("Settings")),
+            body: gestureDeadZones(context,
+                child: ListView(children: [
+                  ListTile(
+                    title: const Text("Download directory"),
+                    subtitle: Text(_settings!.path),
+                    trailing: TextButton(
+                      onPressed: () async {
+                        await chooseDirectory(showDialog);
+                      },
+                      child: const Text("pick new"),
+                    ),
+                  ),
+                  ListTile(
+                    title: const Text("Selected booru"),
+                    trailing: DropdownButton<Booru>(
+                      borderRadius: BorderRadius.circular(25),
+                      underline: Container(),
+                      value: _settings!.selectedBooru,
+                      items: Booru.values
+                          .map((e) => DropdownMenuItem(
+                                value: e,
+                                child: Text(e.string),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != _settings!.selectedBooru) {
+                          isar().writeTxnSync(() => isar()
+                              .settings
+                              .putSync(_settings!.copy(selectedBooru: value)));
+                        }
+                      },
+                    ),
+                  ),
+                  ListTile(
+                      title: const Text("Image display quality"),
+                      leading: IconButton(
+                        icon: const Icon(Icons.info_outlined),
+                        onPressed: () {
+                          Navigator.of(context).push(DialogRoute(
+                              context: context,
+                              builder: (context) {
+                                return const AlertDialog(
+                                  content: Text(
+                                      "Download quality is always Original."),
+                                );
+                              }));
                         },
-                        child: const Text("pick new"),
                       ),
-                    ),
-                    ListTile(
-                      title: const Text("Enable gallery"),
-                      trailing: Switch(
-                        onChanged: null,
-                        /*  (_) {
-                isar().writeTxnSync(() => isar().settings.putSync(
-                    _settings!.copy(enableGallery: !_settings!.enableGallery)));
-              },*/
-                        value: _settings!.enableGallery,
-                      ),
-                    ),
-                    ListTile(
-                      title: const Text("Booru default screen"),
-                      subtitle: const Text(
-                          "If enabled, makes the booru screen the default one, when the app opens."),
-                      trailing: Switch(
-                        onChanged: _settings!.enableGallery
-                            ? (value) {
-                                isar().writeTxnSync(() {
-                                  isar().settings.putSync(_settings!.copy(
-                                      booruDefault: !_settings!.booruDefault));
-                                });
-                              }
-                            : null,
-                        value: _settings!.booruDefault,
-                      ),
-                    ),
-                    ListTile(
-                      title: const Text("Selected booru"),
-                      trailing: DropdownButton<Booru>(
-                        borderRadius: BorderRadius.circular(25),
+                      trailing: DropdownButton<DisplayQuality>(
                         underline: Container(),
-                        value: _settings!.selectedBooru,
+                        borderRadius: BorderRadius.circular(25),
+                        value: _settings!.quality,
                         items: [
                           DropdownMenuItem(
-                            value: Booru.danbooru,
-                            child: Text(Booru.danbooru.string),
-                          ),
+                              value: DisplayQuality.original,
+                              child: Text(DisplayQuality.original.string)),
                           DropdownMenuItem(
-                            value: Booru.gelbooru,
-                            child: Text(Booru.gelbooru.string),
+                            value: DisplayQuality.sample,
+                            child: Text(DisplayQuality.sample.string),
                           )
                         ],
                         onChanged: (value) {
-                          if (value != _settings!.selectedBooru) {
-                            booruChanged = true;
-                            isar().writeTxnSync(() => isar().settings.putSync(
-                                _settings!.copy(selectedBooru: value)));
+                          if (value != _settings!.quality) {
+                            isar().writeTxnSync(() => isar()
+                                .settings
+                                .putSync(_settings!.copy(quality: value)));
                           }
                         },
-                      ),
-                    ),
-                    ListTile(
-                        title: const Text("Image display quality"),
-                        leading: IconButton(
-                          icon: const Icon(Icons.info_outlined),
-                          onPressed: () {
-                            Navigator.of(context).push(DialogRoute(
-                                context: context,
-                                builder: (context) {
-                                  return const AlertDialog(
+                      )),
+                  ListTile(
+                    title: const Text("List view"),
+                    leading: IconButton(
+                        onPressed: () {
+                          Navigator.of(context).push(DialogRoute(
+                              context: context,
+                              builder: (context) => const AlertDialog(
                                     content: Text(
-                                        "Download quality is always Original."),
-                                  );
-                                }));
-                          },
-                        ),
-                        trailing: DropdownButton<DisplayQuality>(
-                          underline: Container(),
-                          borderRadius: BorderRadius.circular(25),
-                          value: _settings!.quality,
-                          items: [
-                            DropdownMenuItem(
-                                value: DisplayQuality.original,
-                                child: Text(DisplayQuality.original.string)),
-                            DropdownMenuItem(
-                              value: DisplayQuality.sample,
-                              child: Text(DisplayQuality.sample.string),
-                            )
-                          ],
-                          onChanged: (value) {
-                            if (value != _settings!.quality) {
-                              isar().writeTxnSync(() => isar()
-                                  .settings
-                                  .putSync(_settings!.copy(quality: value)));
-                            }
-                          },
-                        )),
-                    ListTile(
-                      title: const Text("List view"),
+                                        "Number of elements is always 20 in the list view."),
+                                  )));
+                        },
+                        icon: const Icon(Icons.info_outline)),
+                    subtitle: const Text(
+                        "If enabled shows elements as a list instead of a grid."),
+                    trailing: Switch(
+                      value: _settings!.listViewBooru,
+                      onChanged: (value) {
+                        if (value != _settings!.listViewBooru) {
+                          isar().writeTxnSync(() => isar()
+                              .settings
+                              .putSync(_settings!.copy(listViewBooru: value)));
+                        }
+                      },
+                    ),
+                  ),
+                  ListTile(
+                      title: const Text("Number of elements per row"),
                       leading: IconButton(
-                          onPressed: () {
-                            Navigator.of(context).push(DialogRoute(
-                                context: context,
-                                builder: (context) => const AlertDialog(
-                                      content: Text(
-                                          "Number of elements is always 20 in the list view."),
-                                    )));
-                          },
-                          icon: const Icon(Icons.info_outline)),
-                      subtitle: const Text(
-                          "If enabled shows elements as a list instead of a grid."),
-                      trailing: Switch(
-                        value: _settings!.listViewBooru,
-                        onChanged: (value) {
-                          if (value != _settings!.listViewBooru) {
-                            isar().writeTxnSync(() => isar().settings.putSync(
-                                _settings!.copy(listViewBooru: value)));
-                          }
+                        onPressed: () {
+                          Navigator.of(context).push(DialogRoute(
+                              context: context,
+                              builder: (context) => const AlertDialog(
+                                  content: Text(
+                                      "Number of elements per refresh starts at 20. If number of elements per row is more than two, "
+                                      "number of elements per refresh increases by 10 per increase. So, if number of elements "
+                                      "per row is three, then number of elements per refresh will be 30."))));
                         },
+                        icon: const Icon(Icons.info_outline),
                       ),
+                      trailing: DropdownButton<int>(
+                        underline: Container(),
+                        borderRadius: BorderRadius.circular(25),
+                        value: _settings!.picturesPerRow,
+                        items: const [
+                          DropdownMenuItem(value: 2, child: Text("2")),
+                          DropdownMenuItem(value: 3, child: Text("3")),
+                          DropdownMenuItem(value: 4, child: Text("4")),
+                          DropdownMenuItem(value: 5, child: Text("5")),
+                          DropdownMenuItem(value: 6, child: Text("6"))
+                        ],
+                        onChanged: _settings!.listViewBooru
+                            ? null
+                            : (value) {
+                                if (value != _settings!.picturesPerRow) {
+                                  isar().writeTxnSync(() => isar()
+                                      .settings
+                                      .putSync(_settings!
+                                          .copy(picturesPerRow: value)));
+                                }
+                              },
+                      )),
+                  ListTile(
+                    title: const Text("Safe mode"),
+                    trailing: Switch(
+                      value: _settings!.safeMode,
+                      onChanged: (value) {
+                        isar().writeTxnSync(() => isar().settings.putSync(
+                            _settings!.copy(safeMode: !_settings!.safeMode)));
+                      },
                     ),
-                    ListTile(
-                        title: const Text("Number of elements per row"),
-                        leading: IconButton(
-                          onPressed: () {
-                            Navigator.of(context).push(DialogRoute(
-                                context: context,
-                                builder: (context) => const AlertDialog(
-                                    content: Text(
-                                        "Number of elements per refresh starts at 20. If number of elements per row is more than two, "
-                                        "number of elements per refresh increases by 10 per increase. So, if number of elements "
-                                        "per row is three, then number of elements per refresh will be 30."))));
-                          },
-                          icon: const Icon(Icons.info_outline),
-                        ),
-                        trailing: DropdownButton<int>(
-                          underline: Container(),
-                          borderRadius: BorderRadius.circular(25),
-                          value: _settings!.picturesPerRow,
-                          items: const [
-                            DropdownMenuItem(value: 2, child: Text("2")),
-                            DropdownMenuItem(value: 3, child: Text("3")),
-                            DropdownMenuItem(value: 4, child: Text("4")),
-                            DropdownMenuItem(value: 5, child: Text("5")),
-                            DropdownMenuItem(value: 6, child: Text("6"))
-                          ],
-                          onChanged: _settings!.listViewBooru
-                              ? null
-                              : (value) {
-                                  if (value != _settings!.picturesPerRow) {
-                                    isar().writeTxnSync(() => isar()
-                                        .settings
-                                        .putSync(_settings!
-                                            .copy(picturesPerRow: value)));
-                                  }
-                                },
-                        )),
-                    ListTile(
-                      title: const Text("Safe mode"),
-                      trailing: Switch(
-                        value: _settings!.safeMode,
-                        onChanged: (value) {
-                          isar().writeTxnSync(() => isar().settings.putSync(
-                              _settings!.copy(safeMode: !_settings!.safeMode)));
-                        },
-                      ),
-                    ),
-                    const ListTile(
-                      enabled: false,
-                      leading: Icon(Icons.info_outline),
-                      title: Text("License:"),
-                      subtitle: Text("GPL-2.0-only"),
-                    )
-                  ])),
-            ),
+                  ),
+                  const ListTile(
+                    enabled: false,
+                    leading: Icon(Icons.info_outline),
+                    title: Text("License:"),
+                    subtitle: Text("GPL-2.0-only"),
+                  )
+                ])),
           ),
         ));
   }
