@@ -9,6 +9,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../db/isar.dart';
 
@@ -29,6 +30,7 @@ Widget autocompleteWidget(
     TextEditingController controller,
     void Function(String) highlightChanged,
     void Function(String) onSubmit,
+    Future<List<String>> Function(String) complF,
     FocusNode focus,
     {ScrollController? scrollHack,
     bool noSticky = false,
@@ -117,7 +119,7 @@ Widget autocompleteWidget(
               },
               icon: const Icon(Icons.close),
             ),
-            hintText: "Search",
+            hintText: AppLocalizations.of(context)!.searchHint,
             border: roundBorders
                 ? const OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(50)))
@@ -133,8 +135,7 @@ Widget autocompleteWidget(
     optionsBuilder: (textEditingValue) async {
       List<String> options = [];
       try {
-        options = await autoCompleteTag(
-            textEditingValue.text, getBooru().completeTag);
+        options = await autoCompleteTag(textEditingValue.text, complF);
       } catch (e, trace) {
         log("autocomplete in search, excluded tags",
             level: Level.WARNING.value, error: e, stackTrace: trace);

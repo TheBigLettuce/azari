@@ -30,9 +30,8 @@ class BooruTagging<T extends Tags> {
     var booruTags = get();
     List<String> tagsCopy = List.from(booruTags.tags);
     tagsCopy.remove(t);
-    tagsCopy.add(t);
 
-    _addTags(tagsCopy.reversed.toList(), booruTags.domain);
+    _addTags([t, ...tagsCopy], booruTags.domain);
   }
 
   void delete(String t) {

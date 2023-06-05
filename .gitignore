@@ -46,7 +46,13 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# generated code
+/lib/src/dbus/*
+/lib/src/gallery/android_api/*
+/lib/src/schemas/*.g.dart
+/test/test_api.g.dart
+
 # GNU/Linux packaging
-app
-AppDir
+/app
+/AppDir
 *.AppImage

@@ -7,6 +7,7 @@
 
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -37,11 +38,19 @@ const MethodChannel _channel = MethodChannel("lol.bruh19.azari.gallery");
 /// of a post number, in this case [page] comes in handy:
 /// that is, it makes refreshes on restore few.
 BooruAPI getBooru({int? page}) {
+  Dio dio = Dio(BaseOptions(
+    headers: {
+      "user-agent":
+          "Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0"
+    },
+    responseType: ResponseType.json,
+  ));
+
   var settings = isar().settings.getSync(0);
   if (settings!.selectedBooru == Booru.danbooru) {
-    return Danbooru();
+    return Danbooru(dio);
   } else if (settings.selectedBooru == Booru.gelbooru) {
-    return Gelbooru(page ?? 0);
+    return Gelbooru(page ?? 0, dio);
   } else {
     throw "invalid booru";
   }

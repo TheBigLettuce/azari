@@ -28,6 +28,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import okio.buffer
@@ -41,7 +42,6 @@ class MainActivity : FlutterActivity() {
     private val CHANNEL = "lol.bruh19.azari.gallery"
     private lateinit var mover: Mover
     var callback: ((String) -> Unit)? = null
-
     override fun onCreate(savedInstanceState: Bundle?) {
         var appFlags = context.applicationInfo.flags
         if ((appFlags and ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
@@ -54,7 +54,12 @@ class MainActivity : FlutterActivity() {
         }
 
         super.onCreate(savedInstanceState)
-        mover = Mover(lifecycleScope.coroutineContext, context)
+
+        mover = Mover(
+            lifecycleScope.coroutineContext,
+            context,
+            
+            )
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -103,6 +108,12 @@ class MainActivity : FlutterActivity() {
                     }
                 }
 
+                "refreshGallery" -> {
+                    mover.refreshGallery()
+
+                    result.success(null)
+                }
+
                 "accentColor" -> {
                     try {
                         var value = TypedValue()
@@ -127,18 +138,24 @@ class MainActivity : FlutterActivity() {
 
 data class MoveOp(val source: String, val rootUri: Uri, val dir: String)
 
-class Mover(private val coContext: CoroutineContext, private val context: android.content.Context) {
+class Mover(
+    private val coContext: CoroutineContext,
+    private val context: android.content.Context,
+    //private val galleryApi: GalleryApi
+) {
     private val channel = Channel<MoveOp>()
     private val scope = CoroutineScope(coContext + Dispatchers.IO)
+
+    private var isLockedMux = Mutex()
 
     init {
         scope.launch {
             for (op in channel) {
                 launch {
                     try {
-                        var ext = Path(op.source).extension
+                        val ext = Path(op.source).extension
 
-                        var mimeType =
+                        val mimeType =
                             MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext.lowercase())
                                 ?: throw Exception("could not find mimetype")
 
@@ -155,17 +172,17 @@ class Mover(private val coContext: CoroutineContext, private val context: androi
                         } else if (!dir.isDirectory) throw Exception("needs to be directory: ${op.dir}")
 
                         val docDest =
-                            dir!!.createFile(mimeType, Path(op.source).fileName!!.toString())
+                            dir.createFile(mimeType, Path(op.source).fileName!!.toString())
                                 ?: throw Exception("could not create the destination file")
 
 
-                        var docStream = context.contentResolver.openOutputStream(docDest.uri, "w")
+                        val docStream = context.contentResolver.openOutputStream(docDest.uri, "w")
                             ?: throw Exception("could not get an output stream")
                         val fileSrc = FileSystem.SYSTEM.openReadOnly(op.source.toPath())
 
 
-                        var buffer = docStream.sink().buffer()
-                        var src = fileSrc.source()
+                        val buffer = docStream.sink().buffer()
+                        val src = fileSrc.source()
                         buffer.writeAll(src)
                         buffer.flush()
                         docStream.flush()
@@ -183,6 +200,38 @@ class Mover(private val coContext: CoroutineContext, private val context: androi
             }
         }
     }
+
+    fun refreshGallery() {
+        if (isLockedMux.isLocked) {
+            return
+        }
+
+//        galleryApi.start {
+//            scope.launch {
+//                if (!isLockedMux.tryLock()) {
+//                    return@launch
+//                }
+//
+//                //refreshMediastore(it, context)
+//
+//                isLockedMux.unlock()
+//            }
+//        }
+    }
+
+    /*private fun refreshMediastore(previous: Long, context: Context) {
+        val projection = arrayOf("")
+        val selection = ""
+
+        context.contentResolver.query(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            projection,
+            selection,
+        )
+
+
+        galleryApi.finish()
+    }*/
 
     fun add(op: MoveOp) {
         scope.launch {

@@ -10,7 +10,8 @@ import 'package:flutter/widgets.dart';
 import 'cell.dart';
 import 'data.dart';
 
-class DirectoryCell extends Cell {
+class DirectoryCell implements Cell {
+  String dirPath;
   ImageProvider image;
   String dirName;
   String id;
@@ -22,17 +23,28 @@ class DirectoryCell extends Cell {
   Content fileDisplay() => throw "not implemented";
 
   @override
-  String fileDownloadUrl() => path;
+  String fileDownloadUrl() => dirName;
 
   @override
   CellData getCellData(bool isList) =>
       CellData(thumb: image, name: alias(isList));
 
-  DirectoryCell(
-      {required this.image,
-      required this.id,
-      required super.path,
-      required this.dirName,
-      required super.addInfo,
-      required super.addButtons});
+  @override
+  List<Widget>? Function() get addButtons => () {
+        return null;
+      };
+
+  @override
+  List<Widget>? Function(BuildContext context, dynamic extra, Color borderColor,
+          Color foregroundColor, Color systemOverlayColor)
+      get addInfo => (_, __, ___, ____, _____) {
+            return null;
+          };
+
+  DirectoryCell({
+    required this.image,
+    required this.id,
+    required this.dirPath,
+    required this.dirName,
+  });
 }

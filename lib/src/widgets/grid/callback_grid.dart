@@ -11,6 +11,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/schemas/settings.dart';
@@ -20,6 +21,7 @@ import '../../cell/cell.dart';
 import '../../keybinds/keybinds.dart';
 import '../booru/autocomplete_tag.dart';
 import 'cell.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class GridDescription {
   final int drawerIndex;
@@ -92,12 +94,14 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   late ScrollController controller =
       ScrollController(initialScrollOffset: widget.initalScrollPosition);
 
-  late int cellCount = 0;
+  int cellCount = 0;
   bool refreshing = true;
   _ScrollHack scrollHack = _ScrollHack();
   Settings settings = isar().settings.getSync(0)!;
   late final StreamSubscription<Settings?> settingsWatcher;
   late int lastGridColCount = settings.picturesPerRow;
+
+  BooruAPI booru = getBooru();
 
   late TextEditingController textEditingController =
       TextEditingController(text: widget.searchStartingValue);
@@ -164,8 +168,6 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       });
     });
 
-    widget.updateScrollPosition(0);
-
     if (widget.initalCellCount != 0) {
       cellCount = widget.initalCellCount;
       refreshing = false;
@@ -185,7 +187,7 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       if (!refreshing &&
           cellCount != 0 &&
           (controller.offset / controller.positions.first.maxScrollExtent) >=
-              0.8) {
+              0.95) {
         setState(() {
           refreshing = true;
         });
@@ -217,6 +219,8 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
     focus.dispose();
     mainFocus.dispose();
+
+    booru.close();
 
     super.dispose();
   }
@@ -304,8 +308,8 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   @override
   Widget build(BuildContext context) {
     var bindings = {
-      const SingleActivatorDescription(
-          "Refresh", SingleActivator(LogicalKeyboardKey.f5)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.refresh,
+          const SingleActivator(LogicalKeyboardKey.f5)): () {
         if (!refreshing) {
           setState(() {
             cellCount = 0;
@@ -314,15 +318,15 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
           _refresh();
         }
       },
-      const SingleActivatorDescription("Select highlighted autocomplete",
-          SingleActivator(LogicalKeyboardKey.enter, shift: true)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.selectSuggestion,
+          const SingleActivator(LogicalKeyboardKey.enter, shift: true)): () {
         if (_currentlyHighlightedTag != "") {
           mainFocus.unfocus();
           BooruTags().onPressed(context, _currentlyHighlightedTag);
         }
       },
-      const SingleActivatorDescription("Focus search",
-          SingleActivator(LogicalKeyboardKey.keyF, control: true)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.focusSearch,
+          const SingleActivator(LogicalKeyboardKey.keyF, control: true)): () {
         if (focus.hasFocus) {
           focus.unfocus();
         } else {
@@ -330,8 +334,8 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         }
       },
       if (widget.onBack != null)
-        const SingleActivatorDescription(
-            "Back", SingleActivator(LogicalKeyboardKey.escape)): () {
+        SingleActivatorDescription(AppLocalizations.of(context)!.back,
+            const SingleActivator(LogicalKeyboardKey.escape)): () {
           widget.onBack!();
         },
       if (widget.additionalKeybinds != null) ...widget.additionalKeybinds!,
@@ -380,6 +384,7 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
                             widget.search(s);
                           },
+                          booru.completeTag,
                           focus,
                           scrollHack: scrollHack,
                         ),

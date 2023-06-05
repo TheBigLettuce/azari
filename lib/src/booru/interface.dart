@@ -5,12 +5,14 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'package:dio/dio.dart';
 import 'package:gallery/src/schemas/settings.dart';
-import '../cell/booru.dart';
 import '../db/isar.dart';
 import '../schemas/post.dart';
 
 abstract class BooruAPI {
+  Dio get client;
+
   String name();
 
   int? currentPage();
@@ -26,17 +28,8 @@ abstract class BooruAPI {
   Future<List<String>> completeTag(String tag);
 
   Uri browserLink(int id);
-}
 
-List<BooruCell> postsToCells(
-    List<Post> l, void Function(String tag) onTagPressed) {
-  List<BooruCell> list = [];
-
-  for (var element in l) {
-    list.add(element.booruCell(onTagPressed));
-  }
-
-  return list;
+  void close();
 }
 
 int numberOfElementsPerRefresh() {

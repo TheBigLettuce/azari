@@ -11,7 +11,6 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/booru/interface.dart';
-import 'package:gallery/src/cell/booru.dart';
 import 'package:gallery/src/db/isar.dart' as db;
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
@@ -21,15 +20,17 @@ import 'package:gallery/src/schemas/tags.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../schemas/download_file.dart';
 import '../schemas/secondary_grid.dart';
 import '../schemas/settings.dart';
 import '../booru/tags/tags.dart';
 
-void _updateScrollPrimary(double pos, int? page, {double? tagPos}) {
+void _updateScrollPrimary(BooruAPI booru, double pos, int? page,
+    {double? tagPos}) {
   db.isar().writeTxnSync(() => db.isar().scrollPositionPrimarys.putSync(
-      sc_pos.ScrollPositionPrimary(pos, db.getBooru().domain(),
+      sc_pos.ScrollPositionPrimary(pos, booru.domain(),
           page: page, tagPos: tagPos)));
 }
 
@@ -116,7 +117,8 @@ class _BooruScrollState extends State<BooruScroll> {
 
     if (widget.tags.isEmpty) {
       updateScrollPosition = (pos, {double? infoPos, int? selectedCell}) =>
-          _updateScrollPrimary(pos, booru.currentPage(), tagPos: infoPos);
+          _updateScrollPrimary(booru, pos, booru.currentPage(),
+              tagPos: infoPos);
     } else {
       updateScrollPosition = (pos, {double? infoPos, int? selectedCell}) =>
           _updateScrollSecondary(
@@ -147,6 +149,8 @@ class _BooruScrollState extends State<BooruScroll> {
     if (widget.closeDb != null) {
       widget.closeDb!(isar.name);
     }
+
+    booru.close();
 
     super.dispose();
   }
@@ -220,12 +224,12 @@ class _BooruScrollState extends State<BooruScroll> {
         return Future.value(true);
       },
           _key,
-          CallbackGrid<BooruCell>(
-            description:
-                const GridDescription(kBooruGridDrawerIndex, "Booru grid"),
+          CallbackGrid<Post>(
+            description: GridDescription(kBooruGridDrawerIndex,
+                AppLocalizations.of(context)!.booruGridPageName),
             hasReachedEnd: () => reachedEnd,
             scaffoldKey: _key,
-            getCell: (i) => isar.posts.getSync(i + 1)!.booruCell(_search),
+            getCell: (i) => isar.posts.getSync(i + 1)!,
             loadNext: _addLast,
             refresh: _clearAndRefresh,
             onBack: widget.tags.isEmpty

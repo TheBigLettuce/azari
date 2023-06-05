@@ -15,7 +15,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 1.1.12
+version: 1.1.14
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -65,12 +65,17 @@ dependencies:
   media_kit_native_event_loop: ^1.0.3 
   media_kit_libs_linux: ^1.0.2  
   url_launcher: ^6.1.11
+  intl: any
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
     
+  pigeon: ^10.0.0
   build_runner: ^2.4.1
+
+  flutter_localizations: 
+    sdk: flutter
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -86,6 +91,7 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

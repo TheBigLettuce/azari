@@ -11,9 +11,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
+import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:logging/logging.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../booru/tags/tags.dart';
 import '../../schemas/download_file.dart';
@@ -27,6 +29,7 @@ class SinglePost extends StatefulWidget {
 }
 
 class _SinglePostState extends State<SinglePost> {
+  BooruAPI booru = getBooru();
   TextEditingController controller = TextEditingController();
   List<Widget> menuItems = [];
   MenuController menuController = MenuController();
@@ -39,6 +42,7 @@ class _SinglePostState extends State<SinglePost> {
   void dispose() {
     arrowSpinningController = null;
     controller.dispose();
+    booru.close();
     super.dispose();
   }
 
@@ -48,7 +52,7 @@ class _SinglePostState extends State<SinglePost> {
       menuChildren: menuItems,
       controller: menuController,
       child: SearchBar(
-        hintText: "Go to a post",
+        hintText: AppLocalizations.of(context)!.goPostHint,
         focusNode: widget.focus,
         controller: controller,
         leading: const Icon(Icons.search),
@@ -121,13 +125,14 @@ class _SinglePostState extends State<SinglePost> {
 
                 var n = int.tryParse(controller.text);
                 if (n == null) {
-                  throw "'${controller.text}' is not a number.";
+                  throw AppLocalizations.of(context)!
+                      .notANumber(controller.text);
                 }
 
                 Color overlayColor =
                     Theme.of(context).colorScheme.background.withOpacity(0.5);
 
-                var value = await getBooru().singlePost(n);
+                var value = await booru.singlePost(n);
 
                 // ignore: use_build_context_synchronously
                 Navigator.push(context, MaterialPageRoute(
@@ -136,13 +141,12 @@ class _SinglePostState extends State<SinglePost> {
                       updateTagScrollPos: (_, __) {},
                       download: (_) {
                         Downloader().add(File.d(value.downloadUrl(),
-                            getBooru().domain(), value.filename()));
+                            booru.domain(), value.filename()));
                       },
                       cellCount: 1,
                       scrollUntill: (_) {},
                       startingCell: 0,
-                      getCell: (_) => value
-                          .booruCell((t) => BooruTags().onPressed(context, t)),
+                      getCell: (_) => value,
                       onNearEnd: () {
                         return Future.value(1);
                       },

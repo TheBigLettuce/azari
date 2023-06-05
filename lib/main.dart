@@ -11,10 +11,8 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
-import 'package:gallery/src/booru/downloader/file_mover.dart';
 import 'package:gallery/src/pages/booru_scroll.dart';
 import 'package:gallery/src/db/isar.dart';
-import 'package:gallery/src/gallery/directories.dart';
 import 'package:gallery/src/schemas/grid_restore.dart';
 import 'package:gallery/src/schemas/scroll_position.dart' as scroll_pos;
 import 'package:gallery/src/schemas/settings.dart';
@@ -26,6 +24,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 ThemeData _buildTheme(Brightness brightness, Color accentColor) {
   var baseTheme = ThemeData(
@@ -76,6 +75,8 @@ void main() async {
     darkTheme: _buildTheme(Brightness.dark, accentColor),
     theme: _buildTheme(Brightness.light, accentColor),
     home: const Entry(),
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
     routes: {
       "/senitel": (context) => Container(),
       "/booru": (context) {
@@ -119,7 +120,7 @@ class Entry extends StatelessWidget {
                       onPressed: () {
                         Navigator.pop(context);
                       },
-                      child: const Text("ok"))
+                      child: Text(AppLocalizations.of(context)!.ok))
                 ],
                 content: Text(s),
               )));
@@ -146,7 +147,7 @@ class Entry extends StatelessWidget {
       return IntroductionScreen(
         pages: [
           PageViewModel(
-            title: "Choose download directory",
+            title: AppLocalizations.of(context)!.pickDirectory,
             bodyWidget: TextButton(
               onPressed: () async {
                 for (true;;) {
@@ -157,12 +158,12 @@ class Entry extends StatelessWidget {
 
                 restore();
               },
-              child: const Text("pick"),
+              child: Text(AppLocalizations.of(context)!.pick),
             ),
           )
         ],
         showDoneButton: false,
-        next: const Text("next"),
+        next: Text(AppLocalizations.of(context)!.next),
       );
     }
 

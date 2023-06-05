@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/widgets.dart';
+import 'package:isar/isar.dart';
 
 import 'data.dart';
 
@@ -21,14 +22,16 @@ class Content {
 }
 
 abstract class Cell {
-  String path;
+  //String get path;
 
   String alias(bool isList);
 
-  List<Widget>? Function(dynamic extra, Color borderColor,
-      Color foregroundColor, Color systemOverlayColor) addInfo;
+  @ignore
+  List<Widget>? Function(BuildContext context, dynamic extra, Color borderColor,
+      Color foregroundColor, Color systemOverlayColor) get addInfo;
 
-  List<Widget>? Function() addButtons;
+  @ignore
+  List<Widget>? Function() get addButtons;
 
   Content fileDisplay();
 
@@ -36,5 +39,5 @@ abstract class Cell {
 
   CellData getCellData(bool isList);
 
-  Cell({required this.path, required this.addInfo, required this.addButtons});
+  //Cell({required this.path, required this.addInfo, required this.addButtons});
 }

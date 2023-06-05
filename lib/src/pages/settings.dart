@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/settings.dart' as schema_settings;
 import 'package:gallery/src/widgets/system_gestures.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../keybinds/keybinds.dart';
 import '../schemas/settings.dart';
@@ -54,7 +55,7 @@ class _SettingsState extends State<Settings> {
                     onPressed: () {
                       Navigator.pop(context);
                     },
-                    child: const Text("ok"))
+                    child: Text(AppLocalizations.of(context)!.ok))
               ],
               content: Text(s),
             )));
@@ -63,8 +64,8 @@ class _SettingsState extends State<Settings> {
   @override
   Widget build(BuildContext context) {
     Map<SingleActivatorDescription, Null Function()> bindings = {
-      const SingleActivatorDescription(
-          "Back", SingleActivator(LogicalKeyboardKey.escape)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.back,
+          const SingleActivator(LogicalKeyboardKey.escape)): () {
         Navigator.pop(context);
       }
     };
@@ -72,26 +73,31 @@ class _SettingsState extends State<Settings> {
     return CallbackShortcuts(
         bindings: {
           ...bindings,
-          ...keybindDescription(context, describeKeys(bindings), "Settings")
+          ...keybindDescription(context, describeKeys(bindings),
+              AppLocalizations.of(context)!.settingsPageName)
         },
         child: Focus(
           autofocus: true,
           child: Scaffold(
-            appBar: AppBar(title: const Text("Settings")),
+            appBar: AppBar(
+                title: Text(AppLocalizations.of(context)!.settingsPageName)),
             body: gestureDeadZones(context,
                 child: ListView(children: [
                   ListTile(
-                    title: const Text("Download directory"),
+                    title: Text(
+                        AppLocalizations.of(context)!.downloadDirectorySetting),
                     subtitle: Text(_settings!.path),
                     trailing: TextButton(
                       onPressed: () async {
                         await chooseDirectory(showDialog);
                       },
-                      child: const Text("pick new"),
+                      child: Text(AppLocalizations.of(context)!
+                          .pickNewDownloadDirectory),
                     ),
                   ),
                   ListTile(
-                    title: const Text("Selected booru"),
+                    title: Text(
+                        AppLocalizations.of(context)!.selectedBooruSetting),
                     trailing: DropdownButton<Booru>(
                       borderRadius: BorderRadius.circular(25),
                       underline: Container(),
@@ -112,16 +118,17 @@ class _SettingsState extends State<Settings> {
                     ),
                   ),
                   ListTile(
-                      title: const Text("Image display quality"),
+                      title: Text(AppLocalizations.of(context)!
+                          .imageDisplayQualitySetting),
                       leading: IconButton(
                         icon: const Icon(Icons.info_outlined),
                         onPressed: () {
                           Navigator.of(context).push(DialogRoute(
                               context: context,
                               builder: (context) {
-                                return const AlertDialog(
-                                  content: Text(
-                                      "Download quality is always Original."),
+                                return AlertDialog(
+                                  content: Text(AppLocalizations.of(context)!
+                                      .imageDisplayQualityInfo),
                                 );
                               }));
                         },
@@ -148,19 +155,19 @@ class _SettingsState extends State<Settings> {
                         },
                       )),
                   ListTile(
-                    title: const Text("List view"),
+                    title: Text(AppLocalizations.of(context)!.listViewSetting),
                     leading: IconButton(
                         onPressed: () {
                           Navigator.of(context).push(DialogRoute(
                               context: context,
-                              builder: (context) => const AlertDialog(
-                                    content: Text(
-                                        "Number of elements is always 20 in the list view."),
+                              builder: (context) => AlertDialog(
+                                    content: Text(AppLocalizations.of(context)!
+                                        .listViewInfo),
                                   )));
                         },
                         icon: const Icon(Icons.info_outline)),
-                    subtitle: const Text(
-                        "If enabled shows elements as a list instead of a grid."),
+                    subtitle:
+                        Text(AppLocalizations.of(context)!.listViewSubtitle),
                     trailing: Switch(
                       value: _settings!.listViewBooru,
                       onChanged: (value) {
@@ -173,16 +180,15 @@ class _SettingsState extends State<Settings> {
                     ),
                   ),
                   ListTile(
-                      title: const Text("Number of elements per row"),
+                      title: Text(
+                          AppLocalizations.of(context)!.nPerElementsSetting),
                       leading: IconButton(
                         onPressed: () {
                           Navigator.of(context).push(DialogRoute(
                               context: context,
-                              builder: (context) => const AlertDialog(
-                                  content: Text(
-                                      "Number of elements per refresh starts at 20. If number of elements per row is more than two, "
-                                      "number of elements per refresh increases by 10 per increase. So, if number of elements "
-                                      "per row is three, then number of elements per refresh will be 30."))));
+                              builder: (context) => AlertDialog(
+                                  content: Text(AppLocalizations.of(context)!
+                                      .nPerElementsInfo))));
                         },
                         icon: const Icon(Icons.info_outline),
                       ),
@@ -209,7 +215,7 @@ class _SettingsState extends State<Settings> {
                               },
                       )),
                   ListTile(
-                    title: const Text("Safe mode"),
+                    title: Text(AppLocalizations.of(context)!.safeModeSetting),
                     trailing: Switch(
                       value: _settings!.safeMode,
                       onChanged: (value) {
@@ -218,11 +224,18 @@ class _SettingsState extends State<Settings> {
                       },
                     ),
                   ),
-                  const ListTile(
-                    enabled: false,
-                    leading: Icon(Icons.info_outline),
-                    title: Text("License:"),
-                    subtitle: Text("GPL-2.0-only"),
+                  ListTile(
+                    leading: IconButton(
+                        onPressed: () {
+                          Navigator.push(context, MaterialPageRoute(
+                            builder: (context) {
+                              return const LicensePage();
+                            },
+                          ));
+                        },
+                        icon: const Icon(Icons.info_outline)),
+                    title: Text(AppLocalizations.of(context)!.licenseSetting),
+                    subtitle: const Text("GPL-2.0-only"),
                   )
                 ])),
           ),

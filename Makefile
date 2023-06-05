@@ -1,6 +1,6 @@
 GIT_REV = $(shell git rev-parse --short HEAD)
 
-.PHONY: release run linux-appimage
+.PHONY: release run linux-appimage android_install
 release: linux-appimage
 	flutter build apk --split-per-abi --no-tree-shake-icons
 	git archive --format=tar.gz -o source.tar.gz HEAD 
@@ -10,6 +10,11 @@ release: linux-appimage
 	adb push Azari-*-x86_64.AppImage /sdcard
 	rm app_source_${GIT_REV}.zip
 	rm Azari-*-x86_64.AppImage
+
+
+android_install:
+	flutter build apk --split-per-abi --no-tree-shake-icons
+	adb install build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
 
 linux-appimage: linuxdeploy-x86_64.AppImage
 	mkdir -p AppDir && cd AppDir && rm -r -f *
@@ -32,3 +37,10 @@ linuxdeploy-x86_64.AppImage:
 
 run: app
 	./app/gallery
+
+regenerate: 
+	flutter gen-l10n
+	dart run build_runner build
+	dart-dbus generate-remote-object dbus_services/kf5_org.kde.JobView.xml -o .lib/src/dbus/job_view.g.dart
+	dart-dbus generate-remote-object dbus_services/kf5_org.kde.JobViewServer.xml -o lib/src/dbus/job_view_server.g.dart
+	flutter pub run pigeon --input pigeons/gallery.dart

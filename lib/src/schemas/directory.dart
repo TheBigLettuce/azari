@@ -11,31 +11,27 @@ import 'package:flutter/widgets.dart';
 import 'package:isar/isar.dart';
 
 import '../cell/directory.dart';
+import '../gallery/android_api/api.g.dart' as gallery;
 
 part 'directory.g.dart';
 
 @collection
-class Directory {
+class Directory extends gallery.Directory {
   Id? isarId;
 
   @Index(unique: true, replace: true)
   String id;
-  String name;
-  List<int> thumbnail;
-
-  DateTime updatedAt;
 
   DirectoryCell cell() => DirectoryCell(
-      id: id,
-      image: MemoryImage(Uint8List.fromList(thumbnail)),
-      path: name,
-      dirName: name,
-      addInfo: (d, c, fc, soc) {
-        return null;
-      },
-      addButtons: () {
-        return null;
-      });
+        id: id,
+        image: MemoryImage(Uint8List.fromList(thumbnail.cast())),
+        dirPath: name,
+        dirName: name,
+      );
 
-  Directory(this.id, this.name, this.thumbnail, this.updatedAt);
+  Directory(this.id,
+      {required int lastModified,
+      required List<int?> thumbnail,
+      required String name})
+      : super(lastModified: lastModified, thumbnail: thumbnail, name: name);
 }

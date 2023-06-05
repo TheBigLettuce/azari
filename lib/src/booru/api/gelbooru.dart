@@ -5,23 +5,30 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:convert';
+import 'package:convert/convert.dart';
+import 'package:dio/dio.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:html_unescape/html_unescape_small.dart';
-import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
 import '../../schemas/post.dart';
 import '../tags/tags.dart';
+import 'package:intl/intl.dart';
 
 List<String> _fromGelbooruTags(List<dynamic> l) {
   return l.map((e) => HtmlUnescape().convert(e["name"] as String)).toList();
 }
 
 class Gelbooru implements BooruAPI {
+  @override
+  Dio client;
+
+  @override
+  void close() => client.close(force: true);
+
   int _page = 0;
 
-  Gelbooru(int page) : _page = page;
+  Gelbooru(int page, this.client) : _page = page;
 
   @override
   Uri browserLink(int id) => Uri.https("gelbooru.com", "/index.php", {
@@ -35,7 +42,7 @@ class Gelbooru implements BooruAPI {
 
   @override
   Future<List<String>> completeTag(String t) async {
-    var req = http.get(
+    var req = client.getUri(
       Uri.https("gelbooru.com", "/index.php", {
         "page": "dapi",
         "s": "tag",
@@ -54,7 +61,7 @@ class Gelbooru implements BooruAPI {
           throw "status code not 200";
         }
 
-        var tags = _fromGelbooruTags(jsonDecode(resp.body)["tag"]);
+        var tags = _fromGelbooruTags(resp.data["tag"]);
         return tags;
       } catch (e) {
         return Future.error(e);
@@ -91,7 +98,7 @@ class Gelbooru implements BooruAPI {
       "limit": numberOfElementsPerRefresh().toString()
     };
 
-    var req = http.get(Uri.https("gelbooru.com", "/index.php", query));
+    var req = client.getUri(Uri.https("gelbooru.com", "/index.php", query));
 
     return Future(() async {
       try {
@@ -101,7 +108,7 @@ class Gelbooru implements BooruAPI {
           throw "status not 200";
         }
 
-        var json = jsonDecode(r.body)["post"];
+        var json = r.data["post"];
         if (json == null) {
           return Future.value([]);
         }
@@ -115,7 +122,7 @@ class Gelbooru implements BooruAPI {
 
   @override
   Future<Post> singlePost(int id) {
-    var req = http.get(Uri.https("gelbooru.com", "/index.php", {
+    var req = client.getUri(Uri.https("gelbooru.com", "/index.php", {
       "page": "dapi",
       "s": "post",
       "q": "index",
@@ -131,7 +138,7 @@ class Gelbooru implements BooruAPI {
           throw "status is not 200";
         }
 
-        var json = jsonDecode(resp.body)["post"];
+        var json = resp.data["post"];
         if (json == null) {
           throw "The post has been not found.";
         }
@@ -161,12 +168,18 @@ class Gelbooru implements BooruAPI {
   List<Post> _fromJson(List<dynamic> m) {
     List<Post> list = [];
 
+    var dateFormatter = DateFormat("EEE MMM dd HH:mm:ss -0500 yyyy");
+
     for (var post in m) {
       list.add(Post(
           height: post["height"],
           id: post["id"],
           md5: post["md5"],
           tags: post["tags"],
+          score: post["score"],
+          sourceUrl: post["source"],
+          createdAt: dateFormatter.parse(post["created_at"]),
+          rating: post["rating"],
           width: post["width"],
           fileUrl: post["file_url"],
           previewUrl: post["preview_url"],

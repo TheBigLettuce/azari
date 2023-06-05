@@ -8,8 +8,6 @@
 import 'dart:developer';
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:flutter/services.dart';
-import 'package:gallery/src/booru/downloader/file_mover.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
 import 'package:gallery/src/plugs/notifications.dart';
 import 'package:gallery/src/schemas/download_file.dart' as dw_file;
@@ -97,6 +95,27 @@ class Downloader with CancelTokens {
       }
     } else {
       _inWork--;
+    }
+  }
+
+  void restart() async {
+    var f = isar()
+        .files
+        .filter()
+        .isFailedEqualTo(true)
+        .sortByDateDesc()
+        .findAllSync();
+
+    if (f.length < 6) {
+      f.addAll(isar()
+          .files
+          .where()
+          .sortByDateDesc()
+          .limit(6 - f.length)
+          .findAllSync());
+    }
+    for (var element in f) {
+      add(element);
     }
   }
 
@@ -203,8 +222,6 @@ class Downloader with CancelTokens {
             isar().files.deleteSync(d.id!);
           },
         );
-
-        _done();
       } catch (e, trace) {
         log("writting downloaded file ${d.name} to uri",
             level: Level.SEVERE.value, error: e, stackTrace: trace);
@@ -214,8 +231,6 @@ class Downloader with CancelTokens {
             isar().files.putSync(d.failed());
           },
         );
-
-        _done();
       }
     }).onError((DioError error, stackTrace) {
       // print("d: ${error.message}, ${error.response!.data}");
@@ -227,7 +242,7 @@ class Downloader with CancelTokens {
       );
 
       progress.error(error.toString());
-    });
+    }).whenComplete(() => _done());
   }
 
   void _removeTempContentsDownloads() async {

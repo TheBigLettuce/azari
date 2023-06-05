@@ -19,7 +19,9 @@ import 'package:gallery/src/schemas/excluded_tags.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:logging/logging.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import '../booru/interface.dart';
 import '../db/isar.dart';
 import '../keybinds/keybinds.dart';
 import '../widgets/booru/autocomplete_tag.dart';
@@ -34,6 +36,7 @@ class SearchBooru extends StatefulWidget {
 
 class _SearchBooruState extends State<SearchBooru> {
   final BooruTags _tags = BooruTags();
+  BooruAPI booru = getBooru();
   List<String> _lastTags = [];
   late final StreamSubscription<void> _lastTagsWatcher;
   List<String> _excludedTags = [];
@@ -121,18 +124,21 @@ class _SearchBooruState extends State<SearchBooru> {
     excludedFocus.dispose();
     singlePostFocus.dispose();
     mainFocus.dispose();
+
+    booru.close();
+
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     Map<SingleActivatorDescription, Null Function()> bindings = {
-      const SingleActivatorDescription(
-          "Back", SingleActivator(LogicalKeyboardKey.escape)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.back,
+          const SingleActivator(LogicalKeyboardKey.escape)): () {
         popUntilSenitel(context);
       },
-      const SingleActivatorDescription("Select autocomplete",
-          SingleActivator(LogicalKeyboardKey.enter, shift: true)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.selectSuggestion,
+          const SingleActivator(LogicalKeyboardKey.enter, shift: true)): () {
         if (focus.hasFocus) {
           if (searchHighlight.isNotEmpty) {
             _onTagPressed(searchHighlight);
@@ -144,24 +150,25 @@ class _SearchBooruState extends State<SearchBooru> {
           }
         }
       },
-      const SingleActivatorDescription("Focus search",
-          SingleActivator(LogicalKeyboardKey.keyF, control: true)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.focusSearch,
+          const SingleActivator(LogicalKeyboardKey.keyF, control: true)): () {
         if (focus.hasFocus) {
           focus.unfocus();
         } else {
           focus.requestFocus();
         }
       },
-      const SingleActivatorDescription("Focus single post",
-          SingleActivator(LogicalKeyboardKey.keyF, alt: true)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.focusSinglePost,
+          const SingleActivator(LogicalKeyboardKey.keyF, alt: true)): () {
         if (singlePostFocus.hasFocus) {
           singlePostFocus.unfocus();
         } else {
           singlePostFocus.requestFocus();
         }
       },
-      const SingleActivatorDescription("Focus excluded search",
-          SingleActivator(LogicalKeyboardKey.keyF, shift: true)): () {
+      SingleActivatorDescription(
+          AppLocalizations.of(context)!.focusExcludedSearch,
+          const SingleActivator(LogicalKeyboardKey.keyF, shift: true)): () {
         if (excludedFocus.hasFocus) {
           if (replaceController != null) {
             replaceController!
@@ -186,11 +193,11 @@ class _SearchBooruState extends State<SearchBooru> {
     return makeSkeleton(
         context,
         kTagsDrawerIndex,
-        "Tags page",
+        AppLocalizations.of(context)!.tagsPageName,
         mainFocus,
         bindings,
         AppBar(
-          title: const Text("Search"),
+          title: Text(AppLocalizations.of(context)!.tagsPageAppbarTitle),
         ),
         ListView(
           children: [
@@ -198,17 +205,18 @@ class _SearchBooruState extends State<SearchBooru> {
               padding: const EdgeInsets.only(left: 10, right: 10),
               child: autocompleteWidget(textController, (s) {
                 searchHighlight = s;
-              }, _onTagPressed, focus, roundBorders: true, showSearch: true),
+              }, _onTagPressed, booru.completeTag, focus,
+                  roundBorders: true, showSearch: true),
             ),
-            const ListTile(
-              title: Text("Single post"),
+            ListTile(
+              title: Text(AppLocalizations.of(context)!.singlePostTitle),
             ),
             Padding(
               padding: const EdgeInsets.only(left: 10, right: 10),
               child: SinglePost(singlePostFocus),
             ),
             ListTile(
-              title: const Text("Recent Tags"),
+              title: Text(AppLocalizations.of(context)!.recentTagsTitle),
               trailing: IconButton(
                   onPressed: () {
                     Navigator.push(
@@ -217,14 +225,15 @@ class _SearchBooruState extends State<SearchBooru> {
                           context: context,
                           builder: (context) {
                             return AlertDialog(
-                              title: const Text(
-                                  "Are you sure you want to delete all the tags?"),
+                              title: Text(AppLocalizations.of(context)!
+                                  .tagsDeletionDialogTitle),
                               actions: [
                                 TextButton(
                                     onPressed: () {
                                       Navigator.pop(context);
                                     },
-                                    child: const Text("no")),
+                                    child:
+                                        Text(AppLocalizations.of(context)!.no)),
                                 TextButton(
                                     onPressed: () {
                                       Navigator.pop(context);
@@ -241,7 +250,8 @@ class _SearchBooruState extends State<SearchBooru> {
                                         });
                                       }
                                     },
-                                    child: const Text("yes"))
+                                    child:
+                                        Text(AppLocalizations.of(context)!.yes))
                               ],
                             );
                           },
@@ -271,7 +281,7 @@ class _SearchBooruState extends State<SearchBooru> {
                     ],
                     autoPlay: false),
             ListTile(
-              title: const Text("Excluded Tags"),
+              title: Text(AppLocalizations.of(context)!.excludedTagsTitle),
               trailing: IconButton(
                 icon: const Icon(Icons.add),
                 onPressed: () {
@@ -289,7 +299,8 @@ class _SearchBooruState extends State<SearchBooru> {
                             title: autocompleteWidget(
                                 excludedTagsTextController, (s) {
                               excludedHighlight = s;
-                            }, _tags.excluded.add, excludedFocus,
+                            }, _tags.excluded.add, booru.completeTag,
+                                excludedFocus,
                                 submitOnPress: true, showSearch: true),
                             trailing: IconButton(
                               icon: const Icon(Icons.arrow_back),
@@ -356,7 +367,8 @@ class TagsWidget extends StatelessWidget {
               Navigator.of(context).push(DialogRoute(
                   context: context,
                   builder: (context) => AlertDialog(
-                        title: const Text("Do you want to delete"),
+                        title: Text(
+                            AppLocalizations.of(context)!.tagDeleteDialogTitle),
                         content: Text(tag),
                         actions: [
                           TextButton(
@@ -364,7 +376,7 @@ class TagsWidget extends StatelessWidget {
                                 deleteTag(tag);
                                 Navigator.of(context).pop();
                               },
-                              child: const Text("yes"))
+                              child: Text(AppLocalizations.of(context)!.yes))
                         ],
                       )));
             },

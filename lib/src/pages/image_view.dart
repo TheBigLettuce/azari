@@ -22,6 +22,7 @@ import 'package:photo_view/photo_view_gallery.dart';
 import 'package:video_player/video_player.dart';
 import '../cell/cell.dart';
 import '../keybinds/keybinds.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 final Color kListTileColorInInfo = Colors.white60.withOpacity(0.8);
 
@@ -286,8 +287,8 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
   Widget build(BuildContext context) {
     var addB = currentCell.addButtons();
     Map<SingleActivatorDescription, Null Function()> bindings = {
-      const SingleActivatorDescription(
-          "Back", SingleActivator(LogicalKeyboardKey.escape)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.back,
+          const SingleActivator(LogicalKeyboardKey.escape)): () {
         if (isInfoShown) {
           setState(() {
             isInfoShown = !isInfoShown;
@@ -296,75 +297,81 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
           Navigator.pop(context);
         }
       },
-      const SingleActivatorDescription("Move image right",
-          SingleActivator(LogicalKeyboardKey.arrowRight, shift: true)): () {
+      SingleActivatorDescription(
+          AppLocalizations.of(context)!.moveImageRight,
+          const SingleActivator(LogicalKeyboardKey.arrowRight,
+              shift: true)): () {
         var pos = photoController.position;
         photoController.position = pos.translate(-20, 0);
       },
-      const SingleActivatorDescription("Move image left",
-          SingleActivator(LogicalKeyboardKey.arrowLeft, shift: true)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.moveImageLeft,
+              const SingleActivator(LogicalKeyboardKey.arrowLeft, shift: true)):
+          () {
         var pos = photoController.position;
         photoController.position = pos.translate(20, 0);
       },
-      const SingleActivatorDescription("Rotate image right",
-          SingleActivator(LogicalKeyboardKey.arrowRight, control: true)): () {
+      SingleActivatorDescription(
+          AppLocalizations.of(context)!.rotateImageRight,
+          const SingleActivator(LogicalKeyboardKey.arrowRight,
+              control: true)): () {
         photoController.rotation += 0.5;
       },
-      const SingleActivatorDescription("Rotate image left",
-          SingleActivator(LogicalKeyboardKey.arrowLeft, control: true)): () {
+      SingleActivatorDescription(
+          AppLocalizations.of(context)!.rotateImageLeft,
+          const SingleActivator(LogicalKeyboardKey.arrowLeft,
+              control: true)): () {
         photoController.rotation -= 0.5;
       },
-      const SingleActivatorDescription(
-          "Move image up", SingleActivator(LogicalKeyboardKey.arrowUp)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.moveImageUp,
+          const SingleActivator(LogicalKeyboardKey.arrowUp)): () {
         var pos = photoController.position;
         photoController.position = pos.translate(0, 20);
       },
-      const SingleActivatorDescription(
-              "Move image down", SingleActivator(LogicalKeyboardKey.arrowDown)):
-          () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.moveImageDown,
+          const SingleActivator(LogicalKeyboardKey.arrowDown)): () {
         var pos = photoController.position;
         photoController.position = pos.translate(0, -20);
       },
-      const SingleActivatorDescription(
-          "Zoom in", SingleActivator(LogicalKeyboardKey.pageUp)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.zoomImageIn,
+          const SingleActivator(LogicalKeyboardKey.pageUp)): () {
         var s = photoController.scale;
         if (s != null && s < 2.5) {
           photoController.scale = s + 0.5;
         }
       },
-      const SingleActivatorDescription(
-          "Zoom out", SingleActivator(LogicalKeyboardKey.pageDown)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.zoomImageOut,
+          const SingleActivator(LogicalKeyboardKey.pageDown)): () {
         var s = photoController.scale;
         if (s != null && s > 1) {
           photoController.scale = s - 0.5;
         }
       },
-      const SingleActivatorDescription(
-          "Go fullscreen", SingleActivator(LogicalKeyboardKey.keyF)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.enterFullscreen,
+          const SingleActivator(LogicalKeyboardKey.keyF)): () {
         fullscreenPlug.fullscreen();
       },
-      const SingleActivatorDescription(
-          "Show info", SingleActivator(LogicalKeyboardKey.keyI)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.showImageInfo,
+          const SingleActivator(LogicalKeyboardKey.keyI)): () {
         setState(() {
           isInfoShown = !isInfoShown;
         });
       },
-      const SingleActivatorDescription(
-          "Download file", SingleActivator(LogicalKeyboardKey.keyD)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.downloadImage,
+          const SingleActivator(LogicalKeyboardKey.keyD)): () {
         if (widget.download != null) {
           widget.download!(currentPage);
         }
       },
-      const SingleActivatorDescription(
-          "Hide app bar", SingleActivator(LogicalKeyboardKey.space)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.hideAppBar,
+          const SingleActivator(LogicalKeyboardKey.space)): () {
         _onTap();
       },
-      const SingleActivatorDescription(
-          "Next image", SingleActivator(LogicalKeyboardKey.arrowRight)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.nextImage,
+          const SingleActivator(LogicalKeyboardKey.arrowRight)): () {
         controller.nextPage(duration: 500.milliseconds, curve: Curves.linear);
       },
-      const SingleActivatorDescription(
-          "Previous image", SingleActivator(LogicalKeyboardKey.arrowLeft)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.previousImage,
+          const SingleActivator(LogicalKeyboardKey.arrowLeft)): () {
         controller.previousPage(
             duration: 500.milliseconds, curve: Curves.linear);
       }
@@ -372,7 +379,8 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
     return CallbackShortcuts(
         bindings: {
           ...bindings,
-          ...keybindDescription(context, describeKeys(bindings), "Image view")
+          ...keybindDescription(context, describeKeys(bindings),
+              AppLocalizations.of(context)!.imageViewPageName)
         },
         child: Focus(
           autofocus: true,
@@ -477,7 +485,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                     ),
                     Animate(effects: [
                       SwapEffect(builder: (_, __) {
-                        var addInfo = currentCell.addInfo(() {
+                        var addInfo = currentCell.addInfo(context, () {
                           widget.updateTagScrollPos(
                               scrollController.offset, currentPage);
                         },

@@ -10,31 +10,31 @@ import 'package:flutter/services.dart';
 
 import '../pages/settings.dart';
 import '../widgets/drawer/drawer.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 Map<SingleActivatorDescription, Null Function()> digitAndSettings(
     BuildContext context, int from) {
   return {
-    const SingleActivatorDescription(
-            "Go to the booru grid", SingleActivator(LogicalKeyboardKey.digit1)):
-        () {
+    SingleActivatorDescription(AppLocalizations.of(context)!.goBooruGrid,
+        const SingleActivator(LogicalKeyboardKey.digit1)): () {
       if (from != kBooruGridDrawerIndex) {
         selectDestination(context, from, kBooruGridDrawerIndex);
       }
     },
-    const SingleActivatorDescription(
-        "Go to the gallery", SingleActivator(LogicalKeyboardKey.digit2)): () {
+    SingleActivatorDescription(AppLocalizations.of(context)!.goGallery,
+        const SingleActivator(LogicalKeyboardKey.digit2)): () {
       selectDestination(context, from, kGalleryDrawerIndex);
     },
-    const SingleActivatorDescription(
-        "Go to the tags page", SingleActivator(LogicalKeyboardKey.digit3)): () {
+    SingleActivatorDescription(AppLocalizations.of(context)!.goTags,
+        const SingleActivator(LogicalKeyboardKey.digit3)): () {
       selectDestination(context, from, kTagsDrawerIndex);
     },
-    const SingleActivatorDescription(
-        "Go to the downloads", SingleActivator(LogicalKeyboardKey.digit4)): () {
+    SingleActivatorDescription(AppLocalizations.of(context)!.goDownloads,
+        const SingleActivator(LogicalKeyboardKey.digit4)): () {
       selectDestination(context, from, kDownloadsDrawerIndex);
     },
-    const SingleActivatorDescription("Open settings page",
-        SingleActivator(LogicalKeyboardKey.keyS, control: true)): () {
+    SingleActivatorDescription(AppLocalizations.of(context)!.goSettings,
+        const SingleActivator(LogicalKeyboardKey.keyS, control: true)): () {
       Navigator.push(context, MaterialPageRoute(builder: (context) {
         return const Settings();
       }));
@@ -52,7 +52,8 @@ Map<SingleActivator, Null Function()> keybindDescription(
           builder: (context) => AlertDialog(
                 backgroundColor:
                     Theme.of(context).dialogBackgroundColor.withOpacity(0.5),
-                title: Text("Keybinds for: $pageName"),
+                title:
+                    Text(AppLocalizations.of(context)!.keybindsFor(pageName)),
                 content: SizedBox(
                   width: double.maxFinite,
                   child: ListView(
@@ -65,11 +66,10 @@ Map<SingleActivator, Null Function()> keybindDescription(
                       Padding(
                         padding: const EdgeInsets.only(top: 15),
                         child: ListTile(
-                          title: Text(describeKey(
-                              const SingleActivatorDescription(
-                                  "This menu",
-                                  SingleActivator(LogicalKeyboardKey.keyK,
-                                      shift: true, control: true)))),
+                          title: Text(describeKey(SingleActivatorDescription(
+                              AppLocalizations.of(context)!.keybindsDialog,
+                              const SingleActivator(LogicalKeyboardKey.keyK,
+                                  shift: true, control: true)))),
                         ),
                       )
                     ],

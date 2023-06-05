@@ -15,6 +15,7 @@ import 'package:gallery/src/pages/downloads.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import '../../db/isar.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'package:gallery/src/pages/settings.dart' as widget;
 
@@ -26,16 +27,17 @@ const int kSettingsDrawerIndex = 4;
 
 const IconData kAzariIcon = IconData(0x963F); // 阿
 
-List<NavigationDrawerDestination> destinations() {
+List<NavigationDrawerDestination> destinations(BuildContext context) {
   return [
     NavigationDrawerDestination(
         icon: const Icon(Icons.image),
         label: Text(isar().settings.getSync(0)!.selectedBooru.string)),
-    const NavigationDrawerDestination(
-        icon: Icon(Icons.photo_album), label: Text("Gallery")),
-    const NavigationDrawerDestination(
-      icon: Icon(Icons.tag),
-      label: Text("Tags"),
+    NavigationDrawerDestination(
+        icon: const Icon(Icons.photo_album),
+        label: Text(AppLocalizations.of(context)!.galleryLabel)),
+    NavigationDrawerDestination(
+      icon: const Icon(Icons.tag),
+      label: Text(AppLocalizations.of(context)!.tagsLabel),
     ),
     NavigationDrawerDestination(
         icon: isar().files.countSync() != 0
@@ -43,7 +45,7 @@ List<NavigationDrawerDestination> destinations() {
                 child: Icon(Icons.download),
               )
             : const Icon(Icons.download),
-        label: const Text("Downloads")),
+        label: Text(AppLocalizations.of(context)!.downloadsLabel)),
   ];
 }
 
@@ -136,9 +138,10 @@ Widget? makeDrawer(BuildContext context, int selectedIndex) {
             onInit: (controller) => iconController = controller,
             effects: [ShakeEffect(duration: 700.milliseconds, hz: 6)]),
       )),
-      ...destinations(),
-      const NavigationDrawerDestination(
-          icon: Icon(Icons.settings), label: Text("Settings"))
+      ...destinations(context),
+      NavigationDrawerDestination(
+          icon: const Icon(Icons.settings),
+          label: Text(AppLocalizations.of(context)!.settingsLabel))
     ],
   );
 }

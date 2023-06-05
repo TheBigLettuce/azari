@@ -5,10 +5,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:convert';
-
+import 'package:dio/dio.dart';
 import 'package:gallery/src/schemas/post.dart';
-import 'package:http/http.dart' as http;
 
 import '../interface.dart';
 import '../tags/tags.dart';
@@ -18,14 +16,22 @@ List<String> _fromDanbooruTags(List<dynamic> l) =>
 
 class Danbooru implements BooruAPI {
   @override
+  Dio client;
+
+  @override
+  void close() => client.close(force: true);
+
+  @override
   int? currentPage() => null;
+
+  Danbooru(this.client);
 
   @override
   Uri browserLink(int id) => Uri.https("danbooru.donmai.us", "/posts/$id");
 
   @override
   Future<List<String>> completeTag(String tag) async {
-    var req = http.get(
+    var req = client.getUri(
       Uri.https("danbooru.donmai.us", "/tags.json", {
         "search[name_matches]": "$tag*",
         "order": "count",
@@ -40,7 +46,7 @@ class Danbooru implements BooruAPI {
           throw "status code not 200";
         }
 
-        var tags = _fromDanbooruTags(jsonDecode(resp.body));
+        var tags = _fromDanbooruTags(resp.data);
 
         return tags;
       } catch (e) {
@@ -51,22 +57,21 @@ class Danbooru implements BooruAPI {
 
   @override
   Future<Post> singlePost(int id) {
-    var req = http.get(Uri.https("danbooru.donmai.us", "/posts/$id.json"));
+    var req = client.getUri(Uri.https("danbooru.donmai.us", "/posts/$id.json"));
 
     return Future(() async {
       try {
         var resp = await req;
 
         if (resp.statusCode != 200) {
-          throw jsonDecode(resp.body)["message"];
+          throw resp.data["message"];
         }
 
-        var json = jsonDecode(resp.body);
-        if (json == null) {
+        if (resp.data == null) {
           throw "no post";
         }
 
-        return _fromJson([json])[0];
+        return _fromJson(resp.data)[0];
       } catch (e) {
         return Future.error(e);
       }
@@ -119,7 +124,8 @@ class Danbooru implements BooruAPI {
       query["page"] = page.toString();
     }
 
-    var req = http.get(Uri.https("danbooru.donmai.us", "/posts.json", query));
+    var req =
+        client.getUri(Uri.https("danbooru.donmai.us", "/posts.json", query));
 
     return Future(() async {
       try {
@@ -128,7 +134,7 @@ class Danbooru implements BooruAPI {
           throw "status not ok";
         }
 
-        return _fromJson(jsonDecode(resp.body));
+        return _fromJson(resp.data);
       } catch (e) {
         return Future.error(e);
       }
@@ -143,6 +149,10 @@ class Danbooru implements BooruAPI {
         var post = Post(
             height: e["image_height"],
             id: e["id"],
+            score: e["score"],
+            sourceUrl: e["source"],
+            rating: e["rating"] ?? "?",
+            createdAt: DateTime.parse(e["created_at"]),
             md5: e["md5"],
             tags: e["tag_string"],
             width: e["image_width"],

@@ -17,6 +17,7 @@ import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:isar/isar.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../keybinds/keybinds.dart';
 
@@ -86,28 +87,30 @@ class _DownloadsState extends State<Downloads> {
   @override
   Widget build(BuildContext context) {
     Map<SingleActivatorDescription, Null Function()> bindings = {
-      const SingleActivatorDescription(
-          "Back", SingleActivator(LogicalKeyboardKey.escape)): () {
+      SingleActivatorDescription(AppLocalizations.of(context)!.back,
+          const SingleActivator(LogicalKeyboardKey.escape)): () {
         popUntilSenitel(context);
       },
-      const SingleActivatorDescription("Refresh and mark stale downloads",
-          SingleActivator(LogicalKeyboardKey.f5)): _refresh,
+      SingleActivatorDescription(
+          AppLocalizations.of(context)!.refreshStaleDownloads,
+          const SingleActivator(LogicalKeyboardKey.f5)): _refresh,
       ...digitAndSettings(context, kDownloadsDrawerIndex)
     };
 
     return makeSkeleton(
         context,
         kDownloadsDrawerIndex,
-        "Downloads",
+        AppLocalizations.of(context)!.downloadsPageName,
         mainFocus,
         bindings,
         AppBar(
           title: Text(
             _files == null
-                ? "Downloads"
+                ? AppLocalizations.of(context)!.downloadsPageName
                 : _files!.isEmpty
-                    ? "Downloads (empty)"
-                    : "Downloads (${_inProcess().toString()}/${_files!.length.toString()})",
+                    ? AppLocalizations.of(context)!.downloadsCountEmpty
+                    : AppLocalizations.of(context)!.downloadsCount(
+                        "${_inProcess().toString()}/${_files!.length.toString()}"),
           ),
           actions: [
             IconButton(onPressed: _refresh, icon: const Icon(Icons.refresh))
@@ -126,7 +129,10 @@ class _DownloadsState extends State<Downloads> {
                 .animate(
                     onInit: (controller) => deleteController = controller,
                     effects: const [FlipEffect(begin: 1, end: 0)],
-                    autoPlay: false)
+                    autoPlay: false),
+            IconButton(
+                onPressed: downloader.restart,
+                icon: const Icon(Icons.start_outlined)),
           ],
         ),
         _files == null
@@ -150,13 +156,15 @@ class _DownloadsState extends State<Downloads> {
                                         onPressed: () {
                                           Navigator.pop(context);
                                         },
-                                        child: const Text("no")),
+                                        child: Text(
+                                            AppLocalizations.of(context)!.no)),
                                     TextButton(
                                         onPressed: () {
                                           downloader.retry(file);
                                           Navigator.pop(context);
                                         },
-                                        child: const Text("yes")),
+                                        child: Text(
+                                            AppLocalizations.of(context)!.yes)),
                                   ],
                                   title: Text(downloader.downloadAction(file)),
                                   content: Text(file.name),

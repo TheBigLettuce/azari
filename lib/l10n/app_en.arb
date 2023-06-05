@@ -1,0 +1,324 @@
+{
+    "pickDirectory": "Pick download directory",
+    "@pickDirectory": {
+        "description": "Where the downloaded images from *booru will be stored in"
+    },
+    "pick": "pick",
+    "@pick": {
+        "description": "Button which invokes the pick directory system dialog"
+    },
+    "next": "next",
+    "@next": {
+        "description": "Button which shows next introduction screen"
+    },
+    "ok": "ok",
+    "@ok": {
+        "description": "Button in the modal dialog with info which dismisses it"
+    },
+    "refresh": "Refresh",
+    "@refresh": {
+        "description": "Keybinding key info, refreshes content"
+    },
+    "selectSuggestion": "Select highlighted suggestion",
+    "@selectSuggestion": {
+        "description": "Keybinding key info, selects highlighted autocomplete suggestion"
+    },
+    "focusSearch": "Focus search",
+    "@focusSearch": {
+        "description": "Keybinding key info, focuses tag search field"
+    },
+    "back": "Back",
+    "@back": {
+        "description": "Keybinding key info, goes back a page"
+    },
+    "goBooruGrid": "Go to the booru grid",
+    "@goBooruGrid": {
+        "description": "Keybinding key info, goes to the *booru grid"
+    },
+    "goGallery": "Go to the gallery",
+    "@goGallery": {
+        "description": "Keybinding key info, goes to the gallery"
+    },
+    "goTags": "Go to the tags page",
+    "@goTags": {
+        "description": "Keybinding key info, goes to the tags page"
+    },
+    "goDownloads": "Go to the downloads",
+    "@goDownloads": {
+        "description": "Keybinding key info, goes to the downloads page"
+    },
+    "goSettings": "Open settings page",
+    "@goSettings": {
+        "description": "Keybinding key info, opens settings page"
+    },
+    "keybindsFor": "Keybinds for: {keybind}",
+    "@keybindsFor": {
+        "description": "Keybinding key info, registered keybinds on a page dialog title",
+        "placeholders": {
+            "keybind": {
+                "type": "String",
+                "example": "Settings"
+            }
+        }
+    },
+    "keybindsDialog": "This menu",
+    "@keybindsDialog": {
+        "description": "Keybinding key info, shows the dialog about the keybinds"
+    },
+    "searchHint": "Search",
+    "@searchHint": {
+        "description": "Text field hint, on tag search text field"
+    },
+    "goPostHint": "Go to a post",
+    "@goPostHint": {
+        "description": "Text field hint, on go to a single post search field"
+    },
+    "notANumber": "'{text}' is not a number.",
+    "@notANumber": {
+        "description": "Error message if text is not a number",
+        "placeholders": {
+            "text": {
+                "type": "String"
+            }
+        }
+    },
+    "galleryLabel": "Gallery",
+    "@galleryLabel": {
+        "description": "Drawer destination, gallery page"
+    },
+    "tagsLabel": "Tags",
+    "@tagsLabel": {
+        "description": "Drawer destination, tags page"
+    },
+    "downloadsLabel": "Downloads",
+    "@downloadsLabel": {
+        "description": "Drawer destination, downloads page"
+    },
+    "settingsLabel": "Settings",
+    "@settingsLabel": {
+        "description": "Drawer destination, settings page"
+    },
+    "booruGridPageName": "Booru grid",
+    "@booruGridPageName": {
+        "description": "Keybinding key info, *booru grid page name"
+    },
+    "refreshStaleDownloads": "Refresh and mark stale downloads",
+    "@refreshStaleDownloads": {
+        "description": "Keybinding key info, sorts out stale downloads"
+    },
+    "downloadsPageName": "Downloads",
+    "@downloadsPageName": {
+        "description": "Keybinding key info, downloads page name"
+    },
+    "downloadsCount": "Downloads ({text})",
+    "@downloadsCount": {
+        "description": "Downloads info in the app bar",
+        "placeholders": {
+            "text": {
+                "type": "String"
+            }
+        }
+    },
+    "downloadsCountEmpty": "Downloads (empty)",
+    "@downloadsCountEmpty": {
+        "description": "Downloads info in the app bar, empty"
+    },
+    "yes": "yes",
+    "@yes": {
+        "description": "Dialog button, to proceed with an operation"
+    },
+    "no": "no",
+    "@no": {
+        "description": "Dialog button, to dismiss the dialog"
+    },
+    "moveImageRight": "Move image right",
+    "@moveImageRight": {
+        "description": "Keybinding key info, moves image right in the image view"
+    },
+    "moveImageLeft": "Move image left",
+    "@moveImageLeft": {
+        "description": "Keybinding key info, moves image left in the image view"
+    },
+    "rotateImageRight": "Rotate image right",
+    "@rotateImageRight": {
+        "description": "Keybinding key info, rotates image right in the image view "
+    },
+    "rotateImageLeft": "Rotate image left",
+    "@rotateImageLeft": {
+        "description": "Keybinding key info, rotates image left in the image view"
+    },
+    "moveImageUp": "Move image up",
+    "@moveImageUp": {
+        "description": "Keybinding key info, moves image up in the image view"
+    },
+    "moveImageDown": "Move image down",
+    "@moveImageDown": {
+        "description": "Keybinding key info, moves image down in the image view"
+    },
+    "zoomImageIn": "Zoom in",
+    "@zoomImageIn": {
+        "description": "Keybinding key info, zooms image in in the image view"
+    },
+    "zoomImageOut": "Zoom out",
+    "@zoomImageOut": {
+        "description": "Keybinding key info, zooms image out in the image view "
+    },
+    "enterFullscreen": "Go fullscreen",
+    "@enterFullscreen": {
+        "description": "Keybinding key info, enters fullscreen image view on desktop"
+    },
+    "showImageInfo": "Show info",
+    "@showImageInfo": {
+        "description": "Keybinding key info, toggles the currently viewing image's info"
+    },
+    "downloadImage": "Download file",
+    "@downloadImage": {
+        "description": "Keybinding key info, download the currently viewing image"
+    },
+    "hideAppBar": "Hide app bar",
+    "@hideAppBar": {
+        "description": "Keybinding key info, hide the app bar in the image view"
+    },
+    "previousImage": "Previous image",
+    "@previousImage": {
+        "description": "Keybinding key info, shows previous image in the image view"
+    },
+    "nextImage": "Next image",
+    "@nextImage": {
+        "description": "Keybinding key info, shows next image in the image view"
+    },
+    "imageViewPageName": "Image view",
+    "@imageViewPageName": {
+        "description": "Image view page name"
+    },
+    "focusSinglePost": "Focus single post",
+    "@focusSinglePost": {
+        "description": "Keybinding key info, focus go to single post text field"
+    },
+    "focusExcludedSearch": "Focus excluded search",
+    "@focusExcludedSearch": {
+        "description": "Keybinding key info, focus excluded tags search text field"
+    },
+    "tagsPageName": "Tags page",
+    "@tagsPageName": {
+        "description": "Tags page name"
+    },
+    "tagsPageAppbarTitle": "Search",
+    "@tagsPageAppbarTitle": {
+        "description": "Tags page app bar title"
+    },
+    "singlePostTitle": "Single post",
+    "@singlePostTitle": {
+        "description": "Tags page, displayed above the single post text field"
+    },
+    "recentTagsTitle": "Recent Tags",
+    "@recentTagsTitle": {
+        "description": "Tags page, displayed above recent tags list"
+    },
+    "tagsDeletionDialogTitle": "Are you sure you want to delete all the tags?",
+    "@tagsDeletionDialogTitle": {
+        "description": "Tags page, delete all the recent tags"
+    },
+    "excludedTagsTitle": "Excluded Tags",
+    "@excludedTagsTitle": {
+        "description": "Tags page, displayed above excluded tags list"
+    },
+    "tagDeleteDialogTitle": "Do you want to delete",
+    "@tagDeleteDialogTitle": {
+        "description": "Tags page, tag deletion dialog. Can be either recent tag or excluded"
+    },
+    "settingsPageName": "Settings",
+    "@settingsPageName": {
+        "description": "Settings page name"
+    },
+    "downloadDirectorySetting": "Download directory",
+    "@downloadDirectorySetting": {
+        "description": "Settings, download directory"
+    },
+    "pickNewDownloadDirectory": "pick new",
+    "@pickNewDownloadDirectory": {
+        "description": "Settings, button to choose new directory"
+    },
+    "selectedBooruSetting": "Selected booru",
+    "@selectedBooruSetting": {
+        "description": "Settigns, selected booru"
+    },
+    "imageDisplayQualitySetting": "Image display quality",
+    "@imageDisplayQualitySetting": {
+        "description": "Settings, image display quality"
+    },
+    "imageDisplayQualityInfo": "Download quality is always Original.",
+    "@imageDisplayQualityInfo": {
+        "description": "Settings, image display quality's additional information"
+    },
+    "listViewSetting": "List view",
+    "@listViewSetting": {
+        "description": "Settings, changes between list view and grid view"
+    },
+    "listViewInfo": "Number of elements is always 20 in the list view.",
+    "@listViewInfo": {
+        "description": "Settings, list view additional info"
+    },
+    "listViewSubtitle": "If enabled shows elements as a list instead of a grid.",
+    "@listViewSubtitle": {
+        "description": "Settings, list view subtitle"
+    },
+    "nPerElementsSetting": "Number of elements per row",
+    "@nPerElementsSetting": {
+        "description": "Settings, grid column number"
+    },
+    "nPerElementsInfo": "Number of elements per refresh starts at 20. If number of elements per row is more than two, number of elements per refresh increases by 10 per increase. So, if number of elements per row is three, then number of elements per refresh will be 30.",
+    "@nPerElementsInfo": {
+        "description": "Settings, number of elements info "
+    },
+    "safeModeSetting": "Safe mode",
+    "@safeModeSetting": {
+        "description": "Settings, safe mode"
+    },
+    "licenseSetting": "License:",
+    "@licenseSetting": {
+        "description": "Settings, license"
+    },
+    "tagsInfoPage": "Tags",
+    "@tagsInfoPage": {
+        "description": "Image view, displayed in info above the image's tag list"
+    },
+    "pathInfoPage": "Path",
+    "@pathInfoPage": {
+        "description": "Image view, title of an URL or a path to a file in info"
+    },
+    "widthInfoPage": "Width",
+    "@widthInfoPage": {
+        "description": "Image info, width of the image"
+    },
+    "heightInfoPage": "Height",
+    "@heightInfoPage": {
+        "description": "Image info, height of the image"
+    },
+    "sourceFileInfoPage": "Source",
+    "@sourceFileInfoPage": {
+        "description": "Image info, source URL of the image"
+    },
+    "ratingInfoPage": "Rating",
+    "@ratingInfoPage": {
+        "description": "Image info, rating of the image"
+    },
+    "scoreInfoPage": "Score",
+    "@scoreInfoPage": {
+        "description": "Image info, score of the image"
+    },
+    "createdAtInfoPage": "Created at",
+    "@createdAtInfoPage": {
+        "description": "Image info, created at time of the image"
+    },
+    "date": "{date}",
+    "@date": {
+        "description": "Arbitrary date",
+        "placeholders": {
+            "date": {
+                "type": "DateTime",
+                "format": "yMMMMd"
+            }
+        }
+    }
+}
