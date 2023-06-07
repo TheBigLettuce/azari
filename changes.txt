@@ -1,3 +1,6 @@
+1.1.15:
+— 
+
 1.1.14:
 — Stop committing generated code,
 — Switch to Dio instead of http in the BooruAPI impl., make them closable,

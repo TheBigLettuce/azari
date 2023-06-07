@@ -5,14 +5,22 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-/*import 'package:flutter/material.dart';
-import '../cell/cell.dart';
-import '../cell/directory.dart';
-import 'cells.dart';
+import 'dart:developer';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:gallery/src/gallery/interface.dart';
+import 'package:gallery/src/schemas/directory.dart';
+import 'package:gallery/src/schemas/directory_file.dart';
+import 'package:gallery/src/widgets/drawer/drawer.dart';
+import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/make_skeleton.dart';
+import 'package:logging/logging.dart';
 
 class Images extends StatefulWidget {
-  final DirectoryCell cell;
-  const Images({super.key, required this.cell});
+  final Directory cell;
+  final GalleryAPIFiles api;
+  const Images(this.api, {super.key, required this.cell});
 
   @override
   State<Images> createState() => _ImagesState();
@@ -20,108 +28,129 @@ class Images extends StatefulWidget {
 
 class _ImagesState extends State<Images> {
   final GlobalKey<ScaffoldState> _key = GlobalKey();
-  AssetPathEntity? directoryEntity;
-  List<ImageCell> cells = [];
-  int page = 0;
-  bool reachedEnd = false;
+  final GlobalKey<CallbackGridState> _gridKey = GlobalKey();
+  Result<DirectoryFile>? cells;
+  bool isDisposed = false;
 
   @override
   void initState() {
     super.initState();
   }
 
-  Future<List<ImageCell>> _convertFromAssets(List<AssetEntity> l) async {
-    var newCells = l.map((e) async {
-      var thumb = await e.thumbnailData;
-      String? videoUri;
-      if (e.type == AssetType.video) {
-        videoUri = await e.getMediaUrl();
+  void _addFiles() async {
+    try {
+      var res = await FilePicker.platform.pickFiles(
+          allowMultiple: true,
+          type: FileType.image,
+          allowCompression: false,
+          withReadStream: true,
+          lockParentWindow: true);
+
+      if (res == null || res.count == 0) {
+        throw "empty files";
       }
 
-      return ImageCell(
-          videoUri: videoUri,
-          entity: e,
-          thumb: thumb!,
-          addButtons: () {
-            return null;
-          },
-          addInfo: (_) {
-            return null;
-          },
-          alias: e.title!,
-          path: e.relativePath!);
-    }).toList();
+      await widget.api.uploadFiles(res.files);
 
-    List<ImageCell> newCellsSync = [];
-
-    for (var cell in newCells) {
-      newCellsSync.add(await cell);
+      _gridKey.currentState!.refresh();
+    } catch (e, trace) {
+      log("picking files",
+          level: Level.SEVERE.value, error: e, stackTrace: trace);
     }
-
-    return newCellsSync;
   }
 
   Future<int> _refresh() async {
-    cells.clear();
-    page = 0;
-    reachedEnd = false;
-
-    return _loadNext();
+    return _loadNext(true);
   }
 
-  Future<int> _loadNext() async {
+  Future<int> _loadNext(bool refresh) async {
     try {
-      directoryEntity ??= await AssetPathEntity.fromId(widget.cell.id);
-      var entities =
-          await directoryEntity!.getAssetListPaged(page: page, size: 20);
-
-      if (entities.isNotEmpty) {
-        cells.addAll(await _convertFromAssets(entities));
+      if (refresh) {
+        cells = await widget.api.refresh();
       } else {
-        reachedEnd = true;
+        cells = await widget.api.nextImages();
       }
-    } catch (e) {
-      print(e);
+    } catch (e, stackTrace) {
+      log("load next images in gallery images",
+          level: Level.WARNING.value, error: e, stackTrace: stackTrace);
     }
 
-    page++;
+    return cells == null ? 0 : cells!.count;
+  }
 
-    return Future.value(cells.length);
+  void _deleteFile(DirectoryFile f) async {
+    try {
+      await widget.api.delete(f);
+
+      await _refresh();
+    } catch (e, trace) {
+      log("deleting file",
+          level: Level.SEVERE.value, error: e, stackTrace: trace);
+    }
+  }
+
+  @override
+  void dispose() {
+    isDisposed = true;
+    widget.api.close();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _key,
-      body: CellsWidget<ImageCell>(
-        updateScrollPosition: (pos, {double? infoPos, int? selectedCell}) {},
-        scaffoldKey: _key,
-        refresh: _refresh,
-        hasReachedEnd: () => reachedEnd,
-        search: (s) {},
-        onBack: () => Navigator.of(context).pop(),
-        loadNext: _loadNext,
-        getCell: (i) => cells[i],
-        initalScrollPosition: 0,
-        onLongPress: (indx) {
-          return Navigator.of(context).push(DialogRoute(
-              context: context,
-              builder: ((context) {
-                return AlertDialog(
-                  title: const Text("Do you want to delete:"),
-                  content: Text(widget.cell.alias),
-                  actions: [
-                    TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text("no")),
-                    TextButton(onPressed: () {}, child: const Text("yes")),
-                  ],
-                );
-              })));
-        },
-      ),
-    );
+    return makeGridSkeleton(
+        context,
+        kGalleryDrawerIndex,
+        () => Future.value(true),
+        _key,
+        CallbackGrid<DirectoryFile>(
+          key: _gridKey,
+          description:
+              GridDescription(kGalleryDrawerIndex, "Inner directory grid"),
+          updateScrollPosition: (pos, {double? infoPos, int? selectedCell}) {},
+          scaffoldKey: _key,
+          refresh: _refresh,
+          menuButtonItems: [
+            TextButton(
+                onPressed: () {
+                  _addFiles();
+
+                  Navigator.pop(context);
+                },
+                child: Text("Add files"))
+          ],
+          hasReachedEnd: () => widget.api.reachedEnd,
+          search: (s) {},
+          onBack: () => Navigator.of(context).pop(),
+          loadNext: () => _loadNext(false),
+          getCell: (i) => cells!.cell(i),
+          initalScrollPosition: 0,
+          onLongPress: (indx) {
+            var df = cells!.cell(indx);
+
+            return Navigator.of(context).push(DialogRoute(
+                context: context,
+                builder: ((context) {
+                  return AlertDialog(
+                    title: const Text("Do you want to delete:"),
+                    content: Text(df.name),
+                    actions: [
+                      TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text("no")),
+                      TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+
+                            _deleteFile(df);
+                          },
+                          child: const Text("yes")),
+                    ],
+                  );
+                })));
+          },
+        ));
   }
-}*/
+}

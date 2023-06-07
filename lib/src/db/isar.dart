@@ -15,12 +15,14 @@ import 'package:gallery/src/booru/api/danbooru.dart';
 import 'package:gallery/src/booru/api/gelbooru.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/schemas/directory.dart';
+import 'package:gallery/src/schemas/directory_file.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/excluded_tags.dart';
 import 'package:gallery/src/schemas/grid_restore.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/scroll_position.dart';
 import 'package:gallery/src/schemas/secondary_grid.dart';
+import 'package:gallery/src/schemas/server_settings.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
@@ -71,7 +73,8 @@ Future initalizeIsar() async {
     PostSchema,
     ScrollPositionPrimarySchema,
     ExcludedTagsSchema,
-    GridRestoreSchema
+    GridRestoreSchema,
+    ServerSettingsSchema
   ], directory: _directoryPath, inspector: false)
       .then((value) {
     _isar = value;
@@ -146,6 +149,37 @@ void restoreStateNext(BuildContext context, String exclude) {
 }
 
 Isar isar() => _isar!;
+
+Isar openServerApiIsar() {
+  /*var i = Isar.getInstance("serverApi");
+  if (i != null) {
+    return i;
+  }*/
+
+  return Isar.openSync([DirectorySchema],
+      directory: _directoryPath, inspector: false, name: "serverApi");
+}
+
+void closeServerApiIsar() {
+  var i = Isar.getInstance("serverApi");
+  if (i != null) {
+    i.close();
+  }
+}
+
+Isar openServerApiInnerIsar() {
+  var name = DateTime.now().microsecondsSinceEpoch.toString();
+
+  return Isar.openSync([DirectoryFileSchema],
+      directory: _directoryPath, inspector: false, name: name);
+}
+
+void closeServerApiInnerIsar(String name) {
+  var db = Isar.getInstance(name);
+  if (db != null) {
+    db.close(deleteFromDisk: true);
+  }
+}
 
 Isar openDirectoryIsar() {
   return Isar.openSync([DirectorySchema],

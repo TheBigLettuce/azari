@@ -17,7 +17,6 @@ import 'package:gallery/src/pages/image_view.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../booru/tags/tags.dart';
 import '../../schemas/download_file.dart';
 
 class SinglePost extends StatefulWidget {

@@ -45,6 +45,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   final void Function()? onBack;
   final GlobalKey<ScaffoldState> scaffoldKey;
   final bool Function() hasReachedEnd;
+  final List<Widget>? menuButtonItems;
 
   final bool? hideAlias;
   final void Function(BuildContext context, int indx)? overrideOnPress;
@@ -65,6 +66,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       required this.scaffoldKey,
       required this.hasReachedEnd,
       this.progressTicker,
+      this.menuButtonItems,
       this.searchFilter,
       this.initalCell,
       this.pageViewScrollingOffset,
@@ -82,7 +84,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       : super(key: key);
 
   @override
-  State<CallbackGrid<T>> createState() => _CallbackGridState<T>();
+  State<CallbackGrid<T>> createState() => CallbackGridState<T>();
 }
 
 class _ScrollHack extends ScrollController {
@@ -90,13 +92,13 @@ class _ScrollHack extends ScrollController {
   bool get hasClients => false;
 }
 
-class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
+class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   late ScrollController controller =
       ScrollController(initialScrollOffset: widget.initalScrollPosition);
 
   int cellCount = 0;
   bool refreshing = true;
-  _ScrollHack scrollHack = _ScrollHack();
+  final _ScrollHack _scrollHack = _ScrollHack();
   Settings settings = isar().settings.getSync(0)!;
   late final StreamSubscription<Settings?> settingsWatcher;
   late int lastGridColCount = settings.picturesPerRow;
@@ -172,7 +174,7 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       cellCount = widget.initalCellCount;
       refreshing = false;
     } else {
-      _refresh();
+      refresh();
     }
 
     if (widget.loadNext == null) {
@@ -215,7 +217,7 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     textEditingController.dispose();
     controller.dispose();
     settingsWatcher.cancel();
-    scrollHack.dispose();
+    _scrollHack.dispose();
 
     focus.dispose();
     mainFocus.dispose();
@@ -225,7 +227,7 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     super.dispose();
   }
 
-  Future _refresh() {
+  Future refresh() {
     return widget.refresh().then((value) {
       if (context.mounted) {
         setState(() {
@@ -315,7 +317,7 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
             cellCount = 0;
             refreshing = true;
           });
-          _refresh();
+          refresh();
         }
       },
       SingleActivatorDescription(AppLocalizations.of(context)!.selectSuggestion,
@@ -358,7 +360,7 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                     cellCount = 0;
                     refreshing = true;
                   });
-                  return _refresh();
+                  return refresh();
                 }
 
                 return Future.value();
@@ -386,19 +388,30 @@ class _CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                           },
                           booru.completeTag,
                           focus,
-                          scrollHack: scrollHack,
+                          scrollHack: _scrollHack,
                         ),
-                        actions: widget.onBack != null &&
-                                (Platform.isAndroid || Platform.isIOS)
-                            ? [
-                                IconButton(
-                                    onPressed: () {
-                                      widget.scaffoldKey.currentState!
-                                          .openDrawer();
-                                    },
-                                    icon: const Icon(Icons.menu))
-                              ]
-                            : null,
+                        actions: [
+                          if (widget.onBack != null &&
+                              (Platform.isAndroid || Platform.isIOS))
+                            IconButton(
+                                onPressed: () {
+                                  widget.scaffoldKey.currentState!.openDrawer();
+                                },
+                                icon: const Icon(Icons.menu)),
+                          if (widget.menuButtonItems != null)
+                            PopupMenuButton(
+                                position: PopupMenuPosition.under,
+                                itemBuilder: (context) {
+                                  return widget.menuButtonItems!
+                                      .map(
+                                        (e) => PopupMenuItem(
+                                          enabled: false,
+                                          child: e,
+                                        ),
+                                      )
+                                      .toList();
+                                }),
+                        ],
                         leading: widget.onBack != null
                             ? IconButton(
                                 onPressed: widget.onBack,

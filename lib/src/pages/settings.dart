@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery/src/db/isar.dart';
+import 'package:gallery/src/pages/server_settings.dart';
 import 'package:gallery/src/schemas/settings.dart' as schema_settings;
 import 'package:gallery/src/widgets/system_gestures.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -236,6 +237,13 @@ class _SettingsState extends State<Settings> {
                         icon: const Icon(Icons.info_outline)),
                     title: Text(AppLocalizations.of(context)!.licenseSetting),
                     subtitle: const Text("GPL-2.0-only"),
+                  ),
+                  ListTile(
+                    title: Text("Server settings"),
+                    onTap: () => Navigator.push(context,
+                        MaterialPageRoute(builder: (context) {
+                      return ServerSettingsPage();
+                    })),
                   )
                 ])),
           ),

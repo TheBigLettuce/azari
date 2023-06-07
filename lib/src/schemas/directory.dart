@@ -5,33 +5,49 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:typed_data';
-
 import 'package:flutter/widgets.dart';
+import 'package:gallery/src/cell/cell.dart';
+import 'package:gallery/src/cell/data.dart';
 import 'package:isar/isar.dart';
-
-import '../cell/directory.dart';
-import '../gallery/android_api/api.g.dart' as gallery;
 
 part 'directory.g.dart';
 
 @collection
-class Directory extends gallery.Directory {
+class Directory implements Cell {
   Id? isarId;
 
-  @Index(unique: true, replace: true)
+  String dirPath;
+  String imageUrl;
+  String dirName;
   String id;
 
-  DirectoryCell cell() => DirectoryCell(
-        id: id,
-        image: MemoryImage(Uint8List.fromList(thumbnail.cast())),
-        dirPath: name,
-        dirName: name,
-      );
+  @override
+  String alias(bool isList) => dirName;
+
+  @override
+  Content fileDisplay() => throw "not implemented";
+
+  @override
+  String fileDownloadUrl() => dirName;
+
+  @override
+  CellData getCellData(bool isList) =>
+      CellData(thumb: NetworkImage(imageUrl), name: alias(isList));
+
+  @ignore
+  @override
+  List<Widget>? Function() get addButtons => () {
+        return null;
+      };
+
+  @ignore
+  @override
+  List<Widget>? Function(BuildContext context, dynamic extra, Color borderColor,
+          Color foregroundColor, Color systemOverlayColor)
+      get addInfo => (_, __, ___, ____, _____) {
+            return null;
+          };
 
   Directory(this.id,
-      {required int lastModified,
-      required List<int?> thumbnail,
-      required String name})
-      : super(lastModified: lastModified, thumbnail: thumbnail, name: name);
+      {required this.imageUrl, required this.dirPath, required this.dirName});
 }

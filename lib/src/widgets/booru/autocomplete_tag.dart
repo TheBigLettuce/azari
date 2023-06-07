@@ -11,8 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../db/isar.dart';
-
 Future<List<String>> autoCompleteTag(
     String tagString, Future<List<String>> Function(String) complF) {
   if (tagString.isEmpty) {

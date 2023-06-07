@@ -40,11 +40,4 @@ To just build the release version, run `make app` .
 
 ## Regenerating generated code
 
-All generated Dart code has extension `*.g.dart`. To regenerate DBus generated code, you need to install the `dart-dbus` tool. To install it, run:
-- `dart pub global activate dbus`
-Then you can use Makefile in the `dbus_services/` directory, just `cd dbus_services && make gen` . `dart-dbus` should be in your `path`.
-Note, however, that `dart-dbus` may output invalid code. Then you need to fix it by hand, in the `job_view_server.g.dart` or `job_view.g.dart` file.
-
-To regenerate the Isar schema files, first cd into the directory of this README.md file and run:
-- `flutter pub update`
-You need to get all the dependencies first to start generating, then you need to run `dart run build_runner build` .
+You have to regenerate code before building, or working on it at all. Run `make regenerate` . Be wary that `dart-dbus` can output invalid Dart code, but it is a simple mistake. You would need then to fix it by hand.
