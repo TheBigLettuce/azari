@@ -16,19 +16,23 @@ part 'directory.g.dart';
 class Directory implements Cell {
   Id? isarId;
 
+  @Index(unique: true)
   String dirPath;
   String imageUrl;
   String dirName;
   String id;
+  int time;
+
+  int count;
 
   @override
-  String alias(bool isList) => dirName;
+  String alias(bool isList) => "$dirName ($count)";
 
   @override
   Content fileDisplay() => throw "not implemented";
 
   @override
-  String fileDownloadUrl() => dirName;
+  String fileDownloadUrl() => dirPath;
 
   @override
   CellData getCellData(bool isList) =>
@@ -49,5 +53,9 @@ class Directory implements Cell {
           };
 
   Directory(this.id,
-      {required this.imageUrl, required this.dirPath, required this.dirName});
+      {required this.imageUrl,
+      required this.dirPath,
+      required this.dirName,
+      required this.time,
+      required this.count});
 }

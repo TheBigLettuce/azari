@@ -5,7 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:io';
+import 'dart:io' as io;
 
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
@@ -19,6 +19,7 @@ import 'package:gallery/src/schemas/directory_file.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/excluded_tags.dart';
 import 'package:gallery/src/schemas/grid_restore.dart';
+import 'package:gallery/src/schemas/local_tags.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/scroll_position.dart';
 import 'package:gallery/src/schemas/secondary_grid.dart';
@@ -29,8 +30,11 @@ import 'package:path_provider/path_provider.dart';
 import '../pages/booru_scroll.dart';
 import '../schemas/settings.dart';
 
+import 'package:path/path.dart' as path;
+
 Isar? _isar;
 late String _directoryPath;
+late String _temporaryDbPath;
 //Isar? _isarCopy;
 bool _initalized = false;
 const MethodChannel _channel = MethodChannel("lol.bruh19.azari.gallery");
@@ -65,6 +69,13 @@ Future initalizeIsar() async {
   _initalized = true;
 
   _directoryPath = (await getApplicationSupportDirectory()).path;
+
+  var d = io.Directory(path.joinAll([_directoryPath, "temporary"]));
+  d.createSync();
+  d.deleteSync(recursive: true);
+  d.createSync();
+
+  _temporaryDbPath = d.path;
 
   await Isar.open([
     SettingsSchema,
@@ -160,6 +171,11 @@ Isar openServerApiIsar() {
       directory: _directoryPath, inspector: false, name: "serverApi");
 }
 
+Isar openTagsDbIsar() {
+  return Isar.openSync([LocalTagsSchema],
+      directory: _directoryPath, inspector: false, name: "localTags");
+}
+
 void closeServerApiIsar() {
   var i = Isar.getInstance("serverApi");
   if (i != null) {
@@ -170,8 +186,12 @@ void closeServerApiIsar() {
 Isar openServerApiInnerIsar() {
   var name = DateTime.now().microsecondsSinceEpoch.toString();
 
-  return Isar.openSync([DirectoryFileSchema],
-      directory: _directoryPath, inspector: false, name: name);
+  return Isar.openSync(
+    [DirectoryFileSchema],
+    directory: _temporaryDbPath,
+    inspector: false,
+    name: name,
+  );
 }
 
 void closeServerApiInnerIsar(String name) {
@@ -221,7 +241,7 @@ void removeSecondaryGrid(String name) {
 Future<bool> chooseDirectory(void Function(String) onError) async {
   String resp;
 
-  if (Platform.isAndroid) {
+  if (io.Platform.isAndroid) {
     resp = await _channel.invokeMethod("chooseDirectory");
   } else {
     var r = await FilePicker.platform

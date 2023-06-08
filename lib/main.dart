@@ -11,6 +11,8 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
+import 'package:gallery/src/booru/tags/tags.dart';
+import 'package:gallery/src/gallery/uploader/uploader.dart';
 import 'package:gallery/src/pages/booru_scroll.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/grid_restore.dart';
@@ -50,6 +52,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initalizeIsar();
   await initalizeDownloader();
+  initalizeUploader();
+  initalizeBooruTags();
 
   const platform = MethodChannel("lol.bruh19.azari.gallery");
 

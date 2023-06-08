@@ -35,6 +35,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   final int initalCellCount;
   final Future<int> Function()? loadNext;
   final Future<void> Function(int indx)? onLongPress;
+  final Future<void> Function(int indx)? download;
   final Future<int> Function() refresh;
   final void Function(double pos, {double? infoPos, int? selectedCell})
       updateScrollPosition;
@@ -75,6 +76,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       required this.refresh,
       required this.updateScrollPosition,
       this.onLongPress,
+      this.download,
       this.hideAlias,
       this.searchStartingValue = "",
       this.onBack,
@@ -288,7 +290,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         infoScrollOffset: offset,
         getCell: widget.getCell,
         cellCount: cellCount,
-        download: widget.onLongPress,
+        download: widget.download,
         startingCell: i,
         onNearEnd: widget.loadNext == null
             ? null

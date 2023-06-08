@@ -1,5 +1,7 @@
-1.1.15:
-— 
+1.2.1:
+— Add gallery server API support,
+— Transparently save every post's tags,
+— Add uploader page.
 
 1.1.14:
 — Stop committing generated code,

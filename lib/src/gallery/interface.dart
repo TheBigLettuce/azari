@@ -13,11 +13,11 @@ class Result<T extends Cell> {
 abstract class GalleryAPIFiles {
   bool get reachedEnd;
 
-  Future<Result<DirectoryFile>> nextImages();
+  //Future<Result<DirectoryFile>> nextImages();
   Future<Result<DirectoryFile>> refresh();
 
   Future delete(DirectoryFile f);
-  Future uploadFiles(List<PlatformFile> l);
+  Future uploadFiles(List<PlatformFile> l, void Function() onDone);
 
   void close();
 }
@@ -28,8 +28,10 @@ abstract class GalleryAPI {
   Future<Result<Directory>> directories();
   GalleryAPIFiles images(Directory d);
 
+  Future modify(Directory old, Directory newd);
+  Future setThumbnail(String newThumb, Directory d);
   Future delete(Directory d);
-  Future newDirectory(String path);
+  Future newDirectory(String path, void Function() onDone);
 
   void close();
 }

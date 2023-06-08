@@ -20,6 +20,7 @@
         android:maxSdkVersion="29" /> -->
 
    <application
+        android:usesCleartextTraffic="true"
         android:label="Ācārya"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

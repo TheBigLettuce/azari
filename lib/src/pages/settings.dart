@@ -8,6 +8,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/pages/server_settings.dart';
 import 'package:gallery/src/schemas/settings.dart' as schema_settings;
@@ -239,11 +240,17 @@ class _SettingsState extends State<Settings> {
                     subtitle: const Text("GPL-2.0-only"),
                   ),
                   ListTile(
-                    title: Text("Server settings"),
+                    title: Text(
+                        AppLocalizations.of(context)!.serverSettingsPageName),
                     onTap: () => Navigator.push(context,
                         MaterialPageRoute(builder: (context) {
-                      return ServerSettingsPage();
+                      return const ServerSettingsPage();
                     })),
+                  ),
+                  ListTile(
+                    title: Text(AppLocalizations.of(context)!.savedTagsCount),
+                    enabled: false,
+                    subtitle: Text(BooruTags().savedTagsCount().toString()),
                   )
                 ])),
           ),

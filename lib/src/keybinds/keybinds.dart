@@ -33,6 +33,10 @@ Map<SingleActivatorDescription, Null Function()> digitAndSettings(
         const SingleActivator(LogicalKeyboardKey.digit4)): () {
       selectDestination(context, from, kDownloadsDrawerIndex);
     },
+    SingleActivatorDescription(AppLocalizations.of(context)!.goUploads,
+        const SingleActivator(LogicalKeyboardKey.digit5)): () {
+      selectDestination(context, from, kUploadsDrawerIndex);
+    },
     SingleActivatorDescription(AppLocalizations.of(context)!.goSettings,
         const SingleActivator(LogicalKeyboardKey.keyS, control: true)): () {
       Navigator.push(context, MaterialPageRoute(builder: (context) {

@@ -7,6 +7,7 @@
 
 import 'package:dio/dio.dart';
 import 'package:gallery/src/schemas/post.dart';
+import 'package:gallery/src/schemas/settings.dart';
 
 import '../interface.dart';
 import '../tags/tags.dart';
@@ -17,6 +18,9 @@ List<String> _fromDanbooruTags(List<dynamic> l) =>
 class Danbooru implements BooruAPI {
   @override
   Dio client;
+
+  @override
+  Booru booru() => Booru.danbooru;
 
   @override
   void close() => client.close(force: true);
@@ -159,7 +163,8 @@ class Danbooru implements BooruAPI {
             fileUrl: e["file_url"],
             previewUrl: e["preview_file_url"],
             sampleUrl: e["large_file_url"],
-            ext: ".${e["file_ext"]}");
+            ext: ".${e["file_ext"]}",
+            prefix: booru().prefix);
 
         list.add(post);
       } catch (e) {

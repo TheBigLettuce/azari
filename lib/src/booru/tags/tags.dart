@@ -7,14 +7,24 @@
 
 import 'dart:developer';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery/src/booru/api/danbooru.dart';
+import 'package:gallery/src/booru/api/gelbooru.dart';
+import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/excluded_tags.dart';
+import 'package:gallery/src/schemas/local_tags.dart';
+import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/schemas/tags.dart';
+import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 
 import '../../pages/booru_scroll.dart';
+
+BooruTags? _global;
+bool _isInitalized = false;
 
 class BooruTagging<T extends Tags> {
   final T Function(String booru) _getTags;
@@ -50,7 +60,22 @@ class BooruTagging<T extends Tags> {
         _getTags = getTags;
 }
 
+class _DissolveResult {
+  final String ext;
+  final Booru booru;
+  final String hash;
+  final int id;
+
+  const _DissolveResult(
+      {required this.booru,
+      required this.ext,
+      required this.hash,
+      required this.id});
+}
+
 class BooruTags {
+  final Isar tagsDb;
+
   BooruTagging<ExcludedTags> excluded = BooruTagging((s) {
     var booruTags = isar().excludedTags.getSync(fastHash(s));
     if (booruTags == null) {
@@ -95,4 +120,134 @@ class BooruTags {
           level: Level.WARNING.value, error: error, stackTrace: stackTrace);
     });
   }
+
+  _DissolveResult? _dissassembleFilename(String filename) {
+    var split = filename.split("_");
+    if (split.isEmpty || split.length != 2) {
+      return null;
+    }
+
+    var booru = chooseBooruPrefix(split.first);
+    if (booru == null) {
+      return null;
+    }
+
+    var numbersAndHash = split.last.split("-");
+    if (numbersAndHash.isEmpty || numbersAndHash.length != 2) {
+      return null;
+    }
+
+    var id = int.tryParse(numbersAndHash.first.trimRight());
+    if (id == null) {
+      return null;
+    }
+
+    var hashAndExt = numbersAndHash.last.trimLeft().split(".");
+    if (hashAndExt.isEmpty || hashAndExt.length != 2) {
+      return null;
+    }
+
+    final numbersLetters = RegExp(r'^[a-z0-9]+$');
+    if (!numbersLetters.hasMatch(hashAndExt.first)) {
+      return null;
+    }
+
+    if (hashAndExt.last.length > 6) {
+      return null;
+    }
+
+    if (hashAndExt.first.length != 32) {
+      return null;
+    }
+
+    final onlyLetters = RegExp(r'^[a-zA-Z]+$');
+    if (!onlyLetters.hasMatch(hashAndExt.last)) {
+      return null;
+    }
+
+    return _DissolveResult(
+        id: id, booru: booru, ext: hashAndExt.last, hash: hashAndExt.first);
+  }
+
+  void addTagsPost(String filename, List<String> tags) {
+    if (_dissassembleFilename(filename) == null) {
+      return;
+    }
+
+    tagsDb.writeTxnSync(
+        () => tagsDb.localTags.putSync(LocalTags(filename, tags)));
+  }
+
+  void addAllPostTags(List<Post> p) {
+    tagsDb.writeTxnSync(() => tagsDb.localTags.putAllSync(
+        p.map((e) => LocalTags(e.filename(), e.tags.split(" "))).toList()));
+  }
+
+  List<String> getTagsPost(String filename) {
+    return tagsDb.localTags.getSync(fastHash(filename))?.tags ?? [];
+  }
+
+  int savedTagsCount() => tagsDb.localTags.countSync();
+
+  Future<List<String>> getOnlineAndSaveTags(String filename) async {
+    var dissassembled = _dissassembleFilename(filename);
+    if (dissassembled == null) {
+      return [];
+    }
+
+    BooruAPI api;
+
+    Dio client = Dio(BaseOptions(
+      headers: {
+        "user-agent":
+            "Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0"
+      },
+      responseType: ResponseType.json,
+    ));
+
+    switch (dissassembled.booru) {
+      case Booru.danbooru:
+        api = Danbooru(client);
+        break;
+      case Booru.gelbooru:
+        api = Gelbooru(0, client);
+        break;
+    }
+    try {
+      var post = await api.singlePost(dissassembled.id);
+      if (post.tags.isEmpty) {
+        return [];
+      }
+
+      var postTags = post.tags.split(" ");
+
+      tagsDb.writeTxnSync(
+          () => tagsDb.localTags.put(LocalTags(filename, postTags)));
+
+      api.close();
+
+      return postTags;
+    } catch (e, trace) {
+      log("fetching post for tags",
+          level: Level.SEVERE.value, error: e, stackTrace: trace);
+      api.close();
+      return [];
+    }
+  }
+
+  BooruTags._new(this.tagsDb);
+
+  factory BooruTags() {
+    return _global!;
+  }
+}
+
+void initalizeBooruTags() {
+  if (_isInitalized) {
+    return;
+  }
+
+  _isInitalized = true;
+
+  _global = BooruTags._new(openTagsDbIsar());
 }

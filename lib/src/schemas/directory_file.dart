@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gallery/src/cell/cell.dart';
 import 'package:gallery/src/cell/data.dart';
+import 'package:gallery/src/schemas/post.dart';
 import 'package:isar/isar.dart';
-import '../gallery/android_api/api.g.dart' as gallery;
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 part 'directory_file.g.dart';
 
@@ -15,7 +16,9 @@ class DirectoryFile implements Cell {
   String thumbHash;
   String origHash;
   int type;
+  int time;
   String host;
+  List<String> tags;
 
   @ignore
   @override
@@ -25,7 +28,43 @@ class DirectoryFile implements Cell {
   @override
   List<Widget>? Function(BuildContext context, dynamic extra, Color borderColor,
           Color foregroundColor, Color systemOverlayColor)
-      get addInfo => (_, __, ___, ____, _____) => null;
+      get addInfo =>
+          (context, extra, borderColor, foregroundColor, systemoverlayColor) {
+            return [
+              ListTile(
+                textColor: foregroundColor,
+                title: Text(AppLocalizations.of(context)!.nameTitle),
+                subtitle: Text(name),
+              ),
+              ListTile(
+                textColor: foregroundColor,
+                title: Text(AppLocalizations.of(context)!.directoryTitle),
+                subtitle: Text(dir),
+              ),
+              ListTile(
+                textColor: foregroundColor,
+                title: Text(AppLocalizations.of(context)!.thumbnailHashTitle),
+                subtitle: Text(thumbHash),
+              ),
+              ListTile(
+                textColor: foregroundColor,
+                title: Text(AppLocalizations.of(context)!.originalHashTitle),
+                subtitle: Text(origHash),
+              ),
+              ListTile(
+                textColor: foregroundColor,
+                title: Text(AppLocalizations.of(context)!.typeTitle),
+                subtitle: Text(type.toString()),
+              ),
+              ListTile(
+                textColor: foregroundColor,
+                title: Text(AppLocalizations.of(context)!.timeTitle),
+                subtitle: Text(time.toString()),
+              ),
+              ...makeTags(context, extra, borderColor, foregroundColor,
+                  systemoverlayColor, tags)
+            ];
+          };
 
   @override
   String alias(bool isList) {
@@ -34,16 +73,21 @@ class DirectoryFile implements Cell {
 
   @override
   Content fileDisplay() {
-    return Content("image", true,
-        image: NetworkImage(
-            Uri.parse(host).replace(path: '/static/$origHash').toString()));
+    if (type == 1) {
+      return Content("image", false,
+          image: NetworkImage(
+              Uri.parse(host).replace(path: '/static/$origHash').toString()));
+    } else if (type == 2) {
+      return Content("video", false,
+          videoPath:
+              Uri.parse(host).replace(path: '/static/$origHash').toString());
+    }
+    throw "invalid image type";
   }
 
   @override
-  String fileDownloadUrl() {
-    // TODO: implement fileDownloadUrl
-    throw UnimplementedError();
-  }
+  String fileDownloadUrl() =>
+      Uri.parse(host).replace(path: "/static/$origHash").toString();
 
   @override
   CellData getCellData(bool isList) {
@@ -57,6 +101,8 @@ class DirectoryFile implements Cell {
       {required this.host,
       required this.name,
       required this.origHash,
+      required this.time,
       required this.thumbHash,
+      required this.tags,
       required this.type});
 }

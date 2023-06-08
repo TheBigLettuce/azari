@@ -8,11 +8,10 @@
 import 'dart:async';
 import 'dart:developer';
 
-import 'package:dio/dio.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/gallery/images.dart';
 import 'package:gallery/src/gallery/interface.dart';
+import 'package:gallery/src/gallery/modify_directory.dart';
 import 'package:gallery/src/gallery/server_api/server.dart';
 import 'package:gallery/src/pages/senitel.dart';
 import 'package:gallery/src/schemas/directory.dart';
@@ -22,6 +21,7 @@ import 'package:logging/logging.dart';
 import '../db/isar.dart' as db;
 import '../widgets/drawer/drawer.dart';
 import '../widgets/grid/callback_grid.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class Directories extends StatefulWidget {
   const Directories({super.key});
@@ -46,30 +46,6 @@ class _DirectoriesState extends State<Directories> {
   @override
   void initState() {
     super.initState();
-
-    // isar = db.openDirectoryIsar();
-
-    // thumbnailWatcher = isar.directorys
-    //     .watchLazy()
-    //     .transform(StreamTransformer((stream, cancelOnError) {
-    //   var c = StreamController<int>(sync: true);
-    //   c.onListen = () {
-    //     var subscription = stream.listen(
-    //       (event) {
-    //         c.add(isar.directorys.countSync());
-    //       },
-    //       onError: c.addError,
-    //       onDone: c.close,
-    //       cancelOnError: cancelOnError,
-    //     );
-
-    //     c.onPause = subscription.pause;
-    //     c.onResume = subscription.resume;
-    //     c.onCancel = subscription.cancel;
-    //   };
-
-    //   return c.stream.listen(null);
-    // }));
 
     settingsWatcher = db.isar().settings.watchObject(0).listen((event) {
       setState(() {
@@ -98,51 +74,9 @@ class _DirectoriesState extends State<Directories> {
           level: Level.SEVERE.value, error: e, stackTrace: trace);
     }
 
-    /*try {
-      await PhotoManager.getAssetPathList(
-        hasAll: false,
-      ).then((value) async {
-        isar.writeTxnSync(() => isar.directorys.clearSync());
-
-        for (var directory in value) {
-          var asset = await directory.getAssetListRange(end: 1, start: 0);
-          if (asset.isEmpty) {
-            throw "is empty";
-          }
-
-          try {
-            var thumb = await asset.first.thumbnailData;
-
-            var lastModified = (await directory.fetchPathProperties(
-                    filterOptionGroup:
-                        FilterOptionGroup(containsPathModified: true)))!
-                .lastModified!;
-
-            isar.writeTxnSync(() => isar.directorys.putByIdSync(
-                Directory(directory.id, directory.name, thumb!, lastModified)));
-          } catch (e) {
-            print("while gettinh thumb: $e");
-          }
-        }
-      });
-    } catch (e) {
-      print(e);
-    }*/
-
     return directories == null
         ? 0
         : directories!.count; //isar.directorys.count();
-  }
-
-  void _delete(Directory d) async {
-    try {
-      await api.delete(d);
-
-      _gridKey.currentState!.refresh();
-    } catch (e, trace) {
-      log("deleting directory",
-          level: Level.SEVERE.value, error: e, stackTrace: trace);
-    }
   }
 
   @override
@@ -158,6 +92,17 @@ class _DirectoriesState extends State<Directories> {
     super.dispose();
   }
 
+  void _setThumbnail(String hash, Directory d) async {
+    try {
+      await api.setThumbnail(hash, d);
+
+      _gridKey.currentState!.refresh();
+    } catch (e, trace) {
+      log("setting thumbnail",
+          level: Level.SEVERE.value, error: e, stackTrace: trace);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return makeGridSkeleton(
@@ -167,9 +112,9 @@ class _DirectoriesState extends State<Directories> {
         GlobalKey(),
         CallbackGrid<Directory>(
           key: _gridKey,
-          description: const GridDescription(
+          description: GridDescription(
             kGalleryDrawerIndex,
-            "Gallery",
+            AppLocalizations.of(context)!.galleryPageName,
           ),
           updateScrollPosition: (pos, {double? infoPos, int? selectedCell}) {},
           scaffoldKey: _key,
@@ -180,28 +125,13 @@ class _DirectoriesState extends State<Directories> {
           onLongPress: (indx) {
             var d = directories!.cell(indx);
 
-            Navigator.push(
-                context,
-                DialogRoute(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        title: Text("Do you want to delete: ${d.dirName}"),
-                        actions: [
-                          TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: Text("no")),
-                          TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                                _delete(d);
-                              },
-                              child: Text("yes")),
-                        ],
-                      );
-                    }));
+            Navigator.push(context, MaterialPageRoute(builder: (context) {
+              return ModifyDirectory(
+                api,
+                old: d,
+                refreshKey: _gridKey,
+              );
+            }));
 
             return Future.value();
           },
@@ -215,11 +145,21 @@ class _DirectoriesState extends State<Directories> {
                           context: context,
                           builder: (context) {
                             return AlertDialog(
-                              title: Text("Choose name"),
+                              title: Text(AppLocalizations.of(context)!
+                                  .chooseDirectoryName),
                               content: TextField(
                                 onSubmitted: (value) {
                                   Navigator.pop(context);
-                                  api.newDirectory(value).then((value) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(
+                                              AppLocalizations.of(context)!
+                                                  .uploadStarted)));
+                                  api.newDirectory(value, () {
+                                    if (!isDisposed) {
+                                      _gridKey.currentState?.refresh();
+                                    }
+                                  }).then((value) {
                                     _refresh(true);
                                     _gridKey.currentState!.refresh();
                                   }).onError((error, stackTrace) {
@@ -233,7 +173,7 @@ class _DirectoriesState extends State<Directories> {
                             );
                           }));
                 },
-                child: Text("New directory"))
+                child: Text(AppLocalizations.of(context)!.newDirectory))
           ],
           getCell: (i) =>
               directories!.cell(i), //isar.directorys.getSync(i + 1)!.cell()
@@ -244,6 +184,8 @@ class _DirectoriesState extends State<Directories> {
               return Images(
                 api.images(d),
                 cell: d,
+                setThumbnail: _setThumbnail,
+                parentGrid: _gridKey,
               );
             }));
           },

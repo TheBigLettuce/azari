@@ -12,6 +12,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/gallery/directories.dart';
 import 'package:gallery/src/pages/search_booru.dart';
 import 'package:gallery/src/pages/downloads.dart';
+import 'package:gallery/src/pages/uploader.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import '../../db/isar.dart';
@@ -23,7 +24,8 @@ const int kBooruGridDrawerIndex = 0;
 const int kGalleryDrawerIndex = 1;
 const int kTagsDrawerIndex = 2;
 const int kDownloadsDrawerIndex = 3;
-const int kSettingsDrawerIndex = 4;
+const int kUploadsDrawerIndex = 4;
+const int kSettingsDrawerIndex = 5;
 
 const IconData kAzariIcon = IconData(0x963F); // 阿
 
@@ -46,6 +48,9 @@ List<NavigationDrawerDestination> destinations(BuildContext context) {
               )
             : const Icon(Icons.download),
         label: Text(AppLocalizations.of(context)!.downloadsLabel)),
+    NavigationDrawerDestination(
+        icon: const Icon(Icons.upload),
+        label: Text(AppLocalizations.of(context)!.uploadLabel))
   ];
 }
 
@@ -93,6 +98,19 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
       kSettingsDrawerIndex => {
           Navigator.push(context,
               MaterialPageRoute(builder: (context) => const widget.Settings()))
+        },
+      kUploadsDrawerIndex => {
+          if (from == kBooruGridDrawerIndex)
+            {
+              Navigator.pushNamed(context, "/senitel"),
+            },
+          if (from != kUploadsDrawerIndex)
+            {
+              Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const Uploader()),
+                  ModalRoute.withName("/senitel"))
+            },
         },
       kGalleryDrawerIndex => {
           if (from == kBooruGridDrawerIndex)

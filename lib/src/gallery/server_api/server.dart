@@ -1,18 +1,16 @@
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:convert/convert.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:file_picker/src/platform_file.dart';
+import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/gallery/interface.dart';
+import 'package:gallery/src/gallery/uploader/uploader.dart';
 import 'package:gallery/src/schemas/directory.dart';
 import 'package:gallery/src/schemas/directory_file.dart';
 import 'package:gallery/src/schemas/server_settings.dart';
-import 'package:http_parser/http_parser.dart';
 import 'package:isar/isar.dart';
-import 'package:mime/mime.dart';
 
 Map<String, dynamic> _deviceId(ServerSettings s) => {
       "deviceId": hex.encode(s.deviceId),
@@ -55,14 +53,28 @@ class ServerAPI implements GalleryAPI {
 
     serverIsar.writeTxnSync(() {
       serverIsar.clearSync();
-      serverIsar.directorys.putAllSync((resp.data as List)
+
+      var list = (resp.data as List)
           .map((e) => Directory("",
+              time: e["time"],
               dirName: e["alias"],
+              count: e["count"],
               imageUrl: Uri.parse(settings.host)
                   .replace(path: '/static/${_fromBaseToHex(e["thumbhash"])}')
                   .toString(),
               dirPath: e["path"]))
-          .toList());
+          .toList();
+      list.sort((v1, v2) {
+        if (v1.time < v2.time) {
+          return 1;
+        } else if (v1.time > v2.time) {
+          return -1;
+        } else {
+          return 0;
+        }
+      });
+
+      serverIsar.directorys.putAllSync(list);
     });
 
     return Result((i) => serverIsar.directorys.getSync(i + 1)!,
@@ -83,7 +95,7 @@ class ServerAPI implements GalleryAPI {
   }
 
   @override
-  Future newDirectory(String path) async {
+  Future newDirectory(String path, void Function() onDone) async {
     var res = await FilePicker.platform.pickFiles(
         type: FileType.image, allowCompression: false, withReadStream: true);
     if (res == null) {
@@ -92,8 +104,10 @@ class ServerAPI implements GalleryAPI {
 
     var settings = _settings();
 
-    return _addFile(Uri.parse(settings.host),
-        [_FileAndDir(path, res.files.first)], settings, client);
+    Uploader().add(Uri.parse(settings.host),
+        res.files.map((e) => FileAndDir(path, e)).toList(), onDone);
+
+    return Future.value();
   }
 
   @override
@@ -106,50 +120,31 @@ class ServerAPI implements GalleryAPI {
 
     return Future.value();
   }
-}
 
-Future _addFile(
-    Uri host, List<_FileAndDir> f, ServerSettings settings, Dio client) async {
-  var formData = FormData();
+  Future _modifyDir(String dir, {String? newHash, String? newAlias}) async {
+    var settings = _settings();
 
-  for (var element in f) {
-    var mimt = lookupMimeType(element.res.name);
+    var resp = await client
+        .postUri(Uri.parse(settings.host).replace(path: "/modify/dir"),
+            options: Options(
+              headers: _deviceId(settings),
+            ),
+            data: {
+          "dir": dir,
+          if (newHash != null) "newhash": newHash,
+          if (newAlias != null) "newalias": newAlias
+        });
 
-    formData.files.add(MapEntry(
-        element.res.name,
-        MultipartFile(element.res.readStream!, element.res.size,
-            filename: element.res.name,
-            contentType: MediaType.parse(mimt!),
-            headers: {
-              "dir": [element.dir],
-              "name": [element.res.name]
-            })));
+    return Future.value();
   }
 
-  var req = await client.postUri(host.replace(path: "/add/files"),
-      options: Options(
-          headers: _deviceId(settings),
-          contentType: Headers.multipartFormDataContentType),
-      data: formData);
+  @override
+  Future modify(Directory old, Directory newd) =>
+      _modifyDir(old.dirPath, newAlias: newd.dirName);
 
-  if (req.statusCode != 200) {
-    throw "not 200";
-  }
-
-  var failed = req.data["failed"];
-
-  if (failed != null && (failed as List).isNotEmpty) {
-    log('failed: ${req.data["failed"]}');
-  }
-
-  return Future.value();
-}
-
-class _FileAndDir {
-  final String dir;
-  final PlatformFile res;
-
-  const _FileAndDir(this.dir, this.res);
+  @override
+  Future setThumbnail(String newThumb, Directory d) =>
+      _modifyDir(d.dirPath, newHash: newThumb);
 }
 
 class _ImagesImpl implements GalleryAPIFiles {
@@ -161,11 +156,9 @@ class _ImagesImpl implements GalleryAPIFiles {
   @override
   bool reachedEnd = false;
 
-  @override
-  Future<Result<DirectoryFile>> nextImages() async {
+  Future<bool> nextImages() async {
     if (reachedEnd) {
-      return Result((i) => imageIsar.directoryFiles.getSync(i + 1)!,
-          imageIsar.directoryFiles.countSync());
+      return true;
     }
 
     var settings = _settings();
@@ -175,7 +168,7 @@ class _ImagesImpl implements GalleryAPIFiles {
         options: Options(headers: _deviceId(settings)),
         data: {
           "dir": d.dirPath,
-          "types": "image",
+          // "types": "image",
           "page": page.toString(),
           "count": "20"
         });
@@ -189,21 +182,29 @@ class _ImagesImpl implements GalleryAPIFiles {
       reachedEnd = true;
     } else {
       imageIsar.writeTxnSync(() {
-        imageIsar.directoryFiles.putAllSync(list
-            .map((e) => DirectoryFile(e["dir"],
-                name: e["name"],
-                origHash: _fromBaseToHex(e["orighash"]),
-                thumbHash: _fromBaseToHex(e["thumbhash"]),
-                type: e["type"],
-                host: settings.host))
-            .toList());
+        imageIsar.directoryFiles.putAllSync(list.map((e) {
+          var tags = e["tags"];
+          if (tags != null) {
+            tags = (e["tags"] as List).cast<String>();
+          } else {
+            tags = <String>[];
+          }
+
+          return DirectoryFile(e["dir"],
+              tags: tags,
+              name: e["name"],
+              time: e["time"],
+              origHash: _fromBaseToHex(e["orighash"]),
+              thumbHash: _fromBaseToHex(e["thumbhash"]),
+              type: e["type"],
+              host: settings.host);
+        }).toList());
       });
 
       page++;
     }
 
-    return Result((i) => imageIsar.directoryFiles.getSync(i + 1)!,
-        imageIsar.directoryFiles.countSync());
+    return false;
   }
 
   @override
@@ -214,19 +215,63 @@ class _ImagesImpl implements GalleryAPIFiles {
   _ImagesImpl(this.imageIsar, this.client, this.d);
 
   @override
-  Future<Result<DirectoryFile>> refresh() {
+  Future<Result<DirectoryFile>> refresh() async {
     imageIsar.writeTxnSync(() => imageIsar.clearSync());
+    reachedEnd = false;
     page = 0;
 
-    return nextImages();
+    for (;;) {
+      if (await nextImages()) {
+        break;
+      }
+    }
+
+    var copy = openServerApiInnerIsar();
+
+    imageIsar.writeTxnSync(() {
+      var offset = 0;
+
+      for (;;) {
+        var sorted = imageIsar.directoryFiles
+            .where()
+            .sortByTimeDesc()
+            .offset(offset)
+            .limit(40)
+            .findAllSync();
+        offset += 40;
+
+        for (var element in sorted) {
+          element.isarId = null;
+        }
+
+        copy.writeTxnSync(() => copy.directoryFiles.putAllSync(sorted));
+
+        if (sorted.length != 20) {
+          break;
+        }
+      }
+    });
+
+    imageIsar.close(deleteFromDisk: true);
+
+    imageIsar = copy;
+
+    return Result((i) => imageIsar.directoryFiles.getSync(i + 1)!,
+        imageIsar.directoryFiles.countSync());
   }
 
   @override
-  Future uploadFiles(List<PlatformFile> l) {
+  Future uploadFiles(List<PlatformFile> l, void Function() onDone) {
+    if (l.isEmpty) {
+      throw "l is empty";
+    }
+
     var settings = _settings();
 
-    return _addFile(Uri.parse(settings.host),
-        l.map((e) => _FileAndDir(d.dirPath, e)).toList(), settings, client);
+    Uploader().add(Uri.parse(settings.host),
+        l.map((e) => FileAndDir(d.dirPath, e)).toList(), onDone);
+
+    return Future.value();
   }
 
   @override

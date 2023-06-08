@@ -167,6 +167,7 @@ class _BooruScrollState extends State<BooruScroll> {
         isar.posts.clear();
         return isar.posts.putAllById(list);
       });
+      BooruTags().addAllPostTags(list);
       reachedEnd = false;
     } catch (e, trace) {
       log("refreshing grid on ${settings.selectedBooru.string}",
@@ -203,6 +204,7 @@ class _BooruScrollState extends State<BooruScroll> {
         reachedEnd = true;
       } else {
         isar.writeTxnSync(() => isar.posts.putAllByIdSync(list));
+        BooruTags().addAllPostTags(list);
       }
     } catch (e, trace) {
       log("_addLast on grid ${settings.selectedBooru.string}",
@@ -245,6 +247,7 @@ class _BooruScrollState extends State<BooruScroll> {
             search: _search,
             hideAlias: true,
             onLongPress: _download,
+            download: _download,
             updateScrollPosition: updateScrollPosition,
             initalScrollPosition: widget.initalScroll,
             initalCellCount: widget.clear ? 0 : isar.posts.countSync(),

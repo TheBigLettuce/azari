@@ -23,6 +23,66 @@ import '../db/isar.dart';
 
 part 'post.g.dart';
 
+Iterable<Widget> makeTags(
+    BuildContext context,
+    dynamic extra,
+    Color dividerColor,
+    Color foregroundColor,
+    Color systemOverlayColor,
+    List<String> tags) {
+  if (tags.isEmpty) {
+    return [];
+  }
+
+  var plug = choosePlatformFullscreenPlug(systemOverlayColor);
+
+  return [
+    ListTile(
+      textColor: foregroundColor,
+      title: Text(AppLocalizations.of(context)!.tagsInfoPage),
+    ),
+    ...ListTile.divideTiles(
+        color: dividerColor,
+        tiles: tags.map((e) => ListTile(
+              textColor: foregroundColor,
+              title: Text(HtmlUnescape().convert(e)),
+              onLongPress: () {
+                Navigator.push(
+                    context,
+                    DialogRoute(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: Text(
+                                AppLocalizations.of(context)!.addTagToExcluded),
+                            content: Text(e),
+                            actions: [
+                              TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child:
+                                      Text(AppLocalizations.of(context)!.no)),
+                              TextButton(
+                                  onPressed: () {
+                                    BooruTags().excluded.add(e);
+                                    Navigator.pop(context);
+                                  },
+                                  child:
+                                      Text(AppLocalizations.of(context)!.yes))
+                            ],
+                          );
+                        }));
+              },
+              onTap: () {
+                BooruTags().onPressed(context, HtmlUnescape().convert(e));
+                plug.unFullscreen();
+                extra();
+              },
+            )))
+  ];
+}
+
 String _fileDownloadUrl(String sampleUrl, String originalUrl) {
   if (path_util.extension(originalUrl) == ".zip") {
     return sampleUrl;
@@ -54,9 +114,11 @@ class Post implements Cell {
   final String rating;
   final int score;
   final DateTime createdAt;
+  final String prefix;
 
   String filename() =>
-      "$id - $md5${ext != '.zip' ? ext : path_util.extension(sampleUrl)}";
+      "${prefix.isNotEmpty ? '${prefix}_' : ''}$id - $md5${ext != '.zip' ? ext : path_util.extension(sampleUrl)}";
+
   String downloadUrl() {
     if (path_util.extension(fileUrl) == ".zip") {
       return sampleUrl;
@@ -80,6 +142,7 @@ class Post implements Cell {
       required this.tags,
       required this.width,
       required this.fileUrl,
+      required this.prefix,
       required this.previewUrl,
       required this.sampleUrl,
       required this.ext,
@@ -162,25 +225,9 @@ class Post implements Cell {
             title: Text(AppLocalizations.of(context)!.scoreInfoPage),
             subtitle: Text(score.toString()),
           ),
-          ListTile(
-            textColor: foregroundColor,
-            title: Text(AppLocalizations.of(context)!.tagsInfoPage),
-          ),
+          ...makeTags(context, extra, dividerColor, foregroundColor,
+              systemOverlayColor, tags.split(' ')),
         ];
-
-        var plug = choosePlatformFullscreenPlug(systemOverlayColor);
-
-        list.addAll(ListTile.divideTiles(
-            color: dividerColor,
-            tiles: tags.split(' ').map((e) => ListTile(
-                  textColor: foregroundColor,
-                  title: Text(HtmlUnescape().convert(e)),
-                  onTap: () {
-                    BooruTags().onPressed(context, HtmlUnescape().convert(e));
-                    plug.unFullscreen();
-                    extra();
-                  },
-                ))));
 
         return [
           ListBody(

@@ -19,6 +19,8 @@ abstract class BooruAPI {
 
   String domain();
 
+  Booru booru();
+
   Future<Post> singlePost(int id);
 
   Future<List<Post>> page(int p, String tags);

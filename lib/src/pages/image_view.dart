@@ -255,6 +255,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
 
     widget.updateTagScrollPos(null, null);
     controller.dispose();
+    photoController.dispose();
 
     super.dispose();
   }
@@ -302,13 +303,13 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
           const SingleActivator(LogicalKeyboardKey.arrowRight,
               shift: true)): () {
         var pos = photoController.position;
-        photoController.position = pos.translate(-20, 0);
+        photoController.position = pos.translate(-40, 0);
       },
       SingleActivatorDescription(AppLocalizations.of(context)!.moveImageLeft,
               const SingleActivator(LogicalKeyboardKey.arrowLeft, shift: true)):
           () {
         var pos = photoController.position;
-        photoController.position = pos.translate(20, 0);
+        photoController.position = pos.translate(40, 0);
       },
       SingleActivatorDescription(
           AppLocalizations.of(context)!.rotateImageRight,
@@ -325,16 +326,17 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
       SingleActivatorDescription(AppLocalizations.of(context)!.moveImageUp,
           const SingleActivator(LogicalKeyboardKey.arrowUp)): () {
         var pos = photoController.position;
-        photoController.position = pos.translate(0, 20);
+        photoController.position = pos.translate(0, 40);
       },
       SingleActivatorDescription(AppLocalizations.of(context)!.moveImageDown,
           const SingleActivator(LogicalKeyboardKey.arrowDown)): () {
         var pos = photoController.position;
-        photoController.position = pos.translate(0, -20);
+        photoController.position = pos.translate(0, -40);
       },
       SingleActivatorDescription(AppLocalizations.of(context)!.zoomImageIn,
           const SingleActivator(LogicalKeyboardKey.pageUp)): () {
         var s = photoController.scale;
+
         if (s != null && s < 2.5) {
           photoController.scale = s + 0.5;
         }
@@ -342,13 +344,10 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
       SingleActivatorDescription(AppLocalizations.of(context)!.zoomImageOut,
           const SingleActivator(LogicalKeyboardKey.pageDown)): () {
         var s = photoController.scale;
-        if (s != null && s > 1) {
-          photoController.scale = s - 0.5;
+
+        if (s != null && s > 0.2) {
+          photoController.scale = s - 0.25;
         }
-      },
-      SingleActivatorDescription(AppLocalizations.of(context)!.enterFullscreen,
-          const SingleActivator(LogicalKeyboardKey.keyF)): () {
-        fullscreenPlug.fullscreen();
       },
       SingleActivatorDescription(AppLocalizations.of(context)!.showImageInfo,
           const SingleActivator(LogicalKeyboardKey.keyI)): () {
@@ -442,6 +441,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                             photoController.rotation = 0;
                             photoController.position = Offset.zero;
                             _loadNext(index);
+
                             widget.scrollUntill(index);
 
                             var c = widget.getCell(index);
@@ -473,7 +473,12 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                             } else if (fileContent.type == "image") {
                               return PhotoViewGalleryPageOptions(
                                   controller: photoController,
-                                  minScale: PhotoViewComputedScale.contained,
+                                  minScale:
+                                      PhotoViewComputedScale.contained * 0.8,
+                                  maxScale:
+                                      PhotoViewComputedScale.covered * 1.8,
+                                  initialScale:
+                                      PhotoViewComputedScale.contained,
                                   filterQuality: FilterQuality.high,
                                   imageProvider: fileContent.image);
                             } else {

@@ -7,6 +7,7 @@
 
 import 'package:dio/dio.dart';
 import 'package:gallery/src/booru/interface.dart';
+import 'package:gallery/src/schemas/settings.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 import 'package:path/path.dart' as path;
 
@@ -21,6 +22,9 @@ List<String> _fromGelbooruTags(List<dynamic> l) {
 class Gelbooru implements BooruAPI {
   @override
   Dio client;
+
+  @override
+  Booru booru() => Booru.gelbooru;
 
   @override
   void close() => client.close(force: true);
@@ -172,6 +176,7 @@ class Gelbooru implements BooruAPI {
     for (var post in m) {
       list.add(Post(
           height: post["height"],
+          prefix: booru().prefix,
           id: post["id"],
           md5: post["md5"],
           tags: post["tags"],

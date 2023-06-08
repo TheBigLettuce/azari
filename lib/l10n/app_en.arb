@@ -320,5 +320,163 @@
                 "format": "yMMMMd"
             }
         }
+    },
+    "uploadPageName": "Uploads",
+    "@uploadPageName": {
+        "description": "Keybinding key info, uploads page"
+    },
+    "goUploads": "Go to uploads",
+    "@goUploads": {
+        "description": "Keybinding key info, go to uploads page"
+    },
+    "galleryInnerPageName": "Inner directory grid",
+    "@galleryInnerPageName": {
+        "description": "Inside folder page name"
+    },
+    "uploadStarted": "Upload started",
+    "@uploadStarted": {
+        "description": "User started uploading file info"
+    },
+    "addFiles": "Add files",
+    "@addFiles": {
+        "description": "Choose files for upload"
+    },
+    "deleteImageOption": "Delete",
+    "@deleteImageOption": {
+        "description": "Delete image button label"
+    },
+    "deleteImageConfirm": "Do you want to delete:",
+    "@deleteImageConfirm": {
+        "description": "Delete image conformation, title in dialog, the file is showed separately"
+    },
+    "setAsThumbnail": "Set as folder thumbnail",
+    "@setAsThumbnail": {
+        "description": "Set the choosen image as the folder thumbnail"
+    },
+    "serverSettingsPageName": "Server settings",
+    "@serverSettingsPageName": {
+        "description": "Server settings page name"
+    },
+    "notAValidUrl": "Not a valid url: {text}",
+    "@notAValidUrl": {
+        "description": "Error message shown when server url is invalid",
+        "placeholders": {
+            "text": {
+                "type": "String"
+            }
+        }
+    },
+    "schemeIsRequired": "Scheme is required",
+    "@schemeIsRequired": {
+        "description": "Error message shown when server url has no scheme"
+    },
+    "changeServerUrl": "new",
+    "@changeServerUrl": {
+        "description": "Change server url button label"
+    },
+    "serverAddress": "Address",
+    "@serverAddress": {
+        "description": "Server address list tile title"
+    },
+    "emptyValue": "empty",
+    "@emptyValue": {
+        "description": "Placeholder for empty value"
+    },
+    "enterKey": "Created at",
+    "@enterKey": {
+        "description": "Enter key for the device ID"
+    },
+    "changeDeviceId": "change",
+    "@changeDeviceId": {
+        "description": "Change device ID button label"
+    },
+    "deviceId": "Device ID",
+    "@deviceId": {
+        "description": "Device ID list tile title"
+    },
+    "chooseDirectoryName": "Choose name",
+    "@chooseDirectoryName": {
+        "description": "Choose directory name to create in server"
+    },
+    "newDirectory": "New directory",
+    "@newDirectory": {
+        "description": "Create new directory in server"
+    },
+    "galleryPageName": "Gallery",
+    "@galleryPageName": {
+        "description": "Gallery page name"
+    },
+    "modifyDirectoryPageName": "Modify directory",
+    "@modifyDirectoryPageName": {
+        "description": "Modify directory info page name"
+    },
+    "doYouWantToDelete": "Do you want to delete: {directory}",
+    "@doYouWantToDelete": {
+        "description": "Dialog title displayed when deleting a directory",
+        "placeholders": {
+            "directory": {
+                "type": "String"
+            }
+        }
+    },
+    "directoryAlias": "Alias",
+    "@directoryAlias": {
+        "description": "Directory alias list tile title"
+    },
+    "newAlias": "New alias",
+    "@newAlias": {
+        "description": "Dialog title when inputing the name of new directory alias"
+    },
+    "changeAlias": "change",
+    "@changeAlias": {
+        "description": "Change alias button label"
+    },
+    "directoryCount": "Count",
+    "@directoryCount": {
+        "description": "Count of files inside the directory"
+    },
+    "dateModified": "Date modified",
+    "@dateModified": {
+        "description": "Time of last time the directory was modified"
+    },
+    "directoryPath": "Path",
+    "@directoryPath": {
+        "description": "Real path of the directory"
+    },
+    "savedTagsCount": "Saved tags",
+    "@savedTagsCount": {
+        "description": "Number of the saved tags"
+    },
+    "directoryTitle": "Directory",
+    "@directoryTitle": {
+        "description": "Image info, directory name"
+    },
+    "thumbnailHashTitle": "Thumbnail hash",
+    "@thumbnailHashTitle": {
+        "description": "Image info, thumbnail hash of the image"
+    },
+    "originalHashTitle": "Original hash",
+    "@originalHashTitle": {
+        "description": "Image info, hash of the image"
+    },
+    "typeTitle": "Type",
+    "@typeTitle": {
+        "description": "Image info, type of the image"
+    },
+    "timeTitle": "Time",
+    "@timeTitle": {
+        "description": "Image info, added time of the image"
+    },
+    "nameTitle": "Name",
+    "@nameTitle": {
+        "description": "Image info, name of the image"
+    },
+    "uploadLabel": "Uploads",
+    "@uploadLabel": {
+        "description": "Uploader drawer label"
+    },
+    "addTagToExcluded": "Add tag to exclueded?",
+    "@addTagToExcluded": {
+        "description": "Dialog title when adding tag to excluded from image view tags"
     }
 }

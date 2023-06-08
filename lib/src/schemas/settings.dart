@@ -57,14 +57,24 @@ class Settings {
         safeMode = false;
 }
 
+const _kDanbooruPrefix = "d";
+const _kGelbooruPrefix = "g";
+
 enum Booru {
-  gelbooru(string: "Gelbooru"),
-  danbooru(string: "Danbooru");
+  gelbooru(string: "Gelbooru", prefix: _kGelbooruPrefix),
+  danbooru(string: "Danbooru", prefix: _kDanbooruPrefix);
 
   final String string;
+  final String prefix;
 
-  const Booru({required this.string});
+  const Booru({required this.string, required this.prefix});
 }
+
+Booru? chooseBooruPrefix(String prefix) => switch (prefix) {
+      _kGelbooruPrefix => Booru.gelbooru,
+      _kDanbooruPrefix => Booru.danbooru,
+      String() => null,
+    };
 
 enum DisplayQuality {
   original("Original"),

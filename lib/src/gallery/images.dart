@@ -9,18 +9,27 @@ import 'dart:developer';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/gallery/interface.dart';
 import 'package:gallery/src/schemas/directory.dart';
 import 'package:gallery/src/schemas/directory_file.dart';
+import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:logging/logging.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class Images extends StatefulWidget {
   final Directory cell;
   final GalleryAPIFiles api;
-  const Images(this.api, {super.key, required this.cell});
+  final GlobalKey<CallbackGridState> parentGrid;
+  final void Function(String hash, Directory d) setThumbnail;
+  const Images(this.api,
+      {super.key,
+      required this.cell,
+      required this.setThumbnail,
+      required this.parentGrid});
 
   @override
   State<Images> createState() => _ImagesState();
@@ -41,7 +50,7 @@ class _ImagesState extends State<Images> {
     try {
       var res = await FilePicker.platform.pickFiles(
           allowMultiple: true,
-          type: FileType.image,
+          type: FileType.media,
           allowCompression: false,
           withReadStream: true,
           lockParentWindow: true);
@@ -50,9 +59,12 @@ class _ImagesState extends State<Images> {
         throw "empty files";
       }
 
-      await widget.api.uploadFiles(res.files);
-
-      _gridKey.currentState!.refresh();
+      await widget.api.uploadFiles(res.files, () {
+        if (!isDisposed) {
+          _gridKey.currentState?.refresh();
+          widget.parentGrid.currentState?.refresh();
+        }
+      });
     } catch (e, trace) {
       log("picking files",
           level: Level.SEVERE.value, error: e, stackTrace: trace);
@@ -60,16 +72,12 @@ class _ImagesState extends State<Images> {
   }
 
   Future<int> _refresh() async {
-    return _loadNext(true);
+    return _loadNext();
   }
 
-  Future<int> _loadNext(bool refresh) async {
+  Future<int> _loadNext() async {
     try {
-      if (refresh) {
-        cells = await widget.api.refresh();
-      } else {
-        cells = await widget.api.nextImages();
-      }
+      cells = await widget.api.refresh();
     } catch (e, stackTrace) {
       log("load next images in gallery images",
           level: Level.WARNING.value, error: e, stackTrace: stackTrace);
@@ -96,6 +104,18 @@ class _ImagesState extends State<Images> {
     super.dispose();
   }
 
+  Future<void> _download(int indx) {
+    var df = cells!.cell(indx);
+
+    Downloader().add(File.d(df.fileDownloadUrl(), "gallery", df.name));
+
+    return Future.value();
+  }
+
+  void _setFolderThumbnail(DirectoryFile df) {
+    widget.setThumbnail(df.thumbHash, widget.cell);
+  }
+
   @override
   Widget build(BuildContext context) {
     return makeGridSkeleton(
@@ -105,51 +125,91 @@ class _ImagesState extends State<Images> {
         _key,
         CallbackGrid<DirectoryFile>(
           key: _gridKey,
-          description:
-              GridDescription(kGalleryDrawerIndex, "Inner directory grid"),
+          description: GridDescription(kGalleryDrawerIndex,
+              AppLocalizations.of(context)!.galleryInnerPageName),
           updateScrollPosition: (pos, {double? infoPos, int? selectedCell}) {},
           scaffoldKey: _key,
           refresh: _refresh,
           menuButtonItems: [
             TextButton(
                 onPressed: () {
+                  Navigator.pop(context);
+
                   _addFiles();
 
-                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content:
+                          Text(AppLocalizations.of(context)!.uploadStarted)));
                 },
-                child: Text("Add files"))
+                child: Text(AppLocalizations.of(context)!.addFiles))
           ],
           hasReachedEnd: () => widget.api.reachedEnd,
           search: (s) {},
+          download: _download,
           onBack: () => Navigator.of(context).pop(),
-          loadNext: () => _loadNext(false),
+          // loadNext: () => _loadNext(),
           getCell: (i) => cells!.cell(i),
           initalScrollPosition: 0,
           onLongPress: (indx) {
             var df = cells!.cell(indx);
 
-            return Navigator.of(context).push(DialogRoute(
+            Navigator.of(context).push(DialogRoute(
                 context: context,
-                builder: ((context) {
+                builder: (context) {
                   return AlertDialog(
-                    title: const Text("Do you want to delete:"),
-                    content: Text(df.name),
-                    actions: [
-                      TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text("no")),
-                      TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
+                    content: SizedBox(
+                      height: 100,
+                      width: 300,
+                      child: ListView(
+                        children: [
+                          ListTile(
+                            title: Text(AppLocalizations.of(context)!
+                                .deleteImageOption),
+                            onTap: () {
+                              Navigator.of(context).pushReplacement(DialogRoute(
+                                  context: context,
+                                  builder: ((context) {
+                                    return AlertDialog(
+                                      title: Text(AppLocalizations.of(context)!
+                                          .deleteImageConfirm),
+                                      content: Text(df.name),
+                                      actions: [
+                                        TextButton(
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                            },
+                                            child: Text(
+                                                AppLocalizations.of(context)!
+                                                    .no)),
+                                        TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
 
-                            _deleteFile(df);
-                          },
-                          child: const Text("yes")),
-                    ],
+                                              _deleteFile(df);
+                                            },
+                                            child: Text(
+                                                AppLocalizations.of(context)!
+                                                    .yes)),
+                                      ],
+                                    );
+                                  })));
+                            },
+                          ),
+                          ListTile(
+                            title: Text(
+                                AppLocalizations.of(context)!.setAsThumbnail),
+                            onTap: () {
+                              Navigator.pop(context);
+                              _setFolderThumbnail(df);
+                            },
+                          )
+                        ],
+                      ),
+                    ),
                   );
-                })));
+                }));
+
+            return Future.value();
           },
         ));
   }

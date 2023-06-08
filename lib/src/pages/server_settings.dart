@@ -6,7 +6,7 @@ import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/server_settings.dart';
 import 'package:http/http.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ServerSettingsPage extends StatefulWidget {
   const ServerSettingsPage({super.key});
@@ -65,7 +65,6 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
 
       onSuccess();
     } catch (e, trace) {
-      print(e);
       log("setting deviceId",
           level: Level.WARNING.value, error: e, stackTrace: trace);
     }
@@ -89,7 +88,8 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Server settings")),
+      appBar: AppBar(
+          title: Text(AppLocalizations.of(context)!.serverSettingsPageName)),
       body: ListView(
         children: [
           ListTile(
@@ -107,7 +107,8 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
                                   var uri = Uri.parse(value);
 
                                   if (!uri.hasScheme) {
-                                    throw "Scheme is required";
+                                    throw AppLocalizations.of(context)!
+                                        .schemeIsRequired;
                                   }
 
                                   _checkServer(uri, () {
@@ -131,15 +132,16 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
                                 } catch (e) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                          content: Text(
-                                              "Not an valid URL: ${e.toString()}")));
+                                          content: Text(AppLocalizations.of(
+                                                  context)!
+                                              .notAValidUrl(e.toString()))));
                                 }
                               },
                             ),
                           );
                         }));
               },
-              child: Text("new"),
+              child: Text(AppLocalizations.of(context)!.changeServerUrl),
             ),
             leading: isConnected == null
                 ? IconButton(
@@ -156,10 +158,10 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
                         color: Colors.red,
                         onPressed: _checkConnectivity,
                       ),
-            title: Text("Address"),
+            title: Text(AppLocalizations.of(context)!.serverAddress),
             subtitle: settings.host.isEmpty
                 ? Text(
-                    "empty",
+                    AppLocalizations.of(context)!.emptyValue,
                     style: const TextStyle(fontStyle: FontStyle.italic),
                   )
                 : Text(settings.host),
@@ -175,7 +177,8 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
                               context: context,
                               builder: (context) {
                                 return AlertDialog(
-                                  title: Text("Enter key"),
+                                  title: Text(
+                                      AppLocalizations.of(context)!.enterKey),
                                   content: TextField(
                                     onSubmitted: (value) {
                                       _newDeviceId(value, () {
@@ -194,12 +197,12 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
                                 );
                               }));
                     },
-              child: Text("change"),
+              child: Text(AppLocalizations.of(context)!.changeDeviceId),
             ),
-            title: Text("Device ID"),
+            title: Text(AppLocalizations.of(context)!.deviceId),
             subtitle: settings.deviceId.isEmpty
                 ? Text(
-                    "empty",
+                    AppLocalizations.of(context)!.emptyValue,
                     style: const TextStyle(fontStyle: FontStyle.italic),
                   )
                 : Text(hex.encode(settings.deviceId)),

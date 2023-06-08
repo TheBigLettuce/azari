@@ -26,6 +26,7 @@ Widget makeGridSkeleton(
         key: scaffoldKey,
         drawer: makeDrawer(context, index),
         body: gestureDeadZones(
+          left: true,
           context,
           child: addRail(context, index, grid),
         )),
