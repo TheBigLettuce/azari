@@ -3,10 +3,15 @@ import 'dart:developer';
 import 'package:convert/convert.dart';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
+import 'package:gallery/src/schemas/upload_files.dart';
+import 'package:gallery/src/schemas/upload_files_state.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:mime/mime.dart';
+import 'package:provider/provider.dart';
 
 import '../../db/isar.dart';
 import '../../plugs/notifications.dart';
@@ -18,9 +23,10 @@ bool _isInitalized = false;
 class _HostFileAndDir {
   final Uri host;
   final List<FileAndDir> f;
+  final int stackId;
   final void Function() onSuccess;
 
-  const _HostFileAndDir(this.host, this.f, this.onSuccess);
+  const _HostFileAndDir(this.host, this.f, this.onSuccess, this.stackId);
 }
 
 Map<String, dynamic> _deviceId(ServerSettings s) => {
@@ -43,18 +49,35 @@ class Uploader {
   bool inProgress = false;
   var client = Dio();
   NotificationPlug notification = chooseNotificationPlug();
+  Isar uploadsDb = openUploadsDbIsar();
+
+  List<UploadFilesStack> getStack() {
+    return uploadsDb.uploadFilesStacks.where().findAllSync();
+  }
 
   void add(
     Uri host,
     List<FileAndDir> f,
     void Function() onDone,
   ) {
+    var stackId = uploadsDb.writeTxnSync(() {
+      var id = uploadsDb.uploadFilesStates.putSync(UploadFilesState(f
+          .map((e) => Batch()
+            ..name = e.res.name
+            ..failReason = "")
+          .toList()));
+      return uploadsDb.uploadFilesStacks.putSync(UploadFilesStack(
+          stateId: id, status: UploadStatus.inProgress, count: f.length));
+    });
+
     if (inProgress) {
-      _stack.add(_HostFileAndDir(host, f, onDone));
+      _stack.add(_HostFileAndDir(host, f, onDone, stackId));
     } else {
-      _start(_HostFileAndDir(host, f, onDone));
+      _start(_HostFileAndDir(host, f, onDone, stackId));
     }
   }
+
+  int count() => _stack.length;
 
   void _start(_HostFileAndDir f) async {
     inProgress = true;
@@ -113,7 +136,22 @@ class Uploader {
       }
 
       f.onSuccess();
+
+      uploadsDb.writeTxnSync(() {
+        var stack = uploadsDb.uploadFilesStacks.getSync(f.stackId);
+        if (stack != null) {
+          uploadsDb.uploadFilesStates.deleteSync(stack.stateId);
+          uploadsDb.uploadFilesStacks.deleteSync(stack.isarId!);
+        }
+      });
     } catch (e, trace) {
+      uploadsDb.writeTxnSync(() {
+        var stack = uploadsDb.uploadFilesStacks.getSync(f.stackId);
+        if (stack != null) {
+          uploadsDb.uploadFilesStacks
+              .putSync(stack..status = UploadStatus.failed);
+        }
+      });
       progress.error(e.toString());
       log("uploading file",
           level: Level.SEVERE.value, error: e, stackTrace: trace);
@@ -125,7 +163,10 @@ class Uploader {
   void _done() {
     inProgress = false;
     if (_stack.isNotEmpty) {
-      _start(_stack.first);
+      _start(
+        _stack.first,
+      );
+      _stack.removeAt(0);
     }
   }
 

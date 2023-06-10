@@ -4,6 +4,7 @@ import 'package:convert/convert.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/server_settings.dart';
+import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:http/http.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -19,12 +20,16 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
   ServerSettings settings =
       isar().serverSettings.getSync(0) ?? ServerSettings.empty();
 
+  FocusNode focus = FocusNode();
+
   bool? isConnected;
   bool isDisposed = false;
 
   @override
   void dispose() {
     isDisposed = true;
+
+    focus.dispose();
 
     super.dispose();
   }
@@ -87,10 +92,12 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-          title: Text(AppLocalizations.of(context)!.serverSettingsPageName)),
-      body: ListView(
+    return makeSkeletonInnerSettings(
+      context,
+      "Server settings",
+      focus,
+      AppBar(title: Text(AppLocalizations.of(context)!.serverSettingsPageName)),
+      ListView(
         children: [
           ListTile(
             trailing: TextButton(

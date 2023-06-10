@@ -215,44 +215,56 @@ class _BooruScrollState extends State<BooruScroll> {
   }
 
   @override
-  Widget build(BuildContext context) =>
-      makeGridSkeleton(context, kBooruGridDrawerIndex, () {
-        if (widget.tags.isNotEmpty) {
-          if (widget.toRestore) {
-            db.restoreStateNext(context, isar.name);
-          }
-        }
+  Widget build(BuildContext context) {
+    var insets = MediaQuery.viewPaddingOf(context);
 
-        return Future.value(true);
-      },
-          _key,
-          CallbackGrid<Post>(
-            description: GridDescription(kBooruGridDrawerIndex,
-                AppLocalizations.of(context)!.booruGridPageName),
-            hasReachedEnd: () => reachedEnd,
-            scaffoldKey: _key,
-            getCell: (i) => isar.posts.getSync(i + 1)!,
-            loadNext: _addLast,
-            refresh: _clearAndRefresh,
-            onBack: widget.tags.isEmpty
-                ? null
-                : () {
-                    if (widget.toRestore) {
-                      db.restoreStateNext(context, isar.name);
-                    } else {
-                      Navigator.pop(context);
-                    }
-                  },
-            searchStartingValue: widget.tags,
-            search: _search,
-            hideAlias: true,
-            onLongPress: _download,
-            download: _download,
-            updateScrollPosition: updateScrollPosition,
-            initalScrollPosition: widget.initalScroll,
-            initalCellCount: widget.clear ? 0 : isar.posts.countSync(),
-            searchFilter: _searchFilter,
-            pageViewScrollingOffset: widget.pageViewScrollingOffset,
-            initalCell: widget.initalPost,
-          ));
+    return makeGridSkeleton(context, kBooruGridDrawerIndex, () {
+      if (widget.tags.isNotEmpty) {
+        if (widget.toRestore) {
+          db.restoreStateNext(context, isar.name);
+        }
+      }
+
+      return Future.value(true);
+    },
+        _key,
+        CallbackGrid<Post>(
+          systemNavigationInsets: insets,
+          description: GridDescription(kBooruGridDrawerIndex,
+              AppLocalizations.of(context)!.booruGridPageName, [
+            GridBottomSheetAction(Icons.download, (selected) {
+              for (var element in selected) {
+                downloader.add(File.d(element.fileDownloadUrl(), booru.domain(),
+                    element.filename()));
+              }
+            }, true)
+          ]),
+          hasReachedEnd: () => reachedEnd,
+          scaffoldKey: _key,
+          columns: settings.picturesPerRow,
+          aspectRatio: settings.ratio.value,
+          getCell: (i) => isar.posts.getSync(i + 1)!,
+          loadNext: _addLast,
+          refresh: _clearAndRefresh,
+          onBack: widget.tags.isEmpty
+              ? null
+              : () {
+                  if (widget.toRestore) {
+                    db.restoreStateNext(context, isar.name);
+                  } else {
+                    Navigator.pop(context);
+                  }
+                },
+          searchStartingValue: widget.tags,
+          search: _search,
+          hideAlias: true,
+          download: _download,
+          updateScrollPosition: updateScrollPosition,
+          initalScrollPosition: widget.initalScroll,
+          initalCellCount: widget.clear ? 0 : isar.posts.countSync(),
+          searchFilter: _searchFilter,
+          pageViewScrollingOffset: widget.pageViewScrollingOffset,
+          initalCell: widget.initalPost,
+        ));
+  }
 }

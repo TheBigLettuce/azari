@@ -5,6 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/widgets.dart';
 import 'package:gallery/src/cell/cell.dart';
 import 'package:gallery/src/cell/data.dart';
@@ -35,8 +36,8 @@ class Directory implements Cell {
   String fileDownloadUrl() => dirPath;
 
   @override
-  CellData getCellData(bool isList) =>
-      CellData(thumb: NetworkImage(imageUrl), name: alias(isList));
+  CellData getCellData(bool isList) => CellData(
+      thumb: CachedNetworkImageProvider(imageUrl), name: alias(isList));
 
   @ignore
   @override

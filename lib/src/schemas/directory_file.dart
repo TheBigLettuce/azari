@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/cell/cell.dart';
 import 'package:gallery/src/cell/data.dart';
@@ -75,7 +76,7 @@ class DirectoryFile implements Cell {
   Content fileDisplay() {
     if (type == 1) {
       return Content("image", false,
-          image: NetworkImage(
+          image: CachedNetworkImageProvider(
               Uri.parse(host).replace(path: '/static/$origHash').toString()));
     } else if (type == 2) {
       return Content("video", false,

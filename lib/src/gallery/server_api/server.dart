@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:convert/convert.dart';
 import 'package:dio/dio.dart';
@@ -11,6 +12,7 @@ import 'package:gallery/src/schemas/directory.dart';
 import 'package:gallery/src/schemas/directory_file.dart';
 import 'package:gallery/src/schemas/server_settings.dart';
 import 'package:isar/isar.dart';
+import 'package:path/path.dart';
 
 Map<String, dynamic> _deviceId(ServerSettings s) => {
       "deviceId": hex.encode(s.deviceId),
@@ -172,6 +174,7 @@ class _ImagesImpl implements GalleryAPIFiles {
           "page": page.toString(),
           "count": "20"
         });
+
     if (resp.statusCode != 200) {
       throw resp.data;
     }
@@ -246,7 +249,7 @@ class _ImagesImpl implements GalleryAPIFiles {
 
         copy.writeTxnSync(() => copy.directoryFiles.putAllSync(sorted));
 
-        if (sorted.length != 20) {
+        if (sorted.length != 40) {
           break;
         }
       }
@@ -286,5 +289,21 @@ class _ImagesImpl implements GalleryAPIFiles {
             data: {"dir": d.dirPath, "file": f.name});
 
     return Future.value();
+  }
+
+  @override
+  Future deleteFiles(List<DirectoryFile> f, void Function() onDone) async {
+    var settings = _settings();
+
+    var resp = await client.postUri(
+        Uri.parse(settings.host).replace(path: "/delete/files"),
+        options: Options(
+            headers: _deviceId(settings), contentType: Headers.jsonContentType),
+        data: jsonEncode(f.map((e) => joinAll([e.dir, e.name])).toList()));
+    if (resp.statusCode != 200) {
+      throw resp.data;
+    }
+
+    onDone();
   }
 }

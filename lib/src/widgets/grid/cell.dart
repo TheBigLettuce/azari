@@ -14,6 +14,7 @@ class GridCell<T extends CellData> extends StatefulWidget {
   final int indx;
   final void Function(BuildContext context, int cellIndx) onPressed;
   final bool hideAlias;
+  final bool tight;
   final Function()? onLongPress;
 
   const GridCell(
@@ -21,6 +22,7 @@ class GridCell<T extends CellData> extends StatefulWidget {
       required T cell,
       required this.indx,
       required this.onPressed,
+      required this.tight,
       bool? hidealias,
       this.onLongPress})
       : _data = cell,
@@ -41,64 +43,72 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
       },
       focusColor: Theme.of(context).colorScheme.primary,
       onLongPress: widget.onLongPress,
-      child: Card(
-          elevation: 0,
-          child: ClipPath(
-            clipper: ShapeBorderClipper(
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15.0))),
-            child: Stack(
-              children: [
-                LayoutBuilder(builder: (context, constraint) {
-                  return Center(
-                      child: Image(
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) {
-                        return child.animate().fadeIn();
-                      }
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Card(
+              margin: widget.tight ? const EdgeInsets.all(0.5) : null,
+              elevation: 0,
+              child: ClipPath(
+                clipper: ShapeBorderClipper(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15.0))),
+                child: Stack(
+                  children: [
+                    if (widget.hideAlias)
+                      Container(
+                        decoration: const BoxDecoration(color: Colors.black45),
+                      ),
+                    Center(
+                        child: Image(
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.error_outline),
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) {
+                          return child.animate().fadeIn();
+                        }
 
-                      return Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.cumulativeBytesLoaded
-                                  .toDouble() /
-                              loadingProgress.expectedTotalBytes!.toDouble(),
-                        ),
-                      );
-                    },
-                    image: widget._data.thumb,
-                    alignment: Alignment.center,
-                    fit: BoxFit.cover,
-                    filterQuality: FilterQuality.high,
-                    width: constraint.maxWidth,
-                    height: constraint.maxHeight,
-                  ));
-                }),
-                Container(
-                  alignment: Alignment.bottomCenter,
-                  decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                        Colors.black.withAlpha(50),
-                        Colors.black12,
-                        Colors.black45
-                      ])),
-                  child: widget.hideAlias
-                      ? null
-                      : Padding(
-                          padding: const EdgeInsets.all(6),
-                          child: Text(
-                            widget._data.name,
-                            softWrap: false,
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 2,
-                            style: const TextStyle(color: Colors.white),
-                          )),
+                        return Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.cumulativeBytesLoaded
+                                    .toDouble() /
+                                loadingProgress.expectedTotalBytes!.toDouble(),
+                          ),
+                        );
+                      },
+                      image: widget._data.thumb,
+                      alignment: Alignment.center,
+                      fit: BoxFit.cover,
+                      filterQuality: FilterQuality.high,
+                      width: constraints.maxWidth,
+                      height: constraints.maxHeight,
+                    )),
+                    if (!widget.hideAlias)
+                      Container(
+                        alignment: Alignment.bottomCenter,
+                        decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                              Colors.black.withAlpha(50),
+                              Colors.black12,
+                              Colors.black45
+                            ])),
+                        child: Padding(
+                            padding: const EdgeInsets.all(6),
+                            child: Text(
+                              widget._data.name,
+                              softWrap: false,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 2,
+                              style: const TextStyle(color: Colors.white),
+                            )),
+                      ),
+                  ],
                 ),
-              ],
-            ),
-          )),
+              ));
+        },
+      ),
     );
   }
 }

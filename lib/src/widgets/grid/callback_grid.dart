@@ -23,18 +23,28 @@ import '../booru/autocomplete_tag.dart';
 import 'cell.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-class GridDescription {
+class GridBottomSheetAction<T extends Cell> {
+  final IconData icon;
+  final void Function(List<T> selected) onPress;
+  final bool closeOnPress;
+  final bool showOnlyWhenSingle;
+
+  const GridBottomSheetAction(this.icon, this.onPress, this.closeOnPress,
+      {this.showOnlyWhenSingle = false});
+}
+
+class GridDescription<T extends Cell> {
   final int drawerIndex;
   final String pageDescription;
+  final List<GridBottomSheetAction<T>> actions;
 
-  const GridDescription(this.drawerIndex, this.pageDescription);
+  const GridDescription(this.drawerIndex, this.pageDescription, this.actions);
 }
 
 class CallbackGrid<T extends Cell> extends StatefulWidget {
   final T Function(int) getCell;
   final int initalCellCount;
   final Future<int> Function()? loadNext;
-  final Future<void> Function(int indx)? onLongPress;
   final Future<void> Function(int indx)? download;
   final Future<int> Function() refresh;
   final void Function(double pos, {double? infoPos, int? selectedCell})
@@ -47,6 +57,11 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
   final bool Function() hasReachedEnd;
   final List<Widget>? menuButtonItems;
+  final EdgeInsets systemNavigationInsets;
+
+  final bool tightMode;
+  final double aspectRatio;
+  final GridColumn columns;
 
   final bool? hideAlias;
   final void Function(BuildContext context, int indx)? overrideOnPress;
@@ -57,7 +72,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
 
   final Stream<int>? progressTicker;
 
-  final GridDescription description;
+  final GridDescription<T> description;
 
   const CallbackGrid(
       {Key? key,
@@ -65,7 +80,11 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       required this.getCell,
       required this.initalScrollPosition,
       required this.scaffoldKey,
+      required this.systemNavigationInsets,
       required this.hasReachedEnd,
+      required this.aspectRatio,
+      required this.columns,
+      this.tightMode = false,
       this.progressTicker,
       this.menuButtonItems,
       this.searchFilter,
@@ -75,7 +94,6 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       required this.search,
       required this.refresh,
       required this.updateScrollPosition,
-      this.onLongPress,
       this.download,
       this.hideAlias,
       this.searchStartingValue = "",
@@ -103,7 +121,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   final _ScrollHack _scrollHack = _ScrollHack();
   Settings settings = isar().settings.getSync(0)!;
   late final StreamSubscription<Settings?> settingsWatcher;
-  late int lastGridColCount = settings.picturesPerRow;
+  //late GridColumn lastGridColCount = settings.picturesPerRow;
 
   BooruAPI booru = getBooru();
 
@@ -112,9 +130,146 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   FocusNode focus = FocusNode();
   FocusNode mainFocus = FocusNode();
 
+  Map<int, T> selected = {};
+
+  PersistentBottomSheetController? currentBottomSheet;
+
   StreamSubscription<int>? ticker;
 
+  int? lastSelected;
+
   String _currentlyHighlightedTag = "";
+
+  Widget _wrapSheetButton(
+      BuildContext context, IconData icon, void Function()? onPressed) {
+    var background = Theme.of(context).colorScheme.background;
+    return Container(
+      margin: const EdgeInsets.only(top: 4, bottom: 4),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [
+          background,
+          background.withOpacity(0.7),
+          background.withOpacity(0.3),
+          background.withOpacity(0.1),
+        ], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+          onPressed: onPressed,
+          icon: Icon(
+            icon,
+            color: onPressed == null
+                ? Theme.of(context).colorScheme.primary.withOpacity(0.4)
+                : Theme.of(context).colorScheme.primary.withOpacity(0.9),
+          )),
+    );
+  }
+
+  void _addSelection(int id, T selection) {
+    if (currentBottomSheet == null) {
+      currentBottomSheet = showBottomSheet(
+          context: context,
+          enableDrag: false,
+          builder: (context) {
+            return Padding(
+              padding:
+                  EdgeInsets.only(bottom: widget.systemNavigationInsets.bottom),
+              child: BottomSheet(
+                  enableDrag: false,
+                  onClosing: () {},
+                  builder: (context) {
+                    return Wrap(
+                      spacing: 4,
+                      children: [
+                        _wrapSheetButton(context, Icons.close_rounded, () {
+                          setState(() {
+                            selected.clear();
+                            currentBottomSheet?.close();
+                          });
+                        }),
+                        ...widget.description.actions
+                            .map((e) => _wrapSheetButton(
+                                context,
+                                e.icon,
+                                e.showOnlyWhenSingle && selected.length != 1
+                                    ? null
+                                    : () {
+                                        e.onPress(selected.values.toList());
+
+                                        if (e.closeOnPress) {
+                                          setState(() {
+                                            selected.clear();
+                                            currentBottomSheet?.close();
+                                          });
+                                        }
+                                      }))
+                            .toList()
+                      ],
+                    );
+                  }),
+            );
+          });
+    } else {
+      if (currentBottomSheet != null && currentBottomSheet!.setState != null) {
+        currentBottomSheet!.setState!(() {});
+      }
+    }
+
+    setState(() {
+      selected[id] = selection;
+      lastSelected = id;
+    });
+  }
+
+  void _removeSelection(int id) {
+    setState(() {
+      selected.remove(id);
+      if (selected.isEmpty) {
+        currentBottomSheet?.close();
+        currentBottomSheet = null;
+        lastSelected = null;
+      } else {
+        if (currentBottomSheet != null &&
+            currentBottomSheet!.setState != null) {
+          currentBottomSheet!.setState!(() {});
+        }
+      }
+    });
+  }
+
+  void _selectUntil(int indx) {
+    if (lastSelected != null) {
+      if (lastSelected == indx) {
+        return;
+      }
+
+      if (indx < lastSelected!) {
+        for (var i = lastSelected!; i >= indx; i--) {
+          selected[i] = widget.getCell(i);
+          lastSelected = i;
+        }
+        setState(() {});
+      } else if (indx > lastSelected!) {
+        for (var i = lastSelected!; i <= indx; i++) {
+          selected[i] = widget.getCell(i);
+          lastSelected = i;
+        }
+        setState(() {});
+      }
+
+      if (currentBottomSheet != null && currentBottomSheet!.setState != null) {
+        currentBottomSheet!.setState!(() {});
+      }
+    }
+  }
+
+  void _selectOrUnselect(int index, T selection) {
+    if (selected[index] == null) {
+      _addSelection(index, selection);
+    } else {
+      _removeSelection(index);
+    }
+  }
 
   @override
   void initState() {
@@ -153,22 +308,20 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     settingsWatcher = isar().settings.watchObject(0).listen((event) {
       if (settings.selectedBooru != event!.selectedBooru) {
         cellCount = 0;
-        Navigator.of(context).popUntil(ModalRoute.withName("/booru"));
-        Navigator.pop(context);
 
-        Navigator.of(context).pushNamed("/booru", arguments: true);
         return;
       }
 
       // not perfect, but fine
-      if (lastGridColCount != event.picturesPerRow) {
-        controller.position.jumpTo(
-            controller.offset * lastGridColCount / event.picturesPerRow);
-      }
+      /* if (lastGridColCount != event.picturesPerRow) {
+        controller.position.jumpTo(controller.offset *
+            lastGridColCount.number /
+            event.picturesPerRow.number);
+      }*/
 
       setState(() {
         settings = event;
-        lastGridColCount = event.picturesPerRow;
+        //lastGridColCount = event.picturesPerRow;
       });
     });
 
@@ -230,6 +383,9 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   }
 
   Future refresh() {
+    currentBottomSheet?.close();
+    selected.clear();
+
     return widget.refresh().then((value) {
       if (context.mounted) {
         setState(() {
@@ -244,7 +400,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   }
 
   void _scrollUntill(int p) {
-    var picPerRow = settings.picturesPerRow;
+    var picPerRow = widget.columns;
     // Get the full content height.
     final contentSize = controller.position.viewportDimension +
         controller.position.maxScrollExtent;
@@ -253,7 +409,9 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     if (settings.listViewBooru) {
       target = contentSize * p / cellCount;
     } else {
-      target = contentSize * (p / picPerRow - 1) / (cellCount / picPerRow);
+      target = contentSize *
+          (p / picPerRow.number - 1) /
+          (cellCount / picPerRow.number);
     }
 
     if (target < controller.position.minScrollExtent) {
@@ -340,6 +498,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       if (widget.onBack != null)
         SingleActivatorDescription(AppLocalizations.of(context)!.back,
             const SingleActivator(LogicalKeyboardKey.escape)): () {
+          selected.clear();
+          currentBottomSheet?.close();
           widget.onBack!();
         },
       if (widget.additionalKeybinds != null) ...widget.additionalKeybinds!,
@@ -376,6 +536,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
                       SliverAppBar(
+                        automaticallyImplyLeading: false,
                         title: autocompleteWidget(
                           textEditingController,
                           (s) {
@@ -416,7 +577,13 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                         ],
                         leading: widget.onBack != null
                             ? IconButton(
-                                onPressed: widget.onBack,
+                                onPressed: () {
+                                  selected.clear();
+                                  currentBottomSheet?.close();
+                                  if (widget.onBack != null) {
+                                    widget.onBack!();
+                                  }
+                                },
                                 icon: const Icon(Icons.arrow_back))
                             : null,
                         pinned:
@@ -444,21 +611,32 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                               ),
                               itemCount: cellCount,
                               itemBuilder: (context, index) {
-                                var cell = widget
-                                    .getCell(index)
-                                    .getCellData(settings.listViewBooru);
+                                var cell = widget.getCell(index);
+                                var cellData =
+                                    cell.getCellData(settings.listViewBooru);
+                                ;
 
-                                return ListTile(
-                                  onTap: () => _onPressed(context, index),
-                                  leading: CircleAvatar(
-                                      backgroundColor: Theme.of(context)
-                                          .colorScheme
-                                          .background,
-                                      foregroundImage: cell.thumb),
-                                  title: Text(
-                                    cell.name,
-                                    softWrap: false,
-                                    overflow: TextOverflow.ellipsis,
+                                return _WrappedSelection(
+                                  selectUntil: _selectUntil,
+                                  thisIndx: index,
+                                  isSelected: selected[index] != null,
+                                  selectionEnabled: selected.isNotEmpty,
+                                  selectUnselect: () =>
+                                      _selectOrUnselect(index, cell),
+                                  child: ListTile(
+                                    onLongPress: () =>
+                                        _selectOrUnselect(index, cell),
+                                    onTap: () => _onPressed(context, index),
+                                    leading: CircleAvatar(
+                                        backgroundColor: Theme.of(context)
+                                            .colorScheme
+                                            .background,
+                                        foregroundImage: cellData.thumb),
+                                    title: Text(
+                                      cellData.name,
+                                      softWrap: false,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
                                 ).animate().fadeIn();
                               },
@@ -466,33 +644,109 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                           : SliverGrid.builder(
                               gridDelegate:
                                   SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: settings.picturesPerRow),
+                                      childAspectRatio: widget.aspectRatio,
+                                      crossAxisCount: widget.columns.number),
                               itemCount: cellCount,
                               itemBuilder: (context, indx) {
-                                var m = widget
-                                    .getCell(indx)
-                                    .getCellData(settings.listViewBooru);
-                                return GridCell(
-                                  cell: m,
-                                  hidealias: widget.hideAlias,
-                                  indx: indx,
-                                  onPressed: _onPressed,
-                                  onLongPress: widget.onLongPress == null
-                                      ? null
-                                      : () async {
-                                          widget.onLongPress!(indx)
-                                              .onError((error, stackTrace) {
-                                            log("onLongPress in the grid callback to CellImageWidget",
-                                                level: Level.WARNING.value,
-                                                error: error,
-                                                stackTrace: stackTrace);
-                                          });
-                                        }, //extend: maxExtend,
+                                var m = widget.getCell(indx);
+                                var cellData =
+                                    m.getCellData(settings.listViewBooru);
+
+                                return _WrappedSelection(
+                                  selectionEnabled: selected.isNotEmpty,
+                                  thisIndx: indx,
+                                  selectUntil: _selectUntil,
+                                  selectUnselect: () =>
+                                      _selectOrUnselect(indx, m),
+                                  isSelected: selected[indx] != null,
+                                  child: GridCell(
+                                    cell: cellData,
+                                    hidealias: widget.hideAlias,
+                                    indx: indx,
+                                    tight: widget.tightMode,
+                                    onPressed: _onPressed,
+                                    onLongPress: () => _selectOrUnselect(
+                                        indx, m), //extend: maxExtend,
+                                  ),
                                 );
                               },
                             )
                     ],
                   ))),
         ));
+  }
+}
+
+/* widget.onLongPress == null
+                                        ? null
+                                        : () async {
+                                            widget.onLongPress!(indx)
+                                                .onError((error, stackTrace) {
+                                              log("onLongPress in the grid callback to CellImageWidget",
+                                                  level: Level.WARNING.value,
+                                                  error: error,
+                                                  stackTrace: stackTrace);
+                                            });
+                                          } */
+
+class _WrappedSelection extends StatelessWidget {
+  final Widget child;
+  final bool isSelected;
+  final bool selectionEnabled;
+  final int thisIndx;
+  final void Function() selectUnselect;
+  final void Function(int indx) selectUntil;
+  const _WrappedSelection(
+      {required this.child,
+      required this.isSelected,
+      required this.selectUnselect,
+      required this.thisIndx,
+      required this.selectionEnabled,
+      required this.selectUntil});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        GestureDetector(
+          onTap: selectUnselect,
+          onLongPress: () => selectUntil(thisIndx),
+          child: AbsorbPointer(
+            absorbing: selectionEnabled,
+            child: child,
+          ),
+        ),
+        if (isSelected)
+          GestureDetector(
+            onTap: selectUnselect,
+            child: Container(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: SizedBox(
+                    width: Theme.of(context).iconTheme.size,
+                    height: Theme.of(context).iconTheme.size,
+                    child: Container(
+                      decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle),
+                      child: Icon(
+                        Icons.check_outlined,
+                        color: Theme.of(context).brightness != Brightness.light
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.primaryContainer,
+                        shadows: const [
+                          Shadow(blurRadius: 0, color: Colors.black)
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          )
+      ],
+    );
   }
 }

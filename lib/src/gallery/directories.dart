@@ -105,16 +105,35 @@ class _DirectoriesState extends State<Directories> {
 
   @override
   Widget build(BuildContext context) {
+    var insets = MediaQuery.viewPaddingOf(context);
+
     return makeGridSkeleton(
         context,
         kGalleryDrawerIndex,
         () => popUntilSenitel(context),
         GlobalKey(),
         CallbackGrid<Directory>(
+          systemNavigationInsets: insets,
           key: _gridKey,
+          columns: settings.gallerySettings.directoryColumns ?? GridColumn.two,
+          aspectRatio:
+              settings.gallerySettings.directoryAspectRatio?.value ?? 1,
           description: GridDescription(
             kGalleryDrawerIndex,
             AppLocalizations.of(context)!.galleryPageName,
+            [
+              GridBottomSheetAction(Icons.info_outline, (selected) {
+                var d = selected.first;
+
+                Navigator.push(context, MaterialPageRoute(builder: (context) {
+                  return ModifyDirectory(
+                    api,
+                    old: d,
+                    refreshKey: _gridKey,
+                  );
+                }));
+              }, false, showOnlyWhenSingle: true)
+            ],
           ),
           updateScrollPosition: (pos, {double? infoPos, int? selectedCell}) {},
           scaffoldKey: _key,
@@ -122,19 +141,7 @@ class _DirectoriesState extends State<Directories> {
           hasReachedEnd: () => true,
           refresh: () => _refresh(false),
           search: (s) {},
-          onLongPress: (indx) {
-            var d = directories!.cell(indx);
-
-            Navigator.push(context, MaterialPageRoute(builder: (context) {
-              return ModifyDirectory(
-                api,
-                old: d,
-                refreshKey: _gridKey,
-              );
-            }));
-
-            return Future.value();
-          },
+          hideAlias: settings.gallerySettings.hideDirectoryName,
           initalScrollPosition: 0,
           menuButtonItems: [
             TextButton(

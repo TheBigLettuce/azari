@@ -40,7 +40,7 @@ int numberOfElementsPerRefresh() {
     return 20;
   }
 
-  return 10 * settings.picturesPerRow;
+  return 10 * settings.picturesPerRow.number;
 }
 
 bool isSafeModeEnabled() => isar().settings.getSync(0)!.safeMode;

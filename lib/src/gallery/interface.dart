@@ -18,6 +18,7 @@ abstract class GalleryAPIFiles {
 
   Future delete(DirectoryFile f);
   Future uploadFiles(List<PlatformFile> l, void Function() onDone);
+  Future deleteFiles(List<DirectoryFile> f, void Function() onDone);
 
   void close();
 }

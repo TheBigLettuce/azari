@@ -25,6 +25,8 @@ import 'package:gallery/src/schemas/scroll_position.dart';
 import 'package:gallery/src/schemas/secondary_grid.dart';
 import 'package:gallery/src/schemas/server_settings.dart';
 import 'package:gallery/src/schemas/tags.dart';
+import 'package:gallery/src/schemas/upload_files.dart';
+import 'package:gallery/src/schemas/upload_files_state.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import '../pages/booru_scroll.dart';
@@ -169,6 +171,25 @@ Isar openServerApiIsar() {
 
   return Isar.openSync([DirectorySchema],
       directory: _directoryPath, inspector: false, name: "serverApi");
+}
+
+Isar openUploadsDbIsar() {
+  var db = Isar.openSync([UploadFilesStackSchema, UploadFilesStateSchema],
+      directory: _directoryPath, inspector: false, name: "uploadsDb");
+
+  var list = db.uploadFilesStacks
+      .filter()
+      .statusEqualTo(UploadStatus.inProgress)
+      .findAllSync();
+
+  if (list.isNotEmpty) {
+    db.writeTxnSync(() {
+      db.uploadFilesStacks.putAllSync(
+          list.map((e) => e..status = UploadStatus.failed).toList());
+    });
+  }
+
+  return db;
 }
 
 Isar openTagsDbIsar() {

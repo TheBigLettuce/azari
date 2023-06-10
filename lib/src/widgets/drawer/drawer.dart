@@ -17,6 +17,7 @@ import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import '../../db/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/gallery/uploader/uploader.dart' as upd;
 
 import 'package:gallery/src/pages/settings.dart' as widget;
 
@@ -49,7 +50,11 @@ List<NavigationDrawerDestination> destinations(BuildContext context) {
             : const Icon(Icons.download),
         label: Text(AppLocalizations.of(context)!.downloadsLabel)),
     NavigationDrawerDestination(
-        icon: const Icon(Icons.upload),
+        icon: upd.Uploader().count() != 0
+            ? const Badge(
+                child: Icon(Icons.upload),
+              )
+            : const Icon(Icons.upload),
         label: Text(AppLocalizations.of(context)!.uploadLabel))
   ];
 }
