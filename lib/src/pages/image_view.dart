@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
+import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/system_gestures.dart';
 import 'package:logging/logging.dart';
 import 'package:media_kit/media_kit.dart';
@@ -222,10 +223,11 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
 
   PhotoViewController photoController = PhotoViewController();
 
+  final GlobalKey<ScaffoldState> key = GlobalKey();
+
   AnimationController? downloadButtonController;
 
   bool isAppbarShown = true;
-  bool isInfoShown = false;
 
   late PlatformFullscreensPlug fullscreenPlug =
       choosePlatformFullscreenPlug(widget.systemOverlayRestoreColor);
@@ -236,11 +238,12 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
 
     scrollController =
         ScrollController(initialScrollOffset: widget.infoScrollOffset ?? 0);
-    if (widget.infoScrollOffset != null) {
-      isInfoShown = true;
-    }
 
     WidgetsBinding.instance.scheduleFrameCallback((_) {
+      if (widget.infoScrollOffset != null) {
+        key.currentState?.openEndDrawer();
+      }
+
       fullscreenPlug.setTitle(currentCell.alias(true));
       _loadNext(widget.startingCell);
     });
@@ -290,10 +293,8 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
     Map<SingleActivatorDescription, Null Function()> bindings = {
       SingleActivatorDescription(AppLocalizations.of(context)!.back,
           const SingleActivator(LogicalKeyboardKey.escape)): () {
-        if (isInfoShown) {
-          setState(() {
-            isInfoShown = !isInfoShown;
-          });
+        if (key.currentState?.isEndDrawerOpen ?? false) {
+          key.currentState?.closeEndDrawer();
         } else {
           Navigator.pop(context);
         }
@@ -351,9 +352,13 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
       },
       SingleActivatorDescription(AppLocalizations.of(context)!.showImageInfo,
           const SingleActivator(LogicalKeyboardKey.keyI)): () {
-        setState(() {
-          isInfoShown = !isInfoShown;
-        });
+        if (key.currentState != null) {
+          if (key.currentState!.isEndDrawerOpen) {
+            key.currentState?.closeEndDrawer();
+          } else {
+            key.currentState?.openEndDrawer();
+          }
+        }
       },
       SingleActivatorDescription(AppLocalizations.of(context)!.downloadImage,
           const SingleActivator(LogicalKeyboardKey.keyD)): () {
@@ -375,6 +380,12 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
             duration: 500.milliseconds, curve: Curves.linear);
       }
     };
+
+    var addInfo = currentCell.addInfo(context, () {
+      widget.updateTagScrollPos(scrollController.offset, currentPage);
+    }, Theme.of(context).colorScheme.outlineVariant, kListTileColorInInfo,
+        widget.systemOverlayRestoreColor);
+
     return CallbackShortcuts(
         bindings: {
           ...bindings,
@@ -384,14 +395,29 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
         child: Focus(
           autofocus: true,
           child: Scaffold(
+              key: key,
               extendBodyBehindAppBar: true,
+              endDrawerEnableOpenDragGesture: false,
+              endDrawer: Drawer(
+                backgroundColor:
+                    Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                child: CustomScrollView(
+                  controller: scrollController,
+                  slivers: [
+                    endDrawerHeading(context, "Info", key),
+                    SliverList.list(children: [if (addInfo != null) ...addInfo])
+                  ],
+                ),
+              ),
               appBar: PreferredSize(
                 preferredSize: AppBar().preferredSize,
                 child: IgnorePointer(
                   ignoring: !isAppbarShown,
                   child: AppBar(
+                    automaticallyImplyLeading: false,
                     foregroundColor: kListTileColorInInfo,
                     backgroundColor: Colors.black.withOpacity(0.5),
+                    leading: const BackButton(),
                     title: Text(currentCell.alias(false)),
                     actions: [
                       if (addB != null) ...addB,
@@ -410,9 +436,9 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                                 effects: const [ShakeEffect()],
                                 autoPlay: false),
                       IconButton(
-                          onPressed: () => setState(() {
-                                isInfoShown = !isInfoShown;
-                              }),
+                          onPressed: () {
+                            key.currentState?.openEndDrawer();
+                          },
                           icon: const Icon(Icons.info_outline))
                     ],
                   ),
@@ -488,26 +514,6 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                             }
                           }),
                     ),
-                    Animate(effects: [
-                      SwapEffect(builder: (_, __) {
-                        var addInfo = currentCell.addInfo(context, () {
-                          widget.updateTagScrollPos(
-                              scrollController.offset, currentPage);
-                        },
-                            Theme.of(context).colorScheme.outlineVariant,
-                            kListTileColorInInfo,
-                            widget.systemOverlayRestoreColor);
-
-                        return Container(
-                          decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.5)),
-                          child:
-                              ListView(controller: scrollController, children: [
-                            if (addInfo != null) ...addInfo,
-                          ]),
-                        ).animate().fadeIn();
-                      })
-                    ], target: isInfoShown ? 1 : 0, autoPlay: false)
                   ]),
                   left: true,
                   right: true)),

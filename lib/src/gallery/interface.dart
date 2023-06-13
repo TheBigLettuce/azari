@@ -10,7 +10,7 @@ class Result<T extends Cell> {
   const Result(this.cell, this.count);
 }
 
-abstract class GalleryAPIFiles {
+abstract class GalleryAPIFiles<T> {
   bool get reachedEnd;
 
   //Future<Result<DirectoryFile>> nextImages();
@@ -18,16 +18,16 @@ abstract class GalleryAPIFiles {
 
   Future delete(DirectoryFile f);
   Future uploadFiles(List<PlatformFile> l, void Function() onDone);
-  Future deleteFiles(List<DirectoryFile> f, void Function() onDone);
+  Future deleteFiles(List<T> f, void Function() onDone);
 
   void close();
 }
 
-abstract class GalleryAPI {
+abstract class GalleryAPI<T> {
   Dio get client;
 
   Future<Result<Directory>> directories();
-  GalleryAPIFiles images(Directory d);
+  GalleryAPIFiles<T> images(Directory d);
 
   Future modify(Directory old, Directory newd);
   Future setThumbnail(String newThumb, Directory d);

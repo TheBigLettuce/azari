@@ -21,7 +21,7 @@ class Content {
   Content(this.type, this.isVideoLocal, {this.image, this.videoPath});
 }
 
-abstract class Cell {
+abstract class Cell<B> {
   //String get path;
 
   String alias(bool isList);
@@ -39,5 +39,6 @@ abstract class Cell {
 
   CellData getCellData(bool isList);
 
+  B shrinkedData();
   //Cell({required this.path, required this.addInfo, required this.addButtons});
 }

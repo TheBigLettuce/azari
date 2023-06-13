@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery/src/gallery/uploader/uploader.dart';
 import 'package:gallery/src/keybinds/keybinds.dart';
-import 'package:gallery/src/pages/senitel.dart';
 import 'package:gallery/src/schemas/upload_files.dart';
 import 'package:gallery/src/schemas/upload_files_state.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
@@ -32,6 +31,7 @@ class _UploadInfoState extends State<UploadInfo> {
   FocusNode focus = FocusNode();
   late StreamSubscription<void> update;
   UploadFilesState? state;
+  GlobalKey<ScaffoldState> key = GlobalKey();
 
   @override
   void initState() {
@@ -61,44 +61,30 @@ class _UploadInfoState extends State<UploadInfo> {
 
   @override
   Widget build(BuildContext context) {
-    Map<SingleActivatorDescription, Null Function()> bindings = {
-      SingleActivatorDescription(AppLocalizations.of(context)!.back,
-          const SingleActivator(LogicalKeyboardKey.escape)): () {
-        Navigator.pop(context);
-      },
-      ...digitAndSettings(context, kUploadsDrawerIndex)
-    };
     return makeSkeleton(
       context,
       kUploadsDrawerIndex,
       "Uploads inner",
+      key,
       focus,
-      bindings,
-      AppBar(
-        title: Text(widget.status == UploadStatus.failed
-            ? "Upload (failed)"
-            : "Upload info"),
-      ),
-      state == null
-          ? const EmptyWidget()
-          : ListView.builder(
-              itemCount: state!.upload.length,
-              itemBuilder: (context, index) {
-                var upload = state!.upload[index];
+      popSenitel: false,
+      itemCount: state != null ? state!.upload.length : 0,
+      builder: state == null
+          ? (_, __) => const EmptyWidget()
+          : ((context, indx) {
+              var upload = state!.upload[indx];
 
-                return ListTile(
-                  title: Text(
-                    upload.name!,
-                    style: const TextStyle(overflow: TextOverflow.ellipsis),
-                    maxLines: 1,
-                    softWrap: false,
-                  ),
-                  subtitle: upload.failReason! == ""
-                      ? null
-                      : Text(upload.failReason!),
-                );
-              },
-            ),
+              return ListTile(
+                title: Text(
+                  upload.name!,
+                  style: const TextStyle(overflow: TextOverflow.ellipsis),
+                  maxLines: 1,
+                  softWrap: false,
+                ),
+                subtitle:
+                    upload.failReason! == "" ? null : Text(upload.failReason!),
+              );
+            }),
       overrideOnPop: () => Future.value(true),
     );
   }

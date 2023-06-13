@@ -15,6 +15,7 @@ import 'package:gallery/src/gallery/modify_directory.dart';
 import 'package:gallery/src/gallery/server_api/server.dart';
 import 'package:gallery/src/pages/senitel.dart';
 import 'package:gallery/src/schemas/directory.dart';
+import 'package:gallery/src/schemas/directory_file.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:logging/logging.dart';
@@ -37,7 +38,7 @@ class _DirectoriesState extends State<Directories> {
   //late Stream<int> thumbnailWatcher;
   late Settings settings = db.isar().settings.getSync(0)!;
   late StreamSubscription<Settings?> settingsWatcher;
-  GalleryAPI api = ServerAPI(db.openServerApiIsar());
+  GalleryAPI<DirectoryFileShrinked> api = ServerAPI(db.openServerApiIsar());
   Result<Directory>? directories;
   bool isDisposed = false;
 
@@ -111,8 +112,8 @@ class _DirectoriesState extends State<Directories> {
         context,
         kGalleryDrawerIndex,
         () => popUntilSenitel(context),
-        GlobalKey(),
-        CallbackGrid<Directory>(
+        _key,
+        CallbackGrid<Directory, Directory>(
           systemNavigationInsets: insets,
           key: _gridKey,
           columns: settings.gallerySettings.directoryColumns ?? GridColumn.two,

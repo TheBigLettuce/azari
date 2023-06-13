@@ -17,6 +17,7 @@ import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/schemas/excluded_tags.dart';
 import 'package:gallery/src/schemas/tags.dart';
+import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -56,6 +57,8 @@ class _SearchBooruState extends State<SearchBooru> {
   AnimationController? replaceController;
   AnimationController? deleteAllExcludedController;
   AnimationController? deleteAllController;
+
+  GlobalKey<ScaffoldState> key = GlobalKey();
 
   @override
   void initState() {
@@ -132,212 +135,201 @@ class _SearchBooruState extends State<SearchBooru> {
 
   @override
   Widget build(BuildContext context) {
-    Map<SingleActivatorDescription, Null Function()> bindings = {
-      SingleActivatorDescription(AppLocalizations.of(context)!.back,
-          const SingleActivator(LogicalKeyboardKey.escape)): () {
-        popUntilSenitel(context);
-      },
-      SingleActivatorDescription(AppLocalizations.of(context)!.selectSuggestion,
-          const SingleActivator(LogicalKeyboardKey.enter, shift: true)): () {
-        if (focus.hasFocus) {
-          if (searchHighlight.isNotEmpty) {
-            _onTagPressed(searchHighlight);
-          }
-        } else if (excludedFocus.hasFocus) {
-          if (excludedHighlight.isNotEmpty) {
-            _tags.excluded.add(excludedHighlight);
-            excludedTagsTextController.text = "";
-          }
-        }
-      },
-      SingleActivatorDescription(AppLocalizations.of(context)!.focusSearch,
-          const SingleActivator(LogicalKeyboardKey.keyF, control: true)): () {
-        if (focus.hasFocus) {
-          focus.unfocus();
-        } else {
-          focus.requestFocus();
-        }
-      },
-      SingleActivatorDescription(AppLocalizations.of(context)!.focusSinglePost,
-          const SingleActivator(LogicalKeyboardKey.keyF, alt: true)): () {
-        if (singlePostFocus.hasFocus) {
-          singlePostFocus.unfocus();
-        } else {
-          singlePostFocus.requestFocus();
-        }
-      },
-      SingleActivatorDescription(
-          AppLocalizations.of(context)!.focusExcludedSearch,
-          const SingleActivator(LogicalKeyboardKey.keyF, shift: true)): () {
-        if (excludedFocus.hasFocus) {
-          if (replaceController != null) {
-            replaceController!
-                .reverse(from: 1)
-                .then((value) => excludedFocus.unfocus());
-          } else {
-            excludedFocus.unfocus();
-          }
-        } else {
-          if (replaceController != null) {
-            replaceController!
-                .forward(from: 0)
-                .then((value) => excludedFocus.requestFocus());
-          } else {
-            excludedFocus.requestFocus();
-          }
-        }
-      },
-      ...digitAndSettings(context, kTagsDrawerIndex)
-    };
-
-    return makeSkeleton(
-        context,
-        kTagsDrawerIndex,
-        AppLocalizations.of(context)!.tagsPageName,
-        mainFocus,
-        bindings,
-        AppBar(
-          title: Text(AppLocalizations.of(context)!.tagsPageAppbarTitle),
-        ),
-        ListView(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 10, right: 10),
-              child: autocompleteWidget(textController, (s) {
-                searchHighlight = s;
-              }, _onTagPressed, booru.completeTag, focus,
-                  roundBorders: true, showSearch: true),
-            ),
-            ListTile(
-              title: Text(AppLocalizations.of(context)!.singlePostTitle),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 10, right: 10),
-              child: SinglePost(singlePostFocus),
-            ),
-            ListTile(
-              title: Text(AppLocalizations.of(context)!.recentTagsTitle),
-              trailing: IconButton(
-                  onPressed: () {
-                    Navigator.push(
-                        context,
-                        DialogRoute(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: Text(AppLocalizations.of(context)!
-                                  .tagsDeletionDialogTitle),
-                              actions: [
-                                TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child:
-                                        Text(AppLocalizations.of(context)!.no)),
-                                TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                      if (deleteAllController != null) {
-                                        deleteAllController!
-                                            .forward(from: 0)
-                                            .then((value) {
-                                          isar().writeTxnSync(() =>
-                                              isar().lastTags.clearSync());
-                                          if (deleteAllController != null) {
-                                            deleteAllController!
-                                                .reverse(from: 1);
-                                          }
-                                        });
-                                      }
-                                    },
-                                    child:
-                                        Text(AppLocalizations.of(context)!.yes))
-                              ],
-                            );
-                          },
-                        ));
-                  },
-                  icon: const Icon(Icons.delete)),
-            ),
-            TagsWidget(
-                    tags: _lastTags,
-                    deleteTag: (t) {
-                      if (deleteAllController != null) {
-                        deleteAllController!.forward(from: 0).then((value) {
-                          _tags.latest.delete(t);
-                          if (deleteAllController != null) {
-                            deleteAllController!.reverse(from: 1);
-                          }
-                        });
-                      } else {
-                        _tags.latest.delete(t);
-                      }
-                    },
-                    onPress: _onTagPressed)
-                .animate(
-                    onInit: (controller) => deleteAllController = controller,
-                    effects: [
-                      FadeEffect(begin: 1, end: 0, duration: 200.milliseconds)
-                    ],
-                    autoPlay: false),
-            ListTile(
-              title: Text(AppLocalizations.of(context)!.excludedTagsTitle),
-              trailing: IconButton(
-                icon: const Icon(Icons.add),
+    return makeSkeleton(context, kTagsDrawerIndex,
+        AppLocalizations.of(context)!.tagsPageName, key, mainFocus,
+        additionalBindings: {
+          SingleActivatorDescription(
+                  AppLocalizations.of(context)!.selectSuggestion,
+                  const SingleActivator(LogicalKeyboardKey.enter, shift: true)):
+              () {
+            if (focus.hasFocus) {
+              if (searchHighlight.isNotEmpty) {
+                _onTagPressed(searchHighlight);
+              }
+            } else if (excludedFocus.hasFocus) {
+              if (excludedHighlight.isNotEmpty) {
+                _tags.excluded.add(excludedHighlight);
+                excludedTagsTextController.text = "";
+              }
+            }
+          },
+          SingleActivatorDescription(
+              AppLocalizations.of(context)!.focusSearch,
+              const SingleActivator(LogicalKeyboardKey.keyF,
+                  control: true)): () {
+            if (focus.hasFocus) {
+              focus.unfocus();
+            } else {
+              focus.requestFocus();
+            }
+          },
+          SingleActivatorDescription(
+              AppLocalizations.of(context)!.focusSinglePost,
+              const SingleActivator(LogicalKeyboardKey.keyF, alt: true)): () {
+            if (singlePostFocus.hasFocus) {
+              singlePostFocus.unfocus();
+            } else {
+              singlePostFocus.requestFocus();
+            }
+          },
+          SingleActivatorDescription(
+              AppLocalizations.of(context)!.focusExcludedSearch,
+              const SingleActivator(LogicalKeyboardKey.keyF, shift: true)): () {
+            if (excludedFocus.hasFocus) {
+              if (replaceController != null) {
+                replaceController!
+                    .reverse(from: 1)
+                    .then((value) => excludedFocus.unfocus());
+              } else {
+                excludedFocus.unfocus();
+              }
+            } else {
+              if (replaceController != null) {
+                replaceController!
+                    .forward(from: 0)
+                    .then((value) => excludedFocus.requestFocus());
+              } else {
+                excludedFocus.requestFocus();
+              }
+            }
+          },
+        },
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 10, right: 10),
+            child: autocompleteWidget(textController, (s) {
+              searchHighlight = s;
+            }, _onTagPressed, booru.completeTag, focus,
+                roundBorders: true, showSearch: true),
+          ),
+          ListTile(
+            title: Text(AppLocalizations.of(context)!.singlePostTitle),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 10, right: 10),
+            child: SinglePost(singlePostFocus),
+          ),
+          ListTile(
+            title: Text(AppLocalizations.of(context)!.recentTagsTitle),
+            trailing: IconButton(
                 onPressed: () {
-                  if (replaceController != null) {
-                    replaceController!.forward(from: 0);
-                  }
+                  Navigator.push(
+                      context,
+                      DialogRoute(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: Text(AppLocalizations.of(context)!
+                                .tagsDeletionDialogTitle),
+                            actions: [
+                              TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child:
+                                      Text(AppLocalizations.of(context)!.no)),
+                              TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    if (deleteAllController != null) {
+                                      deleteAllController!
+                                          .forward(from: 0)
+                                          .then((value) {
+                                        isar().writeTxnSync(
+                                            () => isar().lastTags.clearSync());
+                                        if (deleteAllController != null) {
+                                          deleteAllController!.reverse(from: 1);
+                                        }
+                                      });
+                                    }
+                                  },
+                                  child:
+                                      Text(AppLocalizations.of(context)!.yes))
+                            ],
+                          );
+                        },
+                      ));
                 },
-              ),
-            ).animate(
-                onInit: (controller) => replaceController = controller,
-                effects: [
-                  FadeEffect(begin: 1, end: 0, duration: 200.milliseconds),
-                  SwapEffect(
-                      builder: (_, __) => ListTile(
-                            title: autocompleteWidget(
-                                excludedTagsTextController, (s) {
-                              excludedHighlight = s;
-                            }, _tags.excluded.add, booru.completeTag,
-                                excludedFocus,
-                                submitOnPress: true, showSearch: true),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.arrow_back),
-                              onPressed: () {
-                                if (replaceController != null) {
-                                  replaceController!.reverse(from: 1);
-                                }
-                              },
-                            ),
-                          ).animate().fadeIn()),
-                ],
-                autoPlay: false),
-            TagsWidget(
-                    redBackground: true,
-                    tags: _excludedTags,
-                    deleteTag: (t) {
-                      if (deleteAllExcludedController != null) {
-                        deleteAllExcludedController!
-                            .forward(from: 0)
-                            .then((value) {
-                          _tags.excluded.delete(t);
-                          if (deleteAllExcludedController != null) {
-                            deleteAllExcludedController!.reverse(from: 1);
-                          }
-                        });
-                      } else {
+                icon: const Icon(Icons.delete)),
+          ),
+          TagsWidget(
+                  tags: _lastTags,
+                  deleteTag: (t) {
+                    if (deleteAllController != null) {
+                      deleteAllController!.forward(from: 0).then((value) {
+                        _tags.latest.delete(t);
+                        if (deleteAllController != null) {
+                          deleteAllController!.reverse(from: 1);
+                        }
+                      });
+                    } else {
+                      _tags.latest.delete(t);
+                    }
+                  },
+                  onPress: _onTagPressed)
+              .animate(
+                  onInit: (controller) => deleteAllController = controller,
+                  effects: [
+                    FadeEffect(begin: 1, end: 0, duration: 200.milliseconds)
+                  ],
+                  autoPlay: false),
+          ListTile(
+            title: Text(AppLocalizations.of(context)!.excludedTagsTitle),
+            trailing: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () {
+                if (replaceController != null) {
+                  replaceController!.forward(from: 0);
+                }
+              },
+            ),
+          ).animate(
+              onInit: (controller) => replaceController = controller,
+              effects: [
+                FadeEffect(begin: 1, end: 0, duration: 200.milliseconds),
+                SwapEffect(
+                    builder: (_, __) => ListTile(
+                          title: autocompleteWidget(excludedTagsTextController,
+                              (s) {
+                            excludedHighlight = s;
+                          }, _tags.excluded.add, booru.completeTag,
+                              excludedFocus,
+                              submitOnPress: true, showSearch: true),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.arrow_back),
+                            onPressed: () {
+                              if (replaceController != null) {
+                                replaceController!.reverse(from: 1);
+                              }
+                            },
+                          ),
+                        ).animate().fadeIn()),
+              ],
+              autoPlay: false),
+          TagsWidget(
+                  redBackground: true,
+                  tags: _excludedTags,
+                  deleteTag: (t) {
+                    if (deleteAllExcludedController != null) {
+                      deleteAllExcludedController!
+                          .forward(from: 0)
+                          .then((value) {
                         _tags.excluded.delete(t);
-                      }
-                    },
-                    onPress: (t) {})
-                .animate(
-                    onInit: (controller) =>
-                        deleteAllExcludedController = controller,
-                    effects: const [FadeEffect(begin: 1, end: 0)],
-                    autoPlay: false)
-          ],
-        ));
+                        if (deleteAllExcludedController != null) {
+                          deleteAllExcludedController!.reverse(from: 1);
+                        }
+                      });
+                    } else {
+                      _tags.excluded.delete(t);
+                    }
+                  },
+                  onPress: (t) {})
+              .animate(
+                  onInit: (controller) =>
+                      deleteAllExcludedController = controller,
+                  effects: const [FadeEffect(begin: 1, end: 0)],
+                  autoPlay: false)
+        ]);
   }
 }
 
@@ -357,49 +349,51 @@ class TagsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 10, right: 10),
-      child: Wrap(
-        spacing: 2,
-        runSpacing: -6,
-        children: tags.map((tag) {
-          return GestureDetector(
-            onLongPress: () {
-              HapticFeedback.vibrate();
-              Navigator.of(context).push(DialogRoute(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                        title: Text(
-                            AppLocalizations.of(context)!.tagDeleteDialogTitle),
-                        content: Text(tag),
-                        actions: [
-                          TextButton(
-                              onPressed: () {
-                                deleteTag(tag);
-                                Navigator.of(context).pop();
-                              },
-                              child: Text(AppLocalizations.of(context)!.yes))
-                        ],
-                      )));
-            },
-            child: ActionChip(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25)),
-              side: redBackground
-                  ? BorderSide(color: Colors.pink.shade200)
-                  : null,
-              backgroundColor: redBackground ? Colors.pink : null,
-              label: Text(tag,
-                  style: redBackground
-                      ? TextStyle(color: Colors.white.withOpacity(0.8))
-                      : null),
-              onPressed: onPress == null
-                  ? null
-                  : () {
-                      onPress!(tag);
-                    },
+      child: tags.isEmpty
+          ? const EmptyWidget()
+          : Wrap(
+              runSpacing: 2,
+              children: tags.map((tag) {
+                return GestureDetector(
+                  onLongPress: () {
+                    HapticFeedback.vibrate();
+                    Navigator.of(context).push(DialogRoute(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                              title: Text(AppLocalizations.of(context)!
+                                  .tagDeleteDialogTitle),
+                              content: Text(tag),
+                              actions: [
+                                TextButton(
+                                    onPressed: () {
+                                      deleteTag(tag);
+                                      Navigator.of(context).pop();
+                                    },
+                                    child:
+                                        Text(AppLocalizations.of(context)!.yes))
+                              ],
+                            )));
+                  },
+                  child: ActionChip(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25)),
+                    side: redBackground
+                        ? BorderSide(color: Colors.pink.shade200)
+                        : null,
+                    backgroundColor: redBackground ? Colors.pink : null,
+                    label: Text(tag,
+                        style: redBackground
+                            ? TextStyle(color: Colors.white.withOpacity(0.8))
+                            : null),
+                    onPressed: onPress == null
+                        ? null
+                        : () {
+                            onPress!(tag);
+                          },
+                  ),
+                );
+              }).toList(),
             ),
-          );
-        }).toList(),
-      ),
     );
   }
 }

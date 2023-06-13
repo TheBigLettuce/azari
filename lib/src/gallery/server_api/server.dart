@@ -32,7 +32,7 @@ String _fromBaseToHex(String v) {
   return hex.encode(base64Decode(v));
 }
 
-class ServerAPI implements GalleryAPI {
+class ServerAPI implements GalleryAPI<DirectoryFileShrinked> {
   Isar serverIsar;
 
   @override
@@ -92,7 +92,7 @@ class ServerAPI implements GalleryAPI {
   ServerAPI(this.serverIsar);
 
   @override
-  GalleryAPIFiles images(Directory d) {
+  GalleryAPIFiles<DirectoryFileShrinked> images(Directory d) {
     return _ImagesImpl(openServerApiInnerIsar(), client, d);
   }
 
@@ -149,7 +149,7 @@ class ServerAPI implements GalleryAPI {
       _modifyDir(d.dirPath, newHash: newThumb);
 }
 
-class _ImagesImpl implements GalleryAPIFiles {
+class _ImagesImpl implements GalleryAPIFiles<DirectoryFileShrinked> {
   Isar imageIsar;
   int page = 0;
   Dio client;
@@ -292,14 +292,15 @@ class _ImagesImpl implements GalleryAPIFiles {
   }
 
   @override
-  Future deleteFiles(List<DirectoryFile> f, void Function() onDone) async {
+  Future deleteFiles(
+      List<DirectoryFileShrinked> f, void Function() onDone) async {
     var settings = _settings();
 
     var resp = await client.postUri(
         Uri.parse(settings.host).replace(path: "/delete/files"),
         options: Options(
             headers: _deviceId(settings), contentType: Headers.jsonContentType),
-        data: jsonEncode(f.map((e) => joinAll([e.dir, e.name])).toList()));
+        data: jsonEncode(f.map((e) => joinAll([e.dir, e.file])).toList()));
     if (resp.statusCode != 200) {
       throw resp.data;
     }

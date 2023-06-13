@@ -15,6 +15,7 @@ import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/schemas/download_file.dart';
+import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -37,6 +38,8 @@ class _DownloadsState extends State<Downloads> {
 
   AnimationController? refreshController;
   AnimationController? deleteController;
+
+  GlobalKey<ScaffoldState> key = GlobalKey();
 
   @override
   void initState() {
@@ -86,97 +89,77 @@ class _DownloadsState extends State<Downloads> {
 
   @override
   Widget build(BuildContext context) {
-    Map<SingleActivatorDescription, Null Function()> bindings = {
-      SingleActivatorDescription(AppLocalizations.of(context)!.back,
-          const SingleActivator(LogicalKeyboardKey.escape)): () {
-        popUntilSenitel(context);
-      },
-      SingleActivatorDescription(
-          AppLocalizations.of(context)!.refreshStaleDownloads,
-          const SingleActivator(LogicalKeyboardKey.f5)): _refresh,
-      ...digitAndSettings(context, kDownloadsDrawerIndex)
-    };
-
-    return makeSkeleton(
-        context,
-        kDownloadsDrawerIndex,
-        AppLocalizations.of(context)!.downloadsPageName,
-        mainFocus,
-        bindings,
-        AppBar(
-          title: Text(
-            _files == null
-                ? AppLocalizations.of(context)!.downloadsPageName
-                : _files!.isEmpty
-                    ? AppLocalizations.of(context)!.downloadsCountEmpty
-                    : AppLocalizations.of(context)!.downloadsCount(
-                        "${_inProcess().toString()}/${_files!.length.toString()}"),
+    return makeSkeleton(context, kDownloadsDrawerIndex,
+        AppLocalizations.of(context)!.downloadsPageName, key, mainFocus,
+        appBarActions: [
+          Badge(
+            offset: Offset.zero,
+            alignment: Alignment.topLeft,
+            isLabelVisible: _files != null ? _files!.isNotEmpty : false,
+            label: Text(
+                "${_inProcess().toString()}/${_files == null ? 0 : _files!.length.toString()}"),
           ),
-          actions: [
-            IconButton(onPressed: _refresh, icon: const Icon(Icons.refresh))
-                .animate(
-                    onInit: (controller) => refreshController = controller,
-                    effects: const [RotateEffect()],
-                    autoPlay: false),
-            IconButton(
-                    onPressed: () {
-                      if (deleteController != null) {
-                        deleteController!.forward(from: 0);
-                      }
-                      downloader.removeFailed();
-                    },
-                    icon: const Icon(Icons.close))
-                .animate(
-                    onInit: (controller) => deleteController = controller,
-                    effects: const [FlipEffect(begin: 1, end: 0)],
-                    autoPlay: false),
-            IconButton(
-                onPressed: downloader.restart,
-                icon: const Icon(Icons.start_outlined)),
-          ],
-        ),
-        _files == null
-            ? const Center(
-                child: CircularProgressIndicator(),
-              )
-            : ListView.builder(
-                itemCount: _files!.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    onLongPress: () {
-                      var file = _files![index];
-                      Navigator.push(
-                          context,
-                          DialogRoute(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  actions: [
-                                    TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(
-                                            AppLocalizations.of(context)!.no)),
-                                    TextButton(
-                                        onPressed: () {
-                                          downloader.retry(file);
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(
-                                            AppLocalizations.of(context)!.yes)),
-                                  ],
-                                  title: Text(downloader.downloadAction(file)),
-                                  content: Text(file.name),
-                                );
-                              }));
-                    },
-                    title:
-                        Text("${_files![index].site}: ${_files![index].name}"),
-                    subtitle:
-                        Text(downloader.downloadDescription(_files![index])),
-                  );
-                },
-              ));
+          PopupMenuButton(
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                  onTap: () {
+                    if (deleteController != null) {
+                      deleteController!.forward(from: 0);
+                    }
+                    downloader.removeFailed();
+                  },
+                  child: const Icon(Icons.close).animate(
+                      onInit: (controller) => deleteController = controller,
+                      effects: const [FlipEffect(begin: 1, end: 0)],
+                      autoPlay: false)),
+              PopupMenuItem(
+                  onTap: _refresh,
+                  child: const Icon(Icons.refresh).animate(
+                      onInit: (controller) => refreshController = controller,
+                      effects: const [RotateEffect()],
+                      autoPlay: false)),
+              PopupMenuItem(
+                  onTap: downloader.restart,
+                  child: const Icon(Icons.start_outlined)),
+            ],
+          ),
+        ],
+        itemCount: _files != null ? _files!.length : 0,
+        children:
+            _files == null || _files!.isEmpty ? [const EmptyWidget()] : null,
+        builder: _files == null || _files!.isEmpty
+            ? null
+            : (context, indx) => ListTile(
+                  onLongPress: () {
+                    var file = _files![indx];
+                    Navigator.push(
+                        context,
+                        DialogRoute(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                actions: [
+                                  TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(
+                                          AppLocalizations.of(context)!.no)),
+                                  TextButton(
+                                      onPressed: () {
+                                        downloader.retry(file);
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text(
+                                          AppLocalizations.of(context)!.yes)),
+                                ],
+                                title: Text(downloader.downloadAction(file)),
+                                content: Text(file.name),
+                              );
+                            }));
+                  },
+                  title: Text("${_files![indx].site}: ${_files![indx].name}"),
+                  subtitle: Text(downloader.downloadDescription(_files![indx])),
+                ));
   }
 }

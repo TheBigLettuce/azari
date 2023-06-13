@@ -34,7 +34,8 @@ Widget autocompleteWidget(
     bool noSticky = false,
     bool submitOnPress = false,
     bool roundBorders = false,
-    bool showSearch = false}) {
+    bool showSearch = false,
+    List<Widget>? addItems}) {
   return RawAutocomplete<String>(
     textEditingController: controller,
     focusNode: focus,
@@ -110,12 +111,17 @@ Widget autocompleteWidget(
         cursorOpacityAnimates: true,
         decoration: InputDecoration(
             prefixIcon: showSearch ? const Icon(Icons.search_rounded) : null,
-            suffixIcon: IconButton(
-              onPressed: () {
-                textEditingController.clear();
-                focus.unfocus();
-              },
-              icon: const Icon(Icons.close),
+            suffixIcon: Wrap(
+              children: [
+                IconButton(
+                  onPressed: () {
+                    textEditingController.clear();
+                    focus.unfocus();
+                  },
+                  icon: const Icon(Icons.close),
+                ),
+                if (addItems != null) ...addItems,
+              ],
             ),
             hintText: AppLocalizations.of(context)!.searchHint,
             border: roundBorders

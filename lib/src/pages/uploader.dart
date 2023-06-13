@@ -22,6 +22,7 @@ class Uploader extends StatefulWidget {
 class _UploaderState extends State<Uploader> {
   FocusNode focus = FocusNode();
   List<UploadFilesStack> stack = [];
+  GlobalKey<ScaffoldState> key = GlobalKey();
   late StreamSubscription<void> update;
 
   @override
@@ -48,43 +49,27 @@ class _UploaderState extends State<Uploader> {
 
   @override
   Widget build(BuildContext context) {
-    Map<SingleActivatorDescription, Null Function()> bindings = {
-      SingleActivatorDescription(AppLocalizations.of(context)!.back,
-          const SingleActivator(LogicalKeyboardKey.escape)): () {
-        popUntilSenitel(context);
-      },
-      ...digitAndSettings(context, kUploadsDrawerIndex)
-    };
-    return makeSkeleton(
-        context,
-        kUploadsDrawerIndex,
-        AppLocalizations.of(context)!.uploadPageName,
-        focus,
-        bindings,
-        AppBar(
-          title: Text(AppLocalizations.of(context)!.uploadPageName),
-        ),
-        stack.isEmpty
-            ? const EmptyWidget()
-            : ListView.builder(
-                itemCount: stack.length,
-                itemBuilder: (context, indx) {
-                  var upload = stack[indx];
-
-                  return ListTile(
-                    title: Text("Number of files: ${upload.count.toString()}"),
-                    subtitle: Text("${upload.time}: ${upload.status.string}"),
-                    onTap: () {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) {
-                        return UploadInfo(
-                          stateId: upload.stateId,
-                          status: upload.status,
-                        );
-                      }));
-                    },
-                  );
-                },
-              ));
+    return makeSkeleton(context, kUploadsDrawerIndex,
+        AppLocalizations.of(context)!.uploadPageName, key, focus,
+        children: stack.isEmpty ? [const EmptyWidget()] : null,
+        itemCount: stack.length,
+        builder: stack.isEmpty
+            ? null
+            : (context, indx) {
+                var upload = stack[indx];
+                return ListTile(
+                  title: Text("Number of files: ${upload.count.toString()}"),
+                  subtitle: Text("${upload.time}: ${upload.status.string}"),
+                  onTap: () {
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (context) {
+                      return UploadInfo(
+                        stateId: upload.stateId,
+                        status: upload.status,
+                      );
+                    }));
+                  },
+                );
+              });
   }
 }

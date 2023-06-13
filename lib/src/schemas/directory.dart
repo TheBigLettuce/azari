@@ -14,7 +14,7 @@ import 'package:isar/isar.dart';
 part 'directory.g.dart';
 
 @collection
-class Directory implements Cell {
+class Directory implements Cell<Directory> {
   Id? isarId;
 
   @Index(unique: true)
@@ -59,4 +59,7 @@ class Directory implements Cell {
       required this.dirName,
       required this.time,
       required this.count});
+
+  @override
+  shrinkedData() => this;
 }

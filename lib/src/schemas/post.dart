@@ -92,7 +92,7 @@ String _fileDownloadUrl(String sampleUrl, String originalUrl) {
 }
 
 @collection
-class Post implements Cell {
+class Post implements Cell<PostShrinked> {
   Id? isarId;
 
   @Index(unique: true, replace: true)
@@ -277,4 +277,15 @@ class Post implements Cell {
             "Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0"
       }),
       name: alias(isList));
+
+  @override
+  shrinkedData() =>
+      PostShrinked(fileUrl: fileDownloadUrl(), fileName: filename());
+}
+
+class PostShrinked {
+  final String fileUrl;
+  final String fileName;
+
+  const PostShrinked({required this.fileUrl, required this.fileName});
 }

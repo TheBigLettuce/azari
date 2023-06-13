@@ -30,11 +30,16 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 ThemeData _buildTheme(Brightness brightness, Color accentColor) {
   var baseTheme = ThemeData(
-    fontFamily: 'OpenSans',
     brightness: brightness,
     useMaterial3: true,
     colorSchemeSeed: accentColor,
   );
+  baseTheme = baseTheme.copyWith(
+      listTileTheme: baseTheme.listTileTheme.copyWith(
+          isThreeLine: false,
+          subtitleTextStyle: baseTheme.textTheme.bodyMedium!.copyWith(
+            fontWeight: FontWeight.w300,
+          )));
 
   return baseTheme;
 }

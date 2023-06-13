@@ -21,6 +21,7 @@ import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:path/path.dart' as path;
 
 import '../schemas/download_file.dart';
 import '../schemas/secondary_grid.dart';
@@ -228,14 +229,14 @@ class _BooruScrollState extends State<BooruScroll> {
       return Future.value(true);
     },
         _key,
-        CallbackGrid<Post>(
+        CallbackGrid<Post, PostShrinked>(
           systemNavigationInsets: insets,
           description: GridDescription(kBooruGridDrawerIndex,
               AppLocalizations.of(context)!.booruGridPageName, [
             GridBottomSheetAction(Icons.download, (selected) {
               for (var element in selected) {
-                downloader.add(File.d(element.fileDownloadUrl(), booru.domain(),
-                    element.filename()));
+                downloader.add(
+                    File.d(element.fileUrl, booru.domain(), element.fileName));
               }
             }, true)
           ]),

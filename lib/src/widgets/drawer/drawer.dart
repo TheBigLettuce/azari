@@ -15,10 +15,10 @@ import 'package:gallery/src/pages/downloads.dart';
 import 'package:gallery/src/pages/uploader.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/settings.dart';
+import 'package:gallery/src/schemas/upload_files.dart';
 import '../../db/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/gallery/uploader/uploader.dart' as upd;
-
 import 'package:gallery/src/pages/settings.dart' as widget;
 
 const int kBooruGridDrawerIndex = 0;
@@ -31,15 +31,29 @@ const int kSettingsDrawerIndex = 5;
 const IconData kAzariIcon = IconData(0x963F); // 阿
 
 List<NavigationDrawerDestination> destinations(BuildContext context) {
+  var primaryColor = Theme.of(context).colorScheme.primary;
+
   return [
     NavigationDrawerDestination(
         icon: const Icon(Icons.image),
+        selectedIcon: Icon(
+          Icons.image,
+          color: primaryColor,
+        ),
         label: Text(isar().settings.getSync(0)!.selectedBooru.string)),
     NavigationDrawerDestination(
         icon: const Icon(Icons.photo_album),
+        selectedIcon: Icon(
+          Icons.photo_album,
+          color: primaryColor,
+        ),
         label: Text(AppLocalizations.of(context)!.galleryLabel)),
     NavigationDrawerDestination(
       icon: const Icon(Icons.tag),
+      selectedIcon: Icon(
+        Icons.tag,
+        color: primaryColor,
+      ),
       label: Text(AppLocalizations.of(context)!.tagsLabel),
     ),
     NavigationDrawerDestination(
@@ -48,13 +62,21 @@ List<NavigationDrawerDestination> destinations(BuildContext context) {
                 child: Icon(Icons.download),
               )
             : const Icon(Icons.download),
+        selectedIcon: Icon(
+          Icons.download,
+          color: primaryColor,
+        ),
         label: Text(AppLocalizations.of(context)!.downloadsLabel)),
     NavigationDrawerDestination(
-        icon: upd.Uploader().count() != 0
+        icon: upd.Uploader().uploadsDb.uploadFilesStacks.countSync() != 0
             ? const Badge(
                 child: Icon(Icons.upload),
               )
             : const Icon(Icons.upload),
+        selectedIcon: Icon(
+          Icons.upload,
+          color: primaryColor,
+        ),
         label: Text(AppLocalizations.of(context)!.uploadLabel))
   ];
 }
@@ -135,6 +157,38 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
       int() => throw "unknown value"
     };
 
+Widget endDrawerHeading(
+        BuildContext context, String headline, GlobalKey<ScaffoldState> k) =>
+    SliverAppBar(
+      expandedHeight: 152,
+      collapsedHeight: kToolbarHeight,
+      automaticallyImplyLeading: false,
+      actions: [Container()],
+      pinned: true,
+      leading: BackButton(
+        onPressed: () {
+          k.currentState?.closeEndDrawer();
+        },
+      ),
+      flexibleSpace: FlexibleSpaceBar(title: Text(headline)),
+    );
+
+Widget? makeEndDrawerSettings(
+    BuildContext context, GlobalKey<ScaffoldState> key) {
+  if (Platform.isAndroid || Platform.isIOS) {
+    return null;
+  }
+
+  return Drawer(
+      child: CustomScrollView(
+    slivers: [
+      endDrawerHeading(
+          context, AppLocalizations.of(context)!.settingsPageName, key),
+      widget.SettingsList(sliver: true, scaffoldKey: key)
+    ],
+  ));
+}
+
 Widget? makeDrawer(BuildContext context, int selectedIndex) {
   if (!Platform.isAndroid && !Platform.isIOS) {
     return null;
@@ -154,8 +208,9 @@ Widget? makeDrawer(BuildContext context, int selectedIndex) {
               iconController!.forward(from: 0);
             }
           },
-          child: const Icon(
+          child: Icon(
             kAzariIcon,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ).animate(
             onInit: (controller) => iconController = controller,

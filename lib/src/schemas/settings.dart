@@ -68,7 +68,17 @@ class Settings {
             : GridColumn.six,
         listViewBooru = false,
         safeMode = false,
-        gallerySettings = GallerySettings(),
+        gallerySettings = GallerySettings()
+          ..directoryAspectRatio = AspectRatio.zeroSeven
+          ..directoryColumns = Platform.isAndroid || Platform.isIOS
+              ? GridColumn.two
+              : GridColumn.six
+          ..hideDirectoryName = false
+          ..filesAspectRatio = AspectRatio.oneFive
+          ..filesColumns = Platform.isAndroid || Platform.isIOS
+              ? GridColumn.three
+              : GridColumn.six
+          ..hideFileName = true,
         ratio = AspectRatio.one;
 }
 

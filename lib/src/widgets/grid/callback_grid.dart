@@ -15,6 +15,8 @@ import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/schemas/settings.dart';
+import 'package:gallery/src/widgets/empty_widget.dart';
+import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:logging/logging.dart';
 import '../../booru/tags/tags.dart';
 import '../../cell/cell.dart';
@@ -23,9 +25,9 @@ import '../booru/autocomplete_tag.dart';
 import 'cell.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-class GridBottomSheetAction<T extends Cell> {
+class GridBottomSheetAction<B> {
   final IconData icon;
-  final void Function(List<T> selected) onPress;
+  final void Function(List<B> selected) onPress;
   final bool closeOnPress;
   final bool showOnlyWhenSingle;
 
@@ -33,15 +35,15 @@ class GridBottomSheetAction<T extends Cell> {
       {this.showOnlyWhenSingle = false});
 }
 
-class GridDescription<T extends Cell> {
+class GridDescription<B> {
   final int drawerIndex;
   final String pageDescription;
-  final List<GridBottomSheetAction<T>> actions;
+  final List<GridBottomSheetAction<B>> actions;
 
   const GridDescription(this.drawerIndex, this.pageDescription, this.actions);
 }
 
-class CallbackGrid<T extends Cell> extends StatefulWidget {
+class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
   final T Function(int) getCell;
   final int initalCellCount;
   final Future<int> Function()? loadNext;
@@ -72,7 +74,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
 
   final Stream<int>? progressTicker;
 
-  final GridDescription<T> description;
+  final GridDescription<B> description;
 
   const CallbackGrid(
       {Key? key,
@@ -104,7 +106,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       : super(key: key);
 
   @override
-  State<CallbackGrid<T>> createState() => CallbackGridState<T>();
+  State<CallbackGrid<T, B>> createState() => CallbackGridState<T, B>();
 }
 
 class _ScrollHack extends ScrollController {
@@ -112,7 +114,8 @@ class _ScrollHack extends ScrollController {
   bool get hasClients => false;
 }
 
-class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
+class CallbackGridState<T extends Cell<B>, B>
+    extends State<CallbackGrid<T, B>> {
   late ScrollController controller =
       ScrollController(initialScrollOffset: widget.initalScrollPosition);
 
@@ -130,7 +133,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   FocusNode focus = FocusNode();
   FocusNode mainFocus = FocusNode();
 
-  Map<int, T> selected = {};
+  Map<int, B> selected = {};
 
   PersistentBottomSheetController? currentBottomSheet;
 
@@ -140,33 +143,30 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
   String _currentlyHighlightedTag = "";
 
-  Widget _wrapSheetButton(
-      BuildContext context, IconData icon, void Function()? onPressed) {
-    var background = Theme.of(context).colorScheme.background;
-    return Container(
-      margin: const EdgeInsets.only(top: 4, bottom: 4),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [
-          background,
-          background.withOpacity(0.7),
-          background.withOpacity(0.3),
-          background.withOpacity(0.1),
-        ], begin: Alignment.topCenter, end: Alignment.bottomCenter),
-        shape: BoxShape.circle,
-      ),
+  Widget _wrapSheetButton(BuildContext context, IconData icon,
+      void Function()? onPressed, bool addBadge) {
+    var iconBtn = Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 4),
       child: IconButton(
+          style: ButtonStyle(
+              backgroundColor: MaterialStatePropertyAll(
+                  Theme.of(context).colorScheme.primary)),
           onPressed: onPressed,
-          icon: Icon(
-            icon,
-            color: onPressed == null
-                ? Theme.of(context).colorScheme.primary.withOpacity(0.4)
-                : Theme.of(context).colorScheme.primary.withOpacity(0.9),
-          )),
+          icon:
+              Icon(icon, color: Theme.of(context).colorScheme.inversePrimary)),
     );
+
+    return addBadge
+        ? Badge(
+            label: Text(selected.length.toString()),
+            alignment: Alignment.topCenter,
+            child: iconBtn,
+          )
+        : iconBtn;
   }
 
   void _addSelection(int id, T selection) {
-    if (currentBottomSheet == null) {
+    if (selected.isEmpty || currentBottomSheet == null) {
       currentBottomSheet = showBottomSheet(
           context: context,
           enableDrag: false,
@@ -186,7 +186,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                             selected.clear();
                             currentBottomSheet?.close();
                           });
-                        }),
+                        }, true),
                         ...widget.description.actions
                             .map((e) => _wrapSheetButton(
                                 context,
@@ -202,13 +202,15 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                                             currentBottomSheet?.close();
                                           });
                                         }
-                                      }))
+                                      },
+                                false))
                             .toList()
                       ],
                     );
                   }),
             );
-          });
+          })
+        ..closed.then((value) => currentBottomSheet = null);
     } else {
       if (currentBottomSheet != null && currentBottomSheet!.setState != null) {
         currentBottomSheet!.setState!(() {});
@@ -216,7 +218,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     }
 
     setState(() {
-      selected[id] = selection;
+      selected[id] = selection.shrinkedData();
       lastSelected = id;
     });
   }
@@ -245,13 +247,13 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
       if (indx < lastSelected!) {
         for (var i = lastSelected!; i >= indx; i--) {
-          selected[i] = widget.getCell(i);
+          selected[i] = widget.getCell(i).shrinkedData();
           lastSelected = i;
         }
         setState(() {});
       } else if (indx > lastSelected!) {
         for (var i = lastSelected!; i <= indx; i++) {
-          selected[i] = widget.getCell(i);
+          selected[i] = widget.getCell(i).shrinkedData();
           lastSelected = i;
         }
         setState(() {});
@@ -503,7 +505,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
           widget.onBack!();
         },
       if (widget.additionalKeybinds != null) ...widget.additionalKeybinds!,
-      ...digitAndSettings(context, widget.description.drawerIndex),
+      ...digitAndSettings(
+          context, widget.description.drawerIndex, widget.scaffoldKey),
     };
 
     return CallbackShortcuts(
@@ -529,6 +532,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
               },
               child: Scrollbar(
                   interactive: true,
+                  thumbVisibility: true,
                   thickness: 6,
                   controller: controller,
                   child: CustomScrollView(
@@ -536,62 +540,75 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
                       SliverAppBar(
+                        expandedHeight: 152,
+                        collapsedHeight: 64,
                         automaticallyImplyLeading: false,
-                        title: autocompleteWidget(
-                          textEditingController,
-                          (s) {
-                            _currentlyHighlightedTag = s;
-                          },
-                          (s) {
-                            if (refreshing) {
-                              return;
-                            }
+                        actions: [Container()],
+                        flexibleSpace: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                  child: FlexibleSpaceBar(
+                                      titlePadding: EdgeInsetsDirectional.only(
+                                          start: widget.onBack != null ? 48 : 0,
+                                          bottom: 8),
+                                      title: autocompleteWidget(
+                                          textEditingController, (s) {
+                                        _currentlyHighlightedTag = s;
+                                      }, (s) {
+                                        if (refreshing) {
+                                          return;
+                                        }
 
-                            widget.search(s);
-                          },
-                          booru.completeTag,
-                          focus,
-                          scrollHack: _scrollHack,
-                        ),
-                        actions: [
-                          if (widget.onBack != null &&
-                              (Platform.isAndroid || Platform.isIOS))
-                            IconButton(
-                                onPressed: () {
-                                  widget.scaffoldKey.currentState!.openDrawer();
-                                },
-                                icon: const Icon(Icons.menu)),
-                          if (widget.menuButtonItems != null)
-                            PopupMenuButton(
-                                position: PopupMenuPosition.under,
-                                itemBuilder: (context) {
-                                  return widget.menuButtonItems!
-                                      .map(
-                                        (e) => PopupMenuItem(
-                                          enabled: false,
-                                          child: e,
-                                        ),
-                                      )
-                                      .toList();
-                                }),
-                        ],
+                                        widget.search(s);
+                                      }, booru.completeTag, focus,
+                                          scrollHack: _scrollHack,
+                                          showSearch: true,
+                                          addItems: []))),
+                              if (Platform.isAndroid || Platform.isIOS)
+                                wrapAppBarAction(GestureDetector(
+                                  onLongPress: () {
+                                    setState(() {
+                                      selected.clear();
+                                      currentBottomSheet?.close();
+                                    });
+                                  },
+                                  child: IconButton(
+                                      onPressed: () {
+                                        widget.scaffoldKey.currentState!
+                                            .openDrawer();
+                                      },
+                                      icon: const Icon(Icons.menu)),
+                                )),
+                              if (widget.menuButtonItems != null)
+                                wrapAppBarAction(PopupMenuButton(
+                                    position: PopupMenuPosition.under,
+                                    itemBuilder: (context) {
+                                      return widget.menuButtonItems!
+                                          .map(
+                                            (e) => PopupMenuItem(
+                                              enabled: false,
+                                              child: e,
+                                            ),
+                                          )
+                                          .toList();
+                                    }))
+                            ]),
                         leading: widget.onBack != null
                             ? IconButton(
                                 onPressed: () {
-                                  selected.clear();
-                                  currentBottomSheet?.close();
+                                  setState(() {
+                                    selected.clear();
+                                    currentBottomSheet?.close();
+                                  });
                                   if (widget.onBack != null) {
                                     widget.onBack!();
                                   }
                                 },
                                 icon: const Icon(Icons.arrow_back))
-                            : null,
-                        pinned:
-                            Platform.isAndroid || Platform.isIOS ? false : true,
-                        snap:
-                            Platform.isAndroid || Platform.isIOS ? true : false,
-                        floating:
-                            Platform.isAndroid || Platform.isIOS ? true : false,
+                            : Container(),
+                        pinned: true,
+                        stretch: true,
                         bottom: refreshing
                             ? const PreferredSize(
                                 preferredSize: Size.fromHeight(4),
@@ -603,91 +620,81 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                                 borderRadius: BorderRadius.circular(15))
                             : null,
                       ),
-                      settings.listViewBooru
-                          ? SliverList.separated(
-                              separatorBuilder: (context, index) =>
-                                  const Divider(
-                                height: 1,
-                              ),
-                              itemCount: cellCount,
-                              itemBuilder: (context, index) {
-                                var cell = widget.getCell(index);
-                                var cellData =
-                                    cell.getCellData(settings.listViewBooru);
-                                ;
-
-                                return _WrappedSelection(
-                                  selectUntil: _selectUntil,
-                                  thisIndx: index,
-                                  isSelected: selected[index] != null,
-                                  selectionEnabled: selected.isNotEmpty,
-                                  selectUnselect: () =>
-                                      _selectOrUnselect(index, cell),
-                                  child: ListTile(
-                                    onLongPress: () =>
-                                        _selectOrUnselect(index, cell),
-                                    onTap: () => _onPressed(context, index),
-                                    leading: CircleAvatar(
-                                        backgroundColor: Theme.of(context)
-                                            .colorScheme
-                                            .background,
-                                        foregroundImage: cellData.thumb),
-                                    title: Text(
-                                      cellData.name,
-                                      softWrap: false,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
+                      !refreshing && cellCount == 0
+                          ? const SliverToBoxAdapter(child: EmptyWidget())
+                          : settings.listViewBooru
+                              ? SliverList.separated(
+                                  separatorBuilder: (context, index) =>
+                                      const Divider(
+                                    height: 1,
                                   ),
-                                ).animate().fadeIn();
-                              },
-                            )
-                          : SliverGrid.builder(
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                      childAspectRatio: widget.aspectRatio,
-                                      crossAxisCount: widget.columns.number),
-                              itemCount: cellCount,
-                              itemBuilder: (context, indx) {
-                                var m = widget.getCell(indx);
-                                var cellData =
-                                    m.getCellData(settings.listViewBooru);
+                                  itemCount: cellCount,
+                                  itemBuilder: (context, index) {
+                                    var cell = widget.getCell(index);
+                                    var cellData = cell
+                                        .getCellData(settings.listViewBooru);
 
-                                return _WrappedSelection(
-                                  selectionEnabled: selected.isNotEmpty,
-                                  thisIndx: indx,
-                                  selectUntil: _selectUntil,
-                                  selectUnselect: () =>
-                                      _selectOrUnselect(indx, m),
-                                  isSelected: selected[indx] != null,
-                                  child: GridCell(
-                                    cell: cellData,
-                                    hidealias: widget.hideAlias,
-                                    indx: indx,
-                                    tight: widget.tightMode,
-                                    onPressed: _onPressed,
-                                    onLongPress: () => _selectOrUnselect(
-                                        indx, m), //extend: maxExtend,
-                                  ),
-                                );
-                              },
-                            )
+                                    return _WrappedSelection(
+                                      selectUntil: _selectUntil,
+                                      thisIndx: index,
+                                      isSelected: selected[index] != null,
+                                      selectionEnabled: selected.isNotEmpty,
+                                      selectUnselect: () =>
+                                          _selectOrUnselect(index, cell),
+                                      child: ListTile(
+                                        onLongPress: () =>
+                                            _selectOrUnselect(index, cell),
+                                        onTap: () => _onPressed(context, index),
+                                        leading: CircleAvatar(
+                                            backgroundColor: Theme.of(context)
+                                                .colorScheme
+                                                .background,
+                                            foregroundImage: cellData.thumb),
+                                        title: Text(
+                                          cellData.name,
+                                          softWrap: false,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ).animate().fadeIn();
+                                  },
+                                )
+                              : SliverGrid.builder(
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                          childAspectRatio: widget.aspectRatio,
+                                          crossAxisCount:
+                                              widget.columns.number),
+                                  itemCount: cellCount,
+                                  itemBuilder: (context, indx) {
+                                    var m = widget.getCell(indx);
+                                    var cellData =
+                                        m.getCellData(settings.listViewBooru);
+
+                                    return _WrappedSelection(
+                                      selectionEnabled: selected.isNotEmpty,
+                                      thisIndx: indx,
+                                      selectUntil: _selectUntil,
+                                      selectUnselect: () =>
+                                          _selectOrUnselect(indx, m),
+                                      isSelected: selected[indx] != null,
+                                      child: GridCell(
+                                        cell: cellData,
+                                        hidealias: widget.hideAlias,
+                                        indx: indx,
+                                        tight: widget.tightMode,
+                                        onPressed: _onPressed,
+                                        onLongPress: () => _selectOrUnselect(
+                                            indx, m), //extend: maxExtend,
+                                      ),
+                                    );
+                                  },
+                                )
                     ],
                   ))),
         ));
   }
 }
-
-/* widget.onLongPress == null
-                                        ? null
-                                        : () async {
-                                            widget.onLongPress!(indx)
-                                                .onError((error, stackTrace) {
-                                              log("onLongPress in the grid callback to CellImageWidget",
-                                                  level: Level.WARNING.value,
-                                                  error: error,
-                                                  stackTrace: stackTrace);
-                                            });
-                                          } */
 
 class _WrappedSelection extends StatelessWidget {
   final Widget child;

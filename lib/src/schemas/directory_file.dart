@@ -8,8 +8,17 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 part 'directory_file.g.dart';
 
+class DirectoryFileShrinked {
+  final String dir;
+  final String file;
+  final String thumbHash;
+
+  const DirectoryFileShrinked(
+      {required this.dir, required this.file, required this.thumbHash});
+}
+
 @collection
-class DirectoryFile implements Cell {
+class DirectoryFile implements Cell<DirectoryFileShrinked> {
   Id? isarId;
 
   String dir;
@@ -106,4 +115,8 @@ class DirectoryFile implements Cell {
       required this.thumbHash,
       required this.tags,
       required this.type});
+
+  @override
+  shrinkedData() =>
+      DirectoryFileShrinked(dir: dir, file: name, thumbHash: thumbHash);
 }

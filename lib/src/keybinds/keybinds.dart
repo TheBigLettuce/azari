@@ -5,6 +5,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -13,7 +15,7 @@ import '../widgets/drawer/drawer.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 Map<SingleActivatorDescription, Null Function()> digitAndSettings(
-    BuildContext context, int from) {
+    BuildContext context, int from, GlobalKey<ScaffoldState> key) {
   return {
     SingleActivatorDescription(AppLocalizations.of(context)!.goBooruGrid,
         const SingleActivator(LogicalKeyboardKey.digit1)): () {
@@ -39,9 +41,14 @@ Map<SingleActivatorDescription, Null Function()> digitAndSettings(
     },
     SingleActivatorDescription(AppLocalizations.of(context)!.goSettings,
         const SingleActivator(LogicalKeyboardKey.keyS, control: true)): () {
-      Navigator.push(context, MaterialPageRoute(builder: (context) {
-        return const Settings();
-      }));
+      if (Platform.isAndroid || Platform.isIOS) {
+        Navigator.push(context, MaterialPageRoute(builder: (context) {
+          return const Settings();
+        }));
+        return;
+      } else {
+        key.currentState?.openEndDrawer();
+      }
     }
   };
 }

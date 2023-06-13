@@ -12,7 +12,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/pages/settings.dart';
 
-Widget addRail(BuildContext context, int selectedIndex, Widget child) {
+Widget addRail(BuildContext context, int selectedIndex,
+    GlobalKey<ScaffoldState> key, Widget child) {
   if (Platform.isAndroid || Platform.isIOS) {
     return child;
   }
@@ -29,7 +30,10 @@ Widget addRail(BuildContext context, int selectedIndex, Widget child) {
                   iconController!.forward(from: 0);
                 }
               },
-              child: const Icon(kAzariIcon).animate(
+              child: Icon(
+                kAzariIcon,
+                color: Theme.of(context).colorScheme.primary,
+              ).animate(
                   onInit: (controller) => iconController = controller,
                   effects: const [ShakeEffect()],
                   autoPlay: false)),
@@ -37,8 +41,9 @@ Widget addRail(BuildContext context, int selectedIndex, Widget child) {
             padding: const EdgeInsets.only(top: 15),
             child: IconButton(
               icon: const Icon(Icons.settings),
-              onPressed: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => const Settings())),
+              onPressed: () {
+                key.currentState?.openEndDrawer();
+              },
             ),
           ),
           labelType: NavigationRailLabelType.selected,
@@ -49,8 +54,8 @@ Widget addRail(BuildContext context, int selectedIndex, Widget child) {
             selectDestination(context, selectedIndex, value);
           },
           destinations: [
-            ...destinations(context).map(
-                (e) => NavigationRailDestination(icon: e.icon, label: e.label))
+            ...destinations(context).map((e) => NavigationRailDestination(
+                icon: e.icon, label: e.label, selectedIcon: e.selectedIcon))
           ],
           selectedIndex: selectedIndex),
       Expanded(child: child)

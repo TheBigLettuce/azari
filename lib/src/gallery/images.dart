@@ -25,7 +25,7 @@ import '../db/isar.dart' as db;
 
 class Images extends StatefulWidget {
   final Directory cell;
-  final GalleryAPIFiles api;
+  final GalleryAPIFiles<DirectoryFileShrinked> api;
   final GlobalKey<CallbackGridState> parentGrid;
   final void Function(String hash, Directory d) setThumbnail;
   const Images(this.api,
@@ -108,7 +108,7 @@ class _ImagesState extends State<Images> {
     }
   }
 
-  void _deleteFiles(List<DirectoryFile> f) {
+  void _deleteFiles(List<DirectoryFileShrinked> f) {
     widget.api.deleteFiles(f, () {
       _gridKey.currentState?.refresh();
       widget.parentGrid.currentState?.refresh();
@@ -134,8 +134,8 @@ class _ImagesState extends State<Images> {
     return Future.value();
   }
 
-  void _setFolderThumbnail(DirectoryFile df) {
-    widget.setThumbnail(df.thumbHash, widget.cell);
+  void _setFolderThumbnail(String thumbHash) {
+    widget.setThumbnail(thumbHash, widget.cell);
   }
 
   @override
@@ -147,7 +147,7 @@ class _ImagesState extends State<Images> {
         kGalleryDrawerIndex,
         () => Future.value(true),
         _key,
-        CallbackGrid<DirectoryFile>(
+        CallbackGrid<DirectoryFile, DirectoryFileShrinked>(
           systemNavigationInsets: insets,
           key: _gridKey,
           columns: settings.gallerySettings.filesColumns ?? GridColumn.two,
@@ -192,7 +192,7 @@ class _ImagesState extends State<Images> {
                             Text(AppLocalizations.of(context)!.setAsThumbnail),
                         onTap: () {
                           Navigator.pop(context);
-                          _setFolderThumbnail(df);
+                          _setFolderThumbnail(df.thumbHash);
                         },
                       ),
                     );

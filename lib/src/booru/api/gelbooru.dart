@@ -171,7 +171,7 @@ class Gelbooru implements BooruAPI {
   List<Post> _fromJson(List<dynamic> m) {
     List<Post> list = [];
 
-    var dateFormatter = DateFormat("EEE MMM dd HH:mm:ss -0500 yyyy");
+    var dateFormatter = DateFormat("EEE MMM dd HH:mm:ss");
 
     for (var post in m) {
       list.add(Post(
