@@ -7,6 +7,7 @@
 
 import 'dart:io';
 
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:isar/isar.dart';
 
 part 'settings.g.dart';
@@ -28,12 +29,16 @@ class Settings {
   AspectRatio ratio;
   bool safeMode;
 
+  bool autoRefresh;
+  int autoRefreshMicroseconds;
   GallerySettings gallerySettings;
 
   Settings(
       {required this.path,
       required this.selectedBooru,
       required this.quality,
+      required this.autoRefresh,
+      required this.autoRefreshMicroseconds,
       required this.listViewBooru,
       required this.picturesPerRow,
       required this.safeMode,
@@ -45,6 +50,8 @@ class Settings {
       DisplayQuality? quality,
       bool? listViewBooru,
       GridColumn? picturesPerRow,
+      bool? autoRefresh,
+      int? autoRefreshMicroseconds,
       bool? safeMode,
       AspectRatio? ratio,
       GallerySettings? gallerySettings}) {
@@ -53,6 +60,9 @@ class Settings {
         selectedBooru: selectedBooru ?? this.selectedBooru,
         quality: quality ?? this.quality,
         ratio: ratio ?? this.ratio,
+        autoRefresh: autoRefresh ?? this.autoRefresh,
+        autoRefreshMicroseconds:
+            autoRefreshMicroseconds ?? this.autoRefreshMicroseconds,
         listViewBooru: listViewBooru ?? this.listViewBooru,
         picturesPerRow: picturesPerRow ?? this.picturesPerRow,
         safeMode: safeMode ?? this.safeMode,
@@ -61,6 +71,8 @@ class Settings {
 
   Settings.empty()
       : path = "",
+        autoRefresh = false,
+        autoRefreshMicroseconds = 1.hours.inMicroseconds,
         selectedBooru = Booru.gelbooru,
         quality = DisplayQuality.sample,
         picturesPerRow = (Platform.isAndroid || Platform.isIOS)

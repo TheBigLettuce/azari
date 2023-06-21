@@ -20,7 +20,7 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
   ServerSettings settings =
       isar().serverSettings.getSync(0) ?? ServerSettings.empty();
 
-  FocusNode focus = FocusNode();
+  final SkeletonState skeletonState = SkeletonState.settings();
 
   bool? isConnected;
   bool isDisposed = false;
@@ -29,7 +29,7 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
   void dispose() {
     isDisposed = true;
 
-    focus.dispose();
+    skeletonState.dispose();
 
     super.dispose();
   }
@@ -92,7 +92,8 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return makeSkeletonInnerSettings(context, "Server settings", focus, [
+    return makeSkeletonInnerSettings(
+        context, "Server settings", skeletonState, [
       ListTile(
         trailing: TextButton(
           onPressed: () {

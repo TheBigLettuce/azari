@@ -7,6 +7,8 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/pages/server_settings.dart';
@@ -24,12 +26,11 @@ class Settings extends StatefulWidget {
 }
 
 class _SettingsState extends State<Settings> {
-  FocusNode focus = FocusNode();
-  GlobalKey<ScaffoldState> key = GlobalKey();
+  final SkeletonState skeletonState = SkeletonState.settings();
 
   @override
   void dispose() {
-    focus.dispose();
+    skeletonState.dispose();
 
     super.dispose();
   }
@@ -39,11 +40,10 @@ class _SettingsState extends State<Settings> {
     return makeSkeletonSettings(
         context,
         AppLocalizations.of(context)!.settingsPageName,
-        key,
-        focus,
+        skeletonState,
         SettingsList(
           sliver: true,
-          scaffoldKey: key,
+          scaffoldKey: skeletonState.scaffoldKey,
         ));
   }
 }
@@ -255,6 +255,60 @@ class _SettingsListState extends State<SettingsList> {
                   .settings
                   .putSync(_settings!.copy(safeMode: !_settings!.safeMode)));
             },
+          ),
+        ),
+        ListTile(
+          title: Text("Auto refresh"),
+          subtitle: Text("Refresh booru main grid on app open if it is stale.",
+              maxLines: extendListSubtitle ? null : 2),
+          onTap: _extend,
+          trailing: Switch(
+            onChanged: (value) {
+              isar().writeTxnSync(() =>
+                  isar().settings.putSync(_settings!.copy(autoRefresh: value)));
+            },
+            value: _settings!.autoRefresh,
+          ),
+        ),
+        ListTile(
+          title: Text("Auto refresh stale hours"),
+          subtitle: Text(
+            "After this time the grid becomes stale.",
+            maxLines: extendListSubtitle ? null : 2,
+          ),
+          onTap: _extend,
+          trailing: TextButton(
+            onPressed: () {
+              Navigator.push(
+                  context,
+                  DialogRoute(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: Text("Enter time in hours"),
+                        content: TextField(
+                          onSubmitted: (value) {
+                            isar().writeTxnSync(() => isar().settings.putSync(
+                                _settings!.copy(
+                                    autoRefreshMicroseconds: int.parse(value)
+                                        .hours
+                                        .inMicroseconds)));
+                            Navigator.pop(context);
+                          },
+                          keyboardType: TextInputType.number,
+                          maxLength: 3,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly
+                          ],
+                        ),
+                      );
+                    },
+                  ));
+            },
+            child: Text(
+                Duration(microseconds: _settings!.autoRefreshMicroseconds)
+                    .inHours
+                    .toString()),
           ),
         ),
         settingsLabel("Directory", titleStyle),

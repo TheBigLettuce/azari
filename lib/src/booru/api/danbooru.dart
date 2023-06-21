@@ -17,18 +17,22 @@ List<String> _fromDanbooruTags(List<dynamic> l) =>
 
 class Danbooru implements BooruAPI {
   @override
-  Dio client;
+  final Dio client;
 
   @override
-  Booru booru() => Booru.danbooru;
+  final Booru booru = Booru.danbooru;
 
   @override
-  void close() => client.close(force: true);
+  final int? currentPage = null;
 
   @override
-  int? currentPage() => null;
+  final String name = "Danbooru";
 
-  Danbooru(this.client);
+  @override
+  final String domain = "danbooru.donmai.us";
+
+  @override
+  final bool wouldBecomeStale = false;
 
   @override
   Uri browserLink(int id) => Uri.https("danbooru.donmai.us", "/posts/$id");
@@ -84,12 +88,6 @@ class Danbooru implements BooruAPI {
 
   @override
   Future<List<Post>> page(int i, String tags) => _commonPosts(tags, page: i);
-
-  @override
-  String name() => "Danbooru";
-
-  @override
-  String domain() => "danbooru.donmai.us";
 
   @override
   Future<List<Post>> fromPost(int postId, String tags) =>
@@ -164,7 +162,7 @@ class Danbooru implements BooruAPI {
             previewUrl: e["preview_file_url"],
             sampleUrl: e["large_file_url"],
             ext: ".${e["file_ext"]}",
-            prefix: booru().prefix);
+            prefix: booru.prefix);
 
         list.add(post);
       } catch (e) {
@@ -174,4 +172,9 @@ class Danbooru implements BooruAPI {
 
     return list;
   }
+
+  @override
+  void close() => client.close(force: true);
+
+  Danbooru(this.client);
 }

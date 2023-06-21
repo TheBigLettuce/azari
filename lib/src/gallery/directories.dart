@@ -32,26 +32,22 @@ class Directories extends StatefulWidget {
 }
 
 class _DirectoriesState extends State<Directories> {
-  final GlobalKey<ScaffoldState> _key = GlobalKey();
-  final GlobalKey<CallbackGridState> _gridKey = GlobalKey();
-  // late final Isar isar;
-  //late Stream<int> thumbnailWatcher;
-  late Settings settings = db.isar().settings.getSync(0)!;
   late StreamSubscription<Settings?> settingsWatcher;
   GalleryAPI<DirectoryFileShrinked> api = ServerAPI(db.openServerApiIsar());
   Result<Directory>? directories;
   bool isDisposed = false;
 
-  FocusNode mainFocus = FocusNode();
+  late GridSkeletonState skeletonState = GridSkeletonState(
+      index: kGalleryDrawerIndex, onWillPop: () => popUntilSenitel(context));
 
   @override
   void initState() {
     super.initState();
 
     settingsWatcher = db.isar().settings.watchObject(0).listen((event) {
-      setState(() {
-        settings = event!;
-      });
+      skeletonState.settings = event!;
+
+      setState(() {});
     });
   }
 
@@ -87,7 +83,7 @@ class _DirectoriesState extends State<Directories> {
     settingsWatcher.cancel();
     //db.closeDirectoryIsar();
 
-    mainFocus.dispose();
+    skeletonState.dispose();
     api.close();
 
     super.dispose();
@@ -97,7 +93,7 @@ class _DirectoriesState extends State<Directories> {
     try {
       await api.setThumbnail(hash, d);
 
-      _gridKey.currentState!.refresh();
+      skeletonState.gridKey.currentState!.refresh();
     } catch (e, trace) {
       log("setting thumbnail",
           level: Level.SEVERE.value, error: e, stackTrace: trace);
@@ -109,17 +105,16 @@ class _DirectoriesState extends State<Directories> {
     var insets = MediaQuery.viewPaddingOf(context);
 
     return makeGridSkeleton(
-        context,
-        kGalleryDrawerIndex,
-        () => popUntilSenitel(context),
-        _key,
-        CallbackGrid<Directory, Directory>(
-          systemNavigationInsets: insets,
-          key: _gridKey,
-          columns: settings.gallerySettings.directoryColumns ?? GridColumn.two,
-          aspectRatio:
-              settings.gallerySettings.directoryAspectRatio?.value ?? 1,
-          description: GridDescription(
+      context,
+      skeletonState,
+      CallbackGrid<Directory, Directory>(
+        mainFocus: skeletonState.mainFocus,
+        systemNavigationInsets: insets,
+        key: skeletonState.gridKey,
+        aspectRatio: skeletonState
+                .settings.gallerySettings.directoryAspectRatio?.value ??
+            1,
+        description: GridDescription(
             kGalleryDrawerIndex,
             AppLocalizations.of(context)!.galleryPageName,
             [
@@ -130,73 +125,77 @@ class _DirectoriesState extends State<Directories> {
                   return ModifyDirectory(
                     api,
                     old: d,
-                    refreshKey: _gridKey,
+                    refreshKey: skeletonState.gridKey,
                   );
                 }));
               }, false, showOnlyWhenSingle: true)
             ],
-          ),
-          updateScrollPosition: (pos, {double? infoPos, int? selectedCell}) {},
-          scaffoldKey: _key,
-          //progressTicker: thumbnailWatcher,
-          hasReachedEnd: () => true,
-          refresh: () => _refresh(false),
-          search: (s) {},
-          hideAlias: settings.gallerySettings.hideDirectoryName,
-          initalScrollPosition: 0,
-          menuButtonItems: [
-            TextButton(
-                onPressed: () {
-                  Navigator.push(
-                      context,
-                      DialogRoute(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: Text(AppLocalizations.of(context)!
-                                  .chooseDirectoryName),
-                              content: TextField(
-                                onSubmitted: (value) {
-                                  Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                          content: Text(
-                                              AppLocalizations.of(context)!
-                                                  .uploadStarted)));
-                                  api.newDirectory(value, () {
-                                    if (!isDisposed) {
-                                      _gridKey.currentState?.refresh();
-                                    }
-                                  }).then((value) {
-                                    _refresh(true);
-                                    _gridKey.currentState!.refresh();
-                                  }).onError((error, stackTrace) {
-                                    log("adding file to server",
-                                        level: Level.SEVERE.value,
-                                        error: error,
-                                        stackTrace: stackTrace);
-                                  });
-                                },
-                              ),
-                            );
-                          }));
-                },
-                child: Text(AppLocalizations.of(context)!.newDirectory))
-          ],
-          getCell: (i) =>
-              directories!.cell(i), //isar.directorys.getSync(i + 1)!.cell()
-          overrideOnPress: (context, indx) {
-            Navigator.push(context, MaterialPageRoute(builder: (context) {
-              var d = directories!.cell(indx);
+            skeletonState.settings.gallerySettings.directoryColumns ??
+                GridColumn.two),
+        updateScrollPosition: (pos, {double? infoPos, int? selectedCell}) {},
+        scaffoldKey: skeletonState.scaffoldKey,
+        //progressTicker: thumbnailWatcher,
+        hasReachedEnd: () => true,
+        refresh: () => _refresh(false),
+        search: (s) {},
+        hideAlias: skeletonState.settings.gallerySettings.hideDirectoryName,
+        initalScrollPosition: 0,
+        menuButtonItems: [
+          TextButton(
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    DialogRoute(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: Text(AppLocalizations.of(context)!
+                                .chooseDirectoryName),
+                            content: TextField(
+                              onSubmitted: (value) {
+                                Navigator.pop(context);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text(
+                                            AppLocalizations.of(context)!
+                                                .uploadStarted)));
+                                api.newDirectory(value, () {
+                                  if (!isDisposed) {
+                                    skeletonState.gridKey.currentState
+                                        ?.refresh();
+                                  }
+                                }).then((value) {
+                                  _refresh(true);
+                                  skeletonState.gridKey.currentState!.refresh();
+                                }).onError((error, stackTrace) {
+                                  log("adding file to server",
+                                      level: Level.SEVERE.value,
+                                      error: error,
+                                      stackTrace: stackTrace);
+                                });
+                              },
+                            ),
+                          );
+                        }));
+              },
+              child: Text(AppLocalizations.of(context)!.newDirectory))
+        ],
+        getCell: (i) => directories!.cell(i),
+        hideShowFab: (show) => skeletonState.updateFab(
+            setState, show), //isar.directorys.getSync(i + 1)!.cell()
+        overrideOnPress: (context, indx) {
+          Navigator.push(context, MaterialPageRoute(builder: (context) {
+            var d = directories!.cell(indx);
 
-              return Images(
-                api.images(d),
-                cell: d,
-                setThumbnail: _setThumbnail,
-                parentGrid: _gridKey,
-              );
-            }));
-          },
-        ));
+            return Images(
+              api.images(d),
+              cell: d,
+              setThumbnail: _setThumbnail,
+              parentGrid: skeletonState.gridKey,
+            );
+          }));
+        },
+      ),
+    );
   }
 }

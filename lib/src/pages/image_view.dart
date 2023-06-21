@@ -386,6 +386,8 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
     }, Theme.of(context).colorScheme.outlineVariant, kListTileColorInInfo,
         widget.systemOverlayRestoreColor);
 
+    var insets = MediaQuery.viewPaddingOf(context);
+
     return CallbackShortcuts(
         bindings: {
           ...bindings,
@@ -405,7 +407,11 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                   controller: scrollController,
                   slivers: [
                     endDrawerHeading(context, "Info", key),
-                    SliverList.list(children: [if (addInfo != null) ...addInfo])
+                    SliverPadding(
+                      padding: EdgeInsets.only(bottom: insets.bottom),
+                      sliver: SliverList.list(
+                          children: [if (addInfo != null) ...addInfo]),
+                    )
                   ],
                 ),
               ),

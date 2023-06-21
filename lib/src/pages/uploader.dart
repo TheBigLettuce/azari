@@ -20,10 +20,10 @@ class Uploader extends StatefulWidget {
 }
 
 class _UploaderState extends State<Uploader> {
-  FocusNode focus = FocusNode();
   List<UploadFilesStack> stack = [];
-  GlobalKey<ScaffoldState> key = GlobalKey();
   late StreamSubscription<void> update;
+
+  final SkeletonState skeletonState = SkeletonState(kUploadsDrawerIndex);
 
   @override
   void initState() {
@@ -43,14 +43,14 @@ class _UploaderState extends State<Uploader> {
   @override
   void dispose() {
     update.cancel();
-    focus.dispose();
+    skeletonState.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return makeSkeleton(context, kUploadsDrawerIndex,
-        AppLocalizations.of(context)!.uploadPageName, key, focus,
+    return makeSkeleton(
+        context, AppLocalizations.of(context)!.uploadPageName, skeletonState,
         children: stack.isEmpty ? [const EmptyWidget()] : null,
         itemCount: stack.length,
         builder: stack.isEmpty

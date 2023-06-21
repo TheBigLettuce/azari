@@ -15,7 +15,7 @@ class GridCell<T extends CellData> extends StatefulWidget {
   final void Function(BuildContext context, int cellIndx) onPressed;
   final bool hideAlias;
   final bool tight;
-  final Function()? onLongPress;
+  final void Function()? onLongPress;
 
   const GridCell(
       {Key? key,
@@ -71,7 +71,9 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
                           child: CircularProgressIndicator(
                             value: loadingProgress.cumulativeBytesLoaded
                                     .toDouble() /
-                                loadingProgress.expectedTotalBytes!.toDouble(),
+                                (loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.expectedTotalBytes!
+                                    : 1),
                           ),
                         );
                       },

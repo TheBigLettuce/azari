@@ -10,7 +10,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/gallery/directories.dart';
-import 'package:gallery/src/pages/search_booru.dart';
+import 'package:gallery/src/pages/tags.dart';
 import 'package:gallery/src/pages/downloads.dart';
 import 'package:gallery/src/pages/uploader.dart';
 import 'package:gallery/src/schemas/download_file.dart';

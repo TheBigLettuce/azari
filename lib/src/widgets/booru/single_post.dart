@@ -140,7 +140,7 @@ class _SinglePostState extends State<SinglePost> {
                       updateTagScrollPos: (_, __) {},
                       download: (_) {
                         Downloader().add(File.d(value.downloadUrl(),
-                            booru.domain(), value.filename()));
+                            booru.domain, value.filename()));
                       },
                       cellCount: 1,
                       scrollUntill: (_) {},

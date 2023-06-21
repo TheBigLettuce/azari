@@ -18,25 +18,13 @@ Widget addRail(BuildContext context, int selectedIndex,
     return child;
   }
 
-  AnimationController? iconController;
-
   return Row(
     children: [
       NavigationRail(
-          groupAlignment: -0.7,
-          leading: GestureDetector(
-              onTap: () {
-                if (iconController != null) {
-                  iconController!.forward(from: 0);
-                }
-              },
-              child: Icon(
-                kAzariIcon,
-                color: Theme.of(context).colorScheme.primary,
-              ).animate(
-                  onInit: (controller) => iconController = controller,
-                  effects: const [ShakeEffect()],
-                  autoPlay: false)),
+          groupAlignment: -0.8,
+          leading: Icon(
+            kAzariIcon,
+          ),
           trailing: Padding(
             padding: const EdgeInsets.only(top: 15),
             child: IconButton(

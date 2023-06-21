@@ -18,8 +18,10 @@ class ScrollPositionPrimary {
 
   double pos;
   double? tagPos;
+  DateTime time;
 
   int? page;
 
-  ScrollPositionPrimary(this.pos, this.id, {this.page, this.tagPos});
+  ScrollPositionPrimary(this.pos, this.id, {this.page, this.tagPos})
+      : time = DateTime.now().toUtc();
 }

@@ -8,7 +8,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/pages/senitel.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
@@ -34,12 +33,10 @@ class _DownloadsState extends State<Downloads> {
   late final StreamSubscription<void> _updates;
   final Downloader downloader = Downloader();
 
-  FocusNode mainFocus = FocusNode();
+  final SkeletonState skeletonState = SkeletonState(kDownloadsDrawerIndex);
 
   AnimationController? refreshController;
   AnimationController? deleteController;
-
-  GlobalKey<ScaffoldState> key = GlobalKey();
 
   @override
   void initState() {
@@ -71,13 +68,12 @@ class _DownloadsState extends State<Downloads> {
   void dispose() {
     _updates.cancel();
 
-    mainFocus.dispose();
+    skeletonState.dispose();
 
     super.dispose();
   }
 
-  // ignore: prefer_void_to_null
-  Null _refresh() {
+  void _refresh() {
     if (refreshController != null) {
       refreshController!.forward(from: 0);
     }
@@ -89,8 +85,8 @@ class _DownloadsState extends State<Downloads> {
 
   @override
   Widget build(BuildContext context) {
-    return makeSkeleton(context, kDownloadsDrawerIndex,
-        AppLocalizations.of(context)!.downloadsPageName, key, mainFocus,
+    return makeSkeleton(
+        context, AppLocalizations.of(context)!.downloadsPageName, skeletonState,
         appBarActions: [
           Badge(
             offset: Offset.zero,

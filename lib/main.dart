@@ -28,9 +28,41 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+// shamelessly stolen from the Flutter source
+class FadeSidewaysPageTransitionBuilder implements PageTransitionsBuilder {
+  // Fractional offset from 1/4 screen below the top to fully on screen.
+  static final Tween<Offset> _bottomUpTween = Tween<Offset>(
+    begin: const Offset(0.25, 0.0),
+    end: Offset.zero,
+  );
+  static final Animatable<double> _fastOutSlowInTween =
+      CurveTween(curve: Curves.fastOutSlowIn);
+  @override
+  Widget buildTransitions<T>(
+      PageRoute<T> route,
+      BuildContext context,
+      Animation<double> animation,
+      Animation<double> secondaryAnimation,
+      Widget child) {
+    return SlideTransition(
+      position: animation.drive(_bottomUpTween.chain(_fastOutSlowInTween)),
+      child: FadeTransition(
+        opacity: animation.drive(_fastOutSlowInTween),
+        child: child,
+      ),
+    );
+  }
+
+  const FadeSidewaysPageTransitionBuilder();
+}
+
 ThemeData _buildTheme(Brightness brightness, Color accentColor) {
   var baseTheme = ThemeData(
     brightness: brightness,
+    pageTransitionsTheme: PageTransitionsTheme(
+        builders: Map.from(const PageTransitionsTheme().builders)
+          ..[TargetPlatform.android] =
+              const FadeSidewaysPageTransitionBuilder()),
     useMaterial3: true,
     colorSchemeSeed: accentColor,
   );
@@ -97,12 +129,12 @@ void main() async {
           }
         }
 
-        var scroll = isar()
-            .scrollPositionPrimarys
-            .getSync(fastHash(getBooru().domain()));
+        var scroll =
+            isar().scrollPositionPrimarys.getSync(fastHash(getBooru().domain));
 
         return BooruScroll.primary(
           initalScroll: scroll != null ? scroll.pos : 0,
+          time: scroll != null ? scroll.time : DateTime.now(),
           isar: isar(),
           clear: arguments != null ? true : false,
         );

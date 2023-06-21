@@ -39,19 +39,21 @@ class Images extends StatefulWidget {
 }
 
 class _ImagesState extends State<Images> {
-  final GlobalKey<ScaffoldState> _key = GlobalKey();
-  late Settings settings = db.isar().settings.getSync(0)!;
   late StreamSubscription<Settings?> settingsWatcher;
-  final GlobalKey<CallbackGridState> _gridKey = GlobalKey();
   Result<DirectoryFile>? cells;
   bool isDisposed = false;
+
+  GridSkeletonState skeletonState = GridSkeletonState(
+    index: kGalleryDrawerIndex,
+    onWillPop: () => Future.value(true),
+  );
 
   @override
   void initState() {
     settingsWatcher = db.isar().settings.watchObject(0).listen((event) {
-      setState(() {
-        settings = event!;
-      });
+      skeletonState.settings = event!;
+
+      setState(() {});
     });
 
     super.initState();
@@ -72,7 +74,7 @@ class _ImagesState extends State<Images> {
 
       await widget.api.uploadFiles(res.files, () {
         if (!isDisposed) {
-          _gridKey.currentState?.refresh();
+          skeletonState.gridKey.currentState?.refresh();
           widget.parentGrid.currentState?.refresh();
         }
       });
@@ -110,7 +112,7 @@ class _ImagesState extends State<Images> {
 
   void _deleteFiles(List<DirectoryFileShrinked> f) {
     widget.api.deleteFiles(f, () {
-      _gridKey.currentState?.refresh();
+      skeletonState.gridKey.currentState?.refresh();
       widget.parentGrid.currentState?.refresh();
     }).onError((error, stackTrace) {
       log("deleting files",
@@ -122,6 +124,7 @@ class _ImagesState extends State<Images> {
   void dispose() {
     isDisposed = true;
     settingsWatcher.cancel();
+    skeletonState.dispose();
     widget.api.close();
     super.dispose();
   }
@@ -143,87 +146,94 @@ class _ImagesState extends State<Images> {
     var insets = MediaQuery.viewPaddingOf(context);
 
     return makeGridSkeleton(
-        context,
-        kGalleryDrawerIndex,
-        () => Future.value(true),
-        _key,
-        CallbackGrid<DirectoryFile, DirectoryFileShrinked>(
-          systemNavigationInsets: insets,
-          key: _gridKey,
-          columns: settings.gallerySettings.filesColumns ?? GridColumn.two,
-          aspectRatio: settings.gallerySettings.filesAspectRatio?.value ?? 1,
-          description: GridDescription(kGalleryDrawerIndex,
-              AppLocalizations.of(context)!.galleryInnerPageName, [
-            GridBottomSheetAction(Icons.delete, (selected) {
-              Navigator.of(context).push(DialogRoute(
-                  context: context,
-                  builder: ((context) {
-                    return AlertDialog(
-                      title: Text(
-                          AppLocalizations.of(context)!.deleteImageConfirm),
-                      content: Text(
-                          "${selected.length} ${selected.length > 1 ? 'items' : 'item'}"),
-                      actions: [
-                        TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                            child: Text(AppLocalizations.of(context)!.no)),
-                        TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
+      context,
+      skeletonState,
+      CallbackGrid<DirectoryFile, DirectoryFileShrinked>(
+        mainFocus: skeletonState.mainFocus,
+        systemNavigationInsets: insets,
+        key: skeletonState.gridKey,
 
-                              _deleteFiles(selected);
-                            },
-                            child: Text(AppLocalizations.of(context)!.yes)),
-                      ],
-                    );
-                  })));
-            }, true),
-            GridBottomSheetAction(Icons.info_outline, (selected) {
-              var df = selected.first;
+        aspectRatio:
+            skeletonState.settings.gallerySettings.filesAspectRatio?.value ?? 1,
+        description: GridDescription(
+            kGalleryDrawerIndex,
+            AppLocalizations.of(context)!.galleryInnerPageName,
+            [
+              GridBottomSheetAction(Icons.delete, (selected) {
+                Navigator.of(context).push(DialogRoute(
+                    context: context,
+                    builder: ((context) {
+                      return AlertDialog(
+                        title: Text(
+                            AppLocalizations.of(context)!.deleteImageConfirm),
+                        content: Text(
+                            "${selected.length} ${selected.length > 1 ? 'items' : 'item'}"),
+                        actions: [
+                          TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              child: Text(AppLocalizations.of(context)!.no)),
+                          TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
 
-              Navigator.of(context).push(DialogRoute(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      content: ListTile(
-                        title:
-                            Text(AppLocalizations.of(context)!.setAsThumbnail),
-                        onTap: () {
-                          Navigator.pop(context);
-                          _setFolderThumbnail(df.thumbHash);
-                        },
-                      ),
-                    );
-                  }));
-            }, false, showOnlyWhenSingle: true)
-          ]),
-          updateScrollPosition: (pos, {double? infoPos, int? selectedCell}) {},
-          scaffoldKey: _key,
-          refresh: _refresh,
-          tightMode: true,
-          hideAlias: settings.gallerySettings.hideFileName,
-          menuButtonItems: [
-            TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
+                                _deleteFiles(selected);
+                              },
+                              child: Text(AppLocalizations.of(context)!.yes)),
+                        ],
+                      );
+                    })));
+              }, true),
+              GridBottomSheetAction(Icons.info_outline, (selected) {
+                var df = selected.first;
 
-                  _addFiles();
+                Navigator.of(context).push(DialogRoute(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        content: ListTile(
+                          title: Text(
+                              AppLocalizations.of(context)!.setAsThumbnail),
+                          onTap: () {
+                            Navigator.pop(context);
+                            _setFolderThumbnail(df.thumbHash);
+                          },
+                        ),
+                      );
+                    }));
+              }, false, showOnlyWhenSingle: true)
+            ],
+            skeletonState.settings.gallerySettings.filesColumns ??
+                GridColumn.two),
+        updateScrollPosition: (pos, {double? infoPos, int? selectedCell}) {},
+        scaffoldKey: skeletonState.scaffoldKey,
+        refresh: _refresh,
+        tightMode: true,
+        hideAlias: skeletonState.settings.gallerySettings.hideFileName,
+        menuButtonItems: [
+          TextButton(
+              onPressed: () {
+                Navigator.pop(context);
 
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content:
-                          Text(AppLocalizations.of(context)!.uploadStarted)));
-                },
-                child: Text(AppLocalizations.of(context)!.addFiles))
-          ],
-          hasReachedEnd: () => widget.api.reachedEnd,
-          search: (s) {},
-          download: _download,
-          onBack: () => Navigator.of(context).pop(),
-          // loadNext: () => _loadNext(),
-          getCell: (i) => cells!.cell(i),
-          initalScrollPosition: 0,
-        ));
+                _addFiles();
+
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content:
+                        Text(AppLocalizations.of(context)!.uploadStarted)));
+              },
+              child: Text(AppLocalizations.of(context)!.addFiles))
+        ],
+        hasReachedEnd: () => widget.api.reachedEnd,
+        search: (s) {},
+        download: _download,
+        onBack: () => Navigator.of(context).pop(),
+        // loadNext: () => _loadNext(),
+        getCell: (i) => cells!.cell(i),
+        initalScrollPosition: 0,
+
+        hideShowFab: (show) => skeletonState.updateFab(setState, show),
+      ),
+    );
   }
 }

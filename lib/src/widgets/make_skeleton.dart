@@ -9,43 +9,96 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/system_gestures.dart';
 
+import '../db/isar.dart';
 import '../keybinds/keybinds.dart';
 import '../pages/senitel.dart';
+import '../schemas/settings.dart';
 import 'drawer/add_rail.dart';
 import 'drawer/drawer.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+class SkeletonState {
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
+  final FocusNode mainFocus = FocusNode();
+  final int index;
+
+  void dispose() {
+    mainFocus.dispose();
+  }
+
+  SkeletonState.settings() : index = 0;
+  SkeletonState(this.index);
+}
+
+class GridSkeletonState extends SkeletonState {
+  bool showFab;
+  final GlobalKey<CallbackGridState> gridKey = GlobalKey();
+  Settings settings = isar().settings.getSync(0)!;
+  final Future<bool> Function() onWillPop;
+
+  void updateFab(void Function(void Function()) setState, bool fab) {
+    if (fab != showFab) {
+      showFab = fab;
+      setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  GridSkeletonState({required int index, required this.onWillPop})
+      : showFab = false,
+        super(index);
+}
+
 Widget makeGridSkeleton(
-    BuildContext context,
-    int index,
-    Future<bool> Function() onWillPop,
-    GlobalKey<ScaffoldState> scaffoldKey,
-    CallbackGrid grid) {
+    BuildContext context, GridSkeletonState state, CallbackGrid grid) {
   return WillPopScope(
-    onWillPop: onWillPop,
+    onWillPop: state.onWillPop,
     child: Scaffold(
+        floatingActionButton: state.showFab
+            ? FloatingActionButton(
+                onPressed: () {
+                  if (grid.key != null &&
+                      grid.key is GlobalKey<CallbackGridState>) {
+                    (grid.key as GlobalKey<CallbackGridState>)
+                        .currentState
+                        ?.controller
+                        .animateTo(0,
+                            duration: 500.ms, curve: Curves.easeInOutSine);
+                  }
+                },
+                isExtended: true,
+                child: const Icon(Icons.arrow_upward),
+              )
+            : null,
         endDrawerEnableOpenDragGesture: false,
-        key: scaffoldKey,
-        drawer: makeDrawer(context, index),
-        endDrawer: makeEndDrawerSettings(context, scaffoldKey),
+        key: state.scaffoldKey,
+        drawer: makeDrawer(context, state.index),
+        endDrawer: makeEndDrawerSettings(context, state.scaffoldKey),
         body: gestureDeadZones(
           context,
-          child: addRail(context, index, scaffoldKey, grid),
+          child: addRail(context, state.index, state.scaffoldKey, grid),
         )),
   );
 }
 
 Widget makeSkeletonSettings(BuildContext context, String pageDescription,
-    GlobalKey<ScaffoldState> key, FocusNode focus, Widget child) {
+    SkeletonState state, Widget child) {
   Map<SingleActivatorDescription, Null Function()> bindings = {
     SingleActivatorDescription(AppLocalizations.of(context)!.back,
         const SingleActivator(LogicalKeyboardKey.escape)): () {
       Navigator.pop(context);
     },
   };
+
+  var insets = MediaQuery.viewPaddingOf(context);
 
   return CallbackShortcuts(
       bindings: {
@@ -54,9 +107,9 @@ Widget makeSkeletonSettings(BuildContext context, String pageDescription,
       },
       child: Focus(
         autofocus: true,
-        focusNode: focus,
+        focusNode: state.mainFocus,
         child: Scaffold(
-          key: key,
+          key: state.scaffoldKey,
           body: gestureDeadZones(context,
               child: CustomScrollView(
                 slivers: [
@@ -66,7 +119,10 @@ Widget makeSkeletonSettings(BuildContext context, String pageDescription,
                       title: Text(pageDescription),
                     ),
                   ),
-                  child
+                  SliverPadding(
+                    padding: EdgeInsets.only(bottom: insets.bottom),
+                    sliver: child,
+                  )
                 ],
               )),
         ),
@@ -74,13 +130,14 @@ Widget makeSkeletonSettings(BuildContext context, String pageDescription,
 }
 
 Widget makeSkeletonInnerSettings(BuildContext context, String pageDescription,
-    FocusNode focus, List<Widget> children) {
+    SkeletonState state, List<Widget> children) {
   Map<SingleActivatorDescription, Null Function()> bindings = {
     SingleActivatorDescription(AppLocalizations.of(context)!.back,
         const SingleActivator(LogicalKeyboardKey.escape)): () {
       Navigator.pop(context);
     },
   };
+  var insets = MediaQuery.viewPaddingOf(context);
 
   return CallbackShortcuts(
       bindings: {
@@ -89,7 +146,7 @@ Widget makeSkeletonInnerSettings(BuildContext context, String pageDescription,
       },
       child: Focus(
         autofocus: true,
-        focusNode: focus,
+        focusNode: state.mainFocus,
         child: Scaffold(
           body: gestureDeadZones(context,
               child: CustomScrollView(
@@ -100,15 +157,19 @@ Widget makeSkeletonInnerSettings(BuildContext context, String pageDescription,
                       title: Text(pageDescription),
                     ),
                   ),
-                  SliverList(delegate: SliverChildListDelegate(children))
+                  SliverPadding(
+                    padding: EdgeInsets.only(bottom: insets.bottom),
+                    sliver:
+                        SliverList(delegate: SliverChildListDelegate(children)),
+                  )
                 ],
               )),
         ),
       ));
 }
 
-Widget makeSkeleton(BuildContext context, int drawerIndex,
-    String pageDescription, GlobalKey<ScaffoldState> key, FocusNode focus,
+Widget makeSkeleton(
+    BuildContext context, String pageDescription, SkeletonState state,
     {Future<bool> Function()? overrideOnPop,
     List<Widget>? children,
     Widget Function(BuildContext context, int indx)? builder,
@@ -126,13 +187,15 @@ Widget makeSkeleton(BuildContext context, int drawerIndex,
     throw "itemCount should be supplied";
   }
 
+  var insets = MediaQuery.viewPaddingOf(context);
+
   Map<SingleActivatorDescription, Null Function()> bindings = {
     SingleActivatorDescription(AppLocalizations.of(context)!.back,
         const SingleActivator(LogicalKeyboardKey.escape)): () {
-      if (key.currentState != null) {
-        if (key.currentState!.hasEndDrawer &&
-            key.currentState!.isEndDrawerOpen) {
-          key.currentState?.closeEndDrawer();
+      if (state.scaffoldKey.currentState != null) {
+        if (state.scaffoldKey.currentState!.hasEndDrawer &&
+            state.scaffoldKey.currentState!.isEndDrawerOpen) {
+          state.scaffoldKey.currentState?.closeEndDrawer();
         } else {
           if (popSenitel) {
             popUntilSenitel(context);
@@ -149,7 +212,7 @@ Widget makeSkeleton(BuildContext context, int drawerIndex,
       }
     },
     if (additionalBindings != null) ...additionalBindings,
-    ...digitAndSettings(context, drawerIndex, key)
+    ...digitAndSettings(context, state.index, state.scaffoldKey)
   };
 
   return CallbackShortcuts(
@@ -159,20 +222,20 @@ Widget makeSkeleton(BuildContext context, int drawerIndex,
       },
       child: Focus(
           autofocus: true,
-          focusNode: focus,
+          focusNode: state.mainFocus,
           child: WillPopScope(
             onWillPop: () => overrideOnPop != null
                 ? overrideOnPop()
                 : popUntilSenitel(context),
             child: Scaffold(
-              key: key,
-              drawer: makeDrawer(context, drawerIndex),
-              endDrawer: makeEndDrawerSettings(context, key),
+              key: state.scaffoldKey,
+              drawer: makeDrawer(context, state.index),
+              endDrawer: makeEndDrawerSettings(context, state.scaffoldKey),
               body: gestureDeadZones(context,
                   child: addRail(
                       context,
-                      drawerIndex,
-                      key,
+                      state.index,
+                      state.scaffoldKey,
                       CustomScrollView(
                         slivers: [
                           SliverAppBar(
@@ -195,13 +258,19 @@ Widget makeSkeleton(BuildContext context, int drawerIndex,
                             ),
                           ),
                           if (children != null)
-                            SliverList.list(
-                              children: children,
+                            SliverPadding(
+                              padding: EdgeInsets.only(bottom: insets.bottom),
+                              sliver: SliverList.list(
+                                children: children,
+                              ),
                             ),
                           if (builder != null)
-                            SliverList.builder(
-                              itemBuilder: builder,
-                              itemCount: itemCount,
+                            SliverPadding(
+                              padding: EdgeInsets.only(bottom: insets.bottom),
+                              sliver: SliverList.builder(
+                                itemBuilder: builder,
+                                itemCount: itemCount,
+                              ),
                             )
                         ],
                       ))),

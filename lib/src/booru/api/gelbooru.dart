@@ -21,17 +21,24 @@ List<String> _fromGelbooruTags(List<dynamic> l) {
 
 class Gelbooru implements BooruAPI {
   @override
-  Dio client;
+  final Dio client;
 
   @override
-  Booru booru() => Booru.gelbooru;
+  final String name = "Gelbooru";
 
   @override
-  void close() => client.close(force: true);
+  final String domain = "gelbooru.com";
+
+  @override
+  final Booru booru = Booru.gelbooru;
+
+  @override
+  int? get currentPage => _page;
+
+  @override
+  final bool wouldBecomeStale = true;
 
   int _page = 0;
-
-  Gelbooru(int page, this.client) : _page = page;
 
   @override
   Uri browserLink(int id) => Uri.https("gelbooru.com", "/index.php", {
@@ -39,9 +46,6 @@ class Gelbooru implements BooruAPI {
         "s": "view",
         "id": id.toString(),
       });
-
-  @override
-  int? currentPage() => _page;
 
   @override
   Future<List<String>> completeTag(String t) async {
@@ -154,12 +158,6 @@ class Gelbooru implements BooruAPI {
   }
 
   @override
-  String name() => "Gelbooru";
-
-  @override
-  String domain() => "gelbooru.com";
-
-  @override
   Future<List<Post>> fromPost(int _, String tags) =>
       _commonPosts(tags, _page).then((value) {
         if (value.isNotEmpty) {
@@ -174,15 +172,19 @@ class Gelbooru implements BooruAPI {
     var dateFormatter = DateFormat("EEE MMM dd HH:mm:ss");
 
     for (var post in m) {
+      String createdAt = post["created_at"];
+      DateTime date = dateFormatter.parse(createdAt).copyWith(
+          year: int.tryParse(createdAt.substring(createdAt.length - 4)));
+
       list.add(Post(
           height: post["height"],
-          prefix: booru().prefix,
+          prefix: booru.prefix,
           id: post["id"],
           md5: post["md5"],
           tags: post["tags"],
           score: post["score"],
           sourceUrl: post["source"],
-          createdAt: dateFormatter.parse(post["created_at"]),
+          createdAt: date,
           rating: post["rating"],
           width: post["width"],
           fileUrl: post["file_url"],
@@ -195,4 +197,9 @@ class Gelbooru implements BooruAPI {
 
     return list;
   }
+
+  @override
+  void close() => client.close(force: true);
+
+  Gelbooru(int page, this.client) : _page = page;
 }

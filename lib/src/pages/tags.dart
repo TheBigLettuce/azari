@@ -43,7 +43,6 @@ class _SearchBooruState extends State<SearchBooru> {
   List<String> _excludedTags = [];
   late final StreamSubscription<void> _excludedTagsWatcher;
 
-  FocusNode mainFocus = FocusNode();
   FocusNode focus = FocusNode();
   FocusNode excludedFocus = FocusNode();
   FocusNode singlePostFocus = FocusNode();
@@ -58,27 +57,30 @@ class _SearchBooruState extends State<SearchBooru> {
   AnimationController? deleteAllExcludedController;
   AnimationController? deleteAllController;
 
-  GlobalKey<ScaffoldState> key = GlobalKey();
+  final SkeletonState skeletonState = SkeletonState(kTagsDrawerIndex);
+
+  bool recentTagsExpanded = true;
+  bool excludedTagsExpanded = true;
 
   @override
   void initState() {
     focus.addListener(() {
       if (!focus.hasFocus) {
         searchHighlight = "";
-        mainFocus.requestFocus();
+        skeletonState.mainFocus.requestFocus();
       }
     });
 
     excludedFocus.addListener(() {
       if (!excludedFocus.hasFocus) {
         excludedHighlight = "";
-        mainFocus.requestFocus();
+        skeletonState.mainFocus.requestFocus();
       }
     });
 
     singlePostFocus.addListener(() {
       if (!singlePostFocus.hasFocus) {
-        mainFocus.requestFocus();
+        skeletonState.mainFocus.requestFocus();
       }
     });
 
@@ -124,9 +126,10 @@ class _SearchBooruState extends State<SearchBooru> {
     _lastTagsWatcher.cancel();
     _excludedTagsWatcher.cancel();
     focus.dispose();
+
     excludedFocus.dispose();
     singlePostFocus.dispose();
-    mainFocus.dispose();
+    skeletonState.dispose();
 
     booru.close();
 
@@ -135,8 +138,8 @@ class _SearchBooruState extends State<SearchBooru> {
 
   @override
   Widget build(BuildContext context) {
-    return makeSkeleton(context, kTagsDrawerIndex,
-        AppLocalizations.of(context)!.tagsPageName, key, mainFocus,
+    return makeSkeleton(
+        context, AppLocalizations.of(context)!.tagsInfoPage, skeletonState,
         additionalBindings: {
           SingleActivatorDescription(
                   AppLocalizations.of(context)!.selectSuggestion,
@@ -197,138 +200,160 @@ class _SearchBooruState extends State<SearchBooru> {
         children: [
           Padding(
             padding: const EdgeInsets.only(left: 10, right: 10),
-            child: autocompleteWidget(textController, (s) {
-              searchHighlight = s;
-            }, _onTagPressed, booru.completeTag, focus,
-                roundBorders: true, showSearch: true),
-          ),
-          ListTile(
-            title: Text(AppLocalizations.of(context)!.singlePostTitle),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 10, right: 10),
             child: SinglePost(singlePostFocus),
           ),
-          ListTile(
-            title: Text(AppLocalizations.of(context)!.recentTagsTitle),
-            trailing: IconButton(
-                onPressed: () {
-                  Navigator.push(
-                      context,
-                      DialogRoute(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: Text(AppLocalizations.of(context)!
-                                .tagsDeletionDialogTitle),
-                            actions: [
-                              TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
+          ExpansionPanelList(
+            elevation: 0,
+            dividerColor: Theme.of(context).colorScheme.background,
+            expansionCallback: (panelIndex, isExpanded) => switch (panelIndex) {
+              0 => setState(() => recentTagsExpanded = !isExpanded),
+              1 => setState(() => excludedTagsExpanded = !isExpanded),
+              int() => throw "out of range",
+            },
+            children: [
+              ExpansionPanel(
+                  isExpanded: recentTagsExpanded,
+                  headerBuilder: (context, isExpanded) {
+                    return ListTile(
+                      title:
+                          Text(AppLocalizations.of(context)!.recentTagsTitle),
+                      trailing: IconButton(
+                          onPressed: () {
+                            Navigator.push(
+                                context,
+                                DialogRoute(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: Text(AppLocalizations.of(context)!
+                                          .tagsDeletionDialogTitle),
+                                      actions: [
+                                        TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                            },
+                                            child: Text(
+                                                AppLocalizations.of(context)!
+                                                    .no)),
+                                        TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                              if (deleteAllController != null) {
+                                                deleteAllController!
+                                                    .forward(from: 0)
+                                                    .then((value) {
+                                                  isar().writeTxnSync(() =>
+                                                      isar()
+                                                          .lastTags
+                                                          .clearSync());
+                                                  if (deleteAllController !=
+                                                      null) {
+                                                    deleteAllController!
+                                                        .reverse(from: 1);
+                                                  }
+                                                });
+                                              }
+                                            },
+                                            child: Text(
+                                                AppLocalizations.of(context)!
+                                                    .yes))
+                                      ],
+                                    );
                                   },
-                                  child:
-                                      Text(AppLocalizations.of(context)!.no)),
-                              TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    if (deleteAllController != null) {
-                                      deleteAllController!
-                                          .forward(from: 0)
-                                          .then((value) {
-                                        isar().writeTxnSync(
-                                            () => isar().lastTags.clearSync());
-                                        if (deleteAllController != null) {
-                                          deleteAllController!.reverse(from: 1);
-                                        }
-                                      });
-                                    }
-                                  },
-                                  child:
-                                      Text(AppLocalizations.of(context)!.yes))
-                            ],
-                          );
+                                ));
+                          },
+                          icon: const Icon(Icons.delete)),
+                    );
+                  },
+                  body: TagsWidget(
+                          tags: _lastTags,
+                          deleteTag: (t) {
+                            if (deleteAllController != null) {
+                              deleteAllController!
+                                  .forward(from: 0)
+                                  .then((value) {
+                                _tags.latest.delete(t);
+                                if (deleteAllController != null) {
+                                  deleteAllController!.reverse(from: 1);
+                                }
+                              });
+                            } else {
+                              _tags.latest.delete(t);
+                            }
+                          },
+                          onPress: _onTagPressed)
+                      .animate(
+                          onInit: (controller) =>
+                              deleteAllController = controller,
+                          effects: [
+                            FadeEffect(
+                                begin: 1, end: 0, duration: 200.milliseconds)
+                          ],
+                          autoPlay: false)),
+              ExpansionPanel(
+                  isExpanded: excludedTagsExpanded,
+                  headerBuilder: (context, isExpanded) {
+                    return ListTile(
+                      title:
+                          Text(AppLocalizations.of(context)!.excludedTagsTitle),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.add),
+                        onPressed: () {
+                          if (replaceController != null) {
+                            replaceController!.forward(from: 0);
+                          }
                         },
-                      ));
-                },
-                icon: const Icon(Icons.delete)),
+                      ),
+                    ).animate(
+                        onInit: (controller) => replaceController = controller,
+                        effects: [
+                          FadeEffect(
+                              begin: 1, end: 0, duration: 200.milliseconds),
+                          SwapEffect(
+                              builder: (_, __) => ListTile(
+                                    title: autocompleteWidget(
+                                        excludedTagsTextController, (s) {
+                                      excludedHighlight = s;
+                                    }, _tags.excluded.add, booru.completeTag,
+                                        excludedFocus,
+                                        submitOnPress: true, showSearch: true),
+                                    trailing: IconButton(
+                                      icon: const Icon(Icons.arrow_back),
+                                      onPressed: () {
+                                        if (replaceController != null) {
+                                          replaceController!.reverse(from: 1);
+                                        }
+                                      },
+                                    ),
+                                  ).animate().fadeIn()),
+                        ],
+                        autoPlay: false);
+                  },
+                  body: TagsWidget(
+                          redBackground: true,
+                          tags: _excludedTags,
+                          deleteTag: (t) {
+                            if (deleteAllExcludedController != null) {
+                              deleteAllExcludedController!
+                                  .forward(from: 0)
+                                  .then((value) {
+                                _tags.excluded.delete(t);
+                                if (deleteAllExcludedController != null) {
+                                  deleteAllExcludedController!.reverse(from: 1);
+                                }
+                              });
+                            } else {
+                              _tags.excluded.delete(t);
+                            }
+                          },
+                          onPress: (t) {})
+                      .animate(
+                          onInit: (controller) =>
+                              deleteAllExcludedController = controller,
+                          effects: const [FadeEffect(begin: 1, end: 0)],
+                          autoPlay: false))
+            ],
           ),
-          TagsWidget(
-                  tags: _lastTags,
-                  deleteTag: (t) {
-                    if (deleteAllController != null) {
-                      deleteAllController!.forward(from: 0).then((value) {
-                        _tags.latest.delete(t);
-                        if (deleteAllController != null) {
-                          deleteAllController!.reverse(from: 1);
-                        }
-                      });
-                    } else {
-                      _tags.latest.delete(t);
-                    }
-                  },
-                  onPress: _onTagPressed)
-              .animate(
-                  onInit: (controller) => deleteAllController = controller,
-                  effects: [
-                    FadeEffect(begin: 1, end: 0, duration: 200.milliseconds)
-                  ],
-                  autoPlay: false),
-          ListTile(
-            title: Text(AppLocalizations.of(context)!.excludedTagsTitle),
-            trailing: IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () {
-                if (replaceController != null) {
-                  replaceController!.forward(from: 0);
-                }
-              },
-            ),
-          ).animate(
-              onInit: (controller) => replaceController = controller,
-              effects: [
-                FadeEffect(begin: 1, end: 0, duration: 200.milliseconds),
-                SwapEffect(
-                    builder: (_, __) => ListTile(
-                          title: autocompleteWidget(excludedTagsTextController,
-                              (s) {
-                            excludedHighlight = s;
-                          }, _tags.excluded.add, booru.completeTag,
-                              excludedFocus,
-                              submitOnPress: true, showSearch: true),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.arrow_back),
-                            onPressed: () {
-                              if (replaceController != null) {
-                                replaceController!.reverse(from: 1);
-                              }
-                            },
-                          ),
-                        ).animate().fadeIn()),
-              ],
-              autoPlay: false),
-          TagsWidget(
-                  redBackground: true,
-                  tags: _excludedTags,
-                  deleteTag: (t) {
-                    if (deleteAllExcludedController != null) {
-                      deleteAllExcludedController!
-                          .forward(from: 0)
-                          .then((value) {
-                        _tags.excluded.delete(t);
-                        if (deleteAllExcludedController != null) {
-                          deleteAllExcludedController!.reverse(from: 1);
-                        }
-                      });
-                    } else {
-                      _tags.excluded.delete(t);
-                    }
-                  },
-                  onPress: (t) {})
-              .animate(
-                  onInit: (controller) =>
-                      deleteAllExcludedController = controller,
-                  effects: const [FadeEffect(begin: 1, end: 0)],
-                  autoPlay: false)
         ]);
   }
 }

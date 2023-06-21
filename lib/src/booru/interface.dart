@@ -12,14 +12,11 @@ import '../schemas/post.dart';
 
 abstract class BooruAPI {
   Dio get client;
-
-  String name();
-
-  int? currentPage();
-
-  String domain();
-
-  Booru booru();
+  bool get wouldBecomeStale;
+  String get name;
+  String get domain;
+  Booru get booru;
+  int? get currentPage;
 
   Future<Post> singlePost(int id);
 

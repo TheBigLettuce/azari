@@ -1,3 +1,11 @@
+1.2.4:
+— Improve small Android things,
+— Improve grid.
+— Change tags page a bit,
+— Add FAB that scrolls up.
+
+***
+
 1.2.2:
 — Add more options for customizing grid appearance,
 — Improve grid's appearance,

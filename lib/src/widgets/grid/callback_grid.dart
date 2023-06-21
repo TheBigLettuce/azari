@@ -39,39 +39,42 @@ class GridDescription<B> {
   final int drawerIndex;
   final String pageDescription;
   final List<GridBottomSheetAction<B>> actions;
+  final GridColumn columns;
+  final DateTime? time;
 
-  const GridDescription(this.drawerIndex, this.pageDescription, this.actions);
+  const GridDescription(
+      this.drawerIndex, this.pageDescription, this.actions, this.columns,
+      {this.time});
 }
 
 class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
-  final T Function(int) getCell;
-  final int initalCellCount;
   final Future<int> Function()? loadNext;
   final Future<void> Function(int indx)? download;
   final Future<int> Function() refresh;
+  final void Function(bool show)? hideShowFab;
   final void Function(double pos, {double? infoPos, int? selectedCell})
       updateScrollPosition;
-  final double initalScrollPosition;
-  final void Function(String value) search;
-  final List<String> Function(String value)? searchFilter;
-  final String searchStartingValue;
   final void Function()? onBack;
-  final GlobalKey<ScaffoldState> scaffoldKey;
-  final bool Function() hasReachedEnd;
-  final List<Widget>? menuButtonItems;
-  final EdgeInsets systemNavigationInsets;
-
-  final bool tightMode;
-  final double aspectRatio;
-  final GridColumn columns;
-
-  final bool? hideAlias;
   final void Function(BuildContext context, int indx)? overrideOnPress;
-  final double? pageViewScrollingOffset;
-  final int? initalCell;
-
+  final void Function(String value) search;
+  final T Function(int) getCell;
+  final bool Function() hasReachedEnd;
+  final List<String> Function(String value)? searchFilter;
   final Map<SingleActivatorDescription, Null Function()>? additionalKeybinds;
 
+  final int initalCellCount;
+  final int? initalCell;
+  final double initalScrollPosition;
+  final double aspectRatio;
+  final double? pageViewScrollingOffset;
+  final bool tightMode;
+  final bool? hideAlias;
+  final String searchStartingValue;
+
+  final GlobalKey<ScaffoldState> scaffoldKey;
+  final List<Widget>? menuButtonItems;
+  final EdgeInsets systemNavigationInsets;
+  final FocusNode mainFocus;
   final Stream<int>? progressTicker;
 
   final GridDescription<B> description;
@@ -85,7 +88,7 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
       required this.systemNavigationInsets,
       required this.hasReachedEnd,
       required this.aspectRatio,
-      required this.columns,
+      required this.mainFocus,
       this.tightMode = false,
       this.progressTicker,
       this.menuButtonItems,
@@ -96,6 +99,7 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
       required this.search,
       required this.refresh,
       required this.updateScrollPosition,
+      this.hideShowFab,
       this.download,
       this.hideAlias,
       this.searchStartingValue = "",
@@ -124,20 +128,19 @@ class CallbackGridState<T extends Cell<B>, B>
   final _ScrollHack _scrollHack = _ScrollHack();
   Settings settings = isar().settings.getSync(0)!;
   late final StreamSubscription<Settings?> settingsWatcher;
-  //late GridColumn lastGridColCount = settings.picturesPerRow;
 
   BooruAPI booru = getBooru();
 
   late TextEditingController textEditingController =
       TextEditingController(text: widget.searchStartingValue);
   FocusNode focus = FocusNode();
-  FocusNode mainFocus = FocusNode();
 
   Map<int, B> selected = {};
 
   PersistentBottomSheetController? currentBottomSheet;
 
   StreamSubscription<int>? ticker;
+  double height = 0;
 
   int? lastSelected;
 
@@ -149,6 +152,8 @@ class CallbackGridState<T extends Cell<B>, B>
       padding: const EdgeInsets.only(top: 4, bottom: 4),
       child: IconButton(
           style: ButtonStyle(
+              shape: const MaterialStatePropertyAll(RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.elliptical(10, 10)))),
               backgroundColor: MaterialStatePropertyAll(
                   Theme.of(context).colorScheme.primary)),
           onPressed: onPressed,
@@ -159,7 +164,6 @@ class CallbackGridState<T extends Cell<B>, B>
     return addBadge
         ? Badge(
             label: Text(selected.length.toString()),
-            alignment: Alignment.topCenter,
             child: iconBtn,
           )
         : iconBtn;
@@ -280,7 +284,7 @@ class CallbackGridState<T extends Cell<B>, B>
     focus.addListener(() {
       if (!focus.hasFocus) {
         _currentlyHighlightedTag = "";
-        mainFocus.requestFocus();
+        widget.mainFocus.requestFocus();
       }
     });
 
@@ -300,9 +304,18 @@ class CallbackGridState<T extends Cell<B>, B>
     }
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      height = MediaQuery.sizeOf(context).height;
       controller.position.isScrollingNotifier.addListener(() {
         if (!refreshing) {
           widget.updateScrollPosition(controller.offset);
+        }
+
+        if (widget.hideShowFab != null) {
+          if (controller.offset == 0) {
+            widget.hideShowFab!(false);
+          } else {
+            widget.hideShowFab!(!controller.position.isScrollingNotifier.value);
+          }
         }
       });
     });
@@ -327,7 +340,13 @@ class CallbackGridState<T extends Cell<B>, B>
       });
     });
 
-    if (widget.initalCellCount != 0) {
+    if (settings.autoRefresh &&
+        settings.autoRefreshMicroseconds != 0 &&
+        widget.description.time != null &&
+        widget.description.time!.isBefore(DateTime.now()
+            .subtract(settings.autoRefreshMicroseconds.microseconds))) {
+      refresh();
+    } else if (widget.initalCellCount != 0) {
       cellCount = widget.initalCellCount;
       refreshing = false;
     } else {
@@ -343,10 +362,12 @@ class CallbackGridState<T extends Cell<B>, B>
         return;
       }
 
+      var hh = height - height * 0.90;
+
       if (!refreshing &&
           cellCount != 0 &&
           (controller.offset / controller.positions.first.maxScrollExtent) >=
-              0.95) {
+              1 - (hh / controller.positions.first.maxScrollExtent)) {
         setState(() {
           refreshing = true;
         });
@@ -377,7 +398,6 @@ class CallbackGridState<T extends Cell<B>, B>
     _scrollHack.dispose();
 
     focus.dispose();
-    mainFocus.dispose();
 
     booru.close();
 
@@ -387,6 +407,9 @@ class CallbackGridState<T extends Cell<B>, B>
   Future refresh() {
     currentBottomSheet?.close();
     selected.clear();
+    if (widget.hideShowFab != null) {
+      widget.hideShowFab!(false);
+    }
 
     return widget.refresh().then((value) {
       if (context.mounted) {
@@ -394,6 +417,7 @@ class CallbackGridState<T extends Cell<B>, B>
           cellCount = value;
           refreshing = false;
         });
+        widget.updateScrollPosition(0);
       }
     }).onError((error, stackTrace) {
       log("refreshing cells in the grid",
@@ -402,7 +426,7 @@ class CallbackGridState<T extends Cell<B>, B>
   }
 
   void _scrollUntill(int p) {
-    var picPerRow = widget.columns;
+    var picPerRow = widget.description.columns;
     // Get the full content height.
     final contentSize = controller.position.viewportDimension +
         controller.position.maxScrollExtent;
@@ -485,7 +509,7 @@ class CallbackGridState<T extends Cell<B>, B>
       SingleActivatorDescription(AppLocalizations.of(context)!.selectSuggestion,
           const SingleActivator(LogicalKeyboardKey.enter, shift: true)): () {
         if (_currentlyHighlightedTag != "") {
-          mainFocus.unfocus();
+          widget.mainFocus.unfocus();
           BooruTags().onPressed(context, _currentlyHighlightedTag);
         }
       },
@@ -517,7 +541,7 @@ class CallbackGridState<T extends Cell<B>, B>
         },
         child: Focus(
           autofocus: true,
-          focusNode: mainFocus,
+          focusNode: widget.mainFocus,
           child: RefreshIndicator(
               onRefresh: () {
                 if (!refreshing) {
@@ -532,7 +556,8 @@ class CallbackGridState<T extends Cell<B>, B>
               },
               child: Scrollbar(
                   interactive: true,
-                  thumbVisibility: true,
+                  thumbVisibility:
+                      Platform.isAndroid || Platform.isIOS ? false : true,
                   thickness: 6,
                   controller: controller,
                   child: CustomScrollView(
@@ -623,72 +648,86 @@ class CallbackGridState<T extends Cell<B>, B>
                       !refreshing && cellCount == 0
                           ? const SliverToBoxAdapter(child: EmptyWidget())
                           : settings.listViewBooru
-                              ? SliverList.separated(
-                                  separatorBuilder: (context, index) =>
-                                      const Divider(
-                                    height: 1,
-                                  ),
-                                  itemCount: cellCount,
-                                  itemBuilder: (context, index) {
-                                    var cell = widget.getCell(index);
-                                    var cellData = cell
-                                        .getCellData(settings.listViewBooru);
+                              ? SliverPadding(
+                                  padding: EdgeInsets.only(
+                                      bottom:
+                                          widget.systemNavigationInsets.bottom),
+                                  sliver: SliverList.separated(
+                                    separatorBuilder: (context, index) =>
+                                        const Divider(
+                                      height: 1,
+                                    ),
+                                    itemCount: cellCount,
+                                    itemBuilder: (context, index) {
+                                      var cell = widget.getCell(index);
+                                      var cellData = cell
+                                          .getCellData(settings.listViewBooru);
 
-                                    return _WrappedSelection(
-                                      selectUntil: _selectUntil,
-                                      thisIndx: index,
-                                      isSelected: selected[index] != null,
-                                      selectionEnabled: selected.isNotEmpty,
-                                      selectUnselect: () =>
-                                          _selectOrUnselect(index, cell),
-                                      child: ListTile(
-                                        onLongPress: () =>
+                                      return _WrappedSelection(
+                                        selectUntil: _selectUntil,
+                                        thisIndx: index,
+                                        isSelected: selected[index] != null,
+                                        selectionEnabled: selected.isNotEmpty,
+                                        selectUnselect: () =>
                                             _selectOrUnselect(index, cell),
-                                        onTap: () => _onPressed(context, index),
-                                        leading: CircleAvatar(
+                                        child: ListTile(
+                                          onLongPress: () =>
+                                              _selectOrUnselect(index, cell),
+                                          onTap: () =>
+                                              _onPressed(context, index),
+                                          leading: CircleAvatar(
                                             backgroundColor: Theme.of(context)
                                                 .colorScheme
                                                 .background,
-                                            foregroundImage: cellData.thumb),
-                                        title: Text(
-                                          cellData.name,
-                                          softWrap: false,
-                                          overflow: TextOverflow.ellipsis,
+                                            foregroundImage: cellData.thumb,
+                                            onForegroundImageError: (_, __) {},
+                                          ),
+                                          title: Text(
+                                            cellData.name,
+                                            softWrap: false,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
-                                      ),
-                                    ).animate().fadeIn();
-                                  },
+                                      ).animate().fadeIn();
+                                    },
+                                  ),
                                 )
-                              : SliverGrid.builder(
-                                  gridDelegate:
-                                      SliverGridDelegateWithFixedCrossAxisCount(
-                                          childAspectRatio: widget.aspectRatio,
-                                          crossAxisCount:
-                                              widget.columns.number),
-                                  itemCount: cellCount,
-                                  itemBuilder: (context, indx) {
-                                    var m = widget.getCell(indx);
-                                    var cellData =
-                                        m.getCellData(settings.listViewBooru);
+                              : SliverPadding(
+                                  padding: EdgeInsets.only(
+                                      bottom:
+                                          widget.systemNavigationInsets.bottom),
+                                  sliver: SliverGrid.builder(
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                            childAspectRatio:
+                                                widget.aspectRatio,
+                                            crossAxisCount: widget
+                                                .description.columns.number),
+                                    itemCount: cellCount,
+                                    itemBuilder: (context, indx) {
+                                      var m = widget.getCell(indx);
+                                      var cellData =
+                                          m.getCellData(settings.listViewBooru);
 
-                                    return _WrappedSelection(
-                                      selectionEnabled: selected.isNotEmpty,
-                                      thisIndx: indx,
-                                      selectUntil: _selectUntil,
-                                      selectUnselect: () =>
-                                          _selectOrUnselect(indx, m),
-                                      isSelected: selected[indx] != null,
-                                      child: GridCell(
-                                        cell: cellData,
-                                        hidealias: widget.hideAlias,
-                                        indx: indx,
-                                        tight: widget.tightMode,
-                                        onPressed: _onPressed,
-                                        onLongPress: () => _selectOrUnselect(
-                                            indx, m), //extend: maxExtend,
-                                      ),
-                                    );
-                                  },
+                                      return _WrappedSelection(
+                                        selectionEnabled: selected.isNotEmpty,
+                                        thisIndx: indx,
+                                        selectUntil: _selectUntil,
+                                        selectUnselect: () =>
+                                            _selectOrUnselect(indx, m),
+                                        isSelected: selected[indx] != null,
+                                        child: GridCell(
+                                          cell: cellData,
+                                          hidealias: widget.hideAlias,
+                                          indx: indx,
+                                          tight: widget.tightMode,
+                                          onPressed: _onPressed,
+                                          onLongPress: () => _selectOrUnselect(
+                                              indx, m), //extend: maxExtend,
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 )
                     ],
                   ))),
@@ -726,27 +765,25 @@ class _WrappedSelection extends StatelessWidget {
         if (isSelected)
           GestureDetector(
             onTap: selectUnselect,
-            child: Container(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Align(
-                  alignment: Alignment.topRight,
-                  child: SizedBox(
-                    width: Theme.of(context).iconTheme.size,
-                    height: Theme.of(context).iconTheme.size,
-                    child: Container(
-                      decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
-                          shape: BoxShape.circle),
-                      child: Icon(
-                        Icons.check_outlined,
-                        color: Theme.of(context).brightness != Brightness.light
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.primaryContainer,
-                        shadows: const [
-                          Shadow(blurRadius: 0, color: Colors.black)
-                        ],
-                      ),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Align(
+                alignment: Alignment.topRight,
+                child: SizedBox(
+                  width: Theme.of(context).iconTheme.size,
+                  height: Theme.of(context).iconTheme.size,
+                  child: Container(
+                    decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        shape: BoxShape.circle),
+                    child: Icon(
+                      Icons.check_outlined,
+                      color: Theme.of(context).brightness != Brightness.light
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.primaryContainer,
+                      shadows: const [
+                        Shadow(blurRadius: 0, color: Colors.black)
+                      ],
                     ),
                   ),
                 ),

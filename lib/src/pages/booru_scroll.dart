@@ -9,6 +9,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart' as db;
@@ -31,7 +32,7 @@ import '../booru/tags/tags.dart';
 void _updateScrollPrimary(BooruAPI booru, double pos, int? page,
     {double? tagPos}) {
   db.isar().writeTxnSync(() => db.isar().scrollPositionPrimarys.putSync(
-      sc_pos.ScrollPositionPrimary(pos, booru.domain(),
+      sc_pos.ScrollPositionPrimary(pos, booru.domain,
           page: page, tagPos: tagPos)));
 }
 
@@ -50,6 +51,7 @@ class BooruScroll extends StatefulWidget {
   final double? pageViewScrollingOffset;
   final int? initalPost;
   final bool toRestore;
+  final DateTime? time;
 
   // ignore: unused_field
   final String _type; // for debug only
@@ -60,6 +62,7 @@ class BooruScroll extends StatefulWidget {
     super.key,
     required this.initalScroll,
     required this.isar,
+    required this.time,
     this.clear = false,
   })  : tags = "",
         toRestore = false,
@@ -79,6 +82,7 @@ class BooruScroll extends StatefulWidget {
         booruPage = null,
         pageViewScrollingOffset = null,
         initalPost = null,
+        time = null,
         closeDb = db.removeSecondaryGrid,
         _type = "secondary";
 
@@ -92,6 +96,7 @@ class BooruScroll extends StatefulWidget {
       required this.initalScroll})
       : clear = false,
         toRestore = true,
+        time = null,
         closeDb = db.removeSecondaryGrid,
         _type = "restore";
 
@@ -102,15 +107,25 @@ class BooruScroll extends StatefulWidget {
 class _BooruScrollState extends State<BooruScroll> {
   late BooruAPI booru = db.getBooru(page: widget.booruPage);
   late Isar isar = widget.isar;
-  late Settings settings = db.isar().settings.getSync(0)!;
   late StreamSubscription<void> tagWatcher;
   late StreamSubscription<Settings?> settingsWatcher;
   List<String> tags = BooruTags().latest.getStrings();
-  final GlobalKey<ScaffoldState> _key = GlobalKey();
   late final void Function(double pos, {double? infoPos, int? selectedCell})
       updateScrollPosition;
   Downloader downloader = Downloader();
   bool reachedEnd = false;
+
+  late GridSkeletonState skeletonState = GridSkeletonState(
+      index: kBooruGridDrawerIndex,
+      onWillPop: () {
+        if (widget.tags.isNotEmpty) {
+          if (widget.toRestore) {
+            db.restoreStateNext(context, isar.name);
+          }
+        }
+
+        return Future.value(true);
+      });
 
   @override
   void initState() {
@@ -118,12 +133,11 @@ class _BooruScrollState extends State<BooruScroll> {
 
     if (widget.tags.isEmpty) {
       updateScrollPosition = (pos, {double? infoPos, int? selectedCell}) =>
-          _updateScrollPrimary(booru, pos, booru.currentPage(),
-              tagPos: infoPos);
+          _updateScrollPrimary(booru, pos, booru.currentPage, tagPos: infoPos);
     } else {
       updateScrollPosition = (pos, {double? infoPos, int? selectedCell}) =>
           _updateScrollSecondary(
-              widget.isar, pos, widget.tags, booru.currentPage(),
+              widget.isar, pos, widget.tags, booru.currentPage,
               scrollPositionTags: infoPos, selectedPost: selectedCell);
     }
 
@@ -136,9 +150,9 @@ class _BooruScrollState extends State<BooruScroll> {
     });
 
     settingsWatcher = db.isar().settings.watchObject(0).listen((event) {
-      setState(() {
-        settings = event!;
-      });
+      skeletonState.settings = event!;
+
+      setState(() {});
     });
   }
 
@@ -150,6 +164,8 @@ class _BooruScrollState extends State<BooruScroll> {
     if (widget.closeDb != null) {
       widget.closeDb!(isar.name);
     }
+
+    skeletonState.dispose();
 
     booru.close();
 
@@ -171,7 +187,7 @@ class _BooruScrollState extends State<BooruScroll> {
       BooruTags().addAllPostTags(list);
       reachedEnd = false;
     } catch (e, trace) {
-      log("refreshing grid on ${settings.selectedBooru.string}",
+      log("refreshing grid on ${skeletonState.settings.selectedBooru.string}",
           level: Level.WARNING.value, error: e, stackTrace: trace);
     }
 
@@ -186,8 +202,7 @@ class _BooruScrollState extends State<BooruScroll> {
       return Future.value();
     }
 
-    return downloader
-        .add(File.d(p.downloadUrl(), booru.domain(), p.filename()));
+    return downloader.add(File.d(p.downloadUrl(), booru.domain, p.filename()));
   }
 
   Future<int> _addLast() async {
@@ -208,7 +223,7 @@ class _BooruScrollState extends State<BooruScroll> {
         BooruTags().addAllPostTags(list);
       }
     } catch (e, trace) {
-      log("_addLast on grid ${settings.selectedBooru.string}",
+      log("_addLast on grid ${skeletonState.settings.selectedBooru.string}",
           level: Level.WARNING.value, error: e, stackTrace: trace);
     }
 
@@ -219,53 +234,53 @@ class _BooruScrollState extends State<BooruScroll> {
   Widget build(BuildContext context) {
     var insets = MediaQuery.viewPaddingOf(context);
 
-    return makeGridSkeleton(context, kBooruGridDrawerIndex, () {
-      if (widget.tags.isNotEmpty) {
-        if (widget.toRestore) {
-          db.restoreStateNext(context, isar.name);
-        }
-      }
-
-      return Future.value(true);
-    },
-        _key,
-        CallbackGrid<Post, PostShrinked>(
-          systemNavigationInsets: insets,
-          description: GridDescription(kBooruGridDrawerIndex,
-              AppLocalizations.of(context)!.booruGridPageName, [
-            GridBottomSheetAction(Icons.download, (selected) {
-              for (var element in selected) {
-                downloader.add(
-                    File.d(element.fileUrl, booru.domain(), element.fileName));
-              }
-            }, true)
-          ]),
-          hasReachedEnd: () => reachedEnd,
-          scaffoldKey: _key,
-          columns: settings.picturesPerRow,
-          aspectRatio: settings.ratio.value,
-          getCell: (i) => isar.posts.getSync(i + 1)!,
-          loadNext: _addLast,
-          refresh: _clearAndRefresh,
-          onBack: widget.tags.isEmpty
-              ? null
-              : () {
-                  if (widget.toRestore) {
-                    db.restoreStateNext(context, isar.name);
-                  } else {
-                    Navigator.pop(context);
-                  }
-                },
-          searchStartingValue: widget.tags,
-          search: _search,
-          hideAlias: true,
-          download: _download,
-          updateScrollPosition: updateScrollPosition,
-          initalScrollPosition: widget.initalScroll,
-          initalCellCount: widget.clear ? 0 : isar.posts.countSync(),
-          searchFilter: _searchFilter,
-          pageViewScrollingOffset: widget.pageViewScrollingOffset,
-          initalCell: widget.initalPost,
-        ));
+    return makeGridSkeleton(
+      context,
+      skeletonState,
+      CallbackGrid<Post, PostShrinked>(
+        key: skeletonState.gridKey,
+        systemNavigationInsets: insets,
+        description: GridDescription(
+            kBooruGridDrawerIndex,
+            AppLocalizations.of(context)!.booruGridPageName,
+            [
+              GridBottomSheetAction(Icons.download, (selected) {
+                for (var element in selected) {
+                  downloader.add(
+                      File.d(element.fileUrl, booru.domain, element.fileName));
+                }
+              }, true)
+            ],
+            skeletonState.settings.picturesPerRow,
+            time: booru.wouldBecomeStale ? widget.time : null),
+        hasReachedEnd: () => reachedEnd,
+        mainFocus: skeletonState.mainFocus,
+        scaffoldKey: skeletonState.scaffoldKey,
+        aspectRatio: skeletonState.settings.ratio.value,
+        getCell: (i) => isar.posts.getSync(i + 1)!,
+        loadNext: _addLast,
+        refresh: _clearAndRefresh,
+        hideShowFab: (show) => skeletonState.updateFab(setState, show),
+        onBack: widget.tags.isEmpty
+            ? null
+            : () {
+                if (widget.toRestore) {
+                  db.restoreStateNext(context, isar.name);
+                } else {
+                  Navigator.pop(context);
+                }
+              },
+        searchStartingValue: widget.tags,
+        search: _search,
+        hideAlias: true,
+        download: _download,
+        updateScrollPosition: updateScrollPosition,
+        initalScrollPosition: widget.initalScroll,
+        initalCellCount: widget.clear ? 0 : isar.posts.countSync(),
+        searchFilter: _searchFilter,
+        pageViewScrollingOffset: widget.pageViewScrollingOffset,
+        initalCell: widget.initalPost,
+      ),
+    );
   }
 }
