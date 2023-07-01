@@ -1,3 +1,7 @@
+1.2.5:
+— Separate some parts of the CallbackGrid,
+— Move search functionality out of the CallbackGrid.
+
 1.2.4:
 — Improve small Android things,
 — Improve grid.

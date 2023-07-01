@@ -18,12 +18,14 @@ import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:logging/logging.dart';
-import '../../booru/tags/tags.dart';
 import '../../cell/cell.dart';
 import '../../keybinds/keybinds.dart';
-import '../booru/autocomplete_tag.dart';
 import 'cell.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+part 'selection.dart';
+part 'wrapped_selection.dart';
+part 'filter.dart';
 
 class GridBottomSheetAction<B> {
   final IconData icon;
@@ -37,14 +39,20 @@ class GridBottomSheetAction<B> {
 
 class GridDescription<B> {
   final int drawerIndex;
-  final String pageDescription;
+  final String keybindsDescription;
+  final String? pageName;
   final List<GridBottomSheetAction<B>> actions;
   final GridColumn columns;
   final DateTime? time;
 
-  const GridDescription(
-      this.drawerIndex, this.pageDescription, this.actions, this.columns,
-      {this.time});
+  const GridDescription(this.drawerIndex, this.actions, this.columns,
+      {required this.keybindsDescription, this.pageName, this.time});
+}
+
+abstract class SearchFilter<T extends Cell<B>, B> {
+  void setValue(String s);
+  int count();
+  T getCell(int i);
 }
 
 class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
@@ -56,11 +64,10 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
       updateScrollPosition;
   final void Function()? onBack;
   final void Function(BuildContext context, int indx)? overrideOnPress;
-  final void Function(String value) search;
   final T Function(int) getCell;
   final bool Function() hasReachedEnd;
-  final List<String> Function(String value)? searchFilter;
   final Map<SingleActivatorDescription, Null Function()>? additionalKeybinds;
+  final SearchAndFocus? searchWidget;
 
   final int initalCellCount;
   final int? initalCell;
@@ -69,7 +76,6 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
   final double? pageViewScrollingOffset;
   final bool tightMode;
   final bool? hideAlias;
-  final String searchStartingValue;
 
   final GlobalKey<ScaffoldState> scaffoldKey;
   final List<Widget>? menuButtonItems;
@@ -92,17 +98,15 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
       this.tightMode = false,
       this.progressTicker,
       this.menuButtonItems,
-      this.searchFilter,
+      this.searchWidget,
       this.initalCell,
       this.pageViewScrollingOffset,
       this.loadNext,
-      required this.search,
       required this.refresh,
       required this.updateScrollPosition,
       this.hideShowFab,
       this.download,
       this.hideAlias,
-      this.searchStartingValue = "",
       this.onBack,
       this.initalCellCount = 0,
       this.overrideOnPress,
@@ -113,188 +117,38 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
   State<CallbackGrid<T, B>> createState() => CallbackGridState<T, B>();
 }
 
-class _ScrollHack extends ScrollController {
-  @override
-  bool get hasClients => false;
+class SearchAndFocus {
+  final Widget search;
+  final FocusNode focus;
+  final void Function() onPressed;
+
+  const SearchAndFocus(this.search, this.focus, this.onPressed);
 }
 
-class CallbackGridState<T extends Cell<B>, B>
-    extends State<CallbackGrid<T, B>> {
+class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
+    with _Selection<T, B>, _Filter<T, B> {
   late ScrollController controller =
       ScrollController(initialScrollOffset: widget.initalScrollPosition);
 
   int cellCount = 0;
   bool refreshing = true;
-  final _ScrollHack _scrollHack = _ScrollHack();
   Settings settings = isar().settings.getSync(0)!;
   late final StreamSubscription<Settings?> settingsWatcher;
 
   BooruAPI booru = getBooru();
 
-  late TextEditingController textEditingController =
-      TextEditingController(text: widget.searchStartingValue);
-  FocusNode focus = FocusNode();
-
-  Map<int, B> selected = {};
-
-  PersistentBottomSheetController? currentBottomSheet;
-
   StreamSubscription<int>? ticker;
   double height = 0;
-
-  int? lastSelected;
-
-  String _currentlyHighlightedTag = "";
-
-  Widget _wrapSheetButton(BuildContext context, IconData icon,
-      void Function()? onPressed, bool addBadge) {
-    var iconBtn = Padding(
-      padding: const EdgeInsets.only(top: 4, bottom: 4),
-      child: IconButton(
-          style: ButtonStyle(
-              shape: const MaterialStatePropertyAll(RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.elliptical(10, 10)))),
-              backgroundColor: MaterialStatePropertyAll(
-                  Theme.of(context).colorScheme.primary)),
-          onPressed: onPressed,
-          icon:
-              Icon(icon, color: Theme.of(context).colorScheme.inversePrimary)),
-    );
-
-    return addBadge
-        ? Badge(
-            label: Text(selected.length.toString()),
-            child: iconBtn,
-          )
-        : iconBtn;
-  }
-
-  void _addSelection(int id, T selection) {
-    if (selected.isEmpty || currentBottomSheet == null) {
-      currentBottomSheet = showBottomSheet(
-          context: context,
-          enableDrag: false,
-          builder: (context) {
-            return Padding(
-              padding:
-                  EdgeInsets.only(bottom: widget.systemNavigationInsets.bottom),
-              child: BottomSheet(
-                  enableDrag: false,
-                  onClosing: () {},
-                  builder: (context) {
-                    return Wrap(
-                      spacing: 4,
-                      children: [
-                        _wrapSheetButton(context, Icons.close_rounded, () {
-                          setState(() {
-                            selected.clear();
-                            currentBottomSheet?.close();
-                          });
-                        }, true),
-                        ...widget.description.actions
-                            .map((e) => _wrapSheetButton(
-                                context,
-                                e.icon,
-                                e.showOnlyWhenSingle && selected.length != 1
-                                    ? null
-                                    : () {
-                                        e.onPress(selected.values.toList());
-
-                                        if (e.closeOnPress) {
-                                          setState(() {
-                                            selected.clear();
-                                            currentBottomSheet?.close();
-                                          });
-                                        }
-                                      },
-                                false))
-                            .toList()
-                      ],
-                    );
-                  }),
-            );
-          })
-        ..closed.then((value) => currentBottomSheet = null);
-    } else {
-      if (currentBottomSheet != null && currentBottomSheet!.setState != null) {
-        currentBottomSheet!.setState!(() {});
-      }
-    }
-
-    setState(() {
-      selected[id] = selection.shrinkedData();
-      lastSelected = id;
-    });
-  }
-
-  void _removeSelection(int id) {
-    setState(() {
-      selected.remove(id);
-      if (selected.isEmpty) {
-        currentBottomSheet?.close();
-        currentBottomSheet = null;
-        lastSelected = null;
-      } else {
-        if (currentBottomSheet != null &&
-            currentBottomSheet!.setState != null) {
-          currentBottomSheet!.setState!(() {});
-        }
-      }
-    });
-  }
-
-  void _selectUntil(int indx) {
-    if (lastSelected != null) {
-      if (lastSelected == indx) {
-        return;
-      }
-
-      if (indx < lastSelected!) {
-        for (var i = lastSelected!; i >= indx; i--) {
-          selected[i] = widget.getCell(i).shrinkedData();
-          lastSelected = i;
-        }
-        setState(() {});
-      } else if (indx > lastSelected!) {
-        for (var i = lastSelected!; i <= indx; i++) {
-          selected[i] = widget.getCell(i).shrinkedData();
-          lastSelected = i;
-        }
-        setState(() {});
-      }
-
-      if (currentBottomSheet != null && currentBottomSheet!.setState != null) {
-        currentBottomSheet!.setState!(() {});
-      }
-    }
-  }
-
-  void _selectOrUnselect(int index, T selection) {
-    if (selected[index] == null) {
-      _addSelection(index, selection);
-    } else {
-      _removeSelection(index);
-    }
-  }
 
   @override
   void initState() {
     super.initState();
 
-    focus.addListener(() {
-      if (!focus.hasFocus) {
-        _currentlyHighlightedTag = "";
-        widget.mainFocus.requestFocus();
-      }
-    });
-
-    if (widget.progressTicker != null) {
-      ticker = widget.progressTicker!.listen((event) {
-        setState(() {
-          cellCount = event;
-        });
+    ticker = widget.progressTicker?.listen((event) {
+      setState(() {
+        cellCount = event;
       });
-    }
+    });
 
     if (widget.pageViewScrollingOffset != null && widget.initalCell != null) {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
@@ -388,16 +242,10 @@ class CallbackGridState<T extends Cell<B>, B>
 
   @override
   void dispose() {
-    if (ticker != null) {
-      ticker!.cancel();
-    }
+    ticker?.cancel();
 
-    textEditingController.dispose();
     controller.dispose();
     settingsWatcher.cancel();
-    _scrollHack.dispose();
-
-    focus.dispose();
 
     booru.close();
 
@@ -508,17 +356,18 @@ class CallbackGridState<T extends Cell<B>, B>
       },
       SingleActivatorDescription(AppLocalizations.of(context)!.selectSuggestion,
           const SingleActivator(LogicalKeyboardKey.enter, shift: true)): () {
-        if (_currentlyHighlightedTag != "") {
-          widget.mainFocus.unfocus();
-          BooruTags().onPressed(context, _currentlyHighlightedTag);
-        }
+        widget.searchWidget?.onPressed();
       },
       SingleActivatorDescription(AppLocalizations.of(context)!.focusSearch,
           const SingleActivator(LogicalKeyboardKey.keyF, control: true)): () {
-        if (focus.hasFocus) {
-          focus.unfocus();
+        if (widget.searchWidget == null) {
+          return;
+        }
+
+        if (widget.searchWidget!.focus.hasFocus) {
+          widget.searchWidget!.focus.unfocus();
         } else {
-          focus.requestFocus();
+          widget.searchWidget!.focus.requestFocus();
         }
       },
       if (widget.onBack != null)
@@ -537,7 +386,7 @@ class CallbackGridState<T extends Cell<B>, B>
         bindings: {
           ...bindings,
           ...keybindDescription(context, describeKeys(bindings),
-              widget.description.pageDescription)
+              widget.description.keybindsDescription)
         },
         child: Focus(
           autofocus: true,
@@ -565,6 +414,14 @@ class CallbackGridState<T extends Cell<B>, B>
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
                       SliverAppBar(
+                        shape: const ContinuousRectangleBorder(
+                            borderRadius: BorderRadius.only(
+                                bottomLeft: Radius.circular(15),
+                                bottomRight: Radius.circular(15))),
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .background
+                            .withOpacity(0.90),
                         expandedHeight: 152,
                         collapsedHeight: 64,
                         automaticallyImplyLeading: false,
@@ -577,19 +434,15 @@ class CallbackGridState<T extends Cell<B>, B>
                                       titlePadding: EdgeInsetsDirectional.only(
                                           start: widget.onBack != null ? 48 : 0,
                                           bottom: 8),
-                                      title: autocompleteWidget(
-                                          textEditingController, (s) {
-                                        _currentlyHighlightedTag = s;
-                                      }, (s) {
-                                        if (refreshing) {
-                                          return;
-                                        }
-
-                                        widget.search(s);
-                                      }, booru.completeTag, focus,
-                                          scrollHack: _scrollHack,
-                                          showSearch: true,
-                                          addItems: []))),
+                                      title: widget.searchWidget?.search ??
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 8),
+                                            child: Text(
+                                                widget.description.pageName ??
+                                                    widget.description
+                                                        .keybindsDescription),
+                                          ))),
                               if (Platform.isAndroid || Platform.isIOS)
                                 wrapAppBarAction(GestureDetector(
                                   onLongPress: () {
@@ -639,10 +492,6 @@ class CallbackGridState<T extends Cell<B>, B>
                                 preferredSize: Size.fromHeight(4),
                                 child: LinearProgressIndicator(),
                               )
-                            : null,
-                        shape: Platform.isAndroid
-                            ? RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15))
                             : null,
                       ),
                       !refreshing && cellCount == 0
@@ -732,65 +581,5 @@ class CallbackGridState<T extends Cell<B>, B>
                     ],
                   ))),
         ));
-  }
-}
-
-class _WrappedSelection extends StatelessWidget {
-  final Widget child;
-  final bool isSelected;
-  final bool selectionEnabled;
-  final int thisIndx;
-  final void Function() selectUnselect;
-  final void Function(int indx) selectUntil;
-  const _WrappedSelection(
-      {required this.child,
-      required this.isSelected,
-      required this.selectUnselect,
-      required this.thisIndx,
-      required this.selectionEnabled,
-      required this.selectUntil});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        GestureDetector(
-          onTap: selectUnselect,
-          onLongPress: () => selectUntil(thisIndx),
-          child: AbsorbPointer(
-            absorbing: selectionEnabled,
-            child: child,
-          ),
-        ),
-        if (isSelected)
-          GestureDetector(
-            onTap: selectUnselect,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Align(
-                alignment: Alignment.topRight,
-                child: SizedBox(
-                  width: Theme.of(context).iconTheme.size,
-                  height: Theme.of(context).iconTheme.size,
-                  child: Container(
-                    decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        shape: BoxShape.circle),
-                    child: Icon(
-                      Icons.check_outlined,
-                      color: Theme.of(context).brightness != Brightness.light
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.primaryContainer,
-                      shadows: const [
-                        Shadow(blurRadius: 0, color: Colors.black)
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          )
-      ],
-    );
   }
 }

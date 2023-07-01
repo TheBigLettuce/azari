@@ -115,29 +115,30 @@ class _DirectoriesState extends State<Directories> {
                 .settings.gallerySettings.directoryAspectRatio?.value ??
             1,
         description: GridDescription(
-            kGalleryDrawerIndex,
-            AppLocalizations.of(context)!.galleryPageName,
-            [
-              GridBottomSheetAction(Icons.info_outline, (selected) {
-                var d = selected.first;
+          kGalleryDrawerIndex,
+          [
+            GridBottomSheetAction(Icons.info_outline, (selected) {
+              var d = selected.first;
 
-                Navigator.push(context, MaterialPageRoute(builder: (context) {
-                  return ModifyDirectory(
-                    api,
-                    old: d,
-                    refreshKey: skeletonState.gridKey,
-                  );
-                }));
-              }, false, showOnlyWhenSingle: true)
-            ],
-            skeletonState.settings.gallerySettings.directoryColumns ??
-                GridColumn.two),
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return ModifyDirectory(
+                  api,
+                  old: d,
+                  refreshKey: skeletonState.gridKey,
+                );
+              }));
+            }, false, showOnlyWhenSingle: true)
+          ],
+          skeletonState.settings.gallerySettings.directoryColumns ??
+              GridColumn.two,
+          keybindsDescription: AppLocalizations.of(context)!.galleryPageName,
+        ),
         updateScrollPosition: (pos, {double? infoPos, int? selectedCell}) {},
         scaffoldKey: skeletonState.scaffoldKey,
         //progressTicker: thumbnailWatcher,
         hasReachedEnd: () => true,
         refresh: () => _refresh(false),
-        search: (s) {},
+        //search: (s) {},
         hideAlias: skeletonState.settings.gallerySettings.hideDirectoryName,
         initalScrollPosition: 0,
         menuButtonItems: [

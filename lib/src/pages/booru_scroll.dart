@@ -9,7 +9,6 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart' as db;
@@ -22,12 +21,12 @@ import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:path/path.dart' as path;
 
 import '../schemas/download_file.dart';
 import '../schemas/secondary_grid.dart';
 import '../schemas/settings.dart';
 import '../booru/tags/tags.dart';
+import '../widgets/booru/autocomplete_tag.dart';
 
 void _updateScrollPrimary(BooruAPI booru, double pos, int? page,
     {double? tagPos}) {
@@ -101,10 +100,10 @@ class BooruScroll extends StatefulWidget {
         _type = "restore";
 
   @override
-  State<BooruScroll> createState() => _BooruScrollState();
+  State<BooruScroll> createState() => BooruScrollState();
 }
 
-class _BooruScrollState extends State<BooruScroll> {
+class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
   late BooruAPI booru = db.getBooru(page: widget.booruPage);
   late Isar isar = widget.isar;
   late StreamSubscription<void> tagWatcher;
@@ -130,6 +129,8 @@ class _BooruScrollState extends State<BooruScroll> {
   @override
   void initState() {
     super.initState();
+
+    searchHook(skeletonState.mainFocus, widget.tags);
 
     if (widget.tags.isEmpty) {
       updateScrollPosition = (pos, {double? infoPos, int? selectedCell}) =>
@@ -165,6 +166,8 @@ class _BooruScrollState extends State<BooruScroll> {
       widget.closeDb!(isar.name);
     }
 
+    disposeSearch();
+
     skeletonState.dispose();
 
     booru.close();
@@ -172,9 +175,9 @@ class _BooruScrollState extends State<BooruScroll> {
     super.dispose();
   }
 
-  List<String> _searchFilter(String value) => value.isEmpty
-      ? []
-      : tags.where((element) => element.contains(value)).toList();
+  // List<String> _searchFilter(String value) => value.isEmpty
+  //     ? []
+  //     : tags.where((element) => element.contains(value)).toList();
 
   Future<int> _clearAndRefresh() async {
     try {
@@ -193,8 +196,6 @@ class _BooruScrollState extends State<BooruScroll> {
 
     return isar.posts.count();
   }
-
-  void _search(String t) => BooruTags().onPressed(context, t);
 
   Future<void> _download(int i) async {
     var p = isar.posts.getSync(i + 1);
@@ -241,18 +242,19 @@ class _BooruScrollState extends State<BooruScroll> {
         key: skeletonState.gridKey,
         systemNavigationInsets: insets,
         description: GridDescription(
-            kBooruGridDrawerIndex,
-            AppLocalizations.of(context)!.booruGridPageName,
-            [
-              GridBottomSheetAction(Icons.download, (selected) {
-                for (var element in selected) {
-                  downloader.add(
-                      File.d(element.fileUrl, booru.domain, element.fileName));
-                }
-              }, true)
-            ],
-            skeletonState.settings.picturesPerRow,
-            time: booru.wouldBecomeStale ? widget.time : null),
+          kBooruGridDrawerIndex,
+          [
+            GridBottomSheetAction(Icons.download, (selected) {
+              for (var element in selected) {
+                downloader.add(
+                    File.d(element.fileUrl, booru.domain, element.fileName));
+              }
+            }, true)
+          ],
+          skeletonState.settings.picturesPerRow,
+          time: booru.wouldBecomeStale ? widget.time : null,
+          keybindsDescription: AppLocalizations.of(context)!.booruGridPageName,
+        ),
         hasReachedEnd: () => reachedEnd,
         mainFocus: skeletonState.mainFocus,
         scaffoldKey: skeletonState.scaffoldKey,
@@ -270,17 +272,60 @@ class _BooruScrollState extends State<BooruScroll> {
                   Navigator.pop(context);
                 }
               },
-        searchStartingValue: widget.tags,
-        search: _search,
+        //  searchStartingValue: widget.tags,
+        // search: _search,
         hideAlias: true,
         download: _download,
         updateScrollPosition: updateScrollPosition,
         initalScrollPosition: widget.initalScroll,
         initalCellCount: widget.clear ? 0 : isar.posts.countSync(),
-        searchFilter: _searchFilter,
+        searchWidget:
+            SearchAndFocus(searchWidget(context, booru), searchFocus, () {
+          if (currentlyHighlightedTag != "") {
+            skeletonState.mainFocus.unfocus();
+            BooruTags().onPressed(context, currentlyHighlightedTag);
+          }
+        }),
+        //  searchFilter: _searchFilter,
         pageViewScrollingOffset: widget.pageViewScrollingOffset,
         initalCell: widget.initalPost,
       ),
     );
   }
+}
+
+mixin SearchLaunchGrid {
+  final TextEditingController searchTextController = TextEditingController();
+  final FocusNode searchFocus = FocusNode();
+  String currentlyHighlightedTag = "";
+  final _ScrollHack _scrollHack = _ScrollHack();
+
+  void searchHook(FocusNode mainFocus, String searchText) {
+    searchTextController.text = searchText;
+
+    searchFocus.addListener(() {
+      if (!searchFocus.hasFocus) {
+        currentlyHighlightedTag = "";
+        mainFocus.requestFocus();
+      }
+    });
+  }
+
+  void disposeSearch() {
+    searchTextController.dispose();
+    searchFocus.dispose();
+    _scrollHack.dispose();
+  }
+
+  Widget searchWidget(BuildContext context, BooruAPI booru) =>
+      autocompleteWidget(searchTextController, (s) {
+        currentlyHighlightedTag = s;
+      }, (s) => BooruTags().onPressed(context, s), booru.completeTag,
+          searchFocus,
+          scrollHack: _scrollHack, showSearch: true, addItems: []);
+}
+
+class _ScrollHack extends ScrollController {
+  @override
+  bool get hasClients => false;
 }

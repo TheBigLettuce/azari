@@ -8,9 +8,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
-import 'package:gallery/src/pages/settings.dart';
 
 Widget addRail(BuildContext context, int selectedIndex,
     GlobalKey<ScaffoldState> key, Widget child) {
@@ -22,9 +20,7 @@ Widget addRail(BuildContext context, int selectedIndex,
     children: [
       NavigationRail(
           groupAlignment: -0.8,
-          leading: Icon(
-            kAzariIcon,
-          ),
+          leading: azariIcon(context),
           trailing: Padding(
             padding: const EdgeInsets.only(top: 15),
             child: IconButton(

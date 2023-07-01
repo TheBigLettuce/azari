@@ -9,7 +9,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/pages/senitel.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
@@ -18,8 +17,6 @@ import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import '../keybinds/keybinds.dart';
 
 class Downloads extends StatefulWidget {
   const Downloads({super.key});
@@ -87,38 +84,35 @@ class _DownloadsState extends State<Downloads> {
   Widget build(BuildContext context) {
     return makeSkeleton(
         context, AppLocalizations.of(context)!.downloadsPageName, skeletonState,
+        customTitle: Badge(
+          offset: Offset.zero,
+          alignment: Alignment.topRight,
+          isLabelVisible: _files != null ? _files!.isNotEmpty : false,
+          label: Text(
+              "${_inProcess().toString()}/${_files == null ? 0 : _files!.length.toString()}"),
+          child: Text(AppLocalizations.of(context)!.downloadsPageName),
+        ),
         appBarActions: [
-          Badge(
-            offset: Offset.zero,
-            alignment: Alignment.topLeft,
-            isLabelVisible: _files != null ? _files!.isNotEmpty : false,
-            label: Text(
-                "${_inProcess().toString()}/${_files == null ? 0 : _files!.length.toString()}"),
-          ),
-          PopupMenuButton(
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                  onTap: () {
-                    if (deleteController != null) {
-                      deleteController!.forward(from: 0);
-                    }
-                    downloader.removeFailed();
-                  },
-                  child: const Icon(Icons.close).animate(
-                      onInit: (controller) => deleteController = controller,
-                      effects: const [FlipEffect(begin: 1, end: 0)],
-                      autoPlay: false)),
-              PopupMenuItem(
-                  onTap: _refresh,
-                  child: const Icon(Icons.refresh).animate(
-                      onInit: (controller) => refreshController = controller,
-                      effects: const [RotateEffect()],
-                      autoPlay: false)),
-              PopupMenuItem(
-                  onTap: downloader.restart,
-                  child: const Icon(Icons.start_outlined)),
-            ],
-          ),
+          IconButton(
+              onPressed: () {
+                if (deleteController != null) {
+                  deleteController!.forward(from: 0);
+                }
+                downloader.removeFailed();
+              },
+              icon: const Icon(Icons.close).animate(
+                  onInit: (controller) => deleteController = controller,
+                  effects: const [FlipEffect(begin: 1, end: 0)],
+                  autoPlay: false)),
+          IconButton(
+              onPressed: _refresh,
+              icon: const Icon(Icons.refresh).animate(
+                  onInit: (controller) => refreshController = controller,
+                  effects: const [RotateEffect()],
+                  autoPlay: false)),
+          IconButton(
+              onPressed: downloader.restart,
+              icon: const Icon(Icons.start_outlined))
         ],
         itemCount: _files != null ? _files!.length : 0,
         children:

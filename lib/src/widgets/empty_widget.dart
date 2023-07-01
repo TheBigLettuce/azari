@@ -37,23 +37,19 @@ class EmptyWidget extends StatelessWidget {
   }
 }
 
-String chooseKaomoji() {
-  List<String> emojis = [
-    "щ(゜ロ゜щ)",
-    "(´⊙o⊙`；)",
-    "(´⊙ω⊙`)！",
-    "(´･艸･｀)",
-    "Σ(・Д・)!?",
-    "(ﾟヘﾟ)？",
-    "ʅฺ(・ω・。)ʃฺ？？",
-    "｢(ﾟﾍﾟ)",
-    "┻━┻ ︵ ¯\ (ツ)/¯ ︵ ┻━┻",
-    "┐(‘～`；)┌",
-    "╰(　´◔　ω　◔ `)╯",
-    "ㄟ( θ﹏θ)厂"
-  ];
+String chooseKaomoji() => emojis[Random().nextInt(emojis.length)];
 
-  var indx = Random().nextInt(emojis.length);
-
-  return emojis[indx];
-}
+const List<String> emojis = [
+  r"щ(゜ロ゜щ)",
+  r"(´⊙o⊙`；)",
+  r"(´⊙ω⊙`)！",
+  r"(´･艸･｀)",
+  r"Σ(・Д・)!?",
+  r"(ﾟヘﾟ)？",
+  r"ʅฺ(・ω・。)ʃฺ？？",
+  r"｢(ﾟﾍﾟ)",
+  r"┻━┻ ︵ ¯\ (ツ)/¯ ︵ ┻━┻",
+  r"┐(‘～`；)┌",
+  r"╰(　´◔　ω　◔ `)╯",
+  r"ㄟ( θ﹏θ)厂"
+];

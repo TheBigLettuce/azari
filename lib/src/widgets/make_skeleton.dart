@@ -282,7 +282,7 @@ Widget makeSkeleton(
 Widget wrapAppBarAction(Widget child) => SafeArea(
         child: Padding(
       padding: Platform.isAndroid
-          ? const EdgeInsets.only(top: 4, bottom: 4, right: 4, left: 4)
-          : const EdgeInsets.only(top: 8, bottom: 8, right: 8, left: 8),
+          ? const EdgeInsets.only(top: 4, bottom: 4)
+          : const EdgeInsets.only(top: 8, bottom: 8),
       child: child,
     ));

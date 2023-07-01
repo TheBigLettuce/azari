@@ -28,7 +28,13 @@ const int kDownloadsDrawerIndex = 3;
 const int kUploadsDrawerIndex = 4;
 const int kSettingsDrawerIndex = 5;
 
-const IconData kAzariIcon = IconData(0x963F); // 阿
+Widget azariIcon(BuildContext context, {Color? color}) => GestureDetector(
+      onTap: () {},
+      child: Icon(
+        const IconData(0x963F),
+        color: color,
+      ),
+    ); // 阿
 
 List<NavigationDrawerDestination> destinations(BuildContext context) {
   var primaryColor = Theme.of(context).colorScheme.primary;
@@ -158,11 +164,13 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
     };
 
 Widget endDrawerHeading(
-        BuildContext context, String headline, GlobalKey<ScaffoldState> k) =>
+        BuildContext context, String headline, GlobalKey<ScaffoldState> k,
+        {Color? color}) =>
     SliverAppBar(
       expandedHeight: 152,
       collapsedHeight: kToolbarHeight,
       automaticallyImplyLeading: false,
+      backgroundColor: color,
       actions: [Container()],
       pinned: true,
       leading: BackButton(
@@ -197,8 +205,13 @@ Widget? makeDrawer(BuildContext context, int selectedIndex) {
 
   return NavigationDrawer(
     selectedIndex: selectedIndex,
-    onDestinationSelected: (value) =>
-        selectDestination(context, selectedIndex, value),
+    onDestinationSelected: (value) {
+      if (selectedIndex == kBooruGridDrawerIndex) {
+        Navigator.pop(context);
+      }
+
+      selectDestination(context, selectedIndex, value);
+    },
     children: [
       DrawerHeader(
           child: Center(
@@ -208,15 +221,14 @@ Widget? makeDrawer(BuildContext context, int selectedIndex) {
               iconController!.forward(from: 0);
             }
           },
-          child: Icon(
-            kAzariIcon,
-            color: Theme.of(context).colorScheme.primary,
-          ),
+          child:
+              azariIcon(context, color: Theme.of(context).colorScheme.primary),
         ).animate(
             onInit: (controller) => iconController = controller,
             effects: [ShakeEffect(duration: 700.milliseconds, hz: 6)]),
       )),
       ...destinations(context),
+      const Divider(),
       NavigationDrawerDestination(
           icon: const Icon(Icons.settings),
           label: Text(AppLocalizations.of(context)!.settingsLabel))

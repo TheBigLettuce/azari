@@ -36,80 +36,83 @@ class GridCell<T extends CellData> extends StatefulWidget {
 class _GridCellState<T extends CellData> extends State<GridCell<T>> {
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(15.0),
-      onTap: () {
-        widget.onPressed(context, widget.indx);
-      },
-      focusColor: Theme.of(context).colorScheme.primary,
-      onLongPress: widget.onLongPress,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return Card(
-              margin: widget.tight ? const EdgeInsets.all(0.5) : null,
-              elevation: 0,
-              child: ClipPath(
-                clipper: ShapeBorderClipper(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15.0))),
-                child: Stack(
-                  children: [
-                    if (widget.hideAlias)
-                      Container(
-                        decoration: const BoxDecoration(color: Colors.black45),
-                      ),
-                    Center(
-                        child: Image(
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Icon(Icons.error_outline),
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) {
-                          return child.animate().fadeIn();
-                        }
-
-                        return Center(
-                          child: CircularProgressIndicator(
-                            value: loadingProgress.cumulativeBytesLoaded
-                                    .toDouble() /
-                                (loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.expectedTotalBytes!
-                                    : 1),
-                          ),
-                        );
-                      },
-                      image: widget._data.thumb,
-                      alignment: Alignment.center,
-                      fit: BoxFit.cover,
-                      filterQuality: FilterQuality.high,
-                      width: constraints.maxWidth,
-                      height: constraints.maxHeight,
-                    )),
-                    if (!widget.hideAlias)
-                      Container(
-                        alignment: Alignment.bottomCenter,
-                        decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                              Colors.black.withAlpha(50),
-                              Colors.black12,
-                              Colors.black45
-                            ])),
-                        child: Padding(
-                            padding: const EdgeInsets.all(6),
-                            child: Text(
-                              widget._data.name,
-                              softWrap: false,
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 2,
-                              style: const TextStyle(color: Colors.white),
-                            )),
-                      ),
-                  ],
-                ),
-              ));
+    return GestureDetector(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(15.0),
+        onTap: () {
+          widget.onPressed(context, widget.indx);
         },
+        focusColor: Theme.of(context).colorScheme.primary,
+        onLongPress: widget.onLongPress,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Card(
+                margin: widget.tight ? const EdgeInsets.all(0.5) : null,
+                elevation: 0,
+                child: ClipPath(
+                  clipper: ShapeBorderClipper(
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15.0))),
+                  child: Stack(
+                    children: [
+                      if (widget.hideAlias)
+                        Container(
+                          decoration:
+                              const BoxDecoration(color: Colors.black45),
+                        ),
+                      Center(
+                          child: Image(
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.error_outline),
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) {
+                            return child.animate().fadeIn();
+                          }
+
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.cumulativeBytesLoaded
+                                      .toDouble() /
+                                  (loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.expectedTotalBytes!
+                                      : 1),
+                            ),
+                          );
+                        },
+                        image: widget._data.thumb,
+                        alignment: Alignment.center,
+                        fit: BoxFit.cover,
+                        filterQuality: FilterQuality.high,
+                        width: constraints.maxWidth,
+                        height: constraints.maxHeight,
+                      )),
+                      if (!widget.hideAlias)
+                        Container(
+                          alignment: Alignment.bottomCenter,
+                          decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                Colors.black.withAlpha(50),
+                                Colors.black12,
+                                Colors.black45
+                              ])),
+                          child: Padding(
+                              padding: const EdgeInsets.all(6),
+                              child: Text(
+                                widget._data.name,
+                                softWrap: false,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
+                                style: const TextStyle(color: Colors.white),
+                              )),
+                        ),
+                    ],
+                  ),
+                ));
+          },
+        ),
       ),
     );
   }

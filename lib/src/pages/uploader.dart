@@ -1,9 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:gallery/src/keybinds/keybinds.dart';
-import 'package:gallery/src/pages/senitel.dart';
 import 'package:gallery/src/pages/upload_info.dart';
 import 'package:gallery/src/schemas/upload_files.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';

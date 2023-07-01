@@ -8,13 +8,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:gallery/src/gallery/uploader/uploader.dart';
-import 'package:gallery/src/keybinds/keybinds.dart';
 import 'package:gallery/src/schemas/upload_files.dart';
 import 'package:gallery/src/schemas/upload_files_state.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 

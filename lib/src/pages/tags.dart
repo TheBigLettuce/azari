@@ -11,7 +11,6 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/pages/senitel.dart';
 import 'package:gallery/src/widgets/booru/single_post.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
@@ -377,7 +376,6 @@ class TagsWidget extends StatelessWidget {
       child: tags.isEmpty
           ? const EmptyWidget()
           : Wrap(
-              runSpacing: 2,
               children: tags.map((tag) {
                 return GestureDetector(
                   onLongPress: () {

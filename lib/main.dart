@@ -19,6 +19,7 @@ import 'package:gallery/src/schemas/grid_restore.dart';
 import 'package:gallery/src/schemas/scroll_position.dart' as scroll_pos;
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/schemas/tags.dart';
+import 'package:gallery/src/widgets/drawer/drawer.dart';
 // import 'package:google_fonts/google_fonts.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:isar/isar.dart';
@@ -59,6 +60,9 @@ class FadeSidewaysPageTransitionBuilder implements PageTransitionsBuilder {
 ThemeData _buildTheme(Brightness brightness, Color accentColor) {
   var baseTheme = ThemeData(
     brightness: brightness,
+    popupMenuTheme: const PopupMenuThemeData(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(15)))),
     pageTransitionsTheme: PageTransitionsTheme(
         builders: Map.from(const PageTransitionsTheme().builders)
           ..[TargetPlatform.android] =
@@ -103,13 +107,19 @@ void main() async {
   }
   final accentColor = Color(color);
 
+  GlobalKey<BooruScrollState> key = GlobalKey();
+
   FlutterLocalNotificationsPlugin().initialize(
       const InitializationSettings(
           linux:
               LinuxInitializationSettings(defaultActionName: "Default action"),
           android: AndroidInitializationSettings('@drawable/ic_notification')),
-      onDidReceiveNotificationResponse: (details) {},
-      onDidReceiveBackgroundNotificationResponse: notifBackground);
+      onDidReceiveNotificationResponse: (details) {
+    var context = key.currentContext;
+    if (context != null) {
+      selectDestination(context, kBooruGridDrawerIndex, kDownloadsDrawerIndex);
+    }
+  }, onDidReceiveBackgroundNotificationResponse: notifBackground);
 
   runApp(MaterialApp(
     title: 'Ācārya',
@@ -133,6 +143,7 @@ void main() async {
             isar().scrollPositionPrimarys.getSync(fastHash(getBooru().domain));
 
         return BooruScroll.primary(
+          key: key,
           initalScroll: scroll != null ? scroll.pos : 0,
           time: scroll != null ? scroll.time : DateTime.now(),
           isar: isar(),

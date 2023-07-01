@@ -28,11 +28,11 @@ class SinglePost extends StatefulWidget {
 }
 
 class _SinglePostState extends State<SinglePost> {
-  BooruAPI booru = getBooru();
-  TextEditingController controller = TextEditingController();
-  List<Widget> menuItems = [];
-  MenuController menuController = MenuController();
+  final BooruAPI booru = getBooru();
+  final TextEditingController controller = TextEditingController();
+  final MenuController menuController = MenuController();
 
+  List<Widget> menuItems = [];
   bool inProcessLoading = false;
 
   AnimationController? arrowSpinningController;

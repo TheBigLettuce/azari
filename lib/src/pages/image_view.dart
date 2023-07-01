@@ -47,19 +47,21 @@ class _PhotoGalleryPageVideoLinuxState
   void initState() {
     super.initState();
 
-    VideoController.create(player, enableHardwareAcceleration: false)
-        .then((value) {
-      controller = value;
-      player.open(
-        Media(
-          widget.url,
-        ),
-      );
-      setState(() {});
-    }).onError((error, stackTrace) {
-      log("video player linux",
-          level: Level.SEVERE.value, error: error, stackTrace: stackTrace);
-    });
+    controller = VideoController(player,
+        configuration: const VideoControllerConfiguration(
+            enableHardwareAcceleration: false));
+    //     .then((value) {
+    //   controller = value;
+    //   player.open(
+    //     Media(
+    //       widget.url,
+    //     ),
+    //   );
+    //   setState(() {});
+    // }).onError((error, stackTrace) {
+    //   log("video player linux",
+    //       level: Level.SEVERE.value, error: error, stackTrace: stackTrace);
+    // });
   }
 
   @override
@@ -78,7 +80,7 @@ class _PhotoGalleryPageVideoLinuxState
             onDoubleTap: () {
               player.playOrPause();
             },
-            child: Video(controller: controller),
+            child: Video(controller: controller!),
           );
   }
 }
@@ -406,7 +408,11 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                 child: CustomScrollView(
                   controller: scrollController,
                   slivers: [
-                    endDrawerHeading(context, "Info", key),
+                    endDrawerHeading(context, "Info", key,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surface
+                            .withOpacity(0.5)),
                     SliverPadding(
                       padding: EdgeInsets.only(bottom: insets.bottom),
                       sliver: SliverList.list(

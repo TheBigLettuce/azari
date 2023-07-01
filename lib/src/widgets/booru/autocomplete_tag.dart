@@ -21,7 +21,9 @@ Future<List<String>> autoCompleteTag(
 
   var tags = tagString.trim().split(" ");
 
-  return complF(tags.isEmpty ? "" : tags.last);
+  return tags.isEmpty || tags.last.isEmpty
+      ? Future.value([])
+      : complF(tags.last);
 }
 
 Widget autocompleteWidget(

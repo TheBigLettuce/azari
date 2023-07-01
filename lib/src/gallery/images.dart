@@ -157,7 +157,6 @@ class _ImagesState extends State<Images> {
             skeletonState.settings.gallerySettings.filesAspectRatio?.value ?? 1,
         description: GridDescription(
             kGalleryDrawerIndex,
-            AppLocalizations.of(context)!.galleryInnerPageName,
             [
               GridBottomSheetAction(Icons.delete, (selected) {
                 Navigator.of(context).push(DialogRoute(
@@ -205,7 +204,10 @@ class _ImagesState extends State<Images> {
               }, false, showOnlyWhenSingle: true)
             ],
             skeletonState.settings.gallerySettings.filesColumns ??
-                GridColumn.two),
+                GridColumn.two,
+            keybindsDescription:
+                AppLocalizations.of(context)!.galleryInnerPageName,
+            pageName: widget.cell.dirName),
         updateScrollPosition: (pos, {double? infoPos, int? selectedCell}) {},
         scaffoldKey: skeletonState.scaffoldKey,
         refresh: _refresh,
@@ -225,7 +227,7 @@ class _ImagesState extends State<Images> {
               child: Text(AppLocalizations.of(context)!.addFiles))
         ],
         hasReachedEnd: () => widget.api.reachedEnd,
-        search: (s) {},
+        // search: (s) {},
         download: _download,
         onBack: () => Navigator.of(context).pop(),
         // loadNext: () => _loadNext(),
