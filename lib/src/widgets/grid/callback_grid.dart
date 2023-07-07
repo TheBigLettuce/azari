@@ -15,6 +15,7 @@ import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/schemas/settings.dart';
+import 'package:gallery/src/widgets/cloudflare_block.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:logging/logging.dart';
@@ -26,6 +27,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 part 'selection.dart';
 part 'wrapped_selection.dart';
 part 'filter.dart';
+part 'mutation.dart';
 
 class GridBottomSheetAction<B> {
   final IconData icon;
@@ -59,7 +61,8 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
   final Future<int> Function()? loadNext;
   final Future<void> Function(int indx)? download;
   final Future<int> Function() refresh;
-  final void Function(bool show)? hideShowFab;
+  final void Function({required bool fab, required bool foreground})?
+      hideShowFab;
   final void Function(double pos, {double? infoPos, int? selectedCell})
       updateScrollPosition;
   final void Function()? onBack;
@@ -82,8 +85,10 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
   final EdgeInsets systemNavigationInsets;
   final FocusNode mainFocus;
   final Stream<int>? progressTicker;
+  final bool immutable;
 
   final GridDescription<B> description;
+  final FocusNode? belowMainFocus;
 
   const CallbackGrid(
       {Key? key,
@@ -95,7 +100,9 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
       required this.hasReachedEnd,
       required this.aspectRatio,
       required this.mainFocus,
+      this.immutable = true,
       this.tightMode = false,
+      this.belowMainFocus,
       this.progressTicker,
       this.menuButtonItems,
       this.searchWidget,
@@ -120,25 +127,41 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
 class SearchAndFocus {
   final Widget search;
   final FocusNode focus;
-  final void Function() onPressed;
+  final void Function()? onPressed;
 
-  const SearchAndFocus(this.search, this.focus, this.onPressed);
+  const SearchAndFocus(this.search, this.focus, {this.onPressed});
 }
 
 class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
-    with _Selection<T, B>, _Filter<T, B> {
+    with _Selection<T, B>, _Filter<T, B>, SingleTickerProviderStateMixin {
   late ScrollController controller =
       ScrollController(initialScrollOffset: widget.initalScrollPosition);
 
-  int cellCount = 0;
-  bool refreshing = true;
-  Settings settings = isar().settings.getSync(0)!;
+  Settings settings = settingsIsar().settings.getSync(0)!;
+
   late final StreamSubscription<Settings?> settingsWatcher;
 
-  BooruAPI booru = getBooru();
-
   StreamSubscription<int>? ticker;
+
+  bool inImageView = false;
+
   double height = 0;
+  late final _Mutation<T, B> _state = _Mutation(
+    immutable: widget.immutable,
+    widget: () => widget,
+    update: (f) {
+      if (context.mounted) {
+        if (f != null) {
+          f();
+        }
+
+        setState(() {});
+      }
+    },
+  );
+
+  GridMutationInterface<T, B>? get mutationInterface =>
+      widget.immutable ? null : _state;
 
   @override
   void initState() {
@@ -146,7 +169,7 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
 
     ticker = widget.progressTicker?.listen((event) {
       setState(() {
-        cellCount = event;
+        _state._cellCount = event;
       });
     });
 
@@ -160,24 +183,25 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       height = MediaQuery.sizeOf(context).height;
       controller.position.isScrollingNotifier.addListener(() {
-        if (!refreshing) {
+        if (!_state.isRefreshing) {
           widget.updateScrollPosition(controller.offset);
         }
 
         if (widget.hideShowFab != null) {
           if (controller.offset == 0) {
-            widget.hideShowFab!(false);
+            widget.hideShowFab!(fab: false, foreground: inImageView);
           } else {
-            widget.hideShowFab!(!controller.position.isScrollingNotifier.value);
+            widget.hideShowFab!(
+                fab: !controller.position.isScrollingNotifier.value,
+                foreground: inImageView);
           }
         }
       });
     });
 
-    settingsWatcher = isar().settings.watchObject(0).listen((event) {
+    settingsWatcher = settingsIsar().settings.watchObject(0).listen((event) {
       if (settings.selectedBooru != event!.selectedBooru) {
-        cellCount = 0;
-
+        _state._cellCount = 0;
         return;
       }
 
@@ -189,7 +213,7 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
       }*/
 
       setState(() {
-        settings = event;
+        settings = event!;
         //lastGridColCount = event.picturesPerRow;
       });
     });
@@ -201,8 +225,8 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
             .subtract(settings.autoRefreshMicroseconds.microseconds))) {
       refresh();
     } else if (widget.initalCellCount != 0) {
-      cellCount = widget.initalCellCount;
-      refreshing = false;
+      _state._cellCount = widget.initalCellCount;
+      //  refreshing = false;
     } else {
       refresh();
     }
@@ -218,24 +242,11 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
 
       var hh = height - height * 0.90;
 
-      if (!refreshing &&
-          cellCount != 0 &&
+      if (!_state.isRefreshing &&
+          _state.cellCount != 0 &&
           (controller.offset / controller.positions.first.maxScrollExtent) >=
               1 - (hh / controller.positions.first.maxScrollExtent)) {
-        setState(() {
-          refreshing = true;
-        });
-        widget.loadNext!().then((value) {
-          if (context.mounted) {
-            setState(() {
-              cellCount = value;
-              refreshing = false;
-            });
-          }
-        }).onError((error, stackTrace) {
-          log("loading next cells in the grid",
-              level: Level.WARNING.value, error: error, stackTrace: stackTrace);
-        });
+        _state._loadNext();
       }
     });
   }
@@ -244,10 +255,10 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
   void dispose() {
     ticker?.cancel();
 
+    // animation.dispose();
     controller.dispose();
     settingsWatcher.cancel();
-
-    booru.close();
+    widget.belowMainFocus?.requestFocus();
 
     super.dispose();
   }
@@ -256,21 +267,10 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
     currentBottomSheet?.close();
     selected.clear();
     if (widget.hideShowFab != null) {
-      widget.hideShowFab!(false);
+      widget.hideShowFab!(fab: false, foreground: inImageView);
     }
 
-    return widget.refresh().then((value) {
-      if (context.mounted) {
-        setState(() {
-          cellCount = value;
-          refreshing = false;
-        });
-        widget.updateScrollPosition(0);
-      }
-    }).onError((error, stackTrace) {
-      log("refreshing cells in the grid",
-          level: Level.WARNING.value, error: error, stackTrace: stackTrace);
-    });
+    return _state._refresh();
   }
 
   void _scrollUntill(int p) {
@@ -281,19 +281,21 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
     // Estimate the target scroll position.
     double target;
     if (settings.listViewBooru) {
-      target = contentSize * p / cellCount;
+      target = contentSize * p / _state.cellCount;
     } else {
       target = contentSize *
           (p / picPerRow.number - 1) /
-          (cellCount / picPerRow.number);
+          (_state.cellCount / picPerRow.number);
     }
 
     if (target < controller.position.minScrollExtent) {
       widget.updateScrollPosition(controller.position.minScrollExtent);
       return;
     } else if (target > controller.position.maxScrollExtent) {
-      widget.updateScrollPosition(controller.position.maxScrollExtent);
-      return;
+      if (widget.hasReachedEnd()) {
+        widget.updateScrollPosition(controller.position.maxScrollExtent);
+        return;
+      }
     }
 
     widget.updateScrollPosition(target);
@@ -302,10 +304,13 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
   }
 
   void _onPressed(BuildContext context, int i, {double? offset}) {
+    inImageView = true;
     if (widget.overrideOnPress != null) {
       widget.overrideOnPress!(context, i);
       return;
     }
+
+    widget.mainFocus.requestFocus();
 
     var offsetGrid = controller.offset;
     var overlayColor =
@@ -313,96 +318,83 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
 
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return ImageView<T>(
-        systemOverlayRestoreColor: overlayColor,
-        updateTagScrollPos: (pos, selectedCell) => widget.updateScrollPosition(
-            offsetGrid,
-            infoPos: pos,
-            selectedCell: selectedCell),
-        scrollUntill: _scrollUntill,
-        infoScrollOffset: offset,
-        getCell: widget.getCell,
-        cellCount: cellCount,
-        download: widget.download,
-        startingCell: i,
-        onNearEnd: widget.loadNext == null
-            ? null
-            : () async {
-                return widget.loadNext!().then((value) {
-                  if (context.mounted) {
-                    setState(() {
-                      cellCount = value;
-                    });
-                  }
-
-                  return value;
-                });
-              },
-      );
+          systemOverlayRestoreColor: overlayColor,
+          updateTagScrollPos: (pos, selectedCell) =>
+              widget.updateScrollPosition(offsetGrid,
+                  infoPos: pos, selectedCell: selectedCell),
+          scrollUntill: _scrollUntill,
+          onExit: () {
+            inImageView = false;
+          },
+          focusMain: () {
+            widget.mainFocus.requestFocus();
+          },
+          infoScrollOffset: offset,
+          getCell: _state.getCell,
+          cellCount: _state.cellCount,
+          download: widget.download,
+          startingCell: i,
+          onNearEnd: widget.loadNext == null ? null : _state._onNearEnd);
     }));
   }
 
+  Map<SingleActivatorDescription, void Function()> _makeBindings(
+          BuildContext context) =>
+      {
+        SingleActivatorDescription(AppLocalizations.of(context)!.refresh,
+            const SingleActivator(LogicalKeyboardKey.f5)): _state._f5,
+        if (widget.searchWidget != null &&
+            widget.searchWidget!.onPressed != null)
+          SingleActivatorDescription(
+                  AppLocalizations.of(context)!.selectSuggestion,
+                  const SingleActivator(LogicalKeyboardKey.enter, shift: true)):
+              () {
+            widget.searchWidget?.onPressed!();
+          },
+        if (widget.searchWidget != null)
+          SingleActivatorDescription(
+              AppLocalizations.of(context)!.focusSearch,
+              const SingleActivator(LogicalKeyboardKey.keyF,
+                  control: true)): () {
+            if (widget.searchWidget == null) {
+              return;
+            }
+
+            if (widget.searchWidget!.focus.hasFocus) {
+              widget.mainFocus.requestFocus();
+            } else {
+              widget.searchWidget!.focus.requestFocus();
+            }
+          },
+        if (widget.onBack != null)
+          SingleActivatorDescription(AppLocalizations.of(context)!.back,
+              const SingleActivator(LogicalKeyboardKey.escape)): () {
+            selected.clear();
+            currentBottomSheet?.close();
+            widget.onBack!();
+          },
+        if (widget.additionalKeybinds != null) ...widget.additionalKeybinds!,
+        ...digitAndSettings(
+            context, widget.description.drawerIndex, widget.scaffoldKey),
+      };
+
   @override
   Widget build(BuildContext context) {
-    var bindings = {
-      SingleActivatorDescription(AppLocalizations.of(context)!.refresh,
-          const SingleActivator(LogicalKeyboardKey.f5)): () {
-        if (!refreshing) {
-          setState(() {
-            cellCount = 0;
-            refreshing = true;
-          });
-          refresh();
-        }
-      },
-      SingleActivatorDescription(AppLocalizations.of(context)!.selectSuggestion,
-          const SingleActivator(LogicalKeyboardKey.enter, shift: true)): () {
-        widget.searchWidget?.onPressed();
-      },
-      SingleActivatorDescription(AppLocalizations.of(context)!.focusSearch,
-          const SingleActivator(LogicalKeyboardKey.keyF, control: true)): () {
-        if (widget.searchWidget == null) {
-          return;
-        }
-
-        if (widget.searchWidget!.focus.hasFocus) {
-          widget.searchWidget!.focus.unfocus();
-        } else {
-          widget.searchWidget!.focus.requestFocus();
-        }
-      },
-      if (widget.onBack != null)
-        SingleActivatorDescription(AppLocalizations.of(context)!.back,
-            const SingleActivator(LogicalKeyboardKey.escape)): () {
-          selected.clear();
-          currentBottomSheet?.close();
-          widget.onBack!();
-        },
-      if (widget.additionalKeybinds != null) ...widget.additionalKeybinds!,
-      ...digitAndSettings(
-          context, widget.description.drawerIndex, widget.scaffoldKey),
-    };
+    var bindings = _makeBindings(context);
 
     return CallbackShortcuts(
         bindings: {
           ...bindings,
           ...keybindDescription(context, describeKeys(bindings),
-              widget.description.keybindsDescription)
+              widget.description.keybindsDescription, () {
+            widget.mainFocus.requestFocus();
+          })
         },
         child: Focus(
           autofocus: true,
           focusNode: widget.mainFocus,
           child: RefreshIndicator(
-              onRefresh: () {
-                if (!refreshing) {
-                  setState(() {
-                    cellCount = 0;
-                    refreshing = true;
-                  });
-                  return refresh();
-                }
-
-                return Future.value();
-              },
+              onRefresh: _state._onRefresh,
               child: Scrollbar(
                   interactive: true,
                   thumbVisibility:
@@ -487,15 +479,18 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                             : Container(),
                         pinned: true,
                         stretch: true,
-                        bottom: refreshing
+                        bottom: _state.isRefreshing
                             ? const PreferredSize(
                                 preferredSize: Size.fromHeight(4),
                                 child: LinearProgressIndicator(),
                               )
                             : null,
                       ),
-                      !refreshing && cellCount == 0
-                          ? const SliverToBoxAdapter(child: EmptyWidget())
+                      !_state.isRefreshing && _state.cellCount == 0
+                          ? SliverToBoxAdapter(
+                              child: _state.cloudflareBlocked == true
+                                  ? CloudflareBlock()
+                                  : const EmptyWidget())
                           : settings.listViewBooru
                               ? SliverPadding(
                                   padding: EdgeInsets.only(
@@ -506,9 +501,9 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                                         const Divider(
                                       height: 1,
                                     ),
-                                    itemCount: cellCount,
+                                    itemCount: _state.cellCount,
                                     itemBuilder: (context, index) {
-                                      var cell = widget.getCell(index);
+                                      var cell = _state.getCell(index);
                                       var cellData = cell
                                           .getCellData(settings.listViewBooru);
 
@@ -552,9 +547,9 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                                                 widget.aspectRatio,
                                             crossAxisCount: widget
                                                 .description.columns.number),
-                                    itemCount: cellCount,
+                                    itemCount: _state.cellCount,
                                     itemBuilder: (context, indx) {
-                                      var m = widget.getCell(indx);
+                                      var m = _state.getCell(indx);
                                       var cellData =
                                           m.getCellData(settings.listViewBooru);
 
@@ -577,7 +572,7 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                                       );
                                     },
                                   ),
-                                )
+                                ),
                     ],
                   ))),
         ));

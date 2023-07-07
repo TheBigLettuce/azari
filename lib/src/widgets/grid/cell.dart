@@ -86,6 +86,36 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
                         width: constraints.maxWidth,
                         height: constraints.maxHeight,
                       )),
+                      if (widget._data.stickers.isNotEmpty)
+                        Align(
+                          alignment: Alignment.topLeft,
+                          child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Row(
+                                children: widget._data.stickers
+                                    .map((e) => Padding(
+                                          padding: EdgeInsets.only(right: 4),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(2),
+                                            decoration: BoxDecoration(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .inversePrimary
+                                                    .withOpacity(0.6),
+                                                borderRadius:
+                                                    BorderRadius.circular(5)),
+                                            child: Icon(
+                                              e,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .secondary
+                                                  .withOpacity(0.8),
+                                            ),
+                                          ),
+                                        ))
+                                    .toList(),
+                              )),
+                        ),
                       if (!widget.hideAlias)
                         Container(
                           alignment: Alignment.bottomCenter,
@@ -104,7 +134,7 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
                                 widget._data.name,
                                 softWrap: false,
                                 overflow: TextOverflow.ellipsis,
-                                maxLines: 2,
+                                maxLines: 1,
                                 style: const TextStyle(color: Colors.white),
                               )),
                         ),

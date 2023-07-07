@@ -10,8 +10,10 @@ import 'package:isar/isar.dart';
 
 import 'data.dart';
 
+enum ContentType { image, video }
+
 class Content {
-  String type;
+  ContentType type;
   bool isVideoLocal;
 
   ImageProvider? image;
@@ -21,14 +23,26 @@ class Content {
   Content(this.type, this.isVideoLocal, {this.image, this.videoPath});
 }
 
+class AddInfoColorData {
+  final Color borderColor;
+  final Color foregroundColor;
+  final Color systemOverlayColor;
+
+  const AddInfoColorData({
+    required this.borderColor,
+    required this.foregroundColor,
+    required this.systemOverlayColor,
+  });
+}
+
 abstract class Cell<B> {
   //String get path;
 
   String alias(bool isList);
 
   @ignore
-  List<Widget>? Function(BuildContext context, dynamic extra, Color borderColor,
-      Color foregroundColor, Color systemOverlayColor) get addInfo;
+  List<Widget>? Function(
+      BuildContext context, dynamic extra, AddInfoColorData colors) get addInfo;
 
   @ignore
   List<Widget>? Function() get addButtons;

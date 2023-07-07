@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import '../../schemas/tags.dart';
+
 Future<List<String>> autoCompleteTag(
     String tagString, Future<List<String>> Function(String) complF) {
   if (tagString.isEmpty) {
@@ -29,7 +31,8 @@ Future<List<String>> autoCompleteTag(
 Widget autocompleteWidget(
     TextEditingController controller,
     void Function(String) highlightChanged,
-    void Function(String) onSubmit,
+    void Function(Tag) onSubmit,
+    void Function() focusMain,
     Future<List<String>> Function(String) complF,
     FocusNode focus,
     {ScrollController? scrollHack,
@@ -46,9 +49,9 @@ Widget autocompleteWidget(
           .map((elem) => ListTile(
                 onTap: () {
                   if (submitOnPress) {
-                    focus.unfocus();
+                    focusMain();
                     controller.text = "";
-                    onSubmit(elem);
+                    onSubmit(Tag.string(tag: elem));
                     return;
                   }
 
@@ -108,35 +111,34 @@ Widget autocompleteWidget(
     },
     fieldViewBuilder:
         (context, textEditingController, focusNode, onFieldSubmitted) {
-      return TextField(
-        scrollController: scrollHack,
-        cursorOpacityAnimates: true,
-        decoration: InputDecoration(
-            prefixIcon: showSearch ? const Icon(Icons.search_rounded) : null,
-            suffixIcon: Wrap(
-              children: [
-                IconButton(
-                  onPressed: () {
+      return FocusNotifier(
+          focusMain: focusMain,
+          notifier: focus,
+          child: Builder(
+            builder: (context) {
+              return TextField(
+                scrollController: scrollHack,
+                cursorOpacityAnimates: true,
+                decoration: autocompleteBarDecoration(
+                  context,
+                  () {
                     textEditingController.clear();
-                    focus.unfocus();
+                    //focus.unfocus();
+                    focusMain();
                   },
-                  icon: const Icon(Icons.close),
+                  addItems,
+                  showSearch: showSearch,
+                  roundBorders: roundBorders,
+                  hint: AppLocalizations.of(context)!.searchHint,
                 ),
-                if (addItems != null) ...addItems,
-              ],
-            ),
-            hintText: AppLocalizations.of(context)!.searchHint,
-            border: roundBorders
-                ? const OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(50)))
-                : InputBorder.none,
-            isDense: false),
-        controller: textEditingController,
-        focusNode: focusNode,
-        onSubmitted: (value) {
-          onSubmit(value);
-        },
-      );
+                controller: textEditingController,
+                focusNode: focusNode,
+                onSubmitted: (value) {
+                  onSubmit(Tag.string(tag: value));
+                },
+              );
+            },
+          ));
     },
     optionsBuilder: (textEditingValue) async {
       List<String> options = [];
@@ -150,4 +152,55 @@ Widget autocompleteWidget(
       return options;
     },
   );
+}
+
+InputDecoration autocompleteBarDecoration(
+    BuildContext context, void Function() iconOnPressed, List<Widget>? addItems,
+    {required bool showSearch,
+    required bool roundBorders,
+    required String hint}) {
+  return InputDecoration(
+      prefixIcon: FocusNotifier.of(context).hasFocus
+          ? IconButton(
+              onPressed: FocusNotifier.of(context).unfocus,
+              icon: const Icon(Icons.arrow_back))
+          : showSearch
+              ? const Icon(Icons.search_rounded)
+              : null,
+      suffixIcon: Wrap(
+        children: [
+          IconButton(
+            onPressed: iconOnPressed,
+            icon: const Icon(Icons.close),
+          ),
+          if (addItems != null) ...addItems,
+        ],
+      ),
+      hintText: hint,
+      border: roundBorders
+          ? const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(50)))
+          : InputBorder.none,
+      isDense: false);
+}
+
+class FocusNotifier extends InheritedNotifier<FocusNode> {
+  final void Function() focusMain;
+  const FocusNotifier(
+      {super.key,
+      required super.notifier,
+      required this.focusMain,
+      required super.child});
+
+  static FocusNotifierData of(BuildContext context) {
+    var widget = context.dependOnInheritedWidgetOfExactType<FocusNotifier>()!;
+    return FocusNotifierData(
+        hasFocus: widget.notifier!.hasFocus, unfocus: widget.focusMain);
+  }
+}
+
+class FocusNotifierData {
+  final void Function() unfocus;
+  final bool hasFocus;
+  const FocusNotifierData({required this.hasFocus, required this.unfocus});
 }

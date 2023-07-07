@@ -20,8 +20,9 @@ class Directory implements Cell<Directory> {
   @Index(unique: true)
   String dirPath;
   String imageUrl;
+  @Index()
   String dirName;
-  String id;
+  // String id;
   int time;
 
   int count;
@@ -37,7 +38,9 @@ class Directory implements Cell<Directory> {
 
   @override
   CellData getCellData(bool isList) => CellData(
-      thumb: CachedNetworkImageProvider(imageUrl), name: alias(isList));
+      thumb: CachedNetworkImageProvider(imageUrl),
+      name: alias(isList),
+      stickers: []);
 
   @ignore
   @override
@@ -47,13 +50,13 @@ class Directory implements Cell<Directory> {
 
   @ignore
   @override
-  List<Widget>? Function(BuildContext context, dynamic extra, Color borderColor,
-          Color foregroundColor, Color systemOverlayColor)
-      get addInfo => (_, __, ___, ____, _____) {
+  List<Widget>? Function(
+          BuildContext context, dynamic extra, AddInfoColorData colors)
+      get addInfo => (_, __, ___) {
             return null;
           };
 
-  Directory(this.id,
+  Directory(
       {required this.imageUrl,
       required this.dirPath,
       required this.dirName,

@@ -18,25 +18,25 @@ Map<SingleActivatorDescription, Null Function()> digitAndSettings(
     BuildContext context, int from, GlobalKey<ScaffoldState> key) {
   return {
     SingleActivatorDescription(AppLocalizations.of(context)!.goBooruGrid,
-        const SingleActivator(LogicalKeyboardKey.digit1)): () {
+        const SingleActivator(LogicalKeyboardKey.digit1, control: true)): () {
       if (from != kBooruGridDrawerIndex) {
         selectDestination(context, from, kBooruGridDrawerIndex);
       }
     },
     SingleActivatorDescription(AppLocalizations.of(context)!.goGallery,
-        const SingleActivator(LogicalKeyboardKey.digit2)): () {
+        const SingleActivator(LogicalKeyboardKey.digit2, control: true)): () {
       selectDestination(context, from, kGalleryDrawerIndex);
     },
     SingleActivatorDescription(AppLocalizations.of(context)!.goTags,
-        const SingleActivator(LogicalKeyboardKey.digit3)): () {
+        const SingleActivator(LogicalKeyboardKey.digit3, control: true)): () {
       selectDestination(context, from, kTagsDrawerIndex);
     },
     SingleActivatorDescription(AppLocalizations.of(context)!.goDownloads,
-        const SingleActivator(LogicalKeyboardKey.digit4)): () {
+        const SingleActivator(LogicalKeyboardKey.digit4, control: true)): () {
       selectDestination(context, from, kDownloadsDrawerIndex);
     },
     SingleActivatorDescription(AppLocalizations.of(context)!.goUploads,
-        const SingleActivator(LogicalKeyboardKey.digit5)): () {
+        const SingleActivator(LogicalKeyboardKey.digit5, control: true)): () {
       selectDestination(context, from, kUploadsDrawerIndex);
     },
     SingleActivatorDescription(AppLocalizations.of(context)!.goSettings,
@@ -53,11 +53,12 @@ Map<SingleActivatorDescription, Null Function()> digitAndSettings(
   };
 }
 
-Map<SingleActivator, Null Function()> keybindDescription(
-    BuildContext context, List<String> desc, String pageName) {
+Map<SingleActivator, Null Function()> keybindDescription(BuildContext context,
+    List<String> desc, String pageName, void Function() focusMain) {
   return {
     const SingleActivator(LogicalKeyboardKey.keyK, shift: true, control: true):
         () {
+      focusMain();
       showDialog(
           context: context,
           builder: (context) => AlertDialog(

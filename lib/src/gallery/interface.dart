@@ -17,28 +17,31 @@ class Result<T extends Cell> {
   const Result(this.cell, this.count);
 }
 
-abstract class GalleryAPIFiles<T> {
+abstract class GalleryAPIFiles<F extends Cell<A>, A> {
   bool get reachedEnd;
 
   //Future<Result<DirectoryFile>> nextImages();
-  Future<Result<DirectoryFile>> refresh();
+  Future<Result<F>> refresh();
 
-  Future delete(DirectoryFile f);
+  Result<F> filter(String s);
+  void resetFilter();
+
+  Future delete(F f);
   Future uploadFiles(List<PlatformFile> l, void Function() onDone);
-  Future deleteFiles(List<T> f, void Function() onDone);
+  Future deleteFiles(List<A> f, void Function() onDone);
 
   void close();
 }
 
-abstract class GalleryAPI<T> {
+abstract class GalleryAPI<T extends Cell<B>, B, F extends Cell<A>, A> {
   Dio get client;
 
-  Future<Result<Directory>> directories();
-  GalleryAPIFiles<T> images(Directory d);
+  Future<Result<T>> directories();
+  GalleryAPIFiles<F, A> images(T d);
 
-  Future modify(Directory old, Directory newd);
-  Future setThumbnail(String newThumb, Directory d);
-  Future delete(Directory d);
+  Future modify(T old, T newd);
+  Future setThumbnail(String newThumb, T d);
+  Future delete(T d);
   Future newDirectory(String path, void Function() onDone);
 
   void close();

@@ -41,14 +41,15 @@ class _DownloadsState extends State<Downloads> {
 
     downloader.markStale();
 
-    _updates = isar().files.watchLazy(fireImmediately: true).listen((_) async {
-      var filesInProgress = await isar()
+    _updates =
+        settingsIsar().files.watchLazy(fireImmediately: true).listen((_) async {
+      var filesInProgress = await settingsIsar()
           .files
           .filter()
           .inProgressEqualTo(true)
           .sortByDateDesc()
           .findAll();
-      var files = await isar()
+      var files = await settingsIsar()
           .files
           .filter()
           .inProgressEqualTo(false)
@@ -78,7 +79,8 @@ class _DownloadsState extends State<Downloads> {
     downloader.markStale();
   }
 
-  int _inProcess() => isar().files.filter().isFailedEqualTo(false).countSync();
+  int _inProcess() =>
+      settingsIsar().files.filter().isFailedEqualTo(false).countSync();
 
   @override
   Widget build(BuildContext context) {

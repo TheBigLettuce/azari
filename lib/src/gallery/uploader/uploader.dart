@@ -39,7 +39,7 @@ Map<String, dynamic> _deviceId(ServerSettings s) => {
     };
 
 ServerSettings _settings() {
-  var settings = isar().serverSettings.getSync(0);
+  var settings = settingsIsar().serverSettings.getSync(0);
 
   if (settings == null) {
     throw "Server settings should be set";
@@ -92,9 +92,9 @@ class Uploader {
 
     for (var element in f.f) {
       var mimt = lookupMimeType(element.res.name);
-      var tags = BooruTags().getTagsPost(element.res.name);
+      var tags = PostTags().getTagsPost(element.res.name);
       if (tags.isEmpty) {
-        tags = await BooruTags().getOnlineAndSaveTags(element.res.name);
+        tags = await PostTags().getOnlineAndSaveTags(element.res.name);
       }
 
       formData.files.add(MapEntry(

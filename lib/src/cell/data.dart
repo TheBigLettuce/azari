@@ -10,6 +10,7 @@ import 'package:flutter/widgets.dart';
 class CellData {
   final ImageProvider thumb;
   final String name;
+  final List<IconData> stickers;
 
-  CellData({required this.thumb, required this.name});
+  CellData({required this.thumb, required this.name, required this.stickers});
 }

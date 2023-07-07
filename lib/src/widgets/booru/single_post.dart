@@ -144,6 +144,8 @@ class _SinglePostState extends State<SinglePost> {
                       },
                       cellCount: 1,
                       scrollUntill: (_) {},
+                      onExit: () {},
+                      focusMain: () {},
                       startingCell: 0,
                       getCell: (_) => value,
                       onNearEnd: () {

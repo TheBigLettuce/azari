@@ -22,6 +22,7 @@ class DirectoryFile implements Cell<DirectoryFileShrinked> {
   Id? isarId;
 
   String dir;
+  @Index()
   String name;
   String thumbHash;
   String origHash;
@@ -36,43 +37,41 @@ class DirectoryFile implements Cell<DirectoryFileShrinked> {
 
   @ignore
   @override
-  List<Widget>? Function(BuildContext context, dynamic extra, Color borderColor,
-          Color foregroundColor, Color systemOverlayColor)
-      get addInfo =>
-          (context, extra, borderColor, foregroundColor, systemoverlayColor) {
+  List<Widget>? Function(
+          BuildContext context, dynamic extra, AddInfoColorData colors)
+      get addInfo => (context, extra, colors) {
             return [
               ListTile(
-                textColor: foregroundColor,
+                textColor: colors.foregroundColor,
                 title: Text(AppLocalizations.of(context)!.nameTitle),
                 subtitle: Text(name),
               ),
               ListTile(
-                textColor: foregroundColor,
+                textColor: colors.foregroundColor,
                 title: Text(AppLocalizations.of(context)!.directoryTitle),
                 subtitle: Text(dir),
               ),
               ListTile(
-                textColor: foregroundColor,
+                textColor: colors.foregroundColor,
                 title: Text(AppLocalizations.of(context)!.thumbnailHashTitle),
                 subtitle: Text(thumbHash),
               ),
               ListTile(
-                textColor: foregroundColor,
+                textColor: colors.foregroundColor,
                 title: Text(AppLocalizations.of(context)!.originalHashTitle),
                 subtitle: Text(origHash),
               ),
               ListTile(
-                textColor: foregroundColor,
+                textColor: colors.foregroundColor,
                 title: Text(AppLocalizations.of(context)!.typeTitle),
                 subtitle: Text(type.toString()),
               ),
               ListTile(
-                textColor: foregroundColor,
+                textColor: colors.foregroundColor,
                 title: Text(AppLocalizations.of(context)!.timeTitle),
                 subtitle: Text(time.toString()),
               ),
-              ...makeTags(context, extra, borderColor, foregroundColor,
-                  systemoverlayColor, tags)
+              ...makeTags(context, extra, colors, tags, null)
             ];
           };
 
@@ -84,11 +83,11 @@ class DirectoryFile implements Cell<DirectoryFileShrinked> {
   @override
   Content fileDisplay() {
     if (type == 1) {
-      return Content("image", false,
+      return Content(ContentType.image, false,
           image: CachedNetworkImageProvider(
               Uri.parse(host).replace(path: '/static/$origHash').toString()));
     } else if (type == 2) {
-      return Content("video", false,
+      return Content(ContentType.video, false,
           videoPath:
               Uri.parse(host).replace(path: '/static/$origHash').toString());
     }
@@ -104,7 +103,11 @@ class DirectoryFile implements Cell<DirectoryFileShrinked> {
     return CellData(
         thumb: NetworkImage(
             Uri.parse(host).replace(path: '/static/$thumbHash').toString()),
-        name: name);
+        name: name,
+        stickers: [
+          if (type == 2) Icons.play_circle,
+          if (tags.contains("original")) kOriginalSticker,
+        ]);
   }
 
   DirectoryFile(this.dir,

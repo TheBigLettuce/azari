@@ -5,6 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/schemas/settings.dart';
@@ -20,6 +21,8 @@ List<String> _fromGelbooruTags(List<dynamic> l) {
 }
 
 class Gelbooru implements BooruAPI {
+  final UnsaveableCookieJar cookieJar;
+
   @override
   final Dio client;
 
@@ -39,6 +42,11 @@ class Gelbooru implements BooruAPI {
   final bool wouldBecomeStale = true;
 
   int _page = 0;
+
+  @override
+  void setCookies(List<Cookie> cookies) {
+    cookieJar.replaceDirectly(Uri.parse(domain), cookies);
+  }
 
   @override
   Uri browserLink(int id) => Uri.https("gelbooru.com", "/index.php", {
@@ -77,19 +85,18 @@ class Gelbooru implements BooruAPI {
   }
 
   @override
-  Future<List<Post>> page(int p, String tags) {
+  Future<List<Post>> page(int p, String tags, BooruTagging excludedTags) {
     _page = p + 1;
-    return _commonPosts(tags, p);
+    return _commonPosts(tags, p, excludedTags);
   }
 
-  Future<List<Post>> _commonPosts(String tags, int p) async {
+  Future<List<Post>> _commonPosts(
+      String tags, int p, BooruTagging excludedTags) async {
     String excludedTagsString;
 
-    var excludedTags =
-        BooruTags().excluded.getStrings().map((e) => "-$e ").toList();
-    if (excludedTags.isNotEmpty) {
-      excludedTagsString =
-          excludedTags.reduce((value, element) => value + element);
+    var excluded = excludedTags.get().map((e) => "-${e.tag} ").toList();
+    if (excluded.isNotEmpty) {
+      excludedTagsString = excluded.reduce((value, element) => value + element);
     } else {
       excludedTagsString = "";
     }
@@ -122,6 +129,11 @@ class Gelbooru implements BooruAPI {
 
         return _fromJson(json);
       } catch (e) {
+        if (e is DioException) {
+          if (e.response?.statusCode == 403) {
+            return Future.error(CloudflareException());
+          }
+        }
         return Future.error(e);
       }
     });
@@ -152,14 +164,20 @@ class Gelbooru implements BooruAPI {
 
         return _fromJson([json[0]])[0];
       } catch (e) {
+        if (e is DioException) {
+          if (e.response?.statusCode == 403) {
+            return Future.error(CloudflareException());
+          }
+        }
+
         return Future.error(e);
       }
     });
   }
 
   @override
-  Future<List<Post>> fromPost(int _, String tags) =>
-      _commonPosts(tags, _page).then((value) {
+  Future<List<Post>> fromPost(int _, String tags, BooruTagging excludedTags) =>
+      _commonPosts(tags, _page, excludedTags).then((value) {
         if (value.isNotEmpty) {
           _page++;
         }
@@ -201,5 +219,5 @@ class Gelbooru implements BooruAPI {
   @override
   void close() => client.close(force: true);
 
-  Gelbooru(int page, this.client) : _page = page;
+  Gelbooru(int page, this.client, this.cookieJar) : _page = page;
 }

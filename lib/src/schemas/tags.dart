@@ -10,18 +10,25 @@ import 'package:isar/isar.dart';
 part 'tags.g.dart';
 
 @collection
-class LastTags extends Tags {
-  LastTags(super.domain, super.tags);
-}
+class Tag {
+  Id? isarId;
 
-class Tags {
-  String domain;
+  @Index(unique: true, replace: true, composite: [CompositeIndex("isExcluded")])
+  final String tag;
+  final bool isExcluded;
+  final DateTime time;
 
-  Id get isarId => fastHash(domain);
+  Tag trim() {
+    return Tag(tag: tag.trim(), isExcluded: isExcluded);
+  }
 
-  List<String> tags;
-
-  Tags(this.domain, this.tags);
+  Tag({required this.tag, required this.isExcluded}) : time = DateTime.now();
+  Tag.string({required this.tag})
+      : isExcluded = false,
+        time = DateTime.now();
+  Tag copyWith({String? tag, bool? isExcluded}) {
+    return Tag(isExcluded: isExcluded ?? this.isExcluded, tag: tag ?? this.tag);
+  }
 }
 
 int fastHash(String string) {

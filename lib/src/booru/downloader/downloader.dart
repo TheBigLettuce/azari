@@ -38,7 +38,8 @@ class Downloader with CancelTokens {
 
   void retry(dw_file.File f) {
     if (f.isOnHold()) {
-      isar().writeTxnSync(() => isar().files.putSync(f.failed()));
+      settingsIsar()
+          .writeTxnSync(() => settingsIsar().files.putSync(f.failed()));
     } else if (_hasCancelKey(f.id!)) {
       cancelAndRemoveToken(f.id!);
     } else {
@@ -78,15 +79,15 @@ class Downloader with CancelTokens {
 
   void _done() {
     if (_inWork <= maximum) {
-      var f = isar()
+      var f = settingsIsar()
           .files
           .filter()
           .inProgressEqualTo(false)
           .isFailedEqualTo(false)
           .findFirstSync();
       if (f != null) {
-        isar().writeTxnSync(
-          () => isar().files.putSync(f.inprogress()),
+        settingsIsar().writeTxnSync(
+          () => settingsIsar().files.putSync(f.inprogress()),
         );
         _addToken(f.id!, CancelToken());
         _download(f);
@@ -99,7 +100,7 @@ class Downloader with CancelTokens {
   }
 
   void restart() async {
-    var f = isar()
+    var f = settingsIsar()
         .files
         .filter()
         .isFailedEqualTo(true)
@@ -107,7 +108,7 @@ class Downloader with CancelTokens {
         .findAllSync();
 
     if (f.length < 6) {
-      f.addAll(isar()
+      f.addAll(settingsIsar()
           .files
           .where()
           .sortByDateDesc()
@@ -124,20 +125,22 @@ class Downloader with CancelTokens {
       return;
     }
 
-    isar().writeTxnSync(() => isar().files.putSync(download.onHold()));
+    settingsIsar()
+        .writeTxnSync(() => settingsIsar().files.putSync(download.onHold()));
 
     if (_inWork <= maximum) {
       _inWork++;
       var d = download.inprogress();
-      var id = isar().writeTxnSync(() => isar().files.putSync(d));
+      var id =
+          settingsIsar().writeTxnSync(() => settingsIsar().files.putSync(d));
       _download(d);
       _addToken(id, CancelToken());
     }
   }
 
   void removeFailed() {
-    isar().writeTxnSync(() {
-      var failed = isar()
+    settingsIsar().writeTxnSync(() {
+      var failed = settingsIsar()
           .files
           .filter()
           .isFailedEqualTo(true)
@@ -145,17 +148,17 @@ class Downloader with CancelTokens {
           .map((e) => e.id!)
           .toList();
       if (failed.isNotEmpty) {
-        isar().files.deleteAllSync(failed);
+        settingsIsar().files.deleteAllSync(failed);
       }
     });
   }
 
   void markStale() {
-    isar().writeTxnSync(() {
+    settingsIsar().writeTxnSync(() {
       List<dw_file.File> toUpdate = [];
 
       var inProgress =
-          isar().files.filter().inProgressEqualTo(true).findAllSync();
+          settingsIsar().files.filter().inProgressEqualTo(true).findAllSync();
       for (var element in inProgress) {
         if (_tokens[element.id!] == null) {
           toUpdate.add(element.failed());
@@ -163,7 +166,7 @@ class Downloader with CancelTokens {
       }
 
       if (toUpdate.isNotEmpty) {
-        isar().files.putAllSync(toUpdate);
+        settingsIsar().files.putAllSync(toUpdate);
       }
     });
   }
@@ -211,33 +214,33 @@ class Downloader with CancelTokens {
       progress.update(count);
     })).then((value) async {
       try {
-        var settings = isar().settings.getSync(0)!;
+        var settings = settingsIsar().settings.getSync(0)!;
 
         moverPlug.move(MoveOp(
             source: filePath, rootDir: settings.path, targetDir: d.site));
 
-        isar().writeTxnSync(
+        settingsIsar().writeTxnSync(
           () {
             _removeToken(d.id!);
-            isar().files.deleteSync(d.id!);
+            settingsIsar().files.deleteSync(d.id!);
           },
         );
       } catch (e, trace) {
         log("writting downloaded file ${d.name} to uri",
             level: Level.SEVERE.value, error: e, stackTrace: trace);
-        isar().writeTxnSync(
+        settingsIsar().writeTxnSync(
           () {
             _removeToken(d.id!);
-            isar().files.putSync(d.failed());
+            settingsIsar().files.putSync(d.failed());
           },
         );
       }
-    }).onError((DioError error, stackTrace) {
+    }).onError((error, stackTrace) {
       // print("d: ${error.message}, ${error.response!.data}");
-      isar().writeTxnSync(
+      settingsIsar().writeTxnSync(
         () {
           _removeToken(d.id!);
-          isar().files.putSync(d.failed());
+          settingsIsar().files.putSync(d.failed());
         },
       );
 

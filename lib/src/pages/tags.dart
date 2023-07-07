@@ -14,13 +14,13 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/widgets/booru/single_post.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
-import 'package:gallery/src/schemas/excluded_tags.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import '../../main.dart';
 import '../booru/interface.dart';
 import '../db/isar.dart';
 import '../keybinds/keybinds.dart';
@@ -28,19 +28,18 @@ import '../widgets/booru/autocomplete_tag.dart';
 import 'booru_scroll.dart';
 
 class SearchBooru extends StatefulWidget {
-  const SearchBooru({super.key});
+  final GridTab grids;
+  const SearchBooru({super.key, required this.grids});
 
   @override
   State<SearchBooru> createState() => _SearchBooruState();
 }
 
 class _SearchBooruState extends State<SearchBooru> {
-  final BooruTags _tags = BooruTags();
   BooruAPI booru = getBooru();
-  List<String> _lastTags = [];
+  List<Tag> _lastTags = [];
   late final StreamSubscription<void> _lastTagsWatcher;
-  List<String> _excludedTags = [];
-  late final StreamSubscription<void> _excludedTagsWatcher;
+  List<Tag> _excludedTags = [];
 
   FocusNode focus = FocusNode();
   FocusNode excludedFocus = FocusNode();
@@ -84,38 +83,42 @@ class _SearchBooruState extends State<SearchBooru> {
     });
 
     super.initState();
-    _lastTagsWatcher =
-        isar().lastTags.watchLazy(fireImmediately: true).listen((event) {
-      setState(() {
-        _lastTags = _tags.latest.getStrings();
-      });
-    });
-    _excludedTagsWatcher =
-        isar().excludedTags.watchLazy(fireImmediately: true).listen((event) {
-      setState(() {
-        _excludedTags = _tags.excluded.getStrings();
-      });
+    _lastTagsWatcher = widget.grids.instance.tags
+        .watchLazy(fireImmediately: true)
+        .listen((event) {
+      _lastTags = widget.grids.latest.get();
+      _excludedTags = widget.grids.excluded.get();
+
+      setState(() {});
     });
   }
 
-  void _onTagPressed(String tag) {
+  void _onTagPressed(Tag tag) {
     tag = tag.trim();
-    if (tag.isEmpty) {
+    if (tag.tag.isEmpty) {
       return;
     }
 
-    _tags.latest.add(tag);
-    newSecondaryGrid().then((value) {
-      Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-        return BooruScroll.secondary(
-          isar: value,
-          tags: tag,
-        );
-      }));
-    }).onError((error, stackTrace) {
-      log("opening a secondary grid on tag $tag",
-          level: Level.SEVERE.value, error: error, stackTrace: stackTrace);
-    });
+    widget.grids.latest.add(tag);
+    // newSecondaryGrid().then((value) {
+    //   Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+    //     return BooruScroll.secondary(
+    //       isar: value,
+    //       tags: tag.tag,
+    //     );
+    //   }));
+    // }).onError((error, stackTrace) {
+    //   log("opening a secondary grid on tag $tag",
+    //       level: Level.SEVERE.value, error: error, stackTrace: stackTrace);
+    // });
+
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+      return BooruScroll.secondary(
+        grids: widget.grids,
+        instance: widget.grids.newSecondaryGrid(),
+        tags: tag.tag,
+      );
+    }));
   }
 
   @override
@@ -123,7 +126,6 @@ class _SearchBooruState extends State<SearchBooru> {
     textController.dispose();
     excludedTagsTextController.dispose();
     _lastTagsWatcher.cancel();
-    _excludedTagsWatcher.cancel();
     focus.dispose();
 
     excludedFocus.dispose();
@@ -146,11 +148,11 @@ class _SearchBooruState extends State<SearchBooru> {
               () {
             if (focus.hasFocus) {
               if (searchHighlight.isNotEmpty) {
-                _onTagPressed(searchHighlight);
+                _onTagPressed(Tag.string(tag: searchHighlight));
               }
             } else if (excludedFocus.hasFocus) {
               if (excludedHighlight.isNotEmpty) {
-                _tags.excluded.add(excludedHighlight);
+                widget.grids.excluded.add(Tag.string(tag: excludedHighlight));
                 excludedTagsTextController.text = "";
               }
             }
@@ -241,10 +243,7 @@ class _SearchBooruState extends State<SearchBooru> {
                                                 deleteAllController!
                                                     .forward(from: 0)
                                                     .then((value) {
-                                                  isar().writeTxnSync(() =>
-                                                      isar()
-                                                          .lastTags
-                                                          .clearSync());
+                                                  widget.grids.latest.clear();
                                                   if (deleteAllController !=
                                                       null) {
                                                     deleteAllController!
@@ -271,13 +270,13 @@ class _SearchBooruState extends State<SearchBooru> {
                               deleteAllController!
                                   .forward(from: 0)
                                   .then((value) {
-                                _tags.latest.delete(t);
+                                widget.grids.latest.delete(t);
                                 if (deleteAllController != null) {
                                   deleteAllController!.reverse(from: 1);
                                 }
                               });
                             } else {
-                              _tags.latest.delete(t);
+                              widget.grids.latest.delete(t);
                             }
                           },
                           onPress: _onTagPressed)
@@ -313,9 +312,13 @@ class _SearchBooruState extends State<SearchBooru> {
                                     title: autocompleteWidget(
                                         excludedTagsTextController, (s) {
                                       excludedHighlight = s;
-                                    }, _tags.excluded.add, booru.completeTag,
+                                    },
+                                        widget.grids.excluded.add,
+                                        () => focus.requestFocus(),
+                                        booru.completeTag,
                                         excludedFocus,
-                                        submitOnPress: true, showSearch: true),
+                                        submitOnPress: true,
+                                        showSearch: true),
                                     trailing: IconButton(
                                       icon: const Icon(Icons.arrow_back),
                                       onPressed: () {
@@ -336,13 +339,13 @@ class _SearchBooruState extends State<SearchBooru> {
                               deleteAllExcludedController!
                                   .forward(from: 0)
                                   .then((value) {
-                                _tags.excluded.delete(t);
+                                widget.grids.excluded.delete(t);
                                 if (deleteAllExcludedController != null) {
                                   deleteAllExcludedController!.reverse(from: 1);
                                 }
                               });
                             } else {
-                              _tags.excluded.delete(t);
+                              widget.grids.excluded.delete(t);
                             }
                           },
                           onPress: (t) {})
@@ -358,10 +361,10 @@ class _SearchBooruState extends State<SearchBooru> {
 }
 
 class TagsWidget extends StatelessWidget {
-  final void Function(String tag) deleteTag;
-  final void Function(String tag)? onPress;
+  final void Function(Tag tag) deleteTag;
+  final void Function(Tag tag)? onPress;
   final bool redBackground;
-  final List<String> tags;
+  final List<Tag> tags;
   const TagsWidget(
       {super.key,
       required this.tags,
@@ -385,7 +388,7 @@ class TagsWidget extends StatelessWidget {
                         builder: (context) => AlertDialog(
                               title: Text(AppLocalizations.of(context)!
                                   .tagDeleteDialogTitle),
-                              content: Text(tag),
+                              content: Text(tag.tag),
                               actions: [
                                 TextButton(
                                     onPressed: () {
@@ -404,7 +407,7 @@ class TagsWidget extends StatelessWidget {
                         ? BorderSide(color: Colors.pink.shade200)
                         : null,
                     backgroundColor: redBackground ? Colors.pink : null,
-                    label: Text(tag,
+                    label: Text(tag.tag,
                         style: redBackground
                             ? TextStyle(color: Colors.white.withOpacity(0.8))
                             : null),

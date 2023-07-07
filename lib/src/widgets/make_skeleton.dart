@@ -13,6 +13,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/system_gestures.dart';
 
+import '../cell/cell.dart';
 import '../db/isar.dart';
 import '../keybinds/keybinds.dart';
 import '../pages/senitel.dart';
@@ -34,16 +35,19 @@ class SkeletonState {
   SkeletonState(this.index);
 }
 
-class GridSkeletonState extends SkeletonState {
+class GridSkeletonState<T extends Cell<B>, B> extends SkeletonState {
   bool showFab;
-  final GlobalKey<CallbackGridState> gridKey = GlobalKey();
-  Settings settings = isar().settings.getSync(0)!;
+  final GlobalKey<CallbackGridState<T, B>> gridKey = GlobalKey();
+  Settings settings = settingsIsar().settings.getSync(0)!;
   final Future<bool> Function() onWillPop;
 
-  void updateFab(void Function(void Function()) setState, bool fab) {
+  void updateFab(void Function(void Function()) setState,
+      {required bool fab, required bool foreground}) {
     if (fab != showFab) {
       showFab = fab;
-      setState(() {});
+      if (!foreground) {
+        setState(() {});
+      }
     }
   }
 
@@ -57,8 +61,8 @@ class GridSkeletonState extends SkeletonState {
         super(index);
 }
 
-Widget makeGridSkeleton(
-    BuildContext context, GridSkeletonState state, CallbackGrid grid) {
+Widget makeGridSkeleton<T extends Cell<B>, B>(BuildContext context,
+    GridSkeletonState<T, B> state, CallbackGrid<T, B> grid) {
   return WillPopScope(
     onWillPop: state.onWillPop,
     child: Scaffold(
@@ -103,7 +107,10 @@ Widget makeSkeletonSettings(BuildContext context, String pageDescription,
   return CallbackShortcuts(
       bindings: {
         ...bindings,
-        ...keybindDescription(context, describeKeys(bindings), pageDescription)
+        ...keybindDescription(context, describeKeys(bindings), pageDescription,
+            () {
+          state.mainFocus.requestFocus();
+        })
       },
       child: Focus(
         autofocus: true,
@@ -142,7 +149,10 @@ Widget makeSkeletonInnerSettings(BuildContext context, String pageDescription,
   return CallbackShortcuts(
       bindings: {
         ...bindings,
-        ...keybindDescription(context, describeKeys(bindings), pageDescription)
+        ...keybindDescription(context, describeKeys(bindings), pageDescription,
+            () {
+          state.mainFocus.requestFocus();
+        })
       },
       child: Focus(
         autofocus: true,
@@ -218,7 +228,10 @@ Widget makeSkeleton(
   return CallbackShortcuts(
       bindings: {
         ...bindings,
-        ...keybindDescription(context, describeKeys(bindings), pageDescription)
+        ...keybindDescription(context, describeKeys(bindings), pageDescription,
+            () {
+          state.mainFocus.requestFocus();
+        })
       },
       child: Focus(
           autofocus: true,

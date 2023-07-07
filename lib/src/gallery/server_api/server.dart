@@ -23,7 +23,7 @@ Map<String, dynamic> _deviceId(ServerSettings s) => {
     };
 
 ServerSettings _settings() {
-  var settings = isar().serverSettings.getSync(0);
+  var settings = settingsIsar().serverSettings.getSync(0);
 
   if (settings == null) {
     throw "Server settings should be set";
@@ -36,11 +36,13 @@ String _fromBaseToHex(String v) {
   return hex.encode(base64Decode(v));
 }
 
-class ServerAPI implements GalleryAPI<DirectoryFileShrinked> {
-  Isar serverIsar;
+class ServerAPI
+    implements
+        GalleryAPI<Directory, Directory, DirectoryFile, DirectoryFileShrinked> {
+  final Isar serverIsar;
 
   @override
-  Dio client = Dio(BaseOptions(
+  final Dio client = Dio(BaseOptions(
       responseType: ResponseType.json,
       contentType: Headers.formUrlEncodedContentType))
     ..interceptors.add(LogInterceptor(responseBody: false, requestBody: true));
@@ -61,7 +63,7 @@ class ServerAPI implements GalleryAPI<DirectoryFileShrinked> {
       serverIsar.clearSync();
 
       var list = (resp.data as List)
-          .map((e) => Directory("",
+          .map((e) => Directory(
               time: e["time"],
               dirName: e["alias"],
               count: e["count"],
@@ -96,7 +98,7 @@ class ServerAPI implements GalleryAPI<DirectoryFileShrinked> {
   ServerAPI(this.serverIsar);
 
   @override
-  GalleryAPIFiles<DirectoryFileShrinked> images(Directory d) {
+  GalleryAPIFiles<DirectoryFile, DirectoryFileShrinked> images(Directory d) {
     return _ImagesImpl(openServerApiInnerIsar(), client, d);
   }
 
@@ -109,9 +111,10 @@ class ServerAPI implements GalleryAPI<DirectoryFileShrinked> {
     }
 
     var settings = _settings();
+    // TODO: this
 
-    Uploader().add(Uri.parse(settings.host),
-        res.files.map((e) => FileAndDir(path, e)).toList(), onDone);
+    // Uploader().add(Uri.parse(settings.host),
+    //     res.files.map((e) => FileAndDir(path, e)).toList(), onDone);
 
     return Future.value();
   }
@@ -153,14 +156,41 @@ class ServerAPI implements GalleryAPI<DirectoryFileShrinked> {
       _modifyDir(d.dirPath, newHash: newThumb);
 }
 
-class _ImagesImpl implements GalleryAPIFiles<DirectoryFileShrinked> {
+class _ImagesImpl
+    implements GalleryAPIFiles<DirectoryFile, DirectoryFileShrinked> {
   Isar imageIsar;
+  Isar imageFilterIsar;
   int page = 0;
   Dio client;
   Directory d;
 
   @override
   bool reachedEnd = false;
+
+  @override
+  Result<DirectoryFile> filter(String s) {
+    imageFilterIsar.writeTxnSync(
+      () => imageFilterIsar.directoryFiles.clearSync(),
+    );
+
+    _writeFromTo(imageIsar, (offset, limit) {
+      return imageIsar.directoryFiles
+          .filter()
+          .nameContains(s, caseSensitive: false)
+          .offset(offset)
+          .limit(limit)
+          .findAllSync();
+    }, imageFilterIsar);
+
+    return Result((i) => imageFilterIsar.directoryFiles.getSync(i + 1)!,
+        imageFilterIsar.directoryFiles.countSync());
+  }
+
+  @override
+  void resetFilter() {
+    imageFilterIsar
+        .writeTxnSync(() => imageFilterIsar.directoryFiles.clearSync());
+  }
 
   Future<bool> nextImages() async {
     if (reachedEnd) {
@@ -214,12 +244,36 @@ class _ImagesImpl implements GalleryAPIFiles<DirectoryFileShrinked> {
     return false;
   }
 
+  void _writeFromTo(Isar from,
+      List<DirectoryFile> Function(int offset, int limit) getElems, Isar to) {
+    from.writeTxnSync(() {
+      var offset = 0;
+
+      for (;;) {
+        var sorted = getElems(offset, 40);
+        offset += 40;
+
+        for (var element in sorted) {
+          element.isarId = null;
+        }
+
+        to.writeTxnSync(() => to.directoryFiles.putAllSync(sorted));
+
+        if (sorted.length != 40) {
+          break;
+        }
+      }
+    });
+  }
+
   @override
   void close() {
     imageIsar.close(deleteFromDisk: true);
+    imageFilterIsar.close(deleteFromDisk: true);
   }
 
-  _ImagesImpl(this.imageIsar, this.client, this.d);
+  _ImagesImpl(this.imageIsar, this.client, this.d)
+      : imageFilterIsar = openServerApiInnerIsar();
 
   @override
   Future<Result<DirectoryFile>> refresh() async {
@@ -235,29 +289,14 @@ class _ImagesImpl implements GalleryAPIFiles<DirectoryFileShrinked> {
 
     var copy = openServerApiInnerIsar();
 
-    imageIsar.writeTxnSync(() {
-      var offset = 0;
-
-      for (;;) {
-        var sorted = imageIsar.directoryFiles
-            .where()
-            .sortByTimeDesc()
-            .offset(offset)
-            .limit(40)
-            .findAllSync();
-        offset += 40;
-
-        for (var element in sorted) {
-          element.isarId = null;
-        }
-
-        copy.writeTxnSync(() => copy.directoryFiles.putAllSync(sorted));
-
-        if (sorted.length != 40) {
-          break;
-        }
-      }
-    });
+    _writeFromTo(imageIsar, (offset, limit) {
+      return imageIsar.directoryFiles
+          .where()
+          .sortByTimeDesc()
+          .offset(offset)
+          .limit(limit)
+          .findAllSync();
+    }, copy);
 
     imageIsar.close(deleteFromDisk: true);
 
@@ -275,8 +314,10 @@ class _ImagesImpl implements GalleryAPIFiles<DirectoryFileShrinked> {
 
     var settings = _settings();
 
-    Uploader().add(Uri.parse(settings.host),
-        l.map((e) => FileAndDir(d.dirPath, e)).toList(), onDone);
+    // TODO: this
+
+    // Uploader().add(Uri.parse(settings.host),
+    //     l.map((e) => FileAndDir(d.dirPath, e)).toList(), onDone);
 
     return Future.value();
   }

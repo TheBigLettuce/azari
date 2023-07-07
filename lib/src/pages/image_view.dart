@@ -18,6 +18,7 @@ import 'package:gallery/src/widgets/system_gestures.dart';
 import 'package:logging/logging.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:palette_generator/palette_generator.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:video_player/video_player.dart';
@@ -30,6 +31,7 @@ final Color kListTileColorInInfo = Colors.white60.withOpacity(0.8);
 class PhotoGalleryPageVideoLinux extends StatefulWidget {
   final String url;
   final bool localVideo;
+
   const PhotoGalleryPageVideoLinux(
       {super.key, required this.url, required this.localVideo});
 
@@ -50,6 +52,9 @@ class _PhotoGalleryPageVideoLinuxState
     controller = VideoController(player,
         configuration: const VideoControllerConfiguration(
             enableHardwareAcceleration: false));
+
+    player.open(Media(widget.url));
+
     //     .then((value) {
     //   controller = value;
     //   player.open(
@@ -198,6 +203,8 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final void Function(int i)? download;
   final double? infoScrollOffset;
   final Color systemOverlayRestoreColor;
+  final void Function() onExit;
+  final void Function() focusMain;
 
   const ImageView(
       {super.key,
@@ -205,8 +212,10 @@ class ImageView<T extends Cell> extends StatefulWidget {
       required this.cellCount,
       required this.scrollUntill,
       required this.startingCell,
+      required this.onExit,
       required this.getCell,
       required this.onNearEnd,
+      required this.focusMain,
       required this.systemOverlayRestoreColor,
       this.infoScrollOffset,
       this.download});
@@ -215,7 +224,8 @@ class ImageView<T extends Cell> extends StatefulWidget {
   State<ImageView> createState() => _ImageViewState();
 }
 
-class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
+class _ImageViewState<T extends Cell> extends State<ImageView<T>>
+    with SingleTickerProviderStateMixin {
   late PageController controller;
   late T currentCell;
   late int currentPage = widget.startingCell;
@@ -225,7 +235,11 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
 
   PhotoViewController photoController = PhotoViewController();
 
+  late AnimationController animationController;
+
   final GlobalKey<ScaffoldState> key = GlobalKey();
+
+  PaletteGenerator? currentPalette;
 
   AnimationController? downloadButtonController;
 
@@ -234,9 +248,23 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
   late PlatformFullscreensPlug fullscreenPlug =
       choosePlatformFullscreenPlug(widget.systemOverlayRestoreColor);
 
+  void _extractPalette() {
+    PaletteGenerator.fromImageProvider(currentCell.getCellData(false).thumb)
+        .then((value) {
+      setState(() {
+        currentPalette = value;
+      });
+    }).onError((error, stackTrace) {
+      log("making palette for image_view",
+          level: Level.SEVERE.value, error: error, stackTrace: stackTrace);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+
+    animationController = AnimationController(vsync: this);
 
     scrollController =
         ScrollController(initialScrollOffset: widget.infoScrollOffset ?? 0);
@@ -252,15 +280,20 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
 
     currentCell = widget.getCell(widget.startingCell);
     controller = PageController(initialPage: widget.startingCell);
+
+    _extractPalette();
   }
 
   @override
   void dispose() {
     fullscreenPlug.unFullscreen();
 
+    animationController.dispose();
     widget.updateTagScrollPos(null, null);
     controller.dispose();
     photoController.dispose();
+
+    widget.onExit();
 
     super.dispose();
   }
@@ -289,104 +322,115 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
     setState(() => isAppbarShown = !isAppbarShown);
   }
 
+  Map<SingleActivatorDescription, Null Function()> _makeBindings(
+          BuildContext context) =>
+      {
+        SingleActivatorDescription(AppLocalizations.of(context)!.back,
+            const SingleActivator(LogicalKeyboardKey.escape)): () {
+          if (key.currentState?.isEndDrawerOpen ?? false) {
+            key.currentState?.closeEndDrawer();
+          } else {
+            Navigator.pop(context);
+          }
+        },
+        SingleActivatorDescription(
+            AppLocalizations.of(context)!.moveImageRight,
+            const SingleActivator(LogicalKeyboardKey.arrowRight,
+                shift: true)): () {
+          var pos = photoController.position;
+          photoController.position = pos.translate(-40, 0);
+        },
+        SingleActivatorDescription(
+            AppLocalizations.of(context)!.moveImageLeft,
+            const SingleActivator(LogicalKeyboardKey.arrowLeft,
+                shift: true)): () {
+          var pos = photoController.position;
+          photoController.position = pos.translate(40, 0);
+        },
+        SingleActivatorDescription(
+            AppLocalizations.of(context)!.rotateImageRight,
+            const SingleActivator(LogicalKeyboardKey.arrowRight,
+                control: true)): () {
+          photoController.rotation += 0.5;
+        },
+        SingleActivatorDescription(
+            AppLocalizations.of(context)!.rotateImageLeft,
+            const SingleActivator(LogicalKeyboardKey.arrowLeft,
+                control: true)): () {
+          photoController.rotation -= 0.5;
+        },
+        SingleActivatorDescription(AppLocalizations.of(context)!.moveImageUp,
+            const SingleActivator(LogicalKeyboardKey.arrowUp)): () {
+          var pos = photoController.position;
+          photoController.position = pos.translate(0, 40);
+        },
+        SingleActivatorDescription(AppLocalizations.of(context)!.moveImageDown,
+            const SingleActivator(LogicalKeyboardKey.arrowDown)): () {
+          var pos = photoController.position;
+          photoController.position = pos.translate(0, -40);
+        },
+        SingleActivatorDescription(AppLocalizations.of(context)!.zoomImageIn,
+            const SingleActivator(LogicalKeyboardKey.pageUp)): () {
+          var s = photoController.scale;
+
+          if (s != null && s < 2.5) {
+            photoController.scale = s + 0.5;
+          }
+        },
+        SingleActivatorDescription(AppLocalizations.of(context)!.zoomImageOut,
+            const SingleActivator(LogicalKeyboardKey.pageDown)): () {
+          var s = photoController.scale;
+
+          if (s != null && s > 0.2) {
+            photoController.scale = s - 0.25;
+          }
+        },
+        SingleActivatorDescription(AppLocalizations.of(context)!.showImageInfo,
+            const SingleActivator(LogicalKeyboardKey.keyI)): () {
+          if (key.currentState != null) {
+            if (key.currentState!.isEndDrawerOpen) {
+              key.currentState?.closeEndDrawer();
+            } else {
+              key.currentState?.openEndDrawer();
+            }
+          }
+        },
+        SingleActivatorDescription(AppLocalizations.of(context)!.downloadImage,
+            const SingleActivator(LogicalKeyboardKey.keyD)): () {
+          if (widget.download != null) {
+            widget.download!(currentPage);
+          }
+        },
+        SingleActivatorDescription(AppLocalizations.of(context)!.hideAppBar,
+            const SingleActivator(LogicalKeyboardKey.space)): () {
+          _onTap();
+        },
+        SingleActivatorDescription(AppLocalizations.of(context)!.nextImage,
+            const SingleActivator(LogicalKeyboardKey.arrowRight)): () {
+          controller.nextPage(duration: 500.milliseconds, curve: Curves.linear);
+        },
+        SingleActivatorDescription(AppLocalizations.of(context)!.previousImage,
+            const SingleActivator(LogicalKeyboardKey.arrowLeft)): () {
+          controller.previousPage(
+              duration: 500.milliseconds, curve: Curves.linear);
+        }
+      };
+
   @override
   Widget build(BuildContext context) {
     var addB = currentCell.addButtons();
-    Map<SingleActivatorDescription, Null Function()> bindings = {
-      SingleActivatorDescription(AppLocalizations.of(context)!.back,
-          const SingleActivator(LogicalKeyboardKey.escape)): () {
-        if (key.currentState?.isEndDrawerOpen ?? false) {
-          key.currentState?.closeEndDrawer();
-        } else {
-          Navigator.pop(context);
-        }
-      },
-      SingleActivatorDescription(
-          AppLocalizations.of(context)!.moveImageRight,
-          const SingleActivator(LogicalKeyboardKey.arrowRight,
-              shift: true)): () {
-        var pos = photoController.position;
-        photoController.position = pos.translate(-40, 0);
-      },
-      SingleActivatorDescription(AppLocalizations.of(context)!.moveImageLeft,
-              const SingleActivator(LogicalKeyboardKey.arrowLeft, shift: true)):
-          () {
-        var pos = photoController.position;
-        photoController.position = pos.translate(40, 0);
-      },
-      SingleActivatorDescription(
-          AppLocalizations.of(context)!.rotateImageRight,
-          const SingleActivator(LogicalKeyboardKey.arrowRight,
-              control: true)): () {
-        photoController.rotation += 0.5;
-      },
-      SingleActivatorDescription(
-          AppLocalizations.of(context)!.rotateImageLeft,
-          const SingleActivator(LogicalKeyboardKey.arrowLeft,
-              control: true)): () {
-        photoController.rotation -= 0.5;
-      },
-      SingleActivatorDescription(AppLocalizations.of(context)!.moveImageUp,
-          const SingleActivator(LogicalKeyboardKey.arrowUp)): () {
-        var pos = photoController.position;
-        photoController.position = pos.translate(0, 40);
-      },
-      SingleActivatorDescription(AppLocalizations.of(context)!.moveImageDown,
-          const SingleActivator(LogicalKeyboardKey.arrowDown)): () {
-        var pos = photoController.position;
-        photoController.position = pos.translate(0, -40);
-      },
-      SingleActivatorDescription(AppLocalizations.of(context)!.zoomImageIn,
-          const SingleActivator(LogicalKeyboardKey.pageUp)): () {
-        var s = photoController.scale;
-
-        if (s != null && s < 2.5) {
-          photoController.scale = s + 0.5;
-        }
-      },
-      SingleActivatorDescription(AppLocalizations.of(context)!.zoomImageOut,
-          const SingleActivator(LogicalKeyboardKey.pageDown)): () {
-        var s = photoController.scale;
-
-        if (s != null && s > 0.2) {
-          photoController.scale = s - 0.25;
-        }
-      },
-      SingleActivatorDescription(AppLocalizations.of(context)!.showImageInfo,
-          const SingleActivator(LogicalKeyboardKey.keyI)): () {
-        if (key.currentState != null) {
-          if (key.currentState!.isEndDrawerOpen) {
-            key.currentState?.closeEndDrawer();
-          } else {
-            key.currentState?.openEndDrawer();
-          }
-        }
-      },
-      SingleActivatorDescription(AppLocalizations.of(context)!.downloadImage,
-          const SingleActivator(LogicalKeyboardKey.keyD)): () {
-        if (widget.download != null) {
-          widget.download!(currentPage);
-        }
-      },
-      SingleActivatorDescription(AppLocalizations.of(context)!.hideAppBar,
-          const SingleActivator(LogicalKeyboardKey.space)): () {
-        _onTap();
-      },
-      SingleActivatorDescription(AppLocalizations.of(context)!.nextImage,
-          const SingleActivator(LogicalKeyboardKey.arrowRight)): () {
-        controller.nextPage(duration: 500.milliseconds, curve: Curves.linear);
-      },
-      SingleActivatorDescription(AppLocalizations.of(context)!.previousImage,
-          const SingleActivator(LogicalKeyboardKey.arrowLeft)): () {
-        controller.previousPage(
-            duration: 500.milliseconds, curve: Curves.linear);
-      }
-    };
+    Map<SingleActivatorDescription, Null Function()> bindings =
+        _makeBindings(context);
 
     var addInfo = currentCell.addInfo(context, () {
       widget.updateTagScrollPos(scrollController.offset, currentPage);
-    }, Theme.of(context).colorScheme.outlineVariant, kListTileColorInInfo,
-        widget.systemOverlayRestoreColor);
+    },
+        AddInfoColorData(
+          borderColor: Theme.of(context).colorScheme.outlineVariant,
+          foregroundColor:
+              currentPalette?.mutedColor?.bodyTextColor ?? kListTileColorInInfo,
+          systemOverlayColor: widget.systemOverlayRestoreColor,
+        ));
 
     var insets = MediaQuery.viewPaddingOf(context);
 
@@ -394,7 +438,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
         bindings: {
           ...bindings,
           ...keybindDescription(context, describeKeys(bindings),
-              AppLocalizations.of(context)!.imageViewPageName)
+              AppLocalizations.of(context)!.imageViewPageName, widget.focusMain)
         },
         child: Focus(
           autofocus: true,
@@ -404,15 +448,24 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
               endDrawerEnableOpenDragGesture: false,
               endDrawer: Drawer(
                 backgroundColor:
-                    Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                    currentPalette?.mutedColor?.color.withOpacity(0.5) ??
+                        Theme.of(context).colorScheme.surface.withOpacity(0.5),
                 child: CustomScrollView(
                   controller: scrollController,
                   slivers: [
                     endDrawerHeading(context, "Info", key,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surface
-                            .withOpacity(0.5)),
+                        titleColor:
+                            currentPalette?.dominantColor?.titleTextColor ??
+                                Theme.of(context)
+                                    .colorScheme
+                                    .surface
+                                    .withOpacity(0.5),
+                        backroundColor: currentPalette?.dominantColor?.color
+                                .withOpacity(0.5) ??
+                            Theme.of(context)
+                                .colorScheme
+                                .surface
+                                .withOpacity(0.5)),
                     SliverPadding(
                       padding: EdgeInsets.only(bottom: insets.bottom),
                       sliver: SliverList.list(
@@ -427,10 +480,23 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                   ignoring: !isAppbarShown,
                   child: AppBar(
                     automaticallyImplyLeading: false,
-                    foregroundColor: kListTileColorInInfo,
-                    backgroundColor: Colors.black.withOpacity(0.5),
+                    foregroundColor:
+                        currentPalette?.dominantColor?.bodyTextColor ??
+                            kListTileColorInInfo,
+                    backgroundColor:
+                        currentPalette?.dominantColor?.color.withOpacity(0.5) ??
+                            Colors.black.withOpacity(0.5),
                     leading: const BackButton(),
-                    title: Text(currentCell.alias(false)),
+                    title: GestureDetector(
+                      onLongPress: () {
+                        Clipboard.setData(
+                            ClipboardData(text: currentCell.alias(false)));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text("Copied!"))); // TODO: change
+                      },
+                      child: Text(currentCell.alias(false)),
+                    ),
                     actions: [
                       if (addB != null) ...addB,
                       if (widget.download != null)
@@ -473,7 +539,54 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                             },
                       onTap: _onTap,
                       child: PhotoViewGallery.builder(
+                          loadingBuilder: (context, event) {
+                            final expectedBytes = event?.expectedTotalBytes;
+                            final loadedBytes = event?.cumulativeBytesLoaded;
+                            final value =
+                                loadedBytes != null && expectedBytes != null
+                                    ? loadedBytes / expectedBytes
+                                    : null;
+
+                            return Container(
+                              decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                      begin: Alignment.bottomCenter,
+                                      end: Alignment.topCenter,
+                                      colors: [
+                                    ColorTween(
+                                            begin: Colors.black,
+                                            end: currentPalette
+                                                ?.mutedColor?.color
+                                                .withOpacity(0.7))
+                                        .lerp(value ?? 0)!,
+                                    ColorTween(
+                                            begin: Colors.black38,
+                                            end: currentPalette
+                                                ?.mutedColor?.color
+                                                .withOpacity(0.5))
+                                        .lerp(value ?? 0)!,
+                                    ColorTween(
+                                            begin: Colors.black12,
+                                            end: currentPalette
+                                                ?.mutedColor?.color
+                                                .withOpacity(0.3))
+                                        .lerp(value ?? 0)!,
+                                  ])),
+                              child: Center(
+                                child: SizedBox(
+                                    width: 20.0,
+                                    height: 20.0,
+                                    child: CircularProgressIndicator(
+                                        color: currentPalette
+                                            ?.dominantColor?.color,
+                                        value: value)),
+                              ),
+                            );
+                          },
                           enableRotation: true,
+                          backgroundDecoration: BoxDecoration(
+                              color: currentPalette?.mutedColor?.color
+                                  .withOpacity(0.7)),
                           onPageChanged: (index) async {
                             currentPage = index;
                             photoController.rotation = 0;
@@ -488,6 +601,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
 
                             setState(() {
                               currentCell = c;
+                              _extractPalette();
                             });
                           },
                           pageController: controller,
@@ -496,7 +610,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                             var fileContent =
                                 widget.getCell(indx).fileDisplay();
 
-                            if (fileContent.type == "video") {
+                            if (fileContent.type == ContentType.video) {
                               return PhotoViewGalleryPageOptions.customChild(
                                   disableGestures: true,
                                   tightMode: true,
@@ -508,7 +622,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>> {
                                           url: fileContent.videoPath!,
                                           localVideo: fileContent.isVideoLocal,
                                         ));
-                            } else if (fileContent.type == "image") {
+                            } else if (fileContent.type == ContentType.image) {
                               return PhotoViewGalleryPageOptions(
                                   controller: photoController,
                                   minScale:

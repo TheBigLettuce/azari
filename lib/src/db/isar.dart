@@ -7,17 +7,21 @@
 
 import 'dart:io' as io;
 
+import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
+import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery/src/booru/api/danbooru.dart';
 import 'package:gallery/src/booru/api/gelbooru.dart';
 import 'package:gallery/src/booru/interface.dart';
+import 'package:gallery/src/schemas/android_gallery_directory.dart';
+import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 import 'package:gallery/src/schemas/directory.dart';
 import 'package:gallery/src/schemas/directory_file.dart';
 import 'package:gallery/src/schemas/download_file.dart';
-import 'package:gallery/src/schemas/excluded_tags.dart';
+import 'package:gallery/src/schemas/gallery_last_modified.dart';
 import 'package:gallery/src/schemas/grid_restore.dart';
 import 'package:gallery/src/schemas/local_tags.dart';
 import 'package:gallery/src/schemas/post.dart';
@@ -29,10 +33,13 @@ import 'package:gallery/src/schemas/upload_files.dart';
 import 'package:gallery/src/schemas/upload_files_state.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
+import '../booru/tags/tags.dart';
 import '../pages/booru_scroll.dart';
 import '../schemas/settings.dart';
 
 import 'package:path/path.dart' as path;
+
+part 'grids.dart';
 
 Isar? _isar;
 late String _directoryPath;
@@ -54,11 +61,17 @@ BooruAPI getBooru({int? page}) {
     responseType: ResponseType.json,
   ));
 
-  var settings = isar().settings.getSync(0);
+  var settings = settingsIsar().settings.getSync(0);
   if (settings!.selectedBooru == Booru.danbooru) {
-    return Danbooru(dio);
+    var jar = CookieJarTab().get(Booru.danbooru);
+
+    dio.interceptors.add(CookieManager(jar));
+    return Danbooru(dio, UnsaveableCookieJar(jar));
   } else if (settings.selectedBooru == Booru.gelbooru) {
-    return Gelbooru(page ?? 0, dio);
+    var jar = CookieJarTab().get(Booru.gelbooru);
+
+    dio.interceptors.add(CookieManager(jar));
+    return Gelbooru(page ?? 0, dio, UnsaveableCookieJar(jar));
   } else {
     throw "invalid booru";
   }
@@ -79,89 +92,32 @@ Future initalizeIsar() async {
 
   _temporaryDbPath = d.path;
 
-  await Isar.open([
-    SettingsSchema,
-    LastTagsSchema,
-    FileSchema,
-    PostSchema,
-    ScrollPositionPrimarySchema,
-    ExcludedTagsSchema,
-    GridRestoreSchema,
-    ServerSettingsSchema
-  ], directory: _directoryPath, inspector: false)
+  await Isar.open([SettingsSchema, FileSchema, ServerSettingsSchema],
+          directory: _directoryPath, inspector: false)
       .then((value) {
     _isar = value;
   });
 }
 
-void restoreState(BuildContext context, bool pushBooru) {
-  if (pushBooru) {
-    Navigator.pushReplacementNamed(context, "/booru");
-  }
-  var toRestore = isar().gridRestores.where().sortByDateDesc().findAllSync();
+Isar settingsIsar() => _isar!;
 
-  _restoreState(context, toRestore, true);
+void _closePrimaryGridIsar(Booru booru) {
+  Isar.getInstance(booru.string)?.close();
 }
 
-void _restoreState(
-    BuildContext context, List<GridRestore> toRestore, bool push) {
-  if (toRestore.isEmpty) {
-    if (!push) {
-      Navigator.pop(context);
-    }
-    return;
+Isar _primaryGridIsar(Booru booru) {
+  var instance = Isar.getInstance(booru.string);
+  if (instance != null) {
+    return instance;
   }
 
-  for (true;;) {
-    var restore = toRestore.removeAt(0);
-
-    var isarR = restoreIsarGrid(restore.path);
-
-    var state = isarR.secondaryGrids.getSync(0);
-
-    if (state == null) {
-      removeSecondaryGrid(isarR.name);
-      continue;
-    }
-
-    var page = MaterialPageRoute(
-      builder: (context) {
-        return BooruScroll.restore(
-          isar: isarR,
-          tags: state.tags,
-          initalScroll: state.scrollPositionGrid,
-          pageViewScrollingOffset: state.scrollPositionTags,
-          initalPost: state.selectedPost,
-          booruPage: state.page,
-        );
-      },
-    );
-
-    if (push) {
-      Navigator.push(context, page);
-    } else {
-      Navigator.pushReplacement(
-        context,
-        page,
-      );
-    }
-
-    break;
-  }
+  return Isar.openSync([
+    GridRestoreSchema,
+    TagSchema,
+    ScrollPositionPrimarySchema,
+    PostSchema,
+  ], directory: _directoryPath, inspector: false, name: booru.string);
 }
-
-void restoreStateNext(BuildContext context, String exclude) {
-  var toRestore = isar()
-      .gridRestores
-      .where()
-      .pathNotEqualTo(exclude)
-      .sortByDateDesc()
-      .findAllSync();
-
-  _restoreState(context, toRestore, false);
-}
-
-Isar isar() => _isar!;
 
 Isar openServerApiIsar() {
   /*var i = Isar.getInstance("serverApi");
@@ -222,6 +178,21 @@ void closeServerApiInnerIsar(String name) {
   }
 }
 
+Isar openAndroidGalleryIsar() {
+  return Isar.openSync(
+      [SystemGalleryDirectorySchema, GalleryLastModifiedSchema],
+      directory: _directoryPath,
+      inspector: false,
+      name: "systemGalleryDirectories");
+}
+
+Isar openAndroidGalleryInnerIsar() {
+  return Isar.openSync([SystemGalleryDirectoryFileSchema],
+      directory: _temporaryDbPath,
+      inspector: false,
+      name: DateTime.now().microsecondsSinceEpoch.toString());
+}
+
 Isar openDirectoryIsar() {
   return Isar.openSync([DirectorySchema],
       directory: _directoryPath, inspector: false, name: "directories");
@@ -234,29 +205,9 @@ void closeDirectoryIsar() {
   }
 }
 
-Isar restoreIsarGrid(String path) {
+Isar _restoreIsarGrid(String path) {
   return Isar.openSync([PostSchema, SecondaryGridSchema],
       directory: _directoryPath, inspector: false, name: path);
-}
-
-Future<Isar> newSecondaryGrid() async {
-  var p = DateTime.now().millisecondsSinceEpoch.toString();
-
-  isar().writeTxnSync(() => isar().gridRestores.putSync(GridRestore(p)));
-
-  return Isar.open([PostSchema, SecondaryGridSchema],
-      directory: _directoryPath, inspector: false, name: p);
-}
-
-void removeSecondaryGrid(String name) {
-  var grid = isar().gridRestores.filter().pathEqualTo(name).findFirstSync();
-  if (grid != null) {
-    var db = Isar.getInstance(grid.path);
-    if (db != null) {
-      db.close(deleteFromDisk: true);
-    }
-    isar().writeTxnSync(() => isar().gridRestores.deleteSync(grid.id!));
-  }
 }
 
 Future<bool> chooseDirectory(void Function(String) onError) async {
@@ -274,8 +225,9 @@ Future<bool> chooseDirectory(void Function(String) onError) async {
     resp = r;
   }
 
-  var settings = isar().settings.getSync(0) ?? Settings.empty();
-  isar().writeTxnSync(() => isar().settings.putSync(settings.copy(path: resp)));
+  var settings = settingsIsar().settings.getSync(0) ?? Settings.empty();
+  settingsIsar().writeTxnSync(
+      () => settingsIsar().settings.putSync(settings.copy(path: resp)));
 
   return Future.value(true);
 }

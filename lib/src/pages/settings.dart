@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/main.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/pages/server_settings.dart';
@@ -62,14 +63,16 @@ class SettingsList extends StatefulWidget {
 
 class _SettingsListState extends State<SettingsList> {
   late final StreamSubscription<schema_settings.Settings?> _watcher;
-  schema_settings.Settings? _settings = isar().settings.getSync(0);
+  schema_settings.Settings? _settings = settingsIsar().settings.getSync(0);
 
   @override
   void initState() {
     super.initState();
 
-    _watcher =
-        isar().settings.watchObject(0, fireImmediately: true).listen((event) {
+    _watcher = settingsIsar()
+        .settings
+        .watchObject(0, fireImmediately: true)
+        .listen((event) {
       setState(() {
         _settings = event;
       });
@@ -114,6 +117,7 @@ class _SettingsListState extends State<SettingsList> {
         settingsLabel("Booru", titleStyle),
         ListTile(
           title: Text(AppLocalizations.of(context)!.downloadDirectorySetting),
+          onTap: _extend,
           subtitle: Text(
             _settings!.path,
             maxLines: extendListSubtitle ? null : 2,
@@ -139,15 +143,11 @@ class _SettingsListState extends State<SettingsList> {
                 .toList(),
             onChanged: (value) {
               if (value != _settings!.selectedBooru) {
-                isar().writeTxnSync(() => isar()
+                settingsIsar().writeTxnSync(() => settingsIsar()
                     .settings
                     .putSync(_settings!.copy(selectedBooru: value)));
 
-                Navigator.popUntil(context, ModalRoute.withName("/booru"));
-
-                Navigator.pop(context);
-
-                Navigator.pushNamed(context, "/booru");
+                RestartWidget.restartApp(context);
               }
             },
           ),
@@ -175,8 +175,9 @@ class _SettingsListState extends State<SettingsList> {
               ],
               onChanged: (value) {
                 if (value != _settings!.quality) {
-                  isar().writeTxnSync(() =>
-                      isar().settings.putSync(_settings!.copy(quality: value)));
+                  settingsIsar().writeTxnSync(() => settingsIsar()
+                      .settings
+                      .putSync(_settings!.copy(quality: value)));
                 }
               },
             )),
@@ -191,7 +192,7 @@ class _SettingsListState extends State<SettingsList> {
             value: _settings!.listViewBooru,
             onChanged: (value) {
               if (value != _settings!.listViewBooru) {
-                isar().writeTxnSync(() => isar()
+                settingsIsar().writeTxnSync(() => settingsIsar()
                     .settings
                     .putSync(_settings!.copy(listViewBooru: value)));
               }
@@ -214,8 +215,9 @@ class _SettingsListState extends State<SettingsList> {
                 .toList(),
             onChanged: (value) {
               if (value != _settings!.ratio) {
-                isar().writeTxnSync(() =>
-                    isar().settings.putSync(_settings!.copy(ratio: value)));
+                settingsIsar().writeTxnSync(() => settingsIsar()
+                    .settings
+                    .putSync(_settings!.copy(ratio: value)));
               }
             },
           ),
@@ -239,7 +241,7 @@ class _SettingsListState extends State<SettingsList> {
                   ? null
                   : (value) {
                       if (value != _settings!.picturesPerRow) {
-                        isar().writeTxnSync(() => isar()
+                        settingsIsar().writeTxnSync(() => settingsIsar()
                             .settings
                             .putSync(_settings!.copy(picturesPerRow: value)));
                       }
@@ -250,7 +252,7 @@ class _SettingsListState extends State<SettingsList> {
           trailing: Switch(
             value: _settings!.safeMode,
             onChanged: (value) {
-              isar().writeTxnSync(() => isar()
+              settingsIsar().writeTxnSync(() => settingsIsar()
                   .settings
                   .putSync(_settings!.copy(safeMode: !_settings!.safeMode)));
             },
@@ -263,8 +265,9 @@ class _SettingsListState extends State<SettingsList> {
           onTap: _extend,
           trailing: Switch(
             onChanged: (value) {
-              isar().writeTxnSync(() =>
-                  isar().settings.putSync(_settings!.copy(autoRefresh: value)));
+              settingsIsar().writeTxnSync(() => settingsIsar()
+                  .settings
+                  .putSync(_settings!.copy(autoRefresh: value)));
             },
             value: _settings!.autoRefresh,
           ),
@@ -287,8 +290,9 @@ class _SettingsListState extends State<SettingsList> {
                         title: Text("Enter time in hours"),
                         content: TextField(
                           onSubmitted: (value) {
-                            isar().writeTxnSync(() => isar().settings.putSync(
-                                _settings!.copy(
+                            settingsIsar().writeTxnSync(() => settingsIsar()
+                                .settings
+                                .putSync(_settings!.copy(
                                     autoRefreshMicroseconds: int.parse(value)
                                         .hours
                                         .inMicroseconds)));
@@ -315,9 +319,10 @@ class _SettingsListState extends State<SettingsList> {
           title: Text("Hide directory names"),
           trailing: Switch(
             onChanged: (value) {
-              isar().writeTxnSync(() => isar().settings.putSync(_settings!.copy(
-                  gallerySettings: _settings!.gallerySettings
-                      .copy(hideDirectoryName: value))));
+              settingsIsar().writeTxnSync(() => settingsIsar().settings.putSync(
+                  _settings!.copy(
+                      gallerySettings: _settings!.gallerySettings
+                          .copy(hideDirectoryName: value))));
             },
             value: _settings!.gallerySettings.hideDirectoryName ?? false,
           ),
@@ -338,8 +343,9 @@ class _SettingsListState extends State<SettingsList> {
                 .toList(),
             onChanged: (value) {
               if (value != _settings!.gallerySettings.directoryAspectRatio) {
-                isar().writeTxnSync(() => isar().settings.putSync(_settings!
-                    .copy(
+                settingsIsar().writeTxnSync(() => settingsIsar()
+                    .settings
+                    .putSync(_settings!.copy(
                         gallerySettings: _settings!.gallerySettings
                             .copy(directoryAspectRatio: value))));
               }
@@ -358,8 +364,9 @@ class _SettingsListState extends State<SettingsList> {
                   .toList(),
               onChanged: (value) {
                 if (value != _settings!.gallerySettings.directoryColumns) {
-                  isar().writeTxnSync(() => isar().settings.putSync(_settings!
-                      .copy(
+                  settingsIsar().writeTxnSync(() => settingsIsar()
+                      .settings
+                      .putSync(_settings!.copy(
                           gallerySettings: _settings!.gallerySettings
                               .copy(directoryColumns: value))));
                 }
@@ -370,9 +377,10 @@ class _SettingsListState extends State<SettingsList> {
           title: Text("Hide file names"),
           trailing: Switch(
             onChanged: (value) {
-              isar().writeTxnSync(() => isar().settings.putSync(_settings!.copy(
-                  gallerySettings:
-                      _settings!.gallerySettings.copy(hideFileName: value))));
+              settingsIsar().writeTxnSync(() => settingsIsar().settings.putSync(
+                  _settings!.copy(
+                      gallerySettings: _settings!.gallerySettings
+                          .copy(hideFileName: value))));
             },
             value: _settings!.gallerySettings.hideFileName ?? false,
           ),
@@ -393,8 +401,9 @@ class _SettingsListState extends State<SettingsList> {
                 .toList(),
             onChanged: (value) {
               if (value != _settings!.gallerySettings.filesAspectRatio) {
-                isar().writeTxnSync(() => isar().settings.putSync(_settings!
-                    .copy(
+                settingsIsar().writeTxnSync(() => settingsIsar()
+                    .settings
+                    .putSync(_settings!.copy(
                         gallerySettings: _settings!.gallerySettings
                             .copy(filesAspectRatio: value))));
               }
@@ -413,8 +422,9 @@ class _SettingsListState extends State<SettingsList> {
                   .toList(),
               onChanged: (value) {
                 if (value != _settings!.gallerySettings.filesColumns) {
-                  isar().writeTxnSync(() => isar().settings.putSync(_settings!
-                      .copy(
+                  settingsIsar().writeTxnSync(() => settingsIsar()
+                      .settings
+                      .putSync(_settings!.copy(
                           gallerySettings: _settings!.gallerySettings
                               .copy(filesColumns: value))));
                 }
@@ -435,7 +445,7 @@ class _SettingsListState extends State<SettingsList> {
           title: Text(AppLocalizations.of(context)!.savedTagsCount),
           enabled: false,
           onTap: _extend,
-          subtitle: Text(BooruTags().savedTagsCount().toString()),
+          subtitle: Text(PostTags().savedTagsCount().toString()),
         )
       ];
 

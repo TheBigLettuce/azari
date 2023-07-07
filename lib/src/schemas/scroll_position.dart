@@ -5,16 +5,13 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:gallery/src/schemas/tags.dart';
 import 'package:isar/isar.dart';
 
 part 'scroll_position.g.dart';
 
 @collection
 class ScrollPositionPrimary {
-  String id;
-
-  Id get isarId => fastHash(id);
+  Id isarId = 0;
 
   double pos;
   double? tagPos;
@@ -22,6 +19,6 @@ class ScrollPositionPrimary {
 
   int? page;
 
-  ScrollPositionPrimary(this.pos, this.id, {this.page, this.tagPos})
+  ScrollPositionPrimary(this.pos, {this.page, this.tagPos})
       : time = DateTime.now().toUtc();
 }

@@ -9,13 +9,16 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/gallery/directories.dart';
+import 'package:gallery/src/gallery/android_directories.dart';
+import 'package:gallery/src/gallery/server_directories.dart';
+import 'package:gallery/src/pages/booru_scroll.dart';
 import 'package:gallery/src/pages/tags.dart';
 import 'package:gallery/src/pages/downloads.dart';
 import 'package:gallery/src/pages/uploader.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/schemas/upload_files.dart';
+import '../../../main.dart';
 import '../../db/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/gallery/uploader/uploader.dart' as upd;
@@ -46,7 +49,7 @@ List<NavigationDrawerDestination> destinations(BuildContext context) {
           Icons.image,
           color: primaryColor,
         ),
-        label: Text(isar().settings.getSync(0)!.selectedBooru.string)),
+        label: Text(settingsIsar().settings.getSync(0)!.selectedBooru.string)),
     NavigationDrawerDestination(
         icon: const Icon(Icons.photo_album),
         selectedIcon: Icon(
@@ -63,7 +66,7 @@ List<NavigationDrawerDestination> destinations(BuildContext context) {
       label: Text(AppLocalizations.of(context)!.tagsLabel),
     ),
     NavigationDrawerDestination(
-        icon: isar().files.countSync() != 0
+        icon: settingsIsar().files.countSync() != 0
             ? const Badge(
                 child: Icon(Icons.download),
               )
@@ -74,11 +77,12 @@ List<NavigationDrawerDestination> destinations(BuildContext context) {
         ),
         label: Text(AppLocalizations.of(context)!.downloadsLabel)),
     NavigationDrawerDestination(
-        icon: upd.Uploader().uploadsDb.uploadFilesStacks.countSync() != 0
-            ? const Badge(
-                child: Icon(Icons.upload),
-              )
-            : const Icon(Icons.upload),
+        icon: const Icon(Icons.upload), // TODO: this
+        //  upd.Uploader().uploadsDb.uploadFilesStacks.countSync() != 0
+        //     ? const Badge(
+        //         child: Icon(Icons.upload),
+        //       )
+        //     :
         selectedIcon: Icon(
           Icons.upload,
           color: primaryColor,
@@ -108,7 +112,9 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
               Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const SearchBooru(),
+                    builder: (context) => SearchBooru(
+                      grids: getTab(),
+                    ),
                   ),
                   ModalRoute.withName("/senitel"))
             }
@@ -155,7 +161,9 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
               Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const Directories(),
+                    builder: (context) => Platform.isAndroid
+                        ? const AndroidDirectories()
+                        : const ServerDirectories(),
                   ),
                   ModalRoute.withName("/senitel"))
             }
@@ -165,12 +173,12 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
 
 Widget endDrawerHeading(
         BuildContext context, String headline, GlobalKey<ScaffoldState> k,
-        {Color? color}) =>
+        {Color? titleColor, Color? backroundColor}) =>
     SliverAppBar(
       expandedHeight: 152,
       collapsedHeight: kToolbarHeight,
       automaticallyImplyLeading: false,
-      backgroundColor: color,
+      backgroundColor: backroundColor,
       actions: [Container()],
       pinned: true,
       leading: BackButton(
@@ -178,7 +186,11 @@ Widget endDrawerHeading(
           k.currentState?.closeEndDrawer();
         },
       ),
-      flexibleSpace: FlexibleSpaceBar(title: Text(headline)),
+      flexibleSpace: FlexibleSpaceBar(
+          title: Text(
+        headline,
+        style: TextStyle(color: titleColor),
+      )),
     );
 
 Widget? makeEndDrawerSettings(

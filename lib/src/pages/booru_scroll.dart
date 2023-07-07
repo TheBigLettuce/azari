@@ -10,39 +10,24 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
-import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart' as db;
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/schemas/post.dart';
-import 'package:gallery/src/schemas/scroll_position.dart' as sc_pos;
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import '../db/isar.dart';
 import '../schemas/download_file.dart';
-import '../schemas/secondary_grid.dart';
 import '../schemas/settings.dart';
 import '../booru/tags/tags.dart';
-import '../widgets/booru/autocomplete_tag.dart';
-
-void _updateScrollPrimary(BooruAPI booru, double pos, int? page,
-    {double? tagPos}) {
-  db.isar().writeTxnSync(() => db.isar().scrollPositionPrimarys.putSync(
-      sc_pos.ScrollPositionPrimary(pos, booru.domain,
-          page: page, tagPos: tagPos)));
-}
-
-void _updateScrollSecondary(Isar isar, double pos, String tags, int? page,
-    {int? selectedPost, double? scrollPositionTags}) {
-  isar.writeTxnSync(() => isar.secondaryGrids.putSync(
-      SecondaryGrid(tags, scrollPositionTags, selectedPost, pos, page: page)));
-}
+import '../widgets/search_launch_grid.dart';
 
 class BooruScroll extends StatefulWidget {
-  final Isar isar;
+  final GridTab grids;
   final String tags;
   final double initalScroll;
   final bool clear;
@@ -52,28 +37,27 @@ class BooruScroll extends StatefulWidget {
   final bool toRestore;
   final DateTime? time;
 
-  // ignore: unused_field
-  final String _type; // for debug only
-
-  final void Function(String path)? closeDb;
+  final Isar? currentInstance;
+  final bool isPrimary;
 
   const BooruScroll.primary({
     super.key,
     required this.initalScroll,
-    required this.isar,
+    required this.grids,
     required this.time,
+    required this.booruPage,
     this.clear = false,
   })  : tags = "",
         toRestore = false,
-        booruPage = null,
         pageViewScrollingOffset = null,
         initalPost = null,
-        closeDb = null,
-        _type = "primary";
+        currentInstance = null,
+        isPrimary = true;
 
   const BooruScroll.secondary({
     super.key,
-    required this.isar,
+    required this.grids,
+    required Isar instance,
     required this.tags,
   })  : initalScroll = 0,
         clear = true,
@@ -82,12 +66,13 @@ class BooruScroll extends StatefulWidget {
         pageViewScrollingOffset = null,
         initalPost = null,
         time = null,
-        closeDb = db.removeSecondaryGrid,
-        _type = "secondary";
+        currentInstance = instance,
+        isPrimary = false;
 
   const BooruScroll.restore(
       {super.key,
-      required this.isar,
+      required this.grids,
+      required Isar instance,
       required this.pageViewScrollingOffset,
       required this.initalPost,
       required this.tags,
@@ -95,20 +80,19 @@ class BooruScroll extends StatefulWidget {
       required this.initalScroll})
       : clear = false,
         toRestore = true,
+        currentInstance = instance,
         time = null,
-        closeDb = db.removeSecondaryGrid,
-        _type = "restore";
+        isPrimary = false;
 
   @override
   State<BooruScroll> createState() => BooruScrollState();
 }
 
 class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
-  late BooruAPI booru = db.getBooru(page: widget.booruPage);
-  late Isar isar = widget.isar;
-  late StreamSubscription<void> tagWatcher;
+  //late Isar isar = widget.isar;
+  //late StreamSubscription<void> tagWatcher;
   late StreamSubscription<Settings?> settingsWatcher;
-  List<String> tags = BooruTags().latest.getStrings();
+  //List<String> tags = BooruTags().latest.getStrings();
   late final void Function(double pos, {double? infoPos, int? selectedCell})
       updateScrollPosition;
   Downloader downloader = Downloader();
@@ -117,9 +101,10 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
   late GridSkeletonState skeletonState = GridSkeletonState(
       index: kBooruGridDrawerIndex,
       onWillPop: () {
-        if (widget.tags.isNotEmpty) {
+        if (widget.isPrimary) {
           if (widget.toRestore) {
-            db.restoreStateNext(context, isar.name);
+            widget.grids
+                .restoreStateNext(context, widget.currentInstance!.name);
           }
         }
 
@@ -130,27 +115,34 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
   void initState() {
     super.initState();
 
-    searchHook(skeletonState.mainFocus, widget.tags);
+    searchHook(SearchLaunchGridData(skeletonState.mainFocus, widget.tags));
 
-    if (widget.tags.isEmpty) {
+    if (widget.isPrimary) {
       updateScrollPosition = (pos, {double? infoPos, int? selectedCell}) =>
-          _updateScrollPrimary(booru, pos, booru.currentPage, tagPos: infoPos);
+          widget.grids
+              .updateScroll(booru, pos, booru.currentPage, tagPos: infoPos);
     } else {
       updateScrollPosition = (pos, {double? infoPos, int? selectedCell}) =>
-          _updateScrollSecondary(
-              widget.isar, pos, widget.tags, booru.currentPage,
+          widget.grids.updateScrollSecondary(
+              widget.currentInstance!, pos, widget.tags, booru.currentPage,
               scrollPositionTags: infoPos, selectedPost: selectedCell);
     }
 
     if (widget.clear) {
-      isar.writeTxnSync(() => isar.posts.clearSync());
+      if (widget.isPrimary) {
+        widget.grids.instance
+            .writeTxnSync(() => widget.grids.instance.posts.clearSync());
+      } else {
+        widget.currentInstance!
+            .writeTxnSync(() => widget.currentInstance!.posts.clearSync());
+      }
     }
 
-    tagWatcher = db.isar().lastTags.watchLazy().listen((_) {
-      tags = BooruTags().latest.getStrings();
-    });
+    // tagWatcher = db.isar().lastTags.watchLazy().listen((_) {
+    //   tags = BooruTags().latest.getStrings();
+    // });
 
-    settingsWatcher = db.isar().settings.watchObject(0).listen((event) {
+    settingsWatcher = db.settingsIsar().settings.watchObject(0).listen((event) {
       skeletonState.settings = event!;
 
       setState(() {});
@@ -159,11 +151,13 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
 
   @override
   void dispose() {
-    tagWatcher.cancel();
+    //  tagWatcher.cancel();
     settingsWatcher.cancel();
 
-    if (widget.closeDb != null) {
-      widget.closeDb!(isar.name);
+    if (!widget.isPrimary) {
+      widget.grids.removeSecondaryGrid(widget.currentInstance!.name);
+    } else {
+      widget.grids.close();
     }
 
     disposeSearch();
@@ -179,26 +173,34 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
   //     ? []
   //     : tags.where((element) => element.contains(value)).toList();
 
-  Future<int> _clearAndRefresh() async {
-    try {
-      var list = await booru.page(0, widget.tags);
-      updateScrollPosition(0);
-      await isar.writeTxn(() {
-        isar.posts.clear();
-        return isar.posts.putAllById(list);
-      });
-      BooruTags().addAllPostTags(list);
-      reachedEnd = false;
-    } catch (e, trace) {
-      log("refreshing grid on ${skeletonState.settings.selectedBooru.string}",
-          level: Level.WARNING.value, error: e, stackTrace: trace);
-    }
+  Isar _getInstance() =>
+      widget.isPrimary ? widget.grids.instance : widget.currentInstance!;
 
-    return isar.posts.count();
+  Future<int> _clearAndRefresh() async {
+    // try {
+
+    // } catch (e, trace) {
+    //   log("refreshing grid on ${skeletonState.settings.selectedBooru.string}",
+    //       level: Level.WARNING.value, error: e, stackTrace: trace);
+    // }
+
+    var list = await booru.page(0, widget.tags, widget.grids.excluded);
+    updateScrollPosition(0);
+    var instance = _getInstance();
+    await instance.writeTxn(() {
+      instance.posts.clear();
+      return instance.posts.putAllById(list);
+    });
+    PostTags().addAllPostTags(list);
+    reachedEnd = false;
+
+    return instance.posts.count();
   }
 
   Future<void> _download(int i) async {
-    var p = isar.posts.getSync(i + 1);
+    var instance = _getInstance();
+
+    var p = instance.posts.getSync(i + 1);
     if (p == null) {
       return Future.value();
     }
@@ -207,28 +209,30 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
   }
 
   Future<int> _addLast() async {
+    var instance = _getInstance();
+
     if (reachedEnd) {
-      return isar.posts.countSync();
+      return instance.posts.countSync();
     }
-    var p = isar.posts.getSync(isar.posts.countSync());
+    var p = instance.posts.getSync(instance.posts.countSync());
     if (p == null) {
-      return isar.posts.countSync();
+      return instance.posts.countSync();
     }
 
     try {
-      var list = await booru.fromPost(p.id, widget.tags);
+      var list = await booru.fromPost(p.id, widget.tags, widget.grids.excluded);
       if (list.isEmpty) {
         reachedEnd = true;
       } else {
-        isar.writeTxnSync(() => isar.posts.putAllByIdSync(list));
-        BooruTags().addAllPostTags(list);
+        instance.writeTxnSync(() => instance.posts.putAllByIdSync(list));
+        PostTags().addAllPostTags(list);
       }
     } catch (e, trace) {
       log("_addLast on grid ${skeletonState.settings.selectedBooru.string}",
           level: Level.WARNING.value, error: e, stackTrace: trace);
     }
 
-    return isar.posts.count();
+    return instance.posts.count();
   }
 
   @override
@@ -259,15 +263,17 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
         mainFocus: skeletonState.mainFocus,
         scaffoldKey: skeletonState.scaffoldKey,
         aspectRatio: skeletonState.settings.ratio.value,
-        getCell: (i) => isar.posts.getSync(i + 1)!,
+        getCell: (i) => _getInstance().posts.getSync(i + 1)!,
         loadNext: _addLast,
         refresh: _clearAndRefresh,
-        hideShowFab: (show) => skeletonState.updateFab(setState, show),
+        hideShowFab: ({required bool fab, required bool foreground}) =>
+            skeletonState.updateFab(setState, fab: fab, foreground: foreground),
         onBack: widget.tags.isEmpty
             ? null
             : () {
                 if (widget.toRestore) {
-                  db.restoreStateNext(context, isar.name);
+                  widget.grids
+                      .restoreStateNext(context, widget.currentInstance!.name);
                 } else {
                   Navigator.pop(context);
                 }
@@ -278,12 +284,13 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
         download: _download,
         updateScrollPosition: updateScrollPosition,
         initalScrollPosition: widget.initalScroll,
-        initalCellCount: widget.clear ? 0 : isar.posts.countSync(),
+        initalCellCount: widget.clear ? 0 : _getInstance().posts.countSync(),
         searchWidget:
-            SearchAndFocus(searchWidget(context, booru), searchFocus, () {
+            SearchAndFocus(searchWidget(context), searchFocus, onPressed: () {
           if (currentlyHighlightedTag != "") {
             skeletonState.mainFocus.unfocus();
-            BooruTags().onPressed(context, currentlyHighlightedTag);
+            widget.grids.onTagPressed(
+                context, Tag.string(tag: currentlyHighlightedTag));
           }
         }),
         //  searchFilter: _searchFilter,
@@ -292,40 +299,4 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
       ),
     );
   }
-}
-
-mixin SearchLaunchGrid {
-  final TextEditingController searchTextController = TextEditingController();
-  final FocusNode searchFocus = FocusNode();
-  String currentlyHighlightedTag = "";
-  final _ScrollHack _scrollHack = _ScrollHack();
-
-  void searchHook(FocusNode mainFocus, String searchText) {
-    searchTextController.text = searchText;
-
-    searchFocus.addListener(() {
-      if (!searchFocus.hasFocus) {
-        currentlyHighlightedTag = "";
-        mainFocus.requestFocus();
-      }
-    });
-  }
-
-  void disposeSearch() {
-    searchTextController.dispose();
-    searchFocus.dispose();
-    _scrollHack.dispose();
-  }
-
-  Widget searchWidget(BuildContext context, BooruAPI booru) =>
-      autocompleteWidget(searchTextController, (s) {
-        currentlyHighlightedTag = s;
-      }, (s) => BooruTags().onPressed(context, s), booru.completeTag,
-          searchFocus,
-          scrollHack: _scrollHack, showSearch: true, addItems: []);
-}
-
-class _ScrollHack extends ScrollController {
-  @override
-  bool get hasClients => false;
 }

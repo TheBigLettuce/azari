@@ -18,7 +18,7 @@ class ServerSettingsPage extends StatefulWidget {
 
 class _ServerSettingsPageState extends State<ServerSettingsPage> {
   ServerSettings settings =
-      isar().serverSettings.getSync(0) ?? ServerSettings.empty();
+      settingsIsar().serverSettings.getSync(0) ?? ServerSettings.empty();
 
   final SkeletonState skeletonState = SkeletonState.settings();
 
@@ -64,8 +64,8 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
 
       var bytes = await resp.stream.toBytes();
 
-      isar().writeTxnSync(() {
-        isar().serverSettings.putSync(settings.copy(deviceId: bytes));
+      settingsIsar().writeTxnSync(() {
+        settingsIsar().serverSettings.putSync(settings.copy(deviceId: bytes));
       });
 
       onSuccess();
@@ -114,17 +114,18 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
                               }
 
                               _checkServer(uri, () {
-                                isar().writeTxnSync(
+                                settingsIsar().writeTxnSync(
                                   () {
-                                    isar().serverSettings.putSync(
+                                    settingsIsar().serverSettings.putSync(
                                         settings.copy(host: uri.toString()));
                                   },
                                 );
 
                                 if (!isDisposed) {
                                   setState(() {
-                                    settings =
-                                        isar().serverSettings.getSync(0)!;
+                                    settings = settingsIsar()
+                                        .serverSettings
+                                        .getSync(0)!;
                                     isConnected = true;
                                   });
 
@@ -185,8 +186,9 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
                                   _newDeviceId(value, () {
                                     if (!isDisposed) {
                                       setState(() {
-                                        settings =
-                                            isar().serverSettings.getSync(0)!;
+                                        settings = settingsIsar()
+                                            .serverSettings
+                                            .getSync(0)!;
                                       });
 
                                       Navigator.pop(context);

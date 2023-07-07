@@ -19,37 +19,40 @@ import 'package:pigeon/pigeon.dart';
       copyrightHeader: "pigeons/copyright.txt"),
 )
 class Directory {
+  int id;
   String name;
-  List<int?> thumbnail;
 
   int lastModified;
 
-  Directory(
-      {required this.name,
-      required this.thumbnail,
-      required this.lastModified});
+  Directory({required this.id, required this.name, required this.lastModified});
 }
 
 class DirectoryFile {
-  String directoryId;
+  int id;
+  int directoryId;
 
   String name;
-  List<int?> thumbnail;
+  String originalUri;
 
   int lastModified;
 
-  DirectoryFile(
-      {required this.directoryId,
-      required this.lastModified,
-      required this.name,
-      required this.thumbnail});
+  DirectoryFile({
+    required this.id,
+    required this.directoryId,
+    required this.lastModified,
+    required this.originalUri,
+    required this.name,
+  });
 }
 
 @FlutterApi()
 abstract class GalleryApi {
-  int start();
-  void updateDirectory(String id, Directory d);
-  bool compareTime(String id, int time);
-  void updatePicture(String id, DirectoryFile f);
-  void finish(int time);
+  //String start();
+  void updateDirectories(List<Directory> d);
+  //bool compareTime(String id, int time);
+  void updatePictures(List<DirectoryFile?> f);
+  void addThumbnail(int id, List<int?> thumb);
+  bool thumbExist(int id);
+
+  void finish(String newVersion);
 }

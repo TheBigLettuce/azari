@@ -5,6 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/settings.dart';
@@ -16,6 +17,13 @@ List<String> _fromDanbooruTags(List<dynamic> l) =>
     l.map((e) => e["name"] as String).toList();
 
 class Danbooru implements BooruAPI {
+  final UnsaveableCookieJar cookieJar;
+
+  @override
+  void setCookies(List<Cookie> cookies) {
+    cookieJar.replaceDirectly(Uri.parse(domain), cookies);
+  }
+
   @override
   final Dio client;
 
@@ -81,19 +89,27 @@ class Danbooru implements BooruAPI {
 
         return _fromJson(resp.data)[0];
       } catch (e) {
+        if (e is DioException) {
+          if (e.response?.statusCode == 403) {
+            return Future.error(CloudflareException());
+          }
+        }
         return Future.error(e);
       }
     });
   }
 
   @override
-  Future<List<Post>> page(int i, String tags) => _commonPosts(tags, page: i);
+  Future<List<Post>> page(int i, String tags, BooruTagging excludedTags) =>
+      _commonPosts(tags, excludedTags, page: i);
 
   @override
-  Future<List<Post>> fromPost(int postId, String tags) =>
-      _commonPosts(tags, postid: postId);
+  Future<List<Post>> fromPost(
+          int postId, String tags, BooruTagging excludedTags) =>
+      _commonPosts(tags, excludedTags, postid: postId);
 
-  Future<List<Post>> _commonPosts(String tags, {int? postid, int? page}) {
+  Future<List<Post>> _commonPosts(String tags, BooruTagging excludedTags,
+      {int? postid, int? page}) {
     if (postid == null && page == null) {
       throw "postid or page should be set";
     } else if (postid != null && page != null) {
@@ -102,11 +118,9 @@ class Danbooru implements BooruAPI {
 
     String excludedTagsString;
 
-    var excludedTags =
-        BooruTags().excluded.getStrings().map((e) => "-$e ").toList();
-    if (excludedTags.isNotEmpty) {
-      excludedTagsString =
-          excludedTags.reduce((value, element) => value + element);
+    var excluded = excludedTags.get().map((e) => "-${e.tag} ").toList();
+    if (excluded.isNotEmpty) {
+      excludedTagsString = excluded.reduce((value, element) => value + element);
     } else {
       excludedTagsString = "";
     }
@@ -138,6 +152,11 @@ class Danbooru implements BooruAPI {
 
         return _fromJson(resp.data);
       } catch (e) {
+        if (e is DioException) {
+          if (e.response?.statusCode == 403) {
+            return Future.error(CloudflareException());
+          }
+        }
         return Future.error(e);
       }
     });
@@ -176,5 +195,5 @@ class Danbooru implements BooruAPI {
   @override
   void close() => client.close(force: true);
 
-  Danbooru(this.client);
+  Danbooru(this.client, this.cookieJar);
 }

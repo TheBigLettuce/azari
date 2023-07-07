@@ -7,15 +7,19 @@
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery/main.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/cell/cell.dart';
 import 'package:gallery/src/cell/data.dart';
+import 'package:gallery/src/pages/settings.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
 import 'package:gallery/src/schemas/settings.dart';
+import 'package:gallery/src/schemas/tags.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 import 'package:isar/isar.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path_util;
+import 'package:transparent_image/transparent_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -23,62 +27,65 @@ import '../db/isar.dart';
 
 part 'post.g.dart';
 
-Iterable<Widget> makeTags(
-    BuildContext context,
-    dynamic extra,
-    Color dividerColor,
-    Color foregroundColor,
-    Color systemOverlayColor,
-    List<String> tags) {
+Iterable<Widget> makeTags(BuildContext context, dynamic extra,
+    AddInfoColorData colors, List<String> tags, GridTab? grids) {
   if (tags.isEmpty) {
     return [];
   }
 
-  var plug = choosePlatformFullscreenPlug(systemOverlayColor);
+  var plug = choosePlatformFullscreenPlug(colors.systemOverlayColor);
 
   return [
-    ListTile(
-      textColor: foregroundColor,
-      title: Text(AppLocalizations.of(context)!.tagsInfoPage),
-    ),
+    settingsLabel(
+        AppLocalizations.of(context)!.tagsInfoPage,
+        Theme.of(context)
+            .textTheme
+            .titleSmall!
+            .copyWith(color: Theme.of(context).colorScheme.secondary)),
     ...ListTile.divideTiles(
-        color: dividerColor,
+        color: colors.borderColor,
         tiles: tags.map((e) => ListTile(
-              textColor: foregroundColor,
+              textColor: colors.foregroundColor,
               title: Text(HtmlUnescape().convert(e)),
-              onLongPress: () {
-                Navigator.push(
-                    context,
-                    DialogRoute(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: Text(
-                                AppLocalizations.of(context)!.addTagToExcluded),
-                            content: Text(e),
-                            actions: [
-                              TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child:
-                                      Text(AppLocalizations.of(context)!.no)),
-                              TextButton(
-                                  onPressed: () {
-                                    BooruTags().excluded.add(e);
-                                    Navigator.pop(context);
-                                  },
-                                  child:
-                                      Text(AppLocalizations.of(context)!.yes))
-                            ],
-                          );
-                        }));
-              },
-              onTap: () {
-                BooruTags().onPressed(context, HtmlUnescape().convert(e));
-                plug.unFullscreen();
-                extra();
-              },
+              onLongPress: grids == null
+                  ? null
+                  : () {
+                      Navigator.push(
+                          context,
+                          DialogRoute(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: Text(AppLocalizations.of(context)!
+                                      .addTagToExcluded),
+                                  content: Text(e),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                            AppLocalizations.of(context)!.no)),
+                                    TextButton(
+                                        onPressed: () {
+                                          grids.excluded
+                                              .add(Tag.string(tag: e));
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                            AppLocalizations.of(context)!.yes))
+                                  ],
+                                );
+                              }));
+                    },
+              onTap: grids == null
+                  ? null
+                  : () {
+                      grids.onTagPressed(
+                          context, Tag.string(tag: HtmlUnescape().convert(e)));
+                      plug.unFullscreen();
+                      extra();
+                    },
             )))
   ];
 }
@@ -156,7 +163,7 @@ class Post implements Cell<PostShrinked> {
   List<Widget>? Function() get addButtons => () => [
         if (tags.contains("original"))
           const IconButton(
-            icon: Icon(IconData(79)),
+            icon: Icon(kOriginalSticker),
             onPressed: null,
           ),
         IconButton(
@@ -173,75 +180,68 @@ class Post implements Cell<PostShrinked> {
   @ignore
   @override
   List<Widget>? Function(
-      BuildContext context,
-      dynamic extra,
-      Color borderColor,
-      Color foregroundColor,
-      Color systemOverlayColor) get addInfo => (BuildContext context,
-          dynamic extra,
-          Color dividerColor,
-          Color foregroundColor,
-          Color systemOverlayColor) {
-        var downloadUrl = _fileDownloadUrl(sampleUrl, fileUrl);
-        List<Widget> list = [
-          ListTile(
-            textColor: foregroundColor,
-            title: Text(AppLocalizations.of(context)!.pathInfoPage),
-            subtitle: Text(downloadUrl),
-            onTap: () => launchUrl(Uri.parse(downloadUrl),
-                mode: LaunchMode.externalApplication),
-          ),
-          ListTile(
-            textColor: foregroundColor,
-            title: Text(AppLocalizations.of(context)!.widthInfoPage),
-            subtitle: Text("${width}px"),
-          ),
-          ListTile(
-            textColor: foregroundColor,
-            title: Text(AppLocalizations.of(context)!.heightInfoPage),
-            subtitle: Text("${height}px"),
-          ),
-          ListTile(
-            textColor: foregroundColor,
-            title: Text(AppLocalizations.of(context)!.createdAtInfoPage),
-            subtitle: Text(AppLocalizations.of(context)!.date(createdAt)),
-          ),
-          ListTile(
-            textColor: foregroundColor,
-            title: Text(AppLocalizations.of(context)!.sourceFileInfoPage),
-            subtitle: Text(sourceUrl),
-            onTap: sourceUrl.isEmpty
-                ? null
-                : () => launchUrl(Uri.parse(sourceUrl),
+          BuildContext context, dynamic extra, AddInfoColorData colors)
+      get addInfo =>
+          (BuildContext context, dynamic extra, AddInfoColorData colors) {
+            var downloadUrl = _fileDownloadUrl(sampleUrl, fileUrl);
+            List<Widget> list = [
+              ListTile(
+                textColor: colors.foregroundColor,
+                title: Text(AppLocalizations.of(context)!.pathInfoPage),
+                subtitle: Text(downloadUrl),
+                onTap: () => launchUrl(Uri.parse(downloadUrl),
                     mode: LaunchMode.externalApplication),
-          ),
-          ListTile(
-            textColor: foregroundColor,
-            title: Text(AppLocalizations.of(context)!.ratingInfoPage),
-            subtitle: Text(rating),
-          ),
-          ListTile(
-            textColor: foregroundColor,
-            title: Text(AppLocalizations.of(context)!.scoreInfoPage),
-            subtitle: Text(score.toString()),
-          ),
-          ...makeTags(context, extra, dividerColor, foregroundColor,
-              systemOverlayColor, tags.split(' ')),
-        ];
+              ),
+              ListTile(
+                textColor: colors.foregroundColor,
+                title: Text(AppLocalizations.of(context)!.widthInfoPage),
+                subtitle: Text("${width}px"),
+              ),
+              ListTile(
+                textColor: colors.foregroundColor,
+                title: Text(AppLocalizations.of(context)!.heightInfoPage),
+                subtitle: Text("${height}px"),
+              ),
+              ListTile(
+                textColor: colors.foregroundColor,
+                title: Text(AppLocalizations.of(context)!.createdAtInfoPage),
+                subtitle: Text(AppLocalizations.of(context)!.date(createdAt)),
+              ),
+              ListTile(
+                textColor: colors.foregroundColor,
+                title: Text(AppLocalizations.of(context)!.sourceFileInfoPage),
+                subtitle: Text(sourceUrl),
+                onTap: sourceUrl.isEmpty
+                    ? null
+                    : () => launchUrl(Uri.parse(sourceUrl),
+                        mode: LaunchMode.externalApplication),
+              ),
+              ListTile(
+                textColor: colors.foregroundColor,
+                title: Text(AppLocalizations.of(context)!.ratingInfoPage),
+                subtitle: Text(rating),
+              ),
+              ListTile(
+                textColor: colors.foregroundColor,
+                title: Text(AppLocalizations.of(context)!.scoreInfoPage),
+                subtitle: Text(score.toString()),
+              ),
+              ...makeTags(context, extra, colors, tags.split(' '), getTab()),
+            ];
 
-        return [
-          ListBody(
-            children: list,
-          )
-        ];
-      };
+            return [
+              ListBody(
+                children: list,
+              )
+            ];
+          };
 
   @override
   String alias(bool isList) => isList ? tags : id.toString();
 
   @override
   Content fileDisplay() {
-    var settings = isar().settings.getSync(0);
+    var settings = settingsIsar().settings.getSync(0);
     String url;
     if (settings!.quality == DisplayQuality.original) {
       url = fileUrl;
@@ -253,17 +253,24 @@ class Post implements Cell<PostShrinked> {
 
     var type = lookupMimeType(url);
     if (type == null) {
-      return Content("", false);
+      return Content(ContentType.image, false);
     }
 
     var typeHalf = type.split("/")[0];
 
     if (typeHalf == "image") {
-      return Content(typeHalf, false, image: NetworkImage(url));
+      ImageProvider provider;
+      try {
+        provider = NetworkImage(url);
+      } catch (e) {
+        provider = MemoryImage(kTransparentImage);
+      }
+
+      return Content(ContentType.image, false, image: provider);
     } else if (typeHalf == "video") {
-      return Content(typeHalf, false, videoPath: url);
+      return Content(ContentType.video, false, videoPath: url);
     } else {
-      return Content(typeHalf, false);
+      return Content(ContentType.image, false);
     }
   }
 
@@ -271,12 +278,24 @@ class Post implements Cell<PostShrinked> {
   String fileDownloadUrl() => _fileDownloadUrl(sampleUrl, fileUrl);
 
   @override
-  CellData getCellData(bool isList) => CellData(
-      thumb: CachedNetworkImageProvider(previewUrl, headers: {
-        "user-agent":
-            "Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0"
-      }),
-      name: alias(isList));
+  CellData getCellData(bool isList) {
+    ImageProvider provider;
+    try {
+      provider = CachedNetworkImageProvider(previewUrl,
+          headers: {
+            "user-agent":
+                "Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0"
+          },
+          errorListener: () {});
+    } catch (_) {
+      provider = MemoryImage(kTransparentImage);
+    }
+
+    return CellData(thumb: provider, name: alias(isList), stickers: [
+      if (fileDisplay().videoPath != null) Icons.play_circle,
+      if (tags.contains("original")) kOriginalSticker
+    ]);
+  }
 
   @override
   shrinkedData() =>
@@ -289,3 +308,5 @@ class PostShrinked {
 
   const PostShrinked({required this.fileUrl, required this.fileName});
 }
+
+const kOriginalSticker = Icons.circle_outlined;

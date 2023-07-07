@@ -12,10 +12,8 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/gallery/images.dart';
 import 'package:gallery/src/gallery/interface.dart';
 import 'package:gallery/src/gallery/modify_directory.dart';
-import 'package:gallery/src/gallery/server_api/server.dart';
 import 'package:gallery/src/pages/senitel.dart';
 import 'package:gallery/src/schemas/directory.dart';
-import 'package:gallery/src/schemas/directory_file.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:logging/logging.dart';
@@ -24,27 +22,33 @@ import '../widgets/drawer/drawer.dart';
 import '../widgets/grid/callback_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-class Directories extends StatefulWidget {
-  const Directories({super.key});
+import '../widgets/search_filter_grid.dart';
+
+class ServerDirectories extends StatefulWidget {
+  const ServerDirectories({super.key});
 
   @override
-  State<Directories> createState() => _DirectoriesState();
+  State<ServerDirectories> createState() => _ServerDirectoriesState();
 }
 
-class _DirectoriesState extends State<Directories> {
+class _ServerDirectoriesState extends State<ServerDirectories>
+    with SearchFilterGridDirectory {
   late StreamSubscription<Settings?> settingsWatcher;
-  GalleryAPI<DirectoryFileShrinked> api = ServerAPI(db.openServerApiIsar());
   Result<Directory>? directories;
   bool isDisposed = false;
 
-  late GridSkeletonState skeletonState = GridSkeletonState(
-      index: kGalleryDrawerIndex, onWillPop: () => popUntilSenitel(context));
+  late GridSkeletonState<Directory, Directory> skeletonState =
+      GridSkeletonState(
+          index: kGalleryDrawerIndex,
+          onWillPop: () => popUntilSenitel(context));
 
   @override
   void initState() {
     super.initState();
 
-    settingsWatcher = db.isar().settings.watchObject(0).listen((event) {
+    searchHook(skeletonState);
+
+    settingsWatcher = db.settingsIsar().settings.watchObject(0).listen((event) {
       skeletonState.settings = event!;
 
       setState(() {});
@@ -81,7 +85,8 @@ class _DirectoriesState extends State<Directories> {
     isDisposed = true;
 
     settingsWatcher.cancel();
-    //db.closeDirectoryIsar();
+
+    disposeSearch();
 
     skeletonState.dispose();
     api.close();
@@ -95,6 +100,7 @@ class _DirectoriesState extends State<Directories> {
 
       skeletonState.gridKey.currentState!.refresh();
     } catch (e, trace) {
+      //progressTicker: thumbnailWatcher,
       log("setting thumbnail",
           level: Level.SEVERE.value, error: e, stackTrace: trace);
     }
@@ -104,10 +110,10 @@ class _DirectoriesState extends State<Directories> {
   Widget build(BuildContext context) {
     var insets = MediaQuery.viewPaddingOf(context);
 
-    return makeGridSkeleton(
+    return makeGridSkeleton<Directory, Directory>(
       context,
       skeletonState,
-      CallbackGrid<Directory, Directory>(
+      CallbackGrid(
         mainFocus: skeletonState.mainFocus,
         systemNavigationInsets: insets,
         key: skeletonState.gridKey,
@@ -135,10 +141,9 @@ class _DirectoriesState extends State<Directories> {
         ),
         updateScrollPosition: (pos, {double? infoPos, int? selectedCell}) {},
         scaffoldKey: skeletonState.scaffoldKey,
-        //progressTicker: thumbnailWatcher,
         hasReachedEnd: () => true,
         refresh: () => _refresh(false),
-        //search: (s) {},
+        searchWidget: SearchAndFocus(searchWidget(context), searchFocus),
         hideAlias: skeletonState.settings.gallerySettings.hideDirectoryName,
         initalScrollPosition: 0,
         menuButtonItems: [
@@ -182,8 +187,12 @@ class _DirectoriesState extends State<Directories> {
               child: Text(AppLocalizations.of(context)!.newDirectory))
         ],
         getCell: (i) => directories!.cell(i),
-        hideShowFab: (show) => skeletonState.updateFab(
-            setState, show), //isar.directorys.getSync(i + 1)!.cell()
+        immutable: false,
+        hideShowFab: ({required bool fab, required bool foreground}) =>
+            skeletonState.updateFab(setState,
+                fab: fab,
+                foreground:
+                    foreground), //isar.directorys.getSync(i + 1)!.cell()
         overrideOnPress: (context, indx) {
           Navigator.push(context, MaterialPageRoute(builder: (context) {
             var d = directories!.cell(indx);
@@ -191,6 +200,7 @@ class _DirectoriesState extends State<Directories> {
             return Images(
               api.images(d),
               cell: d,
+              parentFocus: skeletonState.mainFocus,
               setThumbnail: _setThumbnail,
               parentGrid: skeletonState.gridKey,
             );

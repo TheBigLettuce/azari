@@ -13,7 +13,6 @@ import 'package:gallery/src/booru/api/danbooru.dart';
 import 'package:gallery/src/booru/api/gelbooru.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
-import 'package:gallery/src/schemas/excluded_tags.dart';
 import 'package:gallery/src/schemas/local_tags.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/settings.dart';
@@ -23,41 +22,14 @@ import 'package:logging/logging.dart';
 
 import '../../pages/booru_scroll.dart';
 
-BooruTags? _global;
+late final PostTags _global;
 bool _isInitalized = false;
 
-class BooruTagging<T extends Tags> {
-  final T Function(String booru) _getTags;
-  final void Function(List<String> v, String domain) _addTags;
-
-  T get() {
-    var currentBooru = isar().settings.getSync(0)!.selectedBooru;
-
-    return _getTags(currentBooru.string);
-  }
-
-  void add(String t) {
-    var booruTags = get();
-    List<String> tagsCopy = List.from(booruTags.tags);
-    tagsCopy.remove(t);
-
-    _addTags([t, ...tagsCopy], booruTags.domain);
-  }
-
-  void delete(String t) {
-    var booruTags = get();
-    List<String> tags = List.from(booruTags.tags);
-    tags.remove(t);
-
-    _addTags(tags, booruTags.domain);
-  }
-
-  List<String> getStrings() => get().tags;
-
-  const BooruTagging(T Function(String s) getTags,
-      void Function(List<String> v, String domain) addTags)
-      : _addTags = addTags,
-        _getTags = getTags;
+abstract class BooruTagging {
+  List<Tag> get();
+  void add(Tag tag);
+  void delete(Tag tag);
+  void clear();
 }
 
 class _DissolveResult {
@@ -73,53 +45,12 @@ class _DissolveResult {
       required this.id});
 }
 
-class BooruTags {
+class PostTags {
   final Isar tagsDb;
 
-  BooruTagging<ExcludedTags> excluded = BooruTagging((s) {
-    var booruTags = isar().excludedTags.getSync(fastHash(s));
-    if (booruTags == null) {
-      booruTags = ExcludedTags(s, []);
-      isar().writeTxnSync(() => isar().excludedTags.putSync(booruTags!));
-    }
+  //BooruTagging get excluded => throw "not impl"; //getGridTab().excluded;
 
-    return booruTags;
-  }, (v, domain) {
-    isar().writeTxnSync(
-        () => isar().excludedTags.putSync(ExcludedTags(domain, v)));
-  });
-
-  BooruTagging<LastTags> latest = BooruTagging((s) {
-    var booruTags = isar().lastTags.getSync(fastHash(s));
-    if (booruTags == null) {
-      booruTags = LastTags(s, []);
-      isar().writeTxnSync(() => isar().lastTags.putSync(booruTags!));
-    }
-
-    return booruTags;
-  }, (v, domain) {
-    isar().writeTxnSync(() => isar().lastTags.putSync(LastTags(domain, v)));
-  });
-
-  void onPressed(BuildContext context, String t) {
-    t = t.trim();
-    if (t.isEmpty) {
-      return;
-    }
-
-    latest.add(t);
-    newSecondaryGrid().then((value) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) {
-        return BooruScroll.secondary(
-          isar: value,
-          tags: t,
-        );
-      }));
-    }).onError((error, stackTrace) {
-      log("searching for tag $t",
-          level: Level.WARNING.value, error: error, stackTrace: stackTrace);
-    });
-  }
+  //BooruTagging get latest => throw "not impl"; //getGridTab().latest;
 
   _DissolveResult? _dissassembleFilename(String filename) {
     var split = filename.split("_");
@@ -207,10 +138,12 @@ class BooruTags {
 
     switch (dissassembled.booru) {
       case Booru.danbooru:
-        api = Danbooru(client);
+        api = Danbooru(
+            client, UnsaveableCookieJar(CookieJarTab().get(Booru.danbooru)));
         break;
       case Booru.gelbooru:
-        api = Gelbooru(0, client);
+        api = Gelbooru(
+            0, client, UnsaveableCookieJar(CookieJarTab().get(Booru.gelbooru)));
         break;
     }
     try {
@@ -235,19 +168,17 @@ class BooruTags {
     }
   }
 
-  BooruTags._new(this.tagsDb);
+  PostTags._new(this.tagsDb);
 
-  factory BooruTags() {
-    return _global!;
+  factory PostTags() {
+    return _global;
   }
 }
 
-void initalizeBooruTags() {
+void initPostTags() {
   if (_isInitalized) {
     return;
   }
 
-  _isInitalized = true;
-
-  _global = BooruTags._new(openTagsDbIsar());
+  _global = PostTags._new(openTagsDbIsar());
 }

@@ -12,6 +12,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
+import 'package:gallery/src/gallery/android_api/api.g.dart';
+import 'package:gallery/src/gallery/android_api/android_side.dart';
+import 'package:gallery/src/gallery/android_api/interface_impl.dart';
 import 'package:gallery/src/gallery/uploader/uploader.dart';
 import 'package:gallery/src/pages/booru_scroll.dart';
 import 'package:gallery/src/db/isar.dart';
@@ -80,6 +83,21 @@ ThemeData _buildTheme(Brightness brightness, Color accentColor) {
   return baseTheme;
 }
 
+class Dummy extends StatelessWidget {
+  const Dummy({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    WidgetsBinding.instance.scheduleFrameCallback(
+      (timeStamp) {
+        _globalTab.restoreState(context);
+      },
+    );
+
+    return Container();
+  }
+}
+
 void main() async {
   if (Platform.isLinux) {
     await Isar.initializeIsarCore(libraries: {
@@ -94,7 +112,11 @@ void main() async {
   await initalizeIsar();
   await initalizeDownloader();
   initalizeUploader();
-  initalizeBooruTags();
+  initPostTags();
+
+  if (Platform.isAndroid) {
+    GalleryApi.setup(GalleryImpl(AndroidGallery()));
+  }
 
   const platform = MethodChannel("lol.bruh19.azari.gallery");
 
@@ -107,51 +129,108 @@ void main() async {
   }
   final accentColor = Color(color);
 
-  GlobalKey<BooruScrollState> key = GlobalKey();
+  // GlobalKey materialAppKey = GlobalKey();
 
-  FlutterLocalNotificationsPlugin().initialize(
+  await FlutterLocalNotificationsPlugin().initialize(
       const InitializationSettings(
           linux:
               LinuxInitializationSettings(defaultActionName: "Default action"),
           android: AndroidInitializationSettings('@drawable/ic_notification')),
       onDidReceiveNotificationResponse: (details) {
-    var context = key.currentContext;
-    if (context != null) {
-      selectDestination(context, kBooruGridDrawerIndex, kDownloadsDrawerIndex);
-    }
+    // var context = materialAppKey.currentContext;
+    // if (context != null) {
+    // selectDestination(context, kBooruGridDrawerIndex, kDownloadsDrawerIndex);
+    // }
   }, onDidReceiveBackgroundNotificationResponse: notifBackground);
 
-  runApp(MaterialApp(
+  FlutterLocalNotificationsPlugin().cancelAll();
+
+  _globalTab = makeGridTab(getSettings().selectedBooru);
+
+  runApp(RestartWidget(
+      child: MaterialApp(
+    // key: materialAppKey,
     title: 'Ācārya',
     darkTheme: _buildTheme(Brightness.dark, accentColor),
     theme: _buildTheme(Brightness.light, accentColor),
-    home: const Entry(),
+    home: getSettings().path == "" ? const Entry() : const Dummy(),
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     routes: {
       "/senitel": (context) => Container(),
       "/booru": (context) {
+        if (Platform.isAndroid) {
+          Permission.notification.request();
+          Permission.photos.request();
+
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+          SystemChrome.setSystemUIOverlayStyle(
+            SystemUiOverlayStyle(
+                systemNavigationBarColor:
+                    Theme.of(context).colorScheme.background.withOpacity(0.5)),
+          );
+        }
+
+        var grids = getTab();
+
         var arguments = ModalRoute.of(context)!.settings.arguments;
         if (arguments != null) {
-          var list = isar().gridRestores.where().findAllSync();
+          var list = grids.instance.gridRestores.where().findAllSync();
           for (var element in list) {
-            removeSecondaryGrid(element.path);
+            grids.removeSecondaryGrid(element.path);
           }
         }
 
-        var scroll =
-            isar().scrollPositionPrimarys.getSync(fastHash(getBooru().domain));
+        var scroll = grids.instance.scrollPositionPrimarys.getSync(0);
 
         return BooruScroll.primary(
-          key: key,
           initalScroll: scroll != null ? scroll.pos : 0,
           time: scroll != null ? scroll.time : DateTime.now(),
-          isar: isar(),
+          grids: grids,
+          booruPage: scroll?.page,
           clear: arguments != null ? true : false,
         );
       }
     },
-  ));
+  )));
+}
+
+late GridTab _globalTab;
+
+GridTab getTab() => _globalTab;
+
+Settings getSettings() {
+  return settingsIsar().settings.getSync(0) ?? Settings.empty();
+}
+
+class BooruArguments {}
+
+class RestartWidget extends StatefulWidget {
+  final Widget child;
+  const RestartWidget({super.key, required this.child});
+
+  static void restartApp(BuildContext context) {
+    context.findAncestorStateOfType<_RestartWidgetState>()!.restartApp();
+  }
+
+  @override
+  State<RestartWidget> createState() => _RestartWidgetState();
+}
+
+class _RestartWidgetState extends State<RestartWidget> {
+  Key key = UniqueKey();
+
+  void restartApp() {
+    _globalTab = makeGridTab(getSettings().selectedBooru);
+    setState(() {
+      key = UniqueKey();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return KeyedSubtree(key: key, child: widget.child);
+  }
 }
 
 @pragma('vm:entry-point')
@@ -162,7 +241,6 @@ class Entry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var settings = isar().settings.getSync(0) ?? Settings.empty();
     showDialog(String s) {
       Navigator.of(context).push(DialogRoute(
           context: context,
@@ -179,50 +257,29 @@ class Entry extends StatelessWidget {
     }
 
     restore() {
-      if (Platform.isAndroid) {
-        Permission.notification.request();
-
-        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-        SystemChrome.setSystemUIOverlayStyle(
-          SystemUiOverlayStyle(
-              systemNavigationBarColor:
-                  Theme.of(context).colorScheme.background.withOpacity(0.5)),
-        );
-      }
-
-      restoreState(context, true);
+      Navigator.pushReplacementNamed(context, "/booru");
     }
 
-    bool validUri(String s) => Uri.tryParse(s) != null;
-
-    if (settings.path.isEmpty || !validUri(settings.path)) {
-      return IntroductionScreen(
-        pages: [
-          PageViewModel(
-            title: AppLocalizations.of(context)!.pickDirectory,
-            bodyWidget: TextButton(
-              onPressed: () async {
-                for (true;;) {
-                  if (await chooseDirectory(showDialog)) {
-                    break;
-                  }
+    return IntroductionScreen(
+      pages: [
+        PageViewModel(
+          title: AppLocalizations.of(context)!.pickDirectory,
+          bodyWidget: TextButton(
+            onPressed: () async {
+              for (true;;) {
+                if (await chooseDirectory(showDialog)) {
+                  break;
                 }
+              }
 
-                restore();
-              },
-              child: Text(AppLocalizations.of(context)!.pick),
-            ),
-          )
-        ],
-        showDoneButton: false,
-        next: Text(AppLocalizations.of(context)!.next),
-      );
-    }
-
-    WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      restore();
-    });
-
-    return Container();
+              restore();
+            },
+            child: Text(AppLocalizations.of(context)!.pick),
+          ),
+        )
+      ],
+      showDoneButton: false,
+      next: Text(AppLocalizations.of(context)!.next),
+    );
   }
 }
