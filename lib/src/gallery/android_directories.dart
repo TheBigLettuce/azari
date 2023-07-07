@@ -88,9 +88,9 @@ class _AndroidDirectoriesState extends State<AndroidDirectories> {
                     db.writeTxnSync(
                         () => db.systemGalleryDirectorys.clearSync());
 
-                    const MethodChannel _channel =
+                    const MethodChannel channel =
                         MethodChannel("lol.bruh19.azari.gallery");
-                    _channel.invokeMethod("refreshGallery");
+                    channel.invokeMethod("refreshGallery");
                     Navigator.pop(context);
                   },
                   child: Text("Deep refresh"))

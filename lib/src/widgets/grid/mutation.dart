@@ -21,6 +21,7 @@ abstract class GridMutationInterface<T extends Cell<B>, B> {
 class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
   int? _cellCountFilter;
   T Function(int i)? _filterGetCell;
+  final void Function() scrollUp;
 
   bool cloudflareBlocked = false;
 
@@ -97,6 +98,8 @@ class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
     }
 
     if (!_refreshing) {
+      scrollUp();
+
       _cellCount = 0;
       _refreshing = true;
 
@@ -147,27 +150,23 @@ class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
     });
   }
 
-  Future _refresh() {
+  Future _refresh() async {
     if (_locked) {
       return Future.value(_cellCount);
     }
 
     _refreshing = true;
 
-    return widget().refresh().then((value) {
-      // if (context.mounted) {
-      //   setState(() {
-
-      //   });
-
+    try {
+      var value = await widget().refresh();
       _cellCount = value;
       _refreshing = false;
 
       update(() {
         widget().updateScrollPosition(0);
       });
-    }).onError((error, stackTrace) {
-      if (error is CloudflareException) {
+    } catch (e, stackTrace) {
+      if (e is CloudflareException) {
         cloudflareBlocked = true;
       }
 
@@ -176,13 +175,18 @@ class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
       update(null);
 
       log("refreshing cells in the grid",
-          level: Level.WARNING.value, error: error, stackTrace: stackTrace);
-    });
+          level: Level.WARNING.value, error: e, stackTrace: stackTrace);
+    }
+
+    return;
   }
 
   final CallbackGrid<T, B> Function() widget;
   final void Function(void Function()? f) update;
 
   _Mutation(
-      {required bool immutable, required this.widget, required this.update});
+      {required bool immutable,
+      required this.widget,
+      required this.update,
+      required this.scrollUp});
 }

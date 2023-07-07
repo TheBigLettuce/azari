@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/cell/cell.dart';
 import 'package:gallery/src/cell/data.dart';
-import 'package:gallery/src/schemas/tags.dart';
 import 'package:isar/isar.dart';
 
 part 'android_gallery_directory_file.g.dart';

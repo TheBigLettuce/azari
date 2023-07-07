@@ -8,7 +8,6 @@
 import 'dart:developer';
 
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/api/danbooru.dart';
 import 'package:gallery/src/booru/api/gelbooru.dart';
 import 'package:gallery/src/booru/interface.dart';
@@ -19,8 +18,6 @@ import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
-
-import '../../pages/booru_scroll.dart';
 
 late final PostTags _global;
 bool _isInitalized = false;
@@ -47,10 +44,6 @@ class _DissolveResult {
 
 class PostTags {
   final Isar tagsDb;
-
-  //BooruTagging get excluded => throw "not impl"; //getGridTab().excluded;
-
-  //BooruTagging get latest => throw "not impl"; //getGridTab().latest;
 
   _DissolveResult? _dissassembleFilename(String filename) {
     var split = filename.split("_");
@@ -129,10 +122,6 @@ class PostTags {
     BooruAPI api;
 
     Dio client = Dio(BaseOptions(
-      headers: {
-        "user-agent":
-            "Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0"
-      },
       responseType: ResponseType.json,
     ));
 

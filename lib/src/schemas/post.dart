@@ -8,7 +8,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/main.dart';
-import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/cell/cell.dart';
 import 'package:gallery/src/cell/data.dart';
 import 'package:gallery/src/pages/settings.dart';
@@ -281,12 +280,9 @@ class Post implements Cell<PostShrinked> {
   CellData getCellData(bool isList) {
     ImageProvider provider;
     try {
-      provider = CachedNetworkImageProvider(previewUrl,
-          headers: {
-            "user-agent":
-                "Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0"
-          },
-          errorListener: () {});
+      provider = CachedNetworkImageProvider(
+        previewUrl,
+      );
     } catch (_) {
       provider = MemoryImage(kTransparentImage);
     }

@@ -185,6 +185,7 @@ class IsarBooruTagging implements BooruTagging {
     return isarCurrent.tags
         .filter()
         .isExcludedEqualTo(excludedMode)
+        .sortByTimeDesc()
         .findAllSync();
   }
 

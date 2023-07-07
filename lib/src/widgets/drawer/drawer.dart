@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/gallery/android_directories.dart';
 import 'package:gallery/src/gallery/server_directories.dart';
-import 'package:gallery/src/pages/booru_scroll.dart';
 import 'package:gallery/src/pages/tags.dart';
 import 'package:gallery/src/pages/downloads.dart';
 import 'package:gallery/src/pages/uploader.dart';
@@ -77,12 +76,11 @@ List<NavigationDrawerDestination> destinations(BuildContext context) {
         ),
         label: Text(AppLocalizations.of(context)!.downloadsLabel)),
     NavigationDrawerDestination(
-        icon: const Icon(Icons.upload), // TODO: this
-        //  upd.Uploader().uploadsDb.uploadFilesStacks.countSync() != 0
-        //     ? const Badge(
-        //         child: Icon(Icons.upload),
-        //       )
-        //     :
+        icon: upd.Uploader().uploadsDb.uploadFilesStacks.countSync() != 0
+            ? const Badge(
+                child: Icon(Icons.upload),
+              )
+            : const Icon(Icons.upload),
         selectedIcon: Icon(
           Icons.upload,
           color: primaryColor,

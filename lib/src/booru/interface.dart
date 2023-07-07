@@ -79,8 +79,8 @@ class UnsaveableCookieJar implements CookieJar {
 
 //enum Rating { questionable, explicit, safe }
 
-const String kTorUserAgent =
-    "Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0";
+// const String kTorUserAgent =
+//     "Mozilla/5.0 (Windows NT 10.0; rv:102.0) Gecko/20100101 Firefox/102.0"; // Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36
 
 class CookieJarTab {
   final Map<Booru, CookieJar> _tab = {};

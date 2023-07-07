@@ -1,13 +1,11 @@
 import 'package:dio/dio.dart';
-import 'package:file_picker/src/platform_file.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/gallery/android_api/android_side.dart';
 import 'package:gallery/src/schemas/android_gallery_directory.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
-import 'package:gallery/src/schemas/directory_file.dart';
 import 'package:isar/isar.dart';
 
-import '../../schemas/directory.dart';
 import '../interface.dart';
 
 class AndroidGallery

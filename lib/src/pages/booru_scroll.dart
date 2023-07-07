@@ -184,15 +184,20 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
     //       level: Level.WARNING.value, error: e, stackTrace: trace);
     // }
 
-    var list = await booru.page(0, widget.tags, widget.grids.excluded);
-    updateScrollPosition(0);
     var instance = _getInstance();
-    await instance.writeTxn(() {
-      instance.posts.clear();
-      return instance.posts.putAllById(list);
-    });
-    PostTags().addAllPostTags(list);
-    reachedEnd = false;
+
+    try {
+      var list = await booru.page(0, widget.tags, widget.grids.excluded);
+      updateScrollPosition(0);
+      await instance.writeTxn(() {
+        instance.posts.clear();
+        return instance.posts.putAllById(list);
+      });
+      PostTags().addAllPostTags(list);
+      reachedEnd = false;
+    } catch (e) {
+      rethrow;
+    }
 
     return instance.posts.count();
   }
@@ -264,6 +269,9 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
         scaffoldKey: skeletonState.scaffoldKey,
         aspectRatio: skeletonState.settings.ratio.value,
         getCell: (i) => _getInstance().posts.getSync(i + 1)!,
+        cloudflareHook: () {
+          return CloudflareBlockInterface(booru);
+        },
         loadNext: _addLast,
         refresh: _clearAndRefresh,
         hideShowFab: ({required bool fab, required bool foreground}) =>

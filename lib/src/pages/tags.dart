@@ -6,21 +6,17 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/widgets/booru/single_post.dart';
-import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
-import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../main.dart';
 import '../booru/interface.dart';
 import '../db/isar.dart';
 import '../keybinds/keybinds.dart';
@@ -100,18 +96,6 @@ class _SearchBooruState extends State<SearchBooru> {
     }
 
     widget.grids.latest.add(tag);
-    // newSecondaryGrid().then((value) {
-    //   Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-    //     return BooruScroll.secondary(
-    //       isar: value,
-    //       tags: tag.tag,
-    //     );
-    //   }));
-    // }).onError((error, stackTrace) {
-    //   log("opening a secondary grid on tag $tag",
-    //       level: Level.SEVERE.value, error: error, stackTrace: stackTrace);
-    // });
-
     Navigator.of(context).push(MaterialPageRoute(builder: (context) {
       return BooruScroll.secondary(
         grids: widget.grids,

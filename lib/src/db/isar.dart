@@ -11,6 +11,7 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery/src/booru/api/danbooru.dart';
@@ -54,24 +55,21 @@ const MethodChannel _channel = MethodChannel("lol.bruh19.azari.gallery");
 /// that is, it makes refreshes on restore few.
 BooruAPI getBooru({int? page}) {
   Dio dio = Dio(BaseOptions(
-    headers: {
-      "user-agent":
-          "Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0"
-    },
+    //headers: {"user-agent": kTorUserAgent},
     responseType: ResponseType.json,
   ));
 
   var settings = settingsIsar().settings.getSync(0);
   if (settings!.selectedBooru == Booru.danbooru) {
-    var jar = CookieJarTab().get(Booru.danbooru);
+    var jar = UnsaveableCookieJar(CookieJarTab().get(Booru.danbooru));
 
     dio.interceptors.add(CookieManager(jar));
-    return Danbooru(dio, UnsaveableCookieJar(jar));
+    return Danbooru(dio, jar);
   } else if (settings.selectedBooru == Booru.gelbooru) {
-    var jar = CookieJarTab().get(Booru.gelbooru);
+    var jar = UnsaveableCookieJar(CookieJarTab().get(Booru.gelbooru));
 
     dio.interceptors.add(CookieManager(jar));
-    return Gelbooru(page ?? 0, dio, UnsaveableCookieJar(jar));
+    return Gelbooru(page ?? 0, dio, jar);
   } else {
     throw "invalid booru";
   }

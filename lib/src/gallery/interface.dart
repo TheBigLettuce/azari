@@ -8,8 +8,6 @@
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:gallery/src/cell/cell.dart';
-import 'package:gallery/src/schemas/directory.dart';
-import 'package:gallery/src/schemas/directory_file.dart';
 
 class Result<T extends Cell> {
   final int count;

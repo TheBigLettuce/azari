@@ -111,10 +111,9 @@ class ServerAPI
     }
 
     var settings = _settings();
-    // TODO: this
 
-    // Uploader().add(Uri.parse(settings.host),
-    //     res.files.map((e) => FileAndDir(path, e)).toList(), onDone);
+    Uploader().add(Uri.parse(settings.host),
+        res.files.map((e) => FileAndDir(path, e)).toList(), onDone);
 
     return Future.value();
   }
@@ -314,10 +313,8 @@ class _ImagesImpl
 
     var settings = _settings();
 
-    // TODO: this
-
-    // Uploader().add(Uri.parse(settings.host),
-    //     l.map((e) => FileAndDir(d.dirPath, e)).toList(), onDone);
+    Uploader().add(Uri.parse(settings.host),
+        l.map((e) => FileAndDir(d.dirPath, e)).toList(), onDone);
 
     return Future.value();
   }

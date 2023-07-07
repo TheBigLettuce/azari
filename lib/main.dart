@@ -21,8 +21,6 @@ import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/grid_restore.dart';
 import 'package:gallery/src/schemas/scroll_position.dart' as scroll_pos;
 import 'package:gallery/src/schemas/settings.dart';
-import 'package:gallery/src/schemas/tags.dart';
-import 'package:gallery/src/widgets/drawer/drawer.dart';
 // import 'package:google_fonts/google_fonts.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:isar/isar.dart';

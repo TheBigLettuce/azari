@@ -29,6 +29,12 @@ part 'wrapped_selection.dart';
 part 'filter.dart';
 part 'mutation.dart';
 
+class CloudflareBlockInterface {
+  final BooruAPI api;
+
+  const CloudflareBlockInterface(this.api);
+}
+
 class GridBottomSheetAction<B> {
   final IconData icon;
   final void Function(List<B> selected) onPress;
@@ -90,6 +96,8 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
   final GridDescription<B> description;
   final FocusNode? belowMainFocus;
 
+  final CloudflareBlockInterface Function()? cloudflareHook;
+
   const CallbackGrid(
       {Key? key,
       this.additionalKeybinds,
@@ -99,6 +107,7 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
       required this.systemNavigationInsets,
       required this.hasReachedEnd,
       required this.aspectRatio,
+      this.cloudflareHook,
       required this.mainFocus,
       this.immutable = true,
       this.tightMode = false,
@@ -147,16 +156,23 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
 
   double height = 0;
   late final _Mutation<T, B> _state = _Mutation(
+    scrollUp: () {
+      if (widget.hideShowFab != null) {
+        widget.hideShowFab!(fab: false, foreground: inImageView);
+      }
+    },
     immutable: widget.immutable,
     widget: () => widget,
     update: (f) {
-      if (context.mounted) {
-        if (f != null) {
-          f();
-        }
+      try {
+        if (context.mounted) {
+          if (f != null) {
+            f();
+          }
 
-        setState(() {});
-      }
+          setState(() {});
+        }
+      } catch (_) {}
     },
   );
 
@@ -200,10 +216,10 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
     });
 
     settingsWatcher = settingsIsar().settings.watchObject(0).listen((event) {
-      if (settings.selectedBooru != event!.selectedBooru) {
-        _state._cellCount = 0;
-        return;
-      }
+      // if (settings.selectedBooru != event!.selectedBooru) {
+      //   _state._cellCount = 0;
+      //   return;
+      // }
 
       // not perfect, but fine
       /* if (lastGridColCount != event.picturesPerRow) {
@@ -406,10 +422,6 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
                       SliverAppBar(
-                        shape: const ContinuousRectangleBorder(
-                            borderRadius: BorderRadius.only(
-                                bottomLeft: Radius.circular(15),
-                                bottomRight: Radius.circular(15))),
                         backgroundColor: Theme.of(context)
                             .colorScheme
                             .background
@@ -488,8 +500,11 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                       ),
                       !_state.isRefreshing && _state.cellCount == 0
                           ? SliverToBoxAdapter(
-                              child: _state.cloudflareBlocked == true
-                                  ? CloudflareBlock()
+                              child: _state.cloudflareBlocked == true &&
+                                      widget.cloudflareHook != null
+                                  ? CloudflareBlock(
+                                      interface: widget.cloudflareHook!(),
+                                    )
                                   : const EmptyWidget())
                           : settings.listViewBooru
                               ? SliverPadding(

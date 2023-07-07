@@ -1,3 +1,11 @@
+1.2.6:
+— Rudimental Android gallery API functions, not ready yet,
+— Add more color to the image view, extracted from the thumbnail,
+— Switch to default user agent for HTTP requests from the Tor one,
+— Rudimental support for Cloudflare captcha challenge solving, not ready yet,
+— Icons on grid cells for original and video,
+— Drastic change for the current *booru API state management.
+
 1.2.5:
 — Separate some parts of the CallbackGrid,
 — Move search functionality out of the CallbackGrid.

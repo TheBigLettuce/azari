@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:octo_image/octo_image.dart';
 import '../../cell/data.dart';
 
 class GridCell<T extends CellData> extends StatefulWidget {
@@ -61,12 +62,15 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
                               const BoxDecoration(color: Colors.black45),
                         ),
                       Center(
-                          child: Image(
+                          child: OctoImage(
                         errorBuilder: (context, error, stackTrace) =>
                             const Icon(Icons.error_outline),
-                        loadingBuilder: (context, child, loadingProgress) {
+                        // placeholderBuilder:(context) {
+                        //   return ;
+                        // },
+                        progressIndicatorBuilder: (context, loadingProgress) {
                           if (loadingProgress == null) {
-                            return child.animate().fadeIn();
+                            return Container();
                           }
 
                           return Center(
@@ -94,7 +98,8 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
                               child: Row(
                                 children: widget._data.stickers
                                     .map((e) => Padding(
-                                          padding: EdgeInsets.only(right: 4),
+                                          padding:
+                                              const EdgeInsets.only(right: 4),
                                           child: Container(
                                             padding: const EdgeInsets.all(2),
                                             decoration: BoxDecoration(
