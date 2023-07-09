@@ -19,40 +19,54 @@ import 'package:pigeon/pigeon.dart';
       copyrightHeader: "pigeons/copyright.txt"),
 )
 class Directory {
-  int id;
+  int thumbFileId;
+  String bucketId;
   String name;
 
   int lastModified;
 
-  Directory({required this.id, required this.name, required this.lastModified});
+  Directory(
+      {required this.bucketId,
+      required this.thumbFileId,
+      required this.name,
+      required this.lastModified});
 }
 
 class DirectoryFile {
   int id;
-  int directoryId;
+  String bucketId;
 
   String name;
   String originalUri;
 
   int lastModified;
 
-  DirectoryFile({
-    required this.id,
-    required this.directoryId,
-    required this.lastModified,
-    required this.originalUri,
-    required this.name,
-  });
+  bool isVideo;
+
+  DirectoryFile(
+      {required this.id,
+      required this.bucketId,
+      required this.lastModified,
+      required this.originalUri,
+      required this.name,
+      required this.isVideo});
 }
 
 @FlutterApi()
 abstract class GalleryApi {
-  //String start();
-  void updateDirectories(List<Directory> d);
-  //bool compareTime(String id, int time);
-  void updatePictures(List<DirectoryFile?> f);
-  void addThumbnail(int id, List<int?> thumb);
-  bool thumbExist(int id);
+  void updateDirectories(List<Directory> d, bool inRefresh);
+  void updatePictures(
+      List<DirectoryFile?> f, String bucketId, int startTime, bool inRefresh);
+  void addThumbnails(List<ThumbnailId> thumbs);
+
+  List<int> thumbsExist(List<int> ids);
 
   void finish(String newVersion);
+}
+
+class ThumbnailId {
+  final int id;
+  final Uint8List thumb;
+
+  const ThumbnailId(this.id, this.thumb);
 }

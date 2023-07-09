@@ -21,6 +21,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
+import 'package:transparent_image/transparent_image.dart';
 import 'package:video_player/video_player.dart';
 import '../cell/cell.dart';
 import '../keybinds/keybinds.dart';
@@ -200,9 +201,11 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final void Function(int post) scrollUntill;
   final void Function(double? pos, int? selectedCell) updateTagScrollPos;
   final Future<int> Function()? onNearEnd;
+  final List<IconButton> Function(ImageViewState<T> state)? addIcons;
   final void Function(int i)? download;
   final double? infoScrollOffset;
   final Color systemOverlayRestoreColor;
+  final void Function(ImageViewState<T> state)? pageChange;
   final void Function() onExit;
   final void Function() focusMain;
 
@@ -217,14 +220,16 @@ class ImageView<T extends Cell> extends StatefulWidget {
       required this.onNearEnd,
       required this.focusMain,
       required this.systemOverlayRestoreColor,
+      this.pageChange,
       this.infoScrollOffset,
-      this.download});
+      this.download,
+      this.addIcons});
 
   @override
-  State<ImageView> createState() => _ImageViewState();
+  State<ImageView<T>> createState() => ImageViewState<T>();
 }
 
-class _ImageViewState<T extends Cell> extends State<ImageView<T>>
+class ImageViewState<T extends Cell> extends State<ImageView<T>>
     with SingleTickerProviderStateMixin {
   late PageController controller;
   late T currentCell;
@@ -233,7 +238,9 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>>
   late int cellCount = widget.cellCount;
   bool refreshing = false;
 
-  PhotoViewController photoController = PhotoViewController();
+  ImageProvider? fakeProvider;
+
+// TODO: write callbacks for image manipulation
 
   late AnimationController animationController;
 
@@ -258,6 +265,21 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>>
       log("making palette for image_view",
           level: Level.SEVERE.value, error: error, stackTrace: stackTrace);
     });
+  }
+
+  void refreshImage() {
+    var i = currentCell.fileDisplay().image;
+    if (i != null) {
+      PaintingBinding.instance.imageCache.evict(i);
+      fakeProvider = MemoryImage(kTransparentImage);
+
+      setState(() {});
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        setState(() {
+          fakeProvider = null;
+        });
+      });
+    }
   }
 
   @override
@@ -291,7 +313,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>>
     animationController.dispose();
     widget.updateTagScrollPos(null, null);
     controller.dispose();
-    photoController.dispose();
+    // photoController.dispose();
 
     widget.onExit();
 
@@ -337,53 +359,53 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>>
             AppLocalizations.of(context)!.moveImageRight,
             const SingleActivator(LogicalKeyboardKey.arrowRight,
                 shift: true)): () {
-          var pos = photoController.position;
-          photoController.position = pos.translate(-40, 0);
+          // var pos = photoController.position;
+          // photoController.position = pos.translate(-40, 0);
         },
         SingleActivatorDescription(
             AppLocalizations.of(context)!.moveImageLeft,
             const SingleActivator(LogicalKeyboardKey.arrowLeft,
                 shift: true)): () {
-          var pos = photoController.position;
-          photoController.position = pos.translate(40, 0);
+          // var pos = photoController.position;
+          // photoController.position = pos.translate(40, 0);
         },
         SingleActivatorDescription(
             AppLocalizations.of(context)!.rotateImageRight,
             const SingleActivator(LogicalKeyboardKey.arrowRight,
                 control: true)): () {
-          photoController.rotation += 0.5;
+          // photoController.rotation += 0.5;
         },
         SingleActivatorDescription(
             AppLocalizations.of(context)!.rotateImageLeft,
             const SingleActivator(LogicalKeyboardKey.arrowLeft,
                 control: true)): () {
-          photoController.rotation -= 0.5;
+          // photoController.rotation -= 0.5;
         },
         SingleActivatorDescription(AppLocalizations.of(context)!.moveImageUp,
             const SingleActivator(LogicalKeyboardKey.arrowUp)): () {
-          var pos = photoController.position;
-          photoController.position = pos.translate(0, 40);
+          // var pos = photoController.position;
+          // photoController.position = pos.translate(0, 40);
         },
         SingleActivatorDescription(AppLocalizations.of(context)!.moveImageDown,
             const SingleActivator(LogicalKeyboardKey.arrowDown)): () {
-          var pos = photoController.position;
-          photoController.position = pos.translate(0, -40);
+          // var pos = photoController.position;
+          // photoController.position = pos.translate(0, -40);
         },
         SingleActivatorDescription(AppLocalizations.of(context)!.zoomImageIn,
             const SingleActivator(LogicalKeyboardKey.pageUp)): () {
-          var s = photoController.scale;
+          // var s = photoController.scale;
 
-          if (s != null && s < 2.5) {
-            photoController.scale = s + 0.5;
-          }
+          // if (s != null && s < 2.5) {
+          // photoController.scale = s + 0.5;
+          // }
         },
         SingleActivatorDescription(AppLocalizations.of(context)!.zoomImageOut,
             const SingleActivator(LogicalKeyboardKey.pageDown)): () {
-          var s = photoController.scale;
+          // var s = photoController.scale;
 
-          if (s != null && s > 0.2) {
-            photoController.scale = s - 0.25;
-          }
+          // if (s != null && s > 0.2) {
+          // photoController.scale = s - 0.25;
+          // }
         },
         SingleActivatorDescription(AppLocalizations.of(context)!.showImageInfo,
             const SingleActivator(LogicalKeyboardKey.keyI)): () {
@@ -499,6 +521,8 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>>
                     ),
                     actions: [
                       if (addB != null) ...addB,
+                      if (widget.addIcons != null)
+                        ...widget.addIcons!.call(this),
                       if (widget.download != null)
                         IconButton(
                                 onPressed: () {
@@ -589,8 +613,7 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>>
                                   .withOpacity(0.7)),
                           onPageChanged: (index) async {
                             currentPage = index;
-                            photoController.rotation = 0;
-                            photoController.position = Offset.zero;
+                            widget.pageChange?.call(this);
                             _loadNext(index);
 
                             widget.scrollUntill(index);
@@ -624,7 +647,6 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>>
                                         ));
                             } else if (fileContent.type == ContentType.image) {
                               return PhotoViewGalleryPageOptions(
-                                  controller: photoController,
                                   minScale:
                                       PhotoViewComputedScale.contained * 0.8,
                                   maxScale:
@@ -632,7 +654,8 @@ class _ImageViewState<T extends Cell> extends State<ImageView<T>>
                                   initialScale:
                                       PhotoViewComputedScale.contained,
                                   filterQuality: FilterQuality.high,
-                                  imageProvider: fileContent.image);
+                                  imageProvider:
+                                      fakeProvider ?? fileContent.image);
                             } else {
                               return PhotoViewGalleryPageOptions.customChild(
                                   disableGestures: true,

@@ -17,7 +17,7 @@ abstract class SearchMixin<T> {
   TextEditingController get searchTextController;
   FocusNode get searchFocus;
 
-  void searchHook(T data);
+  void searchHook(T data, [String? hint, List<Widget>? addButtons]);
   void disposeSearch();
   Widget searchWidget(BuildContext context);
 }
@@ -40,8 +40,12 @@ mixin SearchLaunchGrid on State<BooruScroll>
   late BooruAPI booru = db.getBooru(page: widget.booruPage);
   late final void Function() focusMain;
 
+  late final List<Widget>? addItems;
+
   @override
-  void searchHook(SearchLaunchGridData data) {
+  void searchHook(SearchLaunchGridData data,
+      [String? hint, List<Widget>? items]) {
+    addItems = items;
     searchTextController.text = data.searchText;
     focusMain = () => data.mainFocus.requestFocus();
 
@@ -66,7 +70,7 @@ mixin SearchLaunchGrid on State<BooruScroll>
         currentlyHighlightedTag = s;
       }, (s) => getTab().onTagPressed(context, s), focusMain, booru.completeTag,
           searchFocus,
-          scrollHack: _scrollHack, showSearch: true, addItems: []);
+          scrollHack: _scrollHack, showSearch: true, addItems: addItems);
 }
 
 class _ScrollHack extends ScrollController {

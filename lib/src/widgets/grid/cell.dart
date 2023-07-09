@@ -6,7 +6,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:octo_image/octo_image.dart';
 import '../../cell/data.dart';
 
@@ -140,7 +139,8 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
                                 softWrap: false,
                                 overflow: TextOverflow.ellipsis,
                                 maxLines: 1,
-                                style: const TextStyle(color: Colors.white),
+                                style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7)),
                               )),
                         ),
                     ],

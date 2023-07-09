@@ -33,6 +33,8 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.StandardMethodCodec
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -40,7 +42,9 @@ import okio.FileSystem
 import okio.Path.Companion.toPath
 import okio.buffer
 import okio.sink
+import okio.use
 import java.io.ByteArrayOutputStream
+import java.util.Calendar
 import kotlin.coroutines.CoroutineContext
 import kotlin.io.path.Path
 import kotlin.io.path.deleteIfExists
@@ -111,8 +115,32 @@ class MainActivity : FlutterActivity() {
                             Uri.parse(it),
                             Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                         )
-                        result.success(it)
 
+                        result.success(it)
+                    }
+                }
+
+                "loadThumbnails" -> {
+                    val list = call.arguments as List<Long>
+                    if (list.isEmpty()) {
+                        result.success(null)
+                    } else {
+                        mover.thumbnailsCallback(list) {
+                            result.success(null)
+                        }
+                    }
+                }
+
+                "moveFromMediaStore" -> {
+                    val map = call.arguments as HashMap<String, String>
+                    val from = map["from"]
+                    val to = map["to"]
+                    if (to == null) {
+                        result.error("to is empty", null, null)
+                    } else if (from == null) {
+                        result.error("from is empty", null, null)
+                    } else {
+                        mover.copyMediastoreTo(to, from, result)
                     }
                 }
 
@@ -155,18 +183,75 @@ class MainActivity : FlutterActivity() {
 }
 
 data class MoveOp(val source: String, val rootUri: Uri, val dir: String)
-
+data class ThumbOp(val thumbs: List<Long>, val callback: (() -> Unit)?)
 class Mover(
     private val coContext: CoroutineContext,
-    private val context: android.content.Context,
+    private val context: Context,
     private val galleryApi: GalleryApi
 ) {
     private val channel = Channel<MoveOp>()
+    private val thumbnailsChannel = Channel<ThumbOp>(capacity = 2)
     private val scope = CoroutineScope(coContext + Dispatchers.IO)
 
-    private var isLockedMux = Mutex()
+    private val isLockedMux = Mutex()
+    private val copyFileLock = Mutex()
 
     init {
+        scope.launch {
+            for (uris in thumbnailsChannel) {
+                val newScope = CoroutineScope(Dispatchers.IO)
+
+                try {
+                    for (u in uris.thumbs.chunked(8)) {
+                        newScope.launch(SupervisorJob()) {
+                            val thumbs = mutableListOf<ThumbnailId>()
+                            val mutex = Mutex()
+                            val jobs = mutableListOf<Job>()
+
+                            u.forEach {
+                                val copy = it
+
+                                jobs.add(launch {
+                                    var res: ByteArray
+                                    try {
+                                        val uri = ContentUris.withAppendedId(
+                                            MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                                            it
+                                        )
+
+                                        res = getThumb(uri)
+
+
+                                    } catch (e: Exception) {
+                                        res = transparentImage
+                                        Log.e("thumbnail coro", e.toString())
+                                    }
+
+                                    mutex.lock()
+                                    thumbs.add(ThumbnailId(it, res))
+                                    mutex.unlock()
+                                })
+                            }
+
+                            jobs.forEach {
+                                it.join()
+                            }
+
+                            Handler(Looper.getMainLooper()).post {
+                                galleryApi.addThumbnails(
+                                    thumbs
+                                ) {}
+                            }
+                        }.join()
+                    }
+
+                    uris.callback?.invoke()
+                } catch (e: java.lang.Exception) {
+                    Log.e("thumbnails", e.toString())
+                }
+            }
+        }
+
         scope.launch {
             for (op in channel) {
                 launch {
@@ -219,21 +304,80 @@ class Mover(
         }
     }
 
+    fun thumbnailsCallback(thumbs: List<Long>, callback: () -> Unit) {
+        scope.launch {
+            thumbnailsChannel.send(ThumbOp(thumbs, callback))
+        }
+    }
+
+    fun copyMediastoreTo(to: String, from: String, result: MethodChannel.Result) {
+        scope.launch {
+            copyFileLock.lock()
+            val uri = Uri.parse(from)
+            if (uri.lastPathSegment == null) {
+                result.error("from is invalid", null, null)
+                copyFileLock.unlock()
+                return@launch
+            }
+
+            val filePath = to.toPath().resolve(uri.lastPathSegment!!)
+            try {
+                if (FileSystem.SYSTEM.exists(filePath)) {
+                    result.success(filePath.toString())
+                    copyFileLock.unlock()
+                    return@launch
+                }
+
+                context.contentResolver.openInputStream(Uri.parse(from))?.use { stream ->
+                    java.nio.file.Files.copy(stream, filePath.toNioPath())
+
+//                    FileSystem.SYSTEM.openReadWrite(
+//                        filePath
+//                    ).use { handle ->
+//                        val buf = handle.sink().buffer()
+//                        val source = stream.source()
+//
+//                        try {
+//                            buf.writeAll(source)
+//                            buf.flush()
+//                            handle.flush()
+//
+//                            buf.close()
+//                            source.close()
+//                        } catch (e: Exception) {
+//                            buf.close()
+//                            source.close()
+//                            throw e
+//                        }
+//                    }
+
+                }
+            } catch (e: Exception) {
+                result.error(e.toString(), null, null)
+                copyFileLock.unlock()
+                return@launch
+            }
+
+            copyFileLock.unlock()
+            result.success(filePath.toString())
+        }
+    }
+
     fun refreshFiles(dirId: String) {
         if (isLockedMux.isLocked) {
             return
         }
 
-        galleryApi.start {
-            scope.launch {
-                if (!isLockedMux.tryLock()) {
-                    return@launch
-                }
+        val time = Calendar.getInstance().time.time
 
-                refreshDirectoryFiles(dirId, context)
-
-                isLockedMux.unlock()
+        scope.launch {
+            if (!isLockedMux.tryLock()) {
+                return@launch
             }
+
+            refreshDirectoryFiles(dirId, context, time)
+
+            isLockedMux.unlock()
         }
     }
 
@@ -242,117 +386,144 @@ class Mover(
             return
         }
 
-        galleryApi.start {
-            scope.launch {
-                if (!isLockedMux.tryLock()) {
-                    return@launch
-                }
-
-                refreshMediastore(it, context)
-
-                isLockedMux.unlock()
+        scope.launch {
+            if (!isLockedMux.tryLock()) {
+                return@launch
             }
+
+            refreshMediastore(context)
+
+            isLockedMux.unlock()
         }
     }
 
-    private fun refreshDirectoryFiles(dir: String, context: Context) {
+    private suspend fun refreshDirectoryFiles(dir: String, context: Context, time: Long) {
         val projection = arrayOf(
-            MediaStore.Images.Media.BUCKET_ID,
-            MediaStore.Images.Media.BUCKET_DISPLAY_NAME,
-            MediaStore.Images.Media.DATE_MODIFIED,
-            MediaStore.Images.Media._ID,
+            MediaStore.Files.FileColumns.BUCKET_ID,
+            MediaStore.Files.FileColumns.DISPLAY_NAME,
+            MediaStore.Files.FileColumns.DATE_MODIFIED,
+            MediaStore.Files.FileColumns._ID,
+            MediaStore.Files.FileColumns.MEDIA_TYPE
         )
 
         context.contentResolver.query(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
             projection,
-            "${MediaStore.Images.Media.BUCKET_ID} = ?",
-            arrayOf(dir),
-            null
+            "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ${MediaStore.Files.FileColumns.BUCKET_ID} = ? AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ?",
+            arrayOf(dir, "image/vnd.djvu"),
+            "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC"
         )?.use { cursor ->
-            val id = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-            val bucket_id = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_ID)
+            val id = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+            val bucket_id = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_ID)
             val b_display_name =
-                cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
-            val date_modified = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_MODIFIED)
+                cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
+            val date_modified =
+                cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_MODIFIED)
+            val media_type = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE)
 
             if (!cursor.moveToFirst()) {
                 return@use
             }
 
             try {
+                val list = mutableListOf<DirectoryFile>()
+
                 do {
                     val uri = ContentUris.withAppendedId(
-                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        MediaStore.Files.getContentUri("external"),
                         cursor.getLong(id)
                     )
 
-                    val thumb = context.contentResolver.loadThumbnail(uri, Size(320, 320), null)
-                    val stream = ByteArrayOutputStream()
-
-                    thumb.compress(Bitmap.CompressFormat.PNG, 100, stream)
-
-                    val idval = cursor.getLong(id).toString()
+                    val idval = cursor.getLong(id)
                     val lastmodifval = cursor.getLong(date_modified)
                     val nameval = cursor.getString(b_display_name)
                     val directoryidval = cursor.getString(bucket_id)
 
-                    Handler(Looper.getMainLooper()).post {
-                        galleryApi.updatePicture(
-                            DirectoryFile(
-                                id = idval,
-                                lastModified = lastmodifval,
-                                name = nameval,
-                                thumbnail = stream.toByteArray(),
-                                directoryId = directoryidval,
-                                originalUri = uri.toString()
-                            )
-                        ) {}
+                    list.add(
+                        DirectoryFile(
+                            id = idval,
+                            bucketId = directoryidval,
+                            name = nameval,
+                            originalUri = uri.toString(),
+                            lastModified = lastmodifval,
+                            cursor.getInt(media_type) == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO
+                        )
+                    )
 
-                        stream.reset()
+                    if (list.count() == 40) {
+                        val copy = list.toList()
+                        list.clear()
+                        //filterAndSendThumbs(copy.map { it.id })
+
+                        CoroutineScope(Dispatchers.Main).launch {
+                            galleryApi.updatePictures(
+                                copy,
+                                dir,
+                                time,
+                                !cursor.isLast
+                            ) {}
+                        }.join()
                     }
-
-                    thumb.recycle()
                 } while (
                     cursor.moveToNext()
                 )
+
+                if (list.isNotEmpty()) {
+                    //filterAndSendThumbs(list.map { it.id })
+
+                    CoroutineScope(Dispatchers.Main).launch {
+                        galleryApi.updatePictures(
+                            list,
+                            dir,
+                            time,
+                            false
+                        ) {}
+                    }.join()
+                }
             } catch (e: java.lang.Exception) {
                 Log.e("refreshDirectoryFiles", "cursor block fail", e)
             }
         }
     }
 
-    private fun refreshMediastore(previous: String, context: Context) {
-        /*if (MediaStore.getVersion(
-                context,
-                MediaStore.getVolumeName(MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-            ) == previous
-        ) {
-            return
-        }*/
+    private fun getThumb(uri: Uri): ByteArray {
+        val thumb = context.contentResolver.loadThumbnail(uri, Size(320, 320), null)
+        val stream = ByteArrayOutputStream()
 
+        thumb.compress(Bitmap.CompressFormat.JPEG, 80, stream)
+
+        val bytes = stream.toByteArray()
+
+        stream.reset()
+        thumb.recycle()
+
+        return bytes
+    }
+
+    private suspend fun refreshMediastore(context: Context) {
         val projection = arrayOf(
-            MediaStore.Images.Media.BUCKET_ID,
-            MediaStore.Images.Media.BUCKET_DISPLAY_NAME,
-            MediaStore.Images.Media.DATE_MODIFIED,
-            MediaStore.Images.Media._ID
+            MediaStore.Files.FileColumns.BUCKET_ID,
+            MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME,
+            MediaStore.Files.FileColumns.DATE_MODIFIED,
+            MediaStore.Files.FileColumns._ID
         )
-        // val selection = ""
 
         context.contentResolver.query(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
             projection,
-            "",
-            null,
-            null
+            "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ?",
+            arrayOf("image/vnd.djvu"),
+            "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC"
         )?.use { cursor ->
-            val id = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-            val bucket_id = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_ID)
+            val id = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+            val bucket_id = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_ID)
             val b_display_name =
-                cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
-            val date_modified = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_MODIFIED)
+                cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME)
+            val date_modified =
+                cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_MODIFIED)
 
             val map = HashMap<String, Unit>()
+            val list = mutableListOf<Directory>()
 
             if (!cursor.moveToFirst()) {
                 return@use
@@ -361,55 +532,75 @@ class Mover(
             try {
                 do {
                     val bucketId = cursor.getString(bucket_id)
-                    if (map[bucketId] != null) {
+                    if (bucketId == null || map.containsKey(bucketId)) {
                         continue
                     }
 
                     map[bucketId] = Unit
 
-                    val uri = ContentUris.withAppendedId(
-                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                        cursor.getLong(id)
-                    )
-
-                    val thumb = context.contentResolver.loadThumbnail(uri, Size(320, 320), null)
-                    val stream = ByteArrayOutputStream()
-
-                    thumb.compress(Bitmap.CompressFormat.PNG, 50, stream)
-
+                    val idval = cursor.getLong(id)
                     val lastmodifval = cursor.getLong(date_modified)
-                    val nameval = cursor.getString(b_display_name)
-                    val directoryidval = cursor.getString(bucket_id)
+                    val nameval = cursor.getString(b_display_name) ?: "Internal"
 
-                    Handler(Looper.getMainLooper()).post {
-                        galleryApi.updateDirectory(
-                            Directory(
-                                id = directoryidval,
-                                lastModified = lastmodifval,
-                                name = nameval,
-                                thumbnail = stream.toByteArray()
-                            )
-                        ) {}
-
-                        stream.reset()
-                    }
-
-                    thumb.recycle()
+                    list.add(
+                        Directory(
+                            thumbFileId = idval,
+                            lastModified = lastmodifval,
+                            bucketId = bucketId,
+                            name = nameval
+                        )
+                    )
                 } while (
                     cursor.moveToNext()
                 )
+
+
+                //map.values.
+                if (map.isEmpty()) {
+                    return@use
+                }
+
+                filterAndSendThumbs(list.map { it.thumbFileId })
+
+                for (elem in list.chunked(40)) {
+                    val dirs = elem.toList()
+
+                    CoroutineScope(Dispatchers.Main).launch {
+                        galleryApi.updateDirectories(
+                            dirs,
+                            false
+                        ) {}
+                    }.join()
+                }
+
+
             } catch (e: java.lang.Exception) {
                 Log.e("refreshMediastore", "cursor block fail", e)
             }
         }
 
+        val version = MediaStore.getVersion(
+            context,
+            MediaStore.getVolumeName(MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        )
+
         Handler(Looper.getMainLooper()).post {
             galleryApi.finish(
-                MediaStore.getVersion(
-                    context,
-                    MediaStore.getVolumeName(MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-                )
+                version
             ) {}
+        }
+    }
+
+    private fun filterAndSendThumbs(thumbs: List<Long>) {
+        CoroutineScope(Dispatchers.Main).launch {
+            galleryApi.thumbsExist(thumbs) {
+                if (it.isEmpty()) {
+                    return@thumbsExist
+                }
+                scope.launch {
+                    thumbnailsChannel.send(ThumbOp(it, null))
+                }
+            }
         }
     }
 
@@ -420,13 +611,73 @@ class Mover(
     }
 }
 
-class ThumbnailDispatcher(val coContext: CoroutineContext) {
-    private val scope = CoroutineScope(coContext)
-
-    fun launch() {
-        scope.launch {
-            launch { }
-        }
-    }
-
-}
+@ExperimentalUnsignedTypes
+val transparentImage = ubyteArrayOf(
+    0x89u,
+    0x50u,
+    0x4Eu,
+    0x47u,
+    0x0Du,
+    0x0Au,
+    0x1Au,
+    0x0Au,
+    0x00u,
+    0x00u,
+    0x00u,
+    0x0Du,
+    0x49u,
+    0x48u,
+    0x44u,
+    0x52u,
+    0x00u,
+    0x00u,
+    0x00u,
+    0x01u,
+    0x00u,
+    0x00u,
+    0x00u,
+    0x01u,
+    0x08u,
+    0x06u,
+    0x00u,
+    0x00u,
+    0x00u,
+    0x1Fu,
+    0x15u,
+    0xC4u,
+    0x89u,
+    0x00u,
+    0x00u,
+    0x00u,
+    0x0Au,
+    0x49u,
+    0x44u,
+    0x41u,
+    0x54u,
+    0x78u,
+    0x9Cu,
+    0x63u,
+    0x00u,
+    0x01u,
+    0x00u,
+    0x00u,
+    0x05u,
+    0x00u,
+    0x01u,
+    0x0Du,
+    0x0Au,
+    0x2Du,
+    0xB4u,
+    0x00u,
+    0x00u,
+    0x00u,
+    0x00u,
+    0x49u,
+    0x45u,
+    0x4Eu,
+    0x44u,
+    0xAEu,
+    0x42u,
+    0x60u,
+    0x82u,
+).toByteArray()

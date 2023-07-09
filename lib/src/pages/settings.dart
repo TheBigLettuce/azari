@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -15,6 +16,7 @@ import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/pages/server_settings.dart';
 import 'package:gallery/src/schemas/settings.dart' as schema_settings;
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/schemas/thumbnail.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import '../schemas/settings.dart';
 
@@ -441,13 +443,71 @@ class _SettingsListState extends State<SettingsList> {
           },
           title: const Text("GPL-2.0-only"),
         ),
+
+        settingsLabel("Metrics", titleStyle), // TODO: change
         ListTile(
           title: Text(AppLocalizations.of(context)!.savedTagsCount),
           enabled: false,
           onTap: _extend,
           subtitle: Text(PostTags().savedTagsCount().toString()),
-        )
+        ),
+        if (Platform.isAndroid)
+          ListTile(
+            title: Text("Thumbnails DB size"),
+            subtitle: Text(_calculateMBSize(thumbnailIsar().getSizeSync())),
+            trailing: PopupMenuButton(
+              itemBuilder: (context) {
+                return [
+                  PopupMenuItem(
+                      child: TextButton(
+                    onPressed: () {},
+                    child: Text("Rebuild"),
+                  )),
+                  PopupMenuItem(
+                      child: TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                                context,
+                                DialogRoute(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: Text("Are you sure?"),
+                                      actions: [
+                                        TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                            },
+                                            child: Text("no")),
+                                        TextButton(
+                                            onPressed: () {
+                                              thumbnailIsar().writeTxnSync(() =>
+                                                  thumbnailIsar().clearSync());
+
+                                              setState(() {});
+                                              Navigator.pop(context);
+                                            },
+                                            child: Text("yes")),
+                                      ],
+                                    );
+                                  },
+                                ));
+                          },
+                          child: Text("Purge")))
+                ];
+              },
+              icon: Icon(Icons.more_horiz_rounded),
+            ),
+          ),
       ];
+
+  String _calculateMBSize(int i) {
+    if (i == 0) {
+      return "0 MB";
+    }
+
+    return "${(i / (1000 * 1000)).toStringAsFixed(1)} MB";
+  }
 
   @override
   Widget build(BuildContext context) {

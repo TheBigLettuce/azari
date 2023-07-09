@@ -19,6 +19,7 @@ import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
+import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../db/isar.dart' as db;
@@ -41,19 +42,36 @@ class Images extends StatefulWidget {
   State<Images> createState() => _ImagesState();
 }
 
-class _ImagesState extends State<Images> with SearchFilterGridImages {
+class _ImagesState extends State<Images>
+    with SearchFilterGrid<DirectoryFile, DirectoryFileShrinked> {
   late StreamSubscription<Settings?> settingsWatcher;
   Result<DirectoryFile>? cells;
   bool isDisposed = false;
 
-  final GridSkeletonState<DirectoryFile, DirectoryFileShrinked> skeletonState =
-      GridSkeletonState(
+  List<DirectoryFile> _getElem(int offset, int limit, String value) {
+    return widget.api.db.directoryFiles
+        .filter()
+        .nameContains(value)
+        .offset(offset)
+        .limit(limit)
+        .findAllSync();
+  }
+
+  late final filter = IsarFilter<DirectoryFile, DirectoryFileShrinked>(
+      widget.api.db, db.openServerApiInnerIsar(), _getElem);
+
+  late final GridSkeletonStateFilter<DirectoryFile, DirectoryFileShrinked>
+      skeletonState = GridSkeletonStateFilter(
+    filterFunc: (value) => isarFilterFunc(
+        value, skeletonState.gridKey.currentState?.mutationInterface, filter),
     index: kGalleryDrawerIndex,
     onWillPop: () => Future.value(true),
   );
 
   @override
   void initState() {
+    super.initState();
+
     searchHook(skeletonState);
 
     settingsWatcher = db.settingsIsar().settings.watchObject(0).listen((event) {
@@ -61,8 +79,6 @@ class _ImagesState extends State<Images> with SearchFilterGridImages {
 
       setState(() {});
     });
-
-    super.initState();
   }
 
   void _addFiles() async {
@@ -130,6 +146,7 @@ class _ImagesState extends State<Images> with SearchFilterGridImages {
   void dispose() {
     isDisposed = true;
     disposeSearch();
+    filter.dispose();
     settingsWatcher.cancel();
     skeletonState.dispose();
     widget.api.close();

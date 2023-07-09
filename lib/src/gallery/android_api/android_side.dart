@@ -2,64 +2,20 @@ import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/gallery/android_api/api.g.dart';
 import 'package:gallery/src/schemas/android_gallery_directory.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
-import 'package:gallery/src/schemas/download_file.dart';
+import 'package:gallery/src/schemas/blacklisted_directory.dart';
 import 'package:gallery/src/schemas/gallery_last_modified.dart';
+import 'package:gallery/src/schemas/thumbnail.dart';
 import 'package:isar/isar.dart';
 
 import 'interface_impl.dart';
 
 class GalleryImpl implements GalleryApi {
-  final Isar db = openAndroidGalleryIsar();
-
-  @override
-  bool compareTime(String id, int time) {
-    // TODO: implement compareTime
-    throw UnimplementedError();
-  }
+  final Isar db;
 
   @override
   void finish(String version) {
     db.writeTxnSync(
         () => db.galleryLastModifieds.putSync(GalleryLastModified(version)));
-  }
-
-  @override
-  String start() {
-    return db.galleryLastModifieds.getSync(0)?.version ?? "";
-  }
-
-  @override
-  void updateDirectory(Directory d) {
-    db.writeTxnSync(() => db.systemGalleryDirectorys.putByIdSync(
-        SystemGalleryDirectory(
-            thumbnail: d.thumbnail.cast(),
-            id: d.id,
-            name: d.name,
-            lastModified: d.lastModified)));
-
-    if (androidGalleryApi.callback != null) {
-      androidGalleryApi.callback!(db.systemGalleryDirectorys.countSync());
-    }
-  }
-
-  @override
-  void updatePicture(DirectoryFile f) {
-    androidGalleryApi.currentImages?.db.writeTxnSync(() {
-      androidGalleryApi.currentImages!.db.systemGalleryDirectoryFiles.putSync(
-          SystemGalleryDirectoryFile(
-              id: f.id,
-              directoryId: f.directoryId,
-              name: f.name,
-              lastModified: f.lastModified,
-              originalUri: f.originalUri,
-              thumbnail: f.thumbnail));
-      var callback = androidGalleryApi.currentImages?.callback;
-      if (callback != null) {
-        callback(androidGalleryApi.currentImages?.db.systemGalleryDirectoryFiles
-                .countSync() ??
-            0);
-      }
-    });
   }
 
   final AndroidGallery androidGalleryApi;
@@ -71,14 +27,29 @@ class GalleryImpl implements GalleryApi {
       return _global!;
     }
 
-    _global = GalleryImpl._new(impl);
+    _global = GalleryImpl._new(impl, openAndroidGalleryIsar());
     return _global!;
   }
 
-  GalleryImpl._new(this.androidGalleryApi);
+  GalleryImpl._new(this.androidGalleryApi, this.db);
 
   @override
-  void updatePictures(List<DirectoryFile?> f) {
+  void updatePictures(
+      List<DirectoryFile?> f, String bucketId, int startTime, bool inRefresh) {
+    if (f.isEmpty) {
+      return;
+    }
+
+    var st = androidGalleryApi.currentImages?.startTime;
+
+    if (st == null || st > startTime) {
+      return;
+    }
+
+    if (androidGalleryApi.currentImages?.bucketId != bucketId) {
+      return;
+    }
+
     var db = androidGalleryApi.currentImages?.db;
     if (db == null) {
       return;
@@ -88,15 +59,78 @@ class GalleryImpl implements GalleryApi {
         .cast<DirectoryFile>()
         .map((e) => SystemGalleryDirectoryFile(
             id: e.id,
-            directoryId: e.directoryId,
+            bucketId: e.bucketId,
             name: e.name,
             lastModified: e.lastModified,
             originalUri: e.originalUri,
-            thumbnail: e.thumbnail))
+            isVideo: e.isVideo))
         .toList()));
     var callback = androidGalleryApi.currentImages?.callback;
     if (callback != null) {
-      callback(db.systemGalleryDirectoryFiles.countSync());
+      callback(db.systemGalleryDirectoryFiles.countSync(), inRefresh);
+    }
+  }
+
+  @override
+  void addThumbnails(List<ThumbnailId?> thumbs) {
+    if (thumbs.isEmpty) {
+      return;
+    }
+
+    if (thumbnailIsar().thumbnails.countSync() >= 3000) {
+      thumbnailIsar().writeTxnSync(() => thumbnailIsar()
+          .thumbnails
+          .where()
+          .sortByUpdatedAt()
+          .limit(thumbs.length)
+          .deleteAllSync());
+    }
+
+    thumbnailIsar().writeTxnSync(() {
+      thumbnailIsar().thumbnails.putAllSync(thumbs
+          .cast<ThumbnailId>()
+          .map((e) => Thumbnail(e.id, DateTime.now(), e.thumb))
+          .toList());
+    });
+  }
+
+  @override
+  List<int?> thumbsExist(List<int?> ids) {
+    List<int> response = [];
+    for (final id in ids.cast<int>()) {
+      if (thumbnailIsar().thumbnails.where().idEqualTo(id).countSync() != 1) {
+        response.add(id);
+      }
+    }
+
+    return response;
+  }
+
+  @override
+  void updateDirectories(List<Directory?> d, bool inRefresh) {
+    var blacklisted = db.blacklistedDirectorys
+        .where()
+        .anyOf(d.cast<Directory>(),
+            (q, element) => q.bucketIdEqualTo(element.bucketId))
+        .findAllSync();
+    final map = <String, void>{for (var i in blacklisted) i.bucketId: Null};
+    d = List.from(d);
+    d.removeWhere((element) => map.containsKey(element!.bucketId));
+
+    db.writeTxnSync(() {
+      db.systemGalleryDirectorys.putAllSync(d
+          .cast<Directory>()
+          .map((e) => SystemGalleryDirectory(
+              bucketId: e.bucketId,
+              name: e.name,
+              thumbFileId: e.thumbFileId,
+              lastModified: e.lastModified))
+          .toList());
+    });
+
+    if (androidGalleryApi.callback != null) {
+      androidGalleryApi.callback!(
+          db.systemGalleryDirectorys.countSync(), inRefresh);
     }
   }
 }

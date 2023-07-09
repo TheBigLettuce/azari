@@ -15,6 +15,7 @@ part 'directory.g.dart';
 
 @collection
 class Directory implements Cell<Directory> {
+  @override
   Id? isarId;
 
   @Index(unique: true)

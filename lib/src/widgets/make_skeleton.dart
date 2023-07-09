@@ -35,6 +35,16 @@ class SkeletonState {
   SkeletonState(this.index);
 }
 
+class GridSkeletonStateFilter<T extends Cell<B>, B>
+    extends GridSkeletonState<T, B> {
+  void Function(String) filterFunc;
+  GridSkeletonStateFilter({
+    required this.filterFunc,
+    required super.index,
+    required super.onWillPop,
+  });
+}
+
 class GridSkeletonState<T extends Cell<B>, B> extends SkeletonState {
   bool showFab;
   final GlobalKey<CallbackGridState<T, B>> gridKey = GlobalKey();

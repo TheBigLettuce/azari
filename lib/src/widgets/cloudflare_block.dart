@@ -1,8 +1,14 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//
+// Copyright (C) 2023 Bob
+// This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+// You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:cookie_jar/cookie_jar.dart' as dio;
 
@@ -15,12 +21,9 @@ class CloudflareBlock extends StatefulWidget {
 }
 
 class _CloudflareBlockState extends State<CloudflareBlock> {
-  final ChromeSafariBrowser browser = MyChromeSafariBrowser();
-
   @override
   void initState() {
     super.initState();
-    browser.addMenuItem(ChromeSafariBrowserMenuItem(id: 1, label: "label"));
   }
 
   @override
@@ -46,23 +49,6 @@ class _CloudflareBlockState extends State<CloudflareBlock> {
             child: const Text("Solve captcha")) // TODO: change
       ],
     ));
-  }
-}
-
-class MyChromeSafariBrowser extends ChromeSafariBrowser {
-  @override
-  void onOpened() {
-    print("ChromeSafari browser opened");
-  }
-
-  @override
-  void onCompletedInitialLoad(bool? didLoadSuccessfully) {
-    print("ChromeSafari browser initial load completed");
-  }
-
-  @override
-  void onClosed() {
-    print("ChromeSafari browser closed");
   }
 }
 
@@ -136,8 +122,8 @@ class _AndroidWebviewState extends State<AndroidWebview> {
                   ]);
                 }
               },
-              icon: Icon(Icons.check)),
-          title: Text("Solve captcha")),
+              icon: const Icon(Icons.check)),
+          title: Text("Solve captcha")), // TODO: change
       body: InAppWebView(
         initialUrlRequest: URLRequest(
           url: WebUri.uri(Uri.https(widget.intf.api.domain)),

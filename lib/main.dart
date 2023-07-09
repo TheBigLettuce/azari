@@ -21,6 +21,7 @@ import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/grid_restore.dart';
 import 'package:gallery/src/schemas/scroll_position.dart' as scroll_pos;
 import 'package:gallery/src/schemas/settings.dart';
+import 'package:gallery/src/schemas/thumbnail.dart';
 // import 'package:google_fonts/google_fonts.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:isar/isar.dart';
@@ -158,8 +159,11 @@ void main() async {
       "/senitel": (context) => Container(),
       "/booru": (context) {
         if (Platform.isAndroid) {
-          Permission.notification.request();
-          Permission.photos.request();
+          Permission.notification.request().then((value) {
+            Permission.photos
+                .request()
+                .then((value) => Permission.videos.request());
+          });
 
           SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
           SystemChrome.setSystemUIOverlayStyle(

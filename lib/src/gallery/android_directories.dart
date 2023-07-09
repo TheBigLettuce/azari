@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/gallery/android_api/android_side.dart';
 import 'package:gallery/src/gallery/android_api/interface_impl.dart';
 import 'package:gallery/src/gallery/android_files.dart';
@@ -12,6 +13,8 @@ import 'package:gallery/src/schemas/android_gallery_directory.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
+import 'package:gallery/src/widgets/search_filter_grid.dart';
+import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 
 import '../schemas/settings.dart';
@@ -23,52 +26,88 @@ class AndroidDirectories extends StatefulWidget {
   State<AndroidDirectories> createState() => _AndroidDirectoriesState();
 }
 
-class _AndroidDirectoriesState extends State<AndroidDirectories> {
-  late final GridSkeletonState<SystemGalleryDirectory, void> state =
-      GridSkeletonState(
+class _AndroidDirectoriesState extends State<AndroidDirectories>
+    with SearchFilterGrid {
+  late StreamSubscription<Settings?> settingsWatcher;
+  late final GridSkeletonStateFilter<SystemGalleryDirectory, String> state =
+      GridSkeletonStateFilter(
+          filterFunc: (value) => isarFilterFunc(
+              value, state.gridKey.currentState?.mutationInterface, filter),
           index: kGalleryDrawerIndex,
           onWillPop: () => popUntilSenitel(context));
   final api = AndroidGallery();
   final stream = StreamController<int>(sync: true);
-  Result<SystemGalleryDirectory>? result;
 
   @override
   void initState() {
     super.initState();
-    api.callback = (i) {
+    settingsWatcher = settingsIsar().settings.watchObject(0).listen((event) {
+      state.settings = event!;
+
+      setState(() {});
+    });
+    searchHook(state, "directories"); // TODO: change
+    api.callback = (i, inRefresh) {
+      if (!inRefresh) {
+        state.gridKey.currentState?.mutationInterface?.setIsRefreshing(false);
+      }
+
       stream.add(i);
     };
+    api.refresh = _refresh;
   }
+
+  List<SystemGalleryDirectory> _getCells(int offset, int limit, String v) {
+    return api.db.systemGalleryDirectorys
+        .filter()
+        .nameContains(v, caseSensitive: false)
+        .offset(offset)
+        .limit(limit)
+        .findAllSync();
+  }
+
+  late final filter = IsarFilter<SystemGalleryDirectory, String>(
+      api.db, openAndroidGalleryIsar(temporary: true), _getCells);
 
   @override
   void dispose() {
     api.close();
     stream.close();
+    filter.dispose();
+    settingsWatcher.cancel();
+    disposeSearch();
     state.dispose();
+    api.refresh = null;
     api.callback = null;
+    clearTemporaryImagesDir();
     super.dispose();
   }
 
-  Future<int> _refresh() async {
+  void _refresh() async {
     try {
-      var res = await api.directories();
+      stream.add(0);
+      state.gridKey.currentState?.mutationInterface?.setIsRefreshing(true);
+      final db = GalleryImpl.instance().db;
+      db.writeTxnSync(() => db.systemGalleryDirectorys.clearSync());
+      const MethodChannel channel = MethodChannel("lol.bruh19.azari.gallery");
+      channel.invokeMethod("refreshGallery");
+      // Navigator.pop(context);
+      // var res = await api.directories();
 
-      setState(() {
-        result = res;
-      });
+      // setState(() {
+      //   result = res;
+      // });
     } catch (e, trace) {
       log("android gallery",
           level: Level.SEVERE.value, error: e, stackTrace: trace);
     }
-
-    return result?.count ?? 0;
   }
 
   @override
   Widget build(BuildContext context) {
     var insets = MediaQuery.viewPaddingOf(context);
 
-    return makeGridSkeleton<SystemGalleryDirectory, void>(
+    return makeGridSkeleton<SystemGalleryDirectory, String>(
         context,
         state,
         CallbackGrid(
@@ -78,26 +117,20 @@ class _AndroidDirectoriesState extends State<AndroidDirectories> {
             scaffoldKey: state.scaffoldKey,
             systemNavigationInsets: insets,
             hasReachedEnd: () => true,
-            aspectRatio: 1,
+            aspectRatio:
+                state.settings.gallerySettings.directoryAspectRatio?.value ?? 1,
+            hideAlias: state.settings.gallerySettings.hideDirectoryName,
+            immutable: false,
             mainFocus: state.mainFocus,
-            menuButtonItems: [
-              FilledButton(
-                  onPressed: () {
-                    stream.add(0);
-                    final db = GalleryImpl.instance().db;
-                    db.writeTxnSync(
-                        () => db.systemGalleryDirectorys.clearSync());
+            searchWidget: SearchAndFocus(searchWidget(context), searchFocus),
+            refresh: () {
+              _refresh();
 
-                    const MethodChannel channel =
-                        MethodChannel("lol.bruh19.azari.gallery");
-                    channel.invokeMethod("refreshGallery");
-                    Navigator.pop(context);
-                  },
-                  child: Text("Deep refresh"))
-            ],
-            refresh: _refresh,
+              return null;
+            },
             overrideOnPress: (context, indx) {
-              var d = api.directCell(indx);
+              var d =
+                  state.gridKey.currentState!.mutationInterface!.getCell(indx);
               var apiFiles = api.images(d) as AndroidGalleryFiles;
               api.currentImages = apiFiles;
 
@@ -105,13 +138,20 @@ class _AndroidDirectoriesState extends State<AndroidDirectories> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => AndroidFiles(
-                        api: apiFiles, dirName: d.name, dirId: d.id),
+                        api: apiFiles, dirName: d.name, bucketId: d.bucketId),
                   ));
             },
             progressTicker: stream.stream,
             updateScrollPosition: (pos, {infoPos, selectedCell}) {},
             description: GridDescription(
-                kGalleryDrawerIndex, [], GridColumn.two,
-                keybindsDescription: "Android Gallery")));
+                kGalleryDrawerIndex,
+                [
+                  GridBottomSheetAction(Icons.hide_image_outlined, (selected) {
+                    api.addBlacklisted(selected);
+                  }, true)
+                ],
+                state.settings.gallerySettings.directoryColumns ??
+                    GridColumn.two,
+                keybindsDescription: "Android Gallery"))); // TODO: change
   }
 }

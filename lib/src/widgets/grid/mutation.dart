@@ -12,6 +12,7 @@ abstract class GridMutationInterface<T extends Cell<B>, B> {
   // set cellCount(int i);
   bool get isRefreshing;
 
+  void setIsRefreshing(bool isRefreshing);
   void setSource(int cellCount, T Function(int i) getCell);
   void tick(int i);
   void restore();
@@ -22,6 +23,7 @@ class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
   int? _cellCountFilter;
   T Function(int i)? _filterGetCell;
   final void Function() scrollUp;
+  final void Function() unselectAll;
 
   bool cloudflareBlocked = false;
 
@@ -58,12 +60,21 @@ class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
   }
 
   @override
+  void setIsRefreshing(bool isRefreshing) {
+    _refreshing = isRefreshing;
+
+    update(null);
+  }
+
+  @override
   bool get isRefreshing => _refreshing;
 
   @override
   void setSource(int cellCount, T Function(int i) getCell) {
     _filterGetCell = getCell;
     _cellCountFilter = cellCount;
+
+    unselectAll();
 
     update(null);
   }
@@ -155,10 +166,18 @@ class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
       return Future.value(_cellCount);
     }
 
+    var valueFuture = widget().refresh();
+
+    if (valueFuture == null) {
+      return Future.value();
+    }
+
     _refreshing = true;
 
     try {
-      var value = await widget().refresh();
+      _refreshing = true;
+      var value = await valueFuture;
+
       _cellCount = value;
       _refreshing = false;
 
@@ -188,5 +207,6 @@ class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
       {required bool immutable,
       required this.widget,
       required this.update,
+      required this.unselectAll,
       required this.scrollUp});
 }

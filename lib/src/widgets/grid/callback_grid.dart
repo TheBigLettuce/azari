@@ -66,7 +66,7 @@ abstract class SearchFilter<T extends Cell<B>, B> {
 class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
   final Future<int> Function()? loadNext;
   final Future<void> Function(int indx)? download;
-  final Future<int> Function() refresh;
+  final Future<int>? Function() refresh;
   final void Function({required bool fab, required bool foreground})?
       hideShowFab;
   final void Function(double pos, {double? infoPos, int? selectedCell})
@@ -76,6 +76,7 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
   final T Function(int) getCell;
   final bool Function() hasReachedEnd;
   final Map<SingleActivatorDescription, Null Function()>? additionalKeybinds;
+
   final SearchAndFocus? searchWidget;
 
   final int initalCellCount;
@@ -95,8 +96,11 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
 
   final GridDescription<B> description;
   final FocusNode? belowMainFocus;
+  final List<IconButton> Function(ImageViewState<T> icons)? addIconsImage;
+  final void Function(ImageViewState<T> state)? pageChangeImage;
 
   final CloudflareBlockInterface Function()? cloudflareHook;
+  final void Function(int from)? loadThumbsDirectly;
 
   const CallbackGrid(
       {Key? key,
@@ -108,9 +112,12 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
       required this.hasReachedEnd,
       required this.aspectRatio,
       this.cloudflareHook,
+      this.pageChangeImage,
       required this.mainFocus,
+      this.addIconsImage,
       this.immutable = true,
       this.tightMode = false,
+      this.loadThumbsDirectly,
       this.belowMainFocus,
       this.progressTicker,
       this.menuButtonItems,
@@ -160,6 +167,10 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
       if (widget.hideShowFab != null) {
         widget.hideShowFab!(fab: false, foreground: inImageView);
       }
+    },
+    unselectAll: () {
+      selected.clear();
+      currentBottomSheet?.close();
     },
     immutable: widget.immutable,
     widget: () => widget,
@@ -247,6 +258,18 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
       refresh();
     }
 
+    // var offset = controller.offset;
+    // if (offset != 0) {
+    //   final contentSize = controller.position.viewportDimension +
+    //       controller.position.maxScrollExtent;
+    //   final cellHeight =
+    //       contentSize / (_state.cellCount / widget.description.columns.number);
+    //   final firstVisible =
+    //       offset * widget.description.columns.number ~/ cellHeight;
+
+    //   widget.scrollCallback!(firstVisible);
+    // }
+
     if (widget.loadNext == null) {
       return;
     }
@@ -320,11 +343,11 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
   }
 
   void _onPressed(BuildContext context, int i, {double? offset}) {
-    inImageView = true;
     if (widget.overrideOnPress != null) {
       widget.overrideOnPress!(context, i);
       return;
     }
+    inImageView = true;
 
     widget.mainFocus.requestFocus();
 
@@ -339,9 +362,11 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
               widget.updateScrollPosition(offsetGrid,
                   infoPos: pos, selectedCell: selectedCell),
           scrollUntill: _scrollUntill,
+          pageChange: widget.pageChangeImage,
           onExit: () {
             inImageView = false;
           },
+          addIcons: widget.addIconsImage,
           focusMain: () {
             widget.mainFocus.requestFocus();
           },
@@ -440,12 +465,14 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                                           bottom: 8),
                                       title: widget.searchWidget?.search ??
                                           Padding(
-                                            padding: const EdgeInsets.only(
-                                                bottom: 8),
+                                            padding: const EdgeInsets.all(8),
                                             child: Text(
-                                                widget.description.pageName ??
-                                                    widget.description
-                                                        .keybindsDescription),
+                                              widget.description.pageName ??
+                                                  widget.description
+                                                      .keybindsDescription,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ))),
                               if (Platform.isAndroid || Platform.isIOS)
                                 wrapAppBarAction(GestureDetector(
@@ -521,11 +548,15 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                                       var cell = _state.getCell(index);
                                       var cellData = cell
                                           .getCellData(settings.listViewBooru);
+                                      if (cellData.loaded != null &&
+                                          cellData.loaded == false) {
+                                        widget.loadThumbsDirectly?.call(index);
+                                      }
 
                                       return _WrappedSelection(
-                                        selectUntil: _selectUntil,
+                                        selectUntil: _selectUnselectUntil,
                                         thisIndx: index,
-                                        isSelected: selected[index] != null,
+                                        isSelected: _isSelected(index),
                                         selectionEnabled: selected.isNotEmpty,
                                         selectUnselect: () =>
                                             _selectOrUnselect(index, cell),
@@ -567,14 +598,18 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                                       var m = _state.getCell(indx);
                                       var cellData =
                                           m.getCellData(settings.listViewBooru);
+                                      if (cellData.loaded != null &&
+                                          cellData.loaded == false) {
+                                        widget.loadThumbsDirectly?.call(indx);
+                                      }
 
                                       return _WrappedSelection(
                                         selectionEnabled: selected.isNotEmpty,
                                         thisIndx: indx,
-                                        selectUntil: _selectUntil,
+                                        selectUntil: _selectUnselectUntil,
                                         selectUnselect: () =>
                                             _selectOrUnselect(indx, m),
-                                        isSelected: selected[indx] != null,
+                                        isSelected: _isSelected(indx),
                                         child: GridCell(
                                           cell: cellData,
                                           hidealias: widget.hideAlias,

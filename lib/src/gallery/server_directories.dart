@@ -18,11 +18,13 @@ import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:logging/logging.dart';
 import '../db/isar.dart' as db;
+import 'package:isar/isar.dart';
 import '../widgets/drawer/drawer.dart';
 import '../widgets/grid/callback_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../widgets/search_filter_grid.dart';
+import 'server_api/server.dart';
 
 class ServerDirectories extends StatefulWidget {
   const ServerDirectories({super.key});
@@ -32,13 +34,38 @@ class ServerDirectories extends StatefulWidget {
 }
 
 class _ServerDirectoriesState extends State<ServerDirectories>
-    with SearchFilterGridDirectory {
+    with SearchFilterGrid<Directory, Directory> {
   late StreamSubscription<Settings?> settingsWatcher;
   Result<Directory>? directories;
   bool isDisposed = false;
 
-  late GridSkeletonState<Directory, Directory> skeletonState =
-      GridSkeletonState(
+  final api = ServerAPI(db.openServerApiIsar());
+
+  List<Directory>? filterResults;
+
+  late final GridSkeletonStateFilter<Directory, Directory> skeletonState =
+      GridSkeletonStateFilter(
+          filterFunc: (value) {
+            var interface =
+                skeletonState.gridKey.currentState?.mutationInterface;
+            if (interface != null) {
+              value = value.trim();
+              if (value.isEmpty) {
+                interface.restore();
+                filterResults = null;
+                return;
+              }
+
+              filterResults = api.db.directorys
+                  .filter()
+                  .dirNameContains(value, caseSensitive: false)
+                  .findAllSync();
+
+              interface.setSource(filterResults!.length, (i) {
+                return filterResults![i];
+              });
+            }
+          },
           index: kGalleryDrawerIndex,
           onWillPop: () => popUntilSenitel(context));
 
@@ -195,7 +222,8 @@ class _ServerDirectoriesState extends State<ServerDirectories>
                     foreground), //isar.directorys.getSync(i + 1)!.cell()
         overrideOnPress: (context, indx) {
           Navigator.push(context, MaterialPageRoute(builder: (context) {
-            var d = directories!.cell(indx);
+            var d = skeletonState.gridKey.currentState!.mutationInterface!
+                .getCell(indx);
 
             return Images(
               api.images(d),

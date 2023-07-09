@@ -4,6 +4,7 @@ import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/gallery/android_api/android_side.dart';
 import 'package:gallery/src/schemas/android_gallery_directory.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
+import 'package:gallery/src/schemas/blacklisted_directory.dart';
 import 'package:isar/isar.dart';
 
 import '../interface.dart';
@@ -15,8 +16,17 @@ class AndroidGallery
   @override
   Dio get client => throw UnimplementedError();
 
-  void Function(int i)? callback;
+  void Function(int i, bool inRefresh)? callback;
+  void Function()? refresh;
   AndroidGalleryFiles? currentImages;
+  @override
+  Isar get db => GalleryImpl.instance().db;
+
+  void addBlacklisted(List<String> bucketIds) {
+    db.writeTxnSync(() => db.blacklistedDirectorys
+        .putAllSync(bucketIds.map((e) => BlacklistedDirectory(e)).toList()));
+    refresh?.call();
+  }
 
   @override
   void close() {
@@ -45,7 +55,7 @@ class AndroidGallery
   @override
   GalleryAPIFiles<SystemGalleryDirectoryFile, void> images(
       SystemGalleryDirectory d) {
-    return AndroidGalleryFiles(openAndroidGalleryInnerIsar());
+    return AndroidGalleryFiles(openAndroidGalleryInnerIsar(), d.bucketId);
   }
 
   @override
@@ -81,8 +91,11 @@ AndroidGallery? _global;
 
 class AndroidGalleryFiles
     implements GalleryAPIFiles<SystemGalleryDirectoryFile, void> {
+  @override
   Isar db;
-  void Function(int i)? callback;
+  final String bucketId;
+  void Function(int i, bool inRefresh)? callback;
+  final int startTime;
 
   @override
   void close() {
@@ -133,5 +146,6 @@ class AndroidGalleryFiles
     throw UnimplementedError();
   }
 
-  AndroidGalleryFiles(this.db);
+  AndroidGalleryFiles(this.db, this.bucketId)
+      : startTime = DateTime.now().millisecondsSinceEpoch;
 }

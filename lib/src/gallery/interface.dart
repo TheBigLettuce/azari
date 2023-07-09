@@ -8,6 +8,7 @@
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:gallery/src/cell/cell.dart';
+import 'package:isar/isar.dart';
 
 class Result<T extends Cell> {
   final int count;
@@ -17,12 +18,10 @@ class Result<T extends Cell> {
 
 abstract class GalleryAPIFiles<F extends Cell<A>, A> {
   bool get reachedEnd;
+  Isar get db;
 
   //Future<Result<DirectoryFile>> nextImages();
   Future<Result<F>> refresh();
-
-  Result<F> filter(String s);
-  void resetFilter();
 
   Future delete(F f);
   Future uploadFiles(List<PlatformFile> l, void Function() onDone);
@@ -33,6 +32,7 @@ abstract class GalleryAPIFiles<F extends Cell<A>, A> {
 
 abstract class GalleryAPI<T extends Cell<B>, B, F extends Cell<A>, A> {
   Dio get client;
+  Isar get db;
 
   Future<Result<T>> directories();
   GalleryAPIFiles<F, A> images(T d);

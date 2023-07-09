@@ -39,7 +39,8 @@ String _fromBaseToHex(String v) {
 class ServerAPI
     implements
         GalleryAPI<Directory, Directory, DirectoryFile, DirectoryFileShrinked> {
-  final Isar serverIsar;
+  @override
+  final Isar db;
 
   @override
   final Dio client = Dio(BaseOptions(
@@ -59,8 +60,8 @@ class ServerAPI
       throw resp.data;
     }
 
-    serverIsar.writeTxnSync(() {
-      serverIsar.clearSync();
+    db.writeTxnSync(() {
+      db.clearSync();
 
       var list = (resp.data as List)
           .map((e) => Directory(
@@ -82,20 +83,20 @@ class ServerAPI
         }
       });
 
-      serverIsar.directorys.putAllSync(list);
+      db.directorys.putAllSync(list);
     });
 
-    return Result((i) => serverIsar.directorys.getSync(i + 1)!,
-        serverIsar.directorys.countSync());
+    return Result(
+        (i) => db.directorys.getSync(i + 1)!, db.directorys.countSync());
   }
 
   @override
   void close() {
-    serverIsar.close();
+    db.close();
     client.close(force: true);
   }
 
-  ServerAPI(this.serverIsar);
+  ServerAPI(this.db);
 
   @override
   GalleryAPIFiles<DirectoryFile, DirectoryFileShrinked> images(Directory d) {
@@ -158,38 +159,16 @@ class ServerAPI
 class _ImagesImpl
     implements GalleryAPIFiles<DirectoryFile, DirectoryFileShrinked> {
   Isar imageIsar;
-  Isar imageFilterIsar;
+
   int page = 0;
   Dio client;
   Directory d;
 
   @override
+  Isar get db => imageIsar;
+
+  @override
   bool reachedEnd = false;
-
-  @override
-  Result<DirectoryFile> filter(String s) {
-    imageFilterIsar.writeTxnSync(
-      () => imageFilterIsar.directoryFiles.clearSync(),
-    );
-
-    _writeFromTo(imageIsar, (offset, limit) {
-      return imageIsar.directoryFiles
-          .filter()
-          .nameContains(s, caseSensitive: false)
-          .offset(offset)
-          .limit(limit)
-          .findAllSync();
-    }, imageFilterIsar);
-
-    return Result((i) => imageFilterIsar.directoryFiles.getSync(i + 1)!,
-        imageFilterIsar.directoryFiles.countSync());
-  }
-
-  @override
-  void resetFilter() {
-    imageFilterIsar
-        .writeTxnSync(() => imageFilterIsar.directoryFiles.clearSync());
-  }
 
   Future<bool> nextImages() async {
     if (reachedEnd) {
@@ -268,11 +247,9 @@ class _ImagesImpl
   @override
   void close() {
     imageIsar.close(deleteFromDisk: true);
-    imageFilterIsar.close(deleteFromDisk: true);
   }
 
-  _ImagesImpl(this.imageIsar, this.client, this.d)
-      : imageFilterIsar = openServerApiInnerIsar();
+  _ImagesImpl(this.imageIsar, this.client, this.d);
 
   @override
   Future<Result<DirectoryFile>> refresh() async {

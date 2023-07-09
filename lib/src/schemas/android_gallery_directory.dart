@@ -6,28 +6,30 @@ import 'package:isar/isar.dart';
 import 'package:transparent_image/transparent_image.dart';
 
 import '../cell/cell.dart';
+import 'android_gallery_directory_file.dart';
 
 part 'android_gallery_directory.g.dart';
 
 @collection
-class SystemGalleryDirectory implements Cell<void> {
-  Id? get isarId => fastHash(id);
+class SystemGalleryDirectory implements Cell<String> {
+  @override
+  Id? isarId;
 
+  int thumbFileId;
   @Index(unique: true)
-  String id;
+  String bucketId;
 
   @Index()
   String name;
 
-  List<byte> thumbnail;
-
+  @Index()
   int lastModified;
 
   SystemGalleryDirectory(
-      {required this.id,
-      required this.thumbnail,
+      {required this.bucketId,
       required this.name,
-      required this.lastModified});
+      required this.lastModified,
+      required this.thumbFileId});
 
   @ignore
   @override
@@ -53,17 +55,19 @@ class SystemGalleryDirectory implements Cell<void> {
   @override
   CellData getCellData(bool isList) {
     ImageProvider provier;
+    var record = androidThumbnail(thumbFileId);
     try {
-      provier = MemoryImage(thumbnail as Uint8List);
+      provier = KeyMemoryImage(bucketId, record.$1);
     } catch (e) {
       provier = MemoryImage(kTransparentImage);
     }
 
-    return CellData(thumb: provier, name: name, stickers: []);
+    return CellData(
+        thumb: provier, name: name, stickers: [], loaded: record.$2);
   }
 
   @override
-  void shrinkedData() {
-    // TODO: implement shrinkedData
+  String shrinkedData() {
+    return bucketId;
   }
 }

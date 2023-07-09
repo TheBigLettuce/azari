@@ -99,6 +99,7 @@ String _fileDownloadUrl(String sampleUrl, String originalUrl) {
 
 @collection
 class Post implements Cell<PostShrinked> {
+  @override
   Id? isarId;
 
   @Index(unique: true, replace: true)

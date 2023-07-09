@@ -38,6 +38,9 @@ class AddInfoColorData {
 abstract class Cell<B> {
   //String get path;
 
+  int? get isarId;
+  set isarId(int? i);
+
   String alias(bool isList);
 
   @ignore

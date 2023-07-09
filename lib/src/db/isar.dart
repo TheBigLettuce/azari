@@ -19,6 +19,7 @@ import 'package:gallery/src/booru/api/gelbooru.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/schemas/android_gallery_directory.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
+import 'package:gallery/src/schemas/blacklisted_directory.dart';
 import 'package:gallery/src/schemas/directory.dart';
 import 'package:gallery/src/schemas/directory_file.dart';
 import 'package:gallery/src/schemas/download_file.dart';
@@ -30,6 +31,7 @@ import 'package:gallery/src/schemas/scroll_position.dart';
 import 'package:gallery/src/schemas/secondary_grid.dart';
 import 'package:gallery/src/schemas/server_settings.dart';
 import 'package:gallery/src/schemas/tags.dart';
+import 'package:gallery/src/schemas/thumbnail.dart';
 import 'package:gallery/src/schemas/upload_files.dart';
 import 'package:gallery/src/schemas/upload_files_state.dart';
 import 'package:isar/isar.dart';
@@ -42,9 +44,19 @@ import 'package:path/path.dart' as path;
 
 part 'grids.dart';
 
+String temporaryImagesDir() => _temporaryImagesPath;
+void clearTemporaryImagesDir() {
+  io.Directory(_temporaryImagesPath)
+    ..createSync()
+    ..deleteSync(recursive: true)
+    ..createSync();
+}
+
 Isar? _isar;
+Isar? _thumbnailIsar;
 late String _directoryPath;
 late String _temporaryDbPath;
+late String _temporaryImagesPath;
 //Isar? _isarCopy;
 bool _initalized = false;
 const MethodChannel _channel = MethodChannel("lol.bruh19.azari.gallery");
@@ -90,13 +102,26 @@ Future initalizeIsar() async {
 
   _temporaryDbPath = d.path;
 
+  var dimages = io.Directory(path.joinAll([_directoryPath, "temp_images"]));
+  dimages.createSync();
+  dimages.deleteSync(recursive: true);
+  dimages.createSync();
+
+  _temporaryImagesPath = dimages.path;
+
   await Isar.open([SettingsSchema, FileSchema, ServerSettingsSchema],
           directory: _directoryPath, inspector: false)
       .then((value) {
     _isar = value;
   });
+
+  if (io.Platform.isAndroid) {
+    _thumbnailIsar = Isar.openSync([ThumbnailSchema],
+        directory: _directoryPath, inspector: false, name: "androidThumbnails");
+  }
 }
 
+Isar thumbnailIsar() => _thumbnailIsar!;
 Isar settingsIsar() => _isar!;
 
 void _closePrimaryGridIsar(Booru booru) {
@@ -176,12 +201,17 @@ void closeServerApiInnerIsar(String name) {
   }
 }
 
-Isar openAndroidGalleryIsar() {
-  return Isar.openSync(
-      [SystemGalleryDirectorySchema, GalleryLastModifiedSchema],
-      directory: _directoryPath,
+Isar openAndroidGalleryIsar({bool? temporary}) {
+  return Isar.openSync([
+    SystemGalleryDirectorySchema,
+    GalleryLastModifiedSchema,
+    BlacklistedDirectorySchema
+  ],
+      directory: temporary == true ? _temporaryDbPath : _directoryPath,
       inspector: false,
-      name: "systemGalleryDirectories");
+      name: temporary == true
+          ? DateTime.now().microsecondsSinceEpoch.toString()
+          : "systemGalleryDirectories");
 }
 
 Isar openAndroidGalleryInnerIsar() {

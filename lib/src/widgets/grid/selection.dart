@@ -86,21 +86,31 @@ mixin _Selection<T extends Cell<B>, B> on State<CallbackGrid<T, B>> {
     });
   }
 
-  void _selectUntil(int indx) {
+  void _selectUnselectUntil(int indx) {
     if (lastSelected != null) {
       if (lastSelected == indx) {
         return;
       }
 
+      final selection = !_isSelected(indx);
+
       if (indx < lastSelected!) {
         for (var i = lastSelected!; i >= indx; i--) {
-          selected[i] = widget.getCell(i).shrinkedData();
+          if (selection) {
+            selected[i] = widget.getCell(i).shrinkedData();
+          } else {
+            selected.remove(i);
+          }
           lastSelected = i;
         }
         setState(() {});
       } else if (indx > lastSelected!) {
         for (var i = lastSelected!; i <= indx; i++) {
-          selected[i] = widget.getCell(i).shrinkedData();
+          if (selection) {
+            selected[i] = widget.getCell(i).shrinkedData();
+          } else {
+            selected.remove(i);
+          }
           lastSelected = i;
         }
         setState(() {});
@@ -112,8 +122,12 @@ mixin _Selection<T extends Cell<B>, B> on State<CallbackGrid<T, B>> {
     }
   }
 
+  bool _isSelected(int indx) {
+    return selected.containsKey(indx);
+  }
+
   void _selectOrUnselect(int index, T selection) {
-    if (selected[index] == null) {
+    if (!_isSelected(index)) {
       _addSelection(index, selection);
     } else {
       _removeSelection(index);

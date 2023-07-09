@@ -17,8 +17,19 @@ class DirectoryFileShrinked {
       {required this.dir, required this.file, required this.thumbHash});
 }
 
+ListTile addInfoTile(
+        {required AddInfoColorData colors,
+        required String title,
+        required String subtitle}) =>
+    ListTile(
+      textColor: colors.foregroundColor,
+      title: Text(title),
+      subtitle: Text(subtitle),
+    );
+
 @collection
 class DirectoryFile implements Cell<DirectoryFileShrinked> {
+  @override
   Id? isarId;
 
   String dir;
