@@ -10,17 +10,23 @@ import 'package:isar/isar.dart';
 
 import 'data.dart';
 
-enum ContentType { image, video }
+enum ContentType { image, video, androidImage, androidGif }
 
 class Content {
-  ContentType type;
-  bool isVideoLocal;
+  final ContentType type;
+  final bool isVideoLocal;
 
-  ImageProvider? image;
+  final ImageProvider? image;
 
-  String? videoPath;
+  final String? androidUri;
 
-  Content(this.type, this.isVideoLocal, {this.image, this.videoPath});
+  final String? videoPath;
+  final bool? gif;
+
+  final Size? size;
+
+  const Content(this.type, this.isVideoLocal,
+      {this.image, this.videoPath, this.androidUri, this.size, this.gif});
 }
 
 class AddInfoColorData {

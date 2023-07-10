@@ -12,8 +12,8 @@ part 'thumbnail.g.dart';
 @collection
 class Thumbnail {
   Id id;
-  List<byte> data;
-  DateTime updatedAt;
+  final List<byte> data;
+  final DateTime updatedAt;
 
   Thumbnail(this.id, this.updatedAt, this.data);
 }

@@ -15,15 +15,15 @@ class SystemGalleryDirectory implements Cell<String> {
   @override
   Id? isarId;
 
-  int thumbFileId;
+  final int thumbFileId;
   @Index(unique: true)
-  String bucketId;
+  final String bucketId;
 
   @Index()
-  String name;
+  final String name;
 
   @Index()
-  int lastModified;
+  final int lastModified;
 
   SystemGalleryDirectory(
       {required this.bucketId,

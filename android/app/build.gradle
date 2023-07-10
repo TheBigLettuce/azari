@@ -74,10 +74,10 @@ android {
             signingConfig signingConfigs.release
         }
         debug {
-            applicationIdSuffix 'debug'
+            applicationIdSuffix '.debug'
         }
         profile {
-            applicationIdSuffix 'profile'
+            applicationIdSuffix '.profile'
         }
     }
     namespace 'lol.bruh19.azari.gallery'
@@ -89,6 +89,7 @@ flutter {
 
 dependencies {
     implementation 'com.google.android.material:material:1.9.0'
+    implementation 'pl.droidsonroids.gif:android-gif-drawable:1.2.27'
     implementation 'androidx.window:window:1.0.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.1'
     implementation 'androidx.window:window-java:1.1.0'

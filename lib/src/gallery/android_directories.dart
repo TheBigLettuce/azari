@@ -38,6 +38,8 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
   final api = AndroidGallery();
   final stream = StreamController<int>(sync: true);
 
+  bool isThumbsLoading = false;
+
   @override
   void initState() {
     super.initState();
@@ -103,6 +105,36 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
     }
   }
 
+  void _nextThumbnails(int i) {
+    if (isThumbsLoading) {
+      return;
+    }
+
+    isThumbsLoading = true;
+
+    _thumbs(i);
+  }
+
+  void _thumbs(int from) async {
+    try {
+      final db = filter.isFiltering ? filter.to : api.db;
+      var thumbs = db.systemGalleryDirectorys
+          .where()
+          .offset(from)
+          .limit(from == 0 ? 20 : from + 20)
+          .findAllSync()
+          .map((e) => e.thumbFileId)
+          .toList();
+      const MethodChannel channel = MethodChannel("lol.bruh19.azari.gallery");
+      await channel.invokeMethod("loadThumbnails", thumbs);
+      setState(() {});
+    } catch (e, trace) {
+      log("loading thumbs",
+          level: Level.SEVERE.value, error: e, stackTrace: trace);
+    }
+    isThumbsLoading = false;
+  }
+
   @override
   Widget build(BuildContext context) {
     var insets = MediaQuery.viewPaddingOf(context);
@@ -122,6 +154,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
             hideAlias: state.settings.gallerySettings.hideDirectoryName,
             immutable: false,
             mainFocus: state.mainFocus,
+            loadThumbsDirectly: _nextThumbnails,
             searchWidget: SearchAndFocus(searchWidget(context), searchFocus),
             refresh: () {
               _refresh();

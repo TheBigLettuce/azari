@@ -19,13 +19,13 @@ import 'package:pigeon/pigeon.dart';
       copyrightHeader: "pigeons/copyright.txt"),
 )
 class Directory {
-  int thumbFileId;
-  String bucketId;
-  String name;
+  final int thumbFileId;
+  final String bucketId;
+  final String name;
 
-  int lastModified;
+  final int lastModified;
 
-  Directory(
+  const Directory(
       {required this.bucketId,
       required this.thumbFileId,
       required this.name,
@@ -33,22 +33,29 @@ class Directory {
 }
 
 class DirectoryFile {
-  int id;
-  String bucketId;
+  final int id;
+  final String bucketId;
 
-  String name;
-  String originalUri;
+  final String name;
+  final String originalUri;
 
-  int lastModified;
+  final int lastModified;
 
-  bool isVideo;
+  final int height;
+  final int width;
 
-  DirectoryFile(
+  final bool isVideo;
+  final bool isGif;
+
+  const DirectoryFile(
       {required this.id,
       required this.bucketId,
       required this.lastModified,
       required this.originalUri,
       required this.name,
+      required this.isGif,
+      required this.height,
+      required this.width,
       required this.isVideo});
 }
 

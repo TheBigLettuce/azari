@@ -62,6 +62,9 @@ class GalleryImpl implements GalleryApi {
             bucketId: e.bucketId,
             name: e.name,
             lastModified: e.lastModified,
+            height: e.height,
+            width: e.width,
+            isGif: e.isGif,
             originalUri: e.originalUri,
             isVideo: e.isVideo))
         .toList()));

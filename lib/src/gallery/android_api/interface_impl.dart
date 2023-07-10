@@ -119,12 +119,6 @@ class AndroidGalleryFiles
   }
 
   @override
-  Result<SystemGalleryDirectoryFile> filter(String s) {
-    // TODO: implement filter
-    throw UnimplementedError();
-  }
-
-  @override
   // TODO: implement reachedEnd
   bool get reachedEnd => throw UnimplementedError();
 
@@ -133,11 +127,6 @@ class AndroidGalleryFiles
     return Future.value(Result(
         (i) => db.systemGalleryDirectoryFiles.getSync(i)!,
         db.systemGalleryDirectoryFiles.countSync()));
-  }
-
-  @override
-  void resetFilter() {
-    // TODO: implement resetFilter
   }
 
   @override

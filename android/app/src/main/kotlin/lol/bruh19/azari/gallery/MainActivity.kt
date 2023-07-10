@@ -13,6 +13,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -23,6 +24,7 @@ import android.util.Log
 import android.util.Size
 import android.util.TypedValue
 import android.view.ContextThemeWrapper
+import android.view.View
 import android.webkit.MimeTypeMap
 import androidx.annotation.NonNull
 import androidx.documentfile.provider.DocumentFile
@@ -30,7 +32,10 @@ import androidx.lifecycle.lifecycleScope
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.common.StandardMethodCodec
+import io.flutter.plugin.platform.PlatformView
+import io.flutter.plugin.platform.PlatformViewFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -43,6 +48,8 @@ import okio.Path.Companion.toPath
 import okio.buffer
 import okio.sink
 import okio.use
+import pl.droidsonroids.gif.GifDrawable
+import pl.droidsonroids.gif.GifImageView
 import java.io.ByteArrayOutputStream
 import java.util.Calendar
 import kotlin.coroutines.CoroutineContext
@@ -77,13 +84,19 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+
         mover = Mover(
             lifecycleScope.coroutineContext,
             context,
             GalleryApi(flutterEngine.dartExecutor.binaryMessenger)
         )
 
-        super.configureFlutterEngine(flutterEngine)
+        flutterEngine.platformViewsController.registry.registerViewFactory(
+            "imageview",
+            NativeViewFactory()
+        )
+
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             CHANNEL,
@@ -131,18 +144,18 @@ class MainActivity : FlutterActivity() {
                     }
                 }
 
-                "moveFromMediaStore" -> {
-                    val map = call.arguments as HashMap<String, String>
-                    val from = map["from"]
-                    val to = map["to"]
-                    if (to == null) {
-                        result.error("to is empty", null, null)
-                    } else if (from == null) {
-                        result.error("from is empty", null, null)
-                    } else {
-                        mover.copyMediastoreTo(to, from, result)
-                    }
-                }
+//                "moveFromMediaStore" -> {
+//                    val map = call.arguments as HashMap<String, String>
+//                    val from = map["from"]
+//                    val to = map["to"]
+//                    if (to == null) {
+//                        result.error("to is empty", null, null)
+//                    } else if (from == null) {
+//                        result.error("from is empty", null, null)
+//                    } else {
+//                        mover.copyMediastoreTo(to, from, result)
+//                    }
+//                }
 
                 "refreshFiles" -> {
                     runOnUiThread {
@@ -194,7 +207,7 @@ class Mover(
     private val scope = CoroutineScope(coContext + Dispatchers.IO)
 
     private val isLockedMux = Mutex()
-    private val copyFileLock = Mutex()
+//    private val copyFileLock = Mutex()
 
     init {
         scope.launch {
@@ -310,58 +323,58 @@ class Mover(
         }
     }
 
-    fun copyMediastoreTo(to: String, from: String, result: MethodChannel.Result) {
-        scope.launch {
-            copyFileLock.lock()
-            val uri = Uri.parse(from)
-            if (uri.lastPathSegment == null) {
-                result.error("from is invalid", null, null)
-                copyFileLock.unlock()
-                return@launch
-            }
-
-            val filePath = to.toPath().resolve(uri.lastPathSegment!!)
-            try {
-                if (FileSystem.SYSTEM.exists(filePath)) {
-                    result.success(filePath.toString())
-                    copyFileLock.unlock()
-                    return@launch
-                }
-
-                context.contentResolver.openInputStream(Uri.parse(from))?.use { stream ->
-                    java.nio.file.Files.copy(stream, filePath.toNioPath())
-
-//                    FileSystem.SYSTEM.openReadWrite(
-//                        filePath
-//                    ).use { handle ->
-//                        val buf = handle.sink().buffer()
-//                        val source = stream.source()
+//    fun copyMediastoreTo(to: String, from: String, result: MethodChannel.Result) {
+//        scope.launch {
+//            copyFileLock.lock()
+//            val uri = Uri.parse(from)
+//            if (uri.lastPathSegment == null) {
+//                result.error("from is invalid", null, null)
+//                copyFileLock.unlock()
+//                return@launch
+//            }
 //
-//                        try {
-//                            buf.writeAll(source)
-//                            buf.flush()
-//                            handle.flush()
+//            val filePath = to.toPath().resolve(uri.lastPathSegment!!)
+//            try {
+//                if (FileSystem.SYSTEM.exists(filePath)) {
+//                    result.success(filePath.toString())
+//                    copyFileLock.unlock()
+//                    return@launch
+//                }
 //
-//                            buf.close()
-//                            source.close()
-//                        } catch (e: Exception) {
-//                            buf.close()
-//                            source.close()
-//                            throw e
-//                        }
-//                    }
-
-                }
-            } catch (e: Exception) {
-                result.error(e.toString(), null, null)
-                copyFileLock.unlock()
-                return@launch
-            }
-
-            copyFileLock.unlock()
-            result.success(filePath.toString())
-        }
-    }
+//                context.contentResolver.openInputStream(Uri.parse(from))?.use { stream ->
+//                    java.nio.file.Files.copy(stream, filePath.toNioPath())
+//
+////                    FileSystem.SYSTEM.openReadWrite(
+////                        filePath
+////                    ).use { handle ->
+////                        val buf = handle.sink().buffer()
+////                        val source = stream.source()
+////
+////                        try {
+////                            buf.writeAll(source)
+////                            buf.flush()
+////                            handle.flush()
+////
+////                            buf.close()
+////                            source.close()
+////                        } catch (e: Exception) {
+////                            buf.close()
+////                            source.close()
+////                            throw e
+////                        }
+////                    }
+//
+//                }
+//            } catch (e: Exception) {
+//                result.error(e.toString(), null, null)
+//                copyFileLock.unlock()
+//                return@launch
+//            }
+//
+//            copyFileLock.unlock()
+//            result.success(filePath.toString())
+//        }
+//    }
 
     fun refreshFiles(dirId: String) {
         if (isLockedMux.isLocked) {
@@ -403,7 +416,10 @@ class Mover(
             MediaStore.Files.FileColumns.DISPLAY_NAME,
             MediaStore.Files.FileColumns.DATE_MODIFIED,
             MediaStore.Files.FileColumns._ID,
-            MediaStore.Files.FileColumns.MEDIA_TYPE
+            MediaStore.Files.FileColumns.MEDIA_TYPE,
+            MediaStore.Files.FileColumns.MIME_TYPE,
+            MediaStore.Files.FileColumns.HEIGHT,
+            MediaStore.Files.FileColumns.WIDTH
         )
 
         context.contentResolver.query(
@@ -420,6 +436,10 @@ class Mover(
             val date_modified =
                 cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_MODIFIED)
             val media_type = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE)
+
+            val media_height = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT)
+            val media_width = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH)
+            val media_mime = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
 
             if (!cursor.moveToFirst()) {
                 return@use
@@ -438,6 +458,8 @@ class Mover(
                     val lastmodifval = cursor.getLong(date_modified)
                     val nameval = cursor.getString(b_display_name)
                     val directoryidval = cursor.getString(bucket_id)
+                    val heightval = cursor.getLong(media_height)
+                    val widthval = cursor.getLong(media_width)
 
                     list.add(
                         DirectoryFile(
@@ -446,7 +468,10 @@ class Mover(
                             name = nameval,
                             originalUri = uri.toString(),
                             lastModified = lastmodifval,
-                            cursor.getInt(media_type) == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO
+                            isVideo = cursor.getInt(media_type) == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO,
+                            isGif = cursor.getString(media_mime) == "image/gif",
+                            height = heightval,
+                            width = widthval
                         )
                     )
 
@@ -550,30 +575,31 @@ class Mover(
                             name = nameval
                         )
                     )
+
+                    if (list.count() == 40) {
+                        val copy = list.toList()
+                        list.clear()
+
+                        CoroutineScope(Dispatchers.Main).launch {
+                            galleryApi.updateDirectories(
+                                copy,
+                                !cursor.isLast
+                            ) {}
+                        }.join()
+                    }
                 } while (
                     cursor.moveToNext()
                 )
 
-
                 //map.values.
-                if (map.isEmpty()) {
-                    return@use
-                }
-
-                filterAndSendThumbs(list.map { it.thumbFileId })
-
-                for (elem in list.chunked(40)) {
-                    val dirs = elem.toList()
-
+                if (list.isNotEmpty()) {
                     CoroutineScope(Dispatchers.Main).launch {
                         galleryApi.updateDirectories(
-                            dirs,
+                            list,
                             false
                         ) {}
                     }.join()
                 }
-
-
             } catch (e: java.lang.Exception) {
                 Log.e("refreshMediastore", "cursor block fail", e)
             }
@@ -608,6 +634,80 @@ class Mover(
         scope.launch {
             channel.send(op)
         }
+    }
+}
+
+private val imagesMutex = Mutex()
+
+internal class ImageView(context: Context, id: Int, params: Map<String, String>) : PlatformView {
+    private var imageView: View?
+    private var recycle: (() -> Unit)? = null
+
+    override fun getView(): View? {
+        return imageView
+    }
+
+    override fun dispose() {
+        imageView?.invalidate()
+        imageView = null
+        recycle?.invoke()
+        recycle = null
+    }
+
+    init {
+        val isGif = params.containsKey("gif")
+
+        imageView = if (isGif) {
+            GifImageView(context)
+        } else {
+            android.widget.ImageView(context)
+        }
+
+
+        CoroutineScope(Dispatchers.IO).launch {
+            imagesMutex.lock()
+            try {
+                if (isGif) {
+                    val drawable = GifDrawable(context.contentResolver, Uri.parse(params["uri"]))
+
+                    CoroutineScope(Dispatchers.Main).launch {
+                        if (imageView == null) {
+                            drawable.recycle()
+                        } else {
+                            recycle = {
+                                drawable.recycle()
+                            }
+                            (imageView as GifImageView).setImageDrawable(drawable)
+                        }
+                    }.join()
+                } else {
+                    context.contentResolver.openInputStream(Uri.parse(params["uri"]))
+                        ?.use { stream ->
+                            val b = BitmapFactory.decodeStream(stream)
+                            CoroutineScope(Dispatchers.Main).launch {
+                                if (imageView == null) {
+                                    b.recycle()
+                                } else {
+                                    recycle = {
+                                        b.recycle()
+                                    }
+                                    (imageView as android.widget.ImageView).setImageBitmap(b)
+                                }
+                            }.join()
+                        }
+                }
+            } catch (e: java.lang.Exception) {
+                Log.e("ImageView bitmap", e.toString())
+            }
+
+            imagesMutex.unlock()
+        }
+    }
+}
+
+class NativeViewFactory : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
+    override fun create(context: Context, viewId: Int, args: Any?): PlatformView {
+        return ImageView(context, viewId, args as Map<String, String>)
     }
 }
 

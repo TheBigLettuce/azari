@@ -1,3 +1,6 @@
+1.3.0:
+— Working Android gallery, read only.
+
 1.2.6:
 — Rudimental Android gallery API functions, not ready yet,
 — Add more color to the image view, extracted from the thumbnail,

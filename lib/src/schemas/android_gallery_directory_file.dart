@@ -23,21 +23,28 @@ class SystemGalleryDirectoryFile implements Cell<void> {
   Id? isarId;
 
   @Index(unique: true)
-  int id;
-  String bucketId;
+  final int id;
+  final String bucketId;
   @Index()
-  String name;
+  final String name;
   @Index()
-  int lastModified;
-  String originalUri;
+  final int lastModified;
+  final String originalUri;
 
-  bool isVideo;
+  final int height;
+  final int width;
+
+  final bool isVideo;
+  final bool isGif;
 
   SystemGalleryDirectoryFile({
     required this.id,
     required this.bucketId,
     required this.name,
     required this.isVideo,
+    required this.isGif,
+    required this.height,
+    required this.width,
     required this.lastModified,
     required this.originalUri,
   });
@@ -80,19 +87,15 @@ class SystemGalleryDirectoryFile implements Cell<void> {
       return Content(ContentType.video, true, videoPath: originalUri);
     }
 
-    ImageProvider provider;
-    var path = joinAll([temporaryImagesDir(), split(originalUri).last]);
-    if (File(path).existsSync()) {
-      if (File(path).lengthSync() == 0) {
-        provider = MemoryImage(kTransparentImage);
-      } else {
-        provider = FileImage(File(path));
-      }
-    } else {
-      provider = _PlatformImage(originalUri);
+    if (isGif) {
+      return Content(ContentType.androidGif, true,
+          androidUri: originalUri,
+          size: Size(width.toDouble(), height.toDouble()));
     }
 
-    return Content(ContentType.image, true, image: provider);
+    return Content(ContentType.androidImage, true,
+        androidUri: originalUri,
+        size: Size(width.toDouble(), height.toDouble()));
   }
 
   @override
@@ -106,7 +109,10 @@ class SystemGalleryDirectoryFile implements Cell<void> {
         thumb: KeyMemoryImage(
             id.toString() + record.$1.length.toString(), record.$1),
         name: name,
-        stickers: [if (isVideo) Icons.play_circle],
+        stickers: [
+          if (isVideo) Icons.play_circle,
+          if (isGif) Icons.gif_box_outlined
+        ],
         loaded: record.$2);
   }
 
@@ -121,54 +127,6 @@ class SystemGalleryDirectoryFile implements Cell<void> {
   return thumb == null
       ? (kTransparentImage, false)
       : (thumb.data as Uint8List, true);
-}
-
-void loadNextImage(String originalUri) {
-  if (File(joinAll([temporaryImagesDir(), split(originalUri).last]))
-      .existsSync()) {
-    return;
-  }
-  const MethodChannel channel = MethodChannel("lol.bruh19.azari.gallery");
-  channel.invokeMethod("moveFromMediaStore", {
-    "from": originalUri,
-    "to": temporaryImagesDir(),
-  });
-}
-
-class _PlatformImage extends ImageProvider<ImageProvider> {
-  final String path;
-
-  @override
-  Future<ImageProvider> obtainKey(ImageConfiguration configuration) async {
-    const MethodChannel channel = MethodChannel("lol.bruh19.azari.gallery");
-    try {
-      var p = joinAll([temporaryImagesDir(), split(path).last]);
-      if (File(p).existsSync()) {
-        return FileImage(File(p));
-      }
-      String resp = await channel.invokeMethod("moveFromMediaStore", {
-        "from": path,
-        "to": temporaryImagesDir(),
-      });
-
-      if (File(resp).lengthSync() == 0) {
-        return MemoryImage(kTransparentImage);
-      }
-
-      return FileImage(File(resp));
-    } catch (e) {
-      log("copy file", level: Level.SEVERE.value, error: e);
-      return MemoryImage(kTransparentImage);
-    }
-  }
-
-  @override
-  ImageStreamCompleter loadBuffer(
-      ImageProvider key, DecoderBufferCallback decode) {
-    return key.loadBuffer(key, decode);
-  }
-
-  const _PlatformImage(this.path);
 }
 
 class KeyMemoryImage extends ImageProvider<MemoryImage> {

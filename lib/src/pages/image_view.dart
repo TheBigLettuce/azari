@@ -10,6 +10,7 @@ import 'dart:io';
 
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
@@ -633,33 +634,69 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                             var fileContent =
                                 widget.getCell(indx).fileDisplay();
 
-                            if (fileContent.type == ContentType.video) {
-                              return PhotoViewGalleryPageOptions.customChild(
-                                  disableGestures: true,
-                                  tightMode: true,
-                                  child: Platform.isLinux
-                                      ? PhotoGalleryPageVideoLinux(
-                                          url: fileContent.videoPath!,
-                                          localVideo: fileContent.isVideoLocal)
-                                      : PhotoGalleryPageVideo(
-                                          url: fileContent.videoPath!,
-                                          localVideo: fileContent.isVideoLocal,
-                                        ));
-                            } else if (fileContent.type == ContentType.image) {
-                              return PhotoViewGalleryPageOptions(
-                                  minScale:
-                                      PhotoViewComputedScale.contained * 0.8,
-                                  maxScale:
-                                      PhotoViewComputedScale.covered * 1.8,
-                                  initialScale:
-                                      PhotoViewComputedScale.contained,
-                                  filterQuality: FilterQuality.high,
-                                  imageProvider:
-                                      fakeProvider ?? fileContent.image);
-                            } else {
-                              return PhotoViewGalleryPageOptions.customChild(
-                                  disableGestures: true,
-                                  child: const Icon(Icons.error_outline));
+                            switch (fileContent.type) {
+                              case ContentType.androidImage:
+                              case ContentType.androidGif:
+                                return PhotoViewGalleryPageOptions.customChild(
+                                    // minScale:
+                                    //     PhotoViewComputedScale.contained * 0.8,
+                                    // maxScale:
+                                    //     PhotoViewComputedScale.covered * 1.8,
+                                    // initialScale:
+                                    //     PhotoViewComputedScale.contained,
+                                    // initialScale: ,
+                                    filterQuality: FilterQuality.high,
+                                    childSize: fileContent.size,
+                                    disableGestures: true,
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                          maxHeight: MediaQuery.of(context)
+                                              .size
+                                              .height,
+                                          maxWidth: MediaQuery.of(context)
+                                              .size
+                                              .width),
+                                      child: InteractiveViewer(
+                                          child: AndroidView(
+                                        viewType: "imageview",
+                                        hitTestBehavior:
+                                            PlatformViewHitTestBehavior
+                                                .transparent,
+                                        creationParams: {
+                                          "uri": fileContent.androidUri,
+                                          if (fileContent.type ==
+                                              ContentType.androidGif)
+                                            "gif": "",
+                                        },
+                                        creationParamsCodec:
+                                            const StandardMessageCodec(),
+                                      )),
+                                    ));
+                              case ContentType.image:
+                                return PhotoViewGalleryPageOptions(
+                                    minScale:
+                                        PhotoViewComputedScale.contained * 0.8,
+                                    maxScale:
+                                        PhotoViewComputedScale.covered * 1.8,
+                                    initialScale:
+                                        PhotoViewComputedScale.contained,
+                                    filterQuality: FilterQuality.high,
+                                    imageProvider:
+                                        fakeProvider ?? fileContent.image);
+                              case ContentType.video:
+                                return PhotoViewGalleryPageOptions.customChild(
+                                    disableGestures: true,
+                                    tightMode: true,
+                                    child: Platform.isLinux
+                                        ? PhotoGalleryPageVideoLinux(
+                                            url: fileContent.videoPath!,
+                                            localVideo:
+                                                fileContent.isVideoLocal)
+                                        : PhotoGalleryPageVideo(
+                                            url: fileContent.videoPath!,
+                                            localVideo:
+                                                fileContent.isVideoLocal,
+                                          ));
                             }
                           }),
                     ),

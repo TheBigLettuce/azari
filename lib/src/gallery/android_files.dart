@@ -158,19 +158,6 @@ class _AndroidFilesState extends State<AndroidFiles>
             hasReachedEnd: () => true,
             immutable: false,
             tightMode: true,
-            pageChangeImage: (state) {
-              if ((state.cellCount - (state.currentPage + 1)) > 0) {
-                loadNextImage(
-                    state.widget.getCell(state.currentPage + 1).originalUri);
-              }
-            },
-            addIconsImage: (state) {
-              return [
-                IconButton(
-                    onPressed: state.refreshImage,
-                    icon: const Icon(Icons.refresh))
-              ];
-            },
             aspectRatio:
                 state.settings.gallerySettings.filesAspectRatio?.value ?? 1,
             hideAlias: state.settings.gallerySettings.hideFileName,

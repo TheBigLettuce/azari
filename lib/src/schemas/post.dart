@@ -253,12 +253,12 @@ class Post implements Cell<PostShrinked> {
 
     var type = lookupMimeType(url);
     if (type == null) {
-      return Content(ContentType.image, false);
+      return const Content(ContentType.image, false);
     }
 
-    var typeHalf = type.split("/")[0];
+    var typeHalf = type.split("/");
 
-    if (typeHalf == "image") {
+    if (typeHalf[0] == "image") {
       ImageProvider provider;
       try {
         provider = NetworkImage(url);
@@ -266,11 +266,12 @@ class Post implements Cell<PostShrinked> {
         provider = MemoryImage(kTransparentImage);
       }
 
-      return Content(ContentType.image, false, image: provider);
-    } else if (typeHalf == "video") {
+      return Content(ContentType.image, false,
+          image: provider, gif: typeHalf[1] == "gif");
+    } else if (typeHalf[0] == "video") {
       return Content(ContentType.video, false, videoPath: url);
     } else {
-      return Content(ContentType.image, false);
+      return const Content(ContentType.image, false);
     }
   }
 
@@ -288,8 +289,11 @@ class Post implements Cell<PostShrinked> {
       provider = MemoryImage(kTransparentImage);
     }
 
+    final content = fileDisplay();
+
     return CellData(thumb: provider, name: alias(isList), stickers: [
-      if (fileDisplay().videoPath != null) Icons.play_circle,
+      if (content.videoPath != null) Icons.play_circle,
+      if (content.gif == true) Icons.gif_box_outlined,
       if (tags.contains("original")) kOriginalSticker
     ]);
   }
