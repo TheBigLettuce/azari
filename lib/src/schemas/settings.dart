@@ -14,26 +14,26 @@ part 'settings.g.dart';
 
 @collection
 class Settings {
-  Id id = 0;
+  final Id id = 0;
 
   @enumerated
-  GridColumn picturesPerRow;
-  bool listViewBooru;
+  final GridColumn picturesPerRow;
+  final bool listViewBooru;
 
-  String path;
+  final String path;
   @enumerated
-  Booru selectedBooru;
+  final Booru selectedBooru;
   @enumerated
-  DisplayQuality quality;
+  final DisplayQuality quality;
   @enumerated
-  AspectRatio ratio;
-  bool safeMode;
+  final AspectRatio ratio;
+  final bool safeMode;
 
-  bool autoRefresh;
-  int autoRefreshMicroseconds;
-  GallerySettings gallerySettings;
+  final bool autoRefresh;
+  final int autoRefreshMicroseconds;
+  final GallerySettings gallerySettings;
 
-  Settings(
+  const Settings(
       {required this.path,
       required this.selectedBooru,
       required this.quality,

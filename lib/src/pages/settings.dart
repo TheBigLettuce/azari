@@ -13,10 +13,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/main.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
+import 'package:gallery/src/pages/blacklisted_directores.dart';
 import 'package:gallery/src/pages/server_settings.dart';
 import 'package:gallery/src/schemas/settings.dart' as schema_settings;
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/schemas/thumbnail.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import '../schemas/settings.dart';
 
@@ -116,7 +116,7 @@ class _SettingsListState extends State<SettingsList> {
             return const ServerSettingsPage();
           })),
         ),
-        settingsLabel("Booru", titleStyle),
+        settingsLabel(AppLocalizations.of(context)!.booruLabel, titleStyle),
         ListTile(
           title: Text(AppLocalizations.of(context)!.downloadDirectorySetting),
           onTap: _extend,
@@ -203,7 +203,7 @@ class _SettingsListState extends State<SettingsList> {
         ),
         ListTile(
           title: Text(
-            "Cell aspect ratio",
+            AppLocalizations.of(context)!.cellAspectRadio,
           ),
           trailing: DropdownButton<schema_settings.AspectRatio>(
             underline: Container(),
@@ -261,8 +261,8 @@ class _SettingsListState extends State<SettingsList> {
           ),
         ),
         ListTile(
-          title: Text("Auto refresh"),
-          subtitle: Text("Refresh booru main grid on app open if it is stale.",
+          title: Text(AppLocalizations.of(context)!.autoRefresh),
+          subtitle: Text(AppLocalizations.of(context)!.autoRefreshSubtitle,
               maxLines: extendListSubtitle ? null : 2),
           onTap: _extend,
           trailing: Switch(
@@ -275,9 +275,9 @@ class _SettingsListState extends State<SettingsList> {
           ),
         ),
         ListTile(
-          title: Text("Auto refresh stale hours"),
+          title: Text(AppLocalizations.of(context)!.autoRefreshHours),
           subtitle: Text(
-            "After this time the grid becomes stale.",
+            AppLocalizations.of(context)!.autoRefreshHoursSubtitle,
             maxLines: extendListSubtitle ? null : 2,
           ),
           onTap: _extend,
@@ -289,7 +289,7 @@ class _SettingsListState extends State<SettingsList> {
                     context: context,
                     builder: (context) {
                       return AlertDialog(
-                        title: Text("Enter time in hours"),
+                        title: Text(AppLocalizations.of(context)!.timeInHours),
                         content: TextField(
                           onSubmitted: (value) {
                             settingsIsar().writeTxnSync(() => settingsIsar()
@@ -316,9 +316,9 @@ class _SettingsListState extends State<SettingsList> {
                     .toString()),
           ),
         ),
-        settingsLabel("Directory", titleStyle),
+        settingsLabel(AppLocalizations.of(context)!.dirLabel, titleStyle),
         ListTile(
-          title: Text("Hide directory names"),
+          title: Text(AppLocalizations.of(context)!.dirHideNames),
           trailing: Switch(
             onChanged: (value) {
               settingsIsar().writeTxnSync(() => settingsIsar().settings.putSync(
@@ -331,7 +331,7 @@ class _SettingsListState extends State<SettingsList> {
         ),
         ListTile(
           title: Text(
-            "Directory cell aspect ratio",
+            AppLocalizations.of(context)!.dirAspectRatio,
           ),
           trailing: DropdownButton<schema_settings.AspectRatio>(
             underline: Container(),
@@ -355,7 +355,7 @@ class _SettingsListState extends State<SettingsList> {
           ),
         ),
         ListTile(
-            title: Text("Directory grid columns"),
+            title: Text(AppLocalizations.of(context)!.dirGridColumns),
             trailing: DropdownButton<schema_settings.GridColumn>(
               underline: Container(),
               borderRadius: BorderRadius.circular(25),
@@ -374,9 +374,9 @@ class _SettingsListState extends State<SettingsList> {
                 }
               },
             )),
-        settingsLabel("Files", titleStyle),
+        settingsLabel(AppLocalizations.of(context)!.filesLabel, titleStyle),
         ListTile(
-          title: Text("Hide file names"),
+          title: Text(AppLocalizations.of(context)!.filesHideNames),
           trailing: Switch(
             onChanged: (value) {
               settingsIsar().writeTxnSync(() => settingsIsar().settings.putSync(
@@ -389,7 +389,7 @@ class _SettingsListState extends State<SettingsList> {
         ),
         ListTile(
           title: Text(
-            "Files cell aspect ratio",
+            AppLocalizations.of(context)!.filesAspectRatio,
           ),
           trailing: DropdownButton<schema_settings.AspectRatio>(
             underline: Container(),
@@ -413,7 +413,7 @@ class _SettingsListState extends State<SettingsList> {
           ),
         ),
         ListTile(
-            title: Text("Files grid columns"),
+            title: Text(AppLocalizations.of(context)!.filesGridColumns),
             trailing: DropdownButton<schema_settings.GridColumn>(
               underline: Container(),
               borderRadius: BorderRadius.circular(25),
@@ -443,8 +443,7 @@ class _SettingsListState extends State<SettingsList> {
           },
           title: const Text("GPL-2.0-only"),
         ),
-
-        settingsLabel("Metrics", titleStyle), // TODO: change
+        settingsLabel(AppLocalizations.of(context)!.metricsLabel, titleStyle),
         ListTile(
           title: Text(AppLocalizations.of(context)!.savedTagsCount),
           enabled: false,
@@ -453,16 +452,22 @@ class _SettingsListState extends State<SettingsList> {
         ),
         if (Platform.isAndroid)
           ListTile(
-            title: Text("Thumbnails DB size"),
+            title: const Text("Blacklisted directories"), // TODO: change
+            onTap: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BlacklistedDirectories(),
+                  ));
+            },
+          ),
+        if (Platform.isAndroid)
+          ListTile(
+            title: Text(AppLocalizations.of(context)!.thumbnailsCSize),
             subtitle: Text(_calculateMBSize(thumbnailIsar().getSizeSync())),
             trailing: PopupMenuButton(
               itemBuilder: (context) {
                 return [
-                  PopupMenuItem(
-                      child: TextButton(
-                    onPressed: () {},
-                    child: Text("Rebuild"),
-                  )),
                   PopupMenuItem(
                       child: TextButton(
                           onPressed: () {
@@ -472,13 +477,16 @@ class _SettingsListState extends State<SettingsList> {
                                   context: context,
                                   builder: (context) {
                                     return AlertDialog(
-                                      title: Text("Are you sure?"),
+                                      title: Text(AppLocalizations.of(context)!
+                                          .areYouSure),
                                       actions: [
                                         TextButton(
                                             onPressed: () {
                                               Navigator.pop(context);
                                             },
-                                            child: Text("no")),
+                                            child: Text(
+                                                AppLocalizations.of(context)!
+                                                    .no)),
                                         TextButton(
                                             onPressed: () {
                                               thumbnailIsar().writeTxnSync(() =>
@@ -487,16 +495,19 @@ class _SettingsListState extends State<SettingsList> {
                                               setState(() {});
                                               Navigator.pop(context);
                                             },
-                                            child: Text("yes")),
+                                            child: Text(
+                                                AppLocalizations.of(context)!
+                                                    .yes)),
                                       ],
                                     );
                                   },
                                 ));
                           },
-                          child: Text("Purge")))
+                          child: Text(
+                              AppLocalizations.of(context)!.purgeThumbnails)))
                 ];
               },
-              icon: Icon(Icons.more_horiz_rounded),
+              icon: const Icon(Icons.more_horiz_rounded),
             ),
           ),
       ];

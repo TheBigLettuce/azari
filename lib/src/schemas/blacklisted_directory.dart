@@ -8,7 +8,8 @@ class BlacklistedDirectory {
   Id get isarId => fastHash(bucketId);
 
   @Index(unique: true, replace: true)
-  String bucketId;
+  final String bucketId;
+  final String name;
 
-  BlacklistedDirectory(this.bucketId);
+  BlacklistedDirectory(this.bucketId, this.name);
 }

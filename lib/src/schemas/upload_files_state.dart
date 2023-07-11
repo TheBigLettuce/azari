@@ -13,7 +13,7 @@ part 'upload_files_state.g.dart';
 class UploadFilesState {
   Id? isarId;
 
-  List<Batch> upload;
+  final List<Batch> upload;
 
   UploadFilesState(this.upload);
 }

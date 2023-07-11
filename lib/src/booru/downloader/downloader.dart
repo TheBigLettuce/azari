@@ -190,7 +190,6 @@ class Downloader with CancelTokens {
 
     var filePath = path.joinAll([downloadtd.path, d.site, d.name]);
 
-    // can it throw 🤔
     if (File(filePath).existsSync()) {
       _done();
       return;
@@ -236,7 +235,6 @@ class Downloader with CancelTokens {
         );
       }
     }).onError((error, stackTrace) {
-      // print("d: ${error.message}, ${error.response!.data}");
       settingsIsar().writeTxnSync(
         () {
           _removeToken(d.id!);

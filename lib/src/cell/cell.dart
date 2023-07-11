@@ -12,21 +12,51 @@ import 'data.dart';
 
 enum ContentType { image, video, androidImage, androidGif }
 
-class Content {
-  final ContentType type;
-  final bool isVideoLocal;
+sealed class Contentable {
+  const Contentable();
+}
 
-  final ImageProvider? image;
+class EmptyContent extends Contentable {
+  const EmptyContent();
+}
 
-  final String? androidUri;
+class AndroidGif extends Contentable {
+  final String uri;
+  final Size size;
 
-  final String? videoPath;
-  final bool? gif;
+  const AndroidGif({required this.uri, required this.size});
+}
 
-  final Size? size;
+class AndroidVideo extends Contentable {
+  final String uri;
+  final Size size;
 
-  const Content(this.type, this.isVideoLocal,
-      {this.image, this.videoPath, this.androidUri, this.size, this.gif});
+  const AndroidVideo({required this.uri, required this.size});
+}
+
+class AndroidImage extends Contentable {
+  final String uri;
+  final Size size;
+
+  const AndroidImage({required this.uri, required this.size});
+}
+
+class NetImage extends Contentable {
+  final ImageProvider provider;
+
+  const NetImage(this.provider);
+}
+
+class NetGif extends Contentable {
+  final ImageProvider provider;
+
+  const NetGif(this.provider);
+}
+
+class NetVideo extends Contentable {
+  final String uri;
+
+  const NetVideo(this.uri);
 }
 
 class AddInfoColorData {
@@ -56,7 +86,7 @@ abstract class Cell<B> {
   @ignore
   List<Widget>? Function() get addButtons;
 
-  Content fileDisplay();
+  Contentable fileDisplay();
 
   String fileDownloadUrl();
 

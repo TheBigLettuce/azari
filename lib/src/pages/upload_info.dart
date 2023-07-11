@@ -80,7 +80,6 @@ class _UploadInfoState extends State<UploadInfo> {
                     upload.failReason! == "" ? null : Text(upload.failReason!),
               );
             }),
-      overrideOnPop: () => Future.value(true),
     );
   }
 }

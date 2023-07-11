@@ -18,7 +18,7 @@ class ServerSettingsPage extends StatefulWidget {
 
 class _ServerSettingsPageState extends State<ServerSettingsPage> {
   ServerSettings settings =
-      settingsIsar().serverSettings.getSync(0) ?? ServerSettings.empty();
+      settingsIsar().serverSettings.getSync(0) ?? const ServerSettings.empty();
 
   final SkeletonState skeletonState = SkeletonState.settings();
 

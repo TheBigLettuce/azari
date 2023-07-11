@@ -4,8 +4,8 @@ part 'gallery_last_modified.g.dart';
 
 @collection
 class GalleryLastModified {
-  Id isarId = 0;
+  final Id isarId = 0;
 
-  String version;
-  GalleryLastModified(this.version);
+  final String version;
+  const GalleryLastModified(this.version);
 }

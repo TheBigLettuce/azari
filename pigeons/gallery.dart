@@ -62,9 +62,11 @@ class DirectoryFile {
 @FlutterApi()
 abstract class GalleryApi {
   void updateDirectories(List<Directory> d, bool inRefresh);
-  void updatePictures(
-      List<DirectoryFile?> f, String bucketId, int startTime, bool inRefresh);
+  void updatePictures(List<DirectoryFile?> f, String bucketId, int startTime,
+      bool inRefresh, bool empty);
   void addThumbnails(List<ThumbnailId> thumbs);
+
+  void notify();
 
   List<int> thumbsExist(List<int> ids);
 

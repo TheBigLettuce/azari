@@ -153,8 +153,7 @@ class Uploader {
       uploadsDb.writeTxnSync(() {
         var stack = uploadsDb.uploadFilesStacks.getSync(f.stackId);
         if (stack != null) {
-          uploadsDb.uploadFilesStacks
-              .putSync(stack..status = UploadStatus.failed);
+          uploadsDb.uploadFilesStacks.putSync(stack.failed());
         }
       });
       progress.error(e.toString());

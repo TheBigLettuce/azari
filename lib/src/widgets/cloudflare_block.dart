@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:cookie_jar/cookie_jar.dart' as dio;
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class CloudflareBlock extends StatefulWidget {
   final CloudflareBlockInterface interface;
@@ -34,7 +35,7 @@ class _CloudflareBlockState extends State<CloudflareBlock> {
         Padding(
           padding: const EdgeInsets.only(top: 14, bottom: 14),
           child: Text(
-            "403: Likely Cloudflare", // TODO: change
+            AppLocalizations.of(context)!.cloudflareBlock,
             style: Theme.of(context).textTheme.headlineMedium,
           ),
         ),
@@ -46,7 +47,7 @@ class _CloudflareBlockState extends State<CloudflareBlock> {
                 },
               ));
             },
-            child: const Text("Solve captcha")) // TODO: change
+            child: Text(AppLocalizations.of(context)!.solveCaptcha))
       ],
     ));
   }
@@ -77,11 +78,9 @@ class _AndroidWebviewState extends State<AndroidWebview> {
   }
 
   String _userAgent() {
-    var version = Platform.version;
-    // Only include major and minor version numbers.
-    int index = version.indexOf('.', version.indexOf('.') + 1);
-    version = version.substring(0, index);
-    return "Dart/$version (dart:io)";
+    final version = Platform.version;
+    final index = version.indexOf('.', version.indexOf('.') + 1);
+    return "Dart/${version.substring(0, index)} (dart:io)";
   }
 
   @override
@@ -123,7 +122,7 @@ class _AndroidWebviewState extends State<AndroidWebview> {
                 }
               },
               icon: const Icon(Icons.check)),
-          title: Text("Solve captcha")), // TODO: change
+          title: Text(AppLocalizations.of(context)!.solveCaptcha)),
       body: InAppWebView(
         initialUrlRequest: URLRequest(
           url: WebUri.uri(Uri.https(widget.intf.api.domain)),

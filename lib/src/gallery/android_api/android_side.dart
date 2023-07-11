@@ -1,13 +1,11 @@
-import 'package:gallery/src/db/isar.dart';
-import 'package:gallery/src/gallery/android_api/api.g.dart';
-import 'package:gallery/src/schemas/android_gallery_directory.dart';
-import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
-import 'package:gallery/src/schemas/blacklisted_directory.dart';
-import 'package:gallery/src/schemas/gallery_last_modified.dart';
-import 'package:gallery/src/schemas/thumbnail.dart';
-import 'package:isar/isar.dart';
+// SPDX-License-Identifier: GPL-2.0-only
+//
+// Copyright (C) 2023 Bob
+// This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+// You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'interface_impl.dart';
+part of 'android_api_directories.dart';
 
 class GalleryImpl implements GalleryApi {
   final Isar db;
@@ -18,60 +16,75 @@ class GalleryImpl implements GalleryApi {
         () => db.galleryLastModifieds.putSync(GalleryLastModified(version)));
   }
 
-  final AndroidGallery androidGalleryApi;
-
   factory GalleryImpl.instance() => _global!;
 
-  factory GalleryImpl(AndroidGallery impl) {
+  factory GalleryImpl() {
     if (_global != null) {
       return _global!;
     }
 
-    _global = GalleryImpl._new(impl, openAndroidGalleryIsar());
+    _global = GalleryImpl._new(openAndroidGalleryIsar());
     return _global!;
   }
 
-  GalleryImpl._new(this.androidGalleryApi, this.db);
+  _AndroidGallery? _currentApi;
+
+  void _setCurrentApi(_AndroidGallery api) {
+    _currentApi = api;
+  }
+
+  void _unsetCurrentApi() {
+    _currentApi = null;
+  }
+
+  GalleryImpl._new(this.db);
 
   @override
-  void updatePictures(
-      List<DirectoryFile?> f, String bucketId, int startTime, bool inRefresh) {
-    if (f.isEmpty) {
-      return;
-    }
-
-    var st = androidGalleryApi.currentImages?.startTime;
+  void updatePictures(List<DirectoryFile?> f, String bucketId, int startTime,
+      bool inRefresh, bool empty) {
+    var st = _currentApi?.currentImages?.startTime;
 
     if (st == null || st > startTime) {
       return;
     }
 
-    if (androidGalleryApi.currentImages?.bucketId != bucketId) {
+    if (_currentApi?.currentImages?.bucketId != bucketId) {
       return;
     }
 
-    var db = androidGalleryApi.currentImages?.db;
+    var db = _currentApi?.currentImages?.db;
     if (db == null) {
       return;
     }
 
-    db.writeTxnSync(() => db.systemGalleryDirectoryFiles.putAllSync(f
-        .cast<DirectoryFile>()
-        .map((e) => SystemGalleryDirectoryFile(
-            id: e.id,
-            bucketId: e.bucketId,
-            name: e.name,
-            lastModified: e.lastModified,
-            height: e.height,
-            width: e.width,
-            isGif: e.isGif,
-            originalUri: e.originalUri,
-            isVideo: e.isVideo))
-        .toList()));
-    var callback = androidGalleryApi.currentImages?.callback;
-    if (callback != null) {
-      callback(db.systemGalleryDirectoryFiles.countSync(), inRefresh);
+    if (empty) {
+      _currentApi?.currentImages?.callback
+          ?.call(db.systemGalleryDirectoryFiles.countSync(), inRefresh, true);
     }
+
+    if (f.isEmpty) {
+      return;
+    }
+
+    try {
+      db.writeTxnSync(() => db.systemGalleryDirectoryFiles.putAllSync(f
+          .cast<DirectoryFile>()
+          .map((e) => SystemGalleryDirectoryFile(
+              id: e.id,
+              bucketId: e.bucketId,
+              name: e.name,
+              lastModified: e.lastModified,
+              height: e.height,
+              width: e.width,
+              isGif: e.isGif,
+              originalUri: e.originalUri,
+              isVideo: e.isVideo))
+          .toList()));
+    } catch (e) {
+      log("updatePictures", level: Level.WARNING.value, error: e);
+    }
+    _currentApi?.currentImages?.callback
+        ?.call(db.systemGalleryDirectoryFiles.countSync(), inRefresh, false);
   }
 
   @override
@@ -130,11 +143,14 @@ class GalleryImpl implements GalleryApi {
               lastModified: e.lastModified))
           .toList());
     });
+    _currentApi?.callback
+        ?.call(db.systemGalleryDirectorys.countSync(), inRefresh);
+  }
 
-    if (androidGalleryApi.callback != null) {
-      androidGalleryApi.callback!(
-          db.systemGalleryDirectorys.countSync(), inRefresh);
-    }
+  @override
+  void notify() {
+    _currentApi?.currentImages?.refreshGrid?.call();
+    _currentApi?.refreshGrid?.call();
   }
 }
 

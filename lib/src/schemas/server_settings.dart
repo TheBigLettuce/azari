@@ -4,15 +4,15 @@ part 'server_settings.g.dart';
 
 @collection
 class ServerSettings {
-  Id isarId = 0;
+  final Id isarId = 0;
 
-  String host;
-  List<int> deviceId;
+  final String host;
+  final List<byte> deviceId;
 
-  ServerSettings({required this.host, required this.deviceId});
-  ServerSettings.empty()
+  const ServerSettings({required this.host, required this.deviceId});
+  const ServerSettings.empty()
       : host = "",
-        deviceId = [];
+        deviceId = const [];
 
   ServerSettings copy({String? host, List<int>? deviceId}) => ServerSettings(
       host: host ?? this.host, deviceId: deviceId ?? this.deviceId);

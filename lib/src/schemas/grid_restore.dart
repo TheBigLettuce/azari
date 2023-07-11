@@ -13,7 +13,7 @@ part 'grid_restore.g.dart';
 class GridRestore {
   Id? id;
   @Index(unique: true, replace: true)
-  String path;
-  DateTime date;
+  final String path;
+  final DateTime date;
   GridRestore(this.path) : date = DateTime.now();
 }

@@ -9,22 +9,20 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/gallery/images.dart';
-import 'package:gallery/src/gallery/interface.dart';
-import 'package:gallery/src/gallery/modify_directory.dart';
+import 'package:gallery/src/gallery/server_api/server_files.dart';
+import 'package:gallery/src/gallery/server_api/modify_directory.dart';
 import 'package:gallery/src/pages/senitel.dart';
 import 'package:gallery/src/schemas/directory.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:logging/logging.dart';
-import '../db/isar.dart' as db;
-import 'package:isar/isar.dart';
-import '../widgets/drawer/drawer.dart';
-import '../widgets/grid/callback_grid.dart';
+import '../../db/isar.dart' as db;
+import '../../widgets/drawer/drawer.dart';
+import '../../widgets/grid/callback_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../widgets/search_filter_grid.dart';
-import 'server_api/server.dart';
+import '../../widgets/search_filter_grid.dart';
+import 'server_api_directories.dart';
 
 class ServerDirectories extends StatefulWidget {
   const ServerDirectories({super.key});
@@ -36,36 +34,13 @@ class ServerDirectories extends StatefulWidget {
 class _ServerDirectoriesState extends State<ServerDirectories>
     with SearchFilterGrid<Directory, Directory> {
   late StreamSubscription<Settings?> settingsWatcher;
-  Result<Directory>? directories;
   bool isDisposed = false;
 
-  final api = ServerAPI(db.openServerApiIsar());
-
-  List<Directory>? filterResults;
+  final api = getServerGalleryApi();
 
   late final GridSkeletonStateFilter<Directory, Directory> skeletonState =
       GridSkeletonStateFilter(
-          filterFunc: (value) {
-            var interface =
-                skeletonState.gridKey.currentState?.mutationInterface;
-            if (interface != null) {
-              value = value.trim();
-              if (value.isEmpty) {
-                interface.restore();
-                filterResults = null;
-                return;
-              }
-
-              filterResults = api.db.directorys
-                  .filter()
-                  .dirNameContains(value, caseSensitive: false)
-                  .findAllSync();
-
-              interface.setSource(filterResults!.length, (i) {
-                return filterResults![i];
-              });
-            }
-          },
+          filter: api.getExtra().filter,
           index: kGalleryDrawerIndex,
           onWillPop: () => popUntilSenitel(context));
 
@@ -80,31 +55,6 @@ class _ServerDirectoriesState extends State<ServerDirectories>
 
       setState(() {});
     });
-  }
-
-  Future<int> _refresh(
-    bool sets,
-  ) async {
-    try {
-      var d = await api.directories();
-
-      if (sets) {
-        if (!isDisposed) {
-          setState(() {
-            directories = d;
-          });
-        }
-      } else {
-        directories = d;
-      }
-    } catch (e, trace) {
-      log("refreshing directories",
-          level: Level.SEVERE.value, error: e, stackTrace: trace);
-    }
-
-    return directories == null
-        ? 0
-        : directories!.count; //isar.directorys.count();
   }
 
   @override
@@ -123,7 +73,7 @@ class _ServerDirectoriesState extends State<ServerDirectories>
 
   void _setThumbnail(String hash, Directory d) async {
     try {
-      await api.setThumbnail(hash, d);
+      await api.modify(d, d.copy(imageHash: hash));
 
       skeletonState.gridKey.currentState!.refresh();
     } catch (e, trace) {
@@ -148,28 +98,28 @@ class _ServerDirectoriesState extends State<ServerDirectories>
                 .settings.gallerySettings.directoryAspectRatio?.value ??
             1,
         description: GridDescription(
-          kGalleryDrawerIndex,
-          [
-            GridBottomSheetAction(Icons.info_outline, (selected) {
-              var d = selected.first;
+            kGalleryDrawerIndex,
+            [
+              GridBottomSheetAction(Icons.info_outline, (selected) {
+                var d = selected.first;
 
-              Navigator.push(context, MaterialPageRoute(builder: (context) {
-                return ModifyDirectory(
-                  api,
-                  old: d,
-                  refreshKey: skeletonState.gridKey,
-                );
-              }));
-            }, false, showOnlyWhenSingle: true)
-          ],
-          skeletonState.settings.gallerySettings.directoryColumns ??
-              GridColumn.two,
-          keybindsDescription: AppLocalizations.of(context)!.galleryPageName,
-        ),
+                Navigator.push(context, MaterialPageRoute(builder: (context) {
+                  return ModifyDirectory(
+                    api,
+                    old: d,
+                    refreshKey: skeletonState.gridKey,
+                  );
+                }));
+              }, false, showOnlyWhenSingle: true)
+            ],
+            skeletonState.settings.gallerySettings.directoryColumns ??
+                GridColumn.two,
+            keybindsDescription: AppLocalizations.of(context)!.galleryPageName,
+            listView: skeletonState.settings.listViewBooru),
         updateScrollPosition: (pos, {double? infoPos, int? selectedCell}) {},
         scaffoldKey: skeletonState.scaffoldKey,
         hasReachedEnd: () => true,
-        refresh: () => _refresh(false),
+        refresh: () => api.refresh(),
         searchWidget: SearchAndFocus(searchWidget(context), searchFocus),
         hideAlias: skeletonState.settings.gallerySettings.hideDirectoryName,
         initalScrollPosition: 0,
@@ -198,7 +148,6 @@ class _ServerDirectoriesState extends State<ServerDirectories>
                                         ?.refresh();
                                   }
                                 }).then((value) {
-                                  _refresh(true);
                                   skeletonState.gridKey.currentState!.refresh();
                                 }).onError((error, stackTrace) {
                                   log("adding file to server",
@@ -213,7 +162,7 @@ class _ServerDirectoriesState extends State<ServerDirectories>
               },
               child: Text(AppLocalizations.of(context)!.newDirectory))
         ],
-        getCell: (i) => directories!.cell(i),
+        getCell: (i) => api.directCell(i),
         immutable: false,
         hideShowFab: ({required bool fab, required bool foreground}) =>
             skeletonState.updateFab(setState,
@@ -226,7 +175,7 @@ class _ServerDirectoriesState extends State<ServerDirectories>
                 .getCell(indx);
 
             return Images(
-              api.images(d),
+              api.imagesReadWrite(d),
               cell: d,
               parentFocus: skeletonState.mainFocus,
               setThumbnail: _setThumbnail,

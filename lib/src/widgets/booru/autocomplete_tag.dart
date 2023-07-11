@@ -157,24 +157,39 @@ Widget autocompleteWidget(
 InputDecoration autocompleteBarDecoration(
     BuildContext context, void Function() iconOnPressed, List<Widget>? addItems,
     {required bool showSearch,
+    int? searchCount,
     required bool roundBorders,
     required String hint}) {
   return InputDecoration(
       prefixIcon: FocusNotifier.of(context).hasFocus
           ? IconButton(
               onPressed: FocusNotifier.of(context).unfocus,
-              icon: const Icon(Icons.arrow_back))
+              icon: Badge.count(
+                count: searchCount ?? 0,
+                isLabelVisible: searchCount != null,
+                child: const Icon(Icons.arrow_back),
+              ),
+              padding: EdgeInsets.zero,
+            )
           : showSearch
-              ? const Icon(Icons.search_rounded)
+              ? IconButton(
+                  onPressed: null,
+                  icon: Badge.count(
+                    count: searchCount ?? 0,
+                    isLabelVisible: searchCount != null,
+                    child: const Icon(Icons.search_rounded),
+                  ),
+                  padding: EdgeInsets.zero,
+                )
               : null,
-      suffixIcon: Wrap(
-        children: [
-          IconButton(
-            onPressed: iconOnPressed,
-            icon: const Icon(Icons.close),
-          ),
-          if (addItems != null) ...addItems,
-        ],
+      suffixIcon: addItems == null || addItems.isEmpty
+          ? null
+          : Wrap(
+              children: addItems,
+            ),
+      suffix: IconButton(
+        onPressed: iconOnPressed,
+        icon: const Icon(Icons.close),
       ),
       hintText: hint,
       border: roundBorders

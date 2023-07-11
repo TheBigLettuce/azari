@@ -14,17 +14,17 @@ class File {
   Id? id;
 
   @Index(unique: true, replace: true)
-  String url;
+  final String url;
   @Index(unique: true, replace: true)
-  String name;
+  final String name;
 
-  DateTime date;
+  final DateTime date;
 
-  String site;
+  final String site;
 
-  bool isFailed;
+  final bool isFailed;
 
-  bool inProgress;
+  final bool inProgress;
 
   bool isOnHold() => isFailed == false && inProgress == false;
 

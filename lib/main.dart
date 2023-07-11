@@ -13,15 +13,14 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/gallery/android_api/api.g.dart';
-import 'package:gallery/src/gallery/android_api/android_side.dart';
-import 'package:gallery/src/gallery/android_api/interface_impl.dart';
+import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
 import 'package:gallery/src/gallery/uploader/uploader.dart';
 import 'package:gallery/src/pages/booru_scroll.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/grid_restore.dart';
 import 'package:gallery/src/schemas/scroll_position.dart' as scroll_pos;
 import 'package:gallery/src/schemas/settings.dart';
-import 'package:gallery/src/schemas/thumbnail.dart';
+import 'package:gallery/src/widgets/drawer/drawer.dart';
 // import 'package:google_fonts/google_fonts.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:isar/isar.dart';
@@ -114,7 +113,7 @@ void main() async {
   initPostTags();
 
   if (Platform.isAndroid) {
-    GalleryApi.setup(GalleryImpl(AndroidGallery()));
+    GalleryApi.setup(GalleryImpl());
   }
 
   const platform = MethodChannel("lol.bruh19.azari.gallery");
@@ -128,7 +127,7 @@ void main() async {
   }
   final accentColor = Color(color);
 
-  // GlobalKey materialAppKey = GlobalKey();
+  GlobalKey restartKey = GlobalKey();
 
   await FlutterLocalNotificationsPlugin().initialize(
       const InitializationSettings(
@@ -136,65 +135,71 @@ void main() async {
               LinuxInitializationSettings(defaultActionName: "Default action"),
           android: AndroidInitializationSettings('@drawable/ic_notification')),
       onDidReceiveNotificationResponse: (details) {
-    // var context = materialAppKey.currentContext;
-    // if (context != null) {
-    // selectDestination(context, kBooruGridDrawerIndex, kDownloadsDrawerIndex);
-    // }
+    var context = restartKey.currentContext;
+    if (context != null) {
+      selectDestination(context, kComeFromRandom, kDownloadsDrawerIndex);
+    }
   }, onDidReceiveBackgroundNotificationResponse: notifBackground);
 
   FlutterLocalNotificationsPlugin().cancelAll();
 
   _globalTab = makeGridTab(getSettings().selectedBooru);
 
+  if (Platform.isAndroid) {
+    Permission.notification.request().then((value) async {
+      await Permission.photos.request();
+      await Permission.videos.request();
+      await Permission.storage.request();
+      await Permission.accessMediaLocation.request();
+      const platform = MethodChannel("lol.bruh19.azari.gallery");
+      platform.invokeMethod("requestManageMedia");
+    });
+  }
+
   runApp(RestartWidget(
+      key: restartKey,
       child: MaterialApp(
-    // key: materialAppKey,
-    title: 'Ācārya',
-    darkTheme: _buildTheme(Brightness.dark, accentColor),
-    theme: _buildTheme(Brightness.light, accentColor),
-    home: getSettings().path == "" ? const Entry() : const Dummy(),
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
-    supportedLocales: AppLocalizations.supportedLocales,
-    routes: {
-      "/senitel": (context) => Container(),
-      "/booru": (context) {
-        if (Platform.isAndroid) {
-          Permission.notification.request().then((value) {
-            Permission.photos
-                .request()
-                .then((value) => Permission.videos.request());
-          });
+        // key: materialAppKey,
+        title: 'Ācārya',
+        darkTheme: _buildTheme(Brightness.dark, accentColor),
+        theme: _buildTheme(Brightness.light, accentColor),
+        home: getSettings().path == "" ? const Entry() : const Dummy(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routes: {
+          "/senitel": (context) => Container(),
+          "/booru": (context) {
+            SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+            SystemChrome.setSystemUIOverlayStyle(
+              SystemUiOverlayStyle(
+                  systemNavigationBarColor: Theme.of(context)
+                      .colorScheme
+                      .background
+                      .withOpacity(0.5)),
+            );
 
-          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-          SystemChrome.setSystemUIOverlayStyle(
-            SystemUiOverlayStyle(
-                systemNavigationBarColor:
-                    Theme.of(context).colorScheme.background.withOpacity(0.5)),
-          );
-        }
+            var grids = getTab();
 
-        var grids = getTab();
+            var arguments = ModalRoute.of(context)!.settings.arguments;
+            if (arguments != null) {
+              var list = grids.instance.gridRestores.where().findAllSync();
+              for (var element in list) {
+                grids.removeSecondaryGrid(element.path);
+              }
+            }
 
-        var arguments = ModalRoute.of(context)!.settings.arguments;
-        if (arguments != null) {
-          var list = grids.instance.gridRestores.where().findAllSync();
-          for (var element in list) {
-            grids.removeSecondaryGrid(element.path);
+            var scroll = grids.instance.scrollPositionPrimarys.getSync(0);
+
+            return BooruScroll.primary(
+              initalScroll: scroll != null ? scroll.pos : 0,
+              time: scroll != null ? scroll.time : DateTime.now(),
+              grids: grids,
+              booruPage: scroll?.page,
+              clear: arguments != null ? true : false,
+            );
           }
-        }
-
-        var scroll = grids.instance.scrollPositionPrimarys.getSync(0);
-
-        return BooruScroll.primary(
-          initalScroll: scroll != null ? scroll.pos : 0,
-          time: scroll != null ? scroll.time : DateTime.now(),
-          grids: grids,
-          booruPage: scroll?.page,
-          clear: arguments != null ? true : false,
-        );
-      }
-    },
-  )));
+        },
+      )));
 }
 
 late GridTab _globalTab;

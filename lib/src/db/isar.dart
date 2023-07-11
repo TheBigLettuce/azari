@@ -7,11 +7,9 @@
 
 import 'dart:io' as io;
 
-import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery/src/booru/api/danbooru.dart';
@@ -124,10 +122,6 @@ Future initalizeIsar() async {
 Isar thumbnailIsar() => _thumbnailIsar!;
 Isar settingsIsar() => _isar!;
 
-void _closePrimaryGridIsar(Booru booru) {
-  Isar.getInstance(booru.string)?.close();
-}
-
 Isar _primaryGridIsar(Booru booru) {
   var instance = Isar.getInstance(booru.string);
   if (instance != null) {
@@ -142,14 +136,13 @@ Isar _primaryGridIsar(Booru booru) {
   ], directory: _directoryPath, inspector: false, name: booru.string);
 }
 
-Isar openServerApiIsar() {
-  /*var i = Isar.getInstance("serverApi");
-  if (i != null) {
-    return i;
-  }*/
-
+Isar openServerApiIsar({bool? temporary}) {
   return Isar.openSync([DirectorySchema],
-      directory: _directoryPath, inspector: false, name: "serverApi");
+      directory: temporary == true ? _temporaryDbPath : _directoryPath,
+      inspector: false,
+      name: temporary == true
+          ? DateTime.now().microsecondsSinceEpoch.toString()
+          : "serverApi");
 }
 
 Isar openUploadsDbIsar() {
@@ -163,8 +156,7 @@ Isar openUploadsDbIsar() {
 
   if (list.isNotEmpty) {
     db.writeTxnSync(() {
-      db.uploadFilesStacks.putAllSync(
-          list.map((e) => e..status = UploadStatus.failed).toList());
+      db.uploadFilesStacks.putAllSync(list.map((e) => e.failed()).toList());
     });
   }
 

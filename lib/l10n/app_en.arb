@@ -382,7 +382,7 @@
     "@emptyValue": {
         "description": "Placeholder for empty value"
     },
-    "enterKey": "Created at",
+    "enterKey": "Enter key",
     "@enterKey": {
         "description": "Enter key for the device ID"
     },
@@ -478,5 +478,113 @@
     "addTagToExcluded": "Add tag to exclueded?",
     "@addTagToExcluded": {
         "description": "Dialog title when adding tag to excluded from image view tags"
+    },
+    "directoriesHint": "directories",
+    "@directoriesHint": {
+        "description": "Android gallery, filter bar hint"
+    },
+    "androidGKeybindsDescription": "Android Gallery",
+    "@androidGKeybindsDescription": {
+        "description": "Android gallery keybinds description"
+    },
+    "copiedClipboard": "Copied!",
+    "@copiedClipboard": {
+        "description": "Showed when post number gets copied to clipboard"
+    },
+    "cellAspectRadio": "Cell aspect ratio",
+    "@cellAspectRadio": {
+        "description": "Settings, booru cell aspect ratio"
+    },
+    "autoRefresh": "Auto refresh",
+    "@autoRefresh": {
+        "description": "Settings, auto refresh booru main grid after a certain time. Only works on the booru API where posts can become stale"
+    },
+    "autoRefreshHours": "Auto refresh stale hours",
+    "@autoRefreshHours": {
+        "description": "Settings, auto refresh hours"
+    },
+    "timeInHours": "Enter time in hours",
+    "@timeInHours": {
+        "description": "Settings, time in hours for auto refresh"
+    },
+    "dirHideNames": "Hide directory names",
+    "@dirHideNames": {
+        "description": "Settings, hide directory names on grid"
+    },
+    "dirAspectRatio": "Directory cell aspect ratio",
+    "@dirAspectRatio": {
+        "description": "Settings, directory cell aspect ratio"
+    },
+    "dirGridColumns": "Uploads",
+    "@dirGridColumns": {
+        "description": "Settings, directory grid columns on grid"
+    },
+    "filesLabel": "Files",
+    "@filesLabel": {
+        "description": "Settings, files settings group label"
+    },
+    "dirLabel": "Directory",
+    "@dirLabel": {
+        "description": "Settings, directory settings group label"
+    },
+    "filesAspectRatio": "Files cell aspect ratio",
+    "@filesAspectRatio": {
+        "description": "Settings, files cell aspect ratio on grid"
+    },
+    "filesGridColumns": "Files grid columns",
+    "@filesGridColumns": {
+        "description": "Settings, files grid columns on grid"
+    },
+    "metricsLabel": "Metrics",
+    "@metricsLabel": {
+        "description": "Settings, metrics settings group label"
+    },
+    "thumbnailsCSize": "Thumbnails cache size",
+    "@thumbnailsCSize": {
+        "description": "Settings, thumbnails cache size on disk"
+    },
+    "purgeThumbnails": "Purge",
+    "@purgeThumbnails": {
+        "description": "Uploader drawer label"
+    },
+    "areYouSure": "Are you sure?",
+    "@areYouSure": {
+        "description": "Settings, showed when user wants to purge thumbnails"
+    },
+    "autoRefreshSubtitle": "Refresh booru main grid on app open if it is stale.",
+    "@autoRefreshSubtitle": {
+        "description": "Settings, auto refresh info"
+    },
+    "autoRefreshHoursSubtitle": "After this time the grid becomes stale.",
+    "@autoRefreshHoursSubtitle": {
+        "description": "Settings, auto refresh hours info"
+    },
+    "filesHideNames": "Hide file names",
+    "@filesHideNames": {
+        "description": "Settings, files gallery hide names"
+    },
+    "booruLabel": "Booru",
+    "@booruLabel": {
+        "description": "Settings, booru settings group label"
+    },
+    "cloudflareBlock": "403: Likely Cloudflare",
+    "@cloudflareBlock": {
+        "description": "Showed when access is blocked by Cloudflare"
+    },
+    "solveCaptcha": "Solve captcha",
+    "@solveCaptcha": {
+        "description": "Button which should open open a web view to solve the Cloudflare challenge"
+    },
+    "filterHint": "Filter",
+    "@filterHint": {
+        "description": "Filter hint in the filter bar"
+    },
+    "itemSingular": "item",
+    "@itemSingular": {
+        "description": "Delete item singular"
+    },
+    "itemPlural": "items",
+    "@itemPlural": {
+        "description": "Delete item plural"
     }
 }

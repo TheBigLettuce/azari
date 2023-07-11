@@ -5,7 +5,10 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:convert';
+
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:convert/convert.dart';
 import 'package:flutter/widgets.dart';
 import 'package:gallery/src/cell/cell.dart';
 import 'package:gallery/src/cell/data.dart';
@@ -13,26 +16,50 @@ import 'package:isar/isar.dart';
 
 part 'directory.g.dart';
 
+String _fromBaseToHex(String v) {
+  return hex.encode(base64Decode(v));
+}
+
 @collection
 class Directory implements Cell<Directory> {
   @override
   Id? isarId;
 
   @Index(unique: true)
-  String dirPath;
-  String imageUrl;
+  final String dirPath;
+  final String imageHash;
   @Index()
-  String dirName;
-  // String id;
-  int time;
+  final String dirName;
+  final int time;
+  final String serverUrl;
 
-  int count;
+  final int count;
+
+  @ignore
+  String get imageUrl => Uri.parse(serverUrl)
+      .replace(path: '/static/${_fromBaseToHex(imageHash)}')
+      .toString();
+
+  Directory copy(
+          {String? imageHash,
+          String? dirPath,
+          String? dirName,
+          int? time,
+          String? serverUrl,
+          int? count}) =>
+      Directory(
+          imageHash: imageHash ?? this.imageHash,
+          dirPath: dirPath ?? this.dirPath,
+          dirName: dirName ?? this.dirName,
+          serverUrl: serverUrl ?? this.serverUrl,
+          time: time ?? this.time,
+          count: count ?? this.count);
 
   @override
   String alias(bool isList) => "$dirName ($count)";
 
   @override
-  Content fileDisplay() => throw "not implemented";
+  Contentable fileDisplay() => const EmptyContent();
 
   @override
   String fileDownloadUrl() => dirPath;
@@ -58,7 +85,8 @@ class Directory implements Cell<Directory> {
           };
 
   Directory(
-      {required this.imageUrl,
+      {required this.imageHash,
+      required this.serverUrl,
       required this.dirPath,
       required this.dirName,
       required this.time,

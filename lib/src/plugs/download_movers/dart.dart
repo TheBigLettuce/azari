@@ -32,9 +32,8 @@ class _FileMover {
 
 class DartFileMover implements DownloadMoverPlug {
   SendPort _port;
-  Isolate _moverIsolate;
 
-  DartFileMover._new(this._port, this._moverIsolate);
+  DartFileMover._new(this._port);
 
   @override
   void move(MoveOp op) {
@@ -57,11 +56,11 @@ Future<DartFileMover> initalizeDartMover() {
 
   return Future(() async {
     ReceivePort recv = ReceivePort();
-    var isolate = await Isolate.spawn(_startMover, recv.sendPort);
+    await Isolate.spawn(_startMover, recv.sendPort);
 
     SendPort send = await recv.first;
 
-    _global = DartFileMover._new(send, isolate);
+    _global = DartFileMover._new(send);
 
     return _global!;
   });

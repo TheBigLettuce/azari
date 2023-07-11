@@ -13,13 +13,16 @@ part 'upload_files.g.dart';
 class UploadFilesStack {
   Id? isarId;
 
-  int stateId;
-  int count;
+  final int stateId;
+  final int count;
 
-  DateTime time;
+  final DateTime time;
 
   @enumerated
-  UploadStatus status;
+  final UploadStatus status;
+
+  UploadFilesStack failed() => UploadFilesStack(
+      stateId: stateId, status: UploadStatus.failed, count: count);
 
   UploadFilesStack(
       {required this.stateId, required this.status, required this.count})

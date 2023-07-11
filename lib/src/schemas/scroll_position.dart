@@ -11,13 +11,13 @@ part 'scroll_position.g.dart';
 
 @collection
 class ScrollPositionPrimary {
-  Id isarId = 0;
+  final Id isarId = 0;
 
-  double pos;
-  double? tagPos;
-  DateTime time;
+  final double pos;
+  final double? tagPos;
+  final DateTime time;
 
-  int? page;
+  final int? page;
 
   ScrollPositionPrimary(this.pos, {this.page, this.tagPos})
       : time = DateTime.now().toUtc();

@@ -32,15 +32,15 @@ class DirectoryFile implements Cell<DirectoryFileShrinked> {
   @override
   Id? isarId;
 
-  String dir;
-  @Index()
-  String name;
-  String thumbHash;
-  String origHash;
-  int type;
-  int time;
-  String host;
-  List<String> tags;
+  final String dir;
+  @Index(unique: true)
+  final String name;
+  final String thumbHash;
+  final String origHash;
+  final int type;
+  final int time;
+  final String host;
+  final List<String> tags;
 
   @ignore
   @override
@@ -92,15 +92,13 @@ class DirectoryFile implements Cell<DirectoryFileShrinked> {
   }
 
   @override
-  Content fileDisplay() {
+  Contentable fileDisplay() {
     if (type == 1) {
-      return Content(ContentType.image, false,
-          image: CachedNetworkImageProvider(
-              Uri.parse(host).replace(path: '/static/$origHash').toString()));
+      return NetImage(CachedNetworkImageProvider(
+          Uri.parse(host).replace(path: '/static/$origHash').toString()));
     } else if (type == 2) {
-      return Content(ContentType.video, false,
-          videoPath:
-              Uri.parse(host).replace(path: '/static/$origHash').toString());
+      return NetVideo(
+          Uri.parse(host).replace(path: '/static/$origHash').toString());
     }
     throw "invalid image type";
   }

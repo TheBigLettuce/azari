@@ -11,17 +11,17 @@ part 'secondary_grid.g.dart';
 
 @collection
 class SecondaryGrid {
-  Id id = 0;
+  final Id id = 0;
 
-  String tags;
+  final String tags;
 
-  double scrollPositionGrid;
+  final double scrollPositionGrid;
 
-  int? selectedPost;
-  double? scrollPositionTags;
-  int? page;
+  final int? selectedPost;
+  final double? scrollPositionTags;
+  final int? page;
 
-  SecondaryGrid(this.tags, this.scrollPositionTags, this.selectedPost,
+  const SecondaryGrid(this.tags, this.scrollPositionTags, this.selectedPost,
       this.scrollPositionGrid,
       {this.page});
 }

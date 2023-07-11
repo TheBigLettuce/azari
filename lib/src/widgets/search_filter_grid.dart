@@ -11,33 +11,28 @@ import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:gallery/src/widgets/search_launch_grid.dart';
 import 'package:isar/isar.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../cell/cell.dart';
+
 import '../gallery/interface.dart';
 
-void isarFilterFunc<T extends Cell<B>, B>(String value,
-    GridMutationInterface<T, B>? interf, IsarFilter<T, B> filter) {
-  if (interf != null) {
-    value = value.trim();
-    if (value.isEmpty) {
-      interf.restore();
-      filter.resetFilter();
-      return;
-    }
-
-    var res = filter.filter(value);
-
-    interf.setSource(res.count, res.cell);
-  }
+abstract class FilterInterface<T extends Cell<B>, B> {
+  Result<T> filter(String s);
+  void resetFilter();
 }
 
-class IsarFilter<T extends Cell<B>, B> {
-  final Isar _from;
+class IsarFilter<T extends Cell<B>, B> implements FilterInterface<T, B> {
+  Isar _from;
   final Isar _to;
   bool isFiltering = false;
   final List<T> Function(int offset, int limit, String s) getElems;
 
   Isar get to => _to;
+
+  void setFrom(Isar from) {
+    _from = from;
+  }
 
   void dispose() {
     _to.close(deleteFromDisk: true);
@@ -65,6 +60,7 @@ class IsarFilter<T extends Cell<B>, B> {
     });
   }
 
+  @override
   Result<T> filter(String s) {
     isFiltering = true;
     _to.writeTxnSync(
@@ -79,6 +75,7 @@ class IsarFilter<T extends Cell<B>, B> {
         _to.collection<T>().countSync());
   }
 
+  @override
   void resetFilter() {
     isFiltering = false;
     _to.writeTxnSync(() => _to.collection<T>().clearSync());
@@ -97,19 +94,17 @@ mixin SearchFilterGrid<T extends Cell<B>, B>
   final FocusNode searchFocus = FocusNode();
 
   late final void Function() _focusMain;
-  late final void Function(String s) _onChanged;
+  late final FilterInterface<T, B> _filter;
   late final GlobalKey<CallbackGridState<T, B>> _gridKey;
 
   late final List<Widget>? addItems;
-  late final String? addHint;
 
   @override
-  void searchHook(state, [String? hint, List<Widget>? items]) {
-    addHint = hint;
+  void searchHook(state, [List<Widget>? items]) {
     addItems = items;
     _focusMain = () => state.mainFocus.requestFocus();
     _gridKey = state.gridKey;
-    _onChanged = state.filterFunc;
+    _filter = state.filter;
   }
 
   @override
@@ -119,91 +114,69 @@ mixin SearchFilterGrid<T extends Cell<B>, B>
   }
 
   @override
-  Widget searchWidget(BuildContext context) => FocusNotifier(
-      focusMain: _focusMain,
-      notifier: searchFocus,
-      child: Builder(
-        builder: (context) => TextField(
-          focusNode: searchFocus,
-          controller: searchTextController,
-          decoration: autocompleteBarDecoration(context, () {
-            searchTextController.clear();
-            _gridKey.currentState?.mutationInterface?.restore();
-          }, addItems,
-              showSearch: true,
-              roundBorders: false,
-              hint:
-                  "Filter${addHint != null ? ' $addHint' : ''}"), // TODO: change
-          onChanged: _onChanged,
-        ),
-      ));
+  Widget searchWidget(BuildContext context, {String? hint, int? count}) =>
+      _SearchWidget(
+        instance: this,
+        hint: hint,
+        count: count,
+      );
 }
 
+class _SearchWidget extends StatefulWidget {
+  final SearchFilterGrid instance;
+  final String? hint;
+  final int? count;
+  const _SearchWidget(
+      {super.key,
+      required this.instance,
+      required this.count,
+      required this.hint});
 
+  @override
+  State<_SearchWidget> createState() => __SearchWidgetState();
+}
 
-// mixin SearchFilterGridDirectory on State<ServerDirectories>
-//     implements SearchMixin<GridSkeletonState<Directory, Directory>> {
-//   @override
-//   final TextEditingController searchTextController = TextEditingController();
-//   @override
-//   final FocusNode searchFocus = FocusNode();
+class __SearchWidgetState extends State<_SearchWidget> {
+  @override
+  Widget build(BuildContext context) {
+    return FocusNotifier(
+        focusMain: widget.instance._focusMain,
+        notifier: widget.instance.searchFocus,
+        child: Builder(
+          builder: (context) => TextField(
+            focusNode: widget.instance.searchFocus,
+            controller: widget.instance.searchTextController,
+            decoration: autocompleteBarDecoration(context, () {
+              widget.instance.searchTextController.clear();
+              widget.instance._gridKey.currentState?.mutationInterface
+                  ?.restore();
+              setState(() {});
+            }, widget.instance.addItems,
+                searchCount: widget.instance._gridKey.currentState
+                    ?.mutationInterface?.cellCount,
+                showSearch: true,
+                roundBorders: false,
+                hint:
+                    "${AppLocalizations.of(context)!.filterHint}${widget.hint != null ? ' ${widget.hint}' : ''}"),
+            onChanged: (value) {
+              var interf =
+                  widget.instance._gridKey.currentState?.mutationInterface;
+              if (interf != null) {
+                value = value.trim();
+                if (value.isEmpty) {
+                  interf.restore();
+                  widget.instance._filter.resetFilter();
+                  setState(() {});
+                  return;
+                }
 
-//   final api = ServerAPI(db.openServerApiIsar());
+                var res = widget.instance._filter.filter(value);
 
-//   List<Directory>? filterResults;
-
-//   late final void Function() focusMain;
-
-
-//   late final GlobalKey<CallbackGridState<Directory, Directory>> gridKey;
-
-//   @override
-//   void searchHook(state) {
-//     focusMain = () => state.mainFocus.requestFocus();
-//     gridKey = state.gridKey;
-//   }
-
-//   @override
-//   void disposeSearch() {
-//     searchTextController.dispose();
-//     searchFocus.dispose();
-//   }
-
-//   @override
-//   Widget searchWidget(BuildContext context) => FocusNotifier(
-//       focusMain: focusMain,
-//       notifier: searchFocus,
-//       child: Builder(
-//         builder: (context) => TextField(
-//           focusNode: searchFocus,
-//           controller: searchTextController,
-//           decoration: autocompleteBarDecoration(context, () {
-//             searchTextController.clear();
-//             gridKey.currentState?.mutationInterface?.restore();
-//           }, null,
-//               showSearch: true,
-//               roundBorders: false,
-//               hint: "Filter"), // TODO: change
-//           onChanged: (value) {
-//             var interface = gridKey.currentState?.mutationInterface;
-//             if (interface != null) {
-//               value = value.trim();
-//               if (value.isEmpty) {
-//                 interface.restore();
-//                 filterResults = null;
-//                 return;
-//               }
-
-//               filterResults = api.serverIsar.directorys
-//                   .filter()
-//                   .dirNameContains(value, caseSensitive: false)
-//                   .findAllSync();
-
-//               interface.setSource(filterResults!.length, (i) {
-//                 return filterResults![i];
-//               });
-//             }
-//           },
-//         ),
-//       ));
-// }
+                interf.setSource(res.count, res.cell);
+                setState(() {});
+              }
+            },
+          ),
+        ));
+  }
+}

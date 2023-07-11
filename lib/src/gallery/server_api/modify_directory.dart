@@ -10,12 +10,17 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/gallery/interface.dart';
 import 'package:gallery/src/schemas/directory.dart';
+import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import '../../schemas/directory_file.dart';
+
 class ModifyDirectory extends StatefulWidget {
-  final GalleryAPI api;
+  final GalleryAPIReadWrite<void, void, Directory, Directory, DirectoryFile,
+      DirectoryFileShrinked> api;
   final Directory old;
   final GlobalKey<CallbackGridState> refreshKey;
   const ModifyDirectory(this.api,
@@ -27,6 +32,8 @@ class ModifyDirectory extends StatefulWidget {
 
 class _ModifyDirectoryState extends State<ModifyDirectory> {
   late var copy = widget.old;
+
+  final state = SkeletonState(kGalleryDrawerIndex);
 
   void _delete(Directory d) async {
     try {
@@ -51,11 +58,62 @@ class _ModifyDirectoryState extends State<ModifyDirectory> {
   }
 
   @override
+  void dispose() {
+    state.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.modifyDirectoryPageName),
-        actions: [
+    return makeSkeleton(
+        context, AppLocalizations.of(context)!.modifyDirectoryPageName, state,
+        popSenitel: false,
+        children: [
+          ListTile(
+            title: Text(AppLocalizations.of(context)!.directoryAlias),
+            subtitle: Text(copy.dirName),
+            trailing: TextButton(
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    DialogRoute(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: Text(AppLocalizations.of(context)!.newAlias),
+                            content: TextField(
+                              onSubmitted: (value) {
+                                setState(() {
+                                  copy = copy.copy(dirName: value);
+                                });
+                                Navigator.pop(context);
+
+                                _modify();
+                              },
+                            ),
+                          );
+                        }));
+              },
+              child: Text(AppLocalizations.of(context)!.changeAlias),
+            ),
+          ),
+          ListTile(
+            title: Text(AppLocalizations.of(context)!.directoryPath),
+            enabled: false,
+            subtitle: Text(widget.old.dirPath),
+          ),
+          ListTile(
+            title: Text(AppLocalizations.of(context)!.directoryCount),
+            enabled: false,
+            subtitle: Text(widget.old.count.toString()),
+          ),
+          ListTile(
+            title: Text(AppLocalizations.of(context)!.dateModified),
+            enabled: false,
+            subtitle: Text(widget.old.time.toString()),
+          )
+        ],
+        appBarActions: [
           IconButton(
               onPressed: () {
                 Navigator.push(
@@ -87,55 +145,6 @@ class _ModifyDirectoryState extends State<ModifyDirectory> {
                         }));
               },
               icon: const Icon(Icons.delete))
-        ],
-      ),
-      body: ListView(
-        children: [
-          ListTile(
-            title: Text(AppLocalizations.of(context)!.directoryAlias),
-            subtitle: Text(copy.dirName),
-            trailing: TextButton(
-              onPressed: () {
-                Navigator.push(
-                    context,
-                    DialogRoute(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: Text(AppLocalizations.of(context)!.newAlias),
-                            content: TextField(
-                              onSubmitted: (value) {
-                                setState(() {
-                                  copy.dirName = value;
-                                });
-                                Navigator.pop(context);
-
-                                _modify();
-                              },
-                            ),
-                          );
-                        }));
-              },
-              child: Text(AppLocalizations.of(context)!.changeAlias),
-            ),
-          ),
-          ListTile(
-            title: Text(AppLocalizations.of(context)!.directoryPath),
-            enabled: false,
-            subtitle: Text(widget.old.dirPath),
-          ),
-          ListTile(
-            title: Text(AppLocalizations.of(context)!.directoryCount),
-            enabled: false,
-            subtitle: Text(widget.old.count.toString()),
-          ),
-          ListTile(
-            title: Text(AppLocalizations.of(context)!.dateModified),
-            enabled: false,
-            subtitle: Text(widget.old.time.toString()),
-          )
-        ],
-      ),
-    );
+        ]);
   }
 }

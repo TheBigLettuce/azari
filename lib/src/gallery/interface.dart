@@ -5,10 +5,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:gallery/src/cell/cell.dart';
-import 'package:isar/isar.dart';
 
 class Result<T extends Cell> {
   final int count;
@@ -16,31 +14,46 @@ class Result<T extends Cell> {
   const Result(this.cell, this.count);
 }
 
-abstract class GalleryAPIFiles<F extends Cell<A>, A> {
-  bool get reachedEnd;
-  Isar get db;
+abstract class GalleryAPIFilesReadWrite<ExtraFiles, F extends Cell<A>, A>
+    implements
+        GalleryAPIFilesRead<ExtraFiles, F, A>,
+        GalleryAPIFilesWrite<F, A> {}
 
-  //Future<Result<DirectoryFile>> nextImages();
-  Future<Result<F>> refresh();
+abstract class GalleryAPIFilesRead<ExtraFiles, F extends Cell<A>, A> {
+  F directCell(int i);
 
-  Future delete(F f);
-  Future uploadFiles(List<PlatformFile> l, void Function() onDone);
-  Future deleteFiles(List<A> f, void Function() onDone);
+  Future<int> refresh();
+  ExtraFiles getExtra();
 
   void close();
 }
 
-abstract class GalleryAPI<T extends Cell<B>, B, F extends Cell<A>, A> {
-  Dio get client;
-  Isar get db;
+abstract class GalleryAPIFilesWrite<F extends Cell<A>, A> {
+  Future uploadFiles(List<PlatformFile> l, void Function() onDone);
+  Future deleteFiles(List<A> f, void Function() onDone);
+}
 
-  Future<Result<T>> directories();
-  GalleryAPIFiles<F, A> images(T d);
+abstract class GalleryAPIReadWrite<Extra, ExtraFiles, T extends Cell<B>, B,
+        F extends Cell<A>, A>
+    implements
+        GalleryAPIRead<Extra, ExtraFiles, T, B, F, A>,
+        GalleryAPIWrite<T, B> {
+  GalleryAPIFilesReadWrite<ExtraFiles, F, A> imagesReadWrite(T d);
+}
 
-  Future modify(T old, T newd);
-  Future setThumbnail(String newThumb, T d);
-  Future delete(T d);
-  Future newDirectory(String path, void Function() onDone);
+abstract class GalleryAPIRead<Extra, ExtraFiles, T extends Cell<B>, B,
+    F extends Cell<A>, A> {
+  T directCell(int i);
+
+  Future<int> refresh();
+  Extra getExtra();
+  GalleryAPIFilesRead<ExtraFiles, F, A> imagesRead(T d);
 
   void close();
+}
+
+abstract class GalleryAPIWrite<T extends Cell<B>, B> {
+  Future modify(T old, T newd);
+  Future delete(T d);
+  Future newDirectory(String path, void Function() onDone);
 }

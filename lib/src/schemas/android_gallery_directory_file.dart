@@ -1,6 +1,3 @@
-import 'dart:developer';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
@@ -11,14 +8,13 @@ import 'package:gallery/src/schemas/directory_file.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/thumbnail.dart';
 import 'package:isar/isar.dart';
-import 'package:logging/logging.dart';
-import 'package:path/path.dart';
 import 'package:transparent_image/transparent_image.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 part 'android_gallery_directory_file.g.dart';
 
 @collection
-class SystemGalleryDirectoryFile implements Cell<void> {
+class SystemGalleryDirectoryFile implements Cell<String> {
   @override
   Id? isarId;
 
@@ -49,10 +45,16 @@ class SystemGalleryDirectoryFile implements Cell<void> {
     required this.originalUri,
   });
 
+  bool _isDuplicate() {
+    return RegExp(r'[(][0-9].*[)][.][a-zA-Z].*').hasMatch(name);
+  }
+
   @ignore
   @override
   List<Widget>? Function() get addButtons => () {
-        return null;
+        return _isDuplicate()
+            ? [const Icon(Icons.mode_standby_outlined)]
+            : null;
       };
 
   @ignore
@@ -67,12 +69,12 @@ class SystemGalleryDirectoryFile implements Cell<void> {
             return [
               addInfoTile(
                   colors: colors,
-                  title: "Name",
-                  subtitle: name), // TODO: change
+                  title: AppLocalizations.of(context)!.nameTitle,
+                  subtitle: name),
               addInfoTile(
                   colors: colors,
-                  title: "Last modified",
-                  subtitle: lastModified.toString()), // TODO: change
+                  title: AppLocalizations.of(context)!.dateModified,
+                  subtitle: lastModified.toString()),
               ...makeTags(
                   context, extra, colors, PostTags().getTagsPost(name), null)
             ];
@@ -82,20 +84,20 @@ class SystemGalleryDirectoryFile implements Cell<void> {
   String alias(bool isList) => name;
 
   @override
-  Content fileDisplay() {
+  Contentable fileDisplay() {
+    final size = Size(width.toDouble(), height.toDouble());
+
     if (isVideo) {
-      return Content(ContentType.video, true, videoPath: originalUri);
+      return AndroidVideo(uri: originalUri, size: size);
     }
 
     if (isGif) {
-      return Content(ContentType.androidGif, true,
-          androidUri: originalUri,
-          size: Size(width.toDouble(), height.toDouble()));
+      return AndroidGif(
+          uri: originalUri, size: Size(width.toDouble(), height.toDouble()));
     }
 
-    return Content(ContentType.androidImage, true,
-        androidUri: originalUri,
-        size: Size(width.toDouble(), height.toDouble()));
+    return AndroidImage(
+        uri: originalUri, size: Size(width.toDouble(), height.toDouble()));
   }
 
   @override
@@ -111,14 +113,15 @@ class SystemGalleryDirectoryFile implements Cell<void> {
         name: name,
         stickers: [
           if (isVideo) Icons.play_circle,
+          if (_isDuplicate()) Icons.mode_standby_outlined,
           if (isGif) Icons.gif_box_outlined
         ],
         loaded: record.$2);
   }
 
   @override
-  void shrinkedData() {
-    // TODO: implement shrinkedData
+  String shrinkedData() {
+    return originalUri;
   }
 }
 
@@ -140,7 +143,10 @@ class KeyMemoryImage extends ImageProvider<MemoryImage> {
 
   @override
   ImageStreamCompleter loadBuffer(
-      ImageProvider key, DecoderBufferCallback decode) {
+      ImageProvider key,
+      // ignore: deprecated_member_use
+      DecoderBufferCallback decode) {
+    // ignore: deprecated_member_use
     return key.loadBuffer(key, decode);
   }
 

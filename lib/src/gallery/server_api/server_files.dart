@@ -12,6 +12,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/gallery/interface.dart';
+import 'package:gallery/src/gallery/server_api/server_api_directories.dart';
 import 'package:gallery/src/schemas/directory.dart';
 import 'package:gallery/src/schemas/directory_file.dart';
 import 'package:gallery/src/schemas/download_file.dart';
@@ -19,15 +20,15 @@ import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
-import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import '../db/isar.dart' as db;
-import '../widgets/search_filter_grid.dart';
+import '../../db/isar.dart' as db;
+import '../../widgets/search_filter_grid.dart';
 
 class Images extends StatefulWidget {
   final Directory cell;
-  final GalleryAPIFiles<DirectoryFile, DirectoryFileShrinked> api;
+  final GalleryAPIFilesReadWrite<ServerApiFilesExtra, DirectoryFile,
+      DirectoryFileShrinked> api;
   final GlobalKey<CallbackGridState> parentGrid;
   final void Function(String hash, Directory d) setThumbnail;
   final FocusNode parentFocus;
@@ -45,25 +46,11 @@ class Images extends StatefulWidget {
 class _ImagesState extends State<Images>
     with SearchFilterGrid<DirectoryFile, DirectoryFileShrinked> {
   late StreamSubscription<Settings?> settingsWatcher;
-  Result<DirectoryFile>? cells;
   bool isDisposed = false;
-
-  List<DirectoryFile> _getElem(int offset, int limit, String value) {
-    return widget.api.db.directoryFiles
-        .filter()
-        .nameContains(value)
-        .offset(offset)
-        .limit(limit)
-        .findAllSync();
-  }
-
-  late final filter = IsarFilter<DirectoryFile, DirectoryFileShrinked>(
-      widget.api.db, db.openServerApiInnerIsar(), _getElem);
 
   late final GridSkeletonStateFilter<DirectoryFile, DirectoryFileShrinked>
       skeletonState = GridSkeletonStateFilter(
-    filterFunc: (value) => isarFilterFunc(
-        value, skeletonState.gridKey.currentState?.mutationInterface, filter),
+    filter: widget.api.getExtra().filter,
     index: kGalleryDrawerIndex,
     onWillPop: () => Future.value(true),
   );
@@ -106,32 +93,6 @@ class _ImagesState extends State<Images>
     }
   }
 
-  Future<int> _refresh() async {
-    return _loadNext();
-  }
-
-  Future<int> _loadNext() async {
-    try {
-      cells = await widget.api.refresh();
-    } catch (e, stackTrace) {
-      log("load next images in gallery images",
-          level: Level.WARNING.value, error: e, stackTrace: stackTrace);
-    }
-
-    return cells == null ? 0 : cells!.count;
-  }
-
-  void _deleteFile(DirectoryFile f) async {
-    try {
-      await widget.api.delete(f);
-
-      await _refresh();
-    } catch (e, trace) {
-      log("deleting file",
-          level: Level.SEVERE.value, error: e, stackTrace: trace);
-    }
-  }
-
   void _deleteFiles(List<DirectoryFileShrinked> f) {
     widget.api.deleteFiles(f, () {
       skeletonState.gridKey.currentState?.refresh();
@@ -146,7 +107,6 @@ class _ImagesState extends State<Images>
   void dispose() {
     isDisposed = true;
     disposeSearch();
-    filter.dispose();
     settingsWatcher.cancel();
     skeletonState.dispose();
     widget.api.close();
@@ -154,7 +114,7 @@ class _ImagesState extends State<Images>
   }
 
   Future<void> _download(int indx) {
-    var df = cells!.cell(indx);
+    var df = widget.api.directCell(indx);
 
     Downloader().add(File.d(df.fileDownloadUrl(), "gallery", df.name));
 
@@ -182,32 +142,38 @@ class _ImagesState extends State<Images>
           description: GridDescription(
               kGalleryDrawerIndex,
               [
-                GridBottomSheetAction(Icons.delete, (selected) {
-                  Navigator.of(context).push(DialogRoute(
-                      context: context,
-                      builder: ((context) {
-                        return AlertDialog(
-                          title: Text(
-                              AppLocalizations.of(context)!.deleteImageConfirm),
-                          content: Text(
-                              "${selected.length} ${selected.length > 1 ? 'items' : 'item'}"),
-                          actions: [
-                            TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: Text(AppLocalizations.of(context)!.no)),
-                            TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
+                GridBottomSheetAction(
+                  Icons.delete,
+                  (selected) {
+                    Navigator.of(context).push(DialogRoute(
+                        context: context,
+                        builder: ((context) {
+                          return AlertDialog(
+                            title: Text(AppLocalizations.of(context)!
+                                .deleteImageConfirm),
+                            content: Text(
+                                "${selected.length} ${selected.length > 1 ? AppLocalizations.of(context)!.itemSingular : AppLocalizations.of(context)!.itemPlural}"),
+                            actions: [
+                              TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child:
+                                      Text(AppLocalizations.of(context)!.no)),
+                              TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
 
-                                  _deleteFiles(selected);
-                                },
-                                child: Text(AppLocalizations.of(context)!.yes)),
-                          ],
-                        );
-                      })));
-                }, true),
+                                    _deleteFiles(selected);
+                                  },
+                                  child:
+                                      Text(AppLocalizations.of(context)!.yes)),
+                            ],
+                          );
+                        })));
+                  },
+                  true,
+                ),
                 GridBottomSheetAction(Icons.info_outline, (selected) {
                   var df = selected.first;
 
@@ -231,10 +197,10 @@ class _ImagesState extends State<Images>
                   GridColumn.two,
               keybindsDescription:
                   AppLocalizations.of(context)!.galleryInnerPageName,
-              pageName: widget.cell.dirName),
-          updateScrollPosition: (pos, {double? infoPos, int? selectedCell}) {},
+              pageName: widget.cell.dirName,
+              listView: skeletonState.settings.listViewBooru),
           scaffoldKey: skeletonState.scaffoldKey,
-          refresh: _refresh,
+          refresh: widget.api.refresh,
           tightMode: true,
           hideAlias: skeletonState.settings.gallerySettings.hideFileName,
           menuButtonItems: [
@@ -250,13 +216,13 @@ class _ImagesState extends State<Images>
                 },
                 child: Text(AppLocalizations.of(context)!.addFiles))
           ],
-          hasReachedEnd: () => widget.api.reachedEnd,
+          hasReachedEnd: () => true,
           searchWidget: SearchAndFocus(searchWidget(context), searchFocus),
           download: _download,
           onBack: () => Navigator.of(context).pop(),
           immutable: false,
           // loadNext: () => _loadNext(),
-          getCell: (i) => cells!.cell(i),
+          getCell: (i) => widget.api.directCell(i),
           initalScrollPosition: 0,
           belowMainFocus: widget.parentFocus,
           hideShowFab: ({required bool fab, required bool foreground}) =>

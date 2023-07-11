@@ -8,9 +8,9 @@ class LocalTags {
   Id get isarId => fastHash(filename);
 
   @Index(unique: true, replace: true)
-  String filename;
+  final String filename;
 
-  List<String> tags;
+  final List<String> tags;
 
   LocalTags(this.filename, this.tags);
 }

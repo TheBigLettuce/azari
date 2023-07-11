@@ -244,12 +244,11 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 // TODO: write callbacks for image manipulation
 
   late AnimationController animationController;
+  AnimationController? downloadButtonController;
 
   final GlobalKey<ScaffoldState> key = GlobalKey();
 
   PaletteGenerator? currentPalette;
-
-  AnimationController? downloadButtonController;
 
   bool isAppbarShown = true;
 
@@ -269,9 +268,9 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   }
 
   void refreshImage() {
-    var i = currentCell.fileDisplay().image;
-    if (i != null) {
-      PaintingBinding.instance.imageCache.evict(i);
+    var i = currentCell.fileDisplay();
+    if (i is NetImage) {
+      PaintingBinding.instance.imageCache.evict(i.provider);
       fakeProvider = MemoryImage(kTransparentImage);
 
       setState(() {});
@@ -439,6 +438,53 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
         }
       };
 
+  PhotoViewGalleryPageOptions _makeVideo(String uri, bool local) =>
+      PhotoViewGalleryPageOptions.customChild(
+          disableGestures: true,
+          tightMode: true,
+          child: Platform.isLinux
+              ? PhotoGalleryPageVideoLinux(url: uri, localVideo: local)
+              : PhotoGalleryPageVideo(url: uri, localVideo: local));
+
+  PhotoViewGalleryPageOptions _makeNetImage(ImageProvider provider) =>
+      PhotoViewGalleryPageOptions(
+          minScale: PhotoViewComputedScale.contained * 0.8,
+          maxScale: PhotoViewComputedScale.covered * 1.8,
+          initialScale: PhotoViewComputedScale.contained,
+          filterQuality: FilterQuality.high,
+          imageProvider: fakeProvider ?? provider);
+
+  PhotoViewGalleryPageOptions _makeAndroidImage(
+          Size size, String uri, bool isGif) =>
+      PhotoViewGalleryPageOptions.customChild(
+          filterQuality: FilterQuality.high,
+          disableGestures: true,
+          child: Center(
+            child: SizedBox(
+                height: MediaQuery.of(context).size.height,
+                width: MediaQuery.of(context).size.width,
+                child: AspectRatio(
+                  aspectRatio: MediaQuery.of(context).size.aspectRatio,
+                  child: InteractiveViewer(
+                    child: Center(
+                      child: AspectRatio(
+                        aspectRatio: size.aspectRatio,
+                        child: AndroidView(
+                          viewType: "imageview",
+                          hitTestBehavior:
+                              PlatformViewHitTestBehavior.transparent,
+                          creationParams: {
+                            "uri": uri,
+                            if (isGif) "gif": "",
+                          },
+                          creationParamsCodec: const StandardMessageCodec(),
+                        ),
+                      ),
+                    ),
+                  ),
+                )),
+          ));
+
   @override
   Widget build(BuildContext context) {
     var addB = currentCell.addButtons();
@@ -514,9 +560,9 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                       onLongPress: () {
                         Clipboard.setData(
                             ClipboardData(text: currentCell.alias(false)));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text("Copied!"))); // TODO: change
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(AppLocalizations.of(context)!
+                                .copiedClipboard)));
                       },
                       child: Text(currentCell.alias(false)),
                     ),
@@ -634,70 +680,22 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                             var fileContent =
                                 widget.getCell(indx).fileDisplay();
 
-                            switch (fileContent.type) {
-                              case ContentType.androidImage:
-                              case ContentType.androidGif:
-                                return PhotoViewGalleryPageOptions.customChild(
-                                    // minScale:
-                                    //     PhotoViewComputedScale.contained * 0.8,
-                                    // maxScale:
-                                    //     PhotoViewComputedScale.covered * 1.8,
-                                    // initialScale:
-                                    //     PhotoViewComputedScale.contained,
-                                    // initialScale: ,
-                                    filterQuality: FilterQuality.high,
-                                    childSize: fileContent.size,
-                                    disableGestures: true,
-                                    child: ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                          maxHeight: MediaQuery.of(context)
-                                              .size
-                                              .height,
-                                          maxWidth: MediaQuery.of(context)
-                                              .size
-                                              .width),
-                                      child: InteractiveViewer(
-                                          child: AndroidView(
-                                        viewType: "imageview",
-                                        hitTestBehavior:
-                                            PlatformViewHitTestBehavior
-                                                .transparent,
-                                        creationParams: {
-                                          "uri": fileContent.androidUri,
-                                          if (fileContent.type ==
-                                              ContentType.androidGif)
-                                            "gif": "",
-                                        },
-                                        creationParamsCodec:
-                                            const StandardMessageCodec(),
-                                      )),
-                                    ));
-                              case ContentType.image:
-                                return PhotoViewGalleryPageOptions(
-                                    minScale:
-                                        PhotoViewComputedScale.contained * 0.8,
-                                    maxScale:
-                                        PhotoViewComputedScale.covered * 1.8,
-                                    initialScale:
-                                        PhotoViewComputedScale.contained,
-                                    filterQuality: FilterQuality.high,
-                                    imageProvider:
-                                        fakeProvider ?? fileContent.image);
-                              case ContentType.video:
-                                return PhotoViewGalleryPageOptions.customChild(
-                                    disableGestures: true,
-                                    tightMode: true,
-                                    child: Platform.isLinux
-                                        ? PhotoGalleryPageVideoLinux(
-                                            url: fileContent.videoPath!,
-                                            localVideo:
-                                                fileContent.isVideoLocal)
-                                        : PhotoGalleryPageVideo(
-                                            url: fileContent.videoPath!,
-                                            localVideo:
-                                                fileContent.isVideoLocal,
-                                          ));
-                            }
+                            return switch (fileContent) {
+                              AndroidImage() => _makeAndroidImage(
+                                  fileContent.size, fileContent.uri, false),
+                              AndroidGif() => _makeAndroidImage(
+                                  fileContent.size, fileContent.uri, true),
+                              NetGif() => _makeNetImage(fileContent.provider),
+                              NetImage() => _makeNetImage(fileContent.provider),
+                              AndroidVideo() =>
+                                _makeVideo(fileContent.uri, true),
+                              NetVideo() => _makeVideo(fileContent.uri, false),
+                              EmptyContent() =>
+                                PhotoViewGalleryPageOptions.customChild(
+                                    child: const Center(
+                                  child: Icon(Icons.error_outline),
+                                ))
+                            };
                           }),
                     ),
                   ]),

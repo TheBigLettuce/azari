@@ -17,9 +17,9 @@ abstract class SearchMixin<T> {
   TextEditingController get searchTextController;
   FocusNode get searchFocus;
 
-  void searchHook(T data, [String? hint, List<Widget>? addButtons]);
+  void searchHook(T data, [List<Widget>? addButtons]);
   void disposeSearch();
-  Widget searchWidget(BuildContext context);
+  Widget searchWidget(BuildContext context, {String? hint, int? count});
 }
 
 class SearchLaunchGridData {
@@ -43,8 +43,7 @@ mixin SearchLaunchGrid on State<BooruScroll>
   late final List<Widget>? addItems;
 
   @override
-  void searchHook(SearchLaunchGridData data,
-      [String? hint, List<Widget>? items]) {
+  void searchHook(SearchLaunchGridData data, [List<Widget>? items]) {
     addItems = items;
     searchTextController.text = data.searchText;
     focusMain = () => data.mainFocus.requestFocus();
@@ -65,7 +64,7 @@ mixin SearchLaunchGrid on State<BooruScroll>
   }
 
   @override
-  Widget searchWidget(BuildContext context) =>
+  Widget searchWidget(BuildContext context, {String? hint, int? count}) =>
       autocompleteWidget(searchTextController, (s) {
         currentlyHighlightedTag = s;
       }, (s) => getTab().onTagPressed(context, s), focusMain, booru.completeTag,

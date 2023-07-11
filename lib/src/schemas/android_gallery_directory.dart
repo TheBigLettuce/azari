@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:gallery/src/cell/data.dart';
-import 'package:gallery/src/schemas/tags.dart';
 import 'package:isar/isar.dart';
 import 'package:transparent_image/transparent_image.dart';
 
@@ -10,8 +8,16 @@ import 'android_gallery_directory_file.dart';
 
 part 'android_gallery_directory.g.dart';
 
+class SystemGalleryDirectoryShrinked {
+  final String name;
+  final String bucketId;
+
+  const SystemGalleryDirectoryShrinked(
+      {required this.bucketId, required this.name});
+}
+
 @collection
-class SystemGalleryDirectory implements Cell<String> {
+class SystemGalleryDirectory implements Cell<SystemGalleryDirectoryShrinked> {
   @override
   Id? isarId;
 
@@ -47,7 +53,7 @@ class SystemGalleryDirectory implements Cell<String> {
   String alias(bool isList) => name;
 
   @override
-  Content fileDisplay() => throw "not implemented";
+  Contentable fileDisplay() => const EmptyContent();
 
   @override
   String fileDownloadUrl() => "";
@@ -57,7 +63,8 @@ class SystemGalleryDirectory implements Cell<String> {
     ImageProvider provier;
     var record = androidThumbnail(thumbFileId);
     try {
-      provier = KeyMemoryImage(bucketId, record.$1);
+      provier =
+          KeyMemoryImage(bucketId + record.$1.length.toString(), record.$1);
     } catch (e) {
       provier = MemoryImage(kTransparentImage);
     }
@@ -67,7 +74,7 @@ class SystemGalleryDirectory implements Cell<String> {
   }
 
   @override
-  String shrinkedData() {
-    return bucketId;
+  SystemGalleryDirectoryShrinked shrinkedData() {
+    return SystemGalleryDirectoryShrinked(name: name, bucketId: bucketId);
   }
 }

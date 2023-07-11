@@ -134,14 +134,6 @@ class Post implements Cell<PostShrinked> {
     }
   }
 
-  /*BooruCell booruCell(void Function(String tag) onTagPressed) => BooruCell(
-      post: id,
-      sampleUrl: sampleUrl,
-      path: previewUrl,
-      originalUrl: fileUrl,
-      tags: tags,
-      onTagPressed: onTagPressed);*/
-
   Post(
       {required this.height,
       required this.id,
@@ -240,20 +232,15 @@ class Post implements Cell<PostShrinked> {
   String alias(bool isList) => isList ? tags : id.toString();
 
   @override
-  Content fileDisplay() {
-    var settings = settingsIsar().settings.getSync(0);
-    String url;
-    if (settings!.quality == DisplayQuality.original) {
-      url = fileUrl;
-    } else if (settings.quality == DisplayQuality.sample) {
-      url = sampleUrl;
-    } else {
-      throw "invalid display quality";
-    }
+  Contentable fileDisplay() {
+    String url = switch (settingsIsar().settings.getSync(0)!.quality) {
+      DisplayQuality.original => fileUrl,
+      DisplayQuality.sample => sampleUrl
+    };
 
     var type = lookupMimeType(url);
     if (type == null) {
-      return const Content(ContentType.image, false);
+      return const EmptyContent();
     }
 
     var typeHalf = type.split("/");
@@ -266,12 +253,11 @@ class Post implements Cell<PostShrinked> {
         provider = MemoryImage(kTransparentImage);
       }
 
-      return Content(ContentType.image, false,
-          image: provider, gif: typeHalf[1] == "gif");
+      return typeHalf[1] == "gif" ? NetGif(provider) : NetImage(provider);
     } else if (typeHalf[0] == "video") {
-      return Content(ContentType.video, false, videoPath: url);
+      return NetVideo(url);
     } else {
-      return const Content(ContentType.image, false);
+      return const EmptyContent();
     }
   }
 
@@ -292,8 +278,8 @@ class Post implements Cell<PostShrinked> {
     final content = fileDisplay();
 
     return CellData(thumb: provider, name: alias(isList), stickers: [
-      if (content.videoPath != null) Icons.play_circle,
-      if (content.gif == true) Icons.gif_box_outlined,
+      if (content is NetVideo) Icons.play_circle,
+      if (content is NetGif) Icons.gif_box_outlined,
       if (tags.contains("original")) kOriginalSticker
     ]);
   }

@@ -9,8 +9,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/gallery/android_directories.dart';
-import 'package:gallery/src/gallery/server_directories.dart';
+import 'package:gallery/src/gallery/android_api/android_directories.dart';
+import 'package:gallery/src/gallery/server_api/server_directories.dart';
 import 'package:gallery/src/pages/tags.dart';
 import 'package:gallery/src/pages/downloads.dart';
 import 'package:gallery/src/pages/uploader.dart';
@@ -29,6 +29,7 @@ const int kTagsDrawerIndex = 2;
 const int kDownloadsDrawerIndex = 3;
 const int kUploadsDrawerIndex = 4;
 const int kSettingsDrawerIndex = 5;
+const int kComeFromRandom = -1;
 
 Widget azariIcon(BuildContext context, {Color? color}) => GestureDetector(
       onTap: () {},
@@ -97,8 +98,6 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
               Navigator.popUntil(context, ModalRoute.withName("/senitel")),
               Navigator.pop(context),
             }
-          else
-            {Navigator.pop(context)}
         },
       kTagsDrawerIndex => {
           if (from == kBooruGridDrawerIndex)
@@ -118,7 +117,7 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
             }
         },
       kDownloadsDrawerIndex => {
-          if (from == kBooruGridDrawerIndex)
+          if (from == kBooruGridDrawerIndex || from == kComeFromRandom)
             {
               Navigator.pushNamed(context, "/senitel"),
             },

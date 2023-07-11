@@ -12,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/interface.dart';
-import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/widgets/cloudflare_block.dart';
@@ -26,7 +25,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 part 'selection.dart';
 part 'wrapped_selection.dart';
-part 'filter.dart';
 part 'mutation.dart';
 
 class CloudflareBlockInterface {
@@ -51,10 +49,16 @@ class GridDescription<B> {
   final String? pageName;
   final List<GridBottomSheetAction<B>> actions;
   final GridColumn columns;
-  final DateTime? time;
+  final bool listView;
 
-  const GridDescription(this.drawerIndex, this.actions, this.columns,
-      {required this.keybindsDescription, this.pageName, this.time});
+  const GridDescription(
+    this.drawerIndex,
+    this.actions,
+    this.columns, {
+    required this.keybindsDescription,
+    this.pageName,
+    required this.listView,
+  });
 }
 
 abstract class SearchFilter<T extends Cell<B>, B> {
@@ -69,7 +73,7 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
   final Future<int>? Function() refresh;
   final void Function({required bool fab, required bool foreground})?
       hideShowFab;
-  final void Function(double pos, {double? infoPos, int? selectedCell})
+  final void Function(double pos, {double? infoPos, int? selectedCell})?
       updateScrollPosition;
   final void Function()? onBack;
   final void Function(BuildContext context, int indx)? overrideOnPress;
@@ -126,7 +130,7 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
       this.pageViewScrollingOffset,
       this.loadNext,
       required this.refresh,
-      required this.updateScrollPosition,
+      this.updateScrollPosition,
       this.hideShowFab,
       this.download,
       this.hideAlias,
@@ -149,19 +153,14 @@ class SearchAndFocus {
 }
 
 class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
-    with _Selection<T, B>, _Filter<T, B>, SingleTickerProviderStateMixin {
+    with _Selection<T, B> {
   late ScrollController controller =
       ScrollController(initialScrollOffset: widget.initalScrollPosition);
-
-  Settings settings = settingsIsar().settings.getSync(0)!;
-
-  late final StreamSubscription<Settings?> settingsWatcher;
 
   StreamSubscription<int>? ticker;
 
   bool inImageView = false;
 
-  double height = 0;
   late final _Mutation<T, B> _state = _Mutation(
     scrollUp: () {
       if (widget.hideShowFab != null) {
@@ -208,10 +207,9 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
     }
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      height = MediaQuery.sizeOf(context).height;
       controller.position.isScrollingNotifier.addListener(() {
         if (!_state.isRefreshing) {
-          widget.updateScrollPosition(controller.offset);
+          widget.updateScrollPosition?.call(controller.offset);
         }
 
         if (widget.hideShowFab != null) {
@@ -226,49 +224,11 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
       });
     });
 
-    settingsWatcher = settingsIsar().settings.watchObject(0).listen((event) {
-      // if (settings.selectedBooru != event!.selectedBooru) {
-      //   _state._cellCount = 0;
-      //   return;
-      // }
-
-      // not perfect, but fine
-      /* if (lastGridColCount != event.picturesPerRow) {
-        controller.position.jumpTo(controller.offset *
-            lastGridColCount.number /
-            event.picturesPerRow.number);
-      }*/
-
-      setState(() {
-        settings = event!;
-        //lastGridColCount = event.picturesPerRow;
-      });
-    });
-
-    if (settings.autoRefresh &&
-        settings.autoRefreshMicroseconds != 0 &&
-        widget.description.time != null &&
-        widget.description.time!.isBefore(DateTime.now()
-            .subtract(settings.autoRefreshMicroseconds.microseconds))) {
-      refresh();
-    } else if (widget.initalCellCount != 0) {
+    if (widget.initalCellCount != 0) {
       _state._cellCount = widget.initalCellCount;
-      //  refreshing = false;
     } else {
       refresh();
     }
-
-    // var offset = controller.offset;
-    // if (offset != 0) {
-    //   final contentSize = controller.position.viewportDimension +
-    //       controller.position.maxScrollExtent;
-    //   final cellHeight =
-    //       contentSize / (_state.cellCount / widget.description.columns.number);
-    //   final firstVisible =
-    //       offset * widget.description.columns.number ~/ cellHeight;
-
-    //   widget.scrollCallback!(firstVisible);
-    // }
 
     if (widget.loadNext == null) {
       return;
@@ -279,12 +239,14 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
         return;
       }
 
-      var hh = height - height * 0.90;
+      var h = MediaQuery.sizeOf(context).height;
+
+      var height = h - h * 0.90;
 
       if (!_state.isRefreshing &&
           _state.cellCount != 0 &&
           (controller.offset / controller.positions.first.maxScrollExtent) >=
-              1 - (hh / controller.positions.first.maxScrollExtent)) {
+              1 - (height / controller.positions.first.maxScrollExtent)) {
         _state._loadNext();
       }
     });
@@ -294,9 +256,7 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
   void dispose() {
     ticker?.cancel();
 
-    // animation.dispose();
     controller.dispose();
-    settingsWatcher.cancel();
     widget.belowMainFocus?.requestFocus();
 
     super.dispose();
@@ -319,7 +279,7 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
         controller.position.maxScrollExtent;
     // Estimate the target scroll position.
     double target;
-    if (settings.listViewBooru) {
+    if (widget.description.listView) {
       target = contentSize * p / _state.cellCount;
     } else {
       target = contentSize *
@@ -328,16 +288,16 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
     }
 
     if (target < controller.position.minScrollExtent) {
-      widget.updateScrollPosition(controller.position.minScrollExtent);
+      widget.updateScrollPosition?.call(controller.position.minScrollExtent);
       return;
     } else if (target > controller.position.maxScrollExtent) {
       if (widget.hasReachedEnd()) {
-        widget.updateScrollPosition(controller.position.maxScrollExtent);
+        widget.updateScrollPosition?.call(controller.position.maxScrollExtent);
         return;
       }
     }
 
-    widget.updateScrollPosition(target);
+    widget.updateScrollPosition?.call(target);
 
     controller.jumpTo(target);
   }
@@ -358,9 +318,8 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return ImageView<T>(
           systemOverlayRestoreColor: overlayColor,
-          updateTagScrollPos: (pos, selectedCell) =>
-              widget.updateScrollPosition(offsetGrid,
-                  infoPos: pos, selectedCell: selectedCell),
+          updateTagScrollPos: (pos, selectedCell) => widget.updateScrollPosition
+              ?.call(offsetGrid, infoPos: pos, selectedCell: selectedCell),
           scrollUntill: _scrollUntill,
           pageChange: widget.pageChangeImage,
           onExit: () {
@@ -461,11 +420,15 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                               Expanded(
                                   child: FlexibleSpaceBar(
                                       titlePadding: EdgeInsetsDirectional.only(
-                                          start: widget.onBack != null ? 48 : 0,
-                                          bottom: 8),
+                                        start: widget.onBack != null ? 48 : 0,
+                                      ),
                                       title: widget.searchWidget?.search ??
                                           Padding(
-                                            padding: const EdgeInsets.all(8),
+                                            padding: const EdgeInsets.only(
+                                                top: 8,
+                                                bottom: 16,
+                                                right: 8,
+                                                left: 8),
                                             child: Text(
                                               widget.description.pageName ??
                                                   widget.description
@@ -533,7 +496,7 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                                       interface: widget.cloudflareHook!(),
                                     )
                                   : const EmptyWidget())
-                          : settings.listViewBooru
+                          : widget.description.listView
                               ? SliverPadding(
                                   padding: EdgeInsets.only(
                                       bottom:
@@ -546,8 +509,8 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                                     itemCount: _state.cellCount,
                                     itemBuilder: (context, index) {
                                       var cell = _state.getCell(index);
-                                      var cellData = cell
-                                          .getCellData(settings.listViewBooru);
+                                      var cellData = cell.getCellData(
+                                          widget.description.listView);
                                       if (cellData.loaded != null &&
                                           cellData.loaded == false) {
                                         widget.loadThumbsDirectly?.call(index);
@@ -596,8 +559,8 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                                     itemCount: _state.cellCount,
                                     itemBuilder: (context, indx) {
                                       var m = _state.getCell(indx);
-                                      var cellData =
-                                          m.getCellData(settings.listViewBooru);
+                                      var cellData = m.getCellData(
+                                          widget.description.listView);
                                       if (cellData.loaded != null &&
                                           cellData.loaded == false) {
                                         widget.loadThumbsDirectly?.call(indx);

@@ -64,9 +64,6 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
                           child: OctoImage(
                         errorBuilder: (context, error, stackTrace) =>
                             const Icon(Icons.error_outline),
-                        // placeholderBuilder:(context) {
-                        //   return ;
-                        // },
                         progressIndicatorBuilder: (context, loadingProgress) {
                           if (loadingProgress == null) {
                             return Container();

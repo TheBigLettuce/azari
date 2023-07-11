@@ -15,6 +15,7 @@ import android.content.pm.ApplicationInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -61,6 +62,9 @@ class MainActivity : FlutterActivity() {
     private val CHANNEL = "lol.bruh19.azari.gallery"
     private lateinit var mover: Mover
     private var callback: ((String) -> Unit)? = null
+
+    //    private val deleteMutex = Mutex()
+//    private var deleteItems: List<Uri>? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         var appFlags = context.applicationInfo.flags
         if ((appFlags and ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
@@ -80,6 +84,12 @@ class MainActivity : FlutterActivity() {
         if (requestCode == 1 && resultCode == Activity.RESULT_OK) {
             callback?.invoke(data!!.data.toString())
             callback = null
+        }
+
+        if (requestCode == 9 && resultCode == Activity.RESULT_OK) {
+            mover.notifyGallery()
+        } else {
+            Log.e("delete files", "failed")
         }
     }
 
@@ -144,7 +154,52 @@ class MainActivity : FlutterActivity() {
                     }
                 }
 
-//                "moveFromMediaStore" -> {
+                "requestManageMedia" -> {
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            if (!MediaStore.canManageMedia(context)) {
+                                val intent =
+                                    Intent(android.provider.Settings.ACTION_REQUEST_MANAGE_MEDIA)
+                                intent.data = Uri.parse("package:${context.packageName}")
+                                context.startActivity(intent)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("requestManageMedia", e.toString())
+                    }
+                    result.success(null)
+                }
+
+                "deleteFiles" -> {
+                    try {
+                        val deleteItems = (call.arguments as List<String>).map { Uri.parse(it) }
+                        val status =
+                            MediaStore.createDeleteRequest(
+                                context.contentResolver,
+                                deleteItems
+                            )
+
+                        this.startIntentSenderForResult(status.intentSender, 9, null, 0, 0, 0)
+                    } catch (e: java.lang.Exception) {
+                        Log.e("deleteFiles", e.toString())
+                    }
+
+                }
+
+//                "copyFromMediaStore" -> {
+//                    val map = call.arguments as HashMap<String, String>
+//                    val from = map["from"]
+//                    val to = map["to"]
+//                    if (to == null) {
+//                        result.error("to is empty", null, null)
+//                    } else if (from == null) {
+//                        result.error("from is empty", null, null)
+//                    } else {
+//                        mover.copyMediastoreTo(to, from, result)
+//                    }
+//                }
+
+//                "copyFromMediaStore" -> {
 //                    val map = call.arguments as HashMap<String, String>
 //                    val from = map["from"]
 //                    val to = map["to"]
@@ -206,7 +261,8 @@ class Mover(
     private val thumbnailsChannel = Channel<ThumbOp>(capacity = 2)
     private val scope = CoroutineScope(coContext + Dispatchers.IO)
 
-    private val isLockedMux = Mutex()
+    private val isLockedDirMux = Mutex()
+    private val isLockedFilesMux = Mutex()
 //    private val copyFileLock = Mutex()
 
     init {
@@ -311,6 +367,10 @@ class Mover(
                         Log.e("downloader", e.toString())
                     }
 
+                    CoroutineScope(Dispatchers.Main).launch {
+                        galleryApi.notify { }
+                    }
+
                     Path(op.source).deleteIfExists()
                 }
             }
@@ -323,13 +383,28 @@ class Mover(
         }
     }
 
-//    fun copyMediastoreTo(to: String, from: String, result: MethodChannel.Result) {
+    fun notifyGallery() {
+        galleryApi.notify {
+
+        }
+    }
+
+//    fun deleteFiles(files: List<Uri>) {
 //        scope.launch {
-//            copyFileLock.lock()
+//            try {
+//                context.contentResolver.delete()
+//                MediaStore.createDeleteRequest()
+//            } catch (e: java.lang.Exception) {
+//
+//            }
+//        }
+//    }
+
+//    fun moveMediastoreTo(to: String, from: String, result: MethodChannel.Result) {
+//        scope.launch {
 //            val uri = Uri.parse(from)
 //            if (uri.lastPathSegment == null) {
 //                result.error("from is invalid", null, null)
-//                copyFileLock.unlock()
 //                return@launch
 //            }
 //
@@ -337,7 +412,6 @@ class Mover(
 //            try {
 //                if (FileSystem.SYSTEM.exists(filePath)) {
 //                    result.success(filePath.toString())
-//                    copyFileLock.unlock()
 //                    return@launch
 //                }
 //
@@ -367,46 +441,44 @@ class Mover(
 //                }
 //            } catch (e: Exception) {
 //                result.error(e.toString(), null, null)
-//                copyFileLock.unlock()
 //                return@launch
 //            }
 //
-//            copyFileLock.unlock()
 //            result.success(filePath.toString())
 //        }
 //    }
 
     fun refreshFiles(dirId: String) {
-        if (isLockedMux.isLocked) {
+        if (isLockedFilesMux.isLocked) {
             return
         }
 
         val time = Calendar.getInstance().time.time
 
         scope.launch {
-            if (!isLockedMux.tryLock()) {
+            if (!isLockedFilesMux.tryLock()) {
                 return@launch
             }
 
             refreshDirectoryFiles(dirId, context, time)
 
-            isLockedMux.unlock()
+            isLockedFilesMux.unlock()
         }
     }
 
     fun refreshGallery() {
-        if (isLockedMux.isLocked) {
+        if (isLockedDirMux.isLocked) {
             return
         }
 
         scope.launch {
-            if (!isLockedMux.tryLock()) {
+            if (!isLockedDirMux.tryLock()) {
                 return@launch
             }
 
             refreshMediastore(context)
 
-            isLockedMux.unlock()
+            isLockedDirMux.unlock()
         }
     }
 
@@ -442,6 +514,15 @@ class Mover(
             val media_mime = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
 
             if (!cursor.moveToFirst()) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    galleryApi.updatePictures(
+                        listOf(),
+                        dir,
+                        time,
+                        inRefreshArg = false,
+                        emptyArg = true
+                    ) {}
+                }.join()
                 return@use
             }
 
@@ -449,10 +530,18 @@ class Mover(
                 val list = mutableListOf<DirectoryFile>()
 
                 do {
-                    val uri = ContentUris.withAppendedId(
-                        MediaStore.Files.getContentUri("external"),
-                        cursor.getLong(id)
-                    )
+                    val uri =
+                        if (cursor.getInt(media_type) == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO) {
+                            ContentUris.withAppendedId(
+                                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                                cursor.getLong(id)
+                            )
+                        } else {
+                            ContentUris.withAppendedId(
+                                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                cursor.getLong(id)
+                            )
+                        }
 
                     val idval = cursor.getLong(id)
                     val lastmodifval = cursor.getLong(date_modified)
@@ -485,7 +574,8 @@ class Mover(
                                 copy,
                                 dir,
                                 time,
-                                !cursor.isLast
+                                inRefreshArg = !cursor.isLast,
+                                emptyArg = false
                             ) {}
                         }.join()
                     }
@@ -501,7 +591,8 @@ class Mover(
                             list,
                             dir,
                             time,
-                            false
+                            inRefreshArg = false,
+                            emptyArg = false
                         ) {}
                     }.join()
                 }
@@ -639,9 +730,14 @@ class Mover(
 
 private val imagesMutex = Mutex()
 
-internal class ImageView(context: Context, id: Int, params: Map<String, String>) : PlatformView {
+internal class ImageView(
+    context: Context,
+    id: Int,
+    params: Map<String, String>
+) : PlatformView {
     private var imageView: View?
-    private var recycle: (() -> Unit)? = null
+    private var gif: GifDrawable? = null
+    private var image: Bitmap? = null
 
     override fun getView(): View? {
         return imageView
@@ -650,8 +746,11 @@ internal class ImageView(context: Context, id: Int, params: Map<String, String>)
     override fun dispose() {
         imageView?.invalidate()
         imageView = null
-        recycle?.invoke()
-        recycle = null
+        gif?.recycle()
+        image?.recycle()
+
+        gif = null
+        image = null
     }
 
     init {
@@ -663,7 +762,6 @@ internal class ImageView(context: Context, id: Int, params: Map<String, String>)
             android.widget.ImageView(context)
         }
 
-
         CoroutineScope(Dispatchers.IO).launch {
             imagesMutex.lock()
             try {
@@ -674,9 +772,7 @@ internal class ImageView(context: Context, id: Int, params: Map<String, String>)
                         if (imageView == null) {
                             drawable.recycle()
                         } else {
-                            recycle = {
-                                drawable.recycle()
-                            }
+                            gif = drawable
                             (imageView as GifImageView).setImageDrawable(drawable)
                         }
                     }.join()
@@ -688,9 +784,7 @@ internal class ImageView(context: Context, id: Int, params: Map<String, String>)
                                 if (imageView == null) {
                                     b.recycle()
                                 } else {
-                                    recycle = {
-                                        b.recycle()
-                                    }
+                                    image = b
                                     (imageView as android.widget.ImageView).setImageBitmap(b)
                                 }
                             }.join()

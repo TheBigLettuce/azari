@@ -9,8 +9,8 @@ part of 'callback_grid.dart';
 
 abstract class GridMutationInterface<T extends Cell<B>, B> {
   int get cellCount;
-  // set cellCount(int i);
   bool get isRefreshing;
+  bool get mutated;
 
   void setIsRefreshing(bool isRefreshing);
   void setSource(int cellCount, T Function(int i) getCell);
@@ -30,6 +30,9 @@ class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
   int _cellCount = 0;
   bool _refreshing = false;
   bool _locked = false;
+
+  @override
+  bool get mutated => _filterGetCell != null;
 
   @override
   void restore() {
@@ -182,7 +185,7 @@ class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
       _refreshing = false;
 
       update(() {
-        widget().updateScrollPosition(0);
+        widget().updateScrollPosition?.call(0);
       });
     } catch (e, stackTrace) {
       if (e is CloudflareException) {

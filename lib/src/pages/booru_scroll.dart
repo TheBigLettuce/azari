@@ -9,6 +9,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/db/isar.dart' as db;
 import 'package:gallery/src/widgets/drawer/drawer.dart';
@@ -138,6 +139,15 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
       }
     }
 
+    if (skeletonState.settings.autoRefresh &&
+        skeletonState.settings.autoRefreshMicroseconds != 0 &&
+        widget.time != null &&
+        widget.time!.isBefore(DateTime.now().subtract(
+            skeletonState.settings.autoRefreshMicroseconds.microseconds))) {
+      _getInstance().writeTxnSync(() => _getInstance().posts.clearSync());
+      _clearAndRefresh();
+    }
+
     // tagWatcher = db.isar().lastTags.watchLazy().listen((_) {
     //   tags = BooruTags().latest.getStrings();
     // });
@@ -261,12 +271,13 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
             }, true)
           ],
           skeletonState.settings.picturesPerRow,
-          time: booru.wouldBecomeStale ? widget.time : null,
+          listView: skeletonState.settings.listViewBooru,
           keybindsDescription: AppLocalizations.of(context)!.booruGridPageName,
         ),
         hasReachedEnd: () => reachedEnd,
         mainFocus: skeletonState.mainFocus,
         scaffoldKey: skeletonState.scaffoldKey,
+
         aspectRatio: skeletonState.settings.ratio.value,
         getCell: (i) => _getInstance().posts.getSync(i + 1)!,
         cloudflareHook: () {

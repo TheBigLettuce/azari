@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:gallery/src/widgets/system_gestures.dart';
 
 import '../cell/cell.dart';
@@ -37,9 +38,9 @@ class SkeletonState {
 
 class GridSkeletonStateFilter<T extends Cell<B>, B>
     extends GridSkeletonState<T, B> {
-  void Function(String) filterFunc;
+  final FilterInterface<T, B> filter;
   GridSkeletonStateFilter({
-    required this.filterFunc,
+    required this.filter,
     required super.index,
     required super.onWillPop,
   });
@@ -61,11 +62,6 @@ class GridSkeletonState<T extends Cell<B>, B> extends SkeletonState {
     }
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
   GridSkeletonState({required int index, required this.onWillPop})
       : showFab = false,
         super(index);
@@ -78,6 +74,7 @@ Widget makeGridSkeleton<T extends Cell<B>, B>(BuildContext context,
     child: Scaffold(
         floatingActionButton: state.showFab
             ? FloatingActionButton(
+                heroTag: null,
                 onPressed: () {
                   if (grid.key != null &&
                       grid.key is GlobalKey<CallbackGridState>) {
@@ -147,7 +144,8 @@ Widget makeSkeletonSettings(BuildContext context, String pageDescription,
 }
 
 Widget makeSkeletonInnerSettings(BuildContext context, String pageDescription,
-    SkeletonState state, List<Widget> children) {
+    SkeletonState state, List<Widget> children,
+    {List<Widget>? appBarActions}) {
   Map<SingleActivatorDescription, Null Function()> bindings = {
     SingleActivatorDescription(AppLocalizations.of(context)!.back,
         const SingleActivator(LogicalKeyboardKey.escape)): () {
@@ -173,8 +171,22 @@ Widget makeSkeletonInnerSettings(BuildContext context, String pageDescription,
                 slivers: [
                   SliverAppBar.large(
                     expandedHeight: 160,
-                    flexibleSpace: FlexibleSpaceBar(
-                      title: Text(pageDescription),
+                    flexibleSpace: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                            child: FlexibleSpaceBar(
+                          title: Text(
+                            pageDescription,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        )),
+                        if (appBarActions != null)
+                          ...appBarActions
+                              .map((e) => wrapAppBarAction(e))
+                              .toList()
+                      ],
                     ),
                   ),
                   SliverPadding(
@@ -190,8 +202,7 @@ Widget makeSkeletonInnerSettings(BuildContext context, String pageDescription,
 
 Widget makeSkeleton(
     BuildContext context, String pageDescription, SkeletonState state,
-    {Future<bool> Function()? overrideOnPop,
-    List<Widget>? children,
+    {List<Widget>? children,
     Widget Function(BuildContext context, int indx)? builder,
     Map<SingleActivatorDescription, Null Function()>? additionalBindings,
     bool popSenitel = true,
@@ -247,9 +258,8 @@ Widget makeSkeleton(
           autofocus: true,
           focusNode: state.mainFocus,
           child: WillPopScope(
-            onWillPop: () => overrideOnPop != null
-                ? overrideOnPop()
-                : popUntilSenitel(context),
+            onWillPop: () =>
+                !popSenitel ? Future.value(true) : popUntilSenitel(context),
             child: Scaffold(
               key: state.scaffoldKey,
               drawer: makeDrawer(context, state.index),
