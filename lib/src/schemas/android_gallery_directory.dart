@@ -11,9 +11,10 @@ part 'android_gallery_directory.g.dart';
 class SystemGalleryDirectoryShrinked {
   final String name;
   final String bucketId;
+  final String relativeLoc;
 
   const SystemGalleryDirectoryShrinked(
-      {required this.bucketId, required this.name});
+      {required this.bucketId, required this.name, required this.relativeLoc});
 }
 
 @collection
@@ -28,12 +29,15 @@ class SystemGalleryDirectory implements Cell<SystemGalleryDirectoryShrinked> {
   @Index()
   final String name;
 
+  final String relativeLoc;
+
   @Index()
   final int lastModified;
 
   SystemGalleryDirectory(
       {required this.bucketId,
       required this.name,
+      required this.relativeLoc,
       required this.lastModified,
       required this.thumbFileId});
 
@@ -75,6 +79,7 @@ class SystemGalleryDirectory implements Cell<SystemGalleryDirectoryShrinked> {
 
   @override
   SystemGalleryDirectoryShrinked shrinkedData() {
-    return SystemGalleryDirectoryShrinked(name: name, bucketId: bucketId);
+    return SystemGalleryDirectoryShrinked(
+        name: name, bucketId: bucketId, relativeLoc: relativeLoc);
   }
 }

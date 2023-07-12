@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
+import 'package:gallery/src/gallery/android_api/android_directories.dart';
 import 'package:gallery/src/gallery/interface.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
@@ -22,7 +23,7 @@ class AndroidFiles extends StatefulWidget {
   final String dirName;
   final String bucketId;
   final GalleryAPIFilesRead<AndroidGalleryFilesExtra,
-      SystemGalleryDirectoryFile, String> api;
+      SystemGalleryDirectoryFile, SystemGalleryDirectoryFileShrinked> api;
   const AndroidFiles(
       {super.key,
       required this.api,
@@ -34,7 +35,9 @@ class AndroidFiles extends StatefulWidget {
 }
 
 class _AndroidFilesState extends State<AndroidFiles>
-    with SearchFilterGrid<SystemGalleryDirectoryFile, String> {
+    with
+        SearchFilterGrid<SystemGalleryDirectoryFile,
+            SystemGalleryDirectoryFileShrinked> {
   late StreamSubscription<Settings?> settingsWatcher;
   late final extra = widget.api.getExtra()
     ..setOnThumbnailCallback(() {
@@ -46,6 +49,8 @@ class _AndroidFilesState extends State<AndroidFiles>
         return;
       }
 
+      state.gridKey.currentState?.mutationInterface?.unselectAll();
+
       if (!inRefresh) {
         state.gridKey.currentState?.mutationInterface?.setIsRefreshing(false);
         setState(() {});
@@ -55,7 +60,8 @@ class _AndroidFilesState extends State<AndroidFiles>
     })
     ..setRefreshGridCallback(_refresh);
 
-  late final GridSkeletonStateFilter<SystemGalleryDirectoryFile, String> state =
+  late final GridSkeletonStateFilter<SystemGalleryDirectoryFile,
+          SystemGalleryDirectoryFileShrinked> state =
       GridSkeletonStateFilter(
           filter: extra.filter,
           index: kGalleryDrawerIndex,
@@ -101,11 +107,39 @@ class _AndroidFilesState extends State<AndroidFiles>
     widget.api.refresh();
   }
 
+  void _moveOrCopy(BuildContext context,
+      List<SystemGalleryDirectoryFileShrinked> selected, bool move) {
+    Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        return AndroidDirectories(
+          callback: CallbackDescription(move ? "move" : "copy", (chosen) {
+            // TODO: change
+            if (chosen.bucketId == widget.bucketId) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(move
+                      ? "Can't move to same destination"
+                      : "Can't copy to same destination"))); // TODO: change
+              return;
+            }
+            const MethodChannel channel =
+                MethodChannel("lol.bruh19.azari.gallery");
+            channel.invokeMethod("copyMoveFiles", {
+              "dest": chosen.relativeLoc,
+              "media": selected.map((e) => e.id).toList(),
+              "move": move
+            });
+          }),
+        );
+      },
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     var insets = MediaQuery.viewPaddingOf(context);
 
-    return makeGridSkeleton<SystemGalleryDirectoryFile, String>(
+    return makeGridSkeleton<SystemGalleryDirectoryFile,
+            SystemGalleryDirectoryFileShrinked>(
         context,
         state,
         CallbackGrid(
@@ -138,10 +172,49 @@ class _AndroidFilesState extends State<AndroidFiles>
                 kGalleryDrawerIndex,
                 [
                   GridBottomSheetAction(Icons.delete, (selected) {
-                    const MethodChannel channel =
-                        MethodChannel("lol.bruh19.azari.gallery");
-                    channel.invokeMethod("deleteFiles", selected);
-                  }, true)
+                    Navigator.push(
+                        context,
+                        DialogRoute(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: Text(
+                                  "Do you want to delete ${selected.length} ${selected.length == 1 ? 'item' : 'items'}?"), // TODO: change
+                              content: const Text(
+                                "This cannot be reversed",
+                                style: TextStyle(
+                                    color: Colors.red), // TODO: change
+                              ),
+                              actions: [
+                                TextButton(
+                                    onPressed: () {
+                                      const MethodChannel channel =
+                                          MethodChannel(
+                                              "lol.bruh19.azari.gallery");
+                                      channel.invokeMethod(
+                                          "deleteFiles",
+                                          selected
+                                              .map((e) => e.originalUri)
+                                              .toList());
+                                      Navigator.pop(context);
+                                    },
+                                    child: Text("yes")),
+                                TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: Text("no"))
+                              ],
+                            );
+                          },
+                        ));
+                  }, false),
+                  GridBottomSheetAction(Icons.copy, (selected) {
+                    _moveOrCopy(context, selected, false);
+                  }, false),
+                  GridBottomSheetAction(Icons.forward, (selected) {
+                    _moveOrCopy(context, selected, true);
+                  }, false)
                 ],
                 state.settings.gallerySettings.filesColumns ?? GridColumn.two,
                 listView: state.settings.listViewBooru,

@@ -9,6 +9,7 @@ package lol.bruh19.azari.gallery
 
 import android.app.Activity
 import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
@@ -58,10 +59,15 @@ import kotlin.io.path.Path
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.extension
 
+
+data class FilesDest(val dest: String, val media: List<Uri>, val move: Boolean)
+
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "lol.bruh19.azari.gallery"
     private lateinit var mover: Mover
     private var callback: ((String) -> Unit)? = null
+    private val copyFilesMux = Mutex()
+    private var copyFiles: FilesDest? = null
 
     //    private val deleteMutex = Mutex()
 //    private var deleteItems: List<Uri>? = null
@@ -86,10 +92,106 @@ class MainActivity : FlutterActivity() {
             callback = null
         }
 
-        if (requestCode == 9 && resultCode == Activity.RESULT_OK) {
-            mover.notifyGallery()
-        } else {
-            Log.e("delete files", "failed")
+        if (requestCode == 9) {
+            if (resultCode == Activity.RESULT_OK) {
+                mover.notifyGallery()
+            } else {
+                Log.e("delete files", "failed")
+            }
+        }
+
+        if (requestCode == 10) {
+            if (resultCode == Activity.RESULT_OK) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val values = ContentValues()
+                        values.put(MediaStore.MediaColumns.RELATIVE_PATH, copyFiles!!.dest)
+
+                        if (copyFiles!!.media.isNotEmpty()) {
+                            if (copyFiles!!.move) {
+                                for (e in copyFiles!!.media) {
+                                    contentResolver.update(
+                                        e,
+                                        values,
+                                        null,
+                                        null
+                                    )
+                                }
+                            } else {
+                                for (e in copyFiles!!.media) {
+                                    val isImage = contentResolver.getType(e)!!.startsWith("image")
+
+                                    contentResolver.openInputStream(e)?.use { stream ->
+                                        contentResolver.query(
+                                            e,
+                                            arrayOf(MediaStore.MediaColumns.DISPLAY_NAME),
+                                            null,
+                                            null,
+                                            null
+                                        )?.use {
+                                            if (!it.moveToFirst()) {
+                                                return@use
+                                            }
+                                            val details = ContentValues().apply {
+                                                put(
+                                                    MediaStore.MediaColumns.DISPLAY_NAME,
+                                                    it.getString(0)
+                                                )
+                                                put(
+                                                    MediaStore.MediaColumns.RELATIVE_PATH,
+                                                    copyFiles!!.dest
+                                                )
+                                                put(MediaStore.MediaColumns.IS_PENDING, 1)
+                                            }
+
+//                                            Log.e("cursor", "past details")
+
+                                            val resultUri =
+                                                if (isImage) {
+                                                    contentResolver.insert(
+                                                        MediaStore.Images.Media.getContentUri(
+                                                            MediaStore.VOLUME_EXTERNAL
+                                                        ), details
+                                                    )
+                                                } else {
+                                                    contentResolver.insert(
+                                                        MediaStore.Video.Media.getContentUri(
+                                                            MediaStore.VOLUME_EXTERNAL
+                                                        ), details
+                                                    )
+                                                }
+
+                                            if (resultUri == null) {
+                                                return@use
+                                            }
+
+//                                            Log.e("cursor", "past result")
+
+                                            contentResolver.openOutputStream(resultUri)?.use {
+                                                stream.transferTo(it)
+                                            }
+
+                                            details.clear()
+                                            details.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                                            contentResolver.update(resultUri, details, null, null)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e: java.lang.Exception) {
+                        Log.e("copy files", e.toString())
+                    }
+
+                    copyFiles = null
+                    mover.notifyGallery()
+                    copyFilesMux.unlock()
+                }
+            } else {
+                copyFiles = null
+                copyFilesMux.unlock()
+                Log.e("copy files", "failed")
+            }
         }
     }
 
@@ -101,6 +203,7 @@ class MainActivity : FlutterActivity() {
             context,
             GalleryApi(flutterEngine.dartExecutor.binaryMessenger)
         )
+
 
         flutterEngine.platformViewsController.registry.registerViewFactory(
             "imageview",
@@ -170,6 +273,50 @@ class MainActivity : FlutterActivity() {
                     result.success(null)
                 }
 
+                "copyMoveFiles" -> {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        copyFilesMux.lock()
+                        val dest = call.argument<String>("dest")
+                        val media = call.argument<List<Long>>("media")
+                        val move = call.argument<Boolean>("move")
+
+                        if (dest == null) {
+                            copyFilesMux.unlock()
+                            result.error("dest is empty", "", "")
+                        } else if (media == null || move == null) {
+                            copyFilesMux.unlock()
+                            result.error("media or move is empty", "", "")
+                        } else {
+                            try {
+
+                                val mediaUris = media.map {
+                                    ContentUris.withAppendedId(
+                                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                                        it
+                                    )
+                                }
+
+                                val intent = MediaStore.createWriteRequest(
+                                    context.contentResolver,
+                                    mediaUris
+                                )
+
+                                copyFiles = FilesDest(
+                                    dest,
+                                    mediaUris,
+                                    move
+                                )
+
+                                startIntentSenderForResult(intent.intentSender, 10, null, 0, 0, 0)
+
+                                result.success(null)
+                            } catch (e: java.lang.Exception) {
+                                copyFilesMux.unlock()
+                            }
+                        }
+                    }
+                }
+
                 "deleteFiles" -> {
                     try {
                         val deleteItems = (call.arguments as List<String>).map { Uri.parse(it) }
@@ -183,8 +330,16 @@ class MainActivity : FlutterActivity() {
                     } catch (e: java.lang.Exception) {
                         Log.e("deleteFiles", e.toString())
                     }
-
+                    result.success(null)
                 }
+
+//                "copyFiles" -> {
+//                    try {
+//                    } catch (e: Exception) {
+//                        Log.e("copyFiles", e.toString())
+//                    }
+//                    result.success(null)
+//                }
 
 //                "copyFromMediaStore" -> {
 //                    val map = call.arguments as HashMap<String, String>
@@ -252,7 +407,7 @@ class MainActivity : FlutterActivity() {
 
 data class MoveOp(val source: String, val rootUri: Uri, val dir: String)
 data class ThumbOp(val thumbs: List<Long>, val callback: (() -> Unit)?)
-class Mover(
+private class Mover(
     private val coContext: CoroutineContext,
     private val context: Context,
     private val galleryApi: GalleryApi
@@ -263,6 +418,8 @@ class Mover(
 
     private val isLockedDirMux = Mutex()
     private val isLockedFilesMux = Mutex()
+
+    private val copyFilesMux = Mutex()
 //    private val copyFileLock = Mutex()
 
     init {
@@ -285,7 +442,7 @@ class Mover(
                                     try {
                                         val uri = ContentUris.withAppendedId(
                                             MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
-                                            it
+                                            copy
                                         )
 
                                         res = getThumb(uri)
@@ -384,69 +541,12 @@ class Mover(
     }
 
     fun notifyGallery() {
-        galleryApi.notify {
+        CoroutineScope(Dispatchers.Main).launch {
+            galleryApi.notify {
 
+            }
         }
     }
-
-//    fun deleteFiles(files: List<Uri>) {
-//        scope.launch {
-//            try {
-//                context.contentResolver.delete()
-//                MediaStore.createDeleteRequest()
-//            } catch (e: java.lang.Exception) {
-//
-//            }
-//        }
-//    }
-
-//    fun moveMediastoreTo(to: String, from: String, result: MethodChannel.Result) {
-//        scope.launch {
-//            val uri = Uri.parse(from)
-//            if (uri.lastPathSegment == null) {
-//                result.error("from is invalid", null, null)
-//                return@launch
-//            }
-//
-//            val filePath = to.toPath().resolve(uri.lastPathSegment!!)
-//            try {
-//                if (FileSystem.SYSTEM.exists(filePath)) {
-//                    result.success(filePath.toString())
-//                    return@launch
-//                }
-//
-//                context.contentResolver.openInputStream(Uri.parse(from))?.use { stream ->
-//                    java.nio.file.Files.copy(stream, filePath.toNioPath())
-//
-////                    FileSystem.SYSTEM.openReadWrite(
-////                        filePath
-////                    ).use { handle ->
-////                        val buf = handle.sink().buffer()
-////                        val source = stream.source()
-////
-////                        try {
-////                            buf.writeAll(source)
-////                            buf.flush()
-////                            handle.flush()
-////
-////                            buf.close()
-////                            source.close()
-////                        } catch (e: Exception) {
-////                            buf.close()
-////                            source.close()
-////                            throw e
-////                        }
-////                    }
-//
-//                }
-//            } catch (e: Exception) {
-//                result.error(e.toString(), null, null)
-//                return@launch
-//            }
-//
-//            result.success(filePath.toString())
-//        }
-//    }
 
     fun refreshFiles(dirId: String) {
         if (isLockedFilesMux.isLocked) {
@@ -621,6 +721,7 @@ class Mover(
             MediaStore.Files.FileColumns.BUCKET_ID,
             MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME,
             MediaStore.Files.FileColumns.DATE_MODIFIED,
+            MediaStore.Files.FileColumns.RELATIVE_PATH,
             MediaStore.Files.FileColumns._ID
         )
 
@@ -635,6 +736,8 @@ class Mover(
             val bucket_id = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_ID)
             val b_display_name =
                 cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME)
+            val relative_path =
+                cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.RELATIVE_PATH)
             val date_modified =
                 cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_MODIFIED)
 
@@ -642,6 +745,13 @@ class Mover(
             val list = mutableListOf<Directory>()
 
             if (!cursor.moveToFirst()) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    galleryApi.updateDirectories(
+                        listOf(),
+                        inRefreshArg = false,
+                        emptyArg = true
+                    ) {}
+                }.join()
                 return@use
             }
 
@@ -657,13 +767,15 @@ class Mover(
                     val idval = cursor.getLong(id)
                     val lastmodifval = cursor.getLong(date_modified)
                     val nameval = cursor.getString(b_display_name) ?: "Internal"
+                    val relativepathval = cursor.getString(relative_path)
 
                     list.add(
                         Directory(
                             thumbFileId = idval,
                             lastModified = lastmodifval,
                             bucketId = bucketId,
-                            name = nameval
+                            name = nameval,
+                            relativeLoc = relativepathval
                         )
                     )
 
@@ -674,7 +786,7 @@ class Mover(
                         CoroutineScope(Dispatchers.Main).launch {
                             galleryApi.updateDirectories(
                                 copy,
-                                !cursor.isLast
+                                inRefreshArg = !cursor.isLast, emptyArg = false
                             ) {}
                         }.join()
                     }
@@ -687,7 +799,8 @@ class Mover(
                     CoroutineScope(Dispatchers.Main).launch {
                         galleryApi.updateDirectories(
                             list,
-                            false
+                            inRefreshArg = false,
+                            emptyArg = false
                         ) {}
                     }.join()
                 }
@@ -804,6 +917,7 @@ class NativeViewFactory : PlatformViewFactory(StandardMessageCodec.INSTANCE) {
         return ImageView(context, viewId, args as Map<String, String>)
     }
 }
+
 
 @ExperimentalUnsignedTypes
 val transparentImage = ubyteArrayOf(

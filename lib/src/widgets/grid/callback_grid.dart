@@ -50,12 +50,14 @@ class GridDescription<B> {
   final List<GridBottomSheetAction<B>> actions;
   final GridColumn columns;
   final bool listView;
+  final PreferredSizeWidget? bottomWidget;
 
   const GridDescription(
     this.drawerIndex,
     this.actions,
     this.columns, {
     required this.keybindsDescription,
+    this.bottomWidget,
     this.pageName,
     required this.listView,
   });
@@ -167,7 +169,7 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
         widget.hideShowFab!(fab: false, foreground: inImageView);
       }
     },
-    unselectAll: () {
+    unselectall: () {
       selected.clear();
       currentBottomSheet?.close();
     },
@@ -422,21 +424,32 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                                       titlePadding: EdgeInsetsDirectional.only(
                                         start: widget.onBack != null ? 48 : 0,
                                       ),
-                                      title: widget.searchWidget?.search ??
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                                top: 8,
-                                                bottom: 16,
-                                                right: 8,
-                                                left: 8),
-                                            child: Text(
-                                              widget.description.pageName ??
-                                                  widget.description
-                                                      .keybindsDescription,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ))),
+                                      title: widget.searchWidget?.search != null
+                                          ? Padding(
+                                              padding: EdgeInsets.only(
+                                                  bottom: widget
+                                                          .description
+                                                          .bottomWidget
+                                                          ?.preferredSize
+                                                          .height ??
+                                                      0),
+                                              child:
+                                                  widget.searchWidget?.search,
+                                            )
+                                          : Padding(
+                                              padding: const EdgeInsets.only(
+                                                  top: 8,
+                                                  bottom: 16,
+                                                  right: 8,
+                                                  left: 8),
+                                              child: Text(
+                                                widget.description.pageName ??
+                                                    widget.description
+                                                        .keybindsDescription,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ))),
                               if (Platform.isAndroid || Platform.isIOS)
                                 wrapAppBarAction(GestureDetector(
                                   onLongPress: () {
@@ -481,12 +494,14 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                             : Container(),
                         pinned: true,
                         stretch: true,
-                        bottom: _state.isRefreshing
-                            ? const PreferredSize(
-                                preferredSize: Size.fromHeight(4),
-                                child: LinearProgressIndicator(),
-                              )
-                            : null,
+                        bottom: widget.description.bottomWidget != null
+                            ? widget.description.bottomWidget!
+                            : _state.isRefreshing
+                                ? const PreferredSize(
+                                    preferredSize: Size.fromHeight(4),
+                                    child: LinearProgressIndicator(),
+                                  )
+                                : null,
                       ),
                       !_state.isRefreshing && _state.cellCount == 0
                           ? SliverToBoxAdapter(

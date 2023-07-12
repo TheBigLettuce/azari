@@ -13,8 +13,18 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 part 'android_gallery_directory_file.g.dart';
 
+class SystemGalleryDirectoryFileShrinked {
+  final int id;
+  final String originalUri;
+  final bool isVideo;
+
+  const SystemGalleryDirectoryFileShrinked(
+      this.id, this.originalUri, this.isVideo);
+}
+
 @collection
-class SystemGalleryDirectoryFile implements Cell<String> {
+class SystemGalleryDirectoryFile
+    implements Cell<SystemGalleryDirectoryFileShrinked> {
   @override
   Id? isarId;
 
@@ -120,8 +130,8 @@ class SystemGalleryDirectoryFile implements Cell<String> {
   }
 
   @override
-  String shrinkedData() {
-    return originalUri;
+  SystemGalleryDirectoryFileShrinked shrinkedData() {
+    return SystemGalleryDirectoryFileShrinked(id, originalUri, isVideo);
   }
 }
 

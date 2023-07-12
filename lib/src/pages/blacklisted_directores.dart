@@ -20,16 +20,8 @@ class BlacklistedDirectories extends StatefulWidget {
 
 class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
   final state = SkeletonState.settings();
-  final elems = GalleryImpl.instance()
-      .db
-      .blacklistedDirectorys
-      .where()
-      .findAllSync()
-      .map((e) => ListTile(
-            title: Text(e.name),
-            subtitle: Text(e.bucketId),
-          ))
-      .toList();
+  List<BlacklistedDirectory> elems =
+      GalleryImpl.instance().db.blacklistedDirectorys.where().findAllSync();
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +29,29 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
         context,
         "Blacklisted directories", // TODO: change
         state,
-        elems,
+        elems
+            .map((e) => ListTile(
+                  title: Text(e.name),
+                  trailing: IconButton(
+                      onPressed: () {
+                        GalleryImpl.instance().db.writeTxnSync(() {
+                          GalleryImpl.instance()
+                              .db
+                              .blacklistedDirectorys
+                              .deleteSync(e.isarId);
+                        });
+                        elems = GalleryImpl.instance()
+                            .db
+                            .blacklistedDirectorys
+                            .where()
+                            .findAllSync();
+                        setState(() {});
+                        GalleryImpl.instance().notify();
+                      },
+                      icon: const Icon(Icons.close)),
+                  subtitle: Text(e.bucketId),
+                ))
+            .toList(),
         appBarActions: [
           IconButton(
               onPressed: () {
@@ -49,6 +63,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
                         .db
                         .blacklistedDirectorys
                         .clearSync());
+                GalleryImpl.instance().notify();
               },
               icon: const Icon(Icons.delete))
         ]);

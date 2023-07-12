@@ -75,7 +75,7 @@ class AndroidGalleryExtra {
   }
 
   void setRefreshingStatusCallback(
-      void Function(int i, bool inRefresh) callback) {
+      void Function(int i, bool inRefresh, bool empty) callback) {
     _impl.callback = callback;
   }
 
@@ -83,14 +83,17 @@ class AndroidGalleryExtra {
 }
 
 GalleryAPIRead<
-    AndroidGalleryExtra,
-    AndroidGalleryFilesExtra,
-    SystemGalleryDirectory,
-    SystemGalleryDirectoryShrinked,
-    SystemGalleryDirectoryFile,
-    String> getAndroidGalleryApi() {
-  var api = _AndroidGallery();
-  _global!._setCurrentApi(api);
+        AndroidGalleryExtra,
+        AndroidGalleryFilesExtra,
+        SystemGalleryDirectory,
+        SystemGalleryDirectoryShrinked,
+        SystemGalleryDirectoryFile,
+        SystemGalleryDirectoryFileShrinked>
+    getAndroidGalleryApi({bool? temporary}) {
+  var api = _AndroidGallery(temporary: temporary);
+  if (temporary == false) {
+    _global!._setCurrentApi(api);
+  }
 
   return api;
 }
@@ -103,8 +106,8 @@ class _AndroidGallery
             SystemGalleryDirectory,
             SystemGalleryDirectoryShrinked,
             SystemGalleryDirectoryFile,
-            String> {
-  void Function(int i, bool inRefresh)? callback;
+            SystemGalleryDirectoryFileShrinked> {
+  void Function(int i, bool inRefresh, bool empty)? callback;
   void Function()? refreshGrid;
   void Function()? onThumbUpdate;
   _AndroidGalleryFiles? currentImages;
@@ -138,7 +141,9 @@ class _AndroidGallery
     refreshGrid = null;
     callback = null;
     currentImages = null;
-    _global!._unsetCurrentApi();
+    if (temporary == false) {
+      _global!._unsetCurrentApi();
+    }
   }
 
   @override
@@ -161,7 +166,7 @@ class _AndroidGallery
 
   @override
   GalleryAPIFilesRead<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile,
-      String> imagesRead(SystemGalleryDirectory d) {
+      SystemGalleryDirectoryFileShrinked> imagesRead(SystemGalleryDirectory d) {
     var instance =
         _AndroidGalleryFiles(openAndroidGalleryInnerIsar(), d.bucketId, () {
       currentImages = null;
@@ -170,5 +175,7 @@ class _AndroidGallery
     return instance;
   }
 
-  _AndroidGallery();
+  final bool? temporary;
+
+  _AndroidGallery({this.temporary});
 }

@@ -68,9 +68,10 @@ class GridSkeletonState<T extends Cell<B>, B> extends SkeletonState {
 }
 
 Widget makeGridSkeleton<T extends Cell<B>, B>(BuildContext context,
-    GridSkeletonState<T, B> state, CallbackGrid<T, B> grid) {
+    GridSkeletonState<T, B> state, CallbackGrid<T, B> grid,
+    {bool popSenitel = true}) {
   return WillPopScope(
-    onWillPop: state.onWillPop,
+    onWillPop: popSenitel ? state.onWillPop : () => Future.value(true),
     child: Scaffold(
         floatingActionButton: state.showFab
             ? FloatingActionButton(

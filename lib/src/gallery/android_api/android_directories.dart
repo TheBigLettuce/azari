@@ -20,8 +20,20 @@ import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../schemas/settings.dart';
 
+class CallbackDescription {
+  final void Function(SystemGalleryDirectoryShrinked chosen) c;
+  final String description;
+
+  void call(SystemGalleryDirectoryShrinked chosen) {
+    c(chosen);
+  }
+
+  const CallbackDescription(this.description, this.c);
+}
+
 class AndroidDirectories extends StatefulWidget {
-  const AndroidDirectories({super.key});
+  final CallbackDescription? callback;
+  const AndroidDirectories({super.key, this.callback});
 
   @override
   State<AndroidDirectories> createState() => _AndroidDirectoriesState();
@@ -42,7 +54,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
           filter: extra.filter,
           index: kGalleryDrawerIndex,
           onWillPop: () => popUntilSenitel(context));
-  final api = getAndroidGalleryApi();
+  late final api = getAndroidGalleryApi(temporary: widget.callback != null);
   final stream = StreamController<int>(sync: true);
 
   bool isThumbsLoading = false;
@@ -57,8 +69,10 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
     });
     searchHook(state);
 
-    extra.setRefreshingStatusCallback((i, inRefresh) {
-      if (!inRefresh) {
+    extra.setRefreshingStatusCallback((i, inRefresh, empty) {
+      state.gridKey.currentState?.mutationInterface?.unselectAll();
+
+      if (!inRefresh || empty) {
         state.gridKey.currentState?.mutationInterface?.setIsRefreshing(false);
         setState(() {});
       }
@@ -105,43 +119,86 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
             immutable: false,
             mainFocus: state.mainFocus,
             loadThumbsDirectly: extra.loadThumbs,
+            initalCellCount: widget.callback != null
+                ? GalleryImpl.instance().db.systemGalleryDirectorys.countSync()
+                : 0,
             searchWidget: SearchAndFocus(
                 searchWidget(context,
                     hint: AppLocalizations.of(context)!.directoriesHint),
                 searchFocus),
             refresh: () {
-              _refresh();
+              if (widget.callback == null) {
+                _refresh();
 
-              return null;
+                return null;
+              } else {
+                return Future.value(GalleryImpl.instance()
+                    .db
+                    .systemGalleryDirectorys
+                    .countSync());
+              }
             },
             overrideOnPress: (context, indx) {
-              var d =
-                  state.gridKey.currentState!.mutationInterface!.getCell(indx);
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AndroidFiles(
-                        api: api.imagesRead(d),
-                        dirName: d.name,
-                        bucketId: d.bucketId),
-                  ));
+              if (widget.callback != null) {
+                widget.callback!(state.gridKey.currentState!.mutationInterface!
+                    .getCell(indx)
+                    .shrinkedData());
+                Navigator.pop(context);
+              } else {
+                var d = state.gridKey.currentState!.mutationInterface!
+                    .getCell(indx);
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AndroidFiles(
+                          api: api.imagesRead(d),
+                          dirName: d.name,
+                          bucketId: d.bucketId),
+                    ));
+              }
             },
             progressTicker: stream.stream,
             hideShowFab: ({required bool fab, required bool foreground}) =>
                 state.updateFab(setState, fab: fab, foreground: foreground),
             description: GridDescription(
                 kGalleryDrawerIndex,
-                [
-                  GridBottomSheetAction(Icons.hide_image_outlined, (selected) {
-                    extra.addBlacklisted(selected
-                        .map((e) => BlacklistedDirectory(e.bucketId, e.name))
-                        .toList());
-                  }, true)
-                ],
+                widget.callback != null
+                    ? []
+                    : [
+                        GridBottomSheetAction(Icons.hide_image_outlined,
+                            (selected) {
+                          extra.addBlacklisted(selected
+                              .map((e) =>
+                                  BlacklistedDirectory(e.bucketId, e.name))
+                              .toList());
+                        }, true)
+                      ],
                 state.settings.gallerySettings.directoryColumns ??
                     GridColumn.two,
                 listView: state.settings.listViewBooru,
-                keybindsDescription: AppLocalizations.of(context)!
-                    .androidGKeybindsDescription)));
+                bottomWidget: widget.callback == null
+                    ? null
+                    : PreferredSize(
+                        preferredSize: const Size.fromHeight(12),
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Text(
+                            "Choose ${widget.callback!.description} destination",
+                            style: TextStyle(
+                                fontStyle: FontStyle.italic,
+                                fontSize: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.fontSize,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.8)),
+                          ),
+                        ), // TODO: change
+                      ),
+                keybindsDescription:
+                    AppLocalizations.of(context)!.androidGKeybindsDescription)),
+        popSenitel: widget.callback == null);
   }
 }

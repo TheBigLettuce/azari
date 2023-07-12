@@ -10,8 +10,8 @@ part of 'android_api_directories.dart';
 class AndroidGalleryFilesExtra {
   final _AndroidGalleryFiles _impl;
 
-  FilterInterface<SystemGalleryDirectoryFile, String> get filter =>
-      _impl.filter;
+  FilterInterface<SystemGalleryDirectoryFile,
+      SystemGalleryDirectoryFileShrinked> get filter => _impl.filter;
 
   void loadThumbnails(int from) {
     if (_impl.isThumbsLoading) {
@@ -62,7 +62,7 @@ class AndroidGalleryFilesExtra {
 class _AndroidGalleryFiles
     implements
         GalleryAPIFilesRead<AndroidGalleryFilesExtra,
-            SystemGalleryDirectoryFile, String> {
+            SystemGalleryDirectoryFile, SystemGalleryDirectoryFileShrinked> {
   Isar db;
   final String bucketId;
   void Function() unsetCurrentImages;
@@ -78,8 +78,9 @@ class _AndroidGalleryFiles
     return AndroidGalleryFilesExtra._(this);
   }
 
-  late final filter = IsarFilter<SystemGalleryDirectoryFile, String>(
-      db, openAndroidGalleryInnerIsar(), (offset, limit, s) {
+  late final filter = IsarFilter<SystemGalleryDirectoryFile,
+          SystemGalleryDirectoryFileShrinked>(db, openAndroidGalleryInnerIsar(),
+      (offset, limit, s) {
     return db.systemGalleryDirectoryFiles
         .filter()
         .nameContains(s, caseSensitive: false)

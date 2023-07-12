@@ -28,7 +28,10 @@ class _WrappedSelection extends StatelessWidget {
       children: [
         GestureDetector(
           onTap: selectUnselect,
-          onLongPress: () => selectUntil(thisIndx),
+          onLongPress: () {
+            selectUntil(thisIndx);
+            HapticFeedback.vibrate();
+          },
           child: AbsorbPointer(
             absorbing: selectionEnabled,
             child: child,

@@ -22,12 +22,14 @@ class Directory {
   final int thumbFileId;
   final String bucketId;
   final String name;
+  final String relativeLoc;
 
   final int lastModified;
 
   const Directory(
       {required this.bucketId,
       required this.thumbFileId,
+      required this.relativeLoc,
       required this.name,
       required this.lastModified});
 }
@@ -61,7 +63,7 @@ class DirectoryFile {
 
 @FlutterApi()
 abstract class GalleryApi {
-  void updateDirectories(List<Directory> d, bool inRefresh);
+  void updateDirectories(List<Directory> d, bool inRefresh, bool empty);
   void updatePictures(List<DirectoryFile?> f, String bucketId, int startTime,
       bool inRefresh, bool empty);
   void addThumbnails(List<ThumbnailId> thumbs);
@@ -78,4 +80,16 @@ class ThumbnailId {
   final Uint8List thumb;
 
   const ThumbnailId(this.id, this.thumb);
+}
+
+class CopyOp {
+  final String from;
+  final String to;
+
+  const CopyOp({required this.from, required this.to});
+}
+
+@HostApi()
+abstract class AndroidApi {
+  void copyMedia(List<String> files, String dest);
 }

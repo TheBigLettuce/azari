@@ -12,6 +12,8 @@ abstract class GridMutationInterface<T extends Cell<B>, B> {
   bool get isRefreshing;
   bool get mutated;
 
+  void unselectAll();
+
   void setIsRefreshing(bool isRefreshing);
   void setSource(int cellCount, T Function(int i) getCell);
   void tick(int i);
@@ -23,7 +25,10 @@ class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
   int? _cellCountFilter;
   T Function(int i)? _filterGetCell;
   final void Function() scrollUp;
-  final void Function() unselectAll;
+  final void Function() unselectall;
+
+  @override
+  void unselectAll() => unselectall();
 
   bool cloudflareBlocked = false;
 
@@ -210,6 +215,6 @@ class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
       {required bool immutable,
       required this.widget,
       required this.update,
-      required this.unselectAll,
+      required this.unselectall,
       required this.scrollUp});
 }

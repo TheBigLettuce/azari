@@ -123,7 +123,12 @@ class GalleryImpl implements GalleryApi {
   }
 
   @override
-  void updateDirectories(List<Directory?> d, bool inRefresh) {
+  void updateDirectories(List<Directory?> d, bool inRefresh, bool empty) {
+    if (empty) {
+      _currentApi?.callback
+          ?.call(db.systemGalleryDirectorys.countSync(), inRefresh, true);
+      return;
+    }
     var blacklisted = db.blacklistedDirectorys
         .where()
         .anyOf(d.cast<Directory>(),
@@ -139,12 +144,13 @@ class GalleryImpl implements GalleryApi {
           .map((e) => SystemGalleryDirectory(
               bucketId: e.bucketId,
               name: e.name,
+              relativeLoc: e.relativeLoc,
               thumbFileId: e.thumbFileId,
               lastModified: e.lastModified))
           .toList());
     });
     _currentApi?.callback
-        ?.call(db.systemGalleryDirectorys.countSync(), inRefresh);
+        ?.call(db.systemGalleryDirectorys.countSync(), inRefresh, false);
   }
 
   @override
