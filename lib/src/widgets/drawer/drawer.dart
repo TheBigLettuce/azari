@@ -13,22 +13,18 @@ import 'package:gallery/src/gallery/android_api/android_directories.dart';
 import 'package:gallery/src/gallery/server_api/server_directories.dart';
 import 'package:gallery/src/pages/tags.dart';
 import 'package:gallery/src/pages/downloads.dart';
-import 'package:gallery/src/pages/uploader.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/settings.dart';
-import 'package:gallery/src/schemas/upload_files.dart';
 import '../../../main.dart';
 import '../../db/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/gallery/uploader/uploader.dart' as upd;
 import 'package:gallery/src/pages/settings.dart' as widget;
 
 const int kBooruGridDrawerIndex = 0;
 const int kGalleryDrawerIndex = 1;
 const int kTagsDrawerIndex = 2;
 const int kDownloadsDrawerIndex = 3;
-const int kUploadsDrawerIndex = 4;
-const int kSettingsDrawerIndex = 5;
+const int kSettingsDrawerIndex = 4;
 const int kComeFromRandom = -1;
 
 Widget azariIcon(BuildContext context, {Color? color}) => GestureDetector(
@@ -76,17 +72,6 @@ List<NavigationDrawerDestination> destinations(BuildContext context) {
           color: primaryColor,
         ),
         label: Text(AppLocalizations.of(context)!.downloadsLabel)),
-    NavigationDrawerDestination(
-        icon: upd.Uploader().uploadsDb.uploadFilesStacks.countSync() != 0
-            ? const Badge(
-                child: Icon(Icons.upload),
-              )
-            : const Icon(Icons.upload),
-        selectedIcon: Icon(
-          Icons.upload,
-          color: primaryColor,
-        ),
-        label: Text(AppLocalizations.of(context)!.uploadLabel))
   ];
 }
 
@@ -134,19 +119,6 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
       kSettingsDrawerIndex => {
           Navigator.push(context,
               MaterialPageRoute(builder: (context) => const widget.Settings()))
-        },
-      kUploadsDrawerIndex => {
-          if (from == kBooruGridDrawerIndex)
-            {
-              Navigator.pushNamed(context, "/senitel"),
-            },
-          if (from != kUploadsDrawerIndex)
-            {
-              Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const Uploader()),
-                  ModalRoute.withName("/senitel"))
-            },
         },
       kGalleryDrawerIndex => {
           if (from == kBooruGridDrawerIndex)

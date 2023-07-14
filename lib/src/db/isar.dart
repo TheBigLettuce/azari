@@ -11,10 +11,10 @@ import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:gallery/src/booru/api/danbooru.dart';
 import 'package:gallery/src/booru/api/gelbooru.dart';
 import 'package:gallery/src/booru/interface.dart';
+import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/schemas/android_gallery_directory.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 import 'package:gallery/src/schemas/blacklisted_directory.dart';
@@ -42,6 +42,7 @@ import 'package:path/path.dart' as path;
 
 part 'grids.dart';
 
+String temporaryDbDir() => _temporaryDbPath;
 String temporaryImagesDir() => _temporaryImagesPath;
 void clearTemporaryImagesDir() {
   io.Directory(_temporaryImagesPath)
@@ -57,7 +58,6 @@ late String _temporaryDbPath;
 late String _temporaryImagesPath;
 //Isar? _isarCopy;
 bool _initalized = false;
-const MethodChannel _channel = MethodChannel("lol.bruh19.azari.gallery");
 
 /// [getBooru] returns a selected *booru API.
 /// Some *booru have no way to retreive posts down
@@ -85,7 +85,7 @@ BooruAPI getBooru({int? page}) {
   }
 }
 
-Future initalizeIsar() async {
+Future initalizeIsar(bool temporary) async {
   if (_initalized) {
     return;
   }
@@ -95,15 +95,18 @@ Future initalizeIsar() async {
 
   var d = io.Directory(path.joinAll([_directoryPath, "temporary"]));
   d.createSync();
-  d.deleteSync(recursive: true);
-  d.createSync();
-
+  if (!temporary) {
+    d.deleteSync(recursive: true);
+    d.createSync();
+  }
   _temporaryDbPath = d.path;
 
   var dimages = io.Directory(path.joinAll([_directoryPath, "temp_images"]));
   dimages.createSync();
-  dimages.deleteSync(recursive: true);
-  dimages.createSync();
+  if (!temporary) {
+    dimages.deleteSync(recursive: true);
+    dimages.createSync();
+  }
 
   _temporaryImagesPath = dimages.path;
 
@@ -175,6 +178,8 @@ void closeServerApiIsar() {
   }
 }
 
+String _microsecNow() => DateTime.now().microsecondsSinceEpoch.toString();
+
 Isar openServerApiInnerIsar() {
   var name = DateTime.now().microsecondsSinceEpoch.toString();
 
@@ -234,7 +239,7 @@ Future<bool> chooseDirectory(void Function(String) onError) async {
   String resp;
 
   if (io.Platform.isAndroid) {
-    resp = await _channel.invokeMethod("chooseDirectory");
+    resp = (await PlatformFunctions.chooseDirectory())!;
   } else {
     var r = await FilePicker.platform
         .getDirectoryPath(dialogTitle: "Pick a directory for downloads");

@@ -12,12 +12,14 @@ import 'package:gallery/src/booru/api/danbooru.dart';
 import 'package:gallery/src/booru/api/gelbooru.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
+import 'package:gallery/src/plugs/download_movers.dart';
 import 'package:gallery/src/schemas/local_tags.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart';
 
 late final PostTags _global;
 bool _isInitalized = false;
@@ -43,7 +45,7 @@ class _DissolveResult {
 }
 
 class PostTags {
-  final Isar tagsDb;
+  Isar tagsDb;
 
   _DissolveResult? _dissassembleFilename(String filename) {
     var split = filename.split("_");
@@ -111,6 +113,15 @@ class PostTags {
     return tagsDb.localTags.getSync(fastHash(filename))?.tags ?? [];
   }
 
+  bool containsTag(String filename, String tag) {
+    return tagsDb.localTags
+            .filter()
+            .filenameEqualTo(filename)
+            .tagsElementContains(tag)
+            .countSync() ==
+        1;
+  }
+
   int savedTagsCount() => tagsDb.localTags.countSync();
 
   Future<List<String>> getOnlineAndSaveTags(String filename) async {
@@ -158,6 +169,39 @@ class PostTags {
   }
 
   PostTags._new(this.tagsDb);
+
+  void restore(void Function(String? error) onDone) async {
+    // try {
+    //   const MethodChannel channel = MethodChannel("lol.bruh19.azari.gallery");
+    //   String resp = await channel.invokeMethod("pickFile");
+    //   onDone(null);
+    // } catch (e) {
+    //   onDone(e.toString());
+    // }
+  }
+
+  void copy(void Function(String? error) onDone) async {
+    try {
+      final plug = await chooseDownloadMoverPlug();
+
+      final dir = temporaryDbDir();
+
+      final output = joinAll([
+        dir,
+        "${DateTime.now().microsecondsSinceEpoch.toString()}_savedtags.bin"
+      ]);
+
+      await tagsDb.copyToFile(output);
+
+      plug.move(MoveOp(
+          source: output,
+          rootDir: settingsIsar().settings.getSync(0)!.path,
+          targetDir: "backup"));
+      onDone(null);
+    } catch (e) {
+      onDone(e.toString());
+    }
+  }
 
   factory PostTags() {
     return _global;

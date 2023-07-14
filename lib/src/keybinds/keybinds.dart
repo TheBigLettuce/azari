@@ -35,10 +35,6 @@ Map<SingleActivatorDescription, Null Function()> digitAndSettings(
         const SingleActivator(LogicalKeyboardKey.digit4, control: true)): () {
       selectDestination(context, from, kDownloadsDrawerIndex);
     },
-    SingleActivatorDescription(AppLocalizations.of(context)!.goUploads,
-        const SingleActivator(LogicalKeyboardKey.digit5, control: true)): () {
-      selectDestination(context, from, kUploadsDrawerIndex);
-    },
     SingleActivatorDescription(AppLocalizations.of(context)!.goSettings,
         const SingleActivator(LogicalKeyboardKey.keyS, control: true)): () {
       if (Platform.isAndroid || Platform.isIOS) {

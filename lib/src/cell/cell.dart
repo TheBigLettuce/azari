@@ -72,8 +72,6 @@ class AddInfoColorData {
 }
 
 abstract class Cell<B> {
-  //String get path;
-
   int? get isarId;
   set isarId(int? i);
 
@@ -84,7 +82,7 @@ abstract class Cell<B> {
       BuildContext context, dynamic extra, AddInfoColorData colors) get addInfo;
 
   @ignore
-  List<Widget>? Function() get addButtons;
+  List<Widget>? Function(BuildContext context) get addButtons;
 
   Contentable fileDisplay();
 
@@ -93,5 +91,5 @@ abstract class Cell<B> {
   CellData getCellData(bool isList);
 
   B shrinkedData();
-  //Cell({required this.path, required this.addInfo, required this.addButtons});
+  const Cell();
 }

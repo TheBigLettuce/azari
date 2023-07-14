@@ -335,7 +335,7 @@
     },
     "uploadStarted": "Upload started",
     "@uploadStarted": {
-        "description": "User started uploading file info"
+        "description": "The upload has started"
     },
     "addFiles": "Add files",
     "@addFiles": {
@@ -515,7 +515,7 @@
     "@dirAspectRatio": {
         "description": "Settings, directory cell aspect ratio"
     },
-    "dirGridColumns": "Uploads",
+    "dirGridColumns": "Directory grid columns",
     "@dirGridColumns": {
         "description": "Settings, directory grid columns on grid"
     },
@@ -549,7 +549,7 @@
     },
     "areYouSure": "Are you sure?",
     "@areYouSure": {
-        "description": "Settings, showed when user wants to purge thumbnails"
+        "description": "Settings, showed in the thumbnail db deletion dialog"
     },
     "autoRefreshSubtitle": "Refresh booru main grid on app open if it is stale.",
     "@autoRefreshSubtitle": {
@@ -586,5 +586,63 @@
     "itemPlural": "items",
     "@itemPlural": {
         "description": "Delete item plural"
+    },
+    "cannotBeReversed": "This cannot be reversed",
+    "@cannotBeReversed": {
+        "description": "Showed when deleting a file, permanently"
+    },
+    "chooseMoveDestination": "Choose move destination",
+    "@chooseMoveDestination": {
+        "description": "Showed when moving files in Android gallery"
+    },
+    "chooseCopyDestination": "Choose copy destination",
+    "@chooseCopyDestination": {
+        "description": "Showed when copying files in Android gallery"
+    },
+    "cantCopySameDest": "Can't copy to same destination",
+    "@cantCopySameDest": {
+        "description": "Showed when the original folder from which the file is being copied is selected"
+    },
+    "cantMoveSameDest": "Can't move to same destination",
+    "@cantMoveSameDest": {
+        "description": "Showed when the original folder from which the file is being moved is selected"
+    },
+    "chooseFileNotice": "Choose file",
+    "@chooseFileNotice": {
+        "description": "Showed when the app is asked to pick a file"
+    },
+    "couldntRestoreBackup": "Couldn't restore backup: {error}",
+    "@couldntRestoreBackup": {
+        "description": "Showed when the saved tags restoration failed",
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "restore": "Restore",
+    "@restore": {
+        "description": "The button to restore the saved tags"
+    },
+    "couldntBackup": "Couldn't backup: {error}",
+    "@couldntBackup": {
+        "description": "Showed when backing up the saved tags failed",
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "backupSuccess": "Output written to Download directory/backup",
+    "@backupSuccess": {
+        "description": "Showed when backing up the saved tags succeeded"
+    },
+    "backup": "Backup",
+    "@backup": {
+        "description": "Backup button"
+    },
+    "blacklistedDirectoriesPageName": "Blacklisted directories",
+    "@blacklistedDirectoriesPageName": {
+        "description": "Blacklisted directories page"
     }
 }

@@ -10,6 +10,7 @@ import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
 import 'package:gallery/src/schemas/blacklisted_directory.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:isar/isar.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BlacklistedDirectories extends StatefulWidget {
   const BlacklistedDirectories({super.key});
@@ -27,7 +28,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
   Widget build(BuildContext context) {
     return makeSkeletonInnerSettings(
         context,
-        "Blacklisted directories", // TODO: change
+        AppLocalizations.of(context)!.blacklistedDirectoriesPageName,
         state,
         elems
             .map((e) => ListTile(

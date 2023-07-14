@@ -99,7 +99,7 @@ mixin _Selection<T extends Cell<B>, B> on State<CallbackGrid<T, B>> {
           if (selection) {
             selected[i] = widget.getCell(i).shrinkedData();
           } else {
-            selected.remove(i);
+            _removeSelection(i);
           }
           lastSelected = i;
         }
@@ -109,16 +109,14 @@ mixin _Selection<T extends Cell<B>, B> on State<CallbackGrid<T, B>> {
           if (selection) {
             selected[i] = widget.getCell(i).shrinkedData();
           } else {
-            selected.remove(i);
+            _removeSelection(i);
           }
           lastSelected = i;
         }
         setState(() {});
       }
 
-      if (currentBottomSheet != null && currentBottomSheet!.setState != null) {
-        currentBottomSheet!.setState!(() {});
-      }
+      currentBottomSheet?.setState?.call(() {});
     }
   }
 

@@ -14,6 +14,7 @@ import 'package:gallery/src/pages/settings.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/schemas/tags.dart';
+import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 import 'package:isar/isar.dart';
 import 'package:mime/mime.dart';
@@ -152,10 +153,10 @@ class Post implements Cell<PostShrinked> {
 
   @ignore
   @override
-  List<Widget>? Function() get addButtons => () => [
+  List<Widget>? Function(BuildContext context) get addButtons => (_) => [
         if (tags.contains("original"))
-          const IconButton(
-            icon: Icon(kOriginalSticker),
+          IconButton(
+            icon: Icon(FilteringMode.original.icon),
             onPressed: null,
           ),
         IconButton(
@@ -278,9 +279,9 @@ class Post implements Cell<PostShrinked> {
     final content = fileDisplay();
 
     return CellData(thumb: provider, name: alias(isList), stickers: [
-      if (content is NetVideo) Icons.play_circle,
-      if (content is NetGif) Icons.gif_box_outlined,
-      if (tags.contains("original")) kOriginalSticker
+      if (content is NetVideo) FilteringMode.video.icon,
+      if (content is NetGif) FilteringMode.gif.icon,
+      if (tags.contains("original")) FilteringMode.original.icon
     ]);
   }
 
@@ -295,5 +296,3 @@ class PostShrinked {
 
   const PostShrinked({required this.fileUrl, required this.fileName});
 }
-
-const kOriginalSticker = Icons.circle_outlined;

@@ -24,6 +24,7 @@ import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'package:video_player/video_player.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../cell/cell.dart';
 import '../keybinds/keybinds.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -56,19 +57,6 @@ class _PhotoGalleryPageVideoLinuxState
             enableHardwareAcceleration: false));
 
     player.open(Media(widget.url));
-
-    //     .then((value) {
-    //   controller = value;
-    //   player.open(
-    //     Media(
-    //       widget.url,
-    //     ),
-    //   );
-    //   setState(() {});
-    // }).onError((error, stackTrace) {
-    //   log("video player linux",
-    //       level: Level.SEVERE.value, error: error, stackTrace: stackTrace);
-    // });
   }
 
   @override
@@ -115,11 +103,13 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
   void initState() {
     super.initState();
 
+    WakelockPlus.enable();
+
     if (widget.localVideo) {
       controller = VideoPlayerController.contentUri(Uri.parse(widget.url),
           videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true));
     } else {
-      controller = VideoPlayerController.network(widget.url,
+      controller = VideoPlayerController.networkUrl(Uri.parse(widget.url),
           videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true));
     }
 
@@ -163,6 +153,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
 
   @override
   void dispose() {
+    WakelockPlus.disable();
     disposed = true;
     controller.dispose();
     if (chewieController != null) {
@@ -280,6 +271,21 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
         });
       });
     }
+  }
+
+  void update(int count) {
+    cellCount = count;
+    if (cellCount == 0) {
+      key.currentState?.closeEndDrawer();
+      Navigator.pop(context);
+      return;
+    }
+    if (widget.getCell(currentPage) != currentCell) {
+      controller.nextPage(
+          duration: 200.ms, curve: Curves.fastLinearToSlowEaseIn);
+    }
+
+    setState(() {});
   }
 
   @override
@@ -468,7 +474,9 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                   child: InteractiveViewer(
                     child: Center(
                       child: AspectRatio(
-                        aspectRatio: size.aspectRatio,
+                        aspectRatio: size.aspectRatio == 0
+                            ? MediaQuery.of(context).size.aspectRatio
+                            : size.aspectRatio,
                         child: AndroidView(
                           viewType: "imageview",
                           hitTestBehavior:
@@ -487,7 +495,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
   @override
   Widget build(BuildContext context) {
-    var addB = currentCell.addButtons();
+    var addB = currentCell.addButtons(context);
     Map<SingleActivatorDescription, Null Function()> bindings =
         _makeBindings(context);
 
@@ -511,196 +519,248 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
         },
         child: Focus(
           autofocus: true,
-          child: Scaffold(
-              key: key,
-              extendBodyBehindAppBar: true,
-              endDrawerEnableOpenDragGesture: false,
-              endDrawer: Drawer(
-                backgroundColor:
-                    currentPalette?.mutedColor?.color.withOpacity(0.5) ??
-                        Theme.of(context).colorScheme.surface.withOpacity(0.5),
-                child: CustomScrollView(
-                  controller: scrollController,
-                  slivers: [
-                    endDrawerHeading(context, "Info", key,
-                        titleColor:
-                            currentPalette?.dominantColor?.titleTextColor ??
-                                Theme.of(context)
-                                    .colorScheme
-                                    .surface
-                                    .withOpacity(0.5),
-                        backroundColor: currentPalette?.dominantColor?.color
-                                .withOpacity(0.5) ??
-                            Theme.of(context)
-                                .colorScheme
-                                .surface
-                                .withOpacity(0.5)),
-                    SliverPadding(
-                      padding: EdgeInsets.only(bottom: insets.bottom),
-                      sliver: SliverList.list(
-                          children: [if (addInfo != null) ...addInfo]),
-                    )
-                  ],
-                ),
-              ),
-              appBar: PreferredSize(
-                preferredSize: AppBar().preferredSize,
-                child: IgnorePointer(
-                  ignoring: !isAppbarShown,
-                  child: AppBar(
-                    automaticallyImplyLeading: false,
-                    foregroundColor:
-                        currentPalette?.dominantColor?.bodyTextColor ??
-                            kListTileColorInInfo,
-                    backgroundColor:
-                        currentPalette?.dominantColor?.color.withOpacity(0.5) ??
-                            Colors.black.withOpacity(0.5),
-                    leading: const BackButton(),
-                    title: GestureDetector(
-                      onLongPress: () {
-                        Clipboard.setData(
-                            ClipboardData(text: currentCell.alias(false)));
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text(AppLocalizations.of(context)!
-                                .copiedClipboard)));
-                      },
-                      child: Text(currentCell.alias(false)),
-                    ),
-                    actions: [
-                      if (addB != null) ...addB,
-                      if (widget.addIcons != null)
-                        ...widget.addIcons!.call(this),
-                      if (widget.download != null)
-                        IconButton(
-                                onPressed: () {
-                                  if (downloadButtonController != null) {
-                                    downloadButtonController!.forward(from: 0);
-                                  }
-                                  widget.download!(currentPage);
-                                },
-                                icon: const Icon(Icons.download))
-                            .animate(
-                                onInit: (controller) =>
-                                    downloadButtonController = controller,
-                                effects: const [ShakeEffect()],
-                                autoPlay: false),
-                      IconButton(
-                          onPressed: () {
-                            key.currentState?.openEndDrawer();
-                          },
-                          icon: const Icon(Icons.info_outline))
+          child: Theme(
+            data: Theme.of(context).copyWith(
+                bottomSheetTheme: BottomSheetThemeData(
+              shape: const Border(),
+              backgroundColor:
+                  currentPalette?.dominantColor?.color.withOpacity(0.5) ??
+                      Colors.black.withOpacity(0.5),
+            )),
+            child: Scaffold(
+                key: key,
+                extendBodyBehindAppBar: true,
+                endDrawerEnableOpenDragGesture: false,
+                bottomSheet: !isAppbarShown
+                    ? null
+                    : widget.addIcons != null
+                        ? () {
+                            final items = widget.addIcons!(this);
+                            if (items.isNotEmpty) {
+                              return Theme(
+                                  data: Theme.of(context).copyWith(
+                                      iconButtonTheme: IconButtonThemeData(
+                                          style: ButtonStyle(
+                                              shape: const MaterialStatePropertyAll(
+                                                  RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.all(
+                                                              Radius.elliptical(
+                                                                  10, 10)))),
+                                              backgroundColor: MaterialStatePropertyAll(
+                                                  currentPalette
+                                                          ?.dominantColor?.color
+                                                          .withOpacity(0.5) ??
+                                                      Colors.black.withOpacity(0.5)))),
+                                      iconTheme: IconThemeData(color: currentPalette?.dominantColor?.bodyTextColor.withOpacity(0.8) ?? kListTileColorInInfo)),
+                                  child: SizedBox.fromSize(
+                                    size: Size.fromHeight(kToolbarHeight +
+                                        MediaQuery.viewPaddingOf(context)
+                                            .bottom),
+                                    child: Center(
+                                        child: Padding(
+                                      padding: EdgeInsets.only(
+                                          bottom:
+                                              MediaQuery.viewPaddingOf(context)
+                                                  .bottom),
+                                      child: Wrap(
+                                        spacing: 4,
+                                        children: items,
+                                      ),
+                                    )),
+                                  ));
+                            }
+                          }()
+                        : null,
+                endDrawer: Drawer(
+                  backgroundColor: currentPalette?.mutedColor?.color
+                          .withOpacity(0.5) ??
+                      Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                  child: CustomScrollView(
+                    controller: scrollController,
+                    slivers: [
+                      endDrawerHeading(context, "Info", key,
+                          titleColor:
+                              currentPalette?.dominantColor?.titleTextColor ??
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .surface
+                                      .withOpacity(0.5),
+                          backroundColor: currentPalette?.dominantColor?.color
+                                  .withOpacity(0.5) ??
+                              Theme.of(context)
+                                  .colorScheme
+                                  .surface
+                                  .withOpacity(0.5)),
+                      SliverPadding(
+                        padding: EdgeInsets.only(bottom: insets.bottom),
+                        sliver: SliverList.list(
+                            children: [if (addInfo != null) ...addInfo]),
+                      )
                     ],
                   ),
-                ).animate(
-                  effects: [
-                    FadeEffect(begin: 1, end: 0, duration: 500.milliseconds)
-                  ],
-                  autoPlay: false,
-                  target: isAppbarShown ? 0 : 1,
                 ),
-              ),
-              body: gestureDeadZones(context,
-                  child: Stack(children: [
-                    GestureDetector(
-                      onLongPress: widget.download == null
-                          ? null
-                          : () {
-                              HapticFeedback.vibrate();
-                              widget.download!(currentPage);
+                appBar: PreferredSize(
+                  preferredSize: AppBar().preferredSize,
+                  child: IgnorePointer(
+                    ignoring: !isAppbarShown,
+                    child: AppBar(
+                      automaticallyImplyLeading: false,
+                      foregroundColor: currentPalette
+                              ?.dominantColor?.bodyTextColor
+                              .withOpacity(0.8) ??
+                          kListTileColorInInfo,
+                      backgroundColor: currentPalette?.dominantColor?.color
+                              .withOpacity(0.5) ??
+                          Colors.black.withOpacity(0.5),
+                      leading: const BackButton(),
+                      title: GestureDetector(
+                        onLongPress: () {
+                          Clipboard.setData(
+                              ClipboardData(text: currentCell.alias(false)));
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text(AppLocalizations.of(context)!
+                                  .copiedClipboard)));
+                        },
+                        child: Text(currentCell.alias(false)),
+                      ),
+                      actions: [
+                        if (addB != null) ...addB,
+                        if (widget.download != null)
+                          IconButton(
+                                  onPressed: () {
+                                    if (downloadButtonController != null) {
+                                      downloadButtonController!
+                                          .forward(from: 0);
+                                    }
+                                    widget.download!(currentPage);
+                                  },
+                                  icon: const Icon(Icons.download))
+                              .animate(
+                                  onInit: (controller) =>
+                                      downloadButtonController = controller,
+                                  effects: const [ShakeEffect()],
+                                  autoPlay: false),
+                        IconButton(
+                            onPressed: () {
+                              key.currentState?.openEndDrawer();
                             },
-                      onTap: _onTap,
-                      child: PhotoViewGallery.builder(
-                          loadingBuilder: (context, event) {
-                            final expectedBytes = event?.expectedTotalBytes;
-                            final loadedBytes = event?.cumulativeBytesLoaded;
-                            final value =
-                                loadedBytes != null && expectedBytes != null
-                                    ? loadedBytes / expectedBytes
-                                    : null;
-
-                            return Container(
-                              decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                      begin: Alignment.bottomCenter,
-                                      end: Alignment.topCenter,
-                                      colors: [
-                                    ColorTween(
-                                            begin: Colors.black,
-                                            end: currentPalette
-                                                ?.mutedColor?.color
-                                                .withOpacity(0.7))
-                                        .lerp(value ?? 0)!,
-                                    ColorTween(
-                                            begin: Colors.black38,
-                                            end: currentPalette
-                                                ?.mutedColor?.color
-                                                .withOpacity(0.5))
-                                        .lerp(value ?? 0)!,
-                                    ColorTween(
-                                            begin: Colors.black12,
-                                            end: currentPalette
-                                                ?.mutedColor?.color
-                                                .withOpacity(0.3))
-                                        .lerp(value ?? 0)!,
-                                  ])),
-                              child: Center(
-                                child: SizedBox(
-                                    width: 20.0,
-                                    height: 20.0,
-                                    child: CircularProgressIndicator(
-                                        color: currentPalette
-                                            ?.dominantColor?.color,
-                                        value: value)),
-                              ),
-                            );
-                          },
-                          enableRotation: true,
-                          backgroundDecoration: BoxDecoration(
-                              color: currentPalette?.mutedColor?.color
-                                  .withOpacity(0.7)),
-                          onPageChanged: (index) async {
-                            currentPage = index;
-                            widget.pageChange?.call(this);
-                            _loadNext(index);
-
-                            widget.scrollUntill(index);
-
-                            var c = widget.getCell(index);
-
-                            fullscreenPlug.setTitle(c.alias(true));
-
-                            setState(() {
-                              currentCell = c;
-                              _extractPalette();
-                            });
-                          },
-                          pageController: controller,
-                          itemCount: cellCount,
-                          builder: (context, indx) {
-                            var fileContent =
-                                widget.getCell(indx).fileDisplay();
-
-                            return switch (fileContent) {
-                              AndroidImage() => _makeAndroidImage(
-                                  fileContent.size, fileContent.uri, false),
-                              AndroidGif() => _makeAndroidImage(
-                                  fileContent.size, fileContent.uri, true),
-                              NetGif() => _makeNetImage(fileContent.provider),
-                              NetImage() => _makeNetImage(fileContent.provider),
-                              AndroidVideo() =>
-                                _makeVideo(fileContent.uri, true),
-                              NetVideo() => _makeVideo(fileContent.uri, false),
-                              EmptyContent() =>
-                                PhotoViewGalleryPageOptions.customChild(
-                                    child: const Center(
-                                  child: Icon(Icons.error_outline),
-                                ))
-                            };
-                          }),
+                            icon: const Icon(Icons.info_outline))
+                      ],
                     ),
-                  ]),
-                  left: true,
-                  right: true)),
+                  ).animate(
+                    effects: [
+                      FadeEffect(begin: 1, end: 0, duration: 500.milliseconds)
+                    ],
+                    autoPlay: false,
+                    target: isAppbarShown ? 0 : 1,
+                  ),
+                ),
+                body: gestureDeadZones(context,
+                    child: Stack(children: [
+                      GestureDetector(
+                        onLongPress: widget.download == null
+                            ? null
+                            : () {
+                                HapticFeedback.vibrate();
+                                widget.download!(currentPage);
+                              },
+                        onTap: _onTap,
+                        child: PhotoViewGallery.builder(
+                            loadingBuilder: (context, event) {
+                              final expectedBytes = event?.expectedTotalBytes;
+                              final loadedBytes = event?.cumulativeBytesLoaded;
+                              final value =
+                                  loadedBytes != null && expectedBytes != null
+                                      ? loadedBytes / expectedBytes
+                                      : null;
+
+                              return Container(
+                                decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                        begin: Alignment.bottomCenter,
+                                        end: Alignment.topCenter,
+                                        colors: [
+                                      ColorTween(
+                                              begin: Colors.black,
+                                              end: currentPalette
+                                                  ?.mutedColor?.color
+                                                  .withOpacity(0.7))
+                                          .lerp(value ?? 0)!,
+                                      ColorTween(
+                                              begin: Colors.black38,
+                                              end: currentPalette
+                                                  ?.mutedColor?.color
+                                                  .withOpacity(0.5))
+                                          .lerp(value ?? 0)!,
+                                      ColorTween(
+                                              begin: Colors.black12,
+                                              end: currentPalette
+                                                  ?.mutedColor?.color
+                                                  .withOpacity(0.3))
+                                          .lerp(value ?? 0)!,
+                                    ])),
+                                child: Center(
+                                  child: SizedBox(
+                                      width: 20.0,
+                                      height: 20.0,
+                                      child: CircularProgressIndicator(
+                                          color: currentPalette
+                                              ?.dominantColor?.color,
+                                          value: value)),
+                                ),
+                              );
+                            },
+                            enableRotation: true,
+                            backgroundDecoration: BoxDecoration(
+                                color: currentPalette?.mutedColor?.color
+                                    .withOpacity(0.7)),
+                            onPageChanged: (index) async {
+                              currentPage = index;
+                              widget.pageChange?.call(this);
+                              _loadNext(index);
+
+                              widget.scrollUntill(index);
+
+                              var c = widget.getCell(index);
+
+                              fullscreenPlug.setTitle(c.alias(true));
+
+                              setState(() {
+                                currentCell = c;
+                                _extractPalette();
+                              });
+                            },
+                            pageController: controller,
+                            itemCount: cellCount,
+                            builder: (context, indx) {
+                              var fileContent =
+                                  widget.getCell(indx).fileDisplay();
+
+                              return switch (fileContent) {
+                                AndroidImage() => _makeAndroidImage(
+                                    fileContent.size, fileContent.uri, false),
+                                AndroidGif() => _makeAndroidImage(
+                                    fileContent.size, fileContent.uri, true),
+                                NetGif() => _makeNetImage(fileContent.provider),
+                                NetImage() =>
+                                  _makeNetImage(fileContent.provider),
+                                AndroidVideo() =>
+                                  _makeVideo(fileContent.uri, true),
+                                NetVideo() =>
+                                  _makeVideo(fileContent.uri, false),
+                                EmptyContent() =>
+                                  PhotoViewGalleryPageOptions.customChild(
+                                      child: const Center(
+                                    child: Icon(Icons.error_outline),
+                                  ))
+                              };
+                            }),
+                      ),
+                    ]),
+                    left: true,
+                    right: true)),
+          ),
         ));
   }
 }

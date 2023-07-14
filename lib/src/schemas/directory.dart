@@ -72,7 +72,7 @@ class Directory implements Cell<Directory> {
 
   @ignore
   @override
-  List<Widget>? Function() get addButtons => () {
+  List<Widget>? Function(BuildContext context) get addButtons => (_) {
         return null;
       };
 

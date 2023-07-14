@@ -32,16 +32,23 @@ class SkeletonState {
     mainFocus.dispose();
   }
 
-  SkeletonState.settings() : index = 0;
+  SkeletonState.settings() : index = kSettingsDrawerIndex;
   SkeletonState(this.index);
 }
 
 class GridSkeletonStateFilter<T extends Cell<B>, B>
     extends GridSkeletonState<T, B> {
   final FilterInterface<T, B> filter;
+  final Set<FilteringMode> filteringModes;
+
+  static void _doNothing(FilteringMode m) {}
+
+  final void Function(FilteringMode selected) hook;
   GridSkeletonStateFilter({
     required this.filter,
     required super.index,
+    this.filteringModes = const {},
+    this.hook = _doNothing,
     required super.onWillPop,
   });
 }
@@ -69,7 +76,7 @@ class GridSkeletonState<T extends Cell<B>, B> extends SkeletonState {
 
 Widget makeGridSkeleton<T extends Cell<B>, B>(BuildContext context,
     GridSkeletonState<T, B> state, CallbackGrid<T, B> grid,
-    {bool popSenitel = true}) {
+    {bool popSenitel = true, bool noDrawer = false}) {
   return WillPopScope(
     onWillPop: popSenitel ? state.onWillPop : () => Future.value(true),
     child: Scaffold(
@@ -92,8 +99,9 @@ Widget makeGridSkeleton<T extends Cell<B>, B>(BuildContext context,
             : null,
         endDrawerEnableOpenDragGesture: false,
         key: state.scaffoldKey,
-        drawer: makeDrawer(context, state.index),
-        endDrawer: makeEndDrawerSettings(context, state.scaffoldKey),
+        drawer: noDrawer ? null : makeDrawer(context, state.index),
+        endDrawer:
+            noDrawer ? null : makeEndDrawerSettings(context, state.scaffoldKey),
         body: gestureDeadZones(
           context,
           child: addRail(context, state.index, state.scaffoldKey, grid),

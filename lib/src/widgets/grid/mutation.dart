@@ -26,6 +26,7 @@ class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
   T Function(int i)? _filterGetCell;
   final void Function() scrollUp;
   final void Function() unselectall;
+  final void Function() updateImageView;
 
   @override
   void unselectAll() => unselectall();
@@ -45,6 +46,7 @@ class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
     _filterGetCell = null;
     _locked = false;
 
+    updateImageView();
     update(null);
   }
 
@@ -84,6 +86,8 @@ class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
 
     unselectAll();
 
+    updateImageView();
+
     update(null);
   }
 
@@ -98,6 +102,8 @@ class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
 
     try {
       _cellCount = await widget().loadNext!();
+
+      updateImageView();
 
       update(null);
     } catch (e) {
@@ -189,6 +195,8 @@ class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
       _cellCount = value;
       _refreshing = false;
 
+      updateImageView();
+
       update(() {
         widget().updateScrollPosition?.call(0);
       });
@@ -215,6 +223,7 @@ class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
       {required bool immutable,
       required this.widget,
       required this.update,
+      required this.updateImageView,
       required this.unselectall,
       required this.scrollUp});
 }

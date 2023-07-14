@@ -6,34 +6,53 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:async';
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/isar.dart';
+import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
 import 'package:gallery/src/gallery/android_api/android_files.dart';
 import 'package:gallery/src/pages/senitel.dart';
 import 'package:gallery/src/schemas/android_gallery_directory.dart';
+import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 import 'package:gallery/src/schemas/blacklisted_directory.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:logging/logging.dart';
 import '../../schemas/settings.dart';
 
 class CallbackDescription {
-  final void Function(SystemGalleryDirectoryShrinked chosen) c;
+  final void Function(SystemGalleryDirectoryShrinked? chosen, String? newDir) c;
   final String description;
 
-  void call(SystemGalleryDirectoryShrinked chosen) {
-    c(chosen);
+  void call(SystemGalleryDirectoryShrinked? chosen, String? newDir) {
+    c(chosen, newDir);
   }
 
   const CallbackDescription(this.description, this.c);
 }
 
+class CallbackDescriptionNested {
+  final void Function(SystemGalleryDirectoryFileShrinked chosen) c;
+  final String description;
+
+  void call(SystemGalleryDirectoryFileShrinked chosen) {
+    c(chosen);
+  }
+
+  const CallbackDescriptionNested(this.description, this.c);
+}
+
 class AndroidDirectories extends StatefulWidget {
   final CallbackDescription? callback;
-  const AndroidDirectories({super.key, this.callback});
+  final CallbackDescriptionNested? nestedCallback;
+  final bool? noDrawer;
+  const AndroidDirectories(
+      {super.key, this.callback, this.nestedCallback, this.noDrawer})
+      : assert(!(callback != null && nestedCallback != null));
 
   @override
   State<AndroidDirectories> createState() => _AndroidDirectoriesState();
@@ -44,9 +63,16 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
   late StreamSubscription<Settings?> settingsWatcher;
   late final extra = api.getExtra()
     ..setOnThumbnailCallback(() {
-      setState(() {});
+      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+        state.gridKey.currentState?.setState(() {});
+      });
     })
-    ..setRefreshGridCallback(_refresh);
+    ..setRefreshGridCallback(() {
+      if (state.gridKey.currentState?.mutationInterface?.isRefreshing ==
+          false) {
+        _refresh();
+      }
+    });
 
   late final GridSkeletonStateFilter<SystemGalleryDirectory,
           SystemGalleryDirectoryShrinked> state =
@@ -54,7 +80,9 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
           filter: extra.filter,
           index: kGalleryDrawerIndex,
           onWillPop: () => popUntilSenitel(context));
-  late final api = getAndroidGalleryApi(temporary: widget.callback != null);
+  late final api = getAndroidGalleryApi(
+      temporaryDb: widget.callback != null || widget.nestedCallback != null,
+      setCurrentApi: widget.callback == null);
   final stream = StreamController<int>(sync: true);
 
   bool isThumbsLoading = false;
@@ -72,12 +100,12 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
     extra.setRefreshingStatusCallback((i, inRefresh, empty) {
       state.gridKey.currentState?.mutationInterface?.unselectAll();
 
+      stream.add(i);
+
       if (!inRefresh || empty) {
         state.gridKey.currentState?.mutationInterface?.setIsRefreshing(false);
         setState(() {});
       }
-
-      stream.add(i);
     });
   }
 
@@ -113,6 +141,25 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
             scaffoldKey: state.scaffoldKey,
             systemNavigationInsets: insets,
             hasReachedEnd: () => true,
+            menuButtonItems: widget.callback != null
+                ? [
+                    IconButton(
+                        onPressed: () async {
+                          try {
+                            widget.callback!(
+                                null,
+                                await PlatformFunctions.chooseDirectory(
+                                    temporary: true));
+                            Navigator.pop(context);
+                          } catch (e) {
+                            log("new folder in android_directories",
+                                level: Level.SEVERE.value, error: e);
+                            Navigator.pop(context);
+                          }
+                        },
+                        icon: const Icon(Icons.create_new_folder_outlined))
+                  ]
+                : null,
             aspectRatio:
                 state.settings.gallerySettings.directoryAspectRatio?.value ?? 1,
             hideAlias: state.settings.gallerySettings.hideDirectoryName,
@@ -120,29 +167,29 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
             mainFocus: state.mainFocus,
             loadThumbsDirectly: extra.loadThumbs,
             initalCellCount: widget.callback != null
-                ? GalleryImpl.instance().db.systemGalleryDirectorys.countSync()
+                ? extra.db.systemGalleryDirectorys.countSync()
                 : 0,
             searchWidget: SearchAndFocus(
                 searchWidget(context,
                     hint: AppLocalizations.of(context)!.directoriesHint),
                 searchFocus),
             refresh: () {
-              if (widget.callback == null) {
+              if (widget.callback != null) {
+                return Future.value(
+                    extra.db.systemGalleryDirectorys.countSync());
+              } else {
                 _refresh();
 
                 return null;
-              } else {
-                return Future.value(GalleryImpl.instance()
-                    .db
-                    .systemGalleryDirectorys
-                    .countSync());
               }
             },
             overrideOnPress: (context, indx) {
               if (widget.callback != null) {
-                widget.callback!(state.gridKey.currentState!.mutationInterface!
-                    .getCell(indx)
-                    .shrinkedData());
+                widget.callback!(
+                    state.gridKey.currentState!.mutationInterface!
+                        .getCell(indx)
+                        .shrinkedData(),
+                    null);
                 Navigator.pop(context);
               } else {
                 var d = state.gridKey.currentState!.mutationInterface!
@@ -153,6 +200,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                       builder: (context) => AndroidFiles(
                           api: api.imagesRead(d),
                           dirName: d.name,
+                          callback: widget.nestedCallback,
                           bucketId: d.bucketId),
                     ));
               }
@@ -162,7 +210,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                 state.updateFab(setState, fab: fab, foreground: foreground),
             description: GridDescription(
                 kGalleryDrawerIndex,
-                widget.callback != null
+                widget.callback != null || widget.nestedCallback != null
                     ? []
                     : [
                         GridBottomSheetAction(Icons.hide_image_outlined,
@@ -176,29 +224,32 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                 state.settings.gallerySettings.directoryColumns ??
                     GridColumn.two,
                 listView: state.settings.listViewBooru,
-                bottomWidget: widget.callback == null
-                    ? null
-                    : PreferredSize(
-                        preferredSize: const Size.fromHeight(12),
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Text(
-                            "Choose ${widget.callback!.description} destination",
-                            style: TextStyle(
-                                fontStyle: FontStyle.italic,
-                                fontSize: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.fontSize,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withOpacity(0.8)),
-                          ),
-                        ), // TODO: change
-                      ),
+                bottomWidget:
+                    widget.callback == null && widget.nestedCallback == null
+                        ? null
+                        : gridBottomWidgetText(
+                            context,
+                            widget.callback != null
+                                ? widget.callback!.description
+                                : widget.nestedCallback!.description),
                 keybindsDescription:
                     AppLocalizations.of(context)!.androidGKeybindsDescription)),
-        popSenitel: widget.callback == null);
+        popSenitel: widget.callback == null && widget.nestedCallback == null,
+        noDrawer: widget.noDrawer ?? false);
   }
 }
+
+PreferredSizeWidget gridBottomWidgetText(BuildContext context, String title) =>
+    PreferredSize(
+      preferredSize: const Size.fromHeight(12),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Text(
+          title,
+          style: TextStyle(
+              fontStyle: FontStyle.italic,
+              fontSize: Theme.of(context).textTheme.titleMedium?.fontSize,
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.8)),
+        ),
+      ),
+    );

@@ -40,13 +40,15 @@ class _CloudflareBlockState extends State<CloudflareBlock> {
           ),
         ),
         FilledButton(
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(
-                builder: (context) {
-                  return AndroidWebview(intf: widget.interface);
-                },
-              ));
-            },
+            onPressed: !Platform.isAndroid
+                ? null
+                : () {
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (context) {
+                        return AndroidWebview(intf: widget.interface);
+                      },
+                    ));
+                  },
             child: Text(AppLocalizations.of(context)!.solveCaptcha))
       ],
     ));
@@ -66,12 +68,6 @@ class _AndroidWebviewState extends State<AndroidWebview> {
 
   @override
   void initState() {
-    // ..platform as AndroidWebViewController
-    // ..setUserAgent(kTorUserAgent)
-    // ..loadRequest(
-    //   Uri.https("duckduckgo.com"),
-    // );
-
     CookieManager.instance().deleteAllCookies();
 
     super.initState();

@@ -1,12 +1,22 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//
+// Copyright (C) 2023 Bob
+// This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+// You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/cell/cell.dart';
 import 'package:gallery/src/cell/data.dart';
 import 'package:gallery/src/db/isar.dart';
+import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/schemas/directory_file.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/thumbnail.dart';
+import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:isar/isar.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -55,16 +65,23 @@ class SystemGalleryDirectoryFile
     required this.originalUri,
   });
 
-  bool _isDuplicate() {
+  bool isDuplicate() {
     return RegExp(r'[(][0-9].*[)][.][a-zA-Z].*').hasMatch(name);
   }
 
   @ignore
   @override
-  List<Widget>? Function() get addButtons => () {
-        return _isDuplicate()
-            ? [const Icon(Icons.mode_standby_outlined)]
-            : null;
+  List<Widget>? Function(BuildContext context) get addButtons => (_) {
+        return [
+          if (isDuplicate()) Icon(FilteringMode.duplicate.icon),
+          if (PostTags().containsTag(name, "original"))
+            Icon(FilteringMode.original.icon),
+          IconButton(
+              onPressed: () {
+                PlatformFunctions.share(originalUri);
+              },
+              icon: const Icon(Icons.share))
+        ];
       };
 
   @ignore
@@ -85,6 +102,14 @@ class SystemGalleryDirectoryFile
                   colors: colors,
                   title: AppLocalizations.of(context)!.dateModified,
                   subtitle: lastModified.toString()),
+              addInfoTile(
+                  colors: colors,
+                  title: AppLocalizations.of(context)!.widthInfoPage,
+                  subtitle: "${width}px"),
+              addInfoTile(
+                  colors: colors,
+                  title: AppLocalizations.of(context)!.heightInfoPage,
+                  subtitle: "${height}px"),
               ...makeTags(
                   context, extra, colors, PostTags().getTagsPost(name), null)
             ];
@@ -122,9 +147,11 @@ class SystemGalleryDirectoryFile
             id.toString() + record.$1.length.toString(), record.$1),
         name: name,
         stickers: [
-          if (isVideo) Icons.play_circle,
-          if (_isDuplicate()) Icons.mode_standby_outlined,
-          if (isGif) Icons.gif_box_outlined
+          if (isVideo) FilteringMode.video.icon,
+          if (isGif) FilteringMode.gif.icon,
+          if (PostTags().containsTag(name, "original"))
+            FilteringMode.original.icon,
+          if (isDuplicate()) FilteringMode.duplicate.icon,
         ],
         loaded: record.$2);
   }

@@ -12,6 +12,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
+import 'package:gallery/src/db/platform_channel.dart';
+import 'package:gallery/src/gallery/android_api/android_directories.dart';
 import 'package:gallery/src/gallery/android_api/api.g.dart';
 import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
 import 'package:gallery/src/gallery/uploader/uploader.dart';
@@ -96,6 +98,36 @@ class Dummy extends StatelessWidget {
   }
 }
 
+@pragma('vm:entry-point')
+void mainPickfile() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initalizeIsar(true);
+  initPostTags();
+  GalleryApi.setup(GalleryImpl(true));
+
+  await Permission.photos.request();
+  await Permission.videos.request();
+  await Permission.storage.request();
+  await Permission.accessMediaLocation.request();
+  PlatformFunctions.requestManageMedia();
+
+  final accentColor = await PlatformFunctions.accentColor();
+
+  runApp(MaterialApp(
+    title: 'Ācārya',
+    darkTheme: _buildTheme(Brightness.dark, accentColor),
+    theme: _buildTheme(Brightness.light, accentColor),
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: AndroidDirectories(
+      noDrawer: true,
+      nestedCallback: CallbackDescriptionNested("Choose file", (chosen) {
+        PlatformFunctions.returnUri(chosen.originalUri);
+      }),
+    ),
+  ));
+}
+
 void main() async {
   if (Platform.isLinux) {
     await Isar.initializeIsarCore(libraries: {
@@ -107,25 +139,16 @@ void main() async {
   }
 
   WidgetsFlutterBinding.ensureInitialized();
-  await initalizeIsar();
+  await initalizeIsar(false);
   await initalizeDownloader();
   initalizeUploader();
   initPostTags();
 
   if (Platform.isAndroid) {
-    GalleryApi.setup(GalleryImpl());
+    GalleryApi.setup(GalleryImpl(false));
   }
 
-  const platform = MethodChannel("lol.bruh19.azari.gallery");
-
-  int color;
-
-  try {
-    color = await platform.invokeMethod("accentColor");
-  } catch (_) {
-    color = Colors.limeAccent.value;
-  }
-  final accentColor = Color(color);
+  final accentColor = await PlatformFunctions.accentColor();
 
   GlobalKey restartKey = GlobalKey();
 
@@ -151,15 +174,13 @@ void main() async {
       await Permission.videos.request();
       await Permission.storage.request();
       await Permission.accessMediaLocation.request();
-      const platform = MethodChannel("lol.bruh19.azari.gallery");
-      platform.invokeMethod("requestManageMedia");
+      PlatformFunctions.requestManageMedia();
     });
   }
 
   runApp(RestartWidget(
       key: restartKey,
       child: MaterialApp(
-        // key: materialAppKey,
         title: 'Ācārya',
         darkTheme: _buildTheme(Brightness.dark, accentColor),
         theme: _buildTheme(Brightness.light, accentColor),

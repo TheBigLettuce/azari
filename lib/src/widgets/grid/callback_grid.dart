@@ -102,7 +102,7 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
 
   final GridDescription<B> description;
   final FocusNode? belowMainFocus;
-  final List<IconButton> Function(ImageViewState<T> icons)? addIconsImage;
+  final List<IconButton> Function(ImageViewState<T> state)? addIconsImage;
   final void Function(ImageViewState<T> state)? pageChangeImage;
 
   final CloudflareBlockInterface Function()? cloudflareHook;
@@ -161,9 +161,14 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
 
   StreamSubscription<int>? ticker;
 
+  GlobalKey<ImageViewState<T>> imageViewKey = GlobalKey();
+
   bool inImageView = false;
 
   late final _Mutation<T, B> _state = _Mutation(
+    updateImageView: () {
+      imageViewKey.currentState?.update(_state.cellCount);
+    },
     scrollUp: () {
       if (widget.hideShowFab != null) {
         widget.hideShowFab!(fab: false, foreground: inImageView);
@@ -319,6 +324,7 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
 
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return ImageView<T>(
+          key: imageViewKey,
           systemOverlayRestoreColor: overlayColor,
           updateTagScrollPos: (pos, selectedCell) => widget.updateScrollPosition
               ?.call(offsetGrid, infoPos: pos, selectedCell: selectedCell),
@@ -451,6 +457,12 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                                               ),
                                             ))),
                               if (Platform.isAndroid || Platform.isIOS)
+                                if (widget.menuButtonItems != null &&
+                                    widget.menuButtonItems!.length == 1)
+                                  wrapAppBarAction(
+                                      widget.menuButtonItems!.first),
+                              if (widget.scaffoldKey.currentState?.hasDrawer ??
+                                  false)
                                 wrapAppBarAction(GestureDetector(
                                   onLongPress: () {
                                     setState(() {
@@ -465,7 +477,8 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                                       },
                                       icon: const Icon(Icons.menu)),
                                 )),
-                              if (widget.menuButtonItems != null)
+                              if (widget.menuButtonItems != null &&
+                                  widget.menuButtonItems!.length != 1)
                                 wrapAppBarAction(PopupMenuButton(
                                     position: PopupMenuPosition.under,
                                     itemBuilder: (context) {

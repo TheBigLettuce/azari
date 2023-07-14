@@ -1,3 +1,10 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//
+// Copyright (C) 2023 Bob
+// This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+// You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
 part of 'isar.dart';
 
 class GridTab {
@@ -16,18 +23,6 @@ class GridTab {
     }
 
     latest.add(t);
-
-    // newSecondaryGrid().then((value) {
-    //   Navigator.push(context, MaterialPageRoute(builder: (context) {
-    //     return BooruScroll.secondary(
-    //       isar: value,
-    //       tags: t.tag,
-    //     );
-    //   }));
-    // }).onError((error, stackTrace) {
-    //   log("searching for tag $t",
-    //       level: Level.WARNING.value, error: error, stackTrace: stackTrace);
-    // });
 
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return BooruScroll.secondary(
@@ -154,27 +149,6 @@ class GridTab {
 GridTab makeGridTab(Booru newBooru) {
   return GridTab._new(_primaryGridIsar(newBooru));
 }
-
-// GridTab getGridTab() => _global;
-
-// void initGridtab(Booru newBooru) {
-//   if (_initalizedGridtab) {
-//     return;
-//   }
-
-//   _global = GridTab._new(_primaryGridIsar(newBooru));
-// }
-
-/*void replaceGridTab(Booru newBooru) {
-  _global._instance = _primaryGridIsar(newBooru);
-  _global._excluded =
-      IsarBooruTagging(excludedMode: true, isarCurrent: _global._instance);
-  _global._latest =
-      IsarBooruTagging(excludedMode: false, isarCurrent: _global._instance);
-}*/
-
-// late final GridTab _global;
-// bool _initalizedGridtab = false;
 
 class IsarBooruTagging implements BooruTagging {
   final Isar isarCurrent;

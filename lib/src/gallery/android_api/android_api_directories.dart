@@ -7,7 +7,6 @@
 
 import 'dart:developer';
 
-import 'package:flutter/services.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/android_gallery_directory.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
@@ -17,7 +16,9 @@ import 'package:logging/logging.dart';
 import 'package:gallery/src/gallery/android_api/api.g.dart';
 import 'package:gallery/src/schemas/gallery_last_modified.dart';
 import 'package:gallery/src/schemas/thumbnail.dart';
+import 'package:transparent_image/transparent_image.dart';
 
+import '../../db/platform_channel.dart';
 import '../../widgets/search_filter_grid.dart';
 import '../interface.dart';
 
@@ -29,29 +30,22 @@ class AndroidGalleryExtra {
   FilterInterface<SystemGalleryDirectory, SystemGalleryDirectoryShrinked>
       get filter => _impl.filter;
   void loadThumbs(int from) {
-    if (_impl.isThumbsLoading) {
-      return;
-    }
-
-    _impl.isThumbsLoading = true;
-
     _loadThumbs(from);
   }
+
+  Isar get db => _impl.db;
 
   void _loadThumbs(int from) async {
     try {
       final db = _impl.filter.isFiltering
           ? _impl.filter.to
           : GalleryImpl.instance().db;
-      var thumbs = db.systemGalleryDirectorys
-          .where()
-          .offset(from)
-          .limit(from == 0 ? 20 : from + 20)
-          .findAllSync()
-          .map((e) => e.thumbFileId)
-          .toList();
-      const MethodChannel channel = MethodChannel("lol.bruh19.azari.gallery");
-      await channel.invokeMethod("loadThumbnails", thumbs);
+      final cell = db.systemGalleryDirectorys.getSync(from + 1)!;
+
+      thumbnailIsar().writeTxnSync(() => thumbnailIsar().thumbnails.putSync(
+          Thumbnail(cell.thumbFileId, DateTime.now(), kTransparentImage)));
+
+      PlatformFunctions.loadThumbnail(cell.thumbFileId);
       _impl.onThumbUpdate?.call();
     } catch (e, trace) {
       log("loading thumbs",
@@ -66,11 +60,11 @@ class AndroidGalleryExtra {
     _impl.refreshGrid?.call();
   }
 
-  void setRefreshGridCallback(VoidCallback callback) {
+  void setRefreshGridCallback(void Function() callback) {
     _impl.refreshGrid = callback;
   }
 
-  void setOnThumbnailCallback(VoidCallback callback) {
+  void setOnThumbnailCallback(void Function() callback) {
     _impl.onThumbUpdate = callback;
   }
 
@@ -89,9 +83,9 @@ GalleryAPIRead<
         SystemGalleryDirectoryShrinked,
         SystemGalleryDirectoryFile,
         SystemGalleryDirectoryFileShrinked>
-    getAndroidGalleryApi({bool? temporary}) {
-  var api = _AndroidGallery(temporary: temporary);
-  if (temporary == false) {
+    getAndroidGalleryApi({bool? temporaryDb, bool setCurrentApi = true}) {
+  var api = _AndroidGallery(temporary: temporaryDb);
+  if (setCurrentApi) {
     _global!._setCurrentApi(api);
   }
 
@@ -154,8 +148,7 @@ class _AndroidGallery
   Future<int> refresh() {
     try {
       db.writeTxnSync(() => db.systemGalleryDirectorys.clearSync());
-      const MethodChannel channel = MethodChannel("lol.bruh19.azari.gallery");
-      channel.invokeMethod("refreshGallery");
+      PlatformFunctions.refreshGallery();
     } catch (e, trace) {
       log("android gallery",
           level: Level.SEVERE.value, error: e, stackTrace: trace);

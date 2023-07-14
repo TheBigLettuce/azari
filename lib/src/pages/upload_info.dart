@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/gallery/uploader/uploader.dart';
 import 'package:gallery/src/schemas/upload_files.dart';
 import 'package:gallery/src/schemas/upload_files_state.dart';
-import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 
@@ -28,7 +27,7 @@ class _UploadInfoState extends State<UploadInfo> {
   late StreamSubscription<void> update;
   UploadFilesState? state;
 
-  final SkeletonState skeletonState = SkeletonState(kUploadsDrawerIndex);
+  final SkeletonState skeletonState = SkeletonState.settings();
 
   @override
   void initState() {

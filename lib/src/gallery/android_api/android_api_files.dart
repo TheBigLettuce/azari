@@ -13,28 +13,21 @@ class AndroidGalleryFilesExtra {
   FilterInterface<SystemGalleryDirectoryFile,
       SystemGalleryDirectoryFileShrinked> get filter => _impl.filter;
 
-  void loadThumbnails(int from) {
-    if (_impl.isThumbsLoading) {
-      return;
-    }
-
-    _impl.isThumbsLoading = true;
-
-    _thumbs(from);
+  void loadThumbnails(int thumb) {
+    _thumbs(thumb);
   }
 
-  void _thumbs(int from) async {
+  void _thumbs(int from) {
     try {
       final db = _impl.filter.isFiltering ? _impl.filter.to : _impl.db;
-      var thumbs = db.systemGalleryDirectoryFiles
-          .where()
-          .offset(from)
-          .limit(from == 0 ? 20 : from + 20)
-          .findAllSync()
-          .map((e) => e.id)
-          .toList();
-      const MethodChannel channel = MethodChannel("lol.bruh19.azari.gallery");
-      await channel.invokeMethod("loadThumbnails", thumbs);
+
+      final cell = db.systemGalleryDirectoryFiles.getSync(from + 1)!;
+
+      thumbnailIsar().writeTxnSync(() => thumbnailIsar()
+          .thumbnails
+          .putSync(Thumbnail(cell.id, DateTime.now(), kTransparentImage)));
+
+      PlatformFunctions.loadThumbnail(cell.id);
       _impl.onThumbUpdate?.call();
     } catch (e, trace) {
       log("loading thumbs",
@@ -43,17 +36,24 @@ class AndroidGalleryFilesExtra {
     _impl.isThumbsLoading = false;
   }
 
-  void setOnThumbnailCallback(VoidCallback callback) {
+  void setOnThumbnailCallback(void Function() callback) {
     _impl.onThumbUpdate = callback;
   }
 
-  void setRefreshGridCallback(VoidCallback callback) {
+  void setRefreshGridCallback(void Function() callback) {
     _impl.refreshGrid = callback;
   }
 
   void setRefreshingStatusCallback(
       void Function(int i, bool inRefresh, bool empty) callback) {
     _impl.callback = callback;
+  }
+
+  void setPassFilter(
+      List<SystemGalleryDirectoryFile> Function(
+              List<SystemGalleryDirectoryFile> cells)
+          f) {
+    _impl.filter.passFilter = f;
   }
 
   const AndroidGalleryFilesExtra._(this._impl);
@@ -81,6 +81,13 @@ class _AndroidGalleryFiles
   late final filter = IsarFilter<SystemGalleryDirectoryFile,
           SystemGalleryDirectoryFileShrinked>(db, openAndroidGalleryInnerIsar(),
       (offset, limit, s) {
+    if (s.isEmpty) {
+      return db.systemGalleryDirectoryFiles
+          .where()
+          .offset(offset)
+          .limit(limit)
+          .findAllSync();
+    }
     return db.systemGalleryDirectoryFiles
         .filter()
         .nameContains(s, caseSensitive: false)
@@ -109,8 +116,7 @@ class _AndroidGalleryFiles
     try {
       db.writeTxnSync(() => db.systemGalleryDirectoryFiles.clearSync());
 
-      const MethodChannel channel = MethodChannel("lol.bruh19.azari.gallery");
-      channel.invokeMethod("refreshFiles", bucketId);
+      PlatformFunctions.refreshFiles(bucketId);
     } catch (e, trace) {
       log("android gallery",
           level: Level.SEVERE.value, error: e, stackTrace: trace);

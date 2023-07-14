@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/pages/upload_info.dart';
 import 'package:gallery/src/schemas/upload_files.dart';
-import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -20,7 +19,7 @@ class _UploaderState extends State<Uploader> {
   List<UploadFilesStack> stack = [];
   late StreamSubscription<void> update;
 
-  final SkeletonState skeletonState = SkeletonState(kUploadsDrawerIndex);
+  final SkeletonState skeletonState = SkeletonState.settings();
 
   @override
   void initState() {
@@ -46,27 +45,27 @@ class _UploaderState extends State<Uploader> {
 
   @override
   Widget build(BuildContext context) {
-    return makeSkeleton(
-        context, AppLocalizations.of(context)!.uploadPageName, skeletonState,
-        children: stack.isEmpty ? [const EmptyWidget()] : null,
-        itemCount: stack.length,
-        builder: stack.isEmpty
-            ? null
-            : (context, indx) {
-                var upload = stack[indx];
-                return ListTile(
-                  title: Text("Number of files: ${upload.count.toString()}"),
-                  subtitle: Text("${upload.time}: ${upload.status.string}"),
-                  onTap: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) {
-                      return UploadInfo(
-                        stateId: upload.stateId,
-                        status: upload.status,
-                      );
-                    }));
-                  },
-                );
-              });
+    return makeSkeletonInnerSettings(
+      context,
+      AppLocalizations.of(context)!.uploadPageName,
+      skeletonState,
+      stack.isEmpty
+          ? [const EmptyWidget()]
+          : stack
+              .map((upload) => ListTile(
+                    title: Text("Number of files: ${upload.count.toString()}"),
+                    subtitle: Text("${upload.time}: ${upload.status.string}"),
+                    onTap: () {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) {
+                        return UploadInfo(
+                          stateId: upload.stateId,
+                          status: upload.status,
+                        );
+                      }));
+                    },
+                  ))
+              .toList(),
+    );
   }
 }

@@ -7,8 +7,9 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
+import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
 import 'package:gallery/src/gallery/android_api/android_directories.dart';
 import 'package:gallery/src/gallery/interface.dart';
@@ -18,15 +19,18 @@ import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import '../../schemas/settings.dart';
 import '../../widgets/search_filter_grid.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class AndroidFiles extends StatefulWidget {
   final String dirName;
   final String bucketId;
   final GalleryAPIFilesRead<AndroidGalleryFilesExtra,
       SystemGalleryDirectoryFile, SystemGalleryDirectoryFileShrinked> api;
+  final CallbackDescriptionNested? callback;
   const AndroidFiles(
       {super.key,
       required this.api,
+      this.callback,
       required this.dirName,
       required this.bucketId});
 
@@ -41,30 +45,86 @@ class _AndroidFilesState extends State<AndroidFiles>
   late StreamSubscription<Settings?> settingsWatcher;
   late final extra = widget.api.getExtra()
     ..setOnThumbnailCallback(() {
-      setState(() {});
+      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+        state.gridKey.currentState?.setState(() {});
+      });
     })
     ..setRefreshingStatusCallback((i, inRefresh, empty) {
       if (empty) {
+        state.gridKey.currentState?.currentBottomSheet?.close();
+        state.gridKey.currentState?.imageViewKey.currentState?.key.currentState
+            ?.closeEndDrawer();
+        final imageViewContext =
+            state.gridKey.currentState?.imageViewKey.currentContext;
+        if (imageViewContext != null) {
+          Navigator.of(imageViewContext).pop();
+        }
         Navigator.of(context).pop();
         return;
       }
 
       state.gridKey.currentState?.mutationInterface?.unselectAll();
 
+      stream.add(i);
+
       if (!inRefresh) {
+        state.gridKey.currentState?.imageViewKey.currentState
+            ?.update(state.gridKey.currentState!.mutationInterface!.cellCount);
         state.gridKey.currentState?.mutationInterface?.setIsRefreshing(false);
+        performSearch(searchTextController.text);
         setState(() {});
       }
-
-      stream.add(i);
     })
-    ..setRefreshGridCallback(_refresh);
+    ..setRefreshGridCallback(() {
+      if (state.gridKey.currentState?.mutationInterface?.isRefreshing ==
+          false) {
+        _refresh();
+      }
+    })
+    ..setPassFilter((cells) {
+      return switch (currentFilteringMode()) {
+        FilteringMode.noFilter => cells,
+        FilteringMode.video => _filterVideo(cells),
+        FilteringMode.gif => _filterGif(cells),
+        FilteringMode.duplicate => _filterDuplicate(cells),
+        FilteringMode.original => _filterOriginal(cells)
+      };
+    });
 
-  late final GridSkeletonStateFilter<SystemGalleryDirectoryFile,
-          SystemGalleryDirectoryFileShrinked> state =
-      GridSkeletonStateFilter(
+  List<SystemGalleryDirectoryFile> _filterVideo(
+      List<SystemGalleryDirectoryFile> cells) {
+    return cells.where((element) => element.isVideo).toList();
+  }
+
+  List<SystemGalleryDirectoryFile> _filterGif(
+      List<SystemGalleryDirectoryFile> cells) {
+    return cells.where((element) => element.isGif).toList();
+  }
+
+  List<SystemGalleryDirectoryFile> _filterDuplicate(
+      List<SystemGalleryDirectoryFile> cells) {
+    return cells.where((element) => element.isDuplicate()).toList();
+  }
+
+  List<SystemGalleryDirectoryFile> _filterOriginal(
+      List<SystemGalleryDirectoryFile> cells) {
+    return cells
+        .where((element) => PostTags().containsTag(element.name, "original"))
+        .toList();
+  }
+
+  late final GridSkeletonStateFilter<
+          SystemGalleryDirectoryFile, SystemGalleryDirectoryFileShrinked>
+      state = GridSkeletonStateFilter(
           filter: extra.filter,
           index: kGalleryDrawerIndex,
+          filteringModes: {
+            FilteringMode.noFilter,
+            FilteringMode.original,
+            FilteringMode.duplicate,
+            FilteringMode.gif,
+            FilteringMode.video
+          },
           onWillPop: () => Future.value(true));
   final stream = StreamController<int>(sync: true);
 
@@ -77,18 +137,7 @@ class _AndroidFilesState extends State<AndroidFiles>
 
       setState(() {});
     });
-    searchHook(state, [
-      IconButton(
-          onPressed: () {
-            var settings = settingsIsar().settings.getSync(0)!;
-            settingsIsar().writeTxnSync(() => settingsIsar().settings.putSync(
-                settings.copy(
-                    gallerySettings: settings.gallerySettings.copy(
-                        hideFileName: !(settings.gallerySettings.hideFileName ??
-                            false)))));
-          },
-          icon: const Icon(Icons.subtitles))
-    ]);
+    searchHook(state);
   }
 
   @override
@@ -112,22 +161,24 @@ class _AndroidFilesState extends State<AndroidFiles>
     Navigator.push(context, MaterialPageRoute(
       builder: (context) {
         return AndroidDirectories(
-          callback: CallbackDescription(move ? "move" : "copy", (chosen) {
-            // TODO: change
-            if (chosen.bucketId == widget.bucketId) {
+          callback: CallbackDescription(
+              move
+                  ? AppLocalizations.of(context)!.chooseMoveDestination
+                  : AppLocalizations.of(context)!.chooseCopyDestination,
+              (chosen, newDir) {
+            if (chosen == null && newDir == null) {
+              throw "both are empty";
+            }
+
+            if (chosen != null && chosen.bucketId == widget.bucketId) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   content: Text(move
-                      ? "Can't move to same destination"
-                      : "Can't copy to same destination"))); // TODO: change
+                      ? AppLocalizations.of(context)!.cantMoveSameDest
+                      : AppLocalizations.of(context)!.cantCopySameDest)));
               return;
             }
-            const MethodChannel channel =
-                MethodChannel("lol.bruh19.azari.gallery");
-            channel.invokeMethod("copyMoveFiles", {
-              "dest": chosen.relativeLoc,
-              "media": selected.map((e) => e.id).toList(),
-              "move": move
-            });
+            PlatformFunctions.copyMoveFiles(chosen, selected,
+                move: move, newDir: newDir);
           }),
         );
       },
@@ -151,6 +202,27 @@ class _AndroidFilesState extends State<AndroidFiles>
             hasReachedEnd: () => true,
             immutable: false,
             tightMode: true,
+            addIconsImage: (state) {
+              return [
+                IconButton(
+                    onPressed: () {
+                      deleteDialog(context, [state.currentCell.shrinkedData()]);
+                    },
+                    icon: const Icon(Icons.delete)),
+                IconButton(
+                    onPressed: () {
+                      _moveOrCopy(
+                          context, [state.currentCell.shrinkedData()], false);
+                    },
+                    icon: const Icon(Icons.copy)),
+                IconButton(
+                    onPressed: () {
+                      _moveOrCopy(
+                          context, [state.currentCell.shrinkedData()], true);
+                    },
+                    icon: const Icon(Icons.forward))
+              ];
+            },
             aspectRatio:
                 state.settings.gallerySettings.filesAspectRatio?.value ?? 1,
             hideAlias: state.settings.gallerySettings.hideFileName,
@@ -164,60 +236,86 @@ class _AndroidFilesState extends State<AndroidFiles>
               _refresh();
               return null;
             },
+            menuButtonItems: [
+              IconButton(
+                  onPressed: () {
+                    var settings = settingsIsar().settings.getSync(0)!;
+                    settingsIsar().writeTxnSync(() => settingsIsar()
+                        .settings
+                        .putSync(settings.copy(
+                            gallerySettings: settings.gallerySettings.copy(
+                                hideFileName:
+                                    !(settings.gallerySettings.hideFileName ??
+                                        false)))));
+                  },
+                  icon: const Icon(Icons.subtitles))
+            ],
             onBack: () {
               Navigator.pop(context);
             },
             progressTicker: stream.stream,
+            overrideOnPress: widget.callback != null
+                ? (context, indx) {
+                    widget.callback?.call(state
+                        .gridKey.currentState!.mutationInterface!
+                        .getCell(indx)
+                        .shrinkedData());
+                  }
+                : null,
             description: GridDescription(
                 kGalleryDrawerIndex,
-                [
-                  GridBottomSheetAction(Icons.delete, (selected) {
-                    Navigator.push(
-                        context,
-                        DialogRoute(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: Text(
-                                  "Do you want to delete ${selected.length} ${selected.length == 1 ? 'item' : 'items'}?"), // TODO: change
-                              content: const Text(
-                                "This cannot be reversed",
-                                style: TextStyle(
-                                    color: Colors.red), // TODO: change
-                              ),
-                              actions: [
-                                TextButton(
-                                    onPressed: () {
-                                      const MethodChannel channel =
-                                          MethodChannel(
-                                              "lol.bruh19.azari.gallery");
-                                      channel.invokeMethod(
-                                          "deleteFiles",
-                                          selected
-                                              .map((e) => e.originalUri)
-                                              .toList());
-                                      Navigator.pop(context);
-                                    },
-                                    child: Text("yes")),
-                                TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                    child: Text("no"))
-                              ],
-                            );
-                          },
-                        ));
-                  }, false),
-                  GridBottomSheetAction(Icons.copy, (selected) {
-                    _moveOrCopy(context, selected, false);
-                  }, false),
-                  GridBottomSheetAction(Icons.forward, (selected) {
-                    _moveOrCopy(context, selected, true);
-                  }, false)
-                ],
+                widget.callback != null
+                    ? []
+                    : [
+                        GridBottomSheetAction(Icons.delete, (selected) {
+                          deleteDialog(context, selected);
+                        }, false),
+                        GridBottomSheetAction(Icons.copy, (selected) {
+                          _moveOrCopy(context, selected, false);
+                        }, false),
+                        GridBottomSheetAction(Icons.forward, (selected) {
+                          _moveOrCopy(context, selected, true);
+                        }, false)
+                      ],
                 state.settings.gallerySettings.filesColumns ?? GridColumn.two,
                 listView: state.settings.listViewBooru,
-                keybindsDescription: widget.dirName)));
+                bottomWidget: widget.callback != null
+                    ? gridBottomWidgetText(
+                        context, AppLocalizations.of(context)!.chooseFileNotice)
+                    : null,
+                keybindsDescription: widget.dirName)),
+        noDrawer: widget.callback != null);
   }
+}
+
+void deleteDialog(
+    BuildContext context, List<SystemGalleryDirectoryFileShrinked> selected) {
+  Navigator.push(
+      context,
+      DialogRoute(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text(
+                "${AppLocalizations.of(context)!.tagDeleteDialogTitle} ${selected.length} ${selected.length == 1 ? AppLocalizations.of(context)!.itemSingular : AppLocalizations.of(context)!.itemPlural}?"),
+            content: Text(
+              AppLocalizations.of(context)!.cannotBeReversed,
+              style: const TextStyle(color: Colors.red),
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () {
+                    PlatformFunctions.deleteFiles(selected);
+                    Navigator.pop(context);
+                  },
+                  child: Text(AppLocalizations.of(context)!.yes)),
+              TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text(AppLocalizations.of(context)!.no))
+            ],
+          );
+        },
+      ));
 }

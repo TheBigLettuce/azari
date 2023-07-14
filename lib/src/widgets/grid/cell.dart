@@ -91,29 +91,9 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
                           alignment: Alignment.topLeft,
                           child: Padding(
                               padding: const EdgeInsets.all(8),
-                              child: Row(
+                              child: Wrap(
                                 children: widget._data.stickers
-                                    .map((e) => Padding(
-                                          padding:
-                                              const EdgeInsets.only(right: 4),
-                                          child: Container(
-                                            padding: const EdgeInsets.all(2),
-                                            decoration: BoxDecoration(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .inversePrimary
-                                                    .withOpacity(0.6),
-                                                borderRadius:
-                                                    BorderRadius.circular(5)),
-                                            child: Icon(
-                                              e,
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .secondary
-                                                  .withOpacity(0.8),
-                                            ),
-                                          ),
-                                        ))
+                                    .map((e) => stickerIcon(context, e))
                                     .toList(),
                               )),
                         ),
@@ -149,3 +129,18 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
     );
   }
 }
+
+Widget stickerIcon(BuildContext context, IconData e) => Padding(
+      padding: const EdgeInsets.only(right: 4),
+      child: Container(
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+            color:
+                Theme.of(context).colorScheme.inversePrimary.withOpacity(0.6),
+            borderRadius: BorderRadius.circular(5)),
+        child: Icon(
+          e,
+          color: Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+        ),
+      ),
+    );

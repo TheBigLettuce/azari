@@ -109,13 +109,14 @@ class _SettingsListState extends State<SettingsList> {
   }
 
   List<Widget> makeList(BuildContext context, TextStyle titleStyle) => [
-        ListTile(
-          title: Text(AppLocalizations.of(context)!.serverSettingsPageName),
-          onTap: () =>
-              Navigator.push(context, MaterialPageRoute(builder: (context) {
-            return const ServerSettingsPage();
-          })),
-        ),
+        if (!Platform.isAndroid)
+          ListTile(
+            title: Text(AppLocalizations.of(context)!.serverSettingsPageName),
+            onTap: () =>
+                Navigator.push(context, MaterialPageRoute(builder: (context) {
+              return const ServerSettingsPage();
+            })),
+          ),
         settingsLabel(AppLocalizations.of(context)!.booruLabel, titleStyle),
         ListTile(
           title: Text(AppLocalizations.of(context)!.downloadDirectorySetting),
@@ -446,13 +447,49 @@ class _SettingsListState extends State<SettingsList> {
         settingsLabel(AppLocalizations.of(context)!.metricsLabel, titleStyle),
         ListTile(
           title: Text(AppLocalizations.of(context)!.savedTagsCount),
-          enabled: false,
-          onTap: _extend,
+          trailing: PopupMenuButton(
+            icon: const Icon(Icons.more_horiz_outlined),
+            itemBuilder: (context) {
+              return [
+                PopupMenuItem(
+                    child: TextButton(
+                  onPressed: () {
+                    PostTags().restore((err) {
+                      if (err != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(AppLocalizations.of(context)!
+                                .couldntRestoreBackup(err))));
+                      }
+                    });
+                  },
+                  child: Text(AppLocalizations.of(context)!.restore),
+                )),
+                PopupMenuItem(
+                    child: TextButton(
+                  onPressed: () {
+                    PostTags().copy((err) {
+                      if (err != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(AppLocalizations.of(context)!
+                                .couldntBackup(err))));
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(
+                                AppLocalizations.of(context)!.backupSuccess)));
+                      }
+                    });
+                  },
+                  child: Text(AppLocalizations.of(context)!.backup),
+                )),
+              ];
+            },
+          ),
           subtitle: Text(PostTags().savedTagsCount().toString()),
         ),
         if (Platform.isAndroid)
           ListTile(
-            title: const Text("Blacklisted directories"), // TODO: change
+            title: Text(
+                AppLocalizations.of(context)!.blacklistedDirectoriesPageName),
             onTap: () {
               Navigator.push(
                   context,

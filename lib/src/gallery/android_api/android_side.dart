@@ -18,12 +18,12 @@ class GalleryImpl implements GalleryApi {
 
   factory GalleryImpl.instance() => _global!;
 
-  factory GalleryImpl() {
+  factory GalleryImpl(bool temporary) {
     if (_global != null) {
       return _global!;
     }
 
-    _global = GalleryImpl._new(openAndroidGalleryIsar());
+    _global = GalleryImpl._new(openAndroidGalleryIsar(temporary: temporary));
     return _global!;
   }
 

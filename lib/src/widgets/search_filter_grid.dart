@@ -7,7 +7,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/widgets/booru/autocomplete_tag.dart';
-import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:gallery/src/widgets/search_launch_grid.dart';
 import 'package:isar/isar.dart';
@@ -16,6 +15,19 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../cell/cell.dart';
 
 import '../gallery/interface.dart';
+
+enum FilteringMode {
+  original("Original", Icons.circle_outlined),
+  duplicate("Duplicate", Icons.mode_standby_outlined),
+  video("Video", Icons.play_circle),
+  gif("GIF", Icons.gif_outlined),
+  noFilter("No filter", Icons.filter_list_outlined);
+
+  final String string;
+  final IconData icon;
+
+  const FilteringMode(this.string, this.icon);
+}
 
 abstract class FilterInterface<T extends Cell<B>, B> {
   Result<T> filter(String s);
@@ -27,6 +39,7 @@ class IsarFilter<T extends Cell<B>, B> implements FilterInterface<T, B> {
   final Isar _to;
   bool isFiltering = false;
   final List<T> Function(int offset, int limit, String s) getElems;
+  List<T> Function(List<T>)? passFilter;
 
   Isar get to => _to;
 
@@ -42,18 +55,28 @@ class IsarFilter<T extends Cell<B>, B> implements FilterInterface<T, B> {
       Isar from, List<T> Function(int offset, int limit) getElems, Isar to) {
     from.writeTxnSync(() {
       var offset = 0;
+      var loopCount = 0;
 
       for (;;) {
-        var sorted = getElems(offset, 40);
-        offset += 40;
+        loopCount++;
 
+        var sorted = getElems(offset, 40);
+        final end = sorted.length != 40;
+        offset += 40;
+        if (loopCount > 1000) {
+          throw "infinite loop: $offset, last elems count: ${sorted.length}";
+        }
+
+        if (passFilter != null) {
+          sorted = passFilter!(sorted);
+        }
         for (var element in sorted) {
           element.isarId = null;
         }
 
         to.writeTxnSync(() => to.collection<T>().putAllSync(sorted));
 
-        if (sorted.length != 40) {
+        if (end) {
           break;
         }
       }
@@ -81,7 +104,7 @@ class IsarFilter<T extends Cell<B>, B> implements FilterInterface<T, B> {
     _to.writeTxnSync(() => _to.collection<T>().clearSync());
   }
 
-  IsarFilter(Isar from, Isar to, this.getElems)
+  IsarFilter(Isar from, Isar to, this.getElems, {this.passFilter})
       : _from = from,
         _to = to;
 }
@@ -93,18 +116,15 @@ mixin SearchFilterGrid<T extends Cell<B>, B>
   @override
   final FocusNode searchFocus = FocusNode();
 
-  late final void Function() _focusMain;
-  late final FilterInterface<T, B> _filter;
-  late final GlobalKey<CallbackGridState<T, B>> _gridKey;
-
   late final List<Widget>? addItems;
+  final GlobalKey<__SearchWidgetState> _key = GlobalKey();
+
+  late final GridSkeletonStateFilter<T, B> _state;
 
   @override
   void searchHook(state, [List<Widget>? items]) {
     addItems = items;
-    _focusMain = () => state.mainFocus.requestFocus();
-    _gridKey = state.gridKey;
-    _filter = state.filter;
+    _state = state;
   }
 
   @override
@@ -113,9 +133,19 @@ mixin SearchFilterGrid<T extends Cell<B>, B>
     searchFocus.dispose();
   }
 
+  void performSearch(String s) {
+    searchTextController.text = s;
+    _key.currentState?.onChanged(s, true);
+  }
+
+  FilteringMode currentFilteringMode() {
+    return _key.currentState!.currentFilterMode;
+  }
+
   @override
   Widget searchWidget(BuildContext context, {String? hint, int? count}) =>
       _SearchWidget(
+        key: _key,
         instance: this,
         hint: hint,
         count: count,
@@ -137,10 +167,31 @@ class _SearchWidget extends StatefulWidget {
 }
 
 class __SearchWidgetState extends State<_SearchWidget> {
+  FilteringMode currentFilterMode = FilteringMode.noFilter;
+  void onChanged(String value, bool direct) {
+    var interf = widget.instance._state.gridKey.currentState?.mutationInterface;
+    if (interf != null) {
+      if (!direct) {
+        value = value.trim();
+        if (value.isEmpty) {
+          interf.restore();
+          widget.instance._state.filter.resetFilter();
+          setState(() {});
+          return;
+        }
+      }
+
+      var res = widget.instance._state.filter.filter(value);
+
+      interf.setSource(res.count, res.cell);
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FocusNotifier(
-        focusMain: widget.instance._focusMain,
+        focusMain: widget.instance._state.mainFocus.requestFocus,
         notifier: widget.instance.searchFocus,
         child: Builder(
           builder: (context) => TextField(
@@ -148,34 +199,41 @@ class __SearchWidgetState extends State<_SearchWidget> {
             controller: widget.instance.searchTextController,
             decoration: autocompleteBarDecoration(context, () {
               widget.instance.searchTextController.clear();
-              widget.instance._gridKey.currentState?.mutationInterface
+              widget.instance._state.gridKey.currentState?.mutationInterface
                   ?.restore();
+              if (widget.instance._state.filteringModes.isNotEmpty) {
+                onChanged(widget.instance.searchTextController.text, true);
+              }
               setState(() {});
-            }, widget.instance.addItems,
-                searchCount: widget.instance._gridKey.currentState
+            }, [
+              if (widget.instance._state.filteringModes.isNotEmpty)
+                PopupMenuButton<FilteringMode>(
+                  itemBuilder: (context) {
+                    return widget.instance._state.filteringModes
+                        .map((e) =>
+                            PopupMenuItem(value: e, child: Text(e.string)))
+                        .toList();
+                  },
+                  initialValue: currentFilterMode,
+                  onSelected: (value) {
+                    currentFilterMode = value;
+                    onChanged(widget.instance.searchTextController.text, true);
+                    widget.instance._state.hook(value);
+                  },
+                  icon: Icon(
+                    currentFilterMode.icon,
+                  ),
+                  padding: EdgeInsets.zero,
+                ),
+              if (widget.instance.addItems != null) ...widget.instance.addItems!
+            ],
+                searchCount: widget.instance._state.gridKey.currentState
                     ?.mutationInterface?.cellCount,
                 showSearch: true,
                 roundBorders: false,
                 hint:
                     "${AppLocalizations.of(context)!.filterHint}${widget.hint != null ? ' ${widget.hint}' : ''}"),
-            onChanged: (value) {
-              var interf =
-                  widget.instance._gridKey.currentState?.mutationInterface;
-              if (interf != null) {
-                value = value.trim();
-                if (value.isEmpty) {
-                  interf.restore();
-                  widget.instance._filter.resetFilter();
-                  setState(() {});
-                  return;
-                }
-
-                var res = widget.instance._filter.filter(value);
-
-                interf.setSource(res.count, res.cell);
-                setState(() {});
-              }
-            },
+            onChanged: (s) => onChanged(s, false),
           ),
         ));
   }

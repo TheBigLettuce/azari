@@ -5,15 +5,10 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/services.dart';
+import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
 
 class AndroidDownloadMover implements DownloadMoverPlug {
-  final _downloaderPlatform = const MethodChannel("lol.bruh19.azari.gallery");
-
   @override
-  void move(MoveOp op) {
-    _downloaderPlatform.invokeMethod("move",
-        {"source": op.source, "rootUri": op.rootDir, "dir": op.targetDir});
-  }
+  void move(MoveOp op) => PlatformFunctions.move(op);
 }
