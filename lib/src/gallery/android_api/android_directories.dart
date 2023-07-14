@@ -61,10 +61,17 @@ class AndroidDirectories extends StatefulWidget {
 class _AndroidDirectoriesState extends State<AndroidDirectories>
     with SearchFilterGrid {
   late StreamSubscription<Settings?> settingsWatcher;
+  bool proceed = true;
   late final extra = api.getExtra()
     ..setOnThumbnailCallback(() {
+      if (!proceed) {
+        return;
+      }
+      proceed = false;
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        state.gridKey.currentState?.setState(() {});
+        state.gridKey.currentState?.setState(() {
+          proceed = true;
+        });
       });
     })
     ..setRefreshGridCallback(() {

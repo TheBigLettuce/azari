@@ -1,24 +1,17 @@
 GIT_REV = $(shell git rev-parse --short HEAD)
 
 .PHONY: release run linux-appimage android_install regenerate android_cpysource
-release: linux-appimage
+release:
 	flutter build apk --split-per-abi --no-tree-shake-icons
 	git archive --format=tar.gz -o source.tar.gz HEAD
 	zip app_source_${GIT_REV} build/app/outputs/flutter-apk/app-arm64-v8a-release.apk source.tar.gz
 	rm source.tar.gz
 	adb push app_source_${GIT_REV}.zip /sdcard
-	adb push Azari-*-x86_64.AppImage /sdcard
 	rm app_source_${GIT_REV}.zip
-	rm Azari-*-x86_64.AppImage
 
 android_install:
 	flutter build apk --split-per-abi --no-tree-shake-icons
 	adb install build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-	
-android_cpysource: android_install
-	git archive --format=tar.gz -o source.tar.gz HEAD
-	adb push source.tar.gz /sdcard
-	rm source.tar.gz
 
 linux-appimage: linuxdeploy-x86_64.AppImage
 	mkdir -p AppDir && cd AppDir && rm -r -f *

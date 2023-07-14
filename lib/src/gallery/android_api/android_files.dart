@@ -43,10 +43,17 @@ class _AndroidFilesState extends State<AndroidFiles>
         SearchFilterGrid<SystemGalleryDirectoryFile,
             SystemGalleryDirectoryFileShrinked> {
   late StreamSubscription<Settings?> settingsWatcher;
+  bool proceed = true;
   late final extra = widget.api.getExtra()
     ..setOnThumbnailCallback(() {
+      if (!proceed) {
+        return;
+      }
+      proceed = false;
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        state.gridKey.currentState?.setState(() {});
+        state.gridKey.currentState?.setState(() {
+          proceed = true;
+        });
       });
     })
     ..setRefreshingStatusCallback((i, inRefresh, empty) {
