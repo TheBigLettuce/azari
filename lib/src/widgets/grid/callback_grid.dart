@@ -161,38 +161,6 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
 
   StreamSubscription<int>? ticker;
 
-  GlobalKey<ImageViewState<T>> imageViewKey = GlobalKey();
-
-  bool inImageView = false;
-
-  late final _Mutation<T, B> _state = _Mutation(
-    updateImageView: () {
-      imageViewKey.currentState?.update(_state.cellCount);
-    },
-    scrollUp: () {
-      if (widget.hideShowFab != null) {
-        widget.hideShowFab!(fab: false, foreground: inImageView);
-      }
-    },
-    unselectall: () {
-      selected.clear();
-      currentBottomSheet?.close();
-    },
-    immutable: widget.immutable,
-    widget: () => widget,
-    update: (f) {
-      try {
-        if (context.mounted) {
-          if (f != null) {
-            f();
-          }
-
-          setState(() {});
-        }
-      } catch (_) {}
-    },
-  );
-
   GridMutationInterface<T, B>? get mutationInterface =>
       widget.immutable ? null : _state;
 

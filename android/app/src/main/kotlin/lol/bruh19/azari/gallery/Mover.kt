@@ -88,7 +88,8 @@ internal class Mover(
 
                             CoroutineScope(coContext).launch {
                                 galleryApi.addThumbnails(
-                                    thumbs
+                                    thumbs,
+                                    uris.notify
                                 ) {}
                             }.join()
                         }.join()
@@ -346,22 +347,7 @@ internal class Mover(
 
     fun loadThumb(id: Long) {
         scope.launch {
-            val thumb: ByteArray = try {
-                getThumb(
-                    ContentUris.withAppendedId(
-                        MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
-                        id
-                    )
-                )
-            } catch (_: java.lang.Exception) {
-                transparentImage
-            }
-
-            CoroutineScope(coContext).launch {
-                galleryApi.addThumbnails(
-                    listOf(ThumbnailId(id, thumb))
-                ) {}
-            }
+            thumbnailsChannel.send(ThumbOp(listOf(id), null, true))
         }
     }
 

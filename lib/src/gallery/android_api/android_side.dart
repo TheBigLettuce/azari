@@ -77,6 +77,7 @@ class GalleryImpl implements GalleryApi {
               height: e.height,
               width: e.width,
               isGif: e.isGif,
+              isOriginal: PostTags().isOriginal(e.name),
               originalUri: e.originalUri,
               isVideo: e.isVideo))
           .toList()));
@@ -88,7 +89,7 @@ class GalleryImpl implements GalleryApi {
   }
 
   @override
-  void addThumbnails(List<ThumbnailId?> thumbs) {
+  void addThumbnails(List<ThumbnailId?> thumbs, bool runCallback) {
     if (thumbs.isEmpty) {
       return;
     }
@@ -108,6 +109,11 @@ class GalleryImpl implements GalleryApi {
           .map((e) => Thumbnail(e.id, DateTime.now(), e.thumb))
           .toList());
     });
+
+    if (runCallback) {
+      _currentApi?.onThumbUpdate?.call();
+      _currentApi?.currentImages?.onThumbUpdate?.call();
+    }
   }
 
   @override

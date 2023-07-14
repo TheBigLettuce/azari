@@ -26,7 +26,7 @@ import okio.use
 
 data class FilesDest(val dest: String, val media: List<Uri>, val move: Boolean, val newDir: Boolean)
 data class MoveOp(val source: String, val rootUri: Uri, val dir: String)
-data class ThumbOp(val thumbs: List<Long>, val callback: (() -> Unit)?)
+data class ThumbOp(val thumbs: List<Long>, val callback: (() -> Unit)?, val notify: Boolean = false)
 
 class MainActivity : FlutterActivity() {
     private val engineBindings: EngineBindings by lazy {

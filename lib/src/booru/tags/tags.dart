@@ -114,12 +114,16 @@ class PostTags {
   }
 
   bool containsTag(String filename, String tag) {
+    return tagsDb.localTags.getSync(fastHash(filename))?.tags.contains(tag) ??
+        false;
+  }
+
+  bool isOriginal(String filename) {
     return tagsDb.localTags
-            .filter()
-            .filenameEqualTo(filename)
-            .tagsElementContains(tag)
-            .countSync() ==
-        1;
+            .getSync(fastHash(filename))
+            ?.tags
+            .contains("original") ??
+        false;
   }
 
   int savedTagsCount() => tagsDb.localTags.countSync();

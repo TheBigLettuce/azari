@@ -66,7 +66,7 @@ abstract class GalleryApi {
   void updateDirectories(List<Directory> d, bool inRefresh, bool empty);
   void updatePictures(List<DirectoryFile?> f, String bucketId, int startTime,
       bool inRefresh, bool empty);
-  void addThumbnails(List<ThumbnailId> thumbs);
+  void addThumbnails(List<ThumbnailId> thumbs, bool runCallback);
 
   void notify();
 

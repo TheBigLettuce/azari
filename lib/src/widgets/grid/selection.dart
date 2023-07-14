@@ -9,6 +9,35 @@ part of 'callback_grid.dart';
 
 mixin _Selection<T extends Cell<B>, B> on State<CallbackGrid<T, B>> {
   int? lastSelected;
+  bool inImageView = false;
+  GlobalKey<ImageViewState<T>> imageViewKey = GlobalKey();
+  late final _Mutation<T, B> _state = _Mutation(
+    updateImageView: () {
+      imageViewKey.currentState?.update(_state.cellCount);
+    },
+    scrollUp: () {
+      if (widget.hideShowFab != null) {
+        widget.hideShowFab!(fab: false, foreground: inImageView);
+      }
+    },
+    unselectall: () {
+      selected.clear();
+      currentBottomSheet?.close();
+    },
+    immutable: widget.immutable,
+    widget: () => widget,
+    update: (f) {
+      try {
+        if (context.mounted) {
+          if (f != null) {
+            f();
+          }
+
+          setState(() {});
+        }
+      } catch (_) {}
+    },
+  );
   PersistentBottomSheetController? currentBottomSheet;
   Map<int, B> selected = {};
 
@@ -97,7 +126,7 @@ mixin _Selection<T extends Cell<B>, B> on State<CallbackGrid<T, B>> {
       if (indx < lastSelected!) {
         for (var i = lastSelected!; i >= indx; i--) {
           if (selection) {
-            selected[i] = widget.getCell(i).shrinkedData();
+            selected[i] = _state.getCell(i).shrinkedData();
           } else {
             _removeSelection(i);
           }
@@ -107,7 +136,7 @@ mixin _Selection<T extends Cell<B>, B> on State<CallbackGrid<T, B>> {
       } else if (indx > lastSelected!) {
         for (var i = lastSelected!; i <= indx; i++) {
           if (selection) {
-            selected[i] = widget.getCell(i).shrinkedData();
+            selected[i] = _state.getCell(i).shrinkedData();
           } else {
             _removeSelection(i);
           }

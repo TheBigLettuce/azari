@@ -17,7 +17,11 @@ class LocalTags {
   @Index(unique: true, replace: true)
   final String filename;
 
+  // @Index(caseSensitive: false)
   final List<String> tags;
 
-  LocalTags(this.filename, this.tags);
+  // final bool isOriginal;
+
+  LocalTags(
+      this.filename, this.tags); //: isOriginal = tags.contains("original")
 }

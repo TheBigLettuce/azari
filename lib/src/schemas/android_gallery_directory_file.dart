@@ -61,6 +61,7 @@ class SystemGalleryDirectoryFile
     required this.isGif,
     required this.height,
     required this.width,
+    required this.isOriginal,
     required this.lastModified,
     required this.originalUri,
   });
@@ -74,8 +75,7 @@ class SystemGalleryDirectoryFile
   List<Widget>? Function(BuildContext context) get addButtons => (_) {
         return [
           if (isDuplicate()) Icon(FilteringMode.duplicate.icon),
-          if (PostTags().containsTag(name, "original"))
-            Icon(FilteringMode.original.icon),
+          if (isOriginal) Icon(FilteringMode.original.icon),
           IconButton(
               onPressed: () {
                 PlatformFunctions.share(originalUri);
@@ -135,6 +135,8 @@ class SystemGalleryDirectoryFile
         uri: originalUri, size: Size(width.toDouble(), height.toDouble()));
   }
 
+  final bool isOriginal;
+
   @override
   String fileDownloadUrl() => "";
 
@@ -149,8 +151,7 @@ class SystemGalleryDirectoryFile
         stickers: [
           if (isVideo) FilteringMode.video.icon,
           if (isGif) FilteringMode.gif.icon,
-          if (PostTags().containsTag(name, "original"))
-            FilteringMode.original.icon,
+          if (isOriginal) FilteringMode.original.icon,
           if (isDuplicate()) FilteringMode.duplicate.icon,
         ],
         loaded: record.$2);
