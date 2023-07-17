@@ -17,7 +17,7 @@ class LocalTags {
   @Index(unique: true, replace: true)
   final String filename;
 
-  // @Index(caseSensitive: false)
+  @Index(caseSensitive: false, type: IndexType.hashElements)
   final List<String> tags;
 
   // final bool isOriginal;

@@ -23,9 +23,8 @@ class AndroidGalleryFilesExtra {
 
       final cell = db.systemGalleryDirectoryFiles.getSync(from + 1)!;
 
-      thumbnailIsar().writeTxnSync(() => thumbnailIsar()
-          .thumbnails
-          .putSync(Thumbnail(cell.id, DateTime.now(), kTransparentImage, 0)));
+      thumbnailIsar().writeTxnSync(() => thumbnailIsar().thumbnails.putSync(
+          Thumbnail(cell.id, DateTime.now(), kTransparentImage, 0, true)));
 
       PlatformFunctions.loadThumbnail(cell.id);
       _impl.onThumbUpdate?.call();

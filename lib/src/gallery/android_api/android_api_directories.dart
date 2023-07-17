@@ -36,7 +36,7 @@ class AndroidGalleryExtra {
 
   Isar get db => _impl.db;
 
-  void _loadThumbs(int from) async {
+  void _loadThumbs(int from) {
     try {
       final db = _impl.filter.isFiltering
           ? _impl.filter.to
@@ -44,7 +44,8 @@ class AndroidGalleryExtra {
       final cell = db.systemGalleryDirectorys.getSync(from + 1)!;
 
       thumbnailIsar().writeTxnSync(() => thumbnailIsar().thumbnails.putSync(
-          Thumbnail(cell.thumbFileId, DateTime.now(), kTransparentImage, 0)));
+          Thumbnail(
+              cell.thumbFileId, DateTime.now(), kTransparentImage, 0, true)));
 
       PlatformFunctions.loadThumbnail(cell.thumbFileId);
       _impl.onThumbUpdate?.call();

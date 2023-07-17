@@ -98,19 +98,21 @@ class GalleryImpl implements GalleryApi {
     }
 
     if (thumbnailIsar().thumbnails.countSync() >= 3000) {
-      thumbnailIsar().writeTxnSync(() => thumbnailIsar()
-          .thumbnails
-          .where()
-          .sortByUpdatedAt()
-          .limit(thumbs.length)
-          .deleteAllSync());
+      thumbnailIsar().writeTxnSync(() {
+        thumbnailIsar()
+            .thumbnails
+            .where()
+            .sortByUpdatedAt()
+            .limit(thumbs.length)
+            .deleteAllSync();
+      });
     }
 
     thumbnailIsar().writeTxnSync(() {
       thumbnailIsar().thumbnails.putAllSync(thumbs
           .cast<ThumbnailId>()
-          .map(
-              (e) => Thumbnail(e.id, DateTime.now(), e.thumb, e.differenceHash))
+          .map((e) =>
+              Thumbnail(e.id, DateTime.now(), e.thumb, e.differenceHash, false))
           .toList());
     });
 

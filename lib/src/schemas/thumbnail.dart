@@ -16,5 +16,8 @@ class Thumbnail {
   final int differenceHash;
   final DateTime updatedAt;
 
-  const Thumbnail(this.id, this.updatedAt, this.data, this.differenceHash);
+  final bool isEmpty;
+
+  const Thumbnail(
+      this.id, this.updatedAt, this.data, this.differenceHash, this.isEmpty);
 }
