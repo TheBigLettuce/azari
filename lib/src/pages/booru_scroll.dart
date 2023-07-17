@@ -203,7 +203,9 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
         instance.posts.clear();
         return instance.posts.putAllById(list);
       });
-      PostTags().addAllPostTags(list);
+      if (!skeletonState.settings.saveTagsOnlyOnDownload) {
+        PostTags().addAllPostTags(list);
+      }
       reachedEnd = false;
     } catch (e) {
       rethrow;
@@ -218,6 +220,10 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
     var p = instance.posts.getSync(i + 1);
     if (p == null) {
       return Future.value();
+    }
+
+    if (skeletonState.settings.saveTagsOnlyOnDownload) {
+      PostTags().addTagsPost(p.filename(), p.tags.split(" "), true);
     }
 
     return downloader.add(File.d(p.downloadUrl(), booru.domain, p.filename()));
@@ -240,7 +246,9 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
         reachedEnd = true;
       } else {
         instance.writeTxnSync(() => instance.posts.putAllByIdSync(list));
-        PostTags().addAllPostTags(list);
+        if (!skeletonState.settings.saveTagsOnlyOnDownload) {
+          PostTags().addAllPostTags(list);
+        }
       }
     } catch (e, trace) {
       log("_addLast on grid ${skeletonState.settings.selectedBooru.string}",
@@ -265,6 +273,9 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
           [
             GridBottomSheetAction(Icons.download, (selected) {
               for (var element in selected) {
+                if (skeletonState.settings.saveTagsOnlyOnDownload) {
+                  PostTags().addTagsPost(element.fileName, element.tags, true);
+                }
                 downloader.add(
                     File.d(element.fileUrl, booru.domain, element.fileName));
               }

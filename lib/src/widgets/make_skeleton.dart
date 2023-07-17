@@ -64,7 +64,9 @@ class GridSkeletonState<T extends Cell<B>, B> extends SkeletonState {
     if (fab != showFab) {
       showFab = fab;
       if (!foreground) {
-        setState(() {});
+        try {
+          setState(() {});
+        } catch (_) {}
       }
     }
   }

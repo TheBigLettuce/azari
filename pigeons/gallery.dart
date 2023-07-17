@@ -23,6 +23,7 @@ class Directory {
   final String bucketId;
   final String name;
   final String relativeLoc;
+  final String volumeName;
 
   final int lastModified;
 
@@ -31,6 +32,7 @@ class Directory {
       required this.thumbFileId,
       required this.relativeLoc,
       required this.name,
+      required this.volumeName,
       required this.lastModified});
 }
 
@@ -46,6 +48,8 @@ class DirectoryFile {
   final int height;
   final int width;
 
+  final int size;
+
   final bool isVideo;
   final bool isGif;
 
@@ -55,6 +59,7 @@ class DirectoryFile {
       required this.lastModified,
       required this.originalUri,
       required this.name,
+      required this.size,
       required this.isGif,
       required this.height,
       required this.width,
@@ -68,7 +73,7 @@ abstract class GalleryApi {
       bool inRefresh, bool empty);
   void addThumbnails(List<ThumbnailId> thumbs, bool runCallback);
 
-  void notify();
+  void notify(String? target);
 
   List<int> thumbsExist(List<int> ids);
 
@@ -78,8 +83,9 @@ abstract class GalleryApi {
 class ThumbnailId {
   final int id;
   final Uint8List thumb;
+  final int differenceHash;
 
-  const ThumbnailId(this.id, this.thumb);
+  const ThumbnailId(this.id, this.thumb, this.differenceHash);
 }
 
 class CopyOp {

@@ -37,7 +37,7 @@ class Danbooru implements BooruAPI {
   final String name = "Danbooru";
 
   @override
-  final String domain = "danbooru.donmai.us";
+  final String domain = Booru.danbooru.url;
 
   @override
   final bool wouldBecomeStale = false;
@@ -87,7 +87,7 @@ class Danbooru implements BooruAPI {
           throw "no post";
         }
 
-        return _fromJson(resp.data)[0];
+        return _fromJson([resp.data])[0];
       } catch (e) {
         if (e is DioException) {
           if (e.response?.statusCode == 403) {

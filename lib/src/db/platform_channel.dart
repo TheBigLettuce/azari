@@ -8,7 +8,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
-import 'package:gallery/src/schemas/android_gallery_directory.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 
 const MethodChannel _channel = MethodChannel("lol.bruh19.azari.gallery");
@@ -43,11 +42,22 @@ class PlatformFunctions {
     _channel.invokeMethod("returnUri", originalUri);
   }
 
-  static void copyMoveFiles(SystemGalleryDirectoryShrinked? chosen,
+  static void rename(String uri, String newName) {
+    if (newName.isEmpty) {
+      return;
+    }
+
+    _channel.invokeMethod("rename", {
+      "uri": uri,
+      "newName": newName,
+    });
+  }
+
+  static void copyMoveFiles(String? chosen, String? chosenVolumeName,
       List<SystemGalleryDirectoryFileShrinked> selected,
       {required bool move, String? newDir}) {
     _channel.invokeMethod("copyMoveFiles", {
-      "dest": chosen != null ? chosen.relativeLoc : newDir,
+      "dest": chosen ?? newDir,
       "images": selected
           .where((element) => !element.isVideo)
           .map((e) => e.id)
@@ -57,6 +67,7 @@ class PlatformFunctions {
           .map((e) => e.id)
           .toList(),
       "move": move,
+      "volumeName": chosenVolumeName,
       "newDir": newDir != null
     });
   }

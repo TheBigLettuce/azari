@@ -30,6 +30,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 
+data class RenameOp(val uri: Uri, val newName: String)
+
 class EngineBindings(activity: FlutterActivity, entrypoint: String) {
     val channel: MethodChannel
     val engine: FlutterEngine
@@ -40,6 +42,8 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
     var callback: ((String?) -> Unit)? = null
     val copyFilesMux = Mutex()
     var copyFiles: FilesDest? = null
+    val renameMux = Mutex()
+    var rename: List<RenameOp>? = null
 
 
     init {
@@ -140,6 +144,40 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                     result.success(null)
                 }
 
+                "rename" -> {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        renameMux.lock()
+                        try {
+                            val uri = call.argument<String>("uri") ?: throw Exception("empty uri")
+                            val newName =
+                                call.argument<String>("newName") ?: throw Exception("empty name")
+
+                            var parsedUri = Uri.parse(uri)
+
+                            val intent = MediaStore.createWriteRequest(
+                                context.contentResolver,
+                                listOf(parsedUri)
+                            )
+
+                            rename = listOf(RenameOp(parsedUri, newName))
+
+                            context.startIntentSenderForResult(
+                                intent.intentSender,
+                                11,
+                                null,
+                                0,
+                                0,
+                                0
+                            )
+
+                            result.success(null)
+                        } catch (e: java.lang.Exception) {
+                            renameMux.unlock()
+                            Log.e("rename", e.toString())
+                        }
+                    }
+                }
+
                 "copyMoveFiles" -> {
                     CoroutineScope(Dispatchers.IO).launch {
                         copyFilesMux.lock()
@@ -148,6 +186,7 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                         val videos = call.argument<List<Long>>("videos")
                         val move = call.argument<Boolean>("move")
                         val newDir = call.argument<Boolean>("newDir")
+                        val volumeName = call.argument<String?>("volumeName")
 
                         if (dest == null) {
                             copyFilesMux.unlock()
@@ -155,15 +194,22 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                         } else if (images == null || videos == null || move == null || newDir == null) {
                             copyFilesMux.unlock()
                             result.error("media or move or newDir or videos is empty", "", "")
+                        } else if (newDir == false && volumeName == null) {
+                            copyFilesMux.unlock()
+                            result.error(
+                                "if newDir is false, volumeName should be supplied",
+                                "",
+                                ""
+                            )
                         } else {
                             try {
-
-                                val mediaUris = images.map {
+                                val imageUris = images.map {
                                     ContentUris.withAppendedId(
                                         MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
                                         it
                                     )
-                                } + videos.map {
+                                }
+                                val videoUris = videos.map {
                                     ContentUris.withAppendedId(
                                         MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
                                         it
@@ -172,13 +218,15 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
 
                                 val intent = MediaStore.createWriteRequest(
                                     context.contentResolver,
-                                    mediaUris
+                                    imageUris + videoUris
                                 )
 
                                 copyFiles = FilesDest(
                                     dest,
-                                    mediaUris,
+                                    images = imageUris,
+                                    videos = videoUris,
                                     move = move,
+                                    volumeName = volumeName,
                                     newDir = newDir
                                 )
 

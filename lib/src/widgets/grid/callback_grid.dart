@@ -14,6 +14,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/schemas/settings.dart';
+import 'package:gallery/src/widgets/booru/autocomplete_tag.dart';
 import 'package:gallery/src/widgets/cloudflare_block.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
@@ -381,109 +382,131 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                     controller: controller,
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
-                      SliverAppBar(
-                        backgroundColor: Theme.of(context)
-                            .colorScheme
-                            .background
-                            .withOpacity(0.90),
-                        expandedHeight: 152,
-                        collapsedHeight: 64,
-                        automaticallyImplyLeading: false,
-                        actions: [Container()],
-                        flexibleSpace: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                  child: FlexibleSpaceBar(
-                                      titlePadding: EdgeInsetsDirectional.only(
-                                        start: widget.onBack != null ? 48 : 0,
-                                      ),
-                                      title: widget.searchWidget?.search != null
-                                          ? Padding(
-                                              padding: EdgeInsets.only(
-                                                  bottom: widget
-                                                          .description
-                                                          .bottomWidget
-                                                          ?.preferredSize
-                                                          .height ??
-                                                      0),
-                                              child:
-                                                  widget.searchWidget?.search,
-                                            )
-                                          : Padding(
-                                              padding: const EdgeInsets.only(
-                                                  top: 8,
-                                                  bottom: 16,
-                                                  right: 8,
-                                                  left: 8),
-                                              child: Text(
-                                                widget.description.pageName ??
-                                                    widget.description
-                                                        .keybindsDescription,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
+                      FocusNotifier(
+                          notifier: widget.searchWidget?.focus,
+                          focusMain: () {
+                            widget.mainFocus.requestFocus();
+                          },
+                          child: Builder(
+                            builder: (context) {
+                              return SliverAppBar(
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .background
+                                    .withOpacity(0.90),
+                                expandedHeight:
+                                    FocusNotifier.of(context).hasFocus
+                                        ? 64
+                                        : 152,
+                                collapsedHeight: 64,
+                                automaticallyImplyLeading: false,
+                                actions: [Container()],
+                                flexibleSpace: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                          child: FlexibleSpaceBar(
+                                              titlePadding:
+                                                  EdgeInsetsDirectional.only(
+                                                start: widget.onBack != null
+                                                    ? 48
+                                                    : 0,
                                               ),
-                                            ))),
-                              if (Platform.isAndroid || Platform.isIOS)
-                                if (widget.menuButtonItems != null &&
-                                    widget.menuButtonItems!.length == 1)
-                                  wrapAppBarAction(
-                                      widget.menuButtonItems!.first),
-                              if (widget.scaffoldKey.currentState?.hasDrawer ??
-                                  false)
-                                wrapAppBarAction(GestureDetector(
-                                  onLongPress: () {
-                                    setState(() {
-                                      selected.clear();
-                                      currentBottomSheet?.close();
-                                    });
-                                  },
-                                  child: IconButton(
-                                      onPressed: () {
-                                        widget.scaffoldKey.currentState!
-                                            .openDrawer();
-                                      },
-                                      icon: const Icon(Icons.menu)),
-                                )),
-                              if (widget.menuButtonItems != null &&
-                                  widget.menuButtonItems!.length != 1)
-                                wrapAppBarAction(PopupMenuButton(
-                                    position: PopupMenuPosition.under,
-                                    itemBuilder: (context) {
-                                      return widget.menuButtonItems!
-                                          .map(
-                                            (e) => PopupMenuItem(
-                                              enabled: false,
-                                              child: e,
-                                            ),
+                                              title: widget.searchWidget
+                                                          ?.search !=
+                                                      null
+                                                  ? Padding(
+                                                      padding: EdgeInsets.only(
+                                                          bottom: widget
+                                                                  .description
+                                                                  .bottomWidget
+                                                                  ?.preferredSize
+                                                                  .height ??
+                                                              0),
+                                                      child: widget
+                                                          .searchWidget?.search,
+                                                    )
+                                                  : Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              top: 8,
+                                                              bottom: 16,
+                                                              right: 8,
+                                                              left: 8),
+                                                      child: Text(
+                                                        widget.description
+                                                                .pageName ??
+                                                            widget.description
+                                                                .keybindsDescription,
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ))),
+                                      if (Platform.isAndroid || Platform.isIOS)
+                                        if (widget.menuButtonItems != null &&
+                                            widget.menuButtonItems!.length == 1)
+                                          wrapAppBarAction(
+                                              widget.menuButtonItems!.first),
+                                      if (widget.scaffoldKey.currentState
+                                              ?.hasDrawer ??
+                                          false)
+                                        wrapAppBarAction(GestureDetector(
+                                          onLongPress: () {
+                                            setState(() {
+                                              selected.clear();
+                                              currentBottomSheet?.close();
+                                            });
+                                          },
+                                          child: IconButton(
+                                              onPressed: () {
+                                                widget.scaffoldKey.currentState!
+                                                    .openDrawer();
+                                              },
+                                              icon: const Icon(Icons.menu)),
+                                        )),
+                                      if (widget.menuButtonItems != null &&
+                                          widget.menuButtonItems!.length != 1)
+                                        wrapAppBarAction(PopupMenuButton(
+                                            position: PopupMenuPosition.under,
+                                            itemBuilder: (context) {
+                                              return widget.menuButtonItems!
+                                                  .map(
+                                                    (e) => PopupMenuItem(
+                                                      enabled: false,
+                                                      child: e,
+                                                    ),
+                                                  )
+                                                  .toList();
+                                            }))
+                                    ]),
+                                leading: widget.onBack != null
+                                    ? IconButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            selected.clear();
+                                            currentBottomSheet?.close();
+                                          });
+                                          if (widget.onBack != null) {
+                                            widget.onBack!();
+                                          }
+                                        },
+                                        icon: const Icon(Icons.arrow_back))
+                                    : Container(),
+                                pinned: true,
+                                stretch: true,
+                                bottom: widget.description.bottomWidget != null
+                                    ? widget.description.bottomWidget!
+                                    : _state.isRefreshing
+                                        ? const PreferredSize(
+                                            preferredSize: Size.fromHeight(4),
+                                            child: LinearProgressIndicator(),
                                           )
-                                          .toList();
-                                    }))
-                            ]),
-                        leading: widget.onBack != null
-                            ? IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    selected.clear();
-                                    currentBottomSheet?.close();
-                                  });
-                                  if (widget.onBack != null) {
-                                    widget.onBack!();
-                                  }
-                                },
-                                icon: const Icon(Icons.arrow_back))
-                            : Container(),
-                        pinned: true,
-                        stretch: true,
-                        bottom: widget.description.bottomWidget != null
-                            ? widget.description.bottomWidget!
-                            : _state.isRefreshing
-                                ? const PreferredSize(
-                                    preferredSize: Size.fromHeight(4),
-                                    child: LinearProgressIndicator(),
-                                  )
-                                : null,
-                      ),
+                                        : null,
+                              );
+                            },
+                          )),
                       !_state.isRefreshing && _state.cellCount == 0
                           ? SliverToBoxAdapter(
                               child: _state.cloudflareBlocked == true &&

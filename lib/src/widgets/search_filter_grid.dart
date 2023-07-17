@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/widgets/booru/autocomplete_tag.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:gallery/src/widgets/search_launch_grid.dart';
@@ -19,8 +20,10 @@ import '../gallery/interface.dart';
 enum FilteringMode {
   original("Original", Icons.circle_outlined),
   duplicate("Duplicate", Icons.mode_standby_outlined),
+  same("Same", Icons.drag_handle),
   video("Video", Icons.play_circle),
   gif("GIF", Icons.gif_outlined),
+  tag("Tag", Icons.tag),
   noFilter("No filter", Icons.filter_list_outlined);
 
   final String string;
@@ -38,8 +41,8 @@ class IsarFilter<T extends Cell<B>, B> implements FilterInterface<T, B> {
   Isar _from;
   final Isar _to;
   bool isFiltering = false;
-  final List<T> Function(int offset, int limit, String s) getElems;
-  List<T> Function(List<T>)? passFilter;
+  final Iterable<T> Function(int offset, int limit, String s) getElems;
+  (Iterable<T>, dynamic) Function(Iterable<T>, dynamic, bool)? passFilter;
 
   Isar get to => _to;
 
@@ -51,11 +54,12 @@ class IsarFilter<T extends Cell<B>, B> implements FilterInterface<T, B> {
     _to.close(deleteFromDisk: true);
   }
 
-  void _writeFromTo(
-      Isar from, List<T> Function(int offset, int limit) getElems, Isar to) {
+  void _writeFromTo(Isar from,
+      Iterable<T> Function(int offset, int limit) getElems, Isar to) {
     from.writeTxnSync(() {
       var offset = 0;
       var loopCount = 0;
+      dynamic data;
 
       for (;;) {
         loopCount++;
@@ -68,13 +72,27 @@ class IsarFilter<T extends Cell<B>, B> implements FilterInterface<T, B> {
         }
 
         if (passFilter != null) {
-          sorted = passFilter!(sorted);
+          (sorted, data) = passFilter!(sorted, data, end);
         }
         for (var element in sorted) {
           element.isarId = null;
         }
 
-        to.writeTxnSync(() => to.collection<T>().putAllSync(sorted));
+        final l = <T>[];
+        var count = 0;
+        for (final elem in sorted) {
+          count++;
+          l.add(elem);
+          if (count == 40) {
+            _to.writeTxnSync(() => _to.collection<T>().putAllSync(l));
+            l.clear();
+            count = 0;
+          }
+        }
+
+        if (l.isNotEmpty) {
+          _to.writeTxnSync(() => _to.collection<T>().putAllSync(l));
+        }
 
         if (end) {
           break;
@@ -142,6 +160,10 @@ mixin SearchFilterGrid<T extends Cell<B>, B>
     return _key.currentState!.currentFilterMode;
   }
 
+  void markSearchVirtual() {
+    _key.currentState?.searchVirtual = true;
+  }
+
   @override
   Widget searchWidget(BuildContext context, {String? hint, int? count}) =>
       _SearchWidget(
@@ -167,10 +189,12 @@ class _SearchWidget extends StatefulWidget {
 }
 
 class __SearchWidgetState extends State<_SearchWidget> {
+  bool searchVirtual = false;
   FilteringMode currentFilterMode = FilteringMode.noFilter;
   void onChanged(String value, bool direct) {
     var interf = widget.instance._state.gridKey.currentState?.mutationInterface;
     if (interf != null) {
+      widget.instance._state.hook(currentFilterMode);
       if (!direct) {
         value = value.trim();
         if (value.isEmpty) {
@@ -181,12 +205,38 @@ class __SearchWidgetState extends State<_SearchWidget> {
         }
       }
 
-      var res = widget.instance._state.filter.filter(value);
+      var res =
+          widget.instance._state.filter.filter(searchVirtual ? "" : value);
 
       interf.setSource(res.count, res.cell);
       setState(() {});
     }
   }
+
+  List<Widget> _addItems() => [
+        if (widget.instance._state.filteringModes.isNotEmpty)
+          PopupMenuButton<FilteringMode>(
+            itemBuilder: (context) {
+              return widget.instance._state.filteringModes
+                  .map((e) => PopupMenuItem(value: e, child: Text(e.string)))
+                  .toList();
+            },
+            initialValue: currentFilterMode,
+            onSelected: (value) {
+              searchVirtual = false;
+              currentFilterMode = value;
+              onChanged(widget.instance.searchTextController.text, true);
+            },
+            icon: Icon(
+              currentFilterMode.icon,
+            ),
+            padding: EdgeInsets.zero,
+          ),
+        if (widget.instance.addItems != null) ...widget.instance.addItems!
+      ];
+
+  String _makeHint(BuildContext context) =>
+      "${AppLocalizations.of(context)!.filterHint}${widget.hint != null ? ' ${widget.hint}' : ''}";
 
   @override
   Widget build(BuildContext context) {
@@ -194,47 +244,53 @@ class __SearchWidgetState extends State<_SearchWidget> {
         focusMain: widget.instance._state.mainFocus.requestFocus,
         notifier: widget.instance.searchFocus,
         child: Builder(
-          builder: (context) => TextField(
-            focusNode: widget.instance.searchFocus,
-            controller: widget.instance.searchTextController,
-            decoration: autocompleteBarDecoration(context, () {
-              widget.instance.searchTextController.clear();
-              widget.instance._state.gridKey.currentState?.mutationInterface
-                  ?.restore();
-              if (widget.instance._state.filteringModes.isNotEmpty) {
-                onChanged(widget.instance.searchTextController.text, true);
-              }
-              setState(() {});
-            }, [
-              if (widget.instance._state.filteringModes.isNotEmpty)
-                PopupMenuButton<FilteringMode>(
-                  itemBuilder: (context) {
-                    return widget.instance._state.filteringModes
-                        .map((e) =>
-                            PopupMenuItem(value: e, child: Text(e.string)))
-                        .toList();
+          builder: (context) => currentFilterMode == FilteringMode.tag
+              ? autocompleteWidget(
+                  widget.instance.searchTextController,
+                  (p0) {},
+                  (p0) {},
+                  () {
+                    widget.instance._state.mainFocus.requestFocus();
                   },
-                  initialValue: currentFilterMode,
-                  onSelected: (value) {
-                    currentFilterMode = value;
+                  PostTags().completeLocalTag,
+                  widget.instance.searchFocus,
+                  showSearch: true,
+                  searchCount: widget.instance._state.gridKey.currentState
+                      ?.mutationInterface?.cellCount,
+                  addItems: _addItems(),
+                  onChanged: () {
                     onChanged(widget.instance.searchTextController.text, true);
-                    widget.instance._state.hook(value);
                   },
-                  icon: Icon(
-                    currentFilterMode.icon,
-                  ),
-                  padding: EdgeInsets.zero,
+                  customHint: _makeHint(context),
+                  noUnfocus: true,
+                  scrollHack: _ScrollHack())
+              : TextField(
+                  focusNode: widget.instance.searchFocus,
+                  controller: widget.instance.searchTextController,
+                  decoration: autocompleteBarDecoration(context, () {
+                    widget.instance.searchTextController.clear();
+                    widget
+                        .instance._state.gridKey.currentState?.mutationInterface
+                        ?.restore();
+                    if (widget.instance._state.filteringModes.isNotEmpty) {
+                      searchVirtual = false;
+                      onChanged(
+                          widget.instance.searchTextController.text, true);
+                    }
+                    setState(() {});
+                  }, _addItems(),
+                      searchCount: widget.instance._state.gridKey.currentState
+                          ?.mutationInterface?.cellCount,
+                      showSearch: true,
+                      roundBorders: false,
+                      hint: _makeHint(context)),
+                  onChanged: (s) => onChanged(s, false),
                 ),
-              if (widget.instance.addItems != null) ...widget.instance.addItems!
-            ],
-                searchCount: widget.instance._state.gridKey.currentState
-                    ?.mutationInterface?.cellCount,
-                showSearch: true,
-                roundBorders: false,
-                hint:
-                    "${AppLocalizations.of(context)!.filterHint}${widget.hint != null ? ' ${widget.hint}' : ''}"),
-            onChanged: (s) => onChanged(s, false),
-          ),
         ));
   }
+}
+
+class _ScrollHack extends ScrollController {
+  @override
+  bool get hasClients => false;
 }

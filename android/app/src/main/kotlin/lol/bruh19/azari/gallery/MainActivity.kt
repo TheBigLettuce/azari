@@ -24,7 +24,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okio.use
 
-data class FilesDest(val dest: String, val media: List<Uri>, val move: Boolean, val newDir: Boolean)
+data class FilesDest(
+    val dest: String,
+    val volumeName: String?,
+    val images: List<Uri>,
+    val videos: List<Uri>,
+    val move: Boolean,
+    val newDir: Boolean
+)
+
 data class MoveOp(val source: String, val rootUri: Uri, val dir: String)
 data class ThumbOp(val thumbs: List<Long>, val callback: (() -> Unit)?, val notify: Boolean = false)
 
@@ -33,9 +41,14 @@ class MainActivity : FlutterActivity() {
         EngineBindings(activity = this, "main")
     }
 
-    private fun copyFile(e: Uri, newDir: Boolean, deleteAfter: Boolean) {
+    private fun copyFile(
+        e: Uri,
+        volumeName: String?,
+        newDir: Boolean,
+        isImage: Boolean,
+        deleteAfter: Boolean
+    ) {
         val mimeType = contentResolver.getType(e)!!
-        val isImage = mimeType.startsWith("image")
 
         contentResolver.openInputStream(e)?.use { stream ->
             contentResolver.query(
@@ -84,13 +97,13 @@ class MainActivity : FlutterActivity() {
                     if (isImage) {
                         contentResolver.insert(
                             MediaStore.Images.Media.getContentUri(
-                                MediaStore.VOLUME_EXTERNAL
+                                volumeName!!
                             ), details
                         )
                     } else {
                         contentResolver.insert(
                             MediaStore.Video.Media.getContentUri(
-                                MediaStore.VOLUME_EXTERNAL
+                                volumeName!!
                             ), details
                         )
                     }
@@ -106,6 +119,82 @@ class MainActivity : FlutterActivity() {
                 details.clear()
                 details.put(MediaStore.MediaColumns.IS_PENDING, 0)
                 contentResolver.update(resultUri, details, null, null)
+            }
+        }
+    }
+
+    private fun constructRelPath(uri: Uri, isImage: Boolean): String? {
+        val treePrimary = "/tree/primary:"
+        if (uri.path!!.startsWith(treePrimary)) {
+            val noTree = uri.path!!.substring(treePrimary.length)
+            return if (noTree.startsWith(
+                    if (isImage) {
+                        "Pictures"
+                    } else {
+                        "Movies"
+                    }
+                )
+            ) {
+                noTree
+            } else {
+                null
+            }
+        } else {
+            return null
+        }
+    }
+
+    private fun copyOrMove(
+        uris: List<Uri>,
+        volumeName: String?,
+        isImage: Boolean,
+        newDir: Boolean,
+        move: Boolean
+    ) {
+        if (move) {
+            var dest = engineBindings.copyFiles!!.dest
+
+            if (newDir) {
+                val newDest = constructRelPath(Uri.parse(dest), isImage)
+                if (newDest != null) {
+                    dest = newDest
+                } else {
+                    for (e in uris) {
+                        copyFile(
+                            e,
+                            newDir = true,
+                            isImage = isImage,
+                            volumeName = volumeName,
+                            deleteAfter = true
+                        )
+                    }
+                    return
+                }
+            }
+
+            val values = ContentValues()
+            values.put(
+                MediaStore.MediaColumns.RELATIVE_PATH,
+                dest
+            )
+
+            for (e in uris) {
+                contentResolver.update(
+                    e,
+                    values,
+                    null,
+                    null
+                )
+            }
+        } else {
+            for (e in uris) {
+                copyFile(
+                    e,
+                    newDir = newDir,
+                    isImage = isImage,
+                    volumeName = volumeName,
+                    deleteAfter = false
+                )
             }
         }
     }
@@ -129,40 +218,58 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        if (requestCode == 11) {
+            if (resultCode == Activity.RESULT_OK) {
+                CoroutineScope(lifecycleScope.coroutineContext + Dispatchers.IO).launch {
+                    try {
+                        for (e in engineBindings.rename!!) {
+                            val values = ContentValues()
+                            values.put(
+                                MediaStore.MediaColumns.DISPLAY_NAME,
+                                e.newName
+                            )
+
+                            contentResolver.update(
+                                e.uri,
+                                values,
+                                null,
+                                null
+                            )
+                        }
+
+                        engineBindings.mover.notifyGallery()
+                    } catch (e: Exception) {
+                        Log.e("rename_", e.toString())
+                    }
+
+                    engineBindings.rename = null
+                    engineBindings.renameMux.unlock()
+                }
+            }
+        }
+
         if (requestCode == 10) {
             if (resultCode == Activity.RESULT_OK) {
                 CoroutineScope(lifecycleScope.coroutineContext + Dispatchers.IO).launch {
                     try {
-                        val values = ContentValues()
-                        values.put(
-                            MediaStore.MediaColumns.RELATIVE_PATH,
-                            engineBindings.copyFiles!!.dest
-                        )
+                        if (engineBindings.copyFiles!!.images.isNotEmpty()) {
+                            copyOrMove(
+                                engineBindings.copyFiles!!.images,
+                                isImage = true,
+                                newDir = engineBindings.copyFiles!!.newDir,
+                                volumeName = engineBindings.copyFiles!!.volumeName,
+                                move = engineBindings.copyFiles!!.move
+                            )
+                        }
 
-                        if (engineBindings.copyFiles!!.media.isNotEmpty()) {
-                            if (engineBindings.copyFiles!!.newDir) {
-                                for (e in engineBindings.copyFiles!!.media) {
-                                    copyFile(
-                                        e,
-                                        newDir = true,
-                                        deleteAfter = engineBindings.copyFiles!!.move
-                                    )
-                                }
-                            } else
-                                if (engineBindings.copyFiles!!.move) {
-                                    for (e in engineBindings.copyFiles!!.media) {
-                                        contentResolver.update(
-                                            e,
-                                            values,
-                                            null,
-                                            null
-                                        )
-                                    }
-                                } else {
-                                    for (e in engineBindings.copyFiles!!.media) {
-                                        copyFile(e, newDir = false, deleteAfter = false)
-                                    }
-                                }
+                        if (engineBindings.copyFiles!!.videos.isNotEmpty()) {
+                            copyOrMove(
+                                engineBindings.copyFiles!!.videos,
+                                isImage = false,
+                                newDir = engineBindings.copyFiles!!.newDir,
+                                volumeName = engineBindings.copyFiles!!.volumeName,
+                                move = engineBindings.copyFiles!!.move
+                            )
                         }
                     } catch (e: java.lang.Exception) {
                         Log.e("copy files", e.toString())

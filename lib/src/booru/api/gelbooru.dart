@@ -30,7 +30,7 @@ class Gelbooru implements BooruAPI {
   final String name = "Gelbooru";
 
   @override
-  final String domain = "gelbooru.com";
+  final String domain = Booru.gelbooru.url;
 
   @override
   final Booru booru = Booru.gelbooru;

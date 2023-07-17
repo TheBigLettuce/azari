@@ -12,8 +12,6 @@ import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/android_gallery_directory.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 import 'package:gallery/src/schemas/blacklisted_directory.dart';
-import 'package:gallery/src/schemas/local_tags.dart';
-import 'package:gallery/src/schemas/tags.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:gallery/src/gallery/android_api/api.g.dart';
@@ -46,7 +44,7 @@ class AndroidGalleryExtra {
       final cell = db.systemGalleryDirectorys.getSync(from + 1)!;
 
       thumbnailIsar().writeTxnSync(() => thumbnailIsar().thumbnails.putSync(
-          Thumbnail(cell.thumbFileId, DateTime.now(), kTransparentImage)));
+          Thumbnail(cell.thumbFileId, DateTime.now(), kTransparentImage, 0)));
 
       PlatformFunctions.loadThumbnail(cell.thumbFileId);
       _impl.onThumbUpdate?.call();
@@ -166,7 +164,7 @@ class _AndroidGallery
     var instance =
         _AndroidGalleryFiles(openAndroidGalleryInnerIsar(), d.bucketId, () {
       currentImages = null;
-    });
+    }, d.name);
     currentImages = instance;
     return instance;
   }

@@ -29,6 +29,8 @@ class Settings {
   final AspectRatio ratio;
   final bool safeMode;
 
+  final bool saveTagsOnlyOnDownload;
+
   final bool autoRefresh;
   final int autoRefreshMicroseconds;
   final GallerySettings gallerySettings;
@@ -42,6 +44,7 @@ class Settings {
       required this.listViewBooru,
       required this.picturesPerRow,
       required this.safeMode,
+      required this.saveTagsOnlyOnDownload,
       required this.gallerySettings,
       required this.ratio});
   Settings copy(
@@ -52,6 +55,7 @@ class Settings {
       GridColumn? picturesPerRow,
       bool? autoRefresh,
       int? autoRefreshMicroseconds,
+      bool? saveTagsOnlyOnDownload,
       bool? safeMode,
       AspectRatio? ratio,
       GallerySettings? gallerySettings}) {
@@ -59,6 +63,8 @@ class Settings {
         path: path ?? this.path,
         selectedBooru: selectedBooru ?? this.selectedBooru,
         quality: quality ?? this.quality,
+        saveTagsOnlyOnDownload:
+            saveTagsOnlyOnDownload ?? this.saveTagsOnlyOnDownload,
         ratio: ratio ?? this.ratio,
         autoRefresh: autoRefresh ?? this.autoRefresh,
         autoRefreshMicroseconds:
@@ -72,6 +78,7 @@ class Settings {
   Settings.empty()
       : path = "",
         autoRefresh = false,
+        saveTagsOnlyOnDownload = true,
         autoRefreshMicroseconds = 1.hours.inMicroseconds,
         selectedBooru = Booru.gelbooru,
         quality = DisplayQuality.sample,
@@ -128,13 +135,15 @@ const _kDanbooruPrefix = "d";
 const _kGelbooruPrefix = "g";
 
 enum Booru {
-  gelbooru(string: "Gelbooru", prefix: _kGelbooruPrefix),
-  danbooru(string: "Danbooru", prefix: _kDanbooruPrefix);
+  gelbooru(string: "Gelbooru", prefix: _kGelbooruPrefix, url: "gelbooru.com"),
+  danbooru(
+      string: "Danbooru", prefix: _kDanbooruPrefix, url: "danbooru.donmai.us");
 
   final String string;
   final String prefix;
+  final String url;
 
-  const Booru({required this.string, required this.prefix});
+  const Booru({required this.string, required this.prefix, required this.url});
 }
 
 Booru? chooseBooruPrefix(String prefix) => switch (prefix) {

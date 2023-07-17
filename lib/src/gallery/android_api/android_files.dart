@@ -88,9 +88,11 @@ class _AndroidFilesState extends State<AndroidFiles>
         _refresh();
       }
     })
-    ..setPassFilter((cells) {
+    ..setPassFilter((cells, data, end) {
       return switch (currentFilteringMode()) {
-        FilteringMode.noFilter => cells,
+        FilteringMode.noFilter => (cells, data),
+        FilteringMode.same => _filterSame(cells, data, end),
+        FilteringMode.tag => _filterTag(cells),
         FilteringMode.video => _filterVideo(cells),
         FilteringMode.gif => _filterGif(cells),
         FilteringMode.duplicate => _filterDuplicate(cells),
@@ -98,37 +100,135 @@ class _AndroidFilesState extends State<AndroidFiles>
       };
     });
 
-  List<SystemGalleryDirectoryFile> _filterVideo(
-      List<SystemGalleryDirectoryFile> cells) {
-    return cells.where((element) => element.isVideo).toList();
+  (Iterable<SystemGalleryDirectoryFile>, dynamic) _filterTag(
+      Iterable<SystemGalleryDirectoryFile> cells) {
+    if (searchTextController.text.isEmpty) {
+      return (cells, null);
+    }
+
+    return (
+      cells.where((element) => PostTags()
+          .containsTagMultiple(element.name, searchTextController.text)),
+      null
+    );
   }
 
-  List<SystemGalleryDirectoryFile> _filterGif(
-      List<SystemGalleryDirectoryFile> cells) {
-    return cells.where((element) => element.isGif).toList();
+  (Iterable<SystemGalleryDirectoryFile>, dynamic) _filterSame(
+      Iterable<SystemGalleryDirectoryFile> cells, dynamic data, bool end) {
+    data ??= <int, List<int>>{};
+    for (final element in cells) {
+      final hash = element.getThumbnail()?.differenceHash;
+      if (hash == null || hash == 0) {
+        continue;
+      }
+
+      final prevList = (data as Map<int, List<int>>)[hash] ?? [];
+
+      data[hash] = [...prevList, element.isarId!];
+    }
+
+    if (end) {
+      final Set<int> distanceSet = {};
+
+      (data as Map<int, List<int>>).removeWhere((key, value) {
+        if (value.length > 1) {
+          for (final e in value) {
+            distanceSet.add(e);
+          }
+          return true;
+        }
+        return false;
+      });
+
+      for (final first in data.keys) {
+        for (final second in data.keys) {
+          if (first == second) {
+            continue;
+          }
+
+          final distance = hammingDistance(first, second);
+          if (distance < 2) {
+            for (final e in data[first]!) {
+              distanceSet.add(e);
+            }
+
+            for (final e in data[second]!) {
+              distanceSet.add(e);
+            }
+          }
+        }
+      }
+
+      return (
+        () sync* {
+          for (final i in distanceSet) {
+            var file = widget.api.directCell(i - 1);
+            file.isarId = null;
+            yield file;
+          }
+        }(),
+        data
+      );
+    }
+
+    return ([], data);
   }
 
-  List<SystemGalleryDirectoryFile> _filterDuplicate(
-      List<SystemGalleryDirectoryFile> cells) {
-    return cells.where((element) => element.isDuplicate()).toList();
+  int hammingDistance(int first, int second) {
+    return bitCount(first ^ second);
   }
 
-  List<SystemGalleryDirectoryFile> _filterOriginal(
-      List<SystemGalleryDirectoryFile> cells) {
-    return cells
-        .where((element) => PostTags().containsTag(element.name, "original"))
-        .toList();
+  // stolen from internet
+  int bitCount(int n) {
+    n = n - ((n >> 1) & 0x5555555555555555);
+    n = (n & 0x3333333333333333) + ((n >> 2) & 0x3333333333333333);
+    n = (n + (n >> 4)) & 0x0f0f0f0f0f0f0f0f;
+    n = n + (n >> 8);
+    n = n + (n >> 16);
+    n = n + (n >> 32);
+    return n & 0x7f;
+  }
+
+  (Iterable<SystemGalleryDirectoryFile>, dynamic) _filterVideo(
+      Iterable<SystemGalleryDirectoryFile> cells) {
+    return (cells.where((element) => element.isVideo), null);
+  }
+
+  (Iterable<SystemGalleryDirectoryFile>, dynamic) _filterGif(
+      Iterable<SystemGalleryDirectoryFile> cells) {
+    return (cells.where((element) => element.isGif), null);
+  }
+
+  (Iterable<SystemGalleryDirectoryFile>, dynamic) _filterDuplicate(
+      Iterable<SystemGalleryDirectoryFile> cells) {
+    return (cells.where((element) => element.isDuplicate()), null);
+  }
+
+  (Iterable<SystemGalleryDirectoryFile>, dynamic) _filterOriginal(
+      Iterable<SystemGalleryDirectoryFile> cells) {
+    return (
+      cells
+          .where((element) => PostTags().containsTag(element.name, "original")),
+      null
+    );
   }
 
   late final GridSkeletonStateFilter<
           SystemGalleryDirectoryFile, SystemGalleryDirectoryFileShrinked>
       state = GridSkeletonStateFilter(
+          hook: (selected) {
+            if (selected == FilteringMode.tag) {
+              markSearchVirtual();
+            }
+          },
           filter: extra.filter,
           index: kGalleryDrawerIndex,
           filteringModes: {
             FilteringMode.noFilter,
             FilteringMode.original,
             FilteringMode.duplicate,
+            FilteringMode.same,
+            FilteringMode.tag,
             FilteringMode.gif,
             FilteringMode.video
           },
@@ -184,7 +284,9 @@ class _AndroidFilesState extends State<AndroidFiles>
                       : AppLocalizations.of(context)!.cantCopySameDest)));
               return;
             }
-            PlatformFunctions.copyMoveFiles(chosen, selected,
+
+            PlatformFunctions.copyMoveFiles(
+                chosen?.relativeLoc, chosen?.volumeName, selected,
                 move: move, newDir: newDir);
           }),
         );
@@ -210,25 +312,34 @@ class _AndroidFilesState extends State<AndroidFiles>
             immutable: false,
             tightMode: true,
             addIconsImage: (state) {
-              return [
-                IconButton(
-                    onPressed: () {
-                      deleteDialog(context, [state.currentCell.shrinkedData()]);
-                    },
-                    icon: const Icon(Icons.delete)),
-                IconButton(
-                    onPressed: () {
-                      _moveOrCopy(
-                          context, [state.currentCell.shrinkedData()], false);
-                    },
-                    icon: const Icon(Icons.copy)),
-                IconButton(
-                    onPressed: () {
-                      _moveOrCopy(
-                          context, [state.currentCell.shrinkedData()], true);
-                    },
-                    icon: const Icon(Icons.forward))
-              ];
+              return widget.callback != null
+                  ? [
+                      IconButton(
+                          onPressed: () {
+                            widget.callback!(state.currentCell.shrinkedData());
+                          },
+                          icon: const Icon(Icons.check))
+                    ]
+                  : [
+                      IconButton(
+                          onPressed: () {
+                            deleteDialog(
+                                context, [state.currentCell.shrinkedData()]);
+                          },
+                          icon: const Icon(Icons.delete)),
+                      IconButton(
+                          onPressed: () {
+                            _moveOrCopy(context,
+                                [state.currentCell.shrinkedData()], false);
+                          },
+                          icon: const Icon(Icons.copy)),
+                      IconButton(
+                          onPressed: () {
+                            _moveOrCopy(context,
+                                [state.currentCell.shrinkedData()], true);
+                          },
+                          icon: const Icon(Icons.forward))
+                    ];
             },
             aspectRatio:
                 state.settings.gallerySettings.filesAspectRatio?.value ?? 1,
@@ -261,14 +372,6 @@ class _AndroidFilesState extends State<AndroidFiles>
               Navigator.pop(context);
             },
             progressTicker: stream.stream,
-            overrideOnPress: widget.callback != null
-                ? (context, indx) {
-                    widget.callback?.call(state
-                        .gridKey.currentState!.mutationInterface!
-                        .getCell(indx)
-                        .shrinkedData());
-                  }
-                : null,
             description: GridDescription(
                 kGalleryDrawerIndex,
                 widget.callback != null

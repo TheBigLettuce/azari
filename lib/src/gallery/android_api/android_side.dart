@@ -9,6 +9,7 @@ part of 'android_api_directories.dart';
 
 class GalleryImpl implements GalleryApi {
   final Isar db;
+  final bool temporary;
 
   @override
   void finish(String version) {
@@ -23,7 +24,8 @@ class GalleryImpl implements GalleryApi {
       return _global!;
     }
 
-    _global = GalleryImpl._new(openAndroidGalleryIsar(temporary: temporary));
+    _global = GalleryImpl._new(
+        openAndroidGalleryIsar(temporary: temporary), temporary);
     return _global!;
   }
 
@@ -37,7 +39,7 @@ class GalleryImpl implements GalleryApi {
     _currentApi = null;
   }
 
-  GalleryImpl._new(this.db);
+  GalleryImpl._new(this.db, this.temporary);
 
   @override
   void updatePictures(List<DirectoryFile?> f, String bucketId, int startTime,
@@ -60,12 +62,12 @@ class GalleryImpl implements GalleryApi {
     if (empty) {
       _currentApi?.currentImages?.callback
           ?.call(db.systemGalleryDirectoryFiles.countSync(), inRefresh, true);
+      return;
     }
 
     if (f.isEmpty) {
       return;
     }
-
     try {
       db.writeTxnSync(() => db.systemGalleryDirectoryFiles.putAllSync(f
           .cast<DirectoryFile>()
@@ -73,6 +75,7 @@ class GalleryImpl implements GalleryApi {
               id: e.id,
               bucketId: e.bucketId,
               name: e.name,
+              size: e.size,
               lastModified: e.lastModified,
               height: e.height,
               width: e.width,
@@ -106,7 +109,8 @@ class GalleryImpl implements GalleryApi {
     thumbnailIsar().writeTxnSync(() {
       thumbnailIsar().thumbnails.putAllSync(thumbs
           .cast<ThumbnailId>()
-          .map((e) => Thumbnail(e.id, DateTime.now(), e.thumb))
+          .map(
+              (e) => Thumbnail(e.id, DateTime.now(), e.thumb, e.differenceHash))
           .toList());
     });
 
@@ -150,6 +154,7 @@ class GalleryImpl implements GalleryApi {
           .map((e) => SystemGalleryDirectory(
               bucketId: e.bucketId,
               name: e.name,
+              volumeName: e.volumeName,
               relativeLoc: e.relativeLoc,
               thumbFileId: e.thumbFileId,
               lastModified: e.lastModified))
@@ -160,8 +165,10 @@ class GalleryImpl implements GalleryApi {
   }
 
   @override
-  void notify() {
-    _currentApi?.currentImages?.refreshGrid?.call();
+  void notify(String? target) {
+    if (target == null || target == _currentApi?.currentImages?.target) {
+      _currentApi?.currentImages?.refreshGrid?.call();
+    }
     _currentApi?.refreshGrid?.call();
   }
 }

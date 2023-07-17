@@ -5,19 +5,24 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/cell/cell.dart';
 import 'package:gallery/src/cell/data.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/db/platform_channel.dart';
+import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
 import 'package:gallery/src/schemas/directory_file.dart';
+import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/thumbnail.dart';
 import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:isar/isar.dart';
+import 'package:logging/logging.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -50,6 +55,8 @@ class SystemGalleryDirectoryFile
   final int height;
   final int width;
 
+  final int size;
+
   final bool isVideo;
   final bool isGif;
 
@@ -59,6 +66,7 @@ class SystemGalleryDirectoryFile
     required this.name,
     required this.isVideo,
     required this.isGif,
+    required this.size,
     required this.height,
     required this.width,
     required this.isOriginal,
@@ -73,7 +81,35 @@ class SystemGalleryDirectoryFile
   @ignore
   @override
   List<Widget>? Function(BuildContext context) get addButtons => (_) {
+        DissolveResult? res;
+        try {
+          res = PostTags().dissassembleFilename(name);
+        } catch (_) {}
+
         return [
+          if (size == 0 && res != null)
+            IconButton(
+                onPressed: () {
+                  final api = booruApiFromPrefix(res!.booru);
+
+                  api.singlePost(res.id).then((post) {
+                    PlatformFunctions.deleteFiles([shrinkedData()]);
+
+                    PostTags().addTagsPost(
+                        post.filename(), post.tags.split(" "), true);
+
+                    Downloader().add(File.d(
+                        post.fileDownloadUrl(), api.domain, post.filename()));
+                  }).onError((error, stackTrace) {
+                    log("loading post for download",
+                        level: Level.SEVERE.value,
+                        error: error,
+                        stackTrace: stackTrace);
+                  }).whenComplete(() {
+                    api.close();
+                  });
+                },
+                icon: const Icon(Icons.download_outlined)),
           if (isDuplicate()) Icon(FilteringMode.duplicate.icon),
           if (isOriginal) Icon(FilteringMode.original.icon),
           IconButton(
@@ -93,26 +129,57 @@ class SystemGalleryDirectoryFile
             extra,
             colors,
           ) {
-            return [
-              addInfoTile(
-                  colors: colors,
-                  title: AppLocalizations.of(context)!.nameTitle,
-                  subtitle: name),
-              addInfoTile(
-                  colors: colors,
-                  title: AppLocalizations.of(context)!.dateModified,
-                  subtitle: lastModified.toString()),
-              addInfoTile(
-                  colors: colors,
-                  title: AppLocalizations.of(context)!.widthInfoPage,
-                  subtitle: "${width}px"),
-              addInfoTile(
-                  colors: colors,
-                  title: AppLocalizations.of(context)!.heightInfoPage,
-                  subtitle: "${height}px"),
-              ...makeTags(
-                  context, extra, colors, PostTags().getTagsPost(name), null)
-            ];
+            return wrapTagsSearch(
+                context,
+                extra,
+                colors,
+                [
+                  addInfoTile(
+                      colors: colors,
+                      title: AppLocalizations.of(context)!.nameTitle,
+                      subtitle: name,
+                      trailing: GalleryImpl.instance().temporary
+                          ? null
+                          : IconButton(
+                              onPressed: () {
+                                Navigator.push(
+                                    context,
+                                    DialogRoute(
+                                      context: context,
+                                      builder: (context) {
+                                        return AlertDialog(
+                                          title: const Text(
+                                              "Enter new name"), // TODO: change
+                                          content: TextFormField(
+                                            initialValue: name,
+                                            onFieldSubmitted: (value) {
+                                              PlatformFunctions.rename(
+                                                  originalUri, value);
+                                              Navigator.pop(context);
+                                            },
+                                          ),
+                                        );
+                                      },
+                                    ));
+                              },
+                              icon: const Icon(Icons.edit))),
+                  addInfoTile(
+                      colors: colors,
+                      title: AppLocalizations.of(context)!.dateModified,
+                      subtitle: lastModified.toString()),
+                  addInfoTile(
+                      colors: colors,
+                      title: AppLocalizations.of(context)!.widthInfoPage,
+                      subtitle: "${width}px"),
+                  addInfoTile(
+                      colors: colors,
+                      title: AppLocalizations.of(context)!.heightInfoPage,
+                      subtitle: "${height}px"),
+                ],
+                name,
+                null,
+                temporary: GalleryImpl.instance().temporary,
+                showDeleteButton: true);
           };
 
   @override
@@ -155,6 +222,10 @@ class SystemGalleryDirectoryFile
           if (isDuplicate()) FilteringMode.duplicate.icon,
         ],
         loaded: record.$2);
+  }
+
+  Thumbnail? getThumbnail() {
+    return thumbnailIsar().thumbnails.getSync(id);
   }
 
   @override

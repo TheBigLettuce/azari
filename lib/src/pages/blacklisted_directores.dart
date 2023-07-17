@@ -47,7 +47,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
                             .where()
                             .findAllSync();
                         setState(() {});
-                        GalleryImpl.instance().notify();
+                        GalleryImpl.instance().notify(null);
                       },
                       icon: const Icon(Icons.close)),
                   subtitle: Text(e.bucketId),
@@ -64,7 +64,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
                         .db
                         .blacklistedDirectorys
                         .clearSync());
-                GalleryImpl.instance().notify();
+                GalleryImpl.instance().notify(null);
               },
               icon: const Icon(Icons.delete))
         ]);

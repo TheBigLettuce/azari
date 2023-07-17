@@ -25,7 +25,7 @@ class AndroidGalleryFilesExtra {
 
       thumbnailIsar().writeTxnSync(() => thumbnailIsar()
           .thumbnails
-          .putSync(Thumbnail(cell.id, DateTime.now(), kTransparentImage)));
+          .putSync(Thumbnail(cell.id, DateTime.now(), kTransparentImage, 0)));
 
       PlatformFunctions.loadThumbnail(cell.id);
       _impl.onThumbUpdate?.call();
@@ -50,10 +50,19 @@ class AndroidGalleryFilesExtra {
   }
 
   void setPassFilter(
-      List<SystemGalleryDirectoryFile> Function(
-              List<SystemGalleryDirectoryFile> cells)
+      (Iterable<SystemGalleryDirectoryFile>, dynamic) Function(
+              Iterable<SystemGalleryDirectoryFile> cells,
+              dynamic data,
+              bool end)
           f) {
     _impl.filter.passFilter = f;
+  }
+
+  List<SystemGalleryDirectoryFile> getCellsIds(Set<int> isarIds) {
+    return _impl.db.systemGalleryDirectoryFiles
+        .where()
+        .anyOf(isarIds, (q, element) => q.isarIdEqualTo(element))
+        .findAllSync();
   }
 
   const AndroidGalleryFilesExtra._(this._impl);
@@ -71,6 +80,7 @@ class _AndroidGalleryFiles
   void Function()? refreshGrid;
   void Function()? onThumbUpdate;
   final int startTime;
+  final String target;
   bool isThumbsLoading = false;
 
   @override
@@ -125,6 +135,7 @@ class _AndroidGalleryFiles
     return Future.value(db.systemGalleryDirectoryFiles.countSync());
   }
 
-  _AndroidGalleryFiles(this.db, this.bucketId, this.unsetCurrentImages)
+  _AndroidGalleryFiles(
+      this.db, this.bucketId, this.unsetCurrentImages, this.target)
       : startTime = DateTime.now().millisecondsSinceEpoch;
 }

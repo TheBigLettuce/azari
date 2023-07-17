@@ -19,9 +19,13 @@ class SystemGalleryDirectoryShrinked {
   final String name;
   final String bucketId;
   final String relativeLoc;
+  final String volumeName;
 
   const SystemGalleryDirectoryShrinked(
-      {required this.bucketId, required this.name, required this.relativeLoc});
+      {required this.bucketId,
+      required this.name,
+      required this.relativeLoc,
+      required this.volumeName});
 }
 
 @collection
@@ -37,6 +41,7 @@ class SystemGalleryDirectory implements Cell<SystemGalleryDirectoryShrinked> {
   final String name;
 
   final String relativeLoc;
+  final String volumeName;
 
   @Index()
   final int lastModified;
@@ -44,6 +49,7 @@ class SystemGalleryDirectory implements Cell<SystemGalleryDirectoryShrinked> {
   SystemGalleryDirectory(
       {required this.bucketId,
       required this.name,
+      required this.volumeName,
       required this.relativeLoc,
       required this.lastModified,
       required this.thumbFileId});
@@ -87,6 +93,9 @@ class SystemGalleryDirectory implements Cell<SystemGalleryDirectoryShrinked> {
   @override
   SystemGalleryDirectoryShrinked shrinkedData() {
     return SystemGalleryDirectoryShrinked(
-        name: name, bucketId: bucketId, relativeLoc: relativeLoc);
+        name: name,
+        bucketId: bucketId,
+        relativeLoc: relativeLoc,
+        volumeName: volumeName);
   }
 }

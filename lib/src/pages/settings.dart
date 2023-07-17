@@ -447,6 +447,12 @@ class _SettingsListState extends State<SettingsList> {
         settingsLabel(AppLocalizations.of(context)!.metricsLabel, titleStyle),
         ListTile(
           title: Text(AppLocalizations.of(context)!.savedTagsCount),
+          onLongPress: () {
+            PostTags().rebuildTagDictionary();
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text(
+                    "Tag dictionary rebuild successfully"))); // TODO: change
+          },
           trailing: PopupMenuButton(
             icon: const Icon(Icons.more_horiz_outlined),
             itemBuilder: (context) {
@@ -485,6 +491,16 @@ class _SettingsListState extends State<SettingsList> {
             },
           ),
           subtitle: Text(PostTags().savedTagsCount().toString()),
+        ),
+        ListTile(
+          title: const Text("Save tags only on download"), // TODO: change
+          trailing: Switch(
+              value: _settings!.saveTagsOnlyOnDownload,
+              onChanged: (value) {
+                settingsIsar().writeTxnSync(() => settingsIsar()
+                    .settings
+                    .putSync(_settings!.copy(saveTagsOnlyOnDownload: value)));
+              }),
         ),
         if (Platform.isAndroid)
           ListTile(

@@ -28,10 +28,12 @@ class DirectoryFileShrinked {
 ListTile addInfoTile(
         {required AddInfoColorData colors,
         required String title,
-        required String subtitle}) =>
+        required String subtitle,
+        Widget? trailing}) =>
     ListTile(
       textColor: colors.foregroundColor,
       title: Text(title),
+      trailing: trailing,
       subtitle: Text(subtitle),
     );
 
@@ -56,10 +58,14 @@ class DirectoryFile implements Cell<DirectoryFileShrinked> {
 
   @ignore
   @override
-  List<Widget>? Function(
-          BuildContext context, dynamic extra, AddInfoColorData colors)
-      get addInfo => (context, extra, colors) {
-            return [
+  List<Widget>? Function(BuildContext context,
+      dynamic extra, AddInfoColorData colors) get addInfo => (context, extra,
+          colors) {
+        return wrapTagsSearch(
+            context,
+            extra,
+            colors,
+            [
               ListTile(
                 textColor: colors.foregroundColor,
                 title: Text(AppLocalizations.of(context)!.nameTitle),
@@ -90,9 +96,11 @@ class DirectoryFile implements Cell<DirectoryFileShrinked> {
                 title: Text(AppLocalizations.of(context)!.timeTitle),
                 subtitle: Text(time.toString()),
               ),
-              ...makeTags(context, extra, colors, tags, null)
-            ];
-          };
+            ],
+            name,
+            null,
+            supplyTags: tags);
+      };
 
   @override
   String alias(bool isList) {

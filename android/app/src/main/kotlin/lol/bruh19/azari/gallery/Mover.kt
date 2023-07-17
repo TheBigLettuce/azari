@@ -15,6 +15,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
 import android.webkit.MimeTypeMap
+import androidx.core.graphics.scale
 import androidx.documentfile.provider.DocumentFile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -63,21 +64,22 @@ internal class Mover(
                                 val copy = it
 
                                 jobs.add(launch {
-                                    var res: ByteArray
+                                    var res: ThumbnailId
                                     try {
                                         val uri = ContentUris.withAppendedId(
                                             MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
                                             copy
                                         )
 
-                                        res = getThumb(uri)
+                                        val (byt, hash) = getThumb(uri)
+                                        res = ThumbnailId(it, byt, hash)
                                     } catch (e: Exception) {
-                                        res = transparentImage
+                                        res = ThumbnailId(it, transparentImage, 0)
                                         Log.e("thumbnail coro", e.toString())
                                     }
 
                                     mutex.lock()
-                                    thumbs.add(ThumbnailId(it, res))
+                                    thumbs.add(res)
                                     mutex.unlock()
                                 })
                             }
@@ -149,7 +151,9 @@ internal class Mover(
                     }
 
                     CoroutineScope(coContext).launch {
-                        galleryApi.notify { }
+                        galleryApi.notify(op.dir) {
+
+                        }
                     }
 
                     Path(op.source).deleteIfExists()
@@ -166,7 +170,7 @@ internal class Mover(
 
     fun notifyGallery() {
         CoroutineScope(coContext).launch {
-            galleryApi.notify {
+            galleryApi.notify(null) {
 
             }
         }
@@ -219,6 +223,7 @@ internal class Mover(
             MediaStore.Files.FileColumns.MEDIA_TYPE,
             MediaStore.Files.FileColumns.MIME_TYPE,
             MediaStore.Files.FileColumns.HEIGHT,
+            MediaStore.Files.FileColumns.SIZE,
             MediaStore.Files.FileColumns.WIDTH
         )
 
@@ -236,6 +241,7 @@ internal class Mover(
             val date_modified =
                 cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_MODIFIED)
             val media_type = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE)
+            val size = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
 
             val media_height = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.HEIGHT)
             val media_width = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.WIDTH)
@@ -271,31 +277,24 @@ internal class Mover(
                             )
                         }
 
-                    val idval = cursor.getLong(id)
-                    val lastmodifval = cursor.getLong(date_modified)
-                    val nameval = cursor.getString(b_display_name)
-                    val directoryidval = cursor.getString(bucket_id)
-                    val heightval = cursor.getLong(media_height)
-                    val widthval = cursor.getLong(media_width)
-
                     list.add(
                         DirectoryFile(
-                            id = idval,
-                            bucketId = directoryidval,
-                            name = nameval,
+                            id = cursor.getLong(id),
+                            bucketId = cursor.getString(bucket_id),
+                            name = cursor.getString(b_display_name),
                             originalUri = uri.toString(),
-                            lastModified = lastmodifval,
+                            lastModified = cursor.getLong(date_modified),
                             isVideo = cursor.getInt(media_type) == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO,
                             isGif = cursor.getString(media_mime) == "image/gif",
-                            height = heightval,
-                            width = widthval
+                            height = cursor.getLong(media_height),
+                            width = cursor.getLong(media_width),
+                            size = cursor.getInt(size).toLong()
                         )
                     )
 
                     if (list.count() == 40) {
                         val copy = list.toList()
                         list.clear()
-                        //filterAndSendThumbs(copy.map { it.id })
 
                         CoroutineScope(coContext).launch {
                             galleryApi.updatePictures(
@@ -312,8 +311,6 @@ internal class Mover(
                 )
 
                 if (list.isNotEmpty()) {
-                    //filterAndSendThumbs(list.map { it.id })
-
                     CoroutineScope(coContext).launch {
                         galleryApi.updatePictures(
                             list,
@@ -330,19 +327,36 @@ internal class Mover(
         }
     }
 
-    private fun getThumb(uri: Uri): ByteArray {
+    private fun getThumb(uri: Uri): Pair<ByteArray, Long> {
         val thumb = context.contentResolver.loadThumbnail(uri, Size(320, 320), null)
-        //Glide.with(context).asBitmap().load(uri).apply(RequestOptions.sizeMultiplierOf(0.1f)).thumbnail().
         val stream = ByteArrayOutputStream()
 
-        thumb.compress(Bitmap.CompressFormat.JPEG, 50, stream)
+        val scaled = thumb.scale(9, 8)
+        var hash: Long = 0
+        val grayscale = List(8) { i ->
+            List(9) { j ->
+                scaled.getColor(j, i).luminance()
+            }
+        }
+
+        var idx = 0
+        for (l in grayscale) {
+            for (i in 0 until l.size - 1) {
+                if (l[i] < l[i + 1]) {
+                    hash = hash or 1 shl (64 - idx - 1)
+                }
+                idx++
+            }
+        }
+
+        thumb.compress(Bitmap.CompressFormat.JPEG, 80, stream)
 
         val bytes = stream.toByteArray()
 
         stream.reset()
         thumb.recycle()
 
-        return bytes
+        return Pair(bytes, hash)
     }
 
     fun loadThumb(id: Long) {
@@ -357,6 +371,7 @@ internal class Mover(
             MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME,
             MediaStore.Files.FileColumns.DATE_MODIFIED,
             MediaStore.Files.FileColumns.RELATIVE_PATH,
+            MediaStore.Files.FileColumns.VOLUME_NAME,
             MediaStore.Files.FileColumns._ID
         )
 
@@ -375,6 +390,7 @@ internal class Mover(
                 cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.RELATIVE_PATH)
             val date_modified =
                 cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_MODIFIED)
+            val volume_name = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.VOLUME_NAME)
 
             val map = HashMap<String, Unit>()
             val list = mutableListOf<Directory>()
@@ -399,18 +415,14 @@ internal class Mover(
 
                     map[bucketId] = Unit
 
-                    val idval = cursor.getLong(id)
-                    val lastmodifval = cursor.getLong(date_modified)
-                    val nameval = cursor.getString(b_display_name) ?: "Internal"
-                    val relativepathval = cursor.getString(relative_path)
-
                     list.add(
                         Directory(
-                            thumbFileId = idval,
-                            lastModified = lastmodifval,
+                            thumbFileId = cursor.getLong(id),
+                            lastModified = cursor.getLong(date_modified),
                             bucketId = bucketId,
-                            name = nameval,
-                            relativeLoc = relativepathval
+                            name = cursor.getString(b_display_name) ?: "Internal",
+                            volumeName = cursor.getString(volume_name),
+                            relativeLoc = cursor.getString(relative_path)
                         )
                     )
 

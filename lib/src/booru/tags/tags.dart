@@ -13,10 +13,12 @@ import 'package:gallery/src/booru/api/gelbooru.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
+import 'package:gallery/src/schemas/local_tag_dictionary.dart';
 import 'package:gallery/src/schemas/local_tags.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/schemas/tags.dart';
+import 'package:html_unescape/html_unescape_small.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart';
@@ -31,13 +33,13 @@ abstract class BooruTagging {
   void clear();
 }
 
-class _DissolveResult {
+class DissolveResult {
   final String ext;
   final Booru booru;
   final String hash;
   final int id;
 
-  const _DissolveResult(
+  const DissolveResult(
       {required this.booru,
       required this.ext,
       required this.hash,
@@ -47,93 +49,8 @@ class _DissolveResult {
 class PostTags {
   Isar tagsDb;
 
-  _DissolveResult? _dissassembleFilename(String filename) {
-    var split = filename.split("_");
-    if (split.isEmpty || split.length != 2) {
-      return null;
-    }
-
-    var booru = chooseBooruPrefix(split.first);
-    if (booru == null) {
-      return null;
-    }
-
-    var numbersAndHash = split.last.split("-");
-    if (numbersAndHash.isEmpty || numbersAndHash.length != 2) {
-      return null;
-    }
-
-    var id = int.tryParse(numbersAndHash.first.trimRight());
-    if (id == null) {
-      return null;
-    }
-
-    var hashAndExt = numbersAndHash.last.trimLeft().split(".");
-    if (hashAndExt.isEmpty || hashAndExt.length != 2) {
-      return null;
-    }
-
-    final numbersLetters = RegExp(r'^[a-z0-9]+$');
-    if (!numbersLetters.hasMatch(hashAndExt.first)) {
-      return null;
-    }
-
-    if (hashAndExt.last.length > 6) {
-      return null;
-    }
-
-    if (hashAndExt.first.length != 32) {
-      return null;
-    }
-
-    final onlyLetters = RegExp(r'^[a-zA-Z]+$');
-    if (!onlyLetters.hasMatch(hashAndExt.last)) {
-      return null;
-    }
-
-    return _DissolveResult(
-        id: id, booru: booru, ext: hashAndExt.last, hash: hashAndExt.first);
-  }
-
-  void addTagsPost(String filename, List<String> tags) {
-    if (_dissassembleFilename(filename) == null) {
-      return;
-    }
-
-    tagsDb.writeTxnSync(
-        () => tagsDb.localTags.putSync(LocalTags(filename, tags)));
-  }
-
-  void addAllPostTags(List<Post> p) {
-    tagsDb.writeTxnSync(() => tagsDb.localTags.putAllSync(
-        p.map((e) => LocalTags(e.filename(), e.tags.split(" "))).toList()));
-  }
-
-  List<String> getTagsPost(String filename) {
-    return tagsDb.localTags.getSync(fastHash(filename))?.tags ?? [];
-  }
-
-  bool containsTag(String filename, String tag) {
-    return tagsDb.localTags.getSync(fastHash(filename))?.tags.contains(tag) ??
-        false;
-  }
-
-  bool isOriginal(String filename) {
-    return tagsDb.localTags
-            .getSync(fastHash(filename))
-            ?.tags
-            .contains("original") ??
-        false;
-  }
-
-  int savedTagsCount() => tagsDb.localTags.countSync();
-
-  Future<List<String>> getOnlineAndSaveTags(String filename) async {
-    var dissassembled = _dissassembleFilename(filename);
-    if (dissassembled == null) {
-      return [];
-    }
-
+  Future<List<String>> loadFromDissassemble(
+      String filename, DissolveResult dissassembled) async {
     BooruAPI api;
 
     Dio client = Dio(BaseOptions(
@@ -151,15 +68,15 @@ class PostTags {
         break;
     }
     try {
-      var post = await api.singlePost(dissassembled.id);
+      final post = await api.singlePost(dissassembled.id);
       if (post.tags.isEmpty) {
         return [];
       }
 
-      var postTags = post.tags.split(" ");
+      final postTags = post.tags.split(" ");
 
       tagsDb.writeTxnSync(
-          () => tagsDb.localTags.put(LocalTags(filename, postTags)));
+          () => tagsDb.localTags.putSync(LocalTags(filename, postTags)));
 
       api.close();
 
@@ -170,6 +87,183 @@ class PostTags {
       api.close();
       return [];
     }
+  }
+
+  DissolveResult dissassembleFilename(String filename, {Booru? suppliedBooru}) {
+    final Booru booru;
+    if (suppliedBooru == null) {
+      final split = filename.split("_");
+      if (split.isEmpty || split.length != 2) {
+        throw "no prefix";
+      }
+
+      final newbooru = chooseBooruPrefix(split.first);
+      if (newbooru == null) {
+        throw "prefix not registred";
+      }
+
+      booru = newbooru;
+      filename = split.last;
+    } else {
+      booru = suppliedBooru;
+    }
+
+    final prefix = filename.split("_");
+    if (prefix.length == 2) {
+      filename = prefix.last;
+    }
+
+    final numbersAndHash = filename.split("-");
+    if (numbersAndHash.isEmpty || numbersAndHash.length != 2) {
+      throw "filename doesn't include numbers and hash";
+    }
+
+    final id = int.tryParse(numbersAndHash.first.trimRight());
+    if (id == null) {
+      throw "invalid post number";
+    }
+
+    final hashAndExt = numbersAndHash.last.trimLeft().split(".");
+    if (hashAndExt.isEmpty || hashAndExt.length != 2) {
+      throw "filename doesn't include extension";
+    }
+
+    final numbersLetters = RegExp(r'^[a-z0-9]+$');
+    if (!numbersLetters.hasMatch(hashAndExt.first)) {
+      throw "hash is invalid";
+    }
+
+    if (hashAndExt.last.length > 6) {
+      throw "extension is too long";
+    }
+
+    if (hashAndExt.first.length != 32) {
+      throw "hash is not 32 characters";
+    }
+
+    final onlyLetters = RegExp(r'^[a-zA-Z]+$');
+    if (!onlyLetters.hasMatch(hashAndExt.last)) {
+      throw "extension is invalid";
+    }
+
+    return DissolveResult(
+        id: id, booru: booru, ext: hashAndExt.last, hash: hashAndExt.first);
+  }
+
+  void addTagsPost(String filename, List<String> tags, bool noDisassemble) {
+    if (!noDisassemble) {
+      try {
+        dissassembleFilename(filename);
+      } catch (_) {
+        return;
+      }
+    }
+
+    tagsDb.writeTxnSync(() {
+      _putTagsAndIncreaseFreq(tags);
+      tagsDb.localTags.putSync(LocalTags(filename, tags));
+    });
+  }
+
+  void rebuildTagDictionary() {
+    tagsDb.writeTxnSync(() => tagsDb.localTagDictionarys.clearSync());
+
+    var offset = 0;
+    for (;;) {
+      final tags =
+          tagsDb.localTags.where().offset(offset).limit(40).findAllSync();
+      offset += tags.length;
+
+      for (var e in tags) {
+        tagsDb.writeTxnSync(() => _putTagsAndIncreaseFreq(e.tags));
+      }
+
+      if (tags.length != 40) {
+        return;
+      }
+    }
+  }
+
+  void _putTagsAndIncreaseFreq(List<String> tags) {
+    tagsDb.localTagDictionarys.putAllSync(tags
+        .map((e) => LocalTagDictionary(
+            HtmlUnescape().convert(e),
+            (tagsDb.localTagDictionarys.getSync(fastHash(e))?.frequency ?? 0) +
+                1))
+        .toList());
+  }
+
+  void addAllPostTags(List<Post> p) {
+    tagsDb.writeTxnSync(() {
+      List<LocalTags> list = [];
+      for (var e in p) {
+        final elem = LocalTags(e.filename(), e.tags.split(" "));
+        list.add(elem);
+        _putTagsAndIncreaseFreq(elem.tags);
+      }
+
+      tagsDb.localTags.putAllSync(list);
+    });
+  }
+
+  List<String> getTagsPost(String filename) {
+    return tagsDb.localTags.getSync(fastHash(filename))?.tags ?? [];
+  }
+
+  bool containsTag(String filename, String tag) {
+    return tagsDb.localTags.getSync(fastHash(filename))?.tags.contains(tag) ??
+        false;
+  }
+
+  bool containsTagMultiple(String filename, String tags) {
+    final localTags = tagsDb.localTags.getSync(fastHash(filename))?.tags;
+    if (localTags == null || localTags.isEmpty) {
+      return false;
+    }
+    for (final t in tags.split(" ")) {
+      if (!localTags.contains(t.trim())) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  bool isOriginal(String filename) {
+    return tagsDb.localTags
+            .getSync(fastHash(filename))
+            ?.tags
+            .contains("original") ??
+        false;
+  }
+
+  int savedTagsCount() => tagsDb.localTags.countSync();
+
+  Future<List<String>> completeLocalTag(String string) async {
+    final result = tagsDb.localTagDictionarys
+        .filter()
+        .tagContains(string)
+        .sortByFrequencyDesc()
+        .limit(10)
+        .findAllSync();
+
+    return result.map((e) => e.tag).toList();
+  }
+
+  Future<List<String>> getOnlineAndSaveTags(
+    String filename,
+  ) async {
+    try {
+      final dissassembled = dissassembleFilename(filename);
+
+      return loadFromDissassemble(filename, dissassembled);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  void deletePostTags(String filename) {
+    tagsDb.writeTxnSync(() => tagsDb.localTags.deleteSync(fastHash(filename)));
   }
 
   PostTags._new(this.tagsDb);

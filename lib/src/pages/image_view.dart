@@ -14,6 +14,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
+import 'package:gallery/src/widgets/booru/autocomplete_tag.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/system_gestures.dart';
 import 'package:logging/logging.dart';
@@ -229,6 +230,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   late ScrollController scrollController;
   late int cellCount = widget.cellCount;
   bool refreshing = false;
+  final FocusNode mainFocus = FocusNode();
 
   ImageProvider? fakeProvider;
 
@@ -240,6 +242,10 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   final GlobalKey<ScaffoldState> key = GlobalKey();
 
   PaletteGenerator? currentPalette;
+
+  late final searchData = FilterNotifierData(() {
+    mainFocus.requestFocus();
+  }, TextEditingController(), FocusNode());
 
   bool isAppbarShown = true;
 
@@ -274,15 +280,25 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   }
 
   void update(int count) {
-    cellCount = count;
-    if (cellCount == 0) {
+    if (count == 0) {
       key.currentState?.closeEndDrawer();
       Navigator.pop(context);
       return;
     }
-    if (widget.getCell(currentPage) != currentCell) {
-      controller.nextPage(
-          duration: 200.ms, curve: Curves.fastLinearToSlowEaseIn);
+
+    cellCount = count;
+
+    if (widget.getCell(currentPage).getCellData(false).thumb !=
+        currentCell.getCellData(false).thumb) {
+      if (currentPage == 0) {
+        controller.nextPage(
+            duration: 200.ms, curve: Curves.fastLinearToSlowEaseIn);
+      } else {
+        controller.previousPage(
+            duration: 200.ms, curve: Curves.linearToEaseOut);
+      }
+    } else {
+      currentCell = widget.getCell(currentPage);
     }
 
     setState(() {});
@@ -319,6 +335,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     animationController.dispose();
     widget.updateTagScrollPos(null, null);
     controller.dispose();
+    searchData.dispose();
     // photoController.dispose();
 
     widget.onExit();
@@ -499,17 +516,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     Map<SingleActivatorDescription, Null Function()> bindings =
         _makeBindings(context);
 
-    var addInfo = currentCell.addInfo(context, () {
-      widget.updateTagScrollPos(scrollController.offset, currentPage);
-    },
-        AddInfoColorData(
-          borderColor: Theme.of(context).colorScheme.outlineVariant,
-          foregroundColor:
-              currentPalette?.mutedColor?.bodyTextColor ?? kListTileColorInInfo,
-          systemOverlayColor: widget.systemOverlayRestoreColor,
-        ));
-
-    var insets = MediaQuery.viewPaddingOf(context);
+    var insets = MediaQuery.viewInsetsOf(context);
 
     return CallbackShortcuts(
         bindings: {
@@ -519,6 +526,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
         },
         child: Focus(
           autofocus: true,
+          focusNode: mainFocus,
           child: Theme(
             data: Theme.of(context).copyWith(
                 bottomSheetTheme: BottomSheetThemeData(
@@ -531,6 +539,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                 key: key,
                 extendBodyBehindAppBar: true,
                 endDrawerEnableOpenDragGesture: false,
+                resizeToAvoidBottomInset: false,
                 bottomSheet: !isAppbarShown
                     ? null
                     : widget.addIcons != null
@@ -592,11 +601,61 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                                   .colorScheme
                                   .surface
                                   .withOpacity(0.5)),
-                      SliverPadding(
-                        padding: EdgeInsets.only(bottom: insets.bottom),
-                        sliver: SliverList.list(
-                            children: [if (addInfo != null) ...addInfo]),
-                      )
+                      TagRefreshNotifier(
+                          notify: () {
+                            try {
+                              setState(() {});
+                            } catch (_) {}
+                          },
+                          child: FilterValueNotifier(
+                              notifier: searchData.searchController,
+                              child: FilterNotifier(
+                                data: searchData,
+                                child: FocusNotifier(
+                                    notifier: searchData.searchFocus,
+                                    focusMain: () {
+                                      mainFocus.requestFocus();
+                                    },
+                                    child: Builder(
+                                      builder: (context) {
+                                        var addInfo =
+                                            currentCell.addInfo(context, () {
+                                          widget.updateTagScrollPos(
+                                              scrollController.offset,
+                                              currentPage);
+                                        },
+                                                AddInfoColorData(
+                                                  borderColor: Theme.of(context)
+                                                      .colorScheme
+                                                      .outlineVariant,
+                                                  foregroundColor:
+                                                      currentPalette?.mutedColor
+                                                              ?.bodyTextColor ??
+                                                          kListTileColorInInfo,
+                                                  systemOverlayColor: widget
+                                                      .systemOverlayRestoreColor,
+                                                ));
+
+                                        return Theme(
+                                          data: Theme.of(context).copyWith(
+                                              hintColor: currentPalette
+                                                      ?.mutedColor
+                                                      ?.bodyTextColor ??
+                                                  kListTileColorInInfo),
+                                          child: SliverPadding(
+                                            padding: EdgeInsets.only(
+                                                bottom: insets.bottom +
+                                                    MediaQuery.of(context)
+                                                        .viewPadding
+                                                        .bottom),
+                                            sliver: SliverList.list(children: [
+                                              if (addInfo != null) ...addInfo
+                                            ]),
+                                          ),
+                                        );
+                                      },
+                                    )),
+                              )))
                     ],
                   ),
                 ),

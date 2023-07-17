@@ -8,12 +8,14 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/main.dart';
+import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/cell/cell.dart';
 import 'package:gallery/src/cell/data.dart';
 import 'package:gallery/src/pages/settings.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/schemas/tags.dart';
+import 'package:gallery/src/widgets/booru/autocomplete_tag.dart';
 import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 import 'package:isar/isar.dart';
@@ -27,13 +29,136 @@ import '../db/isar.dart';
 
 part 'post.g.dart';
 
-Iterable<Widget> makeTags(BuildContext context, dynamic extra,
-    AddInfoColorData colors, List<String> tags, GridTab? grids) {
-  if (tags.isEmpty) {
-    return [];
+List<Widget> wrapTagsSearch(BuildContext context, dynamic extra,
+    AddInfoColorData colors, List<Widget> lists, String filename, GridTab? tab,
+    {bool temporary = false,
+    bool showDeleteButton = false,
+    List<String>? supplyTags}) {
+  final data = FilterNotifier.maybeOf(context);
+  final List<String> postTags;
+  if (supplyTags == null) {
+    postTags = PostTags().getTagsPost(filename);
+  } else {
+    postTags = supplyTags;
   }
 
+  return [
+    data?.searchFocus.hasFocus ?? false
+        ? Container()
+        : ListBody(
+            children: lists,
+          ),
+    if (postTags.isNotEmpty && data != null)
+      searchTextField(context, data, filename, showDeleteButton),
+    ...makeTags(
+        context, extra, colors, postTags, tab, temporary ? "" : filename)
+  ];
+}
+
+class LoadTags extends StatelessWidget {
+  final DissolveResult? res;
+  final String filename;
+  const LoadTags({super.key, required this.res, required this.filename});
+
+  @override
+  Widget build(BuildContext context) {
+    return res == null
+        ? Container()
+        : Padding(
+            padding: const EdgeInsets.all(4),
+            child: Column(children: [
+              const Padding(
+                padding: EdgeInsets.only(
+                  bottom: 8,
+                ),
+                child: Text("Load tags"), // TODO: change
+              ),
+              FilledButton(
+                  onPressed: () {
+                    try {
+                      final notifier = TagRefreshNotifier.maybeOf(context);
+
+                      PostTags()
+                          .loadFromDissassemble(filename, res!)
+                          .then((value) {
+                        PostTags().addTagsPost(filename, value, true);
+                        notifier?.call();
+                      });
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(
+                              "Not a valid filename: ${e.toString()}"))); // TODO: change
+                    }
+                  },
+                  child: Text("From ${res!.booru.string}"))
+            ]),
+          );
+  }
+}
+
+Widget searchTextField(BuildContext context, FilterNotifierData data,
+    String filename, bool showDeleteButton) {
+  return TextField(
+    decoration: autocompleteBarDecoration(context, () {
+      data.searchController.clear();
+      data.focusMain();
+    },
+        showDeleteButton
+            ? [
+                IconButton(
+                    onPressed: () {
+                      final notifier = TagRefreshNotifier.maybeOf(context);
+                      PostTags().deletePostTags(filename);
+                      notifier?.call();
+                    },
+                    icon: const Icon(Icons.delete))
+              ]
+            : null,
+        showSearch: true,
+        roundBorders: false,
+        hint: AppLocalizations.of(context)!.filterHint),
+    focusNode: data.searchFocus,
+    controller: data.searchController,
+    onSubmitted: (value) {
+      data.focusMain();
+    },
+  );
+}
+
+Iterable<Widget> makeTags(
+  BuildContext context,
+  dynamic extra,
+  AddInfoColorData colors,
+  List<String> tags,
+  GridTab? grids,
+  String filename,
+) {
+  if (tags.isEmpty) {
+    if (filename.isEmpty) {
+      return [Container()];
+    }
+    DissolveResult? res;
+    try {
+      res = PostTags().dissassembleFilename(filename);
+    } catch (_) {}
+
+    return [
+      LoadTags(
+        filename: filename,
+        res: res,
+      )
+    ];
+  }
   var plug = choosePlatformFullscreenPlug(colors.systemOverlayColor);
+  final value = FilterValueNotifier.maybeOf(context).trim();
+  final data = FilterNotifier.maybeOf(context);
+
+  final List<String> filteredTags;
+  if (data != null && value.isNotEmpty) {
+    filteredTags = tags.where((element) => element.contains(value)).toList();
+  } else {
+    filteredTags = tags;
+  }
 
   return [
     settingsLabel(
@@ -44,7 +169,7 @@ Iterable<Widget> makeTags(BuildContext context, dynamic extra,
             .copyWith(color: Theme.of(context).colorScheme.secondary)),
     ...ListTile.divideTiles(
         color: colors.borderColor,
-        tiles: tags.map((e) => ListTile(
+        tiles: filteredTags.map((e) => ListTile(
               textColor: colors.foregroundColor,
               title: Text(HtmlUnescape().convert(e)),
               onLongPress: grids == null
@@ -172,12 +297,16 @@ class Post implements Cell<PostShrinked> {
 
   @ignore
   @override
-  List<Widget>? Function(
-          BuildContext context, dynamic extra, AddInfoColorData colors)
-      get addInfo =>
-          (BuildContext context, dynamic extra, AddInfoColorData colors) {
-            var downloadUrl = _fileDownloadUrl(sampleUrl, fileUrl);
-            List<Widget> list = [
+  List<Widget>? Function(BuildContext context, dynamic extra,
+      AddInfoColorData colors) get addInfo => (BuildContext context,
+          dynamic extra, AddInfoColorData colors) {
+        var downloadUrl = _fileDownloadUrl(sampleUrl, fileUrl);
+
+        return wrapTagsSearch(
+            context,
+            extra,
+            colors,
+            [
               ListTile(
                 textColor: colors.foregroundColor,
                 title: Text(AppLocalizations.of(context)!.pathInfoPage),
@@ -219,15 +348,11 @@ class Post implements Cell<PostShrinked> {
                 title: Text(AppLocalizations.of(context)!.scoreInfoPage),
                 subtitle: Text(score.toString()),
               ),
-              ...makeTags(context, extra, colors, tags.split(' '), getTab()),
-            ];
-
-            return [
-              ListBody(
-                children: list,
-              )
-            ];
-          };
+            ],
+            filename(),
+            getTab(),
+            supplyTags: tags.split(" "));
+      };
 
   @override
   String alias(bool isList) => isList ? tags : id.toString();
@@ -286,13 +411,15 @@ class Post implements Cell<PostShrinked> {
   }
 
   @override
-  shrinkedData() =>
-      PostShrinked(fileUrl: fileDownloadUrl(), fileName: filename());
+  shrinkedData() => PostShrinked(
+      fileUrl: fileDownloadUrl(), fileName: filename(), tags: tags.split(" "));
 }
 
 class PostShrinked {
   final String fileUrl;
   final String fileName;
+  final List<String> tags;
 
-  const PostShrinked({required this.fileUrl, required this.fileName});
+  const PostShrinked(
+      {required this.fileUrl, required this.fileName, required this.tags});
 }

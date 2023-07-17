@@ -23,6 +23,7 @@ import 'package:gallery/src/schemas/directory_file.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/gallery_last_modified.dart';
 import 'package:gallery/src/schemas/grid_restore.dart';
+import 'package:gallery/src/schemas/local_tag_dictionary.dart';
 import 'package:gallery/src/schemas/local_tags.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/scroll_position.dart';
@@ -59,6 +60,21 @@ late String _temporaryImagesPath;
 //Isar? _isarCopy;
 bool _initalized = false;
 
+BooruAPI booruApiFromPrefix(Booru booru, {int? page}) {
+  Dio dio = Dio(BaseOptions(
+    //headers: {"user-agent": kTorUserAgent},
+    responseType: ResponseType.json,
+  ));
+
+  final jar = UnsaveableCookieJar(CookieJarTab().get(booru));
+  dio.interceptors.add(CookieManager(jar));
+
+  return switch (booru) {
+    Booru.danbooru => Danbooru(dio, jar),
+    Booru.gelbooru => Gelbooru(page ?? 0, dio, jar)
+  };
+}
+
 /// [getBooru] returns a selected *booru API.
 /// Some *booru have no way to retreive posts down
 /// of a post number, in this case [page] comes in handy:
@@ -69,14 +85,14 @@ BooruAPI getBooru({int? page}) {
     responseType: ResponseType.json,
   ));
 
-  var settings = settingsIsar().settings.getSync(0);
+  final settings = settingsIsar().settings.getSync(0);
   if (settings!.selectedBooru == Booru.danbooru) {
-    var jar = UnsaveableCookieJar(CookieJarTab().get(Booru.danbooru));
+    final jar = UnsaveableCookieJar(CookieJarTab().get(Booru.danbooru));
 
     dio.interceptors.add(CookieManager(jar));
     return Danbooru(dio, jar);
   } else if (settings.selectedBooru == Booru.gelbooru) {
-    var jar = UnsaveableCookieJar(CookieJarTab().get(Booru.gelbooru));
+    final jar = UnsaveableCookieJar(CookieJarTab().get(Booru.gelbooru));
 
     dio.interceptors.add(CookieManager(jar));
     return Gelbooru(page ?? 0, dio, jar);
@@ -167,7 +183,7 @@ Isar openUploadsDbIsar() {
 }
 
 Isar openTagsDbIsar() {
-  return Isar.openSync([LocalTagsSchema],
+  return Isar.openSync([LocalTagsSchema, LocalTagDictionarySchema],
       directory: _directoryPath, inspector: false, name: "localTags");
 }
 

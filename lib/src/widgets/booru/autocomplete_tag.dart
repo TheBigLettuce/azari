@@ -39,7 +39,11 @@ Widget autocompleteWidget(
     bool noSticky = false,
     bool submitOnPress = false,
     bool roundBorders = false,
+    String? customHint,
     bool showSearch = false,
+    int? searchCount,
+    bool noUnfocus = false,
+    void Function()? onChanged,
     List<Widget>? addItems}) {
   return RawAutocomplete<String>(
     textEditingController: controller,
@@ -73,6 +77,7 @@ Widget autocompleteWidget(
                       tags.reduce((value, element) => "$value $element");
 
                   onSelected(tagsString);
+                  onChanged?.call();
                 },
                 title: Text(elem),
               ))
@@ -124,15 +129,22 @@ Widget autocompleteWidget(
                   () {
                     textEditingController.clear();
                     //focus.unfocus();
-                    focusMain();
+                    if (!noUnfocus) {
+                      focusMain();
+                    }
+                    onChanged?.call();
                   },
                   addItems,
+                  searchCount: searchCount,
                   showSearch: showSearch,
                   roundBorders: roundBorders,
-                  hint: AppLocalizations.of(context)!.searchHint,
+                  hint: customHint ?? AppLocalizations.of(context)!.searchHint,
                 ),
                 controller: textEditingController,
                 focusNode: focusNode,
+                onChanged: (value) {
+                  onChanged?.call();
+                },
                 onSubmitted: (value) {
                   onSubmit(Tag.string(tag: value));
                 },
@@ -199,6 +211,61 @@ InputDecoration autocompleteBarDecoration(
       isDense: false);
 }
 
+class FilterValueNotifier extends InheritedNotifier<TextEditingController> {
+  const FilterValueNotifier(
+      {super.key, required super.notifier, required super.child});
+
+  static String maybeOf(BuildContext context) {
+    var widget =
+        context.dependOnInheritedWidgetOfExactType<FilterValueNotifier>();
+    return widget?.notifier?.value.text ?? "";
+  }
+}
+
+class TagRefreshNotifier extends InheritedWidget {
+  final void Function() notify;
+  const TagRefreshNotifier(
+      {super.key, required this.notify, required super.child});
+  static void Function()? maybeOf(BuildContext context) {
+    var widget =
+        context.dependOnInheritedWidgetOfExactType<TagRefreshNotifier>();
+    return widget?.notify;
+  }
+
+  @override
+  bool updateShouldNotify(TagRefreshNotifier oldWidget) {
+    return oldWidget.notify != notify;
+  }
+}
+
+class FilterNotifier extends InheritedWidget {
+  final FilterNotifierData data;
+  const FilterNotifier({super.key, required this.data, required super.child});
+  static FilterNotifierData? maybeOf(BuildContext context) {
+    var widget = context.dependOnInheritedWidgetOfExactType<FilterNotifier>();
+    return widget?.data;
+  }
+
+  @override
+  bool updateShouldNotify(FilterNotifier oldWidget) {
+    return data != oldWidget.data;
+  }
+}
+
+class FilterNotifierData {
+  final TextEditingController searchController;
+  final FocusNode searchFocus;
+  final void Function() focusMain;
+
+  void dispose() {
+    searchController.dispose();
+    searchFocus.dispose();
+  }
+
+  const FilterNotifierData(
+      this.focusMain, this.searchController, this.searchFocus);
+}
+
 class FocusNotifier extends InheritedNotifier<FocusNode> {
   final void Function() focusMain;
   const FocusNotifier(
@@ -210,7 +277,8 @@ class FocusNotifier extends InheritedNotifier<FocusNode> {
   static FocusNotifierData of(BuildContext context) {
     var widget = context.dependOnInheritedWidgetOfExactType<FocusNotifier>()!;
     return FocusNotifierData(
-        hasFocus: widget.notifier!.hasFocus, unfocus: widget.focusMain);
+        hasFocus: widget.notifier?.hasFocus ?? false,
+        unfocus: widget.focusMain);
   }
 }
 

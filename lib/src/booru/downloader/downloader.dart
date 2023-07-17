@@ -133,8 +133,8 @@ class Downloader with CancelTokens {
       var d = download.inprogress();
       var id =
           settingsIsar().writeTxnSync(() => settingsIsar().files.putSync(d));
-      _download(d);
       _addToken(id, CancelToken());
+      _download(d);
     }
   }
 
