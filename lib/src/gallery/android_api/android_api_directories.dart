@@ -41,7 +41,10 @@ class AndroidGalleryExtra {
       final db = _impl.filter.isFiltering
           ? _impl.filter.to
           : GalleryImpl.instance().db;
-      final cell = db.systemGalleryDirectorys.getSync(from + 1)!;
+      final cell = db.systemGalleryDirectorys.getSync(from + 1);
+      if (cell == null) {
+        return;
+      }
 
       thumbnailIsar().writeTxnSync(() => thumbnailIsar().thumbnails.putSync(
           Thumbnail(
