@@ -7,7 +7,7 @@
 
 part of 'callback_grid.dart';
 
-abstract class GridMutationInterface<T extends Cell<B>, B> {
+abstract class GridMutationInterface<T extends Cell> {
   int get cellCount;
   bool get isRefreshing;
   bool get mutated;
@@ -21,7 +21,7 @@ abstract class GridMutationInterface<T extends Cell<B>, B> {
   T getCell(int i);
 }
 
-class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
+class _Mutation<T extends Cell> implements GridMutationInterface<T> {
   int? _cellCountFilter;
   T Function(int i)? _filterGetCell;
   final void Function() scrollUp;
@@ -216,7 +216,7 @@ class _Mutation<T extends Cell<B>, B> implements GridMutationInterface<T, B> {
     return;
   }
 
-  final CallbackGrid<T, B> Function() widget;
+  final CallbackGrid<T> Function() widget;
   final void Function(void Function()? f) update;
 
   _Mutation(

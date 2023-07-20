@@ -265,19 +265,20 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
     return makeGridSkeleton(
       context,
       skeletonState,
-      CallbackGrid<Post, PostShrinked>(
+      CallbackGrid<Post>(
         key: skeletonState.gridKey,
         systemNavigationInsets: insets,
         description: GridDescription(
           kBooruGridDrawerIndex,
           [
             GridBottomSheetAction(Icons.download, (selected) {
-              for (var element in selected) {
+              for (final element in selected) {
                 if (skeletonState.settings.saveTagsOnlyOnDownload) {
-                  PostTags().addTagsPost(element.fileName, element.tags, true);
+                  PostTags().addTagsPost(
+                      element.filename(), element.tags.split(" "), true);
                 }
                 downloader.add(
-                    File.d(element.fileUrl, booru.domain, element.fileName));
+                    File.d(element.fileUrl, booru.domain, element.filename()));
               }
             }, true)
           ],

@@ -36,26 +36,29 @@ class SkeletonState {
   SkeletonState(this.index);
 }
 
-class GridSkeletonStateFilter<T extends Cell<B>, B>
-    extends GridSkeletonState<T, B> {
-  final FilterInterface<T, B> filter;
+class GridSkeletonStateFilter<T extends Cell> extends GridSkeletonState<T> {
+  final FilterInterface<T> filter;
   final Set<FilteringMode> filteringModes;
 
-  static void _doNothing(FilteringMode m) {}
+  static SortingMode _doNothing(FilteringMode m) => SortingMode.none;
 
-  final void Function(FilteringMode selected) hook;
+  final SortingMode Function(FilteringMode selected) hook;
+
+  final T Function(T cell, SortingMode sort) transform;
+
   GridSkeletonStateFilter({
     required this.filter,
     required super.index,
+    required this.transform,
     this.filteringModes = const {},
     this.hook = _doNothing,
     required super.onWillPop,
   });
 }
 
-class GridSkeletonState<T extends Cell<B>, B> extends SkeletonState {
+class GridSkeletonState<T extends Cell> extends SkeletonState {
   bool showFab;
-  final GlobalKey<CallbackGridState<T, B>> gridKey = GlobalKey();
+  final GlobalKey<CallbackGridState<T>> gridKey = GlobalKey();
   Settings settings = settingsIsar().settings.getSync(0)!;
   final Future<bool> Function() onWillPop;
 
@@ -76,11 +79,14 @@ class GridSkeletonState<T extends Cell<B>, B> extends SkeletonState {
         super(index);
 }
 
-Widget makeGridSkeleton<T extends Cell<B>, B>(BuildContext context,
-    GridSkeletonState<T, B> state, CallbackGrid<T, B> grid,
-    {bool popSenitel = true, bool noDrawer = false}) {
+Widget makeGridSkeleton<T extends Cell>(
+    BuildContext context, GridSkeletonState<T> state, CallbackGrid<T> grid,
+    {bool popSenitel = true,
+    bool noDrawer = false,
+    Future<bool> Function()? overrideOnPop}) {
   return WillPopScope(
-    onWillPop: popSenitel ? state.onWillPop : () => Future.value(true),
+    onWillPop: overrideOnPop ??
+        (popSenitel ? state.onWillPop : () => Future.value(true)),
     child: Scaffold(
         floatingActionButton: state.showFab
             ? FloatingActionButton(

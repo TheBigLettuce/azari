@@ -7,11 +7,11 @@
 
 part of 'callback_grid.dart';
 
-mixin _Selection<T extends Cell<B>, B> on State<CallbackGrid<T, B>> {
+mixin _Selection<T extends Cell> on State<CallbackGrid<T>> {
   int? lastSelected;
   bool inImageView = false;
   GlobalKey<ImageViewState<T>> imageViewKey = GlobalKey();
-  late final _Mutation<T, B> _state = _Mutation(
+  late final _Mutation<T> _state = _Mutation(
     updateImageView: () {
       imageViewKey.currentState?.update(_state.cellCount);
     },
@@ -39,7 +39,7 @@ mixin _Selection<T extends Cell<B>, B> on State<CallbackGrid<T, B>> {
     },
   );
   PersistentBottomSheetController? currentBottomSheet;
-  Map<int, B> selected = {};
+  Map<int, T> selected = {};
 
   void _addSelection(int id, T selection) {
     if (selected.isEmpty || currentBottomSheet == null) {
@@ -94,7 +94,7 @@ mixin _Selection<T extends Cell<B>, B> on State<CallbackGrid<T, B>> {
     }
 
     setState(() {
-      selected[id] = selection.shrinkedData();
+      selected[id] = selection;
       lastSelected = id;
     });
   }
@@ -126,7 +126,7 @@ mixin _Selection<T extends Cell<B>, B> on State<CallbackGrid<T, B>> {
       if (indx < lastSelected!) {
         for (var i = lastSelected!; i >= indx; i--) {
           if (selection) {
-            selected[i] = _state.getCell(i).shrinkedData();
+            selected[i] = _state.getCell(i);
           } else {
             _removeSelection(i);
           }
@@ -136,7 +136,7 @@ mixin _Selection<T extends Cell<B>, B> on State<CallbackGrid<T, B>> {
       } else if (indx > lastSelected!) {
         for (var i = lastSelected!; i <= indx; i++) {
           if (selection) {
-            selected[i] = _state.getCell(i).shrinkedData();
+            selected[i] = _state.getCell(i);
           } else {
             _removeSelection(i);
           }

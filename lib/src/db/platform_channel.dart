@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gallery/src/gallery/android_api/api.g.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 
@@ -17,9 +18,9 @@ class PlatformFunctions {
     _channel.invokeMethod("refreshFiles", bucketId);
   }
 
-  static Future loadThumbnails(List<int> thumbs) async {
-    return _channel.invokeMethod("loadThumbnails", thumbs);
-  }
+  // static Future loadThumbnails(List<int> thumbs) async {
+  //   return _channel.invokeMethod("loadThumbnails", thumbs);
+  // }
 
   static void loadThumbnail(int thumb) {
     _channel.invokeMethod("loadThumbnail", thumb);
@@ -54,7 +55,7 @@ class PlatformFunctions {
   }
 
   static void copyMoveFiles(String? chosen, String? chosenVolumeName,
-      List<SystemGalleryDirectoryFileShrinked> selected,
+      List<SystemGalleryDirectoryFile> selected,
       {required bool move, String? newDir}) {
     _channel.invokeMethod("copyMoveFiles", {
       "dest": chosen ?? newDir,
@@ -72,7 +73,7 @@ class PlatformFunctions {
     });
   }
 
-  static void deleteFiles(List<SystemGalleryDirectoryFileShrinked> selected) {
+  static void deleteFiles(List<SystemGalleryDirectoryFile> selected) {
     _channel.invokeMethod(
         "deleteFiles", selected.map((e) => e.originalUri).toList());
   }
@@ -92,6 +93,38 @@ class PlatformFunctions {
 
   static void share(String originalUri) {
     _channel.invokeMethod("shareMedia", originalUri);
+  }
+
+  static Future<bool> moveInternal(String internalAppDir, List<String> uris) {
+    return _channel.invokeMethod("moveInternal",
+        {"dir": internalAppDir, "uris": uris}).then((value) => value ?? false);
+  }
+
+  static void refreshTrashed() {
+    _channel.invokeMethod("refreshTrashed");
+  }
+
+  static void addToTrash(List<String> uris) {
+    _channel.invokeMethod("addToTrash", uris);
+  }
+
+  static void removeFromTrash(List<String> uris) {
+    _channel.invokeMethod("removeFromTrash", uris);
+  }
+
+  static Future<bool> moveFromInternal(
+      String fromInternalFile, String toDir, String volume) {
+    return _channel.invokeMethod("moveFromInternal", {
+      "from": fromInternalFile,
+      "to": toDir,
+      "volume": volume
+    }).then((value) => value ?? false);
+  }
+
+  static Future<ThumbnailId> getThumbDirectly(int id) {
+    return _channel.invokeMethod("getThumbDirectly", id).then((value) =>
+        ThumbnailId(
+            id: id, thumb: value["data"], differenceHash: value["hash"]));
   }
 
   const PlatformFunctions();

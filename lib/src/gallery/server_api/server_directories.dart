@@ -32,14 +32,15 @@ class ServerDirectories extends StatefulWidget {
 }
 
 class _ServerDirectoriesState extends State<ServerDirectories>
-    with SearchFilterGrid<Directory, Directory> {
+    with SearchFilterGrid<Directory> {
   late StreamSubscription<Settings?> settingsWatcher;
   bool isDisposed = false;
 
   final api = getServerGalleryApi();
 
-  late final GridSkeletonStateFilter<Directory, Directory> skeletonState =
+  late final GridSkeletonStateFilter<Directory> skeletonState =
       GridSkeletonStateFilter(
+          transform: (cell, _) => cell,
           filter: api.getExtra().filter,
           index: kGalleryDrawerIndex,
           onWillPop: () => popUntilSenitel(context));
@@ -87,7 +88,7 @@ class _ServerDirectoriesState extends State<ServerDirectories>
   Widget build(BuildContext context) {
     var insets = MediaQuery.viewPaddingOf(context);
 
-    return makeGridSkeleton<Directory, Directory>(
+    return makeGridSkeleton<Directory>(
       context,
       skeletonState,
       CallbackGrid(

@@ -22,6 +22,8 @@ import io.flutter.embedding.engine.FlutterEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import okio.FileSystem
+import okio.Path.Companion.toPath
 import okio.use
 
 data class FilesDest(
@@ -34,7 +36,11 @@ data class FilesDest(
 )
 
 data class MoveOp(val source: String, val rootUri: Uri, val dir: String)
-data class ThumbOp(val thumbs: List<Long>, val callback: (() -> Unit)?, val notify: Boolean = false)
+data class ThumbOp(
+    val thumb: Long,
+    val callback: (() -> Unit)?,
+    val notify: Boolean = false
+)
 
 class MainActivity : FlutterActivity() {
     private val engineBindings: EngineBindings by lazy {
@@ -45,15 +51,26 @@ class MainActivity : FlutterActivity() {
         e: Uri,
         volumeName: String?,
         newDir: Boolean,
+        newDirIsLocal: Boolean = false,
         isImage: Boolean,
-        deleteAfter: Boolean
+        deleteAfter: Boolean,
+        dest: String
     ) {
         val mimeType = contentResolver.getType(e)!!
 
         contentResolver.openInputStream(e)?.use { stream ->
             contentResolver.query(
                 e,
-                arrayOf(MediaStore.MediaColumns.DISPLAY_NAME),
+                if (!newDirIsLocal) {
+                    arrayOf(
+                        MediaStore.MediaColumns.DISPLAY_NAME,
+                    )
+                } else {
+                    arrayOf(
+                        MediaStore.MediaColumns.DISPLAY_NAME,
+                        MediaStore.MediaColumns.DATE_MODIFIED
+                    )
+                },
                 null,
                 null,
                 null
@@ -61,20 +78,26 @@ class MainActivity : FlutterActivity() {
                 if (!it.moveToFirst()) {
                     return@use
                 }
-                val details = ContentValues().apply {
-                    put(
-                        MediaStore.MediaColumns.DISPLAY_NAME,
-                        it.getString(0)
-                    )
-                    put(
-                        MediaStore.MediaColumns.RELATIVE_PATH,
-                        engineBindings.copyFiles!!.dest
-                    )
-                    put(MediaStore.MediaColumns.IS_PENDING, 1)
-                }
 
                 if (newDir) {
-                    DocumentFile.fromTreeUri(context, Uri.parse(engineBindings.copyFiles!!.dest))
+                    if (newDirIsLocal) {
+                        val file = java.io.File(dest, it.getString(0))
+                        if (!file.createNewFile()) {
+                            throw Exception("file exists")
+                        }
+
+                        file.outputStream().use { out ->
+                            stream.transferTo(out)
+                            out.flush()
+                            out.fd.sync()
+                        }
+
+                        file.setLastModified(it.getLong(1))
+
+                        return
+                    }
+
+                    DocumentFile.fromTreeUri(context, Uri.parse(dest))
                         ?.run {
                             if (this.isFile || !this.canWrite()) {
                                 return@use
@@ -91,6 +114,18 @@ class MainActivity : FlutterActivity() {
                         }
 
                     return
+                }
+
+                val details = ContentValues().apply {
+                    put(
+                        MediaStore.MediaColumns.DISPLAY_NAME,
+                        it.getString(0)
+                    )
+                    put(
+                        MediaStore.MediaColumns.RELATIVE_PATH,
+                        dest
+                    )
+                    put(MediaStore.MediaColumns.IS_PENDING, 1)
                 }
 
                 val resultUri =
@@ -165,7 +200,8 @@ class MainActivity : FlutterActivity() {
                             newDir = true,
                             isImage = isImage,
                             volumeName = volumeName,
-                            deleteAfter = true
+                            deleteAfter = true,
+                            dest = dest
                         )
                     }
                     return
@@ -193,7 +229,8 @@ class MainActivity : FlutterActivity() {
                     newDir = newDir,
                     isImage = isImage,
                     volumeName = volumeName,
-                    deleteAfter = false
+                    deleteAfter = false,
+                    dest = engineBindings.copyFiles!!.dest
                 )
             }
         }
@@ -202,12 +239,20 @@ class MainActivity : FlutterActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == 1) {
-            if (resultCode == Activity.RESULT_OK) {
-                engineBindings.callback?.invoke(data!!.data.toString())
-            } else {
-                engineBindings.callback?.invoke(null)
+            try {
+                if (resultCode == Activity.RESULT_OK) {
+                    engineBindings.callback?.invoke(data!!.data.toString())
+                } else {
+                    engineBindings.callback?.invoke(null)
+                }
+            } catch (e: java.lang.Exception) {
+                Log.e("pick directory", e.toString())
             }
+
             engineBindings.callback = null
+            if (engineBindings.callbackMux.isLocked) {
+                engineBindings.callbackMux.unlock()
+            }
         }
 
         if (requestCode == 9) {
@@ -215,6 +260,41 @@ class MainActivity : FlutterActivity() {
                 engineBindings.mover.notifyGallery()
             } else {
                 Log.e("delete files", "failed")
+            }
+        }
+        if (requestCode == 13 || requestCode == 14) {
+            if (resultCode == Activity.RESULT_OK) {
+                engineBindings.mover.notifyGallery()
+            }
+        }
+
+        if (requestCode == 12) {
+            if (resultCode == Activity.RESULT_OK) {
+                CoroutineScope(lifecycleScope.coroutineContext + Dispatchers.IO).launch {
+                    try {
+                        FileSystem.SYSTEM.createDirectory(engineBindings.moveInternal!!.dest.toPath())
+
+                        for (e in engineBindings.moveInternal!!.uris) {
+                            copyFile(
+                                e,
+                                null,
+                                newDir = true,
+                                newDirIsLocal = true,
+                                isImage = contentResolver.getType(e)!!.startsWith("image"),
+                                dest = engineBindings.moveInternal!!.dest,
+                                deleteAfter = true
+                            )
+                        }
+
+                        engineBindings.moveInternal!!.callback(true)
+                    } catch (e: Exception) {
+                        engineBindings.moveInternal!!.callback(false)
+                        Log.e("moveInternal_", e.toString())
+                    }
+
+                    engineBindings.moveInternal = null
+                    engineBindings.moveInternalMux.unlock()
+                }
             }
         }
 

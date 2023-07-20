@@ -32,18 +32,24 @@ import kotlinx.coroutines.sync.Mutex
 
 data class RenameOp(val uri: Uri, val newName: String)
 
-class EngineBindings(activity: FlutterActivity, entrypoint: String) {
-    val channel: MethodChannel
-    val engine: FlutterEngine
-    val context: FlutterActivity
-    internal val mover: Mover
-    val galleryApi: GalleryApi
+data class MoveInternalOp(val dest: String, val uris: List<Uri>, val callback: (Boolean) -> Unit)
 
+class EngineBindings(activity: FlutterActivity, entrypoint: String) {
+    private val channel: MethodChannel
+    private val context: FlutterActivity
+    internal val mover: Mover
+    private val galleryApi: GalleryApi
+
+    val engine: FlutterEngine
+
+    val callbackMux = Mutex()
     var callback: ((String?) -> Unit)? = null
     val copyFilesMux = Mutex()
     var copyFiles: FilesDest? = null
     val renameMux = Mutex()
     var rename: List<RenameOp>? = null
+    val moveInternalMux = Mutex()
+    var moveInternal: MoveInternalOp? = null
 
 
     init {
@@ -90,32 +96,27 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                 }
 
                 "chooseDirectory" -> {
-                    val temporary = call.arguments as Boolean
-                    context.startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), 1)
-                    callback = {
-                        if (it == null) {
-                            result.error("empty result", "", "")
-                        } else {
-                            if (!temporary) {
-                                context.contentResolver.takePersistableUriPermission(
-                                    Uri.parse(it),
-                                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                                )
+                    CoroutineScope(Dispatchers.IO).launch {
+                        callbackMux.lock()
+                        val temporary = call.arguments as Boolean
+                        callback = {
+                            if (it == null) {
+                                callbackMux.unlock()
+                                result.error("empty result", "", "")
+                            } else {
+                                if (!temporary) {
+                                    context.contentResolver.takePersistableUriPermission(
+                                        Uri.parse(it),
+                                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                                    )
+                                }
+
+                                callbackMux.unlock()
+                                result.success(it)
                             }
-
-                            result.success(it)
                         }
-                    }
-                }
 
-                "loadThumbnails" -> {
-                    val list = call.arguments as List<Long>
-                    if (list.isEmpty()) {
-                        result.success(null)
-                    } else {
-                        mover.thumbnailsCallback(list) {
-                            result.success(null)
-                        }
+                        context.startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), 1)
                     }
                 }
 
@@ -176,6 +177,89 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                             Log.e("rename", e.toString())
                         }
                     }
+                }
+
+                "refreshTrashed" -> {
+                    context.runOnUiThread {
+                        mover.refreshFiles("trash", true)
+                    }
+
+                    result.success(null)
+                }
+
+                "addToTrash" -> {
+                    val uris = (call.arguments as List<String>).map { Uri.parse(it) }
+
+                    val intent =
+                        MediaStore.createTrashRequest(context.contentResolver, uris, true)
+
+                    context.startIntentSenderForResult(intent.intentSender, 13, null, 0, 0, 0)
+
+                    result.success(null)
+                }
+
+                "removeFromTrash" -> {
+                    val uri = (call.arguments as List<String>).map { Uri.parse(it) }
+
+                    val intent =
+                        MediaStore.createTrashRequest(context.contentResolver, uri, false)
+
+                    context.startIntentSenderForResult(intent.intentSender, 14, null, 0, 0, 0)
+
+                    result.success(null)
+                }
+
+                "moveInternal" -> {
+                    val dir = call.argument<String>("dir") ?: throw Exception("dir is empty")
+                    val uris =
+                        call.argument<List<String>>("uris") ?: throw Exception("uris is empty")
+
+                    val urisParsed = uris.map { Uri.parse(it) }
+
+                    CoroutineScope(Dispatchers.IO).launch {
+                        moveInternalMux.lock()
+
+                        try {
+                            val intent = MediaStore.createWriteRequest(
+                                context.contentResolver,
+                                urisParsed
+                            )
+
+                            moveInternal = MoveInternalOp(dir, urisParsed) {
+                                result.success(it)
+                            }
+
+                            context.startIntentSenderForResult(
+                                intent.intentSender,
+                                12,
+                                null,
+                                0,
+                                0,
+                                0
+                            )
+                        } catch (e: Exception) {
+                            result.error(e.toString(), "", "")
+                            moveInternalMux.unlock()
+                        }
+                    }
+                }
+
+                "getThumbDirectly" -> {
+                    val id: Long = when (call.arguments) {
+                        is Long -> {
+                            call.arguments as Long
+                        }
+
+                        is Int -> {
+                            (call.arguments as Int).toLong()
+                        }
+
+                        else -> {
+                            throw Exception("id is invalid")
+                        }
+                    }
+
+                    mover.getThumbnailCallback(id, result)
                 }
 
                 "copyMoveFiles" -> {

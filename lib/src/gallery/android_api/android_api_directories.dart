@@ -7,11 +7,13 @@
 
 import 'dart:developer';
 
+import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/android_gallery_directory.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 import 'package:gallery/src/schemas/blacklisted_directory.dart';
+import 'package:gallery/src/schemas/settings.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:gallery/src/gallery/android_api/api.g.dart';
@@ -28,8 +30,7 @@ part 'android_side.dart';
 
 class AndroidGalleryExtra {
   final _AndroidGallery _impl;
-  FilterInterface<SystemGalleryDirectory, SystemGalleryDirectoryShrinked>
-      get filter => _impl.filter;
+  FilterInterface<SystemGalleryDirectory> get filter => _impl.filter;
   void loadThumbs(int from) {
     _loadThumbs(from);
   }
@@ -59,6 +60,17 @@ class AndroidGalleryExtra {
     _impl.isThumbsLoading = false;
   }
 
+  GalleryAPIFilesRead<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile>
+      trash() {
+    final instance =
+        _AndroidGalleryFiles(openAndroidGalleryInnerIsar(), "trash", () {
+      _impl.currentImages = null;
+    }, "trash", isTrash: true);
+    _impl.currentImages = instance;
+
+    return instance;
+  }
+
   void addBlacklisted(List<BlacklistedDirectory> bucketIds) {
     _impl.db.writeTxnSync(
         () => _impl.db.blacklistedDirectorys.putAllSync(bucketIds));
@@ -81,13 +93,8 @@ class AndroidGalleryExtra {
   const AndroidGalleryExtra._(this._impl);
 }
 
-GalleryAPIRead<
-        AndroidGalleryExtra,
-        AndroidGalleryFilesExtra,
-        SystemGalleryDirectory,
-        SystemGalleryDirectoryShrinked,
-        SystemGalleryDirectoryFile,
-        SystemGalleryDirectoryFileShrinked>
+GalleryAPIRead<AndroidGalleryExtra, AndroidGalleryFilesExtra,
+        SystemGalleryDirectory, SystemGalleryDirectoryFile>
     getAndroidGalleryApi({bool? temporaryDb, bool setCurrentApi = true}) {
   var api = _AndroidGallery(temporary: temporaryDb);
   if (setCurrentApi) {
@@ -99,23 +106,16 @@ GalleryAPIRead<
 
 class _AndroidGallery
     implements
-        GalleryAPIRead<
-            AndroidGalleryExtra,
-            AndroidGalleryFilesExtra,
-            SystemGalleryDirectory,
-            SystemGalleryDirectoryShrinked,
-            SystemGalleryDirectoryFile,
-            SystemGalleryDirectoryFileShrinked> {
+        GalleryAPIRead<AndroidGalleryExtra, AndroidGalleryFilesExtra,
+            SystemGalleryDirectory, SystemGalleryDirectoryFile> {
   void Function(int i, bool inRefresh, bool empty)? callback;
   void Function()? refreshGrid;
   void Function()? onThumbUpdate;
   _AndroidGalleryFiles? currentImages;
   bool isThumbsLoading = false;
-
-  final filter =
-      IsarFilter<SystemGalleryDirectory, SystemGalleryDirectoryShrinked>(
-          GalleryImpl.instance().db, openAndroidGalleryIsar(temporary: true),
-          (offset, limit, v) {
+  final filter = IsarFilter<SystemGalleryDirectory>(
+      GalleryImpl.instance().db, openAndroidGalleryIsar(temporary: true),
+      (offset, limit, v) {
     return GalleryImpl.instance()
         .db
         .systemGalleryDirectorys
@@ -153,6 +153,7 @@ class _AndroidGallery
   Future<int> refresh() {
     try {
       db.writeTxnSync(() => db.systemGalleryDirectorys.clearSync());
+
       PlatformFunctions.refreshGallery();
     } catch (e, trace) {
       log("android gallery",
@@ -163,8 +164,8 @@ class _AndroidGallery
   }
 
   @override
-  GalleryAPIFilesRead<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile,
-      SystemGalleryDirectoryFileShrinked> imagesRead(SystemGalleryDirectory d) {
+  GalleryAPIFilesRead<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile>
+      imagesRead(SystemGalleryDirectory d) {
     var instance =
         _AndroidGalleryFiles(openAndroidGalleryInnerIsar(), d.bucketId, () {
       currentImages = null;

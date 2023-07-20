@@ -7,6 +7,7 @@
 
 import 'dart:developer';
 import 'dart:typed_data';
+import 'dart:io' as io;
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
@@ -28,18 +29,8 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 part 'android_gallery_directory_file.g.dart';
 
-class SystemGalleryDirectoryFileShrinked {
-  final int id;
-  final String originalUri;
-  final bool isVideo;
-
-  const SystemGalleryDirectoryFileShrinked(
-      this.id, this.originalUri, this.isVideo);
-}
-
 @collection
-class SystemGalleryDirectoryFile
-    implements Cell<SystemGalleryDirectoryFileShrinked> {
+class SystemGalleryDirectoryFile implements Cell {
   @override
   Id? isarId;
 
@@ -55,10 +46,16 @@ class SystemGalleryDirectoryFile
   final int height;
   final int width;
 
+  @Index()
   final int size;
 
   final bool isVideo;
   final bool isGif;
+
+  final bool isOriginal;
+
+  @ignore
+  final List<IconData> injectedStickers = [];
 
   SystemGalleryDirectoryFile({
     required this.id,
@@ -93,7 +90,7 @@ class SystemGalleryDirectoryFile
                   final api = booruApiFromPrefix(res!.booru);
 
                   api.singlePost(res.id).then((post) {
-                    PlatformFunctions.deleteFiles([shrinkedData()]);
+                    PlatformFunctions.deleteFiles([this]);
 
                     PostTags().addTagsPost(
                         post.filename(), post.tags.split(" "), true);
@@ -119,6 +116,40 @@ class SystemGalleryDirectoryFile
               icon: const Icon(Icons.share))
         ];
       };
+
+  IconData sizeSticker() {
+    if (size == 0) {
+      return const IconData(0x4B);
+    }
+
+    final kb = (size / 1000);
+    if (kb < 1000) {
+      if (kb > 500) {
+        return const IconData(0x4B);
+      } else {
+        return const IconData(0x6B);
+      }
+    } else {
+      final mb = kb / 1000;
+      if (mb > 2) {
+        return const IconData(0x4D);
+      } else {
+        return const IconData(0x6D);
+      }
+    }
+  }
+
+  String kbMbSize(int bytes) {
+    if (bytes == 0) {
+      return "0";
+    }
+    final res = bytes / 1000;
+    if (res > 1000) {
+      return "${(res / 1000).toStringAsFixed(1)} MB";
+    }
+
+    return "${res.toStringAsFixed(1)} KB";
+  }
 
   @ignore
   @override
@@ -175,6 +206,8 @@ class SystemGalleryDirectoryFile
                       colors: colors,
                       title: AppLocalizations.of(context)!.heightInfoPage,
                       subtitle: "${height}px"),
+                  addInfoTile(
+                      colors: colors, title: "Size", subtitle: kbMbSize(size))
                 ],
                 name,
                 null,
@@ -202,35 +235,31 @@ class SystemGalleryDirectoryFile
         uri: originalUri, size: Size(width.toDouble(), height.toDouble()));
   }
 
-  final bool isOriginal;
-
   @override
   String fileDownloadUrl() => "";
 
   @override
   CellData getCellData(bool isList) {
-    var record = androidThumbnail(id);
+    final stickers = [
+      ...injectedStickers,
+      if (isVideo) FilteringMode.video.icon,
+      if (isGif) FilteringMode.gif.icon,
+      if (isOriginal) FilteringMode.original.icon,
+      if (isDuplicate()) FilteringMode.duplicate.icon,
+    ];
+
+    final record = androidThumbnail(id);
 
     return CellData(
         thumb: KeyMemoryImage(
             id.toString() + record.$1.length.toString(), record.$1),
         name: name,
-        stickers: [
-          if (isVideo) FilteringMode.video.icon,
-          if (isGif) FilteringMode.gif.icon,
-          if (isOriginal) FilteringMode.original.icon,
-          if (isDuplicate()) FilteringMode.duplicate.icon,
-        ],
+        stickers: stickers,
         loaded: record.$2);
   }
 
   Thumbnail? getThumbnail() {
     return thumbnailIsar().thumbnails.getSync(id);
-  }
-
-  @override
-  SystemGalleryDirectoryFileShrinked shrinkedData() {
-    return SystemGalleryDirectoryFileShrinked(id, originalUri, isVideo);
   }
 }
 

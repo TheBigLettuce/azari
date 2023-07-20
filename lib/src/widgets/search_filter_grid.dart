@@ -24,7 +24,8 @@ enum FilteringMode {
   video("Video", Icons.play_circle),
   gif("GIF", Icons.gif_outlined),
   tag("Tag", Icons.tag),
-  noFilter("No filter", Icons.filter_list_outlined);
+  noFilter("No filter", Icons.filter_list_outlined),
+  size("Size", Icons.arrow_downward);
 
   final String string;
   final IconData icon;
@@ -32,17 +33,21 @@ enum FilteringMode {
   const FilteringMode(this.string, this.icon);
 }
 
-abstract class FilterInterface<T extends Cell<B>, B> {
+enum SortingMode { none, size }
+
+abstract class FilterInterface<T extends Cell> {
   Result<T> filter(String s);
+  void setSortingMode(SortingMode mode);
   void resetFilter();
 }
 
-class IsarFilter<T extends Cell<B>, B> implements FilterInterface<T, B> {
+class IsarFilter<T extends Cell> implements FilterInterface<T> {
   Isar _from;
   final Isar _to;
   bool isFiltering = false;
   final Iterable<T> Function(int offset, int limit, String s) getElems;
   (Iterable<T>, dynamic) Function(Iterable<T>, dynamic, bool)? passFilter;
+  SortingMode currentSorting = SortingMode.none;
 
   Isar get to => _to;
 
@@ -67,7 +72,7 @@ class IsarFilter<T extends Cell<B>, B> implements FilterInterface<T, B> {
         var sorted = getElems(offset, 40);
         final end = sorted.length != 40;
         offset += 40;
-        if (loopCount > 1000) {
+        if (loopCount > 10000) {
           throw "infinite loop: $offset, last elems count: ${sorted.length}";
         }
 
@@ -102,6 +107,11 @@ class IsarFilter<T extends Cell<B>, B> implements FilterInterface<T, B> {
   }
 
   @override
+  void setSortingMode(SortingMode sortingMode) {
+    currentSorting = sortingMode;
+  }
+
+  @override
   Result<T> filter(String s) {
     isFiltering = true;
     _to.writeTxnSync(
@@ -119,6 +129,7 @@ class IsarFilter<T extends Cell<B>, B> implements FilterInterface<T, B> {
   @override
   void resetFilter() {
     isFiltering = false;
+    currentSorting = SortingMode.none;
     _to.writeTxnSync(() => _to.collection<T>().clearSync());
   }
 
@@ -127,8 +138,8 @@ class IsarFilter<T extends Cell<B>, B> implements FilterInterface<T, B> {
         _to = to;
 }
 
-mixin SearchFilterGrid<T extends Cell<B>, B>
-    implements SearchMixin<GridSkeletonStateFilter<T, B>> {
+mixin SearchFilterGrid<T extends Cell>
+    implements SearchMixin<GridSkeletonStateFilter<T>> {
   @override
   final TextEditingController searchTextController = TextEditingController();
   @override
@@ -137,7 +148,7 @@ mixin SearchFilterGrid<T extends Cell<B>, B>
   late final List<Widget>? addItems;
   final GlobalKey<__SearchWidgetState> _key = GlobalKey();
 
-  late final GridSkeletonStateFilter<T, B> _state;
+  late final GridSkeletonStateFilter<T> _state;
 
   @override
   void searchHook(state, [List<Widget>? items]) {
@@ -164,9 +175,13 @@ mixin SearchFilterGrid<T extends Cell<B>, B>
     _key.currentState?.searchVirtual = true;
   }
 
+  void resetSearch() {
+    _key.currentState!.reset();
+  }
+
   @override
   Widget searchWidget(BuildContext context, {String? hint, int? count}) =>
-      _SearchWidget(
+      _SearchWidget<T>(
         key: _key,
         instance: this,
         hint: hint,
@@ -174,8 +189,8 @@ mixin SearchFilterGrid<T extends Cell<B>, B>
       );
 }
 
-class _SearchWidget extends StatefulWidget {
-  final SearchFilterGrid instance;
+class _SearchWidget<T extends Cell> extends StatefulWidget {
+  final SearchFilterGrid<T> instance;
   final String? hint;
   final int? count;
   const _SearchWidget(
@@ -185,30 +200,35 @@ class _SearchWidget extends StatefulWidget {
       required this.hint});
 
   @override
-  State<_SearchWidget> createState() => __SearchWidgetState();
+  State<_SearchWidget<T>> createState() => __SearchWidgetState();
 }
 
-class __SearchWidgetState extends State<_SearchWidget> {
+class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
   bool searchVirtual = false;
   FilteringMode currentFilterMode = FilteringMode.noFilter;
   void onChanged(String value, bool direct) {
     var interf = widget.instance._state.gridKey.currentState?.mutationInterface;
     if (interf != null) {
-      widget.instance._state.hook(currentFilterMode);
-      if (!direct) {
-        value = value.trim();
-        if (value.isEmpty) {
-          interf.restore();
-          widget.instance._state.filter.resetFilter();
-          setState(() {});
-          return;
-        }
-      }
+      final sorting = widget.instance._state.hook(currentFilterMode);
+      // if (!direct) {
+      //   value = value.trim();
+      //   if (value.isEmpty) {
+      //     interf.restore();
+      //     widget.instance._state.filter.resetFilter();
+      //     setState(() {});
+      //     return;
+      //   }
+      // }
+
+      widget.instance._state.filter.setSortingMode(sorting);
 
       var res =
           widget.instance._state.filter.filter(searchVirtual ? "" : value);
 
-      interf.setSource(res.count, res.cell);
+      interf.setSource(res.count, (i) {
+        final cell = res.cell(i);
+        return widget.instance._state.transform(cell, sorting);
+      });
       setState(() {});
     }
   }
@@ -237,6 +257,17 @@ class __SearchWidgetState extends State<_SearchWidget> {
 
   String _makeHint(BuildContext context) =>
       "${AppLocalizations.of(context)!.filterHint}${widget.hint != null ? ' ${widget.hint}' : ''}";
+
+  void reset() {
+    widget.instance.searchTextController.clear();
+    widget.instance._state.gridKey.currentState?.mutationInterface?.restore();
+    if (widget.instance._state.filteringModes.isNotEmpty) {
+      searchVirtual = false;
+      currentFilterMode = FilteringMode.noFilter;
+      onChanged(widget.instance.searchTextController.text, true);
+    }
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -267,18 +298,8 @@ class __SearchWidgetState extends State<_SearchWidget> {
               : TextField(
                   focusNode: widget.instance.searchFocus,
                   controller: widget.instance.searchTextController,
-                  decoration: autocompleteBarDecoration(context, () {
-                    widget.instance.searchTextController.clear();
-                    widget
-                        .instance._state.gridKey.currentState?.mutationInterface
-                        ?.restore();
-                    if (widget.instance._state.filteringModes.isNotEmpty) {
-                      searchVirtual = false;
-                      onChanged(
-                          widget.instance.searchTextController.text, true);
-                    }
-                    setState(() {});
-                  }, _addItems(),
+                  decoration: autocompleteBarDecoration(
+                      context, reset, _addItems(),
                       searchCount: widget.instance._state.gridKey.currentState
                           ?.mutationInterface?.cellCount,
                       showSearch: true,

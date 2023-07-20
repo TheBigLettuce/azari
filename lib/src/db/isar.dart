@@ -109,7 +109,7 @@ Future initalizeIsar(bool temporary) async {
 
   _directoryPath = (await getApplicationSupportDirectory()).path;
 
-  var d = io.Directory(path.joinAll([_directoryPath, "temporary"]));
+  final d = io.Directory(path.joinAll([_directoryPath, "temporary"]));
   d.createSync();
   if (!temporary) {
     d.deleteSync(recursive: true);
@@ -117,7 +117,7 @@ Future initalizeIsar(bool temporary) async {
   }
   _temporaryDbPath = d.path;
 
-  var dimages = io.Directory(path.joinAll([_directoryPath, "temp_images"]));
+  final dimages = io.Directory(path.joinAll([_directoryPath, "temp_images"]));
   dimages.createSync();
   if (!temporary) {
     dimages.deleteSync(recursive: true);
@@ -135,6 +135,9 @@ Future initalizeIsar(bool temporary) async {
   if (io.Platform.isAndroid) {
     _thumbnailIsar = Isar.openSync([ThumbnailSchema],
         directory: _directoryPath, inspector: false, name: "androidThumbnails");
+    _thumbnailIsar!.writeTxnSync(() {
+      _thumbnailIsar!.thumbnails.where().isEmptyEqualTo(true).deleteAllSync();
+    });
   }
 }
 

@@ -14,12 +14,10 @@ class Result<T extends Cell> {
   const Result(this.cell, this.count);
 }
 
-abstract class GalleryAPIFilesReadWrite<ExtraFiles, F extends Cell<A>, A>
-    implements
-        GalleryAPIFilesRead<ExtraFiles, F, A>,
-        GalleryAPIFilesWrite<F, A> {}
+abstract class GalleryAPIFilesReadWrite<ExtraFiles, F extends Cell>
+    implements GalleryAPIFilesRead<ExtraFiles, F>, GalleryAPIFilesWrite<F> {}
 
-abstract class GalleryAPIFilesRead<ExtraFiles, F extends Cell<A>, A> {
+abstract class GalleryAPIFilesRead<ExtraFiles, F extends Cell> {
   F directCell(int i);
 
   Future<int> refresh();
@@ -28,31 +26,29 @@ abstract class GalleryAPIFilesRead<ExtraFiles, F extends Cell<A>, A> {
   void close();
 }
 
-abstract class GalleryAPIFilesWrite<F extends Cell<A>, A> {
+abstract class GalleryAPIFilesWrite<F extends Cell> {
   Future uploadFiles(List<PlatformFile> l, void Function() onDone);
-  Future deleteFiles(List<A> f, void Function() onDone);
+  Future deleteFiles(List<F> f, void Function() onDone);
 }
 
-abstract class GalleryAPIReadWrite<Extra, ExtraFiles, T extends Cell<B>, B,
-        F extends Cell<A>, A>
-    implements
-        GalleryAPIRead<Extra, ExtraFiles, T, B, F, A>,
-        GalleryAPIWrite<T, B> {
-  GalleryAPIFilesReadWrite<ExtraFiles, F, A> imagesReadWrite(T d);
+abstract class GalleryAPIReadWrite<Extra, ExtraFiles, T extends Cell,
+        F extends Cell>
+    implements GalleryAPIRead<Extra, ExtraFiles, T, F>, GalleryAPIWrite<T> {
+  GalleryAPIFilesReadWrite<ExtraFiles, F> imagesReadWrite(T d);
 }
 
-abstract class GalleryAPIRead<Extra, ExtraFiles, T extends Cell<B>, B,
-    F extends Cell<A>, A> {
+abstract class GalleryAPIRead<Extra, ExtraFiles, T extends Cell,
+    F extends Cell> {
   T directCell(int i);
 
   Future<int> refresh();
   Extra getExtra();
-  GalleryAPIFilesRead<ExtraFiles, F, A> imagesRead(T d);
+  GalleryAPIFilesRead<ExtraFiles, F> imagesRead(T d);
 
   void close();
 }
 
-abstract class GalleryAPIWrite<T extends Cell<B>, B> {
+abstract class GalleryAPIWrite<T extends Cell> {
   Future modify(T old, T newd);
   Future delete(T d);
   Future newDirectory(String path, void Function() onDone);

@@ -162,6 +162,7 @@ class GalleryImpl implements GalleryApi {
               lastModified: e.lastModified))
           .toList());
     });
+
     _currentApi?.callback
         ?.call(db.systemGalleryDirectorys.countSync(), inRefresh, false);
   }

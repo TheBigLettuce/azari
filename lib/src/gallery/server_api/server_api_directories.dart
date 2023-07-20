@@ -47,7 +47,7 @@ String _fromBaseToHex(String v) {
 class ServerApiExtra {
   final _ServerAPI _impl;
 
-  FilterInterface<Directory, Directory> get filter => _impl.filter;
+  FilterInterface<Directory> get filter => _impl.filter;
 
   const ServerApiExtra._(this._impl);
 }
@@ -55,24 +55,23 @@ class ServerApiExtra {
 class ServerApiFilesExtra {
   final _ImagesImpl _impl;
 
-  FilterInterface<DirectoryFile, DirectoryFileShrinked> get filter =>
-      _impl.filter;
+  FilterInterface<DirectoryFile> get filter => _impl.filter;
 
   const ServerApiFilesExtra._(this._impl);
 }
 
-GalleryAPIReadWrite<ServerApiExtra, ServerApiFilesExtra, Directory, Directory,
-    DirectoryFile, DirectoryFileShrinked> getServerGalleryApi() {
+GalleryAPIReadWrite<ServerApiExtra, ServerApiFilesExtra, Directory,
+    DirectoryFile> getServerGalleryApi() {
   return _ServerAPI(openServerApiIsar());
 }
 
 class _ServerAPI
     implements
         GalleryAPIReadWrite<ServerApiExtra, ServerApiFilesExtra, Directory,
-            Directory, DirectoryFile, DirectoryFileShrinked> {
+            DirectoryFile> {
   final Isar db;
 
-  final IsarFilter<Directory, Directory> filter;
+  final IsarFilter<Directory> filter;
 
   @override
   ServerApiExtra getExtra() {
@@ -137,8 +136,8 @@ class _ServerAPI
   }
 
   _ServerAPI(this.db)
-      : filter = IsarFilter<Directory, Directory>(
-            db, openServerApiIsar(temporary: true), (offset, limit, s) {
+      : filter = IsarFilter<Directory>(db, openServerApiIsar(temporary: true),
+            (offset, limit, s) {
           return db.directorys
               .filter()
               .dirNameContains(s, caseSensitive: false)
@@ -148,14 +147,14 @@ class _ServerAPI
         });
 
   @override
-  GalleryAPIFilesRead<ServerApiFilesExtra, DirectoryFile, DirectoryFileShrinked>
-      imagesRead(Directory d) {
+  GalleryAPIFilesRead<ServerApiFilesExtra, DirectoryFile> imagesRead(
+      Directory d) {
     return _ImagesImpl(openServerApiInnerIsar(), client, d);
   }
 
   @override
-  GalleryAPIFilesReadWrite<ServerApiFilesExtra, DirectoryFile,
-      DirectoryFileShrinked> imagesReadWrite(Directory d) {
+  GalleryAPIFilesReadWrite<ServerApiFilesExtra, DirectoryFile> imagesReadWrite(
+      Directory d) {
     return _ImagesImpl(openServerApiInnerIsar(), client, d);
   }
 

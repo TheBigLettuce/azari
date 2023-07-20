@@ -16,6 +16,7 @@ class Thumbnail {
   final int differenceHash;
   final DateTime updatedAt;
 
+  @Index()
   final bool isEmpty;
 
   const Thumbnail(

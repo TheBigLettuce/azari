@@ -9,7 +9,7 @@ import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:convert/convert.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:gallery/src/cell/cell.dart';
 import 'package:gallery/src/cell/data.dart';
 import 'package:isar/isar.dart';
@@ -21,7 +21,7 @@ String _fromBaseToHex(String v) {
 }
 
 @collection
-class Directory implements Cell<Directory> {
+class Directory implements Cell {
   @override
   Id? isarId;
 
@@ -91,7 +91,4 @@ class Directory implements Cell<Directory> {
       required this.dirName,
       required this.time,
       required this.count});
-
-  @override
-  shrinkedData() => this;
 }

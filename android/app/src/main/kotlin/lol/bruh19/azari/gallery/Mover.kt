@@ -7,20 +7,22 @@
 
 package lol.bruh19.azari.gallery
 
+import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
 import android.webkit.MimeTypeMap
 import androidx.core.graphics.scale
 import androidx.documentfile.provider.DocumentFile
+import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -42,7 +44,7 @@ internal class Mover(
     private val galleryApi: GalleryApi
 ) {
     private val channel = Channel<MoveOp>()
-    private val thumbnailsChannel = Channel<ThumbOp>(capacity = 2)
+    private val thumbnailsChannel = Channel<ThumbOp>(capacity = 8)
     private val scope = CoroutineScope(coContext + Dispatchers.IO)
 
     private val isLockedDirMux = Mutex()
@@ -50,54 +52,40 @@ internal class Mover(
 
     init {
         scope.launch {
+            val inProgress = mutableListOf<Job>()
             for (uris in thumbnailsChannel) {
-                val newScope = CoroutineScope(coContext + Dispatchers.IO)
-
                 try {
-                    for (u in uris.thumbs.chunked(8)) {
-                        newScope.launch(SupervisorJob()) {
-                            val thumbs = mutableListOf<ThumbnailId>()
-                            val mutex = Mutex()
-                            val jobs = mutableListOf<Job>()
+                    val newScope = CoroutineScope(coContext + Dispatchers.IO)
 
-                            u.forEach {
-                                val copy = it
-
-                                jobs.add(launch {
-                                    var res: ThumbnailId
-                                    try {
-                                        val uri = ContentUris.withAppendedId(
-                                            MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
-                                            copy
-                                        )
-
-                                        val (byt, hash) = getThumb(uri)
-                                        res = ThumbnailId(it, byt, hash)
-                                    } catch (e: Exception) {
-                                        res = ThumbnailId(it, transparentImage, 0)
-                                        Log.e("thumbnail coro", e.toString())
-                                    }
-
-                                    mutex.lock()
-                                    thumbs.add(res)
-                                    mutex.unlock()
-                                })
-                            }
-
-                            jobs.forEach {
-                                it.join()
-                            }
-
-                            CoroutineScope(coContext).launch {
-                                galleryApi.addThumbnails(
-                                    thumbs,
-                                    uris.notify
-                                ) {}
-                            }.join()
-                        }.join()
+                    if (inProgress.size == 8) {
+                        inProgress.first().join()
+                        inProgress.removeFirst()
                     }
 
-                    uris.callback?.invoke()
+                    inProgress.add(newScope.launch {
+                        var res: ThumbnailId
+                        try {
+                            val uri = ContentUris.withAppendedId(
+                                MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                                uris.thumb
+                            )
+
+                            val (byt, hash) = getThumb(uri)
+                            res = ThumbnailId(uris.thumb, byt, hash)
+                        } catch (e: Exception) {
+                            res = ThumbnailId(uris.thumb, transparentImage, 0)
+                            Log.e("thumbnail coro", e.toString())
+                        }
+
+                        CoroutineScope(coContext).launch {
+                            galleryApi.addThumbnails(
+                                listOf(res),
+                                uris.notify
+                            ) {}
+                        }.join()
+
+                        uris.callback?.invoke()
+                    })
                 } catch (e: java.lang.Exception) {
                     Log.e("thumbnails", e.toString())
                 }
@@ -162,21 +150,42 @@ internal class Mover(
         }
     }
 
-    fun thumbnailsCallback(thumbs: List<Long>, callback: () -> Unit) {
+    fun thumbnailsCallback(thumb: Long, callback: () -> Unit) {
         scope.launch {
-            thumbnailsChannel.send(ThumbOp(thumbs, callback))
+            thumbnailsChannel.send(ThumbOp(thumb, callback))
         }
     }
 
-    fun notifyGallery() {
-        CoroutineScope(coContext).launch {
-            galleryApi.notify(null) {
+    fun getThumbnailCallback(thumb: Long, result: MethodChannel.Result) {
+        scope.launch {
+            try {
+                val (t, h) = getThumb(
+                    ContentUris.withAppendedId(
+                        MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                        thumb
+                    )
+                )
 
+                result.success(
+                    mapOf<String, Any>(Pair("data", t), Pair("hash", h))
+                )
+            } catch (e: Exception) {
+                result.success(
+                    mapOf<String, Any>(Pair("data", transparentImage), Pair("hash", 0L))
+                )
             }
         }
     }
 
-    fun refreshFiles(dirId: String) {
+
+    fun notifyGallery() {
+        CoroutineScope(coContext).launch {
+            galleryApi.notify(null) {
+            }
+        }
+    }
+
+    fun refreshFiles(dirId: String, isTrashed: Boolean = false) {
         if (isLockedFilesMux.isLocked) {
             return
         }
@@ -188,7 +197,7 @@ internal class Mover(
                 return@launch
             }
 
-            refreshDirectoryFiles(dirId, context, time)
+            refreshDirectoryFiles(dirId, context, time, isTrashed = isTrashed)
 
             isLockedFilesMux.unlock()
         }
@@ -214,6 +223,7 @@ internal class Mover(
         dir: String,
         context: Context,
         time: Long,
+        isTrashed: Boolean
     ) {
         val projection = arrayOf(
             MediaStore.Files.FileColumns.BUCKET_ID,
@@ -227,12 +237,31 @@ internal class Mover(
             MediaStore.Files.FileColumns.WIDTH
         )
 
+        val selection =
+            "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) ${if (isTrashed) "" else "AND ${MediaStore.Files.FileColumns.BUCKET_ID} = ? "}AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ?"
+
+        Log.i("refresh files", selection)
+
+        val bundle = Bundle().apply {
+            putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
+            putStringArray(
+                ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS,
+                if (isTrashed) arrayOf("image/vnd.djvu") else arrayOf(dir, "image/vnd.djvu")
+            )
+            putString(
+                ContentResolver.QUERY_ARG_SQL_SORT_ORDER,
+                "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC"
+            )
+            if (isTrashed) {
+                putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_ONLY)
+            }
+        }
+
         context.contentResolver.query(
             MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
             projection,
-            "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ${MediaStore.Files.FileColumns.BUCKET_ID} = ? AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ?",
-            arrayOf(dir, "image/vnd.djvu"),
-            "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC"
+            bundle,
+            null
         )?.use { cursor ->
             val id = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
             val bucket_id = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_ID)
@@ -361,7 +390,7 @@ internal class Mover(
 
     fun loadThumb(id: Long) {
         scope.launch {
-            thumbnailsChannel.send(ThumbOp(listOf(id), null, true))
+            thumbnailsChannel.send(ThumbOp(id, null, true))
         }
     }
 
@@ -378,7 +407,7 @@ internal class Mover(
         context.contentResolver.query(
             MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
             projection,
-            "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ?",
+            "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ? AND ${MediaStore.Files.FileColumns.IS_TRASHED} = 0",
             arrayOf("image/vnd.djvu"),
             "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC"
         )?.use { cursor ->
@@ -468,18 +497,18 @@ internal class Mover(
         }.join()
     }
 
-    private fun filterAndSendThumbs(thumbs: List<Long>, galleryApi: GalleryApi) {
-        CoroutineScope(coContext).launch {
-            galleryApi.thumbsExist(thumbs) {
-                if (it.isEmpty()) {
-                    return@thumbsExist
-                }
-                scope.launch {
-                    thumbnailsChannel.send(ThumbOp(it, null))
-                }
-            }
-        }
-    }
+//    private fun filterAndSendThumbs(thumbs: List<Long>, galleryApi: GalleryApi) {
+//        CoroutineScope(coContext).launch {
+//            galleryApi.thumbsExist(thumbs) {
+//                if (it.isEmpty()) {
+//                    return@thumbsExist
+//                }
+//                scope.launch {
+//                    thumbnailsChannel.send(ThumbOp(it, null))
+//                }
+//            }
+//        }
+//    }
 
     fun add(op: MoveOp) {
         scope.launch {

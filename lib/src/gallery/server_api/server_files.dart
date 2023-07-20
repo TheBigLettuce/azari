@@ -27,8 +27,7 @@ import '../../widgets/search_filter_grid.dart';
 
 class Images extends StatefulWidget {
   final Directory cell;
-  final GalleryAPIFilesReadWrite<ServerApiFilesExtra, DirectoryFile,
-      DirectoryFileShrinked> api;
+  final GalleryAPIFilesReadWrite<ServerApiFilesExtra, DirectoryFile> api;
   final GlobalKey<CallbackGridState> parentGrid;
   final void Function(String hash, Directory d) setThumbnail;
   final FocusNode parentFocus;
@@ -43,13 +42,13 @@ class Images extends StatefulWidget {
   State<Images> createState() => _ImagesState();
 }
 
-class _ImagesState extends State<Images>
-    with SearchFilterGrid<DirectoryFile, DirectoryFileShrinked> {
+class _ImagesState extends State<Images> with SearchFilterGrid<DirectoryFile> {
   late StreamSubscription<Settings?> settingsWatcher;
   bool isDisposed = false;
 
-  late final GridSkeletonStateFilter<DirectoryFile, DirectoryFileShrinked>
-      skeletonState = GridSkeletonStateFilter(
+  late final GridSkeletonStateFilter<DirectoryFile> skeletonState =
+      GridSkeletonStateFilter(
+    transform: (cell, _) => cell,
     filter: widget.api.getExtra().filter,
     index: kGalleryDrawerIndex,
     onWillPop: () => Future.value(true),
@@ -93,7 +92,7 @@ class _ImagesState extends State<Images>
     }
   }
 
-  void _deleteFiles(List<DirectoryFileShrinked> f) {
+  void _deleteFiles(List<DirectoryFile> f) {
     widget.api.deleteFiles(f, () {
       skeletonState.gridKey.currentState?.refresh();
       widget.parentGrid.currentState?.refresh();
@@ -129,7 +128,7 @@ class _ImagesState extends State<Images>
   Widget build(BuildContext context) {
     var insets = MediaQuery.viewPaddingOf(context);
 
-    return makeGridSkeleton<DirectoryFile, DirectoryFileShrinked>(
+    return makeGridSkeleton<DirectoryFile>(
       context,
       skeletonState,
       CallbackGrid(

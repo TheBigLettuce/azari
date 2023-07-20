@@ -8,16 +8,14 @@
 part of 'server_api_directories.dart';
 
 class _ImagesImpl
-    implements
-        GalleryAPIFilesReadWrite<ServerApiFilesExtra, DirectoryFile,
-            DirectoryFileShrinked> {
+    implements GalleryAPIFilesReadWrite<ServerApiFilesExtra, DirectoryFile> {
   Isar imageIsar;
 
   int page = 0;
   Dio client;
   Directory d;
 
-  late final filter = IsarFilter<DirectoryFile, DirectoryFileShrinked>(
+  late final filter = IsarFilter<DirectoryFile>(
       imageIsar, openServerApiInnerIsar(), (offset, limit, s) {
     return imageIsar.directoryFiles
         .filter()
@@ -163,13 +161,12 @@ class _ImagesImpl
   }
 
   @override
-  Future deleteFiles(
-      List<DirectoryFileShrinked> f, void Function() onDone) async {
+  Future deleteFiles(List<DirectoryFile> f, void Function() onDone) async {
     var resp = await client.postUri(
         Uri.parse(d.serverUrl).replace(path: "/delete/files"),
         options:
             Options(headers: _deviceId(), contentType: Headers.jsonContentType),
-        data: jsonEncode(f.map((e) => joinAll([e.dir, e.file])).toList()));
+        data: jsonEncode(f.map((e) => joinAll([e.dir, e.name])).toList()));
     if (resp.statusCode != 200) {
       throw resp.data;
     }

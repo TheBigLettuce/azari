@@ -15,21 +15,8 @@ import 'android_gallery_directory_file.dart';
 
 part 'android_gallery_directory.g.dart';
 
-class SystemGalleryDirectoryShrinked {
-  final String name;
-  final String bucketId;
-  final String relativeLoc;
-  final String volumeName;
-
-  const SystemGalleryDirectoryShrinked(
-      {required this.bucketId,
-      required this.name,
-      required this.relativeLoc,
-      required this.volumeName});
-}
-
 @collection
-class SystemGalleryDirectory implements Cell<SystemGalleryDirectoryShrinked> {
+class SystemGalleryDirectory implements Cell {
   @override
   Id? isarId;
 
@@ -88,14 +75,5 @@ class SystemGalleryDirectory implements Cell<SystemGalleryDirectoryShrinked> {
 
     return CellData(
         thumb: provier, name: name, stickers: [], loaded: record.$2);
-  }
-
-  @override
-  SystemGalleryDirectoryShrinked shrinkedData() {
-    return SystemGalleryDirectoryShrinked(
-        name: name,
-        bucketId: bucketId,
-        relativeLoc: relativeLoc,
-        volumeName: volumeName);
   }
 }

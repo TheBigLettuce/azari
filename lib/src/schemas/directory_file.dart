@@ -16,15 +16,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 part 'directory_file.g.dart';
 
-class DirectoryFileShrinked {
-  final String dir;
-  final String file;
-  final String thumbHash;
-
-  const DirectoryFileShrinked(
-      {required this.dir, required this.file, required this.thumbHash});
-}
-
 ListTile addInfoTile(
         {required AddInfoColorData colors,
         required String title,
@@ -38,7 +29,7 @@ ListTile addInfoTile(
     );
 
 @collection
-class DirectoryFile implements Cell<DirectoryFileShrinked> {
+class DirectoryFile implements Cell {
   @override
   Id? isarId;
 
@@ -143,8 +134,4 @@ class DirectoryFile implements Cell<DirectoryFileShrinked> {
       required this.thumbHash,
       required this.tags,
       required this.type});
-
-  @override
-  shrinkedData() =>
-      DirectoryFileShrinked(dir: dir, file: name, thumbHash: thumbHash);
 }

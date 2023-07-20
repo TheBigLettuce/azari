@@ -94,8 +94,3 @@ class CopyOp {
 
   const CopyOp({required this.from, required this.to});
 }
-
-@HostApi()
-abstract class AndroidApi {
-  void copyMedia(List<String> files, String dest);
-}

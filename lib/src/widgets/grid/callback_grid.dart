@@ -9,6 +9,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as material show AspectRatio;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/interface.dart';
@@ -34,9 +35,9 @@ class CloudflareBlockInterface {
   const CloudflareBlockInterface(this.api);
 }
 
-class GridBottomSheetAction<B> {
+class GridBottomSheetAction<T> {
   final IconData icon;
-  final void Function(List<B> selected) onPress;
+  final void Function(List<T> selected) onPress;
   final bool closeOnPress;
   final bool showOnlyWhenSingle;
 
@@ -44,11 +45,18 @@ class GridBottomSheetAction<B> {
       {this.showOnlyWhenSingle = false});
 }
 
-class GridDescription<B> {
+class Segments<T> {
+  final String unsegmentedLabel;
+  final String? Function(T cell) segment;
+
+  const Segments(this.segment, this.unsegmentedLabel);
+}
+
+class GridDescription<T> {
   final int drawerIndex;
   final String keybindsDescription;
   final String? pageName;
-  final List<GridBottomSheetAction<B>> actions;
+  final List<GridBottomSheetAction<T>> actions;
   final GridColumn columns;
   final bool listView;
   final PreferredSizeWidget? bottomWidget;
@@ -64,13 +72,13 @@ class GridDescription<B> {
   });
 }
 
-abstract class SearchFilter<T extends Cell<B>, B> {
+abstract class SearchFilter<T extends Cell> {
   void setValue(String s);
   int count();
   T getCell(int i);
 }
 
-class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
+class CallbackGrid<T extends Cell> extends StatefulWidget {
   final Future<int> Function()? loadNext;
   final Future<void> Function(int indx)? download;
   final Future<int>? Function() refresh;
@@ -101,13 +109,15 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
   final Stream<int>? progressTicker;
   final bool immutable;
 
-  final GridDescription<B> description;
+  final GridDescription<T> description;
   final FocusNode? belowMainFocus;
-  final List<IconButton> Function(ImageViewState<T> state)? addIconsImage;
+  final List<IconButton> Function(T)? addIconsImage;
   final void Function(ImageViewState<T> state)? pageChangeImage;
 
   final CloudflareBlockInterface Function()? cloudflareHook;
   final void Function(int from)? loadThumbsDirectly;
+
+  final Segments<T>? segments;
 
   const CallbackGrid(
       {Key? key,
@@ -122,6 +132,7 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
       this.pageChangeImage,
       required this.mainFocus,
       this.addIconsImage,
+      this.segments,
       this.immutable = true,
       this.tightMode = false,
       this.loadThumbsDirectly,
@@ -144,7 +155,7 @@ class CallbackGrid<T extends Cell<B>, B> extends StatefulWidget {
       : super(key: key);
 
   @override
-  State<CallbackGrid<T, B>> createState() => CallbackGridState<T, B>();
+  State<CallbackGrid<T>> createState() => CallbackGridState<T>();
 }
 
 class SearchAndFocus {
@@ -155,14 +166,15 @@ class SearchAndFocus {
   const SearchAndFocus(this.search, this.focus, {this.onPressed});
 }
 
-class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
-    with _Selection<T, B> {
+class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
+    with _Selection<T> {
   late ScrollController controller =
       ScrollController(initialScrollOffset: widget.initalScrollPosition);
+  final ScrollController fakeController = ScrollController();
 
   StreamSubscription<int>? ticker;
 
-  GridMutationInterface<T, B>? get mutationInterface =>
+  GridMutationInterface<T>? get mutationInterface =>
       widget.immutable ? null : _state;
 
   @override
@@ -234,6 +246,7 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
 
     controller.dispose();
     widget.belowMainFocus?.requestFocus();
+    fakeController.dispose();
 
     super.dispose();
   }
@@ -355,6 +368,332 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
             context, widget.description.drawerIndex, widget.scaffoldKey),
       };
 
+  Widget _segmentLabel(String text) => Padding(
+        padding: const EdgeInsets.all(8),
+        child: Text(
+          text,
+          style: Theme.of(context)
+              .textTheme
+              .headlineLarge
+              ?.copyWith(letterSpacing: 2),
+        ),
+      );
+
+  Widget _makeList(BuildContext context) => SliverPadding(
+        padding: EdgeInsets.only(bottom: widget.systemNavigationInsets.bottom),
+        sliver: SliverList.separated(
+          separatorBuilder: (context, index) => const Divider(
+            height: 1,
+          ),
+          itemCount: _state.cellCount,
+          itemBuilder: (context, index) {
+            var cell = _state.getCell(index);
+            var cellData = cell.getCellData(widget.description.listView);
+            if (cellData.loaded != null && cellData.loaded == false) {
+              widget.loadThumbsDirectly?.call(index);
+            }
+
+            return _WrappedSelection(
+              selectUntil: _selectUnselectUntil,
+              thisIndx: index,
+              isSelected: _isSelected(index),
+              selectionEnabled: selected.isNotEmpty,
+              selectUnselect: () => _selectOrUnselect(index, cell),
+              child: ListTile(
+                onLongPress: () => _selectOrUnselect(index, cell),
+                onTap: () => _onPressed(context, index),
+                leading: CircleAvatar(
+                  backgroundColor: Theme.of(context).colorScheme.background,
+                  foregroundImage: cellData.thumb,
+                  onForegroundImageError: (_, __) {},
+                ),
+                title: Text(
+                  cellData.name,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ).animate().fadeIn();
+          },
+        ),
+      );
+
+  Widget _makeGrid(BuildContext context) => SliverPadding(
+        padding: EdgeInsets.only(bottom: widget.systemNavigationInsets.bottom),
+        sliver: SliverGrid.builder(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              childAspectRatio: widget.aspectRatio,
+              crossAxisCount: widget.description.columns.number),
+          itemCount: _state.cellCount,
+          itemBuilder: (context, indx) {
+            var m = _state.getCell(indx);
+            var cellData = m.getCellData(widget.description.listView);
+            if (cellData.loaded != null && cellData.loaded == false) {
+              widget.loadThumbsDirectly?.call(indx);
+            }
+
+            return _WrappedSelection(
+              selectionEnabled: selected.isNotEmpty,
+              thisIndx: indx,
+              selectUntil: _selectUnselectUntil,
+              selectUnselect: () => _selectOrUnselect(indx, m),
+              isSelected: _isSelected(indx),
+              child: GridCell(
+                cell: cellData,
+                hidealias: widget.hideAlias,
+                indx: indx,
+                tight: widget.tightMode,
+                onPressed: _onPressed,
+                onLongPress: () =>
+                    _selectOrUnselect(indx, m), //extend: maxExtend,
+              ),
+            );
+          },
+        ),
+      );
+
+//   Widget _makeSegmentedGrid(BuildContext context, List<int> segIndx) =>
+//       SliverGrid.builder(
+//         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+//             childAspectRatio: widget.aspectRatio,
+//             crossAxisCount: widget.description.columns.number),
+//         itemCount: segIndx.length,
+//         itemBuilder: (context, indx) {
+//           indx = segIndx[indx] - 1;
+//           print("got: $indx");
+//           var m = _state.getCell(indx);
+//           var cellData = m.getCellData(widget.description.listView);
+//           if (cellData.loaded != null && cellData.loaded == false) {
+//             widget.loadThumbsDirectly?.call(indx);
+//           }
+
+//           return _WrappedSelection(
+//             selectionEnabled: selected.isNotEmpty,
+//             thisIndx: indx,
+//             selectUntil: _selectUnselectUntil,
+//             selectUnselect: () => _selectOrUnselect(indx, m),
+//             isSelected: _isSelected(indx),
+//             child: GridCell(
+//               cell: cellData,
+//               hidealias: widget.hideAlias,
+//               indx: indx,
+//               tight: widget.tightMode,
+//               onPressed: _onPressed,
+//               onLongPress: () =>
+//                   _selectOrUnselect(indx, m), //extend: maxExtend,
+//             ),
+//           );
+//         },
+//       );
+
+// Widget _makeSegments(BuildContext context) {
+//     final unsegmented = widget.segments!.getUnsegmented().toList();
+//     final segMap = widget.segments!
+//         .getSegmentMap()
+//         .map((key, value) => MapEntry(key, value))
+//       ..removeWhere((key, value) {
+//         if (value.length == 1) {
+//           unsegmented.add(value[0]);
+//           return true;
+//         }
+
+//         return false;
+//       });
+
+//     return SliverPadding(
+//       padding: MediaQuery.of(context).viewPadding +
+//           MediaQuery.of(context).viewInsets,
+//       sliver: SliverList.builder(
+//         itemCount: unsegmented.isNotEmpty ? segMap.length + 1 : segMap.length,
+//         itemBuilder: (context, index) {
+//           return CustomScrollView(
+//             shrinkWrap: true,
+//             primary: false,
+//             physics: const NeverScrollableScrollPhysics(),
+//             slivers: [
+//               _segmentLabel(index == segMap.length
+//                   ? widget.segments!.unsegmentedLabel
+//                   : segMap.keys.elementAt(index)),
+//               _makeSegmentedGrid(
+//                   context,
+//                   index == segMap.length
+//                       ? unsegmented
+//                       : segMap[segMap.keys.elementAt(index)]!)
+//             ],
+//           );
+//         },
+//       ),
+//     );
+//   }
+
+  Widget _makeSegmentedRow(
+    BuildContext context,
+    List<int> val,
+    double constraints,
+    void Function(int) selectUntil,
+    void Function(int, T) selectUnselect,
+    bool Function(int) isSelected,
+  ) =>
+      Row(
+        children: val.map((indx) {
+          // indx = indx - 1;
+          var m = _state.getCell(indx);
+          var cellData = m.getCellData(widget.description.listView);
+          if (cellData.loaded != null && cellData.loaded == false) {
+            widget.loadThumbsDirectly?.call(indx);
+          }
+
+          return ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: constraints),
+            child: material.AspectRatio(
+              aspectRatio: widget.aspectRatio,
+              child: _WrappedSelection(
+                selectionEnabled: selected.isNotEmpty,
+                thisIndx: indx,
+                selectUntil: selectUntil,
+                selectUnselect: () => selectUnselect(indx, m),
+                isSelected: isSelected(indx),
+                child: GridCell(
+                  cell: cellData,
+                  hidealias: widget.hideAlias,
+                  indx: indx,
+                  tight: widget.tightMode,
+                  onPressed: _onPressed,
+                  onLongPress: () =>
+                      selectUnselect(indx, m), //extend: maxExtend,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      );
+
+  Widget _makeSegments(BuildContext context) {
+    final segRows = <dynamic>[];
+    final segMap = <String, List<int>>{};
+
+    final unsegmented = <int>[];
+
+    for (var i = 0; i < _state.cellCount; i++) {
+      final res = widget.segments!.segment(_state.getCell(i));
+      if (res == null) {
+        unsegmented.add(i);
+      } else {
+        segMap[res] = [...(segMap[res] ?? []), i];
+      }
+    }
+
+    segMap.removeWhere((key, value) {
+      if (value.length == 1) {
+        unsegmented.add(value[0]);
+        return true;
+      }
+
+      return false;
+    });
+
+    makeRows(List<int> value) {
+      var row = <int>[];
+
+      for (final i in value) {
+        row.add(i);
+        if (row.length == widget.description.columns.number) {
+          segRows.add(row);
+          row = [];
+        }
+      }
+
+      if (row.isNotEmpty) {
+        segRows.add(row);
+      }
+    }
+
+    segMap.forEach(
+      (key, value) {
+        segRows.add(key);
+
+        makeRows(value);
+      },
+    );
+
+    if (unsegmented.isNotEmpty) {
+      segRows.add(widget.segments!.unsegmentedLabel);
+      makeRows(unsegmented);
+    }
+
+    final constraints =
+        MediaQuery.of(context).size.width / widget.description.columns.number;
+
+    return SliverPadding(
+      padding: MediaQuery.of(context).viewPadding +
+          MediaQuery.of(context).viewInsets,
+      sliver: SliverList.builder(
+        itemBuilder: (context, indx) {
+          if (indx >= segRows.length) {
+            return null;
+          }
+          final val = segRows[indx];
+          if (val is String) {
+            return _segmentLabel(val);
+          } else if (val is List<int>) {
+            return _makeSegmentedRow(context, val, constraints, (cellindx) {
+              // cellindx++;
+              // if (lastSelected != null) {
+              //   if (lastSelected == indx) {
+              //     return;
+              //   }
+
+              //   final lastSelectedI = val.indexOf(lastSelected! + 1);
+              //   final targetI = val.indexOf(cellindx);
+
+              //   if (lastSelectedI == -1 || targetI == -1) {
+              //     return;
+              //   }
+
+              //   print("l:$lastSelected, $val");
+
+              //   final selection = !_isSelected(indx);
+
+              //   if (targetI < lastSelectedI) {
+              //     for (var i = lastSelectedI; i >= targetI; i--) {
+              //       final celli = val[i];
+              //       if (selection) {
+              //         selected[celli] = _state.getCell(celli);
+              //       } else {
+              //         _removeSelection(celli);
+              //       }
+              //       lastSelected = celli;
+              //     }
+              //     setState(() {});
+              //   } else if (targetI > lastSelectedI) {
+              //     for (var i = lastSelectedI; i <= targetI; i++) {
+              //       final celli = val[i];
+
+              //       if (selection) {
+              //         selected[celli] = _state.getCell(celli);
+              //       } else {
+              //         _removeSelection(celli);
+              //       }
+              //       lastSelected = celli;
+              //     }
+              //     setState(() {});
+              //   }
+
+              //   currentBottomSheet?.setState?.call(() {});
+              // }
+            }, (i, cell) {
+              _selectOrUnselect(i, cell);
+            }, (i) {
+              return _isSelected(i);
+            });
+          }
+
+          throw "invalid type";
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     var bindings = _makeBindings(context);
@@ -373,7 +712,7 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
           child: RefreshIndicator(
               onRefresh: _state._onRefresh,
               child: Scrollbar(
-                  interactive: true,
+                  interactive: false,
                   thumbVisibility:
                       Platform.isAndroid || Platform.isIOS ? false : true,
                   thickness: 6,
@@ -507,104 +846,20 @@ class CallbackGridState<T extends Cell<B>, B> extends State<CallbackGrid<T, B>>
                               );
                             },
                           )),
-                      !_state.isRefreshing && _state.cellCount == 0
-                          ? SliverToBoxAdapter(
-                              child: _state.cloudflareBlocked == true &&
-                                      widget.cloudflareHook != null
-                                  ? CloudflareBlock(
-                                      interface: widget.cloudflareHook!(),
-                                    )
-                                  : const EmptyWidget())
-                          : widget.description.listView
-                              ? SliverPadding(
-                                  padding: EdgeInsets.only(
-                                      bottom:
-                                          widget.systemNavigationInsets.bottom),
-                                  sliver: SliverList.separated(
-                                    separatorBuilder: (context, index) =>
-                                        const Divider(
-                                      height: 1,
-                                    ),
-                                    itemCount: _state.cellCount,
-                                    itemBuilder: (context, index) {
-                                      var cell = _state.getCell(index);
-                                      var cellData = cell.getCellData(
-                                          widget.description.listView);
-                                      if (cellData.loaded != null &&
-                                          cellData.loaded == false) {
-                                        widget.loadThumbsDirectly?.call(index);
-                                      }
-
-                                      return _WrappedSelection(
-                                        selectUntil: _selectUnselectUntil,
-                                        thisIndx: index,
-                                        isSelected: _isSelected(index),
-                                        selectionEnabled: selected.isNotEmpty,
-                                        selectUnselect: () =>
-                                            _selectOrUnselect(index, cell),
-                                        child: ListTile(
-                                          onLongPress: () =>
-                                              _selectOrUnselect(index, cell),
-                                          onTap: () =>
-                                              _onPressed(context, index),
-                                          leading: CircleAvatar(
-                                            backgroundColor: Theme.of(context)
-                                                .colorScheme
-                                                .background,
-                                            foregroundImage: cellData.thumb,
-                                            onForegroundImageError: (_, __) {},
-                                          ),
-                                          title: Text(
-                                            cellData.name,
-                                            softWrap: false,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ).animate().fadeIn();
-                                    },
-                                  ),
-                                )
-                              : SliverPadding(
-                                  padding: EdgeInsets.only(
-                                      bottom:
-                                          widget.systemNavigationInsets.bottom),
-                                  sliver: SliverGrid.builder(
-                                    gridDelegate:
-                                        SliverGridDelegateWithFixedCrossAxisCount(
-                                            childAspectRatio:
-                                                widget.aspectRatio,
-                                            crossAxisCount: widget
-                                                .description.columns.number),
-                                    itemCount: _state.cellCount,
-                                    itemBuilder: (context, indx) {
-                                      var m = _state.getCell(indx);
-                                      var cellData = m.getCellData(
-                                          widget.description.listView);
-                                      if (cellData.loaded != null &&
-                                          cellData.loaded == false) {
-                                        widget.loadThumbsDirectly?.call(indx);
-                                      }
-
-                                      return _WrappedSelection(
-                                        selectionEnabled: selected.isNotEmpty,
-                                        thisIndx: indx,
-                                        selectUntil: _selectUnselectUntil,
-                                        selectUnselect: () =>
-                                            _selectOrUnselect(indx, m),
-                                        isSelected: _isSelected(indx),
-                                        child: GridCell(
-                                          cell: cellData,
-                                          hidealias: widget.hideAlias,
-                                          indx: indx,
-                                          tight: widget.tightMode,
-                                          onPressed: _onPressed,
-                                          onLongPress: () => _selectOrUnselect(
-                                              indx, m), //extend: maxExtend,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
+                      if (widget.segments == null)
+                        !_state.isRefreshing && _state.cellCount == 0
+                            ? SliverToBoxAdapter(
+                                child: _state.cloudflareBlocked == true &&
+                                        widget.cloudflareHook != null
+                                    ? CloudflareBlock(
+                                        interface: widget.cloudflareHook!(),
+                                      )
+                                    : const EmptyWidget())
+                            : widget.description.listView
+                                ? _makeList(context)
+                                : _makeGrid(context)
+                      else
+                        _makeSegments(context),
                     ],
                   ))),
         ));

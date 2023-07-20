@@ -10,8 +10,7 @@ part of 'android_api_directories.dart';
 class AndroidGalleryFilesExtra {
   final _AndroidGalleryFiles _impl;
 
-  FilterInterface<SystemGalleryDirectoryFile,
-      SystemGalleryDirectoryFileShrinked> get filter => _impl.filter;
+  FilterInterface<SystemGalleryDirectoryFile> get filter => _impl.filter;
 
   void loadThumbnails(int thumb) {
     _thumbs(thumb);
@@ -38,6 +37,8 @@ class AndroidGalleryFilesExtra {
     _impl.isThumbsLoading = false;
   }
 
+  bool isTrash() => _impl.isTrash;
+
   void setOnThumbnailCallback(void Function() callback) {
     _impl.onThumbUpdate = callback;
   }
@@ -45,6 +46,50 @@ class AndroidGalleryFilesExtra {
   void setRefreshGridCallback(void Function() callback) {
     _impl.refreshGrid = callback;
   }
+
+  void loadNextThumbnails(void Function() callback) async {
+    var offset = 0;
+    var count = 0;
+    List<Future<ThumbnailId>> thumbnails = [];
+
+    for (;;) {
+      final elems = _impl.db.systemGalleryDirectoryFiles
+          .where()
+          .offset(offset)
+          .limit(40)
+          .findAllSync();
+      offset += elems.length;
+
+      if (elems.isEmpty) {
+        break;
+      }
+
+      for (final file in elems) {
+        if (file.getThumbnail() == null) {
+          count++;
+
+          thumbnails.add(PlatformFunctions.getThumbDirectly(file.id));
+
+          if (thumbnails.length > 8) {
+            GalleryImpl.instance().addThumbnails(await thumbnails.wait, false);
+            thumbnails.clear();
+          }
+        }
+      }
+
+      if (count >= 80) {
+        break;
+      }
+    }
+
+    if (thumbnails.isNotEmpty) {
+      GalleryImpl.instance().addThumbnails(await thumbnails.wait, false);
+    }
+
+    callback();
+  }
+
+  bool get supportsDirectRefresh => false;
 
   void setRefreshingStatusCallback(
       void Function(int i, bool inRefresh, bool empty) callback) {
@@ -73,7 +118,7 @@ class AndroidGalleryFilesExtra {
 class _AndroidGalleryFiles
     implements
         GalleryAPIFilesRead<AndroidGalleryFilesExtra,
-            SystemGalleryDirectoryFile, SystemGalleryDirectoryFileShrinked> {
+            SystemGalleryDirectoryFile> {
   Isar db;
   final String bucketId;
   void Function() unsetCurrentImages;
@@ -84,15 +129,26 @@ class _AndroidGalleryFiles
   final int startTime;
   final String target;
   bool isThumbsLoading = false;
+  final bool isTrash;
 
   @override
   AndroidGalleryFilesExtra getExtra() {
     return AndroidGalleryFilesExtra._(this);
   }
 
-  late final filter = IsarFilter<SystemGalleryDirectoryFile,
-          SystemGalleryDirectoryFileShrinked>(db, openAndroidGalleryInnerIsar(),
-      (offset, limit, s) {
+  late final IsarFilter<SystemGalleryDirectoryFile> filter =
+      IsarFilter<SystemGalleryDirectoryFile>(db, openAndroidGalleryInnerIsar(),
+          (offset, limit, s) {
+    if (filter.currentSorting == SortingMode.size) {
+      return db.systemGalleryDirectoryFiles
+          .filter()
+          .nameContains(s, caseSensitive: false)
+          .sortBySizeDesc()
+          .offset(offset)
+          .limit(limit)
+          .findAllSync();
+    }
+
     if (s.isEmpty) {
       return db.systemGalleryDirectoryFiles
           .where()
@@ -100,6 +156,7 @@ class _AndroidGalleryFiles
           .limit(limit)
           .findAllSync();
     }
+
     return db.systemGalleryDirectoryFiles
         .filter()
         .nameContains(s, caseSensitive: false)
@@ -128,7 +185,11 @@ class _AndroidGalleryFiles
     try {
       db.writeTxnSync(() => db.systemGalleryDirectoryFiles.clearSync());
 
-      PlatformFunctions.refreshFiles(bucketId);
+      if (isTrash) {
+        PlatformFunctions.refreshTrashed();
+      } else {
+        PlatformFunctions.refreshFiles(bucketId);
+      }
     } catch (e, trace) {
       log("android gallery",
           level: Level.SEVERE.value, error: e, stackTrace: trace);
@@ -138,6 +199,7 @@ class _AndroidGalleryFiles
   }
 
   _AndroidGalleryFiles(
-      this.db, this.bucketId, this.unsetCurrentImages, this.target)
+      this.db, this.bucketId, this.unsetCurrentImages, this.target,
+      {this.isTrash = false})
       : startTime = DateTime.now().millisecondsSinceEpoch;
 }

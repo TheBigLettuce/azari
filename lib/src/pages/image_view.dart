@@ -5,6 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
@@ -194,7 +195,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final void Function(int post) scrollUntill;
   final void Function(double? pos, int? selectedCell) updateTagScrollPos;
   final Future<int> Function()? onNearEnd;
-  final List<IconButton> Function(ImageViewState<T> state)? addIcons;
+  final List<IconButton> Function(T)? addIcons;
   final void Function(int i)? download;
   final double? infoScrollOffset;
   final Color systemOverlayRestoreColor;
@@ -480,8 +481,9 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   PhotoViewGalleryPageOptions _makeAndroidImage(
           Size size, String uri, bool isGif) =>
       PhotoViewGalleryPageOptions.customChild(
-          filterQuality: FilterQuality.high,
+          gestureDetectorBehavior: HitTestBehavior.translucent,
           disableGestures: true,
+          filterQuality: FilterQuality.high,
           child: Center(
             child: SizedBox(
                 height: MediaQuery.of(context).size.height,
@@ -489,6 +491,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                 child: AspectRatio(
                   aspectRatio: MediaQuery.of(context).size.aspectRatio,
                   child: InteractiveViewer(
+                    trackpadScrollCausesScale: true,
                     child: Center(
                       child: AspectRatio(
                         aspectRatio: size.aspectRatio == 0
@@ -544,7 +547,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                     ? null
                     : widget.addIcons != null
                         ? () {
-                            final items = widget.addIcons!(this);
+                            final items = widget.addIcons!(currentCell);
                             if (items.isNotEmpty) {
                               return Theme(
                                   data: Theme.of(context).copyWith(
@@ -726,6 +729,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                               },
                         onTap: _onTap,
                         child: PhotoViewGallery.builder(
+                            scaleStateChangedCallback: (value) {},
                             loadingBuilder: (context, event) {
                               final expectedBytes = event?.expectedTotalBytes;
                               final loadedBytes = event?.cumulativeBytesLoaded;
@@ -793,7 +797,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                             pageController: controller,
                             itemCount: cellCount,
                             builder: (context, indx) {
-                              var fileContent =
+                              final fileContent =
                                   widget.getCell(indx).fileDisplay();
 
                               return switch (fileContent) {

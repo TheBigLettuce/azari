@@ -25,10 +25,10 @@ import 'package:logging/logging.dart';
 import '../../schemas/settings.dart';
 
 class CallbackDescription {
-  final void Function(SystemGalleryDirectoryShrinked? chosen, String? newDir) c;
+  final void Function(SystemGalleryDirectory? chosen, String? newDir) c;
   final String description;
 
-  void call(SystemGalleryDirectoryShrinked? chosen, String? newDir) {
+  void call(SystemGalleryDirectory? chosen, String? newDir) {
     c(chosen, newDir);
   }
 
@@ -36,10 +36,10 @@ class CallbackDescription {
 }
 
 class CallbackDescriptionNested {
-  final void Function(SystemGalleryDirectoryFileShrinked chosen) c;
+  final void Function(SystemGalleryDirectoryFile chosen) c;
   final String description;
 
-  void call(SystemGalleryDirectoryFileShrinked chosen) {
+  void call(SystemGalleryDirectoryFile chosen) {
     c(chosen);
   }
 
@@ -59,7 +59,7 @@ class AndroidDirectories extends StatefulWidget {
 }
 
 class _AndroidDirectoriesState extends State<AndroidDirectories>
-    with SearchFilterGrid {
+    with SearchFilterGrid<SystemGalleryDirectory> {
   late StreamSubscription<Settings?> settingsWatcher;
   bool proceed = true;
   late final extra = api.getExtra()
@@ -81,9 +81,9 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
       }
     });
 
-  late final GridSkeletonStateFilter<SystemGalleryDirectory,
-          SystemGalleryDirectoryShrinked> state =
+  late final GridSkeletonStateFilter<SystemGalleryDirectory> state =
       GridSkeletonStateFilter(
+          transform: (cell, _) => cell,
           filter: extra.filter,
           index: kGalleryDrawerIndex,
           onWillPop: () => popUntilSenitel(context));
@@ -111,6 +111,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
 
       if (!inRefresh || empty) {
         state.gridKey.currentState?.mutationInterface?.setIsRefreshing(false);
+        performSearch("");
         setState(() {});
       }
     });
@@ -137,8 +138,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
   Widget build(BuildContext context) {
     var insets = MediaQuery.viewPaddingOf(context);
 
-    return makeGridSkeleton<SystemGalleryDirectory,
-            SystemGalleryDirectoryShrinked>(
+    return makeGridSkeleton<SystemGalleryDirectory>(
         context,
         state,
         CallbackGrid(
@@ -166,11 +166,31 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                         },
                         icon: const Icon(Icons.create_new_folder_outlined))
                   ]
-                : null,
+                : [
+                    IconButton(
+                        onPressed: () {
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) {
+                            return AndroidFiles(
+                                api: extra.trash(),
+                                dirName: "trash",
+                                bucketId: "trash");
+                          }));
+                        },
+                        icon: const Icon(Icons.delete))
+                  ],
             aspectRatio:
                 state.settings.gallerySettings.directoryAspectRatio?.value ?? 1,
             hideAlias: state.settings.gallerySettings.hideDirectoryName,
             immutable: false,
+            segments: Segments((cell) {
+              final name = cell.name.split(" ");
+              if (name.isEmpty || name.length == 1) {
+                return null;
+              } else {
+                return name.first;
+              }
+            }, "Uncategorized"),
             mainFocus: state.mainFocus,
             loadThumbsDirectly: extra.loadThumbs,
             initalCellCount: widget.callback != null
@@ -194,8 +214,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
               if (widget.callback != null) {
                 widget.callback!(
                     state.gridKey.currentState!.mutationInterface!
-                        .getCell(indx)
-                        .shrinkedData(),
+                        .getCell(indx),
                     null);
                 Navigator.pop(context);
               } else {

@@ -19,8 +19,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../schemas/directory_file.dart';
 
 class ModifyDirectory extends StatefulWidget {
-  final GalleryAPIReadWrite<void, void, Directory, Directory, DirectoryFile,
-      DirectoryFileShrinked> api;
+  final GalleryAPIReadWrite<void, void, Directory, DirectoryFile> api;
   final Directory old;
   final GlobalKey<CallbackGridState> refreshKey;
   const ModifyDirectory(this.api,

@@ -224,7 +224,7 @@ String _fileDownloadUrl(String sampleUrl, String originalUrl) {
 }
 
 @collection
-class Post implements Cell<PostShrinked> {
+class Post implements Cell {
   @override
   Id? isarId;
 
@@ -409,17 +409,4 @@ class Post implements Cell<PostShrinked> {
       if (tags.contains("original")) FilteringMode.original.icon
     ]);
   }
-
-  @override
-  shrinkedData() => PostShrinked(
-      fileUrl: fileDownloadUrl(), fileName: filename(), tags: tags.split(" "));
-}
-
-class PostShrinked {
-  final String fileUrl;
-  final String fileName;
-  final List<String> tags;
-
-  const PostShrinked(
-      {required this.fileUrl, required this.fileName, required this.tags});
 }
