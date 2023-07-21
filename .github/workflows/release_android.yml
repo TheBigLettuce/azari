@@ -31,6 +31,7 @@ jobs:
         run: |
           echo "storeFile=${{ steps.android_keystore.outputs.filePath }}" > android/key.properties
           echo "storePassword=${{ secrets.STORE_PASSWORD }}" >> android/key.properties
+          echo "keyPassword=${{ secrets.STORE_PASSWORD }}" >> android/key.properties
           echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
           
       - uses: actions/setup-java@v2
