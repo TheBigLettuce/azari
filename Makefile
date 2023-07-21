@@ -37,6 +37,7 @@ run: app
 
 regenerate: 
 	flutter gen-l10n
+	mkdir -p test
 	flutter pub run pigeon --input pigeons/gallery.dart
 	dart run build_runner build
 	mkdir -p lib/src/dbus
