@@ -47,7 +47,7 @@ app.*.map.json
 /android/app/release
 
 # generated code
-/lib/src/dbus/*
+# /lib/src/dbus/*
 /lib/src/gallery/android_api/*.g.dart
 /lib/src/schemas/*.g.dart
 /test/test_api.g.dart
