@@ -1,6 +1,6 @@
 # Azari
 
-A *booru client app.
+A *booru client app, built Dart/Flutter.
 
 ## Building for Android
 
