@@ -52,6 +52,7 @@ app.*.map.json
 /lib/src/schemas/*.g.dart
 /test/test_api.g.dart
 
+/.vscode/settings
 # GNU/Linux packaging
 /app
 /AppDir
