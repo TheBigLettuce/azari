@@ -39,7 +39,7 @@ regenerate:
 	flutter gen-l10n
 	flutter pub run pigeon --input pigeons/gallery.dart
 	dart run build_runner build
-	mkdir lib/src/dbus
+	mkdir -p lib/src/dbus
 	dart-dbus generate-remote-object dbus_services/kf5_org.kde.JobView.xml -o lib/src/dbus/job_view.g.dart
 	dart-dbus generate-remote-object dbus_services/kf5_org.kde.JobViewServer.xml -o lib/src/dbus/job_view_server.g.dart
 	@echo -e "\n\nPlease read: D-Bus generated code might be wrong, you have to fix it by hand"
