@@ -7,7 +7,6 @@
 
 import 'dart:developer';
 import 'dart:typed_data';
-import 'dart:io' as io;
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';

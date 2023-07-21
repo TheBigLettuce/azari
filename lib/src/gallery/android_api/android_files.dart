@@ -146,7 +146,7 @@ class _AndroidFilesState extends State<AndroidFiles>
       if (accu.skipped != 0) {
         ScaffoldMessenger.of(context).removeCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("Results are incomplete"), // TODO: change
+          content: const Text("Results are incomplete"), // TODO: change
           duration: const Duration(seconds: 20),
           action: SnackBarAction(
               label: "Load more", // TODO: change
@@ -155,7 +155,7 @@ class _AndroidFilesState extends State<AndroidFiles>
                   try {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         duration: 4.seconds,
-                        content: Text("Loaded"))); // TODO: change
+                        content: const Text("Loaded"))); // TODO: change
                     performSearch(searchTextController.text);
                   } catch (_) {}
                 });

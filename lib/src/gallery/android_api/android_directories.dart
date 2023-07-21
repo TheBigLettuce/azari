@@ -8,6 +8,7 @@
 import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
+import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
@@ -22,6 +23,7 @@ import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:logging/logging.dart';
+import '../../booru/interface.dart';
 import '../../schemas/settings.dart';
 
 class CallbackDescription {
@@ -111,7 +113,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
 
       if (!inRefresh || empty) {
         state.gridKey.currentState?.mutationInterface?.setIsRefreshing(false);
-        performSearch("");
+        performSearch(searchTextController.text);
         setState(() {});
       }
     });
@@ -184,12 +186,19 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
             hideAlias: state.settings.gallerySettings.hideDirectoryName,
             immutable: false,
             segments: Segments((cell) {
-              final name = cell.name.split(" ");
-              if (name.isEmpty || name.length == 1) {
-                return null;
-              } else {
-                return name.first;
+              for (final booru in Booru.values) {
+                if (booru.url == cell.name) {
+                  return ("Booru", true);
+                }
               }
+
+              final dirTag = PostTags().directoryTag(cell.bucketId);
+              if (dirTag != null) {
+                return (dirTag, false);
+              }
+
+              final name = cell.name.split(" ");
+              return (name.first, false);
             }, "Uncategorized"),
             mainFocus: state.mainFocus,
             loadThumbsDirectly: extra.loadThumbs,
@@ -239,6 +248,80 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                 widget.callback != null || widget.nestedCallback != null
                     ? []
                     : [
+                        GridBottomSheetAction(Icons.tag, (selected) {
+                          Navigator.push(
+                              context,
+                              DialogRoute(
+                                context: context,
+                                builder: (context) {
+                                  final currentTag = PostTags()
+                                      .directoryTag(selected[0].bucketId);
+                                  return AlertDialog(
+                                      title: const Text(
+                                          "Current tag"), // TODO: change
+                                      content: ListTile(
+                                        title: Text(currentTag ?? "none",
+                                            style: currentTag == null
+                                                ? const TextStyle(
+                                                    fontStyle: FontStyle.italic)
+                                                : null),
+                                        leading: IconButton(
+                                            onPressed: () {
+                                              PostTags().removeDirectoryTag(
+                                                  selected[0].bucketId);
+                                              setState(() {});
+                                              Navigator.pop(context);
+                                            },
+                                            icon: const Icon(Icons.close)),
+                                        trailing: IconButton(
+                                            onPressed: () {
+                                              Navigator.push(
+                                                  context,
+                                                  DialogRoute(
+                                                    context: context,
+                                                    builder: (context) {
+                                                      return AlertDialog(
+                                                        title: const Text(
+                                                            "Enter new tag"), // TODO: change
+                                                        content: TextFormField(
+                                                          autofocus: true,
+                                                          initialValue:
+                                                              currentTag,
+                                                          onFieldSubmitted:
+                                                              (value) {
+                                                            if (value
+                                                                .isNotEmpty) {
+                                                              PostTags()
+                                                                  .setDirectoryTag(
+                                                                      selected[
+                                                                              0]
+                                                                          .bucketId,
+                                                                      value);
+                                                              setState(() {});
+                                                              Navigator.pop(
+                                                                  context);
+                                                              Navigator.pop(
+                                                                  context);
+                                                            } else {
+                                                              ScaffoldMessenger
+                                                                      .of(
+                                                                          context)
+                                                                  .showSnackBar(
+                                                                      const SnackBar(
+                                                                          content:
+                                                                              Text("Value is empty"))); // TODO : change
+                                                            }
+                                                          },
+                                                        ),
+                                                      );
+                                                    },
+                                                  ));
+                                            },
+                                            icon: const Icon(Icons.edit)),
+                                      ));
+                                },
+                              ));
+                        }, true, showOnlyWhenSingle: true),
                         GridBottomSheetAction(Icons.hide_image_outlined,
                             (selected) {
                           extra.addBlacklisted(selected

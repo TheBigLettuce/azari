@@ -20,6 +20,7 @@ import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 import 'package:gallery/src/schemas/blacklisted_directory.dart';
 import 'package:gallery/src/schemas/directory.dart';
 import 'package:gallery/src/schemas/directory_file.dart';
+import 'package:gallery/src/schemas/directory_tags.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/gallery_last_modified.dart';
 import 'package:gallery/src/schemas/grid_restore.dart';
@@ -186,7 +187,8 @@ Isar openUploadsDbIsar() {
 }
 
 Isar openTagsDbIsar() {
-  return Isar.openSync([LocalTagsSchema, LocalTagDictionarySchema],
+  return Isar.openSync(
+      [LocalTagsSchema, LocalTagDictionarySchema, DirectoryTagSchema],
       directory: _directoryPath, inspector: false, name: "localTags");
 }
 

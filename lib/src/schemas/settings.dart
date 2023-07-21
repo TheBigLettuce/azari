@@ -10,6 +10,8 @@ import 'dart:io';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:isar/isar.dart';
 
+import '../booru/interface.dart';
+
 part 'settings.g.dart';
 
 @collection
@@ -130,27 +132,6 @@ class GallerySettings {
         ..filesColumns = filesColumns ?? this.filesColumns
         ..directoryColumns = directoryColumns ?? this.directoryColumns;
 }
-
-const _kDanbooruPrefix = "d";
-const _kGelbooruPrefix = "g";
-
-enum Booru {
-  gelbooru(string: "Gelbooru", prefix: _kGelbooruPrefix, url: "gelbooru.com"),
-  danbooru(
-      string: "Danbooru", prefix: _kDanbooruPrefix, url: "danbooru.donmai.us");
-
-  final String string;
-  final String prefix;
-  final String url;
-
-  const Booru({required this.string, required this.prefix, required this.url});
-}
-
-Booru? chooseBooruPrefix(String prefix) => switch (prefix) {
-      _kGelbooruPrefix => Booru.gelbooru,
-      _kDanbooruPrefix => Booru.danbooru,
-      String() => null,
-    };
 
 enum DisplayQuality {
   original("Original"),

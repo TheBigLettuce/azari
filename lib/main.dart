@@ -83,6 +83,7 @@ ThemeData _buildTheme(Brightness brightness, Color accentColor) {
   return baseTheme;
 }
 
+/// This needed for the state restoration.
 class Dummy extends StatelessWidget {
   const Dummy({super.key});
 
@@ -98,6 +99,8 @@ class Dummy extends StatelessWidget {
   }
 }
 
+/// Entrypoint for the second Android's Activity.
+/// Picks a file and returns to the app requested.
 @pragma('vm:entry-point')
 void mainPickfile() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -233,6 +236,7 @@ Settings getSettings() {
 
 class BooruArguments {}
 
+/// RestartWidget is needed for changing the boorus in the settings.
 class RestartWidget extends StatefulWidget {
   final Widget child;
   const RestartWidget({super.key, required this.child});
@@ -249,6 +253,7 @@ class _RestartWidgetState extends State<RestartWidget> {
   Key key = UniqueKey();
 
   void restartApp() {
+    // this is very important, because getTab usage is random
     _globalTab = makeGridTab(getSettings().selectedBooru);
     setState(() {
       key = UniqueKey();
@@ -264,6 +269,7 @@ class _RestartWidgetState extends State<RestartWidget> {
 @pragma('vm:entry-point')
 void notifBackground(NotificationResponse res) {}
 
+/// Currently forces the user to choose a directory.
 class Entry extends StatelessWidget {
   const Entry({super.key});
 

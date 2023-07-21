@@ -8,14 +8,17 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/plugs/notifications.dart';
 
+const _max = 12;
+
 class AndroidProgress implements NotificationProgress {
   int total = 0;
+  int _step = 0;
+  int _currentSteps = 0;
   String group;
   int id;
   String name;
 
-  @override
-  void update(int progress) {
+  _showNotification(int progress) {
     FlutterLocalNotificationsPlugin().show(
       id,
       group,
@@ -38,6 +41,15 @@ class AndroidProgress implements NotificationProgress {
   }
 
   @override
+  void update(int progress) {
+    if (progress > (_currentSteps == 0 ? _step : _step * _currentSteps)) {
+      _currentSteps++;
+
+      _showNotification(progress);
+    }
+  }
+
+  @override
   void error(String s) {
     FlutterLocalNotificationsPlugin().cancel(id);
   }
@@ -51,6 +63,7 @@ class AndroidProgress implements NotificationProgress {
   void setTotal(int t) {
     if (total == 0) {
       total = t;
+      _step = (total / 12).floor();
     }
   }
 

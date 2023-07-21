@@ -13,6 +13,7 @@ import 'package:flutter/material.dart' as material show AspectRatio;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/interface.dart';
+import 'package:gallery/src/cell/data.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/widgets/booru/autocomplete_tag.dart';
@@ -35,30 +36,66 @@ class CloudflareBlockInterface {
   const CloudflareBlockInterface(this.api);
 }
 
+/// Action which can be taken upon a selected group of cells.
 class GridBottomSheetAction<T> {
+  /// Icon of the button.
   final IconData icon;
+
+  /// [onPress] is called when the button gets pressed,
+  /// if [showOnlyWhenSingle] is true then this is guranteed to be called
+  /// with [selected] elements zero or one.
   final void Function(List<T> selected) onPress;
+
+  /// If [closeOnPress] is true, then the bottom sheet will be closed immediately after this
+  /// button has been pressed.
   final bool closeOnPress;
+
+  /// If [showOnlyWhenSingle] is true, then this button will be only active if only a single
+  /// element is currently selected.
   final bool showOnlyWhenSingle;
 
   const GridBottomSheetAction(this.icon, this.onPress, this.closeOnPress,
       {this.showOnlyWhenSingle = false});
 }
 
+/// Segments of the grid.
 class Segments<T> {
+  /// Under [unsegmentedLabel] appear cells on which [segment] returns null,
+  /// or are single standing.
   final String unsegmentedLabel;
-  final String? Function(T cell) segment;
+
+  /// Segmentation function.
+  /// If [sticky] is true, then even if the cell is single standing it will appear
+  /// as a single element segment on the grid.
+  final (String? segment, bool sticky) Function(T cell) segment;
 
   const Segments(this.segment, this.unsegmentedLabel);
 }
 
+/// Metadata about the grid.
 class GridDescription<T> {
+  /// Index of the element in the drawer.
+  /// Useful if the grid is displayed in the page which have entry in the drawer.
   final int drawerIndex;
+
+  /// Displayed in the keybinds info page name.
   final String keybindsDescription;
+
+  /// If [pageName] is not null, and [CallbackGrid.searchWidget] is null,
+  /// then a Text widget will be displayed in the app bar with this value.
+  /// If null and [CallbackGrid.searchWidget] is null, then [keybindsDescription] is used as the value.
   final String? pageName;
+
+  /// Actions of the grid on selected cells.
   final List<GridBottomSheetAction<T>> actions;
+
   final GridColumn columns;
+
+  /// If [listView] is true, then grid becomes a list.
+  /// [CallbackGrid.segments] gets ignored if [listView] is true.
   final bool listView;
+
+  /// Displayed in the app bar bottom widget.
   final PreferredSizeWidget? bottomWidget;
 
   const GridDescription(
@@ -72,55 +109,129 @@ class GridDescription<T> {
   });
 }
 
-abstract class SearchFilter<T extends Cell> {
-  void setValue(String s);
-  int count();
-  T getCell(int i);
-}
-
+/// The grid of images.
 class CallbackGrid<T extends Cell> extends StatefulWidget {
+  /// [loadNext] gets called when the grid is scrolled around the end of the viewport.
+  /// If this is null, then the grid is assumed to be not able to incrementally add posts
+  /// by scrolling at the near end of the viewport.
   final Future<int> Function()? loadNext;
+
+  /// In case if the cell represents an online resource which can be downloaded,
+  /// setting [download] enables buttons to download the resource.
   final Future<void> Function(int indx)? download;
+
+  /// Refresh the grid.
+  /// If [refresh] returns null, it means no posts can be loaded more,
+  /// which means that if [loadNext] is not null it wont be called more.
   final Future<int>? Function() refresh;
+
+  /// [hideShowFab] gets called when viewport gets scrolled, when not null.
   final void Function({required bool fab, required bool foreground})?
       hideShowFab;
+
+  /// [updateScrollPosition] gets called when grid first builds and then when scrolling stops,
+  ///  if not null. Useful when it is desirable to persist the scroll position of the grid.
+  /// [infoPos] represents the scroll position in the "Info" of the image view,
+  ///  and [selectedCell] represents the inital page of the image view.
+  /// State restoration takes this info into the account.
   final void Function(double pos, {double? infoPos, int? selectedCell})?
       updateScrollPosition;
+
+  /// If [onBack] is not null, then a back button will be displayed in the appbar,
+  /// which would call this callback when pressed.
   final void Function()? onBack;
+
+  /// Overrides the default behaviour of launching the image view on cell pressed.
+  /// [overrideOnPress] can, for example, include calls to [Navigator.push] of routes.
   final void Function(BuildContext context, int indx)? overrideOnPress;
+
+  /// Grid gets the cell from [getCell].
   final T Function(int) getCell;
+
+  /// [hasReachedEnd] should return true when the cell loading cannot load more.
   final bool Function() hasReachedEnd;
+
+  /// The cell includes some keybinds by default.
+  /// If [additionalKeybinds] is not null, they are added together.
   final Map<SingleActivatorDescription, Null Function()>? additionalKeybinds;
 
+  /// If not null, [searchWidget] is displayed in the appbar.
   final SearchAndFocus? searchWidget;
 
+  /// If [initalCellCount] is not 0, then the grid won't call [refresh].
   final int initalCellCount;
+
+  /// [initalCell] is needed for the state restoration.
+  /// If [initalCell] is not null the grid will launch image view setting [ImageView.startingCell] as this value.
   final int? initalCell;
+
+  /// [initalScrollPosition] is needed for the state restoration.
+  /// If [initalScrollPosition] is not 0, then it is set as the starting scrolling position.
   final double initalScrollPosition;
+
+  /// Aspect ratio of the cells.
   final double aspectRatio;
+
+  /// [pageViewScrollingOffset] is needed for the state restoration.
+  /// If not null, [pageViewScrollingOffset] gets supplied to the [ImageView.infoScrollOffset].
   final double? pageViewScrollingOffset;
+
+  /// If [tightMode] is true, removes extra padding around the cells.
   final bool tightMode;
+
+  /// If [hideAlias] is true, hides the cell names.
   final bool? hideAlias;
 
+  /// Used for enabling bottom sheets and the drawer.
   final GlobalKey<ScaffoldState> scaffoldKey;
+
+  /// Items added in the menu button's children, after the [searchWidget], or the page name
+  /// if [searchWidget] is null. If [menuButtonItems] includes only one widget,
+  /// it is displayed directly.
   final List<Widget>? menuButtonItems;
+
+  /// Padding of the system navigation, like the system bottom navigation bar.
   final EdgeInsets systemNavigationInsets;
+
+  /// The main focus node of the grid.
   final FocusNode mainFocus;
+
+  /// If the elemnts of the grid arrive in batches [progressTicker] can be set to not null,
+  /// grid will subscribe to it and set the cell count from this ticker's events.
   final Stream<int>? progressTicker;
+
+  // Mark the grid as immutable.
+  /// If [immutable] is false then [CallbackGridState.mutationInterface] will return not null
+  /// [GridMutationInterface] with which some of the grid behaviour can be augumented.
   final bool immutable;
 
+  /// Some additional metadata about the grid.
   final GridDescription<T> description;
+
+  /// If [belowMainFocus] is not null, then when the grid gets disposed
+  /// [belowMainFocus.requestFocus] get called.
   final FocusNode? belowMainFocus;
+
+  /// Supplied to [ImageView.addIcons].
   final List<IconButton> Function(T)? addIconsImage;
+
+  /// Supplied to [ImageView.pageChange].
   final void Function(ImageViewState<T> state)? pageChangeImage;
 
+  /// Currently useless.
   final CloudflareBlockInterface Function()? cloudflareHook;
+
+  /// If [loadThumbsDirectly] is not null then the grid will call it
+  /// in case when [CellData.loaded] is false.
   final void Function(int from)? loadThumbsDirectly;
 
+  /// Segments of the grid.
+  /// If [segments] is not null, then the grid will try to group the cells together
+  /// by a common category name.
   final Segments<T>? segments;
 
   const CallbackGrid(
-      {Key? key,
+      {super.key,
       this.additionalKeybinds,
       required this.getCell,
       required this.initalScrollPosition,
@@ -151,8 +262,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       this.onBack,
       this.initalCellCount = 0,
       this.overrideOnPress,
-      required this.description})
-      : super(key: key);
+      required this.description});
 
   @override
   State<CallbackGrid<T>> createState() => CallbackGridState<T>();
@@ -570,22 +680,24 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
 
   Widget _makeSegments(BuildContext context) {
     final segRows = <dynamic>[];
-    final segMap = <String, List<int>>{};
+    final segMap = <String, _ListSticky>{};
 
     final unsegmented = <int>[];
 
     for (var i = 0; i < _state.cellCount; i++) {
-      final res = widget.segments!.segment(_state.getCell(i));
+      final (res, sticky) = widget.segments!.segment(_state.getCell(i));
       if (res == null) {
         unsegmented.add(i);
       } else {
-        segMap[res] = [...(segMap[res] ?? []), i];
+        final previous = (segMap[res]) ?? _ListSticky([], sticky);
+        previous.list.add(i);
+        segMap[res] = previous;
       }
     }
 
     segMap.removeWhere((key, value) {
-      if (value.length == 1) {
-        unsegmented.add(value[0]);
+      if (value.list.length == 1 && !value.sticky) {
+        unsegmented.add(value.list[0]);
         return true;
       }
 
@@ -612,7 +724,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
       (key, value) {
         segRows.add(key);
 
-        makeRows(value);
+        makeRows(value.list);
       },
     );
 
@@ -864,4 +976,11 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
                   ))),
         ));
   }
+}
+
+class _ListSticky {
+  final List<int> list;
+  final bool sticky;
+
+  const _ListSticky(this.list, this.sticky);
 }

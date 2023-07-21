@@ -88,6 +88,8 @@ Widget makeGridSkeleton<T extends Cell>(
     onWillPop: overrideOnPop ??
         (popSenitel ? state.onWillPop : () => Future.value(true)),
     child: Scaffold(
+        drawerEnableOpenDragGesture:
+            MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,
         floatingActionButton: state.showFab
             ? FloatingActionButton(
                 heroTag: null,
@@ -140,6 +142,8 @@ Widget makeSkeletonSettings(BuildContext context, String pageDescription,
         autofocus: true,
         focusNode: state.mainFocus,
         child: Scaffold(
+          drawerEnableOpenDragGesture:
+              MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,
           key: state.scaffoldKey,
           body: gestureDeadZones(context,
               child: CustomScrollView(
@@ -183,6 +187,8 @@ Widget makeSkeletonInnerSettings(BuildContext context, String pageDescription,
         autofocus: true,
         focusNode: state.mainFocus,
         child: Scaffold(
+          drawerEnableOpenDragGesture:
+              MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,
           body: gestureDeadZones(context,
               child: CustomScrollView(
                 slivers: [
@@ -278,6 +284,8 @@ Widget makeSkeleton(
             onWillPop: () =>
                 !popSenitel ? Future.value(true) : popUntilSenitel(context),
             child: Scaffold(
+              drawerEnableOpenDragGesture:
+                  MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,
               key: state.scaffoldKey,
               drawer: makeDrawer(context, state.index),
               endDrawer: makeEndDrawerSettings(context, state.scaffoldKey),

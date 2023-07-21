@@ -8,7 +8,6 @@
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:gallery/src/schemas/post.dart';
-import 'package:gallery/src/schemas/settings.dart';
 
 import '../interface.dart';
 import '../tags/tags.dart';

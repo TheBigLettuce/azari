@@ -8,15 +8,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:isar/isar.dart';
+import 'package:gallery/src/widgets/grid/callback_grid.dart';
 
 import 'data.dart';
 
+/// Content which can be presented in the image view.
 enum ContentType { image, video, androidImage, androidGif }
 
+/// Content of the file.
+/// Classes which extend this can be displayed in the image view.
+/// Android* classes should be represented differently.
+/// There is no AndroidVideo because [ContentType.video] can display the videos in Android.
+/// [NetImage] and [NetGif] are able to display local files, not only network ones.
 sealed class Contentable {
   const Contentable();
 }
 
+/// Displays an error page in the image view.
 class EmptyContent extends Contentable {
   const EmptyContent();
 }
@@ -72,24 +80,50 @@ class AddInfoColorData {
   });
 }
 
+/// Cells on a grid.
+/// Implementations of this interface can be presented on the [CallbackGrid].
+/// This can be not only a cell on a grid, it can be also an element in a list.
+/// [CallbackGrid] decides how this gets displayed.
 abstract class Cell {
+  /// Common pattern of the implementations of [Cell] is that they are all an Isar schema.
+  /// However, this property can be ignored, together with the setter.
+  /// This is only useful for the internal implementations, not used in the [CallbackGrid].
+  /// No asumptions can be made about this property.
   int? get isarId;
   set isarId(int? i);
 
+  /// The name of the cell, displayed on top of the cell.
+  /// If [isList] is true, it means the cell gets displayed as a list entry,
+  /// instead of a cell on a grid.
   String alias(bool isList);
 
+  /// Additional information about the cell.
+  /// This gets displayed in the "Info" list view, in the image view.
   @ignore
   List<Widget>? Function(
       BuildContext context, dynamic extra, AddInfoColorData colors) get addInfo;
 
+  /// Additional buttons which get diplayed in the image view's appbar.
   @ignore
   List<Widget>? Function(BuildContext context) get addButtons;
 
+  /// File that gets displayed in the image view.
+  /// This can be unimplemented.
+  /// Not implementing this assumes that clicking on the grid will take to an other page,
+  /// requires [CallbackGrid.overrideOnPress] to be not null, which makes [fileDisplay] never to be called.
   Contentable fileDisplay();
 
+  /// Url to the file to download.
+  /// This can be unimplemented.
+  /// Not implementing this assumes that clicking on the grid will take to an other page,
+  /// requires [CallbackGrid.overrideOnPress] to be not null, which makes [fileDownloadUrl] never to be called.
   String fileDownloadUrl();
 
+  /// The thumbnail and additional information for the cell.
+  /// If [isList] is true, it means the cell gets displayed as a list entry,
+  /// instead of a cell on a grid.
   CellData getCellData(bool isList);
 
+  /// Const constructor to allow implementations to have const constructors.
   const Cell();
 }

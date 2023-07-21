@@ -12,27 +12,93 @@ import 'package:gallery/src/schemas/settings.dart';
 import '../db/isar.dart';
 import '../schemas/post.dart';
 
+const _kDanbooruPrefix = "d";
+const _kGelbooruPrefix = "g";
+
+/// Enum which holds all the currently supported sites by this app.
+/// All of the implementations of [BooruAPI] should be added here.
+/// Prefixes, names and urls should be unique.
+enum Booru {
+  gelbooru(string: "Gelbooru", prefix: _kGelbooruPrefix, url: "gelbooru.com"),
+  danbooru(
+      string: "Danbooru", prefix: _kDanbooruPrefix, url: "danbooru.donmai.us");
+
+  // Name. starting with an uppercase letter.
+  final String string;
+
+  /// Prefix ensures that the filenames will be unique.
+  /// This is useful in the folders which have images from various sources.
+  final String prefix;
+
+  /// Url to the booru. All the requests are made to the booru API use this.
+  /// Scheme is always assumed to be https.
+  final String url;
+
+  const Booru({required this.string, required this.prefix, required this.url});
+}
+
+Booru? chooseBooruPrefix(String prefix) => switch (prefix) {
+      _kGelbooruPrefix => Booru.gelbooru,
+      _kDanbooruPrefix => Booru.danbooru,
+      String() => null,
+    };
+
+/// The interface to interact with the various booru APIs.
+///
+/// Implemenations of this interface should hold no state, other than the [client].
+/// In case when booru API doesn't support getting posts down a certain post number,
+/// it should keep the page number and increase it after calls to [fromPost],
+/// return the current page in [currentPage], return true in [wouldBecomeStale]
+/// and reset page number after calls to [page].
 abstract class BooruAPI {
+  // The client with which all the requests are made to the booru API.
   Dio get client;
+
+  /// Some booru do not support pulling posts down a certain post number,
+  /// this flag reflects this.
   bool get wouldBecomeStale;
+
+  /// Name of the booru, starting with an uppercase letter.
   String get name;
+
+  /// Domain of the booru, without the scheme. It is always assumed that the scheme is https.
   String get domain;
+
+  /// Booru enum of this API. All the boorus should be added to this enum.
   Booru get booru;
+
+  /// Some boorus do not support pulling posts down a certain post number,
+  /// and instead API implementations use paging to make it work.
+  /// This should be not null if [wouldBecomeStale] is true.
   int? get currentPage;
 
+  /// Get a single post by it's id.
+  /// This is used in many places, like tags and single post loading in the "Tags" page.
   Future<Post> singlePost(int id);
 
+  /// Get posts by a certain page.
+  /// This is only used to refresh the grid, the code which loads and presets the posts uses [fromPost] for further posts loading.
+  /// The boorus which do not support geting posts down a certain post number should keep a page number internally,
+  /// and return it in [currentPage].
   Future<List<Post>> page(int p, String tags, BooruTagging excludedTags);
 
+  /// Get posts down a certain post number.
+  /// The boorus which do not support geting posts down a certain post number should keep a page number internally,
+  /// and use paging to load the posts.
   Future<List<Post>> fromPost(
       int postId, String tags, BooruTagging excludedTags);
 
+  /// Tag completition, this shouldn't present more than 10 at a time.
   Future<List<String>> completeTag(String tag);
 
+  /// Constructs a link to the post to be loaded in the browser, outside the app.
   Uri browserLink(int id);
 
+  /// Sets the cookies for all the requests done with the [client].
+  /// This is useful with Cloudlfare, but currently is usesless.
   void setCookies(List<Cookie> cookies);
 
+  /// After the call to [close], [client] should not work.
   void close();
 }
 
@@ -82,6 +148,8 @@ class UnsaveableCookieJar implements CookieJar {
 // const String kTorUserAgent =
 //     "Mozilla/5.0 (Windows NT 10.0; rv:102.0) Gecko/20100101 Firefox/102.0"; // Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36
 
+/// Cookie jar from the booru's clients are stored here.
+/// Currently useless.
 class CookieJarTab {
   final Map<Booru, CookieJar> _tab = {};
 

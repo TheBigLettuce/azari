@@ -13,6 +13,7 @@ import 'package:gallery/src/booru/api/gelbooru.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
+import 'package:gallery/src/schemas/directory_tags.dart';
 import 'package:gallery/src/schemas/local_tag_dictionary.dart';
 import 'package:gallery/src/schemas/local_tags.dart';
 import 'package:gallery/src/schemas/post.dart';
@@ -276,6 +277,20 @@ class PostTags {
     // } catch (e) {
     //   onDone(e.toString());
     // }
+  }
+
+  String? directoryTag(String bucketId) {
+    return tagsDb.directoryTags.getSync(fastHash(bucketId))?.tag;
+  }
+
+  void setDirectoryTag(String bucketId, String tag) {
+    tagsDb.writeTxnSync(
+        () => tagsDb.directoryTags.putSync(DirectoryTag(bucketId, tag)));
+  }
+
+  void removeDirectoryTag(String buckedId) {
+    tagsDb.writeTxnSync(
+        () => tagsDb.directoryTags.deleteSync(fastHash(buckedId)));
   }
 
   void copy(void Function(String? error) onDone) async {

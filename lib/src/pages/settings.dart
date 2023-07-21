@@ -18,6 +18,7 @@ import 'package:gallery/src/pages/server_settings.dart';
 import 'package:gallery/src/schemas/settings.dart' as schema_settings;
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
+import '../booru/interface.dart';
 import '../schemas/settings.dart';
 
 class Settings extends StatefulWidget {
