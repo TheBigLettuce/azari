@@ -53,3 +53,8 @@ jobs:
 
       - name: Start release build
         run: flutter build apk --split-per-abi --no-tree-shake-icons
+        
+      - uses: actions/upload-artifact@v3
+        with:
+          name: output
+          path: build/app/outputs/flutter-apk/
