@@ -88,7 +88,7 @@ class Settings {
             ? GridColumn.two
             : GridColumn.six,
         listViewBooru = false,
-        safeMode = false,
+        safeMode = true,
         gallerySettings = GallerySettings()
           ..directoryAspectRatio = AspectRatio.zeroSeven
           ..directoryColumns = Platform.isAndroid || Platform.isIOS
