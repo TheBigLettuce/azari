@@ -91,20 +91,39 @@ Widget makeGridSkeleton<T extends Cell>(
         drawerEnableOpenDragGesture:
             MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,
         floatingActionButton: state.showFab
-            ? FloatingActionButton(
-                heroTag: null,
-                onPressed: () {
+            ? GestureDetector(
+                onLongPress: () {
                   if (grid.key != null &&
                       grid.key is GlobalKey<CallbackGridState>) {
+                    final maxOffset = state.gridKey.currentState?.controller
+                        .position.maxScrollExtent;
+                    if (maxOffset == null || maxOffset.isInfinite) {
+                      return;
+                    }
+
+                    HapticFeedback.vibrate();
                     (grid.key as GlobalKey<CallbackGridState>)
                         .currentState
                         ?.controller
-                        .animateTo(0,
+                        .animateTo(maxOffset,
                             duration: 500.ms, curve: Curves.easeInOutSine);
                   }
                 },
-                isExtended: true,
-                child: const Icon(Icons.arrow_upward),
+                child: FloatingActionButton(
+                  heroTag: null,
+                  onPressed: () {
+                    if (grid.key != null &&
+                        grid.key is GlobalKey<CallbackGridState>) {
+                      (grid.key as GlobalKey<CallbackGridState>)
+                          .currentState
+                          ?.controller
+                          .animateTo(0,
+                              duration: 500.ms, curve: Curves.easeInOutSine);
+                    }
+                  },
+                  isExtended: true,
+                  child: const Icon(Icons.arrow_upward),
+                ),
               )
             : null,
         endDrawerEnableOpenDragGesture: false,

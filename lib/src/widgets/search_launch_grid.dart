@@ -28,6 +28,7 @@ class SearchLaunchGridData {
   const SearchLaunchGridData(this.mainFocus, this.searchText);
 }
 
+/// Search mixin which launches a new page with a grid.
 mixin SearchLaunchGrid on State<BooruScroll>
     implements SearchMixin<SearchLaunchGridData> {
   @override

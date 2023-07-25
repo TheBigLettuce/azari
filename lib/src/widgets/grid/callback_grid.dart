@@ -490,7 +490,9 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
       );
 
   Widget _makeList(BuildContext context) => SliverPadding(
-        padding: EdgeInsets.only(bottom: widget.systemNavigationInsets.bottom),
+        padding: EdgeInsets.only(
+            bottom: widget.systemNavigationInsets.bottom +
+                MediaQuery.viewPaddingOf(context).bottom),
         sliver: SliverList.separated(
           separatorBuilder: (context, index) => const Divider(
             height: 1,
@@ -529,7 +531,9 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
       );
 
   Widget _makeGrid(BuildContext context) => SliverPadding(
-        padding: EdgeInsets.only(bottom: widget.systemNavigationInsets.bottom),
+        padding: EdgeInsets.only(
+            bottom: widget.systemNavigationInsets.bottom +
+                MediaQuery.viewPaddingOf(context).bottom),
         sliver: SliverGrid.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               childAspectRatio: widget.aspectRatio,
@@ -561,80 +565,6 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
           },
         ),
       );
-
-//   Widget _makeSegmentedGrid(BuildContext context, List<int> segIndx) =>
-//       SliverGrid.builder(
-//         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-//             childAspectRatio: widget.aspectRatio,
-//             crossAxisCount: widget.description.columns.number),
-//         itemCount: segIndx.length,
-//         itemBuilder: (context, indx) {
-//           indx = segIndx[indx] - 1;
-//           print("got: $indx");
-//           var m = _state.getCell(indx);
-//           var cellData = m.getCellData(widget.description.listView);
-//           if (cellData.loaded != null && cellData.loaded == false) {
-//             widget.loadThumbsDirectly?.call(indx);
-//           }
-
-//           return _WrappedSelection(
-//             selectionEnabled: selected.isNotEmpty,
-//             thisIndx: indx,
-//             selectUntil: _selectUnselectUntil,
-//             selectUnselect: () => _selectOrUnselect(indx, m),
-//             isSelected: _isSelected(indx),
-//             child: GridCell(
-//               cell: cellData,
-//               hidealias: widget.hideAlias,
-//               indx: indx,
-//               tight: widget.tightMode,
-//               onPressed: _onPressed,
-//               onLongPress: () =>
-//                   _selectOrUnselect(indx, m), //extend: maxExtend,
-//             ),
-//           );
-//         },
-//       );
-
-// Widget _makeSegments(BuildContext context) {
-//     final unsegmented = widget.segments!.getUnsegmented().toList();
-//     final segMap = widget.segments!
-//         .getSegmentMap()
-//         .map((key, value) => MapEntry(key, value))
-//       ..removeWhere((key, value) {
-//         if (value.length == 1) {
-//           unsegmented.add(value[0]);
-//           return true;
-//         }
-
-//         return false;
-//       });
-
-//     return SliverPadding(
-//       padding: MediaQuery.of(context).viewPadding +
-//           MediaQuery.of(context).viewInsets,
-//       sliver: SliverList.builder(
-//         itemCount: unsegmented.isNotEmpty ? segMap.length + 1 : segMap.length,
-//         itemBuilder: (context, index) {
-//           return CustomScrollView(
-//             shrinkWrap: true,
-//             primary: false,
-//             physics: const NeverScrollableScrollPhysics(),
-//             slivers: [
-//               _segmentLabel(index == segMap.length
-//                   ? widget.segments!.unsegmentedLabel
-//                   : segMap.keys.elementAt(index)),
-//               _makeSegmentedGrid(
-//                   context,
-//                   index == segMap.length
-//                       ? unsegmented
-//                       : segMap[segMap.keys.elementAt(index)]!)
-//             ],
-//           );
-//         },
-//       ),
-//     );
-//   }
 
   Widget _makeSegmentedRow(
     BuildContext context,
@@ -737,8 +667,9 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
         MediaQuery.of(context).size.width / widget.description.columns.number;
 
     return SliverPadding(
-      padding: MediaQuery.of(context).viewPadding +
-          MediaQuery.of(context).viewInsets,
+      padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewPadding.bottom +
+              MediaQuery.of(context).viewPadding.bottom),
       sliver: SliverList.builder(
         itemBuilder: (context, indx) {
           if (indx >= segRows.length) {
@@ -748,52 +679,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
           if (val is String) {
             return _segmentLabel(val);
           } else if (val is List<int>) {
-            return _makeSegmentedRow(context, val, constraints, (cellindx) {
-              // cellindx++;
-              // if (lastSelected != null) {
-              //   if (lastSelected == indx) {
-              //     return;
-              //   }
-
-              //   final lastSelectedI = val.indexOf(lastSelected! + 1);
-              //   final targetI = val.indexOf(cellindx);
-
-              //   if (lastSelectedI == -1 || targetI == -1) {
-              //     return;
-              //   }
-
-              //   print("l:$lastSelected, $val");
-
-              //   final selection = !_isSelected(indx);
-
-              //   if (targetI < lastSelectedI) {
-              //     for (var i = lastSelectedI; i >= targetI; i--) {
-              //       final celli = val[i];
-              //       if (selection) {
-              //         selected[celli] = _state.getCell(celli);
-              //       } else {
-              //         _removeSelection(celli);
-              //       }
-              //       lastSelected = celli;
-              //     }
-              //     setState(() {});
-              //   } else if (targetI > lastSelectedI) {
-              //     for (var i = lastSelectedI; i <= targetI; i++) {
-              //       final celli = val[i];
-
-              //       if (selection) {
-              //         selected[celli] = _state.getCell(celli);
-              //       } else {
-              //         _removeSelection(celli);
-              //       }
-              //       lastSelected = celli;
-              //     }
-              //     setState(() {});
-              //   }
-
-              //   currentBottomSheet?.setState?.call(() {});
-              // }
-            }, (i, cell) {
+            return _makeSegmentedRow(context, val, constraints, (cellindx) {},
+                (i, cell) {
               _selectOrUnselect(i, cell);
             }, (i) {
               return _isSelected(i);

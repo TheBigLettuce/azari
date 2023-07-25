@@ -7,6 +7,8 @@
 
 part of 'isar.dart';
 
+/// Holds the reference to the currently active booru,
+/// with its excluded and latest tags.
 class GridTab {
   final Isar _instance;
 

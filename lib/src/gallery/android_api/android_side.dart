@@ -7,6 +7,7 @@
 
 part of 'android_api_directories.dart';
 
+/// Callbacks related to the gallery.
 class GalleryImpl implements GalleryApi {
   final Isar db;
   final bool temporary;
@@ -156,6 +157,7 @@ class GalleryImpl implements GalleryApi {
           .map((e) => SystemGalleryDirectory(
               bucketId: e.bucketId,
               name: e.name,
+              tag: PostTags().directoryTag(e.bucketId) ?? "",
               volumeName: e.volumeName,
               relativeLoc: e.relativeLoc,
               thumbFileId: e.thumbFileId,

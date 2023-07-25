@@ -88,6 +88,13 @@ class AndroidGalleryExtra {
     _impl.callback = callback;
   }
 
+  void setPassFilter(
+      (Iterable<SystemGalleryDirectory>, dynamic) Function(
+              Iterable<SystemGalleryDirectory>, dynamic, bool)?
+          filter) {
+    _impl.filter.passFilter = filter;
+  }
+
   const AndroidGalleryExtra._(this._impl);
 }
 
@@ -119,6 +126,8 @@ class _AndroidGallery
         .systemGalleryDirectorys
         .filter()
         .nameContains(v, caseSensitive: false)
+        .or()
+        .tagEqualTo(v)
         .offset(offset)
         .limit(limit)
         .findAllSync();

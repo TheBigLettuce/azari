@@ -33,9 +33,13 @@ class SystemGalleryDirectory implements Cell {
   @Index()
   final int lastModified;
 
+  @Index()
+  final String tag;
+
   SystemGalleryDirectory(
       {required this.bucketId,
       required this.name,
+      required this.tag,
       required this.volumeName,
       required this.relativeLoc,
       required this.lastModified,

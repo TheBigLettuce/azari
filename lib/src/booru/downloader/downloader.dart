@@ -20,7 +20,7 @@ import '../../db/isar.dart';
 
 Downloader? _global;
 
-mixin CancelTokens {
+mixin _CancelTokens {
   final Map<int, CancelToken> _tokens = {};
 
   void _addToken(int key, CancelToken t) => _tokens[key] = t;
@@ -28,7 +28,7 @@ mixin CancelTokens {
   bool _hasCancelKey(int id) => _tokens[id] != null;
 }
 
-class Downloader with CancelTokens {
+class Downloader with _CancelTokens {
   int _inWork = 0;
   final Dio dio = Dio();
   final int maximum;

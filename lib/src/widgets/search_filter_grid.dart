@@ -12,27 +12,55 @@ import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:gallery/src/widgets/search_launch_grid.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/widgets/grid/callback_grid.dart';
 
 import '../cell/cell.dart';
 
-import '../gallery/interface.dart';
+/// Result of the filter to provide to the [GridMutationInterface].
+class Result<T extends Cell> {
+  final int count;
+  final T Function(int i) cell;
+  const Result(this.cell, this.count);
+}
 
+/// Filtering modes.
+/// Implemented outside the [FilterInterface].
 enum FilteringMode {
+  /// Filter by the  "original" tag.
   original("Original", Icons.circle_outlined),
-  duplicate("Duplicate", Icons.mode_standby_outlined),
-  same("Same", Icons.drag_handle),
-  video("Video", Icons.play_circle),
-  gif("GIF", Icons.gif_outlined),
-  tag("Tag", Icons.tag),
-  noFilter("No filter", Icons.filter_list_outlined),
-  size("Size", Icons.arrow_downward);
 
+  /// Filter by filenames, which have (1).ext format.
+  duplicate("Duplicate", Icons.mode_standby_outlined),
+
+  /// Filter by similarity.
+  same("Same", Icons.drag_handle),
+
+  /// Filter by video.
+  video("Video", Icons.play_circle),
+
+  /// Filter by GIF.
+  gif("GIF", Icons.gif_outlined),
+
+  /// Filter by tag. Virtual.
+  tag("Tag", Icons.tag),
+
+  /// Filter by size, from bif to small.
+  size("Size", Icons.arrow_downward),
+
+  /// No filter.
+  noFilter("No filter", Icons.filter_list_outlined);
+
+  /// Name displayed in search bar.
   final String string;
+
+  /// Icon displayed in search bar.
   final IconData icon;
 
   const FilteringMode(this.string, this.icon);
 }
 
+/// Sorting modes.
+/// Implemented inside the [FilterInterface].
 enum SortingMode { none, size }
 
 abstract class FilterInterface<T extends Cell> {
@@ -138,6 +166,7 @@ class IsarFilter<T extends Cell> implements FilterInterface<T> {
         _to = to;
 }
 
+/// Search mixin which filters the elements on a grid.
 mixin SearchFilterGrid<T extends Cell>
     implements SearchMixin<GridSkeletonStateFilter<T>> {
   @override

@@ -13,6 +13,8 @@ import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 
 const MethodChannel _channel = MethodChannel("lol.bruh19.azari.gallery");
 
+/// Platform functions which are currently implemented.
+/// Most of the methods here depend on the callbacks methods created by Pigeon.
 class PlatformFunctions {
   static void refreshFiles(String bucketId) {
     _channel.invokeMethod("refreshFiles", bucketId);

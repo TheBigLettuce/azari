@@ -8,12 +8,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:gallery/src/cell/cell.dart';
 
-class Result<T extends Cell> {
-  final int count;
-  final T Function(int i) cell;
-  const Result(this.cell, this.count);
-}
-
 abstract class GalleryAPIFilesReadWrite<ExtraFiles, F extends Cell>
     implements GalleryAPIFilesRead<ExtraFiles, F>, GalleryAPIFilesWrite<F> {}
 

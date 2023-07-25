@@ -23,21 +23,36 @@ import 'package:html_unescape/html_unescape_small.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart';
+import 'package:gallery/src/booru/downloader/downloader.dart';
 
 late final PostTags _global;
 bool _isInitalized = false;
 
+/// Tag search history.
+/// Used for both for the recent tags and the excluded.
 abstract class BooruTagging {
   List<Tag> get();
   void add(Tag tag);
   void delete(Tag tag);
   void clear();
+
+  const BooruTagging();
 }
 
+/// Result of disassembling of the filename in the format.
+/// All the files downloaded with the [Downloader] have a certain format
+/// of the filenames, this class represents the format.
 class DissolveResult {
+  /// Extension of the file.
   final String ext;
+
+  /// The booru enum from matching the prefix.
   final Booru booru;
+
+  /// The MD5 hash.
   final String hash;
+
+  /// The post number.
   final int id;
 
   const DissolveResult(
@@ -47,6 +62,8 @@ class DissolveResult {
       required this.id});
 }
 
+/// Post tags saved locally.
+/// This is used for offline tag viewing in the gallery.
 class PostTags {
   Isar tagsDb;
 

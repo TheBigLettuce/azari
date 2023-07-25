@@ -48,6 +48,7 @@ ServerSettings _settings() {
   return settings;
 }
 
+/// Upload files to the server.
 class Uploader {
   final List<_HostFileAndDir> _stack = [];
   int id = 0;
