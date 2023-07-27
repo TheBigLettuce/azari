@@ -22,6 +22,7 @@ import 'package:gallery/src/schemas/directory.dart';
 import 'package:gallery/src/schemas/directory_file.dart';
 import 'package:gallery/src/schemas/directory_tags.dart';
 import 'package:gallery/src/schemas/download_file.dart';
+import 'package:gallery/src/schemas/expensive_hash.dart';
 import 'package:gallery/src/schemas/gallery_last_modified.dart';
 import 'package:gallery/src/schemas/grid_restore.dart';
 import 'package:gallery/src/schemas/local_tag_dictionary.dart';
@@ -55,6 +56,8 @@ void clearTemporaryImagesDir() {
 
 Isar? _isar;
 Isar? _thumbnailIsar;
+Isar? _expensiveHashIsar;
+Isar? _blacklistedDirIsar;
 late String _directoryPath;
 late String _temporaryDbPath;
 late String _temporaryImagesPath;
@@ -139,11 +142,21 @@ Future initalizeIsar(bool temporary) async {
     _thumbnailIsar!.writeTxnSync(() {
       _thumbnailIsar!.thumbnails.where().isEmptyEqualTo(true).deleteAllSync();
     });
+    _expensiveHashIsar = Isar.openSync([ExpensiveHashSchema],
+        directory: _directoryPath,
+        inspector: false,
+        name: "androidExpensiveHash");
+    _blacklistedDirIsar = Isar.openSync([BlacklistedDirectorySchema],
+        directory: _directoryPath,
+        inspector: false,
+        name: "androidBlacklistedDir");
   }
 }
 
 Isar thumbnailIsar() => _thumbnailIsar!;
 Isar settingsIsar() => _isar!;
+Isar expensiveHashIsar() => _expensiveHashIsar!;
+Isar blacklistedDirIsar() => _blacklistedDirIsar!;
 
 Isar _primaryGridIsar(Booru booru) {
   var instance = Isar.getInstance(booru.string);
@@ -220,11 +233,8 @@ void closeServerApiInnerIsar(String name) {
 }
 
 Isar openAndroidGalleryIsar({bool? temporary}) {
-  return Isar.openSync([
-    SystemGalleryDirectorySchema,
-    GalleryLastModifiedSchema,
-    BlacklistedDirectorySchema
-  ],
+  return Isar.openSync(
+      [SystemGalleryDirectorySchema, GalleryLastModifiedSchema],
       directory: temporary == true ? _temporaryDbPath : _directoryPath,
       inspector: false,
       name: temporary == true

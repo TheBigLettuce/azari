@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
 import 'package:gallery/src/schemas/blacklisted_directory.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
@@ -22,7 +23,7 @@ class BlacklistedDirectories extends StatefulWidget {
 class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
   final state = SkeletonState.settings();
   List<BlacklistedDirectory> elems =
-      GalleryImpl.instance().db.blacklistedDirectorys.where().findAllSync();
+      blacklistedDirIsar().blacklistedDirectorys.where().findAllSync();
 
   @override
   Widget build(BuildContext context) {
@@ -35,14 +36,12 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
                   title: Text(e.name),
                   trailing: IconButton(
                       onPressed: () {
-                        GalleryImpl.instance().db.writeTxnSync(() {
-                          GalleryImpl.instance()
-                              .db
+                        blacklistedDirIsar().writeTxnSync(() {
+                          blacklistedDirIsar()
                               .blacklistedDirectorys
                               .deleteSync(e.isarId);
                         });
-                        elems = GalleryImpl.instance()
-                            .db
+                        elems = blacklistedDirIsar()
                             .blacklistedDirectorys
                             .where()
                             .findAllSync();
@@ -59,11 +58,8 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
                 setState(() {
                   elems.clear();
                 });
-                GalleryImpl.instance().db.writeTxnSync(() =>
-                    GalleryImpl.instance()
-                        .db
-                        .blacklistedDirectorys
-                        .clearSync());
+                blacklistedDirIsar().writeTxnSync(() =>
+                    blacklistedDirIsar().blacklistedDirectorys.clearSync());
                 GalleryImpl.instance().notify(null);
               },
               icon: const Icon(Icons.delete))

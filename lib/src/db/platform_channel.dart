@@ -11,6 +11,8 @@ import 'package:gallery/src/gallery/android_api/api.g.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 
+import '../schemas/expensive_hash.dart';
+
 const MethodChannel _channel = MethodChannel("lol.bruh19.azari.gallery");
 
 /// Platform functions which are currently implemented.
@@ -18,6 +20,12 @@ const MethodChannel _channel = MethodChannel("lol.bruh19.azari.gallery");
 class PlatformFunctions {
   static void refreshFiles(String bucketId) {
     _channel.invokeMethod("refreshFiles", bucketId);
+  }
+
+  static Future<ExpensiveHash> getExpensiveHashDirectly(int id) {
+    return _channel
+        .invokeMethod("getExpensiveHashDirectly", id)
+        .then((value) => ExpensiveHash(value, id));
   }
 
   // static Future loadThumbnails(List<int> thumbs) async {

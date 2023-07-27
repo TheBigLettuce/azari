@@ -12,6 +12,8 @@ import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/android_gallery_directory.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 import 'package:gallery/src/schemas/blacklisted_directory.dart';
+import 'package:gallery/src/schemas/expensive_hash.dart';
+import 'package:gallery/src/schemas/settings.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:gallery/src/gallery/android_api/api.g.dart';
@@ -70,8 +72,8 @@ class AndroidGalleryExtra {
   }
 
   void addBlacklisted(List<BlacklistedDirectory> bucketIds) {
-    _impl.db.writeTxnSync(
-        () => _impl.db.blacklistedDirectorys.putAllSync(bucketIds));
+    blacklistedDirIsar().writeTxnSync(
+        () => blacklistedDirIsar().blacklistedDirectorys.putAllSync(bucketIds));
     _impl.refreshGrid?.call();
   }
 

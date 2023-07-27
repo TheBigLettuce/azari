@@ -447,6 +447,23 @@ class _SettingsListState extends State<SettingsList> {
         ),
         settingsLabel(AppLocalizations.of(context)!.metricsLabel, titleStyle),
         ListTile(
+          title: const Text('Expensive "Same" algorithm'), // TODO: change
+          subtitle: Text(
+            "More accurate, at a cost of speed. Results persist.",
+            maxLines: extendListSubtitle ? null : 2,
+          ),
+          onTap: _extend,
+          trailing: Switch(
+              value: _settings!.expensiveHash,
+              onChanged: (value) {
+                settingsIsar().writeTxnSync(() {
+                  settingsIsar()
+                      .settings
+                      .putSync(_settings!.copy(expensiveHash: value));
+                });
+              }),
+        ),
+        ListTile(
           title: Text(AppLocalizations.of(context)!.savedTagsCount),
           onLongPress: () {
             PostTags().rebuildTagDictionary();

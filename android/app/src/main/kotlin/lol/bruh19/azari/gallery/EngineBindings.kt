@@ -262,6 +262,24 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                     mover.getThumbnailCallback(id, result)
                 }
 
+                "getExpensiveHashDirectly" -> {
+                    val id: Long = when (call.arguments) {
+                        is Long -> {
+                            call.arguments as Long
+                        }
+
+                        is Int -> {
+                            (call.arguments as Int).toLong()
+                        }
+
+                        else -> {
+                            throw java.lang.Exception("id is invalid")
+                        }
+                    }
+
+                    mover.getExpensiveHashCallback(id, result)
+                }
+
                 "copyMoveFiles" -> {
                     CoroutineScope(Dispatchers.IO).launch {
                         copyFilesMux.lock()

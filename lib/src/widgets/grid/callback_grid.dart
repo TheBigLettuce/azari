@@ -761,7 +761,10 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
                                                                   .bottomWidget
                                                                   ?.preferredSize
                                                                   .height ??
-                                                              0),
+                                                              0 +
+                                                                  (_state.isRefreshing
+                                                                      ? 4
+                                                                      : 0)),
                                                       child: widget
                                                           .searchWidget?.search,
                                                     )

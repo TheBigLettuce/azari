@@ -142,7 +142,8 @@ class GalleryImpl implements GalleryApi {
           ?.call(db.systemGalleryDirectorys.countSync(), inRefresh, true);
       return;
     }
-    var blacklisted = db.blacklistedDirectorys
+    var blacklisted = blacklistedDirIsar()
+        .blacklistedDirectorys
         .where()
         .anyOf(d.cast<Directory>(),
             (q, element) => q.bucketIdEqualTo(element.bucketId))

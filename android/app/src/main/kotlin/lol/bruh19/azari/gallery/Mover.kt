@@ -19,6 +19,7 @@ import android.util.Size
 import android.webkit.MimeTypeMap
 import androidx.core.graphics.scale
 import androidx.documentfile.provider.DocumentFile
+import com.bumptech.glide.Glide
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -173,6 +174,23 @@ internal class Mover(
                 result.success(
                     mapOf<String, Any>(Pair("data", transparentImage), Pair("hash", 0L))
                 )
+            }
+        }
+    }
+
+    fun getExpensiveHashCallback(id: Long, result: MethodChannel.Result) {
+        scope.launch {
+            try {
+                val scaled = Glide.with(context).asBitmap().load(
+                    ContentUris.withAppendedId(
+                        MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                        id
+                    )
+                ).submit(9, 8).get()
+
+                result.success(diffHashFromThumb(scaled))
+            } catch (e: java.lang.Exception) {
+                result.success(0L)
             }
         }
     }
@@ -354,11 +372,7 @@ internal class Mover(
         }
     }
 
-    private fun getThumb(uri: Uri): Pair<ByteArray, Long> {
-        val thumb = context.contentResolver.loadThumbnail(uri, Size(320, 320), null)
-        val stream = ByteArrayOutputStream()
-
-        val scaled = thumb.scale(9, 8)
+    private fun diffHashFromThumb(scaled: Bitmap): Long {
         var hash: Long = 0
         val grayscale = List(8) { i ->
             List(9) { j ->
@@ -375,6 +389,17 @@ internal class Mover(
                 idx++
             }
         }
+
+        return hash
+    }
+
+    private fun getThumb(uri: Uri): Pair<ByteArray, Long> {
+        val thumb = context.contentResolver.loadThumbnail(uri, Size(320, 320), null)
+        val stream = ByteArrayOutputStream()
+
+        val scaled = thumb.scale(9, 8)
+
+        val hash = diffHashFromThumb(scaled)
 
         thumb.compress(Bitmap.CompressFormat.JPEG, 80, stream)
 

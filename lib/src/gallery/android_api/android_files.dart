@@ -128,8 +128,8 @@ class _AndroidFilesState extends State<AndroidFiles>
       bool end) {
     accu ??= SameFilterAccumulator.empty();
 
-    for (final element in cells) {
-      final hash = element.getThumbnail()?.differenceHash;
+    for (final (isarId, hash)
+        in extra.getDifferenceHash(cells, state.settings.expensiveHash)) {
       if (hash == null) {
         accu.skipped++;
         continue;
@@ -139,10 +139,65 @@ class _AndroidFilesState extends State<AndroidFiles>
 
       final prev = accu.data[hash] ?? {};
 
-      accu.data[hash] = {...prev, element.isarId!};
+      accu.data[hash] = {...prev, isarId};
     }
 
     if (end) {
+      Iterable<SystemGalleryDirectoryFile> ret;
+
+      if (state.settings.expensiveHash) {
+        final Set<int> distanceSet = {};
+
+        accu.data.removeWhere((key, value) {
+          if (value.length > 1) {
+            for (final e in value) {
+              distanceSet.add(e);
+            }
+            return true;
+          }
+          return false;
+        });
+
+        for (final first in accu.data.keys) {
+          for (final second in accu.data.keys) {
+            if (first == second) {
+              continue;
+            }
+
+            final distance = hammingDistance(first, second);
+            if (distance < 4) {
+              for (final e in accu.data[first]!) {
+                distanceSet.add(e);
+              }
+
+              for (final e in accu.data[second]!) {
+                distanceSet.add(e);
+              }
+            }
+          }
+        }
+
+        ret = () sync* {
+          for (final i in distanceSet) {
+            var file = widget.api.directCell(i - 1);
+            file.isarId = null;
+            yield file;
+          }
+        }();
+      } else {
+        ret = () sync* {
+          for (final i in accu!.data.values) {
+            if (i.length > 1) {
+              for (final v in i) {
+                var file = widget.api.directCell(v - 1);
+                file.isarId = null;
+                yield file;
+              }
+            }
+          }
+        }();
+      }
+
       if (accu.skipped != 0) {
         ScaffoldMessenger.of(context).removeCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -158,25 +213,12 @@ class _AndroidFilesState extends State<AndroidFiles>
                         content: const Text("Loaded"))); // TODO: change
                     performSearch(searchTextController.text);
                   } catch (_) {}
-                });
+                }, state.settings.expensiveHash);
               }),
         ));
       }
 
-      return (
-        () sync* {
-          for (final i in accu!.data.values) {
-            if (i.length > 1) {
-              for (final v in i) {
-                var file = widget.api.directCell(v - 1);
-                file.isarId = null;
-                yield file;
-              }
-            }
-          }
-        }(),
-        accu
-      );
+      return (ret, accu);
     }
 
     return ([], accu);
@@ -262,7 +304,10 @@ class _AndroidFilesState extends State<AndroidFiles>
     super.initState();
 
     settingsWatcher = settingsIsar().settings.watchObject(0).listen((event) {
-      state.settings = event!;
+      if (state.settings.expensiveHash != event!.expensiveHash) {
+        performSearch(searchTextController.text);
+      }
+      state.settings = event;
 
       setState(() {});
     });

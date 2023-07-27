@@ -47,7 +47,77 @@ class AndroidGalleryFilesExtra {
     _impl.refreshGrid = callback;
   }
 
-  void loadNextThumbnails(void Function() callback) async {
+  Iterable<(int isarId, int? h)> getDifferenceHash(
+      Iterable<SystemGalleryDirectoryFile> cells, bool expensive) sync* {
+    for (final cell in cells) {
+      if (expensive) {
+        yield (
+          cell.isarId!,
+          expensiveHashIsar().expensiveHashs.getSync(cell.id)?.hash
+        );
+      } else {
+        yield (cell.isarId!, cell.getThumbnail()?.differenceHash);
+      }
+    }
+  }
+
+  void loadNextThumbnails(void Function() callback, bool expensive) async {
+    if (expensive) {
+      await _loadThumbExpensive();
+    } else {
+      await _loadThumbInexpensive();
+    }
+
+    callback();
+  }
+
+  Future<void> _loadThumbExpensive() async {
+    var offset = 0;
+    var count = 0;
+    List<Future<ExpensiveHash>> hashs = [];
+
+    for (;;) {
+      final elems = _impl.db.systemGalleryDirectoryFiles
+          .where()
+          .offset(offset)
+          .limit(20)
+          .findAllSync();
+      offset += elems.length;
+
+      if (elems.isEmpty) {
+        break;
+      }
+
+      for (final file in elems) {
+        if (expensiveHashIsar().expensiveHashs.getSync(file.id) == null) {
+          count++;
+
+          hashs.add(PlatformFunctions.getExpensiveHashDirectly(file.id));
+
+          if (hashs.length > 4) {
+            final loadedH = await hashs.wait;
+            expensiveHashIsar().writeTxnSync(() {
+              expensiveHashIsar().expensiveHashs.putAllSync(loadedH);
+            });
+            hashs.clear();
+          }
+        }
+      }
+
+      if (count >= 40) {
+        break;
+      }
+    }
+
+    if (hashs.isNotEmpty) {
+      final loadedH = await hashs.wait;
+      expensiveHashIsar().writeTxnSync(() {
+        expensiveHashIsar().expensiveHashs.putAllSync(loadedH);
+      });
+    }
+  }
+
+  Future<void> _loadThumbInexpensive() async {
     var offset = 0;
     var count = 0;
     List<Future<ThumbnailId>> thumbnails = [];
@@ -85,8 +155,6 @@ class AndroidGalleryFilesExtra {
     if (thumbnails.isNotEmpty) {
       GalleryImpl.instance().addThumbnails(await thumbnails.wait, false);
     }
-
-    callback();
   }
 
   bool get supportsDirectRefresh => false;

@@ -31,6 +31,8 @@ class Settings {
   final AspectRatio ratio;
   final bool safeMode;
 
+  final bool expensiveHash;
+
   final bool saveTagsOnlyOnDownload;
 
   final bool autoRefresh;
@@ -46,6 +48,7 @@ class Settings {
       required this.listViewBooru,
       required this.picturesPerRow,
       required this.safeMode,
+      required this.expensiveHash,
       required this.saveTagsOnlyOnDownload,
       required this.gallerySettings,
       required this.ratio});
@@ -58,10 +61,12 @@ class Settings {
       bool? autoRefresh,
       int? autoRefreshMicroseconds,
       bool? saveTagsOnlyOnDownload,
+      bool? expensiveHash,
       bool? safeMode,
       AspectRatio? ratio,
       GallerySettings? gallerySettings}) {
     return Settings(
+        expensiveHash: expensiveHash ?? this.expensiveHash,
         path: path ?? this.path,
         selectedBooru: selectedBooru ?? this.selectedBooru,
         quality: quality ?? this.quality,
@@ -79,6 +84,7 @@ class Settings {
 
   Settings.empty()
       : path = "",
+        expensiveHash = false,
         autoRefresh = false,
         saveTagsOnlyOnDownload = true,
         autoRefreshMicroseconds = 1.hours.inMicroseconds,
