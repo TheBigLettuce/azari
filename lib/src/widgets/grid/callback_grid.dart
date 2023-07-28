@@ -69,7 +69,12 @@ class Segments<T> {
   /// as a single element segment on the grid.
   final (String? segment, bool sticky) Function(T cell) segment;
 
-  const Segments(this.segment, this.unsegmentedLabel);
+  /// If [addToSticky] is not null. then it will be possible to make
+  /// segments sticky on the grid.
+  /// If [unsticky] is true, then instead of stickying, unstickying should happen.
+  final void Function(String seg, {bool? unsticky})? addToSticky;
+
+  const Segments(this.segment, this.unsegmentedLabel, {this.addToSticky});
 }
 
 /// Metadata about the grid.
@@ -478,16 +483,26 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
             context, widget.description.drawerIndex, widget.scaffoldKey),
       };
 
-  Widget _segmentLabel(String text) => Padding(
-        padding: const EdgeInsets.all(8),
-        child: Text(
+  Widget _segmentLabel(String text, bool sticky) => Padding(
+      padding: const EdgeInsets.all(8),
+      child: ListTile(
+        onLongPress: widget.segments!.addToSticky != null &&
+                text != widget.segments!.unsegmentedLabel
+            ? () {
+                widget.segments!.addToSticky!(text,
+                    unsticky: sticky ? true : null);
+                _state._onRefresh();
+              }
+            : null,
+        title: Text(
           text,
           style: Theme.of(context)
               .textTheme
               .headlineLarge
               ?.copyWith(letterSpacing: 2),
         ),
-      );
+        trailing: sticky ? const Icon(Icons.push_pin_outlined) : null,
+      ));
 
   Widget _makeList(BuildContext context) => SliverPadding(
         padding: EdgeInsets.only(
@@ -610,7 +625,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
 
   Widget _makeSegments(BuildContext context) {
     final segRows = <dynamic>[];
-    final segMap = <String, _ListSticky>{};
+    final segMap = <String, List<int>>{};
+    final stickySegs = <String, List<int>>{};
 
     final unsegmented = <int>[];
 
@@ -619,15 +635,21 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
       if (res == null) {
         unsegmented.add(i);
       } else {
-        final previous = (segMap[res]) ?? _ListSticky([], sticky);
-        previous.list.add(i);
-        segMap[res] = previous;
+        if (sticky) {
+          final previous = (stickySegs[res]) ?? [];
+          previous.add(i);
+          stickySegs[res] = previous;
+        } else {
+          final previous = (segMap[res]) ?? [];
+          previous.add(i);
+          segMap[res] = previous;
+        }
       }
     }
 
     segMap.removeWhere((key, value) {
-      if (value.list.length == 1 && !value.sticky) {
-        unsegmented.add(value.list[0]);
+      if (value.length == 1) {
+        unsegmented.add(value[0]);
         return true;
       }
 
@@ -650,16 +672,23 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
       }
     }
 
+    stickySegs.forEach((key, value) {
+      segRows.add(_SegSticky(key, true));
+
+      makeRows(value);
+    });
+
     segMap.forEach(
       (key, value) {
-        segRows.add(key);
+        segRows.add(_SegSticky(key, false));
 
-        makeRows(value.list);
+        makeRows(value);
       },
     );
 
     if (unsegmented.isNotEmpty) {
-      segRows.add(widget.segments!.unsegmentedLabel);
+      segRows.add(_SegSticky(widget.segments!.unsegmentedLabel, false));
+
       makeRows(unsegmented);
     }
 
@@ -676,8 +705,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
             return null;
           }
           final val = segRows[indx];
-          if (val is String) {
-            return _segmentLabel(val);
+          if (val is _SegSticky) {
+            return _segmentLabel(val.seg, val.sticky);
           } else if (val is List<int>) {
             return _makeSegmentedRow(context, val, constraints, (cellindx) {},
                 (i, cell) {
@@ -873,4 +902,11 @@ class _ListSticky {
   final bool sticky;
 
   const _ListSticky(this.list, this.sticky);
+}
+
+class _SegSticky {
+  final String seg;
+  final bool sticky;
+
+  const _SegSticky(this.seg, this.sticky);
 }

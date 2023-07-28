@@ -120,6 +120,62 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                     }
                 }
 
+                "pickFileAndCopy" -> {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        callbackMux.lock()
+                        val outputDir = call.arguments as String
+                        callback = {
+                            if (it == null) {
+                                callbackMux.unlock()
+                                result.error("empty result", "", "")
+                            } else {
+                                try {
+                                    val uri = Uri.parse(it)
+                                    var outputFile: String? = null
+
+                                    val file =
+                                        java.io.File(outputDir, uri.toString().split("/").last())
+
+                                    if (file.exists()) {
+                                        file.delete()
+                                    }
+
+                                    if (!file.createNewFile()) {
+                                        throw Exception("exist")
+                                    }
+
+                                    context.contentResolver.openInputStream(uri)?.use { input ->
+                                        file.outputStream().use { output ->
+                                            input.transferTo(output)
+                                            output.flush()
+                                            output.fd.sync()
+                                        }
+
+                                        outputFile = file.absolutePath
+                                    }
+
+                                    if (outputFile == null) {
+                                        throw Exception("file haven't been moved")
+                                    }
+
+                                    result.success(outputFile)
+                                } catch (e: Exception) {
+                                    Log.e("pickFileAndCopy", e.toString())
+                                    result.error(e.toString(), null, null)
+                                }
+
+                                callbackMux.unlock()
+                            }
+                        }
+
+                        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+                        intent.addCategory(Intent.CATEGORY_OPENABLE)
+                        intent.type = "*/*"
+
+                        context.startActivityForResult(intent, 1)
+                    }
+                }
+
                 "loadThumbnail" -> {
                     var thumb = call.arguments
                     if (thumb is Int) {

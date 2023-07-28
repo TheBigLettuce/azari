@@ -469,6 +469,16 @@ class _AndroidFilesState extends State<AndroidFiles>
                           }, false)
                         ]
                       : [
+                          GridBottomSheetAction(Icons.tag_rounded,
+                              (selected) async {
+                            for (final elem in selected) {
+                              if (PostTags().getTagsPost(elem.name).isEmpty) {
+                                await PostTags()
+                                    .getOnlineAndSaveTags(elem.name);
+                              }
+                            }
+                            GalleryImpl.instance().notify(null);
+                          }, false),
                           GridBottomSheetAction(Icons.delete, (selected) {
                             deleteDialog(context, selected);
                           }, false),

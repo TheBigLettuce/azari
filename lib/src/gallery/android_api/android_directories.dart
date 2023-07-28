@@ -17,6 +17,8 @@ import 'package:gallery/src/pages/senitel.dart';
 import 'package:gallery/src/schemas/android_gallery_directory.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 import 'package:gallery/src/schemas/blacklisted_directory.dart';
+import 'package:gallery/src/schemas/pinned_directories.dart';
+import 'package:gallery/src/schemas/tags.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
@@ -185,21 +187,54 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                 state.settings.gallerySettings.directoryAspectRatio?.value ?? 1,
             hideAlias: state.settings.gallerySettings.hideDirectoryName,
             immutable: false,
-            segments: Segments((cell) {
-              for (final booru in Booru.values) {
-                if (booru.url == cell.name) {
-                  return ("Booru", true);
+            segments: Segments(
+              (cell) {
+                for (final booru in Booru.values) {
+                  if (booru.url == cell.name) {
+                    return ("Booru", true);
+                  }
                 }
-              }
 
-              final dirTag = PostTags().directoryTag(cell.bucketId);
-              if (dirTag != null) {
-                return (dirTag, false);
-              }
+                final dirTag = PostTags().directoryTag(cell.bucketId);
+                if (dirTag != null) {
+                  return (
+                    dirTag,
+                    blacklistedDirIsar()
+                            .pinnedDirectories
+                            .getSync(fastHash(dirTag)) !=
+                        null
+                  );
+                }
 
-              final name = cell.name.split(" ");
-              return (name.first, false);
-            }, "Uncategorized"),
+                final name = cell.name.split(" ");
+                return (
+                  name.first,
+                  blacklistedDirIsar()
+                          .pinnedDirectories
+                          .getSync(fastHash(name.first)) !=
+                      null
+                );
+              },
+              "Uncategorized",
+              addToSticky: (seg, {unsticky}) {
+                if (seg == "Booru") {
+                  return;
+                }
+                if (unsticky == true) {
+                  blacklistedDirIsar().writeTxnSync(() {
+                    blacklistedDirIsar()
+                        .pinnedDirectories
+                        .deleteSync(fastHash(seg));
+                  });
+                } else {
+                  blacklistedDirIsar().writeTxnSync(() {
+                    blacklistedDirIsar()
+                        .pinnedDirectories
+                        .putSync(PinnedDirectories(seg, DateTime.now()));
+                  });
+                }
+              },
+            ),
             mainFocus: state.mainFocus,
             loadThumbsDirectly: extra.loadThumbs,
             initalCellCount: widget.callback != null

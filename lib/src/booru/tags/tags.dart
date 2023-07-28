@@ -6,12 +6,14 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:developer';
+import 'dart:io' as io;
 
 import 'package:dio/dio.dart';
 import 'package:gallery/src/booru/api/danbooru.dart';
 import 'package:gallery/src/booru/api/gelbooru.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
+import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
 import 'package:gallery/src/schemas/directory_tags.dart';
 import 'package:gallery/src/schemas/local_tag_dictionary.dart';
@@ -287,13 +289,42 @@ class PostTags {
   PostTags._new(this.tagsDb);
 
   void restore(void Function(String? error) onDone) async {
-    // try {
-    //   const MethodChannel channel = MethodChannel("lol.bruh19.azari.gallery");
-    //   String resp = await channel.invokeMethod("pickFile");
-    //   onDone(null);
-    // } catch (e) {
-    //   onDone(e.toString());
-    // }
+    final tagsFile = joinAll([appStorageDir(), "localTags"]);
+    final tagsBakFile = joinAll([appStorageDir(), "localTags.bak"]);
+
+    try {
+      final outputFile =
+          await PlatformFunctions.pickFileAndCopy(appStorageDir());
+      await Isar.openSync(
+              [LocalTagsSchema, LocalTagDictionarySchema, DirectoryTagSchema],
+              directory: appStorageDir(),
+              inspector: false,
+              name: outputFile.split("/").last)
+          .close();
+
+      await tagsDb.copyToFile(tagsBakFile);
+
+      await tagsDb.close();
+
+      io.File("$tagsFile.isar").deleteSync();
+      io.File(outputFile).renameSync("$tagsFile.isar");
+
+      tagsDb = openTagsDbIsar();
+
+      io.File(tagsBakFile).deleteSync();
+
+      onDone(null);
+    } catch (e) {
+      try {
+        if (io.File(tagsBakFile).existsSync()) {
+          if (io.File("$tagsFile.isar").existsSync()) {
+            io.File("$tagsFile.isar").deleteSync();
+          }
+          io.File(tagsBakFile).renameSync("$tagsFile.isar");
+        }
+      } catch (_) {}
+      onDone(e.toString());
+    }
   }
 
   String? directoryTag(String bucketId) {

@@ -28,6 +28,12 @@ class PlatformFunctions {
         .then((value) => ExpensiveHash(value, id));
   }
 
+  static Future<String> pickFileAndCopy(String outputDir) {
+    return _channel
+        .invokeMethod("pickFileAndCopy", outputDir)
+        .then((value) => value!);
+  }
+
   // static Future loadThumbnails(List<int> thumbs) async {
   //   return _channel.invokeMethod("loadThumbnails", thumbs);
   // }

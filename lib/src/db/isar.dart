@@ -27,6 +27,7 @@ import 'package:gallery/src/schemas/gallery_last_modified.dart';
 import 'package:gallery/src/schemas/grid_restore.dart';
 import 'package:gallery/src/schemas/local_tag_dictionary.dart';
 import 'package:gallery/src/schemas/local_tags.dart';
+import 'package:gallery/src/schemas/pinned_directories.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/scroll_position.dart';
 import 'package:gallery/src/schemas/secondary_grid.dart';
@@ -45,6 +46,7 @@ import 'package:path/path.dart' as path;
 
 part 'grids.dart';
 
+String appStorageDir() => _directoryPath;
 String temporaryDbDir() => _temporaryDbPath;
 String temporaryImagesDir() => _temporaryImagesPath;
 void clearTemporaryImagesDir() {
@@ -146,7 +148,8 @@ Future initalizeIsar(bool temporary) async {
         directory: _directoryPath,
         inspector: false,
         name: "androidExpensiveHash");
-    _blacklistedDirIsar = Isar.openSync([BlacklistedDirectorySchema],
+    _blacklistedDirIsar = Isar.openSync(
+        [BlacklistedDirectorySchema, PinnedDirectoriesSchema],
         directory: _directoryPath,
         inspector: false,
         name: "androidBlacklistedDir");

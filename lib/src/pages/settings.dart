@@ -481,8 +481,11 @@ class _SettingsListState extends State<SettingsList> {
                     PostTags().restore((err) {
                       if (err != null) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            duration: 1.minutes,
                             content: Text(AppLocalizations.of(context)!
                                 .couldntRestoreBackup(err))));
+                      } else {
+                        setState(() {});
                       }
                     });
                   },
