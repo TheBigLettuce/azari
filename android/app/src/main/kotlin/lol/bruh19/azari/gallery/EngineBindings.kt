@@ -209,7 +209,7 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                             val newName =
                                 call.argument<String>("newName") ?: throw Exception("empty name")
 
-                            var parsedUri = Uri.parse(uri)
+                            val parsedUri = Uri.parse(uri)
 
                             val intent = MediaStore.createWriteRequest(
                                 context.contentResolver,

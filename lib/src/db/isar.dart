@@ -144,7 +144,7 @@ Future initalizeIsar(bool temporary) async {
     _thumbnailIsar!.writeTxnSync(() {
       _thumbnailIsar!.thumbnails.where().isEmptyEqualTo(true).deleteAllSync();
     });
-    _expensiveHashIsar = Isar.openSync([ExpensiveHashSchema],
+    _expensiveHashIsar = Isar.openSync([PerceptionHashSchema],
         directory: _directoryPath,
         inspector: false,
         name: "androidExpensiveHash");

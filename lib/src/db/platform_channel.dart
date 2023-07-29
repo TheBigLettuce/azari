@@ -22,10 +22,10 @@ class PlatformFunctions {
     _channel.invokeMethod("refreshFiles", bucketId);
   }
 
-  static Future<ExpensiveHash> getExpensiveHashDirectly(int id) {
+  static Future<PerceptionHash> getExpensiveHashDirectly(int id) {
     return _channel
         .invokeMethod("getExpensiveHashDirectly", id)
-        .then((value) => ExpensiveHash(value, id));
+        .then((value) => PerceptionHash(value, id));
   }
 
   static Future<String> pickFileAndCopy(String outputDir) {

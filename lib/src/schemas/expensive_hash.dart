@@ -10,9 +10,9 @@ import 'package:isar/isar.dart';
 part 'expensive_hash.g.dart';
 
 @collection
-class ExpensiveHash {
+class PerceptionHash {
   final Id id;
   final int hash;
 
-  const ExpensiveHash(this.hash, this.id);
+  const PerceptionHash(this.hash, this.id);
 }

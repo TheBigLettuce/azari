@@ -1,4 +1,9 @@
-1.3.4:
+1.3.5+5:
+— Improvements to some details,
+— Segment grid in the gallery directories' grid,
+— Perception hash for expensive "Same" algorithm.
+
+1.3.4+4:
 — Filtering by tags,
 — Filtering by similarity, based on difference hash alghoritm.
 

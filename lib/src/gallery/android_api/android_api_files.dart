@@ -53,7 +53,7 @@ class AndroidGalleryFilesExtra {
       if (expensive) {
         yield (
           cell.isarId!,
-          expensiveHashIsar().expensiveHashs.getSync(cell.id)?.hash
+          expensiveHashIsar().perceptionHashs.getSync(cell.id)?.hash
         );
       } else {
         yield (cell.isarId!, cell.getThumbnail()?.differenceHash);
@@ -74,7 +74,7 @@ class AndroidGalleryFilesExtra {
   Future<void> _loadThumbExpensive() async {
     var offset = 0;
     var count = 0;
-    List<Future<ExpensiveHash>> hashs = [];
+    List<Future<PerceptionHash>> hashs = [];
 
     for (;;) {
       final elems = _impl.db.systemGalleryDirectoryFiles
@@ -89,7 +89,7 @@ class AndroidGalleryFilesExtra {
       }
 
       for (final file in elems) {
-        if (expensiveHashIsar().expensiveHashs.getSync(file.id) == null) {
+        if (expensiveHashIsar().perceptionHashs.getSync(file.id) == null) {
           count++;
 
           hashs.add(PlatformFunctions.getExpensiveHashDirectly(file.id));
@@ -97,7 +97,7 @@ class AndroidGalleryFilesExtra {
           if (hashs.length > 4) {
             final loadedH = await hashs.wait;
             expensiveHashIsar().writeTxnSync(() {
-              expensiveHashIsar().expensiveHashs.putAllSync(loadedH);
+              expensiveHashIsar().perceptionHashs.putAllSync(loadedH);
             });
             hashs.clear();
           }
@@ -112,7 +112,7 @@ class AndroidGalleryFilesExtra {
     if (hashs.isNotEmpty) {
       final loadedH = await hashs.wait;
       expensiveHashIsar().writeTxnSync(() {
-        expensiveHashIsar().expensiveHashs.putAllSync(loadedH);
+        expensiveHashIsar().perceptionHashs.putAllSync(loadedH);
       });
     }
   }

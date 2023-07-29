@@ -484,24 +484,37 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
       };
 
   Widget _segmentLabel(String text, bool sticky) => Padding(
-      padding: const EdgeInsets.all(8),
-      child: ListTile(
+      padding: const EdgeInsets.only(bottom: 8, top: 16, left: 8, right: 8),
+      child: GestureDetector(
         onLongPress: widget.segments!.addToSticky != null &&
                 text != widget.segments!.unsegmentedLabel
             ? () {
+                HapticFeedback.vibrate();
                 widget.segments!.addToSticky!(text,
                     unsticky: sticky ? true : null);
                 _state._onRefresh();
               }
             : null,
-        title: Text(
-          text,
-          style: Theme.of(context)
-              .textTheme
-              .headlineLarge
-              ?.copyWith(letterSpacing: 2),
+        child: SizedBox.fromSize(
+          size: Size.fromHeight(
+              (Theme.of(context).textTheme.headlineLarge?.fontSize ?? 24) + 8),
+          child: Stack(
+            children: [
+              Text(
+                text,
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineLarge
+                    ?.copyWith(letterSpacing: 2),
+              ),
+              if (sticky)
+                const Align(
+                  alignment: Alignment.centerRight,
+                  child: Icon(Icons.push_pin_outlined),
+                ),
+            ],
+          ),
         ),
-        trailing: sticky ? const Icon(Icons.push_pin_outlined) : null,
       ));
 
   Widget _makeList(BuildContext context) => SliverPadding(
@@ -895,13 +908,6 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
                   ))),
         ));
   }
-}
-
-class _ListSticky {
-  final List<int> list;
-  final bool sticky;
-
-  const _ListSticky(this.list, this.sticky);
 }
 
 class _SegSticky {

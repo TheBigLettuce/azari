@@ -165,7 +165,7 @@ class _AndroidFilesState extends State<AndroidFiles>
             }
 
             final distance = hammingDistance(first, second);
-            if (distance < 4) {
+            if (distance < 3) {
               for (final e in accu.data[first]!) {
                 distanceSet.add(e);
               }
