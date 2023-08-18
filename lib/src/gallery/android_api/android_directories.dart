@@ -152,6 +152,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
             scaffoldKey: state.scaffoldKey,
             systemNavigationInsets: insets,
             hasReachedEnd: () => true,
+            inlineMenuButtonItems: true,
             menuButtonItems: widget.callback != null
                 ? [
                     IconButton(
@@ -181,7 +182,18 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                                 bucketId: "trash");
                           }));
                         },
-                        icon: const Icon(Icons.delete))
+                        icon: const Icon(Icons.delete)),
+                    IconButton(
+                        onPressed: () {
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) {
+                            return AndroidFiles(
+                                api: extra.favorites(),
+                                dirName: "favorites",
+                                bucketId: "favorites");
+                          }));
+                        },
+                        icon: const Icon(Icons.star_border_outlined))
                   ],
             aspectRatio:
                 state.settings.gallerySettings.directoryAspectRatio?.value ?? 1,
@@ -268,7 +280,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                     context,
                     MaterialPageRoute(
                       builder: (context) => AndroidFiles(
-                          api: api.imagesRead(d),
+                          api: api.images(d),
                           dirName: d.name,
                           callback: widget.nestedCallback,
                           bucketId: d.bucketId),

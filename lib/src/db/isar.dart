@@ -40,6 +40,7 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import '../booru/tags/tags.dart';
 import '../pages/booru_scroll.dart';
+import '../schemas/favorite_media.dart';
 import '../schemas/settings.dart';
 
 import 'package:path/path.dart' as path;
@@ -148,8 +149,11 @@ Future initalizeIsar(bool temporary) async {
         directory: _directoryPath,
         inspector: false,
         name: "androidExpensiveHash");
-    _blacklistedDirIsar = Isar.openSync(
-        [BlacklistedDirectorySchema, PinnedDirectoriesSchema],
+    _blacklistedDirIsar = Isar.openSync([
+      BlacklistedDirectorySchema,
+      PinnedDirectoriesSchema,
+      FavoriteMediaSchema
+    ],
         directory: _directoryPath,
         inspector: false,
         name: "androidBlacklistedDir");

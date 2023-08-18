@@ -16,6 +16,7 @@ class GridCell<T extends CellData> extends StatefulWidget {
   final bool hideAlias;
   final bool tight;
   final void Function()? onLongPress;
+  final Future Function(int)? download;
 
   const GridCell(
       {Key? key,
@@ -23,6 +24,7 @@ class GridCell<T extends CellData> extends StatefulWidget {
       required this.indx,
       required this.onPressed,
       required this.tight,
+      required this.download,
       bool? hidealias,
       this.onLongPress})
       : _data = cell,
@@ -44,6 +46,11 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
         },
         focusColor: Theme.of(context).colorScheme.primary,
         onLongPress: widget.onLongPress,
+        onDoubleTap: widget.download != null
+            ? () {
+                widget.download!(widget.indx);
+              }
+            : null,
         child: LayoutBuilder(
           builder: (context, constraints) {
             return Card(

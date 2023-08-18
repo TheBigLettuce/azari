@@ -15,6 +15,7 @@ import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
 import 'package:gallery/src/gallery/android_api/android_directories.dart';
 import 'package:gallery/src/gallery/interface.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
+import 'package:gallery/src/schemas/favorite_media.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
@@ -34,8 +35,8 @@ class SameFilterAccumulator {
 class AndroidFiles extends StatefulWidget {
   final String dirName;
   final String bucketId;
-  final GalleryAPIFilesRead<AndroidGalleryFilesExtra,
-      SystemGalleryDirectoryFile> api;
+  final GalleryAPIFiles<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile>
+      api;
   final CallbackDescriptionNested? callback;
   const AndroidFiles(
       {super.key,
@@ -65,7 +66,7 @@ class _AndroidFilesState extends State<AndroidFiles>
       });
     })
     ..setRefreshingStatusCallback((i, inRefresh, empty) {
-      if (empty && !extra.isTrash()) {
+      if (empty && !extra.isTrash() && !extra.isFavorites()) {
         state.gridKey.currentState?.currentBottomSheet?.close();
         state.gridKey.currentState?.imageViewKey.currentState?.key.currentState
             ?.closeEndDrawer();
@@ -98,6 +99,7 @@ class _AndroidFilesState extends State<AndroidFiles>
     })
     ..setPassFilter((cells, data, end) {
       return switch (currentFilteringMode()) {
+        FilteringMode.favorite => _filterFavorite(cells),
         FilteringMode.noFilter => (cells, data),
         FilteringMode.same => _filterSame(cells, data, end),
         FilteringMode.tag => _filterTag(cells),
@@ -108,6 +110,11 @@ class _AndroidFilesState extends State<AndroidFiles>
         FilteringMode.original => _filterOriginal(cells)
       };
     });
+
+  (Iterable<SystemGalleryDirectoryFile>, dynamic) _filterFavorite(
+      Iterable<SystemGalleryDirectoryFile> cells) {
+    return (cells.where((element) => element.isFavorite()), null);
+  }
 
   (Iterable<SystemGalleryDirectoryFile>, dynamic) _filterTag(
       Iterable<SystemGalleryDirectoryFile> cells) {
@@ -288,6 +295,7 @@ class _AndroidFilesState extends State<AndroidFiles>
           index: kGalleryDrawerIndex,
           filteringModes: {
             FilteringMode.noFilter,
+            if (!extra.isFavorites()) FilteringMode.favorite,
             FilteringMode.original,
             FilteringMode.duplicate,
             FilteringMode.same,
@@ -361,6 +369,21 @@ class _AndroidFilesState extends State<AndroidFiles>
     ));
   }
 
+  void _favoriteOrUnfavorite(
+      BuildContext context, List<SystemGalleryDirectoryFile> selected) {
+    for (final fav in selected) {
+      if (fav.isFavorite()) {
+        blacklistedDirIsar().writeTxnSync(
+            () => blacklistedDirIsar().favoriteMedias.deleteSync(fav.id));
+      } else {
+        blacklistedDirIsar().writeTxnSync(() =>
+            blacklistedDirIsar().favoriteMedias.putSync(FavoriteMedia(fav.id)));
+      }
+    }
+
+    _refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
     var insets = MediaQuery.viewPaddingOf(context);
@@ -396,6 +419,11 @@ class _AndroidFilesState extends State<AndroidFiles>
                             icon: const Icon(Icons.restore_from_trash))
                       ]
                     : [
+                        IconButton(
+                            onPressed: () {
+                              _favoriteOrUnfavorite(context, [cell]);
+                            },
+                            icon: const Icon(Icons.star_border)),
                         IconButton(
                             onPressed: () {
                               deleteDialog(context, [cell]);
@@ -478,6 +506,10 @@ class _AndroidFilesState extends State<AndroidFiles>
                               }
                             }
                             GalleryImpl.instance().notify(null);
+                          }, false),
+                          GridBottomSheetAction(Icons.star_border_outlined,
+                              (selected) {
+                            _favoriteOrUnfavorite(context, selected);
                           }, false),
                           GridBottomSheetAction(Icons.delete, (selected) {
                             deleteDialog(context, selected);

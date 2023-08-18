@@ -235,6 +235,9 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   /// by a common category name.
   final Segments<T>? segments;
 
+  /// Makes [menuButtonItems] appear as app bar items.
+  final bool inlineMenuButtonItems;
+
   const CallbackGrid(
       {super.key,
       this.additionalKeybinds,
@@ -253,6 +256,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       this.tightMode = false,
       this.loadThumbsDirectly,
       this.belowMainFocus,
+      this.inlineMenuButtonItems = false,
       this.progressTicker,
       this.menuButtonItems,
       this.searchWidget,
@@ -561,7 +565,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
   Widget _makeGrid(BuildContext context) => SliverPadding(
         padding: EdgeInsets.only(
             bottom: widget.systemNavigationInsets.bottom +
-                MediaQuery.viewPaddingOf(context).bottom),
+                MediaQuery.viewPaddingOf(context).bottom +
+                (currentBottomSheet != null ? 48 + 4 : 0)),
         sliver: SliverGrid.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               childAspectRatio: widget.aspectRatio,
@@ -584,6 +589,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
                 cell: cellData,
                 hidealias: widget.hideAlias,
                 indx: indx,
+                download: widget.download,
                 tight: widget.tightMode,
                 onPressed: _onPressed,
                 onLongPress: () =>
@@ -625,6 +631,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
                   cell: cellData,
                   hidealias: widget.hideAlias,
                   indx: indx,
+                  download: widget.download,
                   tight: widget.tightMode,
                   onPressed: _onPressed,
                   onLongPress: () =>
@@ -829,9 +836,11 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
                                                     ))),
                                       if (Platform.isAndroid || Platform.isIOS)
                                         if (widget.menuButtonItems != null &&
-                                            widget.menuButtonItems!.length == 1)
-                                          wrapAppBarAction(
-                                              widget.menuButtonItems!.first),
+                                            (widget.menuButtonItems!.length ==
+                                                    1 ||
+                                                widget.inlineMenuButtonItems))
+                                          ...widget.menuButtonItems!
+                                              .map((e) => wrapAppBarAction(e)),
                                       if (widget.scaffoldKey.currentState
                                               ?.hasDrawer ??
                                           false)
@@ -850,7 +859,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
                                               icon: const Icon(Icons.menu)),
                                         )),
                                       if (widget.menuButtonItems != null &&
-                                          widget.menuButtonItems!.length != 1)
+                                          widget.menuButtonItems!.length != 1 &&
+                                          !widget.inlineMenuButtonItems)
                                         wrapAppBarAction(PopupMenuButton(
                                             position: PopupMenuPosition.under,
                                             itemBuilder: (context) {

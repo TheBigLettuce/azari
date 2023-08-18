@@ -25,7 +25,8 @@ import 'booru_scroll.dart';
 
 class SearchBooru extends StatefulWidget {
   final GridTab grids;
-  const SearchBooru({super.key, required this.grids});
+  final bool popSenitel;
+  const SearchBooru({super.key, required this.grids, required this.popSenitel});
 
   @override
   State<SearchBooru> createState() => _SearchBooruState();
@@ -340,7 +341,8 @@ class _SearchBooruState extends State<SearchBooru> {
                           autoPlay: false))
             ],
           ),
-        ]);
+        ],
+        popSenitel: widget.popSenitel);
   }
 }
 

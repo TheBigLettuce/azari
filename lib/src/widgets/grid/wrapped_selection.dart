@@ -27,7 +27,10 @@ class _WrappedSelection extends StatelessWidget {
     return Stack(
       children: [
         GestureDetector(
-          onTap: selectUnselect,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            selectUnselect();
+          },
           onLongPress: () {
             selectUntil(thisIndx);
             HapticFeedback.vibrate();
@@ -39,7 +42,10 @@ class _WrappedSelection extends StatelessWidget {
         ),
         if (isSelected)
           GestureDetector(
-            onTap: selectUnselect,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              selectUnselect();
+            },
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Align(

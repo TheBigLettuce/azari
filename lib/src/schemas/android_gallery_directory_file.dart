@@ -18,6 +18,7 @@ import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
 import 'package:gallery/src/schemas/directory_file.dart';
 import 'package:gallery/src/schemas/download_file.dart';
+import 'package:gallery/src/schemas/favorite_media.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/thumbnail.dart';
 import 'package:gallery/src/widgets/search_filter_grid.dart';
@@ -74,6 +75,10 @@ class SystemGalleryDirectoryFile implements Cell {
     return RegExp(r'[(][0-9].*[)][.][a-zA-Z].*').hasMatch(name);
   }
 
+  bool isFavorite() {
+    return blacklistedDirIsar().favoriteMedias.getSync(id) != null;
+  }
+
   @ignore
   @override
   List<Widget>? Function(BuildContext context) get addButtons => (_) {
@@ -107,6 +112,7 @@ class SystemGalleryDirectoryFile implements Cell {
                 },
                 icon: const Icon(Icons.download_outlined)),
           if (isDuplicate()) Icon(FilteringMode.duplicate.icon),
+          if (isFavorite()) Icon(FilteringMode.favorite.icon),
           if (isOriginal) Icon(FilteringMode.original.icon),
           IconButton(
               onPressed: () {
@@ -245,6 +251,7 @@ class SystemGalleryDirectoryFile implements Cell {
       if (isGif) FilteringMode.gif.icon,
       if (isOriginal) FilteringMode.original.icon,
       if (isDuplicate()) FilteringMode.duplicate.icon,
+      if (isFavorite()) FilteringMode.favorite.icon,
     ];
 
     final record = androidThumbnail(id);

@@ -45,7 +45,12 @@ internal class Mover(
     private val galleryApi: GalleryApi
 ) {
     private val channel = Channel<MoveOp>()
-    private val thumbnailsChannel = Channel<ThumbOp>(capacity = 8)
+    private val cap = if (Runtime.getRuntime().availableProcessors() == 1) {
+        1
+    } else {
+        Runtime.getRuntime().availableProcessors() - 1
+    }
+    private val thumbnailsChannel = Channel<ThumbOp>(capacity = cap)
     private val scope = CoroutineScope(coContext + Dispatchers.IO)
 
     private val isLockedDirMux = Mutex()
@@ -58,7 +63,7 @@ internal class Mover(
                 try {
                     val newScope = CoroutineScope(coContext + Dispatchers.IO)
 
-                    if (inProgress.size == 8) {
+                    if (inProgress.size == cap) {
                         inProgress.first().join()
                         inProgress.removeFirst()
                     }
@@ -219,6 +224,24 @@ internal class Mover(
         }
     }
 
+    fun refreshFavorites(ids: List<Long>) {
+        if (isLockedFilesMux.isLocked) {
+            return
+        }
+
+        val time = Calendar.getInstance().time.time
+
+        scope.launch {
+            if (!isLockedFilesMux.tryLock()) {
+                return@launch
+            }
+
+            refreshDirectoryFiles("favorites", context, time, showOnly = ids)
+
+            isLockedFilesMux.unlock()
+        }
+    }
+
     fun refreshFiles(dirId: String, isTrashed: Boolean = false) {
         if (isLockedFilesMux.isLocked) {
             return
@@ -257,7 +280,8 @@ internal class Mover(
         dir: String,
         context: Context,
         time: Long,
-        isTrashed: Boolean
+        isTrashed: Boolean = false,
+        showOnly: List<Long>? = null
     ) {
         val projection = arrayOf(
             MediaStore.Files.FileColumns.BUCKET_ID,
@@ -271,14 +295,44 @@ internal class Mover(
             MediaStore.Files.FileColumns.WIDTH
         )
 
-        val selection =
-            "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) ${if (isTrashed) "" else "AND ${MediaStore.Files.FileColumns.BUCKET_ID} = ? "}AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ?"
 
+        var selection =
+            "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) ${if (isTrashed || showOnly != null) "" else "AND ${MediaStore.Files.FileColumns.BUCKET_ID} = ? "}AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ?"
+
+        if (showOnly != null) {
+            if (showOnly.isEmpty()) {
+                CoroutineScope(coContext).launch {
+                    galleryApi.updatePictures(
+                        listOf(),
+                        dir,
+                        time,
+                        inRefreshArg = false,
+                        emptyArg = true
+                    ) {}
+                }.join()
+                return
+            }
+
+            selection = "($selection) AND ${MediaStore.Files.FileColumns._ID} = ${showOnly.first()}"
+            if (showOnly.size > 1) {
+                val builder = StringBuilder();
+                builder.append(selection)
+                for (id in showOnly) {
+                    builder.append(" OR ${MediaStore.Files.FileColumns._ID} =  $id")
+                }
+
+                selection = builder.toString()
+            }
+        }
+        
         val bundle = Bundle().apply {
             putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
             putStringArray(
                 ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS,
-                if (isTrashed) arrayOf("image/vnd.djvu") else arrayOf(dir, "image/vnd.djvu")
+                if (isTrashed || showOnly != null) arrayOf("image/vnd.djvu") else arrayOf(
+                    dir,
+                    "image/vnd.djvu"
+                )
             )
             putString(
                 ContentResolver.QUERY_ARG_SQL_SORT_ORDER,

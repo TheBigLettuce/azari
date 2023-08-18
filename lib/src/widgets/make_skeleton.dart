@@ -88,6 +88,7 @@ Widget makeGridSkeleton<T extends Cell>(
     onWillPop: overrideOnPop ??
         (popSenitel ? state.onWillPop : () => Future.value(true)),
     child: Scaffold(
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         drawerEnableOpenDragGesture:
             MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,
         floatingActionButton: state.showFab
@@ -121,7 +122,6 @@ Widget makeGridSkeleton<T extends Cell>(
                               duration: 500.ms, curve: Curves.easeInOutSine);
                     }
                   },
-                  isExtended: true,
                   child: const Icon(Icons.arrow_upward),
                 ),
               )

@@ -7,7 +7,9 @@
 
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:ui' as ui;
 
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
@@ -114,6 +116,8 @@ void mainPickfile() async {
   await Permission.accessMediaLocation.request();
   PlatformFunctions.requestManageMedia();
 
+  changeErrorColors();
+
   final accentColor = await PlatformFunctions.accentColor();
 
   runApp(MaterialApp(
@@ -131,6 +135,11 @@ void mainPickfile() async {
   ));
 }
 
+void changeErrorColors() {
+  RenderErrorBox.backgroundColor = Colors.blue.shade800;
+  RenderErrorBox.textStyle = ui.TextStyle(color: Colors.white70);
+}
+
 void main() async {
   if (Platform.isLinux) {
     await Isar.initializeIsarCore(libraries: {
@@ -140,6 +149,8 @@ void main() async {
 
     MediaKit.ensureInitialized();
   }
+
+  changeErrorColors();
 
   WidgetsFlutterBinding.ensureInitialized();
   await initalizeIsar(false);

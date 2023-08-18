@@ -10,7 +10,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/gallery/android_api/android_directories.dart';
-import 'package:gallery/src/gallery/server_api/server_directories.dart';
 import 'package:gallery/src/pages/tags.dart';
 import 'package:gallery/src/pages/downloads.dart';
 import 'package:gallery/src/schemas/download_file.dart';
@@ -91,14 +90,29 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
             },
           if (from != kTagsDrawerIndex)
             {
-              Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => SearchBooru(
-                      grids: getTab(),
-                    ),
-                  ),
-                  ModalRoute.withName("/senitel"))
+              if (from == kGalleryDrawerIndex)
+                {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SearchBooru(
+                          grids: getTab(),
+                          popSenitel: false,
+                        ),
+                      ))
+                }
+              else
+                {
+                  Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SearchBooru(
+                          grids: getTab(),
+                          popSenitel: true,
+                        ),
+                      ),
+                      ModalRoute.withName("/senitel"))
+                }
             }
         },
       kDownloadsDrawerIndex => {
@@ -121,21 +135,21 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
               MaterialPageRoute(builder: (context) => const widget.Settings()))
         },
       kGalleryDrawerIndex => {
-          if (from == kBooruGridDrawerIndex)
+          if (Platform.isAndroid)
             {
-              Navigator.pushNamed(context, "/senitel"),
+              if (from == kBooruGridDrawerIndex)
+                {
+                  Navigator.pushNamed(context, "/senitel"),
+                },
+              if (from != kGalleryDrawerIndex)
+                {
+                  Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const AndroidDirectories()),
+                      ModalRoute.withName("/senitel"))
+                }
             },
-          if (from != kGalleryDrawerIndex)
-            {
-              Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => Platform.isAndroid
-                        ? const AndroidDirectories()
-                        : const ServerDirectories(),
-                  ),
-                  ModalRoute.withName("/senitel"))
-            }
         },
       int() => throw "unknown value"
     };

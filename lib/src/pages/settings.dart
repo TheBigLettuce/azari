@@ -14,7 +14,6 @@ import 'package:gallery/main.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/pages/blacklisted_directores.dart';
-import 'package:gallery/src/pages/server_settings.dart';
 import 'package:gallery/src/schemas/settings.dart' as schema_settings;
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
@@ -110,14 +109,6 @@ class _SettingsListState extends State<SettingsList> {
   }
 
   List<Widget> makeList(BuildContext context, TextStyle titleStyle) => [
-        if (!Platform.isAndroid)
-          ListTile(
-            title: Text(AppLocalizations.of(context)!.serverSettingsPageName),
-            onTap: () =>
-                Navigator.push(context, MaterialPageRoute(builder: (context) {
-              return const ServerSettingsPage();
-            })),
-          ),
         settingsLabel(AppLocalizations.of(context)!.booruLabel, titleStyle),
         ListTile(
           title: Text(AppLocalizations.of(context)!.downloadDirectorySetting),

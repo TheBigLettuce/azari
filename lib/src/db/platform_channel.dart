@@ -22,6 +22,10 @@ class PlatformFunctions {
     _channel.invokeMethod("refreshFiles", bucketId);
   }
 
+  static void refreshFavorites(List<int> ids) {
+    _channel.invokeMethod("refreshFavorites", ids);
+  }
+
   static Future<PerceptionHash> getExpensiveHashDirectly(int id) {
     return _channel
         .invokeMethod("getExpensiveHashDirectly", id)

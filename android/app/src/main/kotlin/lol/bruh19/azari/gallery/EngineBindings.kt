@@ -201,6 +201,7 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                     result.success(null)
                 }
 
+
                 "rename" -> {
                     CoroutineScope(Dispatchers.IO).launch {
                         renameMux.lock()
@@ -233,6 +234,13 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                             Log.e("rename", e.toString())
                         }
                     }
+                }
+
+                "refreshFavorites" -> {
+                    context.runOnUiThread {
+                        mover.refreshFavorites(call.arguments as List<Long>)
+                    }
+                    result.success(null)
                 }
 
                 "refreshTrashed" -> {

@@ -13,7 +13,7 @@ import 'package:gallery/src/schemas/android_gallery_directory.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 import 'package:gallery/src/schemas/blacklisted_directory.dart';
 import 'package:gallery/src/schemas/expensive_hash.dart';
-import 'package:gallery/src/schemas/settings.dart';
+import 'package:gallery/src/schemas/favorite_media.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:gallery/src/gallery/android_api/api.g.dart';
@@ -60,12 +60,23 @@ class AndroidGalleryExtra {
     _impl.isThumbsLoading = false;
   }
 
-  GalleryAPIFilesRead<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile>
+  GalleryAPIFiles<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile>
       trash() {
     final instance =
         _AndroidGalleryFiles(openAndroidGalleryInnerIsar(), "trash", () {
       _impl.currentImages = null;
     }, "trash", isTrash: true);
+    _impl.currentImages = instance;
+
+    return instance;
+  }
+
+  GalleryAPIFiles<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile>
+      favorites() {
+    final instance =
+        _AndroidGalleryFiles(openAndroidGalleryInnerIsar(), "favorites", () {
+      _impl.currentImages = null;
+    }, "favorites", isFavorites: true);
     _impl.currentImages = instance;
 
     return instance;
@@ -100,7 +111,7 @@ class AndroidGalleryExtra {
   const AndroidGalleryExtra._(this._impl);
 }
 
-GalleryAPIRead<AndroidGalleryExtra, AndroidGalleryFilesExtra,
+GalleryAPI<AndroidGalleryExtra, AndroidGalleryFilesExtra,
         SystemGalleryDirectory, SystemGalleryDirectoryFile>
     getAndroidGalleryApi({bool? temporaryDb, bool setCurrentApi = true}) {
   var api = _AndroidGallery(temporary: temporaryDb);
@@ -113,7 +124,7 @@ GalleryAPIRead<AndroidGalleryExtra, AndroidGalleryFilesExtra,
 
 class _AndroidGallery
     implements
-        GalleryAPIRead<AndroidGalleryExtra, AndroidGalleryFilesExtra,
+        GalleryAPI<AndroidGalleryExtra, AndroidGalleryFilesExtra,
             SystemGalleryDirectory, SystemGalleryDirectoryFile> {
   void Function(int i, bool inRefresh, bool empty)? callback;
   void Function()? refreshGrid;
@@ -173,8 +184,8 @@ class _AndroidGallery
   }
 
   @override
-  GalleryAPIFilesRead<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile>
-      imagesRead(SystemGalleryDirectory d) {
+  GalleryAPIFiles<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile> images(
+      SystemGalleryDirectory d) {
     var instance =
         _AndroidGalleryFiles(openAndroidGalleryInnerIsar(), d.bucketId, () {
       currentImages = null;

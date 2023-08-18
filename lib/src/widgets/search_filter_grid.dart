@@ -26,6 +26,9 @@ class Result<T extends Cell> {
 /// Filtering modes.
 /// Implemented outside the [FilterInterface].
 enum FilteringMode {
+  /// Filter by the favorite.
+  favorite("Favorite", Icons.star_border),
+
   /// Filter by the  "original" tag.
   original("Original", Icons.circle_outlined),
 

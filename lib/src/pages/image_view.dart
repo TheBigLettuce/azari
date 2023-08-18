@@ -82,12 +82,40 @@ class _PhotoGalleryPageVideoLinuxState
   }
 }
 
+class WakelockStack {
+  Future? current;
+
+  void diasble() {
+    current?.then((value) {
+      WakelockPlus.disable();
+    });
+  }
+
+  void enable() {
+    if (current != null) {
+      return;
+    }
+
+    current = WakelockPlus.enable()..then((value) => current = null);
+  }
+
+  void dispose() {
+    if (current != null) {
+      current?.then((value) => WakelockPlus.disable());
+    } else {
+      WakelockPlus.disable();
+    }
+  }
+}
+
 class PhotoGalleryPageVideo extends StatefulWidget {
   final String url;
   final bool localVideo;
+  final WakelockStack wakelock;
   const PhotoGalleryPageVideo({
     super.key,
     required this.url,
+    required this.wakelock,
     required this.localVideo,
   });
 
@@ -105,7 +133,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
   void initState() {
     super.initState();
 
-    WakelockPlus.enable();
+    widget.wakelock.enable();
 
     if (widget.localVideo) {
       controller = VideoPlayerController.contentUri(Uri.parse(widget.url),
@@ -155,7 +183,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
 
   @override
   void dispose() {
-    WakelockPlus.disable();
+    widget.wakelock.diasble();
     disposed = true;
     controller.dispose();
     if (chewieController != null) {
@@ -232,6 +260,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   late int cellCount = widget.cellCount;
   bool refreshing = false;
   final FocusNode mainFocus = FocusNode();
+
+  final WakelockStack wakelock = WakelockStack();
 
   ImageProvider? fakeProvider;
 
@@ -333,6 +363,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   void dispose() {
     fullscreenPlug.unFullscreen();
 
+    wakelock.dispose();
     animationController.dispose();
     widget.updateTagScrollPos(null, null);
     controller.dispose();
@@ -468,7 +499,11 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
           tightMode: true,
           child: Platform.isLinux
               ? PhotoGalleryPageVideoLinux(url: uri, localVideo: local)
-              : PhotoGalleryPageVideo(url: uri, localVideo: local));
+              : PhotoGalleryPageVideo(
+                  url: uri,
+                  localVideo: local,
+                  wakelock: wakelock,
+                ));
 
   PhotoViewGalleryPageOptions _makeNetImage(ImageProvider provider) =>
       PhotoViewGalleryPageOptions(
@@ -586,7 +621,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                         : null,
                 endDrawer: Drawer(
                   backgroundColor: currentPalette?.mutedColor?.color
-                          .withOpacity(0.5) ??
+                          .withOpacity(0.85) ??
                       Theme.of(context).colorScheme.surface.withOpacity(0.5),
                   child: CustomScrollView(
                     controller: scrollController,

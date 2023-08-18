@@ -38,6 +38,7 @@ class AndroidGalleryFilesExtra {
   }
 
   bool isTrash() => _impl.isTrash;
+  bool isFavorites() => _impl.isFavorites;
 
   void setOnThumbnailCallback(void Function() callback) {
     _impl.onThumbUpdate = callback;
@@ -185,8 +186,7 @@ class AndroidGalleryFilesExtra {
 
 class _AndroidGalleryFiles
     implements
-        GalleryAPIFilesRead<AndroidGalleryFilesExtra,
-            SystemGalleryDirectoryFile> {
+        GalleryAPIFiles<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile> {
   Isar db;
   final String bucketId;
   void Function() unsetCurrentImages;
@@ -198,6 +198,7 @@ class _AndroidGalleryFiles
   final String target;
   bool isThumbsLoading = false;
   final bool isTrash;
+  final bool isFavorites;
 
   @override
   AndroidGalleryFilesExtra getExtra() {
@@ -255,6 +256,13 @@ class _AndroidGalleryFiles
 
       if (isTrash) {
         PlatformFunctions.refreshTrashed();
+      } else if (isFavorites) {
+        PlatformFunctions.refreshFavorites(blacklistedDirIsar()
+            .favoriteMedias
+            .where()
+            .findAllSync()
+            .map((e) => e.id)
+            .toList());
       } else {
         PlatformFunctions.refreshFiles(bucketId);
       }
@@ -268,6 +276,6 @@ class _AndroidGalleryFiles
 
   _AndroidGalleryFiles(
       this.db, this.bucketId, this.unsetCurrentImages, this.target,
-      {this.isTrash = false})
+      {this.isTrash = false, this.isFavorites = false})
       : startTime = DateTime.now().millisecondsSinceEpoch;
 }

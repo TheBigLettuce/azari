@@ -10,7 +10,7 @@ part of 'callback_grid.dart';
 mixin _Selection<T extends Cell> on State<CallbackGrid<T>> {
   int? lastSelected;
   bool inImageView = false;
-  GlobalKey<ImageViewState<T>> imageViewKey = GlobalKey();
+  final GlobalKey<ImageViewState<T>> imageViewKey = GlobalKey();
   late final _Mutation<T> _state = _Mutation(
     updateImageView: () {
       imageViewKey.currentState?.update(_state.cellCount);
@@ -44,46 +44,47 @@ mixin _Selection<T extends Cell> on State<CallbackGrid<T>> {
   void _addSelection(int id, T selection) {
     if (selected.isEmpty || currentBottomSheet == null) {
       currentBottomSheet = showBottomSheet(
+          constraints:
+              BoxConstraints(minWidth: MediaQuery.of(context).size.width),
+          backgroundColor:
+              Theme.of(context).colorScheme.surface.withOpacity(0.8),
           context: context,
           enableDrag: false,
           builder: (context) {
             return Padding(
-              padding:
-                  EdgeInsets.only(bottom: widget.systemNavigationInsets.bottom),
-              child: BottomSheet(
-                  enableDrag: false,
-                  onClosing: () {},
-                  builder: (context) {
-                    return Wrap(
-                      spacing: 4,
-                      children: [
-                        _wrapSheetButton(context, Icons.close_rounded, () {
-                          setState(() {
-                            selected.clear();
-                            currentBottomSheet?.close();
-                          });
-                        }, true),
-                        ...widget.description.actions
-                            .map((e) => _wrapSheetButton(
-                                context,
-                                e.icon,
-                                e.showOnlyWhenSingle && selected.length != 1
-                                    ? null
-                                    : () {
-                                        e.onPress(selected.values.toList());
+              padding: EdgeInsets.only(
+                  bottom: widget.systemNavigationInsets.bottom + 4,
+                  top: 48 / 2),
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 4,
+                children: [
+                  _wrapSheetButton(context, Icons.close_rounded, () {
+                    setState(() {
+                      selected.clear();
+                      currentBottomSheet?.close();
+                    });
+                  }, true),
+                  ...widget.description.actions
+                      .map((e) => _wrapSheetButton(
+                          context,
+                          e.icon,
+                          e.showOnlyWhenSingle && selected.length != 1
+                              ? null
+                              : () {
+                                  e.onPress(selected.values.toList());
 
-                                        if (e.closeOnPress) {
-                                          setState(() {
-                                            selected.clear();
-                                            currentBottomSheet?.close();
-                                          });
-                                        }
-                                      },
-                                false))
-                            .toList()
-                      ],
-                    );
-                  }),
+                                  if (e.closeOnPress) {
+                                    setState(() {
+                                      selected.clear();
+                                      currentBottomSheet?.close();
+                                    });
+                                  }
+                                },
+                          false))
+                      .toList()
+                ],
+              ),
             );
           })
         ..closed.then((value) => currentBottomSheet = null);

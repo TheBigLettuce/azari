@@ -63,7 +63,7 @@ class AndroidProgress implements NotificationProgress {
   void setTotal(int t) {
     if (total == 0) {
       total = t;
-      _step = (total / 12).floor();
+      _step = (total / _max).floor();
     }
   }
 

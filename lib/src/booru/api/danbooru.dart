@@ -49,7 +49,7 @@ class Danbooru implements BooruAPI {
     var req = client.getUri(
       Uri.https("danbooru.donmai.us", "/tags.json", {
         "search[name_matches]": "$tag*",
-        "order": "count",
+        "search[order]": "count",
         "limit": "10",
       }),
     );
