@@ -188,6 +188,20 @@ class SystemGalleryDirectoryFile implements Cell {
                                               "Enter new name"), // TODO: change
                                           content: TextFormField(
                                             initialValue: name,
+                                            autovalidateMode:
+                                                AutovalidateMode.always,
+                                            validator: (value) {
+                                              if (value == null) {
+                                                return "Value is null";
+                                              }
+                                              try {
+                                                PostTags().dissassembleFilename(
+                                                    value);
+                                                return null;
+                                              } catch (e) {
+                                                return e.toString();
+                                              }
+                                            },
                                             onFieldSubmitted: (value) {
                                               PlatformFunctions.rename(
                                                   originalUri, value);

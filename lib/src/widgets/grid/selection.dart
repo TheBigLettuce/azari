@@ -173,7 +173,12 @@ mixin _Selection<T extends Cell> on State<CallbackGrid<T>> {
               backgroundColor: MaterialStatePropertyAll(onPressed == null
                   ? Theme.of(context).colorScheme.primary.withOpacity(0.5)
                   : Theme.of(context).colorScheme.primary)),
-          onPressed: onPressed,
+          onPressed: onPressed == null
+              ? null
+              : () {
+                  HapticFeedback.selectionClick();
+                  onPressed();
+                },
           icon:
               Icon(icon, color: Theme.of(context).colorScheme.inversePrimary)),
     );

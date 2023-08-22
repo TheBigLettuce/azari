@@ -51,7 +51,13 @@ enum FilteringMode {
   size("Size", Icons.arrow_downward),
 
   /// No filter.
-  noFilter("No filter", Icons.filter_list_outlined);
+  noFilter("No filter", Icons.filter_list_outlined),
+
+  /// Filter by not tag not included.
+  tagReversed("Tag reversed", Icons.label_off_outlined),
+
+  /// Filter by no tags on image.
+  untagged("Untagged", Icons.label_off);
 
   /// Name displayed in search bar.
   final String string;
@@ -307,7 +313,8 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
         focusMain: widget.instance._state.mainFocus.requestFocus,
         notifier: widget.instance.searchFocus,
         child: Builder(
-          builder: (context) => currentFilterMode == FilteringMode.tag
+          builder: (context) => currentFilterMode == FilteringMode.tag ||
+                  currentFilterMode == FilteringMode.tagReversed
               ? autocompleteWidget(
                   widget.instance.searchTextController,
                   (p0) {},

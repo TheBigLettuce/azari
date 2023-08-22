@@ -11,7 +11,7 @@ class DummyProgress implements NotificationProgress {
   @override
   void setTotal(int t) {}
   @override
-  void update(int progress) {}
+  void update(int progress, [String? str]) {}
   @override
   void done() {}
   @override
@@ -20,6 +20,6 @@ class DummyProgress implements NotificationProgress {
 
 class DummyNotifications implements NotificationPlug {
   @override
-  Future<NotificationProgress> newProgress(_, __, ___) =>
+  Future<NotificationProgress> newProgress(_, __, ___, ____) =>
       Future.value(DummyProgress());
 }

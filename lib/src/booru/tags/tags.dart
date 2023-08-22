@@ -114,12 +114,12 @@ class PostTags {
     if (suppliedBooru == null) {
       final split = filename.split("_");
       if (split.isEmpty || split.length != 2) {
-        throw "no prefix";
+        throw "No prefix";
       }
 
       final newbooru = chooseBooruPrefix(split.first);
       if (newbooru == null) {
-        throw "prefix not registred";
+        throw "Prefix not registred";
       }
 
       booru = newbooru;
@@ -135,35 +135,35 @@ class PostTags {
 
     final numbersAndHash = filename.split("-");
     if (numbersAndHash.isEmpty || numbersAndHash.length != 2) {
-      throw "filename doesn't include numbers and hash";
+      throw "Filename doesn't include numbers and hash";
     }
 
     final id = int.tryParse(numbersAndHash.first.trimRight());
     if (id == null) {
-      throw "invalid post number";
+      throw "Invalid post number";
     }
 
     final hashAndExt = numbersAndHash.last.trimLeft().split(".");
     if (hashAndExt.isEmpty || hashAndExt.length != 2) {
-      throw "filename doesn't include extension";
+      throw "Filename doesn't include extension";
     }
 
     final numbersLetters = RegExp(r'^[a-z0-9]+$');
     if (!numbersLetters.hasMatch(hashAndExt.first)) {
-      throw "hash is invalid";
+      throw "Hash is invalid";
     }
 
     if (hashAndExt.last.length > 6) {
-      throw "extension is too long";
+      throw "Extension is too long";
     }
 
     if (hashAndExt.first.length != 32) {
-      throw "hash is not 32 characters";
+      throw "Hash is not 32 characters";
     }
 
-    final onlyLetters = RegExp(r'^[a-zA-Z]+$');
+    final onlyLetters = RegExp(r'^[a-zA-Z0-9]+$');
     if (!onlyLetters.hasMatch(hashAndExt.last)) {
-      throw "extension is invalid";
+      throw "Extension is invalid";
     }
 
     return DissolveResult(

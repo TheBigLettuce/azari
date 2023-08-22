@@ -14,6 +14,7 @@ import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
 import 'package:gallery/src/gallery/android_api/android_directories.dart';
 import 'package:gallery/src/gallery/interface.dart';
+import 'package:gallery/src/plugs/notifications.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 import 'package:gallery/src/schemas/favorite_media.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
@@ -101,8 +102,10 @@ class _AndroidFilesState extends State<AndroidFiles>
       return switch (currentFilteringMode()) {
         FilteringMode.favorite => _filterFavorite(cells),
         FilteringMode.noFilter => (cells, data),
+        FilteringMode.untagged => _filterUntagged(cells),
         FilteringMode.same => _filterSame(cells, data, end),
         FilteringMode.tag => _filterTag(cells),
+        FilteringMode.tagReversed => _filterTagReversed(cells),
         FilteringMode.video => _filterVideo(cells),
         FilteringMode.gif => _filterGif(cells),
         FilteringMode.size => (cells, data),
@@ -111,9 +114,30 @@ class _AndroidFilesState extends State<AndroidFiles>
       };
     });
 
+  (Iterable<SystemGalleryDirectoryFile>, dynamic) _filterTagReversed(
+      Iterable<SystemGalleryDirectoryFile> cells) {
+    if (searchTextController.text.isEmpty) {
+      return (cells, null);
+    }
+
+    return (
+      cells.where((element) => !PostTags()
+          .containsTagMultiple(element.name, searchTextController.text)),
+      null
+    );
+  }
+
   (Iterable<SystemGalleryDirectoryFile>, dynamic) _filterFavorite(
       Iterable<SystemGalleryDirectoryFile> cells) {
     return (cells.where((element) => element.isFavorite()), null);
+  }
+
+  (Iterable<SystemGalleryDirectoryFile>, dynamic) _filterUntagged(
+      Iterable<SystemGalleryDirectoryFile> cells) {
+    return (
+      cells.where((element) => PostTags().getTagsPost(element.name).isEmpty),
+      null
+    );
   }
 
   (Iterable<SystemGalleryDirectoryFile>, dynamic) _filterTag(
@@ -281,7 +305,8 @@ class _AndroidFilesState extends State<AndroidFiles>
             return cell;
           },
           hook: (selected) {
-            if (selected == FilteringMode.tag) {
+            if (selected == FilteringMode.tag ||
+                selected == FilteringMode.tagReversed) {
               markSearchVirtual();
             }
 
@@ -300,6 +325,8 @@ class _AndroidFilesState extends State<AndroidFiles>
             FilteringMode.duplicate,
             FilteringMode.same,
             FilteringMode.tag,
+            FilteringMode.tagReversed,
+            FilteringMode.untagged,
             FilteringMode.gif,
             FilteringMode.size,
             FilteringMode.video
@@ -382,6 +409,83 @@ class _AndroidFilesState extends State<AndroidFiles>
     }
 
     _refresh();
+  }
+
+  void _saveTags(
+      BuildContext context, List<SystemGalleryDirectoryFile> selected) async {
+    final notifi = await chooseNotificationPlug().newProgress(
+        "Saving ${selected.length == 1 ? '1 tag' : '${selected.length} tags'}",
+        -2,
+        "Saving tags",
+        "Saving tags");
+    notifi.setTotal(selected.length);
+
+    int progress = 0;
+    for (final elem in selected) {
+      progress++;
+      notifi.update(progress, "$progress/${selected.length}");
+
+      if (PostTags().getTagsPost(elem.name).isEmpty) {
+        await PostTags().getOnlineAndSaveTags(elem.name);
+      }
+    }
+    notifi.done();
+    GalleryImpl.instance().notify(null);
+  }
+
+  void _changeName(
+      BuildContext context, List<SystemGalleryDirectoryFile> selected) {
+    if (selected.isEmpty) {
+      return;
+    }
+    Navigator.push(
+        context,
+        DialogRoute(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text("Bulk rename"), // TODO: change
+              content: TextFormField(
+                autofocus: true,
+                initialValue: "*",
+                autovalidateMode: AutovalidateMode.always,
+                validator: (value) {
+                  if (value == null) {
+                    return "Value is null";
+                  }
+                  if (value.isEmpty) {
+                    return "New name should not be empty"; // TODO: change
+                  }
+
+                  if (!value.contains("*")) {
+                    return "New name should include one *"; // TODO: change
+                  }
+
+                  return null;
+                },
+                onFieldSubmitted: (value) async {
+                  if (value.isEmpty) {
+                    return;
+                  }
+                  final idx = value.indexOf("*");
+                  if (idx == -1) {
+                    return;
+                  }
+
+                  final matchBefore = value.substring(0, idx);
+
+                  for (var i = 0; i != selected.length; i++) {
+                    PlatformFunctions.rename(selected[i].originalUri,
+                        "$matchBefore${selected[i].name}",
+                        notify: i == selected.length - 1);
+                  }
+
+                  Navigator.pop(context);
+                },
+              ),
+            );
+          },
+        ));
   }
 
   @override
@@ -497,16 +601,12 @@ class _AndroidFilesState extends State<AndroidFiles>
                           }, false)
                         ]
                       : [
-                          GridBottomSheetAction(Icons.tag_rounded,
-                              (selected) async {
-                            for (final elem in selected) {
-                              if (PostTags().getTagsPost(elem.name).isEmpty) {
-                                await PostTags()
-                                    .getOnlineAndSaveTags(elem.name);
-                              }
-                            }
-                            GalleryImpl.instance().notify(null);
+                          GridBottomSheetAction(Icons.edit, (selected) {
+                            _changeName(context, selected);
                           }, false),
+                          GridBottomSheetAction(Icons.tag_rounded, (selected) {
+                            _saveTags(context, selected);
+                          }, true),
                           GridBottomSheetAction(Icons.star_border_outlined,
                               (selected) {
                             _favoriteOrUnfavorite(context, selected);

@@ -13,13 +13,14 @@ import 'package:gallery/src/plugs/notifications/kde.dart';
 
 abstract class NotificationProgress {
   void setTotal(int t);
-  void update(int progress);
+  void update(int progress, [String? str]);
   void done();
   void error(String s);
 }
 
 abstract class NotificationPlug {
-  Future<NotificationProgress> newProgress(String name, int id, String group);
+  Future<NotificationProgress> newProgress(
+      String name, int id, String group, String channelName);
 }
 
 NotificationPlug chooseNotificationPlug() {

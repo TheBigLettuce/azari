@@ -111,7 +111,7 @@ class Uploader {
     }
 
     var progress = await notification.newProgress(
-        "${f.f.length.toString()} files", id, "Uploading");
+        "${f.f.length.toString()} files", id, "Uploading", "Uploader");
 
     try {
       var settings = _settings();

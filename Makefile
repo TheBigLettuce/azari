@@ -41,4 +41,3 @@ regenerate:
 	flutter pub run pigeon --input pigeons/gallery.dart
 	dart run build_runner build
 	mkdir -p lib/src/dbus
-	@echo -e "\n\nPlease read: D-Bus generated code might be wrong, you have to fix it by hand"

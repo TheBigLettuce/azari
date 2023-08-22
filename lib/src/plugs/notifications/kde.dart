@@ -27,7 +27,7 @@ class KDENotificationProgress extends NotificationProgress {
   }
 
   @override
-  void update(int progress) {
+  void update(int progress, [String? str]) {
     _job.callsetProcessedAmount(progress, "bytes");
     _job.callsetPercent((progress / total * 100).toInt());
   }
@@ -47,7 +47,7 @@ class KDENotifications implements NotificationPlug {
   final DBusClient _client = DBusClient.session();
 
   @override
-  Future<NotificationProgress> newProgress(String name, _, __) async {
+  Future<NotificationProgress> newProgress(String name, _, __, ___) async {
     try {
       var object = OrgKdeJobViewServer(
           _client, "org.kde.kuiserver", DBusObjectPath("/JobViewServer"));

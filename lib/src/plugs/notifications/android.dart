@@ -14,17 +14,19 @@ class AndroidProgress implements NotificationProgress {
   int total = 0;
   int _step = 0;
   int _currentSteps = 0;
-  String group;
-  int id;
-  String name;
+  final String group;
+  final int id;
+  final String name;
+  final String channelName;
 
-  _showNotification(int progress) {
+  _showNotification(int progress, String name) {
     FlutterLocalNotificationsPlugin().show(
       id,
       group,
       name,
       NotificationDetails(
-        android: AndroidNotificationDetails("download", "Dowloader",
+        android: AndroidNotificationDetails(
+            channelName.toLowerCase(), channelName,
             groupKey: group,
             ongoing: true,
             playSound: false,
@@ -41,11 +43,15 @@ class AndroidProgress implements NotificationProgress {
   }
 
   @override
-  void update(int progress) {
-    if (progress > (_currentSteps == 0 ? _step : _step * _currentSteps)) {
-      _currentSteps++;
+  void update(int progress, [String? str]) {
+    if (str == null) {
+      if (progress > (_currentSteps == 0 ? _step : _step * _currentSteps)) {
+        _currentSteps++;
 
-      _showNotification(progress);
+        _showNotification(progress, name);
+      }
+    } else {
+      _showNotification(progress, str);
     }
   }
 
@@ -67,11 +73,17 @@ class AndroidProgress implements NotificationProgress {
     }
   }
 
-  AndroidProgress({required this.group, required this.id, required this.name});
+  AndroidProgress(
+      {required this.group,
+      required this.id,
+      required this.name,
+      required this.channelName});
 }
 
 class AndroidNotifications implements NotificationPlug {
   @override
-  Future<NotificationProgress> newProgress(String name, int id, String group) =>
-      Future.value(AndroidProgress(group: group, id: id, name: name));
+  Future<NotificationProgress> newProgress(
+          String name, int id, String group, String channelName) =>
+      Future.value(AndroidProgress(
+          group: group, id: id, name: name, channelName: channelName));
 }

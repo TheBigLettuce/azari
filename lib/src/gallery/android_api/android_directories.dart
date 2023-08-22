@@ -178,6 +178,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                               MaterialPageRoute(builder: (context) {
                             return AndroidFiles(
                                 api: extra.trash(),
+                                callback: widget.nestedCallback,
                                 dirName: "trash",
                                 bucketId: "trash");
                           }));
@@ -189,6 +190,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                               MaterialPageRoute(builder: (context) {
                             return AndroidFiles(
                                 api: extra.favorites(),
+                                callback: widget.nestedCallback,
                                 dirName: "favorites",
                                 bucketId: "favorites");
                           }));

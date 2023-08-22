@@ -30,7 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 
-data class RenameOp(val uri: Uri, val newName: String)
+data class RenameOp(val uri: Uri, val newName: String, val notify: Boolean)
 
 data class MoveInternalOp(val dest: String, val uris: List<Uri>, val callback: (Boolean) -> Unit)
 
@@ -47,7 +47,7 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
     val copyFilesMux = Mutex()
     var copyFiles: FilesDest? = null
     val renameMux = Mutex()
-    var rename: List<RenameOp>? = null
+    var rename: RenameOp? = null
     val moveInternalMux = Mutex()
     var moveInternal: MoveInternalOp? = null
 
@@ -209,6 +209,8 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                             val uri = call.argument<String>("uri") ?: throw Exception("empty uri")
                             val newName =
                                 call.argument<String>("newName") ?: throw Exception("empty name")
+                            val notify =
+                                call.argument<Boolean>("notify") ?: throw Exception("empty notify")
 
                             val parsedUri = Uri.parse(uri)
 
@@ -217,7 +219,7 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                                 listOf(parsedUri)
                             )
 
-                            rename = listOf(RenameOp(parsedUri, newName))
+                            rename = RenameOp(parsedUri, newName, notify)
 
                             context.startIntentSenderForResult(
                                 intent.intentSender,

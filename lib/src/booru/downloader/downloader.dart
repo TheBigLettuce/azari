@@ -195,14 +195,11 @@ class Downloader with _CancelTokens {
       return;
     }
 
-    var progress = await notificationPlug.newProgress(d.name, d.id!, d.site);
+    var progress =
+        await notificationPlug.newProgress(d.name, d.id!, d.site, "Downloader");
 
     dio.download(d.url, filePath,
         cancelToken: _tokens[d.id],
-        options: Options(headers: {
-          "user-agent":
-              "Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0"
-        }),
         deleteOnError: true, onReceiveProgress: ((count, total) {
       if (count == total || !_hasCancelKey(d.id!)) {
         progress.done();

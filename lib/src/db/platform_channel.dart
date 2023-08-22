@@ -63,15 +63,13 @@ class PlatformFunctions {
     _channel.invokeMethod("returnUri", originalUri);
   }
 
-  static void rename(String uri, String newName) {
+  static rename(String uri, String newName, {bool notify = true}) {
     if (newName.isEmpty) {
       return;
     }
 
-    _channel.invokeMethod("rename", {
-      "uri": uri,
-      "newName": newName,
-    });
+    _channel.invokeMethod(
+        "rename", {"uri": uri, "newName": newName, "notify": notify});
   }
 
   static void copyMoveFiles(String? chosen, String? chosenVolumeName,

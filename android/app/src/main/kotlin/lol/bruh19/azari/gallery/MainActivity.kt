@@ -302,22 +302,22 @@ class MainActivity : FlutterActivity() {
             if (resultCode == Activity.RESULT_OK) {
                 CoroutineScope(lifecycleScope.coroutineContext + Dispatchers.IO).launch {
                     try {
-                        for (e in engineBindings.rename!!) {
-                            val values = ContentValues()
-                            values.put(
-                                MediaStore.MediaColumns.DISPLAY_NAME,
-                                e.newName
-                            )
+                        val values = ContentValues()
+                        values.put(
+                            MediaStore.MediaColumns.DISPLAY_NAME,
+                            engineBindings.rename!!.newName
+                        )
 
-                            contentResolver.update(
-                                e.uri,
-                                values,
-                                null,
-                                null
-                            )
+                        contentResolver.update(
+                            engineBindings.rename!!.uri,
+                            values,
+                            null,
+                            null
+                        )
+
+                        if (engineBindings.rename!!.notify) {
+                            engineBindings.mover.notifyGallery()
                         }
-
-                        engineBindings.mover.notifyGallery()
                     } catch (e: Exception) {
                         Log.e("rename_", e.toString())
                     }
