@@ -413,9 +413,16 @@ class _AndroidFilesState extends State<AndroidFiles>
 
   void _saveTags(
       BuildContext context, List<SystemGalleryDirectoryFile> selected) async {
+    if (GalleryImpl.instance().isSavingTags) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Tag saving is already in progress")));
+      return;
+    }
+    GalleryImpl.instance().isSavingTags = true;
+
     final notifi = await chooseNotificationPlug().newProgress(
         "Saving ${selected.length == 1 ? '1 tag' : '${selected.length} tags'}",
-        -2,
+        -10,
         "Saving tags",
         "Saving tags");
     notifi.setTotal(selected.length);
@@ -431,6 +438,7 @@ class _AndroidFilesState extends State<AndroidFiles>
     }
     notifi.done();
     GalleryImpl.instance().notify(null);
+    GalleryImpl.instance().isSavingTags = false;
   }
 
   void _changeName(

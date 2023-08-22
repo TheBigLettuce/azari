@@ -190,6 +190,10 @@ class SystemGalleryDirectoryFile implements Cell {
                                             initialValue: name,
                                             autovalidateMode:
                                                 AutovalidateMode.always,
+                                            maxLines: 2,
+                                            minLines: 1,
+                                            decoration: const InputDecoration(
+                                                errorMaxLines: 2),
                                             validator: (value) {
                                               if (value == null) {
                                                 return "Value is null";

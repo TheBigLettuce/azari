@@ -456,12 +456,12 @@ class _SettingsListState extends State<SettingsList> {
         ),
         ListTile(
           title: Text(AppLocalizations.of(context)!.savedTagsCount),
-          onLongPress: () {
-            PostTags().rebuildTagDictionary();
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text(
-                    "Tag dictionary rebuild successfully"))); // TODO: change
-          },
+          // onLongPress: () {
+          //   PostTags().rebuildTagDictionary();
+          //   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          //       content: Text(
+          //           "Tag dictionary rebuild successfully"))); // TODO: change
+          // },
           trailing: PopupMenuButton(
             icon: const Icon(Icons.more_horiz_outlined),
             itemBuilder: (context) {

@@ -126,11 +126,17 @@ void mainPickfile() async {
     theme: _buildTheme(Brightness.light, accentColor),
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
-    home: AndroidDirectories(
-      noDrawer: true,
-      nestedCallback: CallbackDescriptionNested("Choose file", (chosen) {
-        PlatformFunctions.returnUri(chosen.originalUri);
-      }),
+    home: Builder(
+      builder: (context) {
+        changeOverlay(context);
+
+        return AndroidDirectories(
+          noDrawer: true,
+          nestedCallback: CallbackDescriptionNested("Choose file", (chosen) {
+            PlatformFunctions.returnUri(chosen.originalUri);
+          }),
+        );
+      },
     ),
   ));
 }
@@ -204,14 +210,7 @@ void main() async {
         routes: {
           "/senitel": (context) => Container(),
           "/booru": (context) {
-            SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-            SystemChrome.setSystemUIOverlayStyle(
-              SystemUiOverlayStyle(
-                  systemNavigationBarColor: Theme.of(context)
-                      .colorScheme
-                      .background
-                      .withOpacity(0.5)),
-            );
+            changeOverlay(context);
 
             var grids = getTab();
 
@@ -235,6 +234,15 @@ void main() async {
           }
         },
       )));
+}
+
+void changeOverlay(BuildContext context) {
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(
+    SystemUiOverlayStyle(
+        systemNavigationBarColor:
+            Theme.of(context).colorScheme.background.withOpacity(0.5)),
+  );
 }
 
 late GridTab _globalTab;

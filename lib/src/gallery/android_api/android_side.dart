@@ -11,6 +11,7 @@ part of 'android_api_directories.dart';
 class GalleryImpl implements GalleryApi {
   final Isar db;
   final bool temporary;
+  bool isSavingTags = false;
 
   @override
   void finish(String version) {
