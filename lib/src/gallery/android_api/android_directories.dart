@@ -7,6 +7,7 @@
 
 import 'dart:async';
 import 'dart:developer';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
@@ -21,22 +22,135 @@ import 'package:gallery/src/schemas/pinned_directories.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/grid/cell.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:logging/logging.dart';
 import '../../booru/interface.dart';
+import '../../cell/cell.dart';
+import '../../pages/image_view.dart';
 import '../../schemas/settings.dart';
+
+class CopyMovePreview extends StatefulWidget {
+  final List<SystemGalleryDirectoryFile> files;
+  const CopyMovePreview({super.key, required this.files});
+
+  @override
+  State<CopyMovePreview> createState() => _CopyMovePreviewState();
+}
+
+class _CopyMovePreviewState extends State<CopyMovePreview> {
+  final key = GlobalKey<ImageViewState>();
+
+  int calculateWidth(int i) {
+    return 52 + (i * 14);
+  }
+
+  Widget _imagePadding(int id, Cell cellData, {bool shadow = true}) {
+    return Padding(
+      padding: EdgeInsets.only(left: id * 14),
+      child: SizedBox(
+        height: 52,
+        width: 52,
+        child: GridCell(
+          cell: cellData.getCellData(false),
+          indx: id,
+          ignoreStickers: true,
+          onPressed: (context, _) {
+            Navigator.push(context, MaterialPageRoute(builder: (context) {
+              return ImageView<Cell>(
+                  key: key,
+                  systemOverlayRestoreColor:
+                      Theme.of(context).colorScheme.background.withOpacity(0.5),
+                  updateTagScrollPos: (_, __) {},
+                  scrollUntill: (_) {},
+                  onExit: () {},
+                  addIcons: (_) {
+                    return [
+                      IconButton(
+                          onPressed: () {
+                            widget.files
+                                .removeAt(key.currentState!.currentPage);
+
+                            key.currentState!.update(widget.files.length);
+
+                            if (widget.files.isEmpty) {
+                              Navigator.pop(context);
+                            }
+
+                            setState(() {});
+                          },
+                          icon: const Icon(Icons.close_rounded))
+                    ];
+                  },
+                  focusMain: () {},
+                  getCell: (i) => widget.files[i],
+                  cellCount: widget.files.length,
+                  startingCell: id,
+                  onNearEnd: null);
+            }));
+          },
+          tight: true,
+          download: null,
+          hidealias: true,
+          shadowOnTop: shadow,
+          circle: true,
+        ),
+      ),
+    );
+  }
+
+  Widget _makeStackedImages(BuildContext context) {
+    return Stack(
+      children: () {
+        final list = <Widget>[];
+
+        final width = (MediaQuery.sizeOf(context).width - 8);
+
+        for (final e in widget.files.indexed) {
+          if (calculateWidth(e.$1) > width) {
+            break;
+          }
+
+          list.add(_imagePadding(e.$1, e.$2, shadow: e.$1 != 0));
+        }
+
+        return list.reversed.toList();
+      }(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: MediaQuery.sizeOf(context).width,
+      height: 56,
+      child: Center(
+        child: Badge.count(
+          count: widget.files.length,
+          alignment: Alignment.topLeft,
+          child: Padding(
+            padding: const EdgeInsets.only(right: 4, left: 4, bottom: 4),
+            child: _makeStackedImages(context),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class CallbackDescription {
   final void Function(SystemGalleryDirectory? chosen, String? newDir) c;
   final String description;
 
+  final PreferredSizeWidget? preview;
+
   void call(SystemGalleryDirectory? chosen, String? newDir) {
     c(chosen, newDir);
   }
 
-  const CallbackDescription(this.description, this.c);
+  const CallbackDescription(this.description, this.c, {this.preview});
 }
 
 class CallbackDescriptionNested {
@@ -251,6 +365,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
             ),
             mainFocus: state.mainFocus,
             loadThumbsDirectly: extra.loadThumbs,
+            footer: widget.callback?.preview,
             initalCellCount: widget.callback != null
                 ? extra.db.systemGalleryDirectorys.countSync()
                 : 0,
@@ -383,13 +498,13 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                     GridColumn.two,
                 listView: state.settings.listViewBooru,
                 bottomWidget:
-                    widget.callback == null && widget.nestedCallback == null
-                        ? null
-                        : gridBottomWidgetText(
+                    widget.callback != null || widget.nestedCallback != null
+                        ? gridBottomWidgetText(
                             context,
                             widget.callback != null
                                 ? widget.callback!.description
-                                : widget.nestedCallback!.description),
+                                : widget.nestedCallback!.description)
+                        : null,
                 keybindsDescription:
                     AppLocalizations.of(context)!.androidGKeybindsDescription)),
         popSenitel: widget.callback == null && widget.nestedCallback == null,

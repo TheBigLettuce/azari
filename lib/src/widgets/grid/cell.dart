@@ -18,6 +18,9 @@ class GridCell<T extends CellData> extends StatefulWidget {
   final bool tight;
   final void Function()? onLongPress;
   final Future Function(int)? download;
+  final bool shadowOnTop;
+  final bool circle;
+  final bool ignoreStickers;
 
   const GridCell(
       {Key? key,
@@ -27,6 +30,9 @@ class GridCell<T extends CellData> extends StatefulWidget {
       required this.tight,
       required this.download,
       bool? hidealias,
+      this.shadowOnTop = false,
+      this.circle = false,
+      this.ignoreStickers = false,
       this.onLongPress})
       : _data = cell,
         hideAlias = hidealias ?? false,
@@ -58,10 +64,13 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
             return Card(
                 margin: widget.tight ? const EdgeInsets.all(0.5) : null,
                 elevation: 0,
+                color: Theme.of(context).cardColor.withOpacity(0),
                 child: ClipPath(
                   clipper: ShapeBorderClipper(
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15.0))),
+                      shape: widget.circle
+                          ? const CircleBorder()
+                          : RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15.0))),
                   child: Stack(
                     children: [
                       if (widget.hideAlias)
@@ -90,12 +99,17 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
                         },
                         image: widget._data.thumb,
                         alignment: Alignment.center,
+                        color: widget.shadowOnTop
+                            ? Colors.black.withOpacity(0.5)
+                            : null,
+                        colorBlendMode: BlendMode.darken,
                         fit: BoxFit.cover,
                         filterQuality: FilterQuality.high,
                         width: constraints.maxWidth,
                         height: constraints.maxHeight,
                       )),
-                      if (widget._data.stickers.isNotEmpty)
+                      if (widget._data.stickers.isNotEmpty &&
+                          !widget.ignoreStickers)
                         Align(
                           alignment: Alignment.topLeft,
                           child: Padding(

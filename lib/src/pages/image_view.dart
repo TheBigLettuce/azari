@@ -318,18 +318,21 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     }
 
     cellCount = count;
-
-    if (widget.getCell(currentPage).getCellData(false).thumb !=
-        currentCell.getCellData(false).thumb) {
-      if (currentPage == 0) {
-        controller.nextPage(
-            duration: 200.ms, curve: Curves.fastLinearToSlowEaseIn);
-      } else {
-        controller.previousPage(
-            duration: 200.ms, curve: Curves.linearToEaseOut);
-      }
+    if (currentPage > cellCount - 1) {
+      controller.previousPage(duration: 200.ms, curve: Curves.linearToEaseOut);
     } else {
-      currentCell = widget.getCell(currentPage);
+      if (widget.getCell(currentPage).getCellData(false).thumb !=
+          currentCell.getCellData(false).thumb) {
+        if (currentPage == 0) {
+          controller.nextPage(
+              duration: 200.ms, curve: Curves.fastLinearToSlowEaseIn);
+        } else {
+          controller.previousPage(
+              duration: 200.ms, curve: Curves.linearToEaseOut);
+        }
+      } else {
+        currentCell = widget.getCell(currentPage);
+      }
     }
 
     setState(() {});

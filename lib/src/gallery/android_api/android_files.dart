@@ -390,7 +390,13 @@ class _AndroidFilesState extends State<AndroidFiles>
             PlatformFunctions.copyMoveFiles(
                 chosen?.relativeLoc, chosen?.volumeName, selected,
                 move: move, newDir: newDir);
-          }),
+          },
+              preview: PreferredSize(
+                preferredSize: const Size.fromHeight(52),
+                child: CopyMovePreview(
+                  files: selected,
+                ),
+              )),
         );
       },
     ));

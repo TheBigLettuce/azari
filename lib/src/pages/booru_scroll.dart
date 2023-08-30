@@ -90,10 +90,7 @@ class BooruScroll extends StatefulWidget {
 }
 
 class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
-  //late Isar isar = widget.isar;
-  //late StreamSubscription<void> tagWatcher;
   late StreamSubscription<Settings?> settingsWatcher;
-  //List<String> tags = BooruTags().latest.getStrings();
   late final void Function(double pos, {double? infoPos, int? selectedCell})
       updateScrollPosition;
   Downloader downloader = Downloader();
@@ -148,10 +145,6 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
       _clearAndRefresh();
     }
 
-    // tagWatcher = db.isar().lastTags.watchLazy().listen((_) {
-    //   tags = BooruTags().latest.getStrings();
-    // });
-
     settingsWatcher = db.settingsIsar().settings.watchObject(0).listen((event) {
       skeletonState.settings = event!;
 
@@ -161,7 +154,6 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
 
   @override
   void dispose() {
-    //  tagWatcher.cancel();
     settingsWatcher.cancel();
 
     if (!widget.isPrimary) {
@@ -179,21 +171,10 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
     super.dispose();
   }
 
-  // List<String> _searchFilter(String value) => value.isEmpty
-  //     ? []
-  //     : tags.where((element) => element.contains(value)).toList();
-
   Isar _getInstance() =>
       widget.isPrimary ? widget.grids.instance : widget.currentInstance!;
 
   Future<int> _clearAndRefresh() async {
-    // try {
-
-    // } catch (e, trace) {
-    //   log("refreshing grid on ${skeletonState.settings.selectedBooru.string}",
-    //       level: Level.WARNING.value, error: e, stackTrace: trace);
-    // }
-
     var instance = _getInstance();
 
     try {
@@ -241,13 +222,18 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
     }
 
     try {
-      var list = await booru.fromPost(p.id, widget.tags, widget.grids.excluded);
+      final list =
+          await booru.fromPost(p.id, widget.tags, widget.grids.excluded);
       if (list.isEmpty) {
         reachedEnd = true;
       } else {
+        final oldCount = instance.posts.countSync();
         instance.writeTxnSync(() => instance.posts.putAllByIdSync(list));
         if (!skeletonState.settings.saveTagsOnlyOnDownload) {
           PostTags().addAllPostTags(list);
+        }
+        if (instance.posts.countSync() - oldCount < 3) {
+          return await _addLast();
         }
       }
     } catch (e, trace) {
