@@ -154,7 +154,7 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
     return Future.value();
   }
 
-  void _loadNext() {
+  void _loadNext(BuildContext context) {
     if (_locked) {
       return;
     }

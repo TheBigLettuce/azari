@@ -38,8 +38,7 @@ data class FilesDest(
 data class MoveOp(val source: String, val rootUri: Uri, val dir: String)
 data class ThumbOp(
     val thumb: Long,
-    val callback: (() -> Unit)?,
-    val notify: Boolean = false
+    val callback: (() -> Unit)?
 )
 
 class MainActivity : FlutterActivity() {

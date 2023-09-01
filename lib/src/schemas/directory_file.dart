@@ -52,7 +52,7 @@ class DirectoryFile implements Cell {
   List<Widget>? Function(BuildContext context,
       dynamic extra, AddInfoColorData colors) get addInfo => (context, extra,
           colors) {
-        return wrapTagsSearch(
+        return Post.wrapTagsSearch(
             context,
             extra,
             colors,
@@ -89,7 +89,6 @@ class DirectoryFile implements Cell {
               ),
             ],
             name,
-            null,
             supplyTags: tags);
       };
 

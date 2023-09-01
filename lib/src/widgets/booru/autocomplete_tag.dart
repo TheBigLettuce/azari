@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import '../../booru/interface.dart';
+import '../../db/isar.dart';
 import '../../schemas/tags.dart';
 
 Future<List<String>> autoCompleteTag(
@@ -237,6 +239,42 @@ class TagRefreshNotifier extends InheritedWidget {
   @override
   bool updateShouldNotify(TagRefreshNotifier oldWidget) =>
       oldWidget.notify != notify;
+}
+
+class BooruAPINotifier extends InheritedWidget {
+  final BooruAPI api;
+
+  static BooruAPI of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<BooruAPINotifier>();
+
+    return widget!.api;
+  }
+
+  @override
+  bool updateShouldNotify(BooruAPINotifier oldWidget) {
+    return api != oldWidget.api;
+  }
+
+  const BooruAPINotifier({super.key, required this.api, required super.child});
+}
+
+class GridTabNotifier extends InheritedWidget {
+  final GridTab tab;
+
+  @override
+  bool updateShouldNotify(GridTabNotifier oldWidget) {
+    return tab != oldWidget.tab;
+  }
+
+  static GridTab of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<GridTabNotifier>();
+
+    return widget!.tab;
+  }
+
+  const GridTabNotifier({super.key, required this.tab, required super.child});
 }
 
 class FilterNotifier extends InheritedWidget {

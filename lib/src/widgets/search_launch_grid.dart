@@ -7,7 +7,7 @@
 
 import 'package:flutter/widgets.dart';
 import 'package:gallery/src/pages/booru_scroll.dart';
-import 'package:gallery/src/db/isar.dart' as db;
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../main.dart';
 import '../booru/interface.dart';
@@ -38,7 +38,7 @@ mixin SearchLaunchGrid on State<BooruScroll>
 
   String currentlyHighlightedTag = "";
   final _ScrollHack _scrollHack = _ScrollHack();
-  late BooruAPI booru = db.getBooru(page: widget.booruPage);
+  late BooruAPI booru;
   late final void Function() focusMain;
 
   late final List<Widget>? addItems;
@@ -70,7 +70,11 @@ mixin SearchLaunchGrid on State<BooruScroll>
         currentlyHighlightedTag = s;
       }, (s) => getTab().onTagPressed(context, s), focusMain, booru.completeTag,
           searchFocus,
-          scrollHack: _scrollHack, showSearch: true, addItems: addItems);
+          scrollHack: _scrollHack,
+          showSearch: true,
+          addItems: addItems,
+          customHint:
+              "${AppLocalizations.of(context)!.searchHint} ${hint?.toLowerCase() ?? ''}");
 }
 
 class _ScrollHack extends ScrollController {

@@ -175,6 +175,8 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
 
   final Widget Function(Object error)? onError;
 
+  final List<InheritedWidget Function(Widget child)>? registerNotifiers;
+
   const CallbackGrid(
       {super.key,
       this.additionalKeybinds,
@@ -191,6 +193,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       this.addIconsImage,
       this.segments,
       this.footer,
+      this.registerNotifiers,
       this.immutable = true,
       this.tightMode = false,
       this.loadThumbsDirectly,
@@ -319,7 +322,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
           _state.cellCount != 0 &&
           (controller.offset / controller.positions.first.maxScrollExtent) >=
               1 - (height / controller.positions.first.maxScrollExtent)) {
-        _state._loadNext();
+        _state._loadNext(context);
       }
     });
   }
@@ -391,6 +394,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return ImageView<T>(
           key: imageViewKey,
+          registerNotifiers: widget.registerNotifiers,
           systemOverlayRestoreColor: overlayColor,
           updateTagScrollPos: (pos, selectedCell) => widget.updateScrollPosition
               ?.call(offsetGrid, infoPos: pos, selectedCell: selectedCell),
@@ -476,252 +480,284 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
             widget.systemNavigationInsets.bottom), //extend: maxExtend,
       );
 
+  static Widget wrapNotifiers(
+      BuildContext context,
+      List<InheritedWidget Function(Widget child)>? notifiers,
+      Widget Function(BuildContext context) child) {
+    if (notifiers == null || notifiers.isEmpty) {
+      return child(context);
+    }
+
+    Widget registerRecursion(int idx, Widget currentChild) {
+      if (idx <= -1) {
+        return currentChild;
+      }
+      final f = notifiers[idx];
+      return registerRecursion(idx - 1, f(currentChild));
+    }
+
+    return registerRecursion(notifiers.length - 1, Builder(
+      builder: (context) {
+        return child(context);
+      },
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
-    var bindings = _makeBindings(context);
+    final bindings = _makeBindings(context);
 
-    return CallbackShortcuts(
-        bindings: {
-          ...bindings,
-          ...keybindDescription(context, describeKeys(bindings),
-              widget.description.keybindsDescription, () {
-            widget.mainFocus.requestFocus();
-          })
-        },
-        child: Focus(
-          autofocus: true,
-          focusNode: widget.mainFocus,
-          child: Stack(
-            children: [
-              RefreshIndicator(
-                  onRefresh: _state.onRefresh,
-                  child: Scrollbar(
-                      interactive: false,
-                      thumbVisibility:
-                          Platform.isAndroid || Platform.isIOS ? false : true,
-                      thickness: 6,
-                      controller: controller,
-                      child: CustomScrollView(
+    return wrapNotifiers(context, widget.registerNotifiers, (context) {
+      return CallbackShortcuts(
+          bindings: {
+            ...bindings,
+            ...keybindDescription(context, describeKeys(bindings),
+                widget.description.keybindsDescription, () {
+              widget.mainFocus.requestFocus();
+            })
+          },
+          child: Focus(
+            autofocus: true,
+            focusNode: widget.mainFocus,
+            child: Stack(
+              children: [
+                RefreshIndicator(
+                    onRefresh: _state.onRefresh,
+                    child: Scrollbar(
+                        interactive: false,
+                        thumbVisibility:
+                            Platform.isAndroid || Platform.isIOS ? false : true,
+                        thickness: 6,
                         controller: controller,
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        slivers: [
-                          FocusNotifier(
-                              notifier: widget.searchWidget?.focus,
-                              focusMain: () {
-                                widget.mainFocus.requestFocus();
-                              },
-                              child: Builder(
-                                builder: (context) {
-                                  return SliverAppBar(
-                                    backgroundColor: Theme.of(context)
-                                        .colorScheme
-                                        .background
-                                        .withOpacity(0.90),
-                                    expandedHeight:
-                                        FocusNotifier.of(context).hasFocus
-                                            ? 64
-                                            : 152 +
-                                                (widget
-                                                        .description
-                                                        .bottomWidget
-                                                        ?.preferredSize
-                                                        .height ??
-                                                    0),
-                                    collapsedHeight: 64,
-                                    automaticallyImplyLeading: false,
-                                    actions: [Container()],
-                                    flexibleSpace: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Expanded(
-                                              child: FlexibleSpaceBar(
-                                                  titlePadding:
-                                                      EdgeInsetsDirectional
-                                                          .only(
-                                                    start: widget.onBack != null
-                                                        ? 48
-                                                        : 0,
-                                                  ),
-                                                  title: widget.searchWidget
-                                                              ?.search !=
-                                                          null
-                                                      ? Padding(
-                                                          padding: EdgeInsets.only(
-                                                              bottom: widget
+                        child: CustomScrollView(
+                          controller: controller,
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          slivers: [
+                            FocusNotifier(
+                                notifier: widget.searchWidget?.focus,
+                                focusMain: () {
+                                  widget.mainFocus.requestFocus();
+                                },
+                                child: Builder(
+                                  builder: (context) {
+                                    return SliverAppBar(
+                                      backgroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .background
+                                          .withOpacity(0.90),
+                                      expandedHeight:
+                                          FocusNotifier.of(context).hasFocus
+                                              ? 64
+                                              : 152 +
+                                                  (widget
+                                                          .description
+                                                          .bottomWidget
+                                                          ?.preferredSize
+                                                          .height ??
+                                                      0),
+                                      collapsedHeight: 64,
+                                      automaticallyImplyLeading: false,
+                                      actions: [Container()],
+                                      flexibleSpace: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                                child: FlexibleSpaceBar(
+                                                    titlePadding:
+                                                        EdgeInsetsDirectional
+                                                            .only(
+                                                      start:
+                                                          widget.onBack != null
+                                                              ? 48
+                                                              : 0,
+                                                    ),
+                                                    title: widget.searchWidget
+                                                                ?.search !=
+                                                            null
+                                                        ? Padding(
+                                                            padding: EdgeInsets.only(
+                                                                bottom: widget
+                                                                        .description
+                                                                        .bottomWidget
+                                                                        ?.preferredSize
+                                                                        .height ??
+                                                                    0 +
+                                                                        (_state.isRefreshing
+                                                                            ? 4
+                                                                            : 0)),
+                                                            child: widget
+                                                                .searchWidget
+                                                                ?.search,
+                                                          )
+                                                        : Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                        .only(
+                                                                    top: 8,
+                                                                    bottom: 16,
+                                                                    right: 8,
+                                                                    left: 8),
+                                                            child: Text(
+                                                              widget.description
+                                                                      .pageName ??
+                                                                  widget
                                                                       .description
-                                                                      .bottomWidget
-                                                                      ?.preferredSize
-                                                                      .height ??
-                                                                  0 +
-                                                                      (_state.isRefreshing
-                                                                          ? 4
-                                                                          : 0)),
-                                                          child: widget
-                                                              .searchWidget
-                                                              ?.search,
-                                                        )
-                                                      : Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                      .only(
-                                                                  top: 8,
-                                                                  bottom: 16,
-                                                                  right: 8,
-                                                                  left: 8),
-                                                          child: Text(
-                                                            widget.description
-                                                                    .pageName ??
-                                                                widget
-                                                                    .description
-                                                                    .keybindsDescription,
-                                                            maxLines: 1,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
-                                                          ),
-                                                        ))),
-                                          if (Platform.isAndroid ||
-                                              Platform.isIOS)
+                                                                      .keybindsDescription,
+                                                              maxLines: 1,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                            ),
+                                                          ))),
+                                            if (Platform.isAndroid ||
+                                                Platform.isIOS)
+                                              if (widget.menuButtonItems !=
+                                                      null &&
+                                                  (widget.menuButtonItems!
+                                                              .length ==
+                                                          1 ||
+                                                      widget
+                                                          .inlineMenuButtonItems))
+                                                ...widget.menuButtonItems!.map(
+                                                    (e) => wrapAppBarAction(e)),
+                                            if (widget.scaffoldKey.currentState
+                                                    ?.hasDrawer ??
+                                                false)
+                                              wrapAppBarAction(GestureDetector(
+                                                onLongPress: () {
+                                                  setState(() {
+                                                    selection.selected.clear();
+                                                    selection.currentBottomSheet
+                                                        ?.close();
+                                                  });
+                                                },
+                                                child: IconButton(
+                                                    onPressed: () {
+                                                      widget.scaffoldKey
+                                                          .currentState!
+                                                          .openDrawer();
+                                                    },
+                                                    icon:
+                                                        const Icon(Icons.menu)),
+                                              )),
                                             if (widget.menuButtonItems !=
                                                     null &&
-                                                (widget.menuButtonItems!
-                                                            .length ==
-                                                        1 ||
-                                                    widget
-                                                        .inlineMenuButtonItems))
-                                              ...widget.menuButtonItems!.map(
-                                                  (e) => wrapAppBarAction(e)),
-                                          if (widget.scaffoldKey.currentState
-                                                  ?.hasDrawer ??
-                                              false)
-                                            wrapAppBarAction(GestureDetector(
-                                              onLongPress: () {
+                                                widget.menuButtonItems!
+                                                        .length !=
+                                                    1 &&
+                                                !widget.inlineMenuButtonItems)
+                                              wrapAppBarAction(PopupMenuButton(
+                                                  position:
+                                                      PopupMenuPosition.under,
+                                                  itemBuilder: (context) {
+                                                    return widget
+                                                        .menuButtonItems!
+                                                        .map(
+                                                          (e) => PopupMenuItem(
+                                                            enabled: false,
+                                                            child: e,
+                                                          ),
+                                                        )
+                                                        .toList();
+                                                  }))
+                                          ]),
+                                      leading: widget.onBack != null
+                                          ? IconButton(
+                                              onPressed: () {
                                                 setState(() {
                                                   selection.selected.clear();
                                                   selection.currentBottomSheet
                                                       ?.close();
                                                 });
+                                                if (widget.onBack != null) {
+                                                  widget.onBack!();
+                                                }
                                               },
-                                              child: IconButton(
-                                                  onPressed: () {
-                                                    widget.scaffoldKey
-                                                        .currentState!
-                                                        .openDrawer();
-                                                  },
-                                                  icon: const Icon(Icons.menu)),
-                                            )),
-                                          if (widget.menuButtonItems != null &&
-                                              widget.menuButtonItems!.length !=
-                                                  1 &&
-                                              !widget.inlineMenuButtonItems)
-                                            wrapAppBarAction(PopupMenuButton(
-                                                position:
-                                                    PopupMenuPosition.under,
-                                                itemBuilder: (context) {
-                                                  return widget.menuButtonItems!
-                                                      .map(
-                                                        (e) => PopupMenuItem(
-                                                          enabled: false,
-                                                          child: e,
-                                                        ),
-                                                      )
-                                                      .toList();
-                                                }))
-                                        ]),
-                                    leading: widget.onBack != null
-                                        ? IconButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                selection.selected.clear();
-                                                selection.currentBottomSheet
-                                                    ?.close();
-                                              });
-                                              if (widget.onBack != null) {
-                                                widget.onBack!();
-                                              }
-                                            },
-                                            icon: const Icon(Icons.arrow_back))
-                                        : Container(),
-                                    pinned: true,
-                                    stretch: true,
-                                    bottom:
-                                        widget.description.bottomWidget != null
-                                            ? widget.description.bottomWidget!
-                                            : _state.isRefreshing
-                                                ? const PreferredSize(
-                                                    preferredSize:
-                                                        Size.fromHeight(4),
-                                                    child:
-                                                        LinearProgressIndicator(),
-                                                  )
-                                                : null,
-                                  );
-                                },
-                              )),
-                          if (widget.segments == null)
-                            !_state.isRefreshing && _state.cellCount == 0
-                                ? SliverToBoxAdapter(
-                                    child: Column(
-                                    children: [
-                                      EmptyWidget(
-                                        error: _state.refreshingError,
-                                      ),
-                                      if (widget.onError != null &&
-                                          _state.refreshingError != null)
-                                        widget
-                                            .onError!(_state.refreshingError!),
-                                    ],
-                                  ))
-                                : _withPadding(widget.description.listView
-                                    ? GridLayout.list<T>(
-                                        context,
-                                        _state,
-                                        selection,
-                                        widget.systemNavigationInsets.bottom,
-                                        widget.description.listView,
-                                        loadThumbsDirectly:
-                                            widget.loadThumbsDirectly,
-                                        onPressed: _onPressed)
-                                    : GridLayout.grid<T>(
-                                        context,
-                                        _state,
-                                        selection,
-                                        widget.description.columns.number,
-                                        widget.description.listView,
-                                        widget.loadThumbsDirectly,
-                                        _makeGridCell,
-                                        systemNavigationInsets: widget
-                                            .systemNavigationInsets.bottom,
-                                        aspectRatio: widget.aspectRatio,
-                                      ))
-                          else
-                            _withPadding(GridLayout.segments<T>(
-                                context,
-                                widget.segments!,
-                                _state,
-                                selection,
-                                widget.description.listView,
-                                widget.description.columns.number,
-                                _makeGridCell,
-                                systemNavigationInsets:
-                                    widget.systemNavigationInsets.bottom,
-                                aspectRatio: widget.aspectRatio,
-                                loadThumbsDirectly: widget.loadThumbsDirectly)),
-                        ],
-                      ))),
-              if (widget.footer != null)
-                Align(
-                  alignment: Alignment.bottomLeft,
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      bottom: widget.systemNavigationInsets.bottom,
+                                              icon:
+                                                  const Icon(Icons.arrow_back))
+                                          : Container(),
+                                      pinned: true,
+                                      stretch: true,
+                                      bottom: widget.description.bottomWidget !=
+                                              null
+                                          ? widget.description.bottomWidget!
+                                          : _state.isRefreshing
+                                              ? const PreferredSize(
+                                                  preferredSize:
+                                                      Size.fromHeight(4),
+                                                  child:
+                                                      LinearProgressIndicator(),
+                                                )
+                                              : null,
+                                    );
+                                  },
+                                )),
+                            if (widget.segments == null)
+                              !_state.isRefreshing && _state.cellCount == 0
+                                  ? SliverToBoxAdapter(
+                                      child: Column(
+                                      children: [
+                                        EmptyWidget(
+                                          error: _state.refreshingError,
+                                        ),
+                                        if (widget.onError != null &&
+                                            _state.refreshingError != null)
+                                          widget.onError!(
+                                              _state.refreshingError!),
+                                      ],
+                                    ))
+                                  : _withPadding(widget.description.listView
+                                      ? GridLayout.list<T>(
+                                          context,
+                                          _state,
+                                          selection,
+                                          widget.systemNavigationInsets.bottom,
+                                          widget.description.listView,
+                                          loadThumbsDirectly:
+                                              widget.loadThumbsDirectly,
+                                          onPressed: _onPressed)
+                                      : GridLayout.grid<T>(
+                                          context,
+                                          _state,
+                                          selection,
+                                          widget.description.columns.number,
+                                          widget.description.listView,
+                                          widget.loadThumbsDirectly,
+                                          _makeGridCell,
+                                          systemNavigationInsets: widget
+                                              .systemNavigationInsets.bottom,
+                                          aspectRatio: widget.aspectRatio,
+                                        ))
+                            else
+                              _withPadding(GridLayout.segments<T>(
+                                  context,
+                                  widget.segments!,
+                                  _state,
+                                  selection,
+                                  widget.description.listView,
+                                  widget.description.columns.number,
+                                  _makeGridCell,
+                                  systemNavigationInsets:
+                                      widget.systemNavigationInsets.bottom,
+                                  aspectRatio: widget.aspectRatio,
+                                  loadThumbsDirectly:
+                                      widget.loadThumbsDirectly)),
+                          ],
+                        ))),
+                if (widget.footer != null)
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        bottom: widget.systemNavigationInsets.bottom,
+                      ),
+                      child: widget.footer!,
                     ),
-                    child: widget.footer!,
                   ),
-                ),
-            ],
-          ),
-        ));
+              ],
+            ),
+          ));
+    });
   }
 }

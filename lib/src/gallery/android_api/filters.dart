@@ -134,7 +134,7 @@ class Filters {
             }
 
             final distance = hammingDistance(first, second);
-            if (distance < 3) {
+            if (distance < 2) {
               for (final e in accu.data[first]!) {
                 distanceSet.add(e);
               }

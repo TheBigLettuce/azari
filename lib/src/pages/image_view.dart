@@ -16,6 +16,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
 import 'package:gallery/src/widgets/booru/autocomplete_tag.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
+import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/system_gestures.dart';
 import 'package:logging/logging.dart';
 import 'package:palette_generator/palette_generator.dart';
@@ -46,6 +47,8 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final void Function() onExit;
   final void Function() focusMain;
 
+  final List<InheritedWidget Function(Widget)>? registerNotifiers;
+
   const ImageView(
       {super.key,
       required this.updateTagScrollPos,
@@ -60,6 +63,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
       this.pageChange,
       this.infoScrollOffset,
       this.download,
+      this.registerNotifiers,
       this.addIcons});
 
   @override
@@ -80,12 +84,18 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
   ImageProvider? fakeProvider;
 
-// TODO: write callbacks for image manipulation
+  PhotoViewController? currentPageController;
 
   late AnimationController animationController;
   AnimationController? downloadButtonController;
 
   final GlobalKey<ScaffoldState> key = GlobalKey();
+
+  final _finalizer = Finalizer<PhotoViewController>((controller) {
+    try {
+      controller.dispose();
+    } catch (_) {}
+  });
 
   PaletteGenerator? currentPalette;
 
@@ -186,9 +196,10 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     widget.updateTagScrollPos(null, null);
     controller.dispose();
     searchData.dispose();
-    // photoController.dispose();
 
     widget.onExit();
+
+    currentPageController?.dispose();
 
     super.dispose();
   }
@@ -232,56 +243,68 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
             AppLocalizations.of(context)!.moveImageRight,
             const SingleActivator(LogicalKeyboardKey.arrowRight,
                 shift: true)): () {
-          // var pos = photoController.position;
-          // photoController.position = pos.translate(-40, 0);
+          final pos = currentPageController?.position;
+
+          if (pos != null) {
+            currentPageController?.position = pos.translate(-40, 0);
+          }
         },
         SingleActivatorDescription(
             AppLocalizations.of(context)!.moveImageLeft,
             const SingleActivator(LogicalKeyboardKey.arrowLeft,
                 shift: true)): () {
-          // var pos = photoController.position;
-          // photoController.position = pos.translate(40, 0);
+          final pos = currentPageController?.position;
+
+          if (pos != null) {
+            currentPageController?.position = pos.translate(40, 0);
+          }
         },
         SingleActivatorDescription(
             AppLocalizations.of(context)!.rotateImageRight,
             const SingleActivator(LogicalKeyboardKey.arrowRight,
                 control: true)): () {
-          // photoController.rotation += 0.5;
+          currentPageController?.rotation -= 0.5;
         },
         SingleActivatorDescription(
             AppLocalizations.of(context)!.rotateImageLeft,
             const SingleActivator(LogicalKeyboardKey.arrowLeft,
                 control: true)): () {
-          // photoController.rotation -= 0.5;
+          currentPageController?.rotation += 0.5;
         },
         SingleActivatorDescription(AppLocalizations.of(context)!.moveImageUp,
             const SingleActivator(LogicalKeyboardKey.arrowUp)): () {
-          // var pos = photoController.position;
-          // photoController.position = pos.translate(0, 40);
+          final pos = currentPageController?.position;
+
+          if (pos != null) {
+            currentPageController?.position = pos.translate(0, 40);
+          }
         },
         SingleActivatorDescription(AppLocalizations.of(context)!.moveImageDown,
             const SingleActivator(LogicalKeyboardKey.arrowDown)): () {
-          // var pos = photoController.position;
-          // photoController.position = pos.translate(0, -40);
+          final pos = currentPageController?.position;
+
+          if (pos != null) {
+            currentPageController?.position = pos.translate(0, -40);
+          }
         },
         SingleActivatorDescription(AppLocalizations.of(context)!.zoomImageIn,
             const SingleActivator(LogicalKeyboardKey.pageUp)): () {
-          // var s = photoController.scale;
+          final s = currentPageController?.scale;
 
-          // if (s != null && s < 2.5) {
-          // photoController.scale = s + 0.5;
-          // }
+          if (s != null && s < 2.5) {
+            currentPageController?.scale = s + 0.5;
+          }
         },
         SingleActivatorDescription(AppLocalizations.of(context)!.zoomImageOut,
             const SingleActivator(LogicalKeyboardKey.pageDown)): () {
-          // var s = photoController.scale;
+          final s = currentPageController?.scale;
 
-          // if (s != null && s > 0.2) {
-          // photoController.scale = s - 0.25;
-          // }
+          if (s != null && s > 0.2) {
+            currentPageController?.scale = s - 0.25;
+          }
         },
         SingleActivatorDescription(AppLocalizations.of(context)!.showImageInfo,
-            const SingleActivator(LogicalKeyboardKey.keyI)): () {
+            const SingleActivator(LogicalKeyboardKey.keyI, control: true)): () {
           if (key.currentState != null) {
             if (key.currentState!.isEndDrawerOpen) {
               key.currentState?.closeEndDrawer();
@@ -291,13 +314,14 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
           }
         },
         SingleActivatorDescription(AppLocalizations.of(context)!.downloadImage,
-            const SingleActivator(LogicalKeyboardKey.keyD)): () {
+            const SingleActivator(LogicalKeyboardKey.keyD, control: true)): () {
           if (widget.download != null) {
             widget.download!(currentPage);
           }
         },
         SingleActivatorDescription(AppLocalizations.of(context)!.hideAppBar,
-            const SingleActivator(LogicalKeyboardKey.space)): () {
+                const SingleActivator(LogicalKeyboardKey.space, control: true)):
+            () {
           _onTap();
         },
         SingleActivatorDescription(AppLocalizations.of(context)!.nextImage,
@@ -323,13 +347,21 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                   wakelock: wakelock,
                 ));
 
-  PhotoViewGalleryPageOptions _makeNetImage(ImageProvider provider) =>
-      PhotoViewGalleryPageOptions(
-          minScale: PhotoViewComputedScale.contained * 0.8,
-          maxScale: PhotoViewComputedScale.covered * 1.8,
-          initialScale: PhotoViewComputedScale.contained,
-          filterQuality: FilterQuality.high,
-          imageProvider: fakeProvider ?? provider);
+  PhotoViewGalleryPageOptions _makeNetImage(ImageProvider provider) {
+    final options = PhotoViewGalleryPageOptions(
+        minScale: PhotoViewComputedScale.contained * 0.8,
+        maxScale: PhotoViewComputedScale.covered * 1.8,
+        initialScale: PhotoViewComputedScale.contained,
+        controller: Platform.isLinux ? PhotoViewController() : null,
+        filterQuality: FilterQuality.high,
+        imageProvider: fakeProvider ?? provider);
+
+    if (options.controller != null) {
+      _finalizer.attach(provider, options.controller!);
+    }
+
+    return options;
+  }
 
   PhotoViewGalleryPageOptions _makeAndroidImage(
           Size size, String uri, bool isGif) =>
@@ -374,304 +406,316 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     final insets = MediaQuery.viewInsetsOf(context);
 
-    return CallbackShortcuts(
-        bindings: {
-          ...bindings,
-          ...keybindDescription(context, describeKeys(bindings),
-              AppLocalizations.of(context)!.imageViewPageName, widget.focusMain)
-        },
-        child: Focus(
-          autofocus: true,
-          focusNode: mainFocus,
-          child: Theme(
-            data: Theme.of(context).copyWith(
-                bottomSheetTheme: BottomSheetThemeData(
-              shape: const Border(),
-              backgroundColor:
-                  currentPalette?.dominantColor?.color.withOpacity(0.5) ??
-                      Colors.black.withOpacity(0.5),
-            )),
-            child: Scaffold(
-                key: key,
-                extendBodyBehindAppBar: true,
-                endDrawerEnableOpenDragGesture: false,
-                resizeToAvoidBottomInset: false,
-                bottomSheet: !isAppbarShown
-                    ? null
-                    : widget.addIcons != null
-                        ? () {
-                            final items = widget.addIcons!(currentCell);
-                            if (items.isNotEmpty) {
-                              return Theme(
-                                  data: Theme.of(context).copyWith(
-                                      iconButtonTheme: IconButtonThemeData(
-                                          style: ButtonStyle(
-                                              shape: const MaterialStatePropertyAll(
-                                                  RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.all(
-                                                              Radius.elliptical(
-                                                                  10, 10)))),
-                                              backgroundColor: MaterialStatePropertyAll(
-                                                  currentPalette
-                                                          ?.dominantColor?.color
-                                                          .withOpacity(0.5) ??
-                                                      Colors.black.withOpacity(0.5)))),
-                                      iconTheme: IconThemeData(color: currentPalette?.dominantColor?.bodyTextColor.withOpacity(0.8) ?? kListTileColorInInfo)),
-                                  child: SizedBox.fromSize(
-                                    size: Size.fromHeight(kToolbarHeight +
-                                        MediaQuery.viewPaddingOf(context)
-                                            .bottom),
-                                    child: Center(
-                                        child: Padding(
-                                      padding: EdgeInsets.only(
-                                          bottom:
-                                              MediaQuery.viewPaddingOf(context)
-                                                  .bottom),
-                                      child: Wrap(
-                                        spacing: 4,
-                                        children: items,
-                                      ),
-                                    )),
-                                  ));
-                            }
-                          }()
-                        : null,
-                endDrawer: Drawer(
-                  backgroundColor: currentPalette?.mutedColor?.color
-                          .withOpacity(0.85) ??
-                      Theme.of(context).colorScheme.surface.withOpacity(0.5),
-                  child: CustomScrollView(
-                    controller: scrollController,
-                    slivers: [
-                      endDrawerHeading(context, "Info", key,
-                          titleColor:
-                              currentPalette?.dominantColor?.titleTextColor ??
-                                  Theme.of(context)
-                                      .colorScheme
-                                      .surface
-                                      .withOpacity(0.5),
-                          backroundColor: currentPalette?.dominantColor?.color
-                                  .withOpacity(0.5) ??
-                              Theme.of(context)
-                                  .colorScheme
-                                  .surface
-                                  .withOpacity(0.5)),
-                      TagRefreshNotifier(
-                          notify: () {
-                            try {
-                              setState(() {});
-                            } catch (_) {}
-                          },
-                          child: FilterValueNotifier(
-                              notifier: searchData.searchController,
-                              child: FilterNotifier(
-                                data: searchData,
-                                child: FocusNotifier(
-                                    notifier: searchData.searchFocus,
-                                    focusMain: () {
-                                      mainFocus.requestFocus();
-                                    },
-                                    child: Builder(
-                                      builder: (context) {
-                                        var addInfo =
-                                            currentCell.addInfo(context, () {
-                                          widget.updateTagScrollPos(
-                                              scrollController.offset,
-                                              currentPage);
-                                        },
-                                                AddInfoColorData(
-                                                  borderColor: Theme.of(context)
-                                                      .colorScheme
-                                                      .outlineVariant,
-                                                  foregroundColor:
-                                                      currentPalette?.mutedColor
-                                                              ?.bodyTextColor ??
-                                                          kListTileColorInInfo,
-                                                  systemOverlayColor: widget
-                                                      .systemOverlayRestoreColor,
-                                                ));
-
-                                        return Theme(
-                                          data: Theme.of(context).copyWith(
-                                              hintColor: currentPalette
-                                                      ?.mutedColor
-                                                      ?.bodyTextColor ??
-                                                  kListTileColorInInfo),
-                                          child: SliverPadding(
-                                            padding: EdgeInsets.only(
-                                                bottom: insets.bottom +
-                                                    MediaQuery.of(context)
-                                                        .viewPadding
-                                                        .bottom),
-                                            sliver: SliverList.list(children: [
-                                              if (addInfo != null) ...addInfo
-                                            ]),
-                                          ),
-                                        );
-                                      },
-                                    )),
-                              )))
-                    ],
-                  ),
-                ),
-                appBar: PreferredSize(
-                  preferredSize: AppBar().preferredSize,
-                  child: IgnorePointer(
-                    ignoring: !isAppbarShown,
-                    child: AppBar(
-                      automaticallyImplyLeading: false,
-                      foregroundColor: currentPalette
-                              ?.dominantColor?.bodyTextColor
-                              .withOpacity(0.8) ??
-                          kListTileColorInInfo,
-                      backgroundColor: currentPalette?.dominantColor?.color
-                              .withOpacity(0.5) ??
-                          Colors.black.withOpacity(0.5),
-                      leading: const BackButton(),
-                      title: GestureDetector(
-                        onLongPress: () {
-                          Clipboard.setData(
-                              ClipboardData(text: currentCell.alias(false)));
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text(AppLocalizations.of(context)!
-                                  .copiedClipboard)));
-                        },
-                        child: Text(currentCell.alias(false)),
-                      ),
-                      actions: [
-                        if (addB != null) ...addB,
-                        if (widget.download != null)
-                          IconButton(
-                                  onPressed: () {
-                                    if (downloadButtonController != null) {
-                                      downloadButtonController!
-                                          .forward(from: 0);
-                                    }
-                                    widget.download!(currentPage);
-                                  },
-                                  icon: const Icon(Icons.download))
-                              .animate(
-                                  onInit: (controller) =>
-                                      downloadButtonController = controller,
-                                  effects: const [ShakeEffect()],
-                                  autoPlay: false),
-                        IconButton(
-                            onPressed: () {
-                              key.currentState?.openEndDrawer();
+    return CallbackGridState.wrapNotifiers(context, widget.registerNotifiers,
+        (context) {
+      return CallbackShortcuts(
+          bindings: {
+            ...bindings,
+            ...keybindDescription(
+                context,
+                describeKeys(bindings),
+                AppLocalizations.of(context)!.imageViewPageName,
+                widget.focusMain)
+          },
+          child: Focus(
+            autofocus: true,
+            focusNode: mainFocus,
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                  bottomSheetTheme: BottomSheetThemeData(
+                shape: const Border(),
+                backgroundColor:
+                    currentPalette?.dominantColor?.color.withOpacity(0.5) ??
+                        Colors.black.withOpacity(0.5),
+              )),
+              child: Scaffold(
+                  key: key,
+                  extendBodyBehindAppBar: true,
+                  endDrawerEnableOpenDragGesture: false,
+                  resizeToAvoidBottomInset: false,
+                  bottomSheet: !isAppbarShown
+                      ? null
+                      : widget.addIcons != null
+                          ? () {
+                              final items = widget.addIcons!(currentCell);
+                              if (items.isNotEmpty) {
+                                return Theme(
+                                    data: Theme.of(context).copyWith(
+                                        iconButtonTheme: IconButtonThemeData(
+                                            style: ButtonStyle(
+                                                shape: const MaterialStatePropertyAll(
+                                                    RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.all(
+                                                                Radius.elliptical(
+                                                                    10, 10)))),
+                                                backgroundColor: MaterialStatePropertyAll(
+                                                    currentPalette
+                                                            ?.dominantColor
+                                                            ?.color
+                                                            .withOpacity(0.5) ??
+                                                        Colors.black.withOpacity(0.5)))),
+                                        iconTheme: IconThemeData(color: currentPalette?.dominantColor?.bodyTextColor.withOpacity(0.8) ?? kListTileColorInInfo)),
+                                    child: SizedBox.fromSize(
+                                      size: Size.fromHeight(kToolbarHeight +
+                                          MediaQuery.viewPaddingOf(context)
+                                              .bottom),
+                                      child: Center(
+                                          child: Padding(
+                                        padding: EdgeInsets.only(
+                                            bottom: MediaQuery.viewPaddingOf(
+                                                    context)
+                                                .bottom),
+                                        child: Wrap(
+                                          spacing: 4,
+                                          children: items,
+                                        ),
+                                      )),
+                                    ));
+                              }
+                            }()
+                          : null,
+                  endDrawer: Drawer(
+                    backgroundColor: currentPalette?.mutedColor?.color
+                            .withOpacity(0.85) ??
+                        Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                    child: CustomScrollView(
+                      controller: scrollController,
+                      slivers: [
+                        endDrawerHeading(context,
+                            AppLocalizations.of(context)!.infoHeadline, key,
+                            titleColor:
+                                currentPalette?.dominantColor?.titleTextColor ??
+                                    Theme.of(context)
+                                        .colorScheme
+                                        .surface
+                                        .withOpacity(0.5),
+                            backroundColor: currentPalette?.dominantColor?.color
+                                    .withOpacity(0.5) ??
+                                Theme.of(context)
+                                    .colorScheme
+                                    .surface
+                                    .withOpacity(0.5)),
+                        TagRefreshNotifier(
+                            notify: () {
+                              try {
+                                setState(() {});
+                              } catch (_) {}
                             },
-                            icon: const Icon(Icons.info_outline))
+                            child: FilterValueNotifier(
+                                notifier: searchData.searchController,
+                                child: FilterNotifier(
+                                  data: searchData,
+                                  child: FocusNotifier(
+                                      notifier: searchData.searchFocus,
+                                      focusMain: () {
+                                        mainFocus.requestFocus();
+                                      },
+                                      child: Builder(
+                                        builder: (context) {
+                                          final addInfo =
+                                              currentCell.addInfo(context, () {
+                                            widget.updateTagScrollPos(
+                                                scrollController.offset,
+                                                currentPage);
+                                          },
+                                                  AddInfoColorData(
+                                                    borderColor:
+                                                        Theme.of(context)
+                                                            .colorScheme
+                                                            .outlineVariant,
+                                                    foregroundColor: currentPalette
+                                                            ?.mutedColor
+                                                            ?.bodyTextColor ??
+                                                        kListTileColorInInfo,
+                                                    systemOverlayColor: widget
+                                                        .systemOverlayRestoreColor,
+                                                  ));
+
+                                          return Theme(
+                                            data: Theme.of(context).copyWith(
+                                                hintColor: currentPalette
+                                                        ?.mutedColor
+                                                        ?.bodyTextColor ??
+                                                    kListTileColorInInfo),
+                                            child: SliverPadding(
+                                              padding: EdgeInsets.only(
+                                                  bottom: insets.bottom +
+                                                      MediaQuery.of(context)
+                                                          .viewPadding
+                                                          .bottom),
+                                              sliver:
+                                                  SliverList.list(children: [
+                                                if (addInfo != null) ...addInfo
+                                              ]),
+                                            ),
+                                          );
+                                        },
+                                      )),
+                                )))
                       ],
                     ),
-                  ).animate(
-                    effects: [
-                      FadeEffect(begin: 1, end: 0, duration: 500.milliseconds)
-                    ],
-                    autoPlay: false,
-                    target: isAppbarShown ? 0 : 1,
                   ),
-                ),
-                body: gestureDeadZones(context,
-                    child: GestureDetector(
-                      onLongPress: widget.download == null
-                          ? null
-                          : () {
-                              HapticFeedback.vibrate();
-                              widget.download!(currentPage);
-                            },
-                      onTap: _onTap,
-                      child: PhotoViewGallery.builder(
-                          loadingBuilder: (context, event) {
-                            final expectedBytes = event?.expectedTotalBytes;
-                            final loadedBytes = event?.cumulativeBytesLoaded;
-                            final value =
-                                loadedBytes != null && expectedBytes != null
-                                    ? loadedBytes / expectedBytes
-                                    : null;
-
-                            return Container(
-                              decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                      begin: Alignment.bottomCenter,
-                                      end: Alignment.topCenter,
-                                      colors: [
-                                    ColorTween(
-                                            begin: Colors.black,
-                                            end: currentPalette
-                                                ?.mutedColor?.color
-                                                .withOpacity(0.7))
-                                        .lerp(value ?? 0)!,
-                                    ColorTween(
-                                            begin: Colors.black38,
-                                            end: currentPalette
-                                                ?.mutedColor?.color
-                                                .withOpacity(0.5))
-                                        .lerp(value ?? 0)!,
-                                    ColorTween(
-                                            begin: Colors.black12,
-                                            end: currentPalette
-                                                ?.mutedColor?.color
-                                                .withOpacity(0.3))
-                                        .lerp(value ?? 0)!,
-                                  ])),
-                              child: Center(
-                                child: SizedBox(
-                                    width: 20.0,
-                                    height: 20.0,
-                                    child: CircularProgressIndicator(
-                                        color: currentPalette
-                                            ?.dominantColor?.color,
-                                        value: value)),
-                              ),
-                            );
+                  appBar: PreferredSize(
+                    preferredSize: AppBar().preferredSize,
+                    child: IgnorePointer(
+                      ignoring: !isAppbarShown,
+                      child: AppBar(
+                        automaticallyImplyLeading: false,
+                        foregroundColor: currentPalette
+                                ?.dominantColor?.bodyTextColor
+                                .withOpacity(0.8) ??
+                            kListTileColorInInfo,
+                        backgroundColor: currentPalette?.dominantColor?.color
+                                .withOpacity(0.5) ??
+                            Colors.black.withOpacity(0.5),
+                        leading: const BackButton(),
+                        title: GestureDetector(
+                          onLongPress: () {
+                            Clipboard.setData(
+                                ClipboardData(text: currentCell.alias(false)));
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(AppLocalizations.of(context)!
+                                    .copiedClipboard)));
                           },
-                          enableRotation: true,
-                          backgroundDecoration: BoxDecoration(
-                              color: currentPalette?.mutedColor?.color
-                                  .withOpacity(0.7)),
-                          onPageChanged: (index) async {
-                            currentPage = index;
-                            widget.pageChange?.call(this);
-                            _loadNext(index);
-
-                            widget.scrollUntill(index);
-
-                            final c = widget.getCell(index);
-
-                            fullscreenPlug.setTitle(c.alias(true));
-
-                            setState(() {
-                              currentCell = c;
-                              _extractPalette();
-                            });
-                          },
-                          pageController: controller,
-                          itemCount: cellCount,
-                          builder: (context, indx) {
-                            final fileContent =
-                                widget.getCell(indx).fileDisplay();
-
-                            return switch (fileContent) {
-                              AndroidImage() => _makeAndroidImage(
-                                  fileContent.size, fileContent.uri, false),
-                              AndroidGif() => _makeAndroidImage(
-                                  fileContent.size, fileContent.uri, true),
-                              NetGif() => _makeNetImage(fileContent.provider),
-                              NetImage() => _makeNetImage(fileContent.provider),
-                              AndroidVideo() =>
-                                _makeVideo(fileContent.uri, true),
-                              NetVideo() => _makeVideo(fileContent.uri, false),
-                              EmptyContent() =>
-                                PhotoViewGalleryPageOptions.customChild(
-                                    child: const Center(
-                                  child: Icon(Icons.error_outline),
-                                ))
-                            };
-                          }),
+                          child: Text(currentCell.alias(false)),
+                        ),
+                        actions: [
+                          if (addB != null) ...addB,
+                          if (widget.download != null)
+                            IconButton(
+                                    onPressed: () {
+                                      if (downloadButtonController != null) {
+                                        downloadButtonController!
+                                            .forward(from: 0);
+                                      }
+                                      widget.download!(currentPage);
+                                    },
+                                    icon: const Icon(Icons.download))
+                                .animate(
+                                    onInit: (controller) =>
+                                        downloadButtonController = controller,
+                                    effects: const [ShakeEffect()],
+                                    autoPlay: false),
+                          IconButton(
+                              onPressed: () {
+                                key.currentState?.openEndDrawer();
+                              },
+                              icon: const Icon(Icons.info_outline))
+                        ],
+                      ),
+                    ).animate(
+                      effects: [
+                        FadeEffect(begin: 1, end: 0, duration: 500.milliseconds)
+                      ],
+                      autoPlay: false,
+                      target: isAppbarShown ? 0 : 1,
                     ),
-                    left: true,
-                    right: true)),
-          ),
-        ));
+                  ),
+                  body: gestureDeadZones(context,
+                      child: GestureDetector(
+                        onLongPress: widget.download == null
+                            ? null
+                            : () {
+                                HapticFeedback.vibrate();
+                                widget.download!(currentPage);
+                              },
+                        onTap: _onTap,
+                        child: PhotoViewGallery.builder(
+                            loadingBuilder: (context, event) {
+                              final expectedBytes = event?.expectedTotalBytes;
+                              final loadedBytes = event?.cumulativeBytesLoaded;
+                              final value =
+                                  loadedBytes != null && expectedBytes != null
+                                      ? loadedBytes / expectedBytes
+                                      : null;
+
+                              return Container(
+                                decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                        begin: Alignment.bottomCenter,
+                                        end: Alignment.topCenter,
+                                        colors: [
+                                      ColorTween(
+                                              begin: Colors.black,
+                                              end: currentPalette
+                                                  ?.mutedColor?.color
+                                                  .withOpacity(0.7))
+                                          .lerp(value ?? 0)!,
+                                      ColorTween(
+                                              begin: Colors.black38,
+                                              end: currentPalette
+                                                  ?.mutedColor?.color
+                                                  .withOpacity(0.5))
+                                          .lerp(value ?? 0)!,
+                                      ColorTween(
+                                              begin: Colors.black12,
+                                              end: currentPalette
+                                                  ?.mutedColor?.color
+                                                  .withOpacity(0.3))
+                                          .lerp(value ?? 0)!,
+                                    ])),
+                                child: Center(
+                                  child: SizedBox(
+                                      width: 20.0,
+                                      height: 20.0,
+                                      child: CircularProgressIndicator(
+                                          color: currentPalette
+                                              ?.dominantColor?.color,
+                                          value: value)),
+                                ),
+                              );
+                            },
+                            enableRotation: true,
+                            backgroundDecoration: BoxDecoration(
+                                color: currentPalette?.mutedColor?.color
+                                    .withOpacity(0.7)),
+                            onPageChanged: (index) async {
+                              currentPage = index;
+                              widget.pageChange?.call(this);
+                              _loadNext(index);
+
+                              widget.scrollUntill(index);
+
+                              final c = widget.getCell(index);
+
+                              fullscreenPlug.setTitle(c.alias(true));
+
+                              setState(() {
+                                currentCell = c;
+                                _extractPalette();
+                              });
+                            },
+                            pageController: controller,
+                            itemCount: cellCount,
+                            builder: (context, indx) {
+                              final fileContent =
+                                  widget.getCell(indx).fileDisplay();
+
+                              return switch (fileContent) {
+                                AndroidImage() => _makeAndroidImage(
+                                    fileContent.size, fileContent.uri, false),
+                                AndroidGif() => _makeAndroidImage(
+                                    fileContent.size, fileContent.uri, true),
+                                NetGif() => _makeNetImage(fileContent.provider),
+                                NetImage() =>
+                                  _makeNetImage(fileContent.provider),
+                                AndroidVideo() =>
+                                  _makeVideo(fileContent.uri, true),
+                                NetVideo() =>
+                                  _makeVideo(fileContent.uri, false),
+                                EmptyContent() =>
+                                  PhotoViewGalleryPageOptions.customChild(
+                                      child: const Center(
+                                    child: Icon(Icons.error_outline),
+                                  ))
+                              };
+                            }),
+                      ),
+                      left: true,
+                      right: true)),
+            ),
+          ));
+    });
   }
 }

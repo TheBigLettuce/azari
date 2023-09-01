@@ -8,6 +8,7 @@
 import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/db/platform_channel.dart';
@@ -75,17 +76,6 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
   late StreamSubscription<Settings?> settingsWatcher;
   bool proceed = true;
   late final extra = api.getExtra()
-    ..setOnThumbnailCallback(() {
-      if (!proceed) {
-        return;
-      }
-      proceed = false;
-      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        state.gridKey.currentState?.setState(() {
-          proceed = true;
-        });
-      });
-    })
     ..setRefreshGridCallback(() {
       if (state.gridKey.currentState?.mutationInterface?.isRefreshing ==
           false) {
@@ -126,6 +116,12 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
         performSearch(searchTextController.text);
         setState(() {});
       }
+    });
+
+    Future.delayed(500.ms, () {
+      try {
+        setState(() {});
+      } catch (_) {}
     });
   }
 

@@ -249,6 +249,7 @@ Widget makeSkeleton(
     Map<SingleActivatorDescription, Null Function()>? additionalBindings,
     bool popSenitel = true,
     int? itemCount,
+    void Function(int route, void Function() original)? overrideChooseRoute,
     List<Widget>? appBarActions,
     Widget? customTitle}) {
   if (children == null && builder == null ||
@@ -306,7 +307,8 @@ Widget makeSkeleton(
               drawerEnableOpenDragGesture:
                   MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,
               key: state.scaffoldKey,
-              drawer: makeDrawer(context, state.index),
+              drawer: makeDrawer(context, state.index,
+                  overrideChooseRoute: overrideChooseRoute),
               endDrawer: makeEndDrawerSettings(context, state.scaffoldKey),
               body: gestureDeadZones(context,
                   child: addRail(

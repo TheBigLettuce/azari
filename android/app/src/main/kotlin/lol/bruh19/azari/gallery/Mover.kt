@@ -85,8 +85,7 @@ internal class Mover(
 
                         CoroutineScope(coContext).launch {
                             galleryApi.addThumbnails(
-                                listOf(res),
-                                uris.notify
+                                listOf(res)
                             ) {}
                         }.join()
 
@@ -324,7 +323,7 @@ internal class Mover(
                 selection = builder.toString()
             }
         }
-        
+
         val bundle = Bundle().apply {
             putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
             putStringArray(
@@ -483,7 +482,7 @@ internal class Mover(
 
     fun loadThumb(id: Long) {
         scope.launch {
-            thumbnailsChannel.send(ThumbOp(id, null, true))
+            thumbnailsChannel.send(ThumbOp(id, null))
         }
     }
 
@@ -563,7 +562,6 @@ internal class Mover(
                     cursor.moveToNext()
                 )
 
-                //map.values.
                 if (list.isNotEmpty()) {
                     CoroutineScope(coContext).launch {
                         galleryApi.updateDirectories(
@@ -589,19 +587,6 @@ internal class Mover(
             ) {}
         }.join()
     }
-
-//    private fun filterAndSendThumbs(thumbs: List<Long>, galleryApi: GalleryApi) {
-//        CoroutineScope(coContext).launch {
-//            galleryApi.thumbsExist(thumbs) {
-//                if (it.isEmpty()) {
-//                    return@thumbsExist
-//                }
-//                scope.launch {
-//                    thumbnailsChannel.send(ThumbOp(it, null))
-//                }
-//            }
-//        }
-//    }
 
     fun add(op: MoveOp) {
         scope.launch {

@@ -515,16 +515,6 @@ class _SettingsListState extends State<SettingsList> {
           ),
           subtitle: Text(PostTags().savedTagsCount().toString()),
         ),
-        ListTile(
-          title: Text(AppLocalizations.of(context)!.saveTagsOnlyOnDownload),
-          trailing: Switch(
-              value: _settings!.saveTagsOnlyOnDownload,
-              onChanged: (value) {
-                settingsIsar().writeTxnSync(() => settingsIsar()
-                    .settings
-                    .putSync(_settings!.copy(saveTagsOnlyOnDownload: value)));
-              }),
-        ),
         if (Platform.isAndroid)
           ListTile(
             title: Text(

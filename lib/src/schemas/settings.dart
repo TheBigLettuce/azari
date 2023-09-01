@@ -31,10 +31,6 @@ class Settings {
   final AspectRatio ratio;
   final bool safeMode;
 
-  final bool expensiveHash;
-
-  final bool saveTagsOnlyOnDownload;
-
   final bool autoRefresh;
   final int autoRefreshMicroseconds;
   final GallerySettings gallerySettings;
@@ -48,8 +44,6 @@ class Settings {
       required this.booruListView,
       required this.picturesPerRow,
       required this.safeMode,
-      required this.expensiveHash,
-      required this.saveTagsOnlyOnDownload,
       required this.gallerySettings,
       required this.ratio});
   Settings copy(
@@ -66,12 +60,9 @@ class Settings {
       AspectRatio? ratio,
       GallerySettings? gallerySettings}) {
     return Settings(
-        expensiveHash: expensiveHash ?? this.expensiveHash,
         path: path ?? this.path,
         selectedBooru: selectedBooru ?? this.selectedBooru,
         quality: quality ?? this.quality,
-        saveTagsOnlyOnDownload:
-            saveTagsOnlyOnDownload ?? this.saveTagsOnlyOnDownload,
         ratio: ratio ?? this.ratio,
         autoRefresh: autoRefresh ?? this.autoRefresh,
         autoRefreshMicroseconds:
@@ -84,9 +75,7 @@ class Settings {
 
   Settings.empty()
       : path = "",
-        expensiveHash = false,
         autoRefresh = false,
-        saveTagsOnlyOnDownload = true,
         autoRefreshMicroseconds = 1.hours.inMicroseconds,
         selectedBooru = Booru.gelbooru,
         quality = DisplayQuality.sample,

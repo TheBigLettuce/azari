@@ -470,7 +470,7 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
 
                 "accentColor" -> {
                     try {
-                        var value = TypedValue()
+                        val value = TypedValue()
                         ContextThemeWrapper(
                             context,
                             R.style.Theme_DeviceDefault

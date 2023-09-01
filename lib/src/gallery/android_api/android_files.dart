@@ -7,6 +7,7 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/db/platform_channel.dart';
@@ -48,21 +49,10 @@ class _AndroidFilesState extends State<AndroidFiles>
     with SearchFilterGrid<SystemGalleryDirectoryFile> {
   final stream = StreamController<int>(sync: true);
 
-  late StreamSubscription<Settings?> settingsWatcher;
+  late final StreamSubscription<Settings?> settingsWatcher;
   bool proceed = true;
 
   late final AndroidGalleryFilesExtra extra = widget.api.getExtra()
-    ..setOnThumbnailCallback(() {
-      if (!proceed) {
-        return;
-      }
-      proceed = false;
-      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        state.gridKey.currentState?.setState(() {
-          proceed = true;
-        });
-      });
-    })
     ..setRefreshingStatusCallback((i, inRefresh, empty) {
       if (empty && !extra.isTrash() && !extra.isFavorites()) {
         state.gridKey.currentState?.selection.currentBottomSheet?.close();
@@ -112,7 +102,7 @@ class _AndroidFilesState extends State<AndroidFiles>
             getCell: (i) => widget.api.directCell(i - 1),
             performSearch: () => performSearch(searchTextController.text),
             end: end,
-            expensiveHash: state.settings.expensiveHash),
+            expensiveHash: true),
       };
     });
 
@@ -160,14 +150,18 @@ class _AndroidFilesState extends State<AndroidFiles>
     super.initState();
 
     settingsWatcher = settingsIsar().settings.watchObject(0).listen((event) {
-      if (state.settings.expensiveHash != event!.expensiveHash) {
-        performSearch(searchTextController.text);
-      }
-      state.settings = event;
+      state.settings = event!;
 
       setState(() {});
     });
     searchHook(state);
+
+    // hack to prevent setState on every thumb loading
+    Future.delayed(500.ms, () {
+      try {
+        setState(() {});
+      } catch (_) {}
+    });
   }
 
   @override

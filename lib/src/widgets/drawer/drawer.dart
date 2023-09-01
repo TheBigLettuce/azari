@@ -98,6 +98,7 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
                         builder: (context) => SearchBooru(
                           grids: getTab(),
                           popSenitel: false,
+                          fromGallery: true,
                         ),
                       ))
                 }
@@ -109,6 +110,7 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
                         builder: (context) => SearchBooru(
                           grids: getTab(),
                           popSenitel: true,
+                          fromGallery: false,
                         ),
                       ),
                       ModalRoute.withName("/senitel"))
@@ -192,7 +194,8 @@ Widget? makeEndDrawerSettings(
   ));
 }
 
-Widget? makeDrawer(BuildContext context, int selectedIndex) {
+Widget? makeDrawer(BuildContext context, int selectedIndex,
+    {void Function(int route, void Function() original)? overrideChooseRoute}) {
   if (!Platform.isAndroid && !Platform.isIOS) {
     return null;
   }
@@ -205,7 +208,12 @@ Widget? makeDrawer(BuildContext context, int selectedIndex) {
         Navigator.pop(context);
       }
 
-      selectDestination(context, selectedIndex, value);
+      if (overrideChooseRoute != null) {
+        overrideChooseRoute(
+            value, () => selectDestination(context, selectedIndex, value));
+      } else {
+        selectDestination(context, selectedIndex, value);
+      }
     },
     children: [
       DrawerHeader(

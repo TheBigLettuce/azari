@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/db/isar.dart' as db;
+import 'package:gallery/src/widgets/booru/autocomplete_tag.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/schemas/post.dart';
@@ -22,6 +23,7 @@ import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../booru/interface.dart';
 import '../db/isar.dart';
 import '../schemas/download_file.dart';
 import '../schemas/settings.dart';
@@ -41,6 +43,9 @@ class BooruScroll extends StatefulWidget {
 
   final Isar? currentInstance;
   final bool isPrimary;
+  final bool closeGrids;
+  final BooruAPI? api;
+  final bool forceCloseApi;
 
   const BooruScroll.primary({
     super.key,
@@ -51,6 +56,9 @@ class BooruScroll extends StatefulWidget {
     this.clear = false,
   })  : tags = "",
         toRestore = false,
+        closeGrids = false,
+        api = null,
+        forceCloseApi = false,
         pageViewScrollingOffset = null,
         initalPost = null,
         currentInstance = null,
@@ -61,6 +69,9 @@ class BooruScroll extends StatefulWidget {
     required this.grids,
     required Isar instance,
     required this.tags,
+    this.forceCloseApi = false,
+    this.closeGrids = false,
+    this.api,
   })  : initalScroll = 0,
         clear = true,
         toRestore = false,
@@ -82,6 +93,9 @@ class BooruScroll extends StatefulWidget {
       required this.initalScroll})
       : clear = false,
         toRestore = true,
+        api = null,
+        forceCloseApi = false,
+        closeGrids = false,
         currentInstance = instance,
         time = null,
         isPrimary = false;
@@ -114,6 +128,8 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
   @override
   void initState() {
     super.initState();
+
+    booru = widget.api ?? db.getBooru(page: widget.booruPage);
 
     searchHook(SearchLaunchGridData(skeletonState.mainFocus, widget.tags));
 
@@ -168,7 +184,13 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
 
     skeletonState.dispose();
 
-    booru.close();
+    if (widget.isPrimary || widget.forceCloseApi) {
+      booru.close();
+    }
+
+    if (widget.closeGrids) {
+      widget.grids.close();
+    }
 
     super.dispose();
   }
@@ -179,6 +201,8 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
   Future<int> _clearAndRefresh() async {
     final instance = _getInstance();
 
+    booru;
+
     try {
       final list = await booru.page(0, widget.tags, widget.grids.excluded);
       updateScrollPosition(0);
@@ -186,9 +210,7 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
         instance.posts.clear();
         return instance.posts.putAllById(list);
       });
-      if (!skeletonState.settings.saveTagsOnlyOnDownload) {
-        PostTags().addAllPostTags(list);
-      }
+
       reachedEnd = false;
     } catch (e) {
       rethrow;
@@ -205,9 +227,7 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
       return Future.value();
     }
 
-    if (skeletonState.settings.saveTagsOnlyOnDownload) {
-      PostTags().addTagsPost(p.filename(), p.tags.split(" "), true);
-    }
+    PostTags().addTagsPost(p.filename(), p.tags.split(" "), true);
 
     return downloader.add(File.d(p.downloadUrl(), booru.domain, p.filename()));
   }
@@ -231,9 +251,6 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
       } else {
         final oldCount = instance.posts.countSync();
         instance.writeTxnSync(() => instance.posts.putAllByIdSync(list));
-        if (!skeletonState.settings.saveTagsOnlyOnDownload) {
-          PostTags().addAllPostTags(list);
-        }
         if (instance.posts.countSync() - oldCount < 3) {
           return await _addLast();
         }
@@ -256,15 +273,17 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
       CallbackGrid<Post>(
         key: skeletonState.gridKey,
         systemNavigationInsets: insets,
+        registerNotifiers: [
+          (child) => GridTabNotifier(tab: widget.grids, child: child),
+          (child) => BooruAPINotifier(api: booru, child: child)
+        ],
         description: GridDescription(
           kBooruGridDrawerIndex,
           [
             GridBottomSheetAction(Icons.download, (selected) {
               for (final element in selected) {
-                if (skeletonState.settings.saveTagsOnlyOnDownload) {
-                  PostTags().addTagsPost(
-                      element.filename(), element.tags.split(" "), true);
-                }
+                PostTags().addTagsPost(
+                    element.filename(), element.tags.split(" "), true);
                 downloader.add(
                     File.d(element.fileUrl, booru.domain, element.filename()));
               }
@@ -305,22 +324,20 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
                   Navigator.pop(context);
                 }
               },
-        //  searchStartingValue: widget.tags,
-        // search: _search,
         hideAlias: true,
         download: _download,
         updateScrollPosition: updateScrollPosition,
         initalScrollPosition: widget.initalScroll,
         initalCellCount: widget.clear ? 0 : _getInstance().posts.countSync(),
         searchWidget:
-            SearchAndFocus(searchWidget(context), searchFocus, onPressed: () {
+            SearchAndFocus(searchWidget(context, hint: booru.name), searchFocus,
+                onPressed: () {
           if (currentlyHighlightedTag != "") {
             skeletonState.mainFocus.unfocus();
             widget.grids.onTagPressed(
                 context, Tag.string(tag: currentlyHighlightedTag));
           }
         }),
-        //  searchFilter: _searchFilter,
         pageViewScrollingOffset: widget.pageViewScrollingOffset,
         initalCell: widget.initalPost,
       ),

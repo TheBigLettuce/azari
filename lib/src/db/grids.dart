@@ -26,10 +26,13 @@ class GridTab {
 
     latest.add(t);
 
+    final api = BooruAPINotifier.of(context);
+
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return BooruScroll.secondary(
         grids: this,
         instance: newSecondaryGrid(),
+        api: api,
         tags: t.tag,
       );
     }));
@@ -53,14 +56,18 @@ class GridTab {
         page: page)));
   }
 
-  Isar newSecondaryGrid() {
+  Isar newSecondaryGrid({bool temporary = false}) {
     final p = DateTime.now().microsecondsSinceEpoch.toString();
 
-    _instance
-        .writeTxnSync(() => _instance.gridRestores.putSync(GridRestore(p)));
+    if (!temporary) {
+      _instance
+          .writeTxnSync(() => _instance.gridRestores.putSync(GridRestore(p)));
+    }
 
     return Isar.openSync([PostSchema, SecondaryGridSchema],
-        directory: _directoryPath, inspector: false, name: p);
+        directory: temporary ? _temporaryDbPath : _directoryPath,
+        inspector: false,
+        name: p);
   }
 
   void removeSecondaryGrid(String name) {

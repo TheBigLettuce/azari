@@ -46,7 +46,6 @@ class AndroidGalleryExtra {
               cell.thumbFileId, DateTime.now(), kTransparentImage, 0, true)));
 
       PlatformFunctions.loadThumbnail(cell.thumbFileId);
-      _impl.onThumbUpdate?.call();
     } catch (e, trace) {
       log("loading thumbs",
           level: Level.SEVERE.value, error: e, stackTrace: trace);
@@ -94,10 +93,6 @@ class AndroidGalleryExtra {
     _impl.refreshGrid = callback;
   }
 
-  void setOnThumbnailCallback(void Function() callback) {
-    _impl.onThumbUpdate = callback;
-  }
-
   void setRefreshingStatusCallback(
       void Function(int i, bool inRefresh, bool empty) callback) {
     _impl.callback = callback;
@@ -132,7 +127,6 @@ class _AndroidGallery
 
   void Function(int i, bool inRefresh, bool empty)? callback;
   void Function()? refreshGrid;
-  void Function()? onThumbUpdate;
 
   _AndroidGalleryFiles? currentImages;
 
@@ -161,7 +155,6 @@ class _AndroidGallery
   @override
   void close() {
     filter.dispose();
-    onThumbUpdate = null;
     refreshGrid = null;
     callback = null;
     currentImages = null;

@@ -9,6 +9,7 @@ import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:gallery/main.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/cell/cell.dart';
@@ -16,6 +17,7 @@ import 'package:gallery/src/cell/data.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
+import 'package:gallery/src/pages/booru_scroll.dart';
 import 'package:gallery/src/schemas/directory_file.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/favorite_media.dart';
@@ -26,6 +28,7 @@ import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 part 'android_gallery_directory_file.g.dart';
 
@@ -114,6 +117,17 @@ class SystemGalleryDirectoryFile implements Cell {
           if (isDuplicate()) Icon(FilteringMode.duplicate.icon),
           if (isFavorite()) Icon(FilteringMode.favorite.icon),
           if (isOriginal) Icon(FilteringMode.original.icon),
+          if (res != null)
+            IconButton(
+                onPressed: () {
+                  final api = booruApiFromPrefix(res!.booru);
+
+                  launchUrl(api.browserLink(res.id),
+                      mode: LaunchMode.externalApplication);
+
+                  api.close();
+                },
+                icon: const Icon(Icons.public)),
           IconButton(
               onPressed: () {
                 PlatformFunctions.share(originalUri);
@@ -165,80 +179,99 @@ class SystemGalleryDirectoryFile implements Cell {
             extra,
             colors,
           ) {
-            return wrapTagsSearch(
-                context,
-                extra,
-                colors,
-                [
-                  addInfoTile(
-                      colors: colors,
-                      title: AppLocalizations.of(context)!.nameTitle,
-                      subtitle: name,
-                      trailing: GalleryImpl.instance().temporary
-                          ? null
-                          : IconButton(
-                              onPressed: () {
-                                Navigator.push(
-                                    context,
-                                    DialogRoute(
-                                      context: context,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          title: Text(
-                                              AppLocalizations.of(context)!
-                                                  .enterNewNameTitle),
-                                          content: TextFormField(
-                                            initialValue: name,
-                                            autovalidateMode:
-                                                AutovalidateMode.always,
-                                            maxLines: 2,
-                                            minLines: 1,
-                                            decoration: const InputDecoration(
-                                                errorMaxLines: 2),
-                                            validator: (value) {
-                                              if (value == null) {
-                                                return AppLocalizations.of(
-                                                        context)!
-                                                    .valueIsNull;
-                                              }
-                                              try {
-                                                PostTags().dissassembleFilename(
-                                                    value);
-                                                return null;
-                                              } catch (e) {
-                                                return e.toString();
-                                              }
-                                            },
-                                            onFieldSubmitted: (value) {
-                                              PlatformFunctions.rename(
-                                                  originalUri, value);
-                                              Navigator.pop(context);
-                                            },
-                                          ),
-                                        );
-                                      },
-                                    ));
-                              },
-                              icon: const Icon(Icons.edit))),
-                  addInfoTile(
-                      colors: colors,
-                      title: AppLocalizations.of(context)!.dateModified,
-                      subtitle: lastModified.toString()),
-                  addInfoTile(
-                      colors: colors,
-                      title: AppLocalizations.of(context)!.widthInfoPage,
-                      subtitle: "${width}px"),
-                  addInfoTile(
-                      colors: colors,
-                      title: AppLocalizations.of(context)!.heightInfoPage,
-                      subtitle: "${height}px"),
-                  addInfoTile(
-                      colors: colors, title: "Size", subtitle: kbMbSize(size))
-                ],
-                name,
-                null,
-                temporary: GalleryImpl.instance().temporary,
-                showDeleteButton: true);
+            return Post.wrapTagsSearch(
+              context,
+              extra,
+              colors,
+              [
+                addInfoTile(
+                    colors: colors,
+                    title: AppLocalizations.of(context)!.nameTitle,
+                    subtitle: name,
+                    trailing: GalleryImpl.instance().temporary
+                        ? null
+                        : IconButton(
+                            onPressed: () {
+                              Navigator.push(
+                                  context,
+                                  DialogRoute(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        title: Text(
+                                            AppLocalizations.of(context)!
+                                                .enterNewNameTitle),
+                                        content: TextFormField(
+                                          initialValue: name,
+                                          autovalidateMode:
+                                              AutovalidateMode.always,
+                                          maxLines: 2,
+                                          minLines: 1,
+                                          decoration: const InputDecoration(
+                                              errorMaxLines: 2),
+                                          validator: (value) {
+                                            if (value == null) {
+                                              return AppLocalizations.of(
+                                                      context)!
+                                                  .valueIsNull;
+                                            }
+                                            try {
+                                              PostTags()
+                                                  .dissassembleFilename(value);
+                                              return null;
+                                            } catch (e) {
+                                              return e.toString();
+                                            }
+                                          },
+                                          onFieldSubmitted: (value) {
+                                            PlatformFunctions.rename(
+                                                originalUri, value);
+                                            Navigator.pop(context);
+                                          },
+                                        ),
+                                      );
+                                    },
+                                  ));
+                            },
+                            icon: const Icon(Icons.edit))),
+                addInfoTile(
+                    colors: colors,
+                    title: AppLocalizations.of(context)!.dateModified,
+                    subtitle: lastModified.toString()),
+                addInfoTile(
+                    colors: colors,
+                    title: AppLocalizations.of(context)!.widthInfoPage,
+                    subtitle: "${width}px"),
+                addInfoTile(
+                    colors: colors,
+                    title: AppLocalizations.of(context)!.heightInfoPage,
+                    subtitle: "${height}px"),
+                addInfoTile(
+                    colors: colors, title: "Size", subtitle: kbMbSize(size))
+              ],
+              name,
+              temporary: GalleryImpl.instance().temporary,
+              showDeleteButton: true,
+              launchGrid: (t) {
+                try {
+                  final res = PostTags().dissassembleFilename(name);
+                  final tab = makeGridTab(res.booru);
+
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (context) {
+                      return BooruScroll.secondary(
+                          grids: tab,
+                          instance: tab.newSecondaryGrid(temporary: true),
+                          forceCloseApi: true,
+                          closeGrids:
+                              getTab().instance.name != tab.instance.name,
+                          api: booruApiFromPrefix(res.booru),
+                          tags: t);
+                    },
+                  ));
+                } catch (_) {}
+              },
+            );
           };
 
   @override

@@ -30,16 +30,11 @@ class AndroidGalleryFilesExtra {
           Thumbnail(cell.id, DateTime.now(), kTransparentImage, 0, true)));
 
       PlatformFunctions.loadThumbnail(cell.id);
-      _impl.onThumbUpdate?.call();
     } catch (e, trace) {
       log("loading thumbs",
           level: Level.SEVERE.value, error: e, stackTrace: trace);
     }
     _impl.isThumbsLoading = false;
-  }
-
-  void setOnThumbnailCallback(void Function() callback) {
-    _impl.onThumbUpdate = callback;
   }
 
   void setRefreshGridCallback(void Function() callback) {
@@ -79,7 +74,7 @@ class AndroidGalleryFilesExtra {
       final elems = _impl.db.systemGalleryDirectoryFiles
           .where()
           .offset(offset)
-          .limit(20)
+          .limit(40)
           .findAllSync();
       offset += elems.length;
 
@@ -93,7 +88,7 @@ class AndroidGalleryFilesExtra {
 
           hashs.add(PlatformFunctions.getExpensiveHashDirectly(file.id));
 
-          if (hashs.length > 4) {
+          if (hashs.length > 8) {
             final loadedH = await hashs.wait;
             expensiveHashIsar().writeTxnSync(() {
               expensiveHashIsar().perceptionHashs.putAllSync(loadedH);
@@ -103,7 +98,7 @@ class AndroidGalleryFilesExtra {
         }
       }
 
-      if (count >= 40) {
+      if (count >= 80) {
         break;
       }
     }
@@ -140,7 +135,7 @@ class AndroidGalleryFilesExtra {
           thumbnails.add(PlatformFunctions.getThumbDirectly(file.id));
 
           if (thumbnails.length > 8) {
-            GalleryImpl.instance().addThumbnails(await thumbnails.wait, false);
+            GalleryImpl.instance().addThumbnails(await thumbnails.wait);
             thumbnails.clear();
           }
         }
@@ -152,7 +147,7 @@ class AndroidGalleryFilesExtra {
     }
 
     if (thumbnails.isNotEmpty) {
-      GalleryImpl.instance().addThumbnails(await thumbnails.wait, false);
+      GalleryImpl.instance().addThumbnails(await thumbnails.wait);
     }
   }
 
@@ -191,7 +186,6 @@ class _AndroidGalleryFiles
   void Function() unsetCurrentImages;
   void Function(int i, bool inRefresh, bool empty)? callback;
   void Function()? refreshGrid;
-  void Function()? onThumbUpdate;
 
   bool isThumbsLoading = false;
   Isar db;
@@ -236,7 +230,6 @@ class _AndroidGalleryFiles
   void close() {
     filter.dispose();
     db.close(deleteFromDisk: true);
-    onThumbUpdate = null;
     callback = null;
     refreshGrid = null;
 

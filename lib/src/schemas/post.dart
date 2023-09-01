@@ -7,13 +7,10 @@
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:gallery/main.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/cell/cell.dart';
 import 'package:gallery/src/cell/data.dart';
-import 'package:gallery/src/plugs/platform_fullscreens.dart';
 import 'package:gallery/src/schemas/settings.dart';
-import 'package:gallery/src/schemas/tags.dart';
 import 'package:gallery/src/widgets/booru/autocomplete_tag.dart';
 import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:html_unescape/html_unescape_small.dart';
@@ -25,195 +22,11 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../db/isar.dart';
-import '../widgets/settings_label.dart';
+import '../widgets/make_tags.dart';
+import '../widgets/search_text_field.dart';
+import 'tags.dart';
 
 part 'post.g.dart';
-
-List<Widget> wrapTagsSearch(BuildContext context, dynamic extra,
-    AddInfoColorData colors, List<Widget> lists, String filename, GridTab? tab,
-    {bool temporary = false,
-    bool showDeleteButton = false,
-    List<String>? supplyTags}) {
-  final data = FilterNotifier.maybeOf(context);
-  final List<String> postTags;
-  if (supplyTags == null) {
-    postTags = PostTags().getTagsPost(filename);
-  } else {
-    postTags = supplyTags;
-  }
-
-  return [
-    data?.searchFocus.hasFocus ?? false
-        ? Container()
-        : ListBody(
-            children: lists,
-          ),
-    if (postTags.isNotEmpty && data != null)
-      searchTextField(context, data, filename, showDeleteButton),
-    ...makeTags(
-        context, extra, colors, postTags, tab, temporary ? "" : filename)
-  ];
-}
-
-class LoadTags extends StatelessWidget {
-  final DissolveResult? res;
-  final String filename;
-  const LoadTags({super.key, required this.res, required this.filename});
-
-  @override
-  Widget build(BuildContext context) {
-    return res == null
-        ? Container()
-        : Padding(
-            padding: const EdgeInsets.all(4),
-            child: Column(children: [
-              Padding(
-                padding: const EdgeInsets.only(
-                  bottom: 8,
-                ),
-                child: Text(AppLocalizations.of(context)!.loadTags),
-              ),
-              FilledButton(
-                  onPressed: () {
-                    try {
-                      final notifier = TagRefreshNotifier.maybeOf(context);
-
-                      PostTags()
-                          .loadFromDissassemble(filename, res!)
-                          .then((value) {
-                        PostTags().addTagsPost(filename, value, true);
-                        notifier?.call();
-                      });
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(AppLocalizations.of(context)!
-                              .notValidFilename(e.toString()))));
-                    }
-                  },
-                  child: Text("From ${res!.booru.string}"))
-            ]),
-          );
-  }
-}
-
-Widget searchTextField(BuildContext context, FilterNotifierData data,
-    String filename, bool showDeleteButton) {
-  return TextField(
-    decoration: autocompleteBarDecoration(context, () {
-      data.searchController.clear();
-      data.focusMain();
-    },
-        showDeleteButton
-            ? [
-                IconButton(
-                    onPressed: () {
-                      final notifier = TagRefreshNotifier.maybeOf(context);
-                      PostTags().deletePostTags(filename);
-                      notifier?.call();
-                    },
-                    icon: const Icon(Icons.delete))
-              ]
-            : null,
-        showSearch: true,
-        roundBorders: false,
-        hint: AppLocalizations.of(context)!.filterHint),
-    focusNode: data.searchFocus,
-    controller: data.searchController,
-    onSubmitted: (value) {
-      data.focusMain();
-    },
-  );
-}
-
-Iterable<Widget> makeTags(
-  BuildContext context,
-  dynamic extra,
-  AddInfoColorData colors,
-  List<String> tags,
-  GridTab? grids,
-  String filename,
-) {
-  if (tags.isEmpty) {
-    if (filename.isEmpty) {
-      return [Container()];
-    }
-    DissolveResult? res;
-    try {
-      res = PostTags().dissassembleFilename(filename);
-    } catch (_) {}
-
-    return [
-      LoadTags(
-        filename: filename,
-        res: res,
-      )
-    ];
-  }
-  var plug = choosePlatformFullscreenPlug(colors.systemOverlayColor);
-  final value = FilterValueNotifier.maybeOf(context).trim();
-  final data = FilterNotifier.maybeOf(context);
-
-  final List<String> filteredTags;
-  if (data != null && value.isNotEmpty) {
-    filteredTags = tags.where((element) => element.contains(value)).toList();
-  } else {
-    filteredTags = tags;
-  }
-
-  return [
-    settingsLabel(
-        AppLocalizations.of(context)!.tagsInfoPage,
-        Theme.of(context)
-            .textTheme
-            .titleSmall!
-            .copyWith(color: Theme.of(context).colorScheme.secondary)),
-    ...ListTile.divideTiles(
-        color: colors.borderColor,
-        tiles: filteredTags.map((e) => ListTile(
-              textColor: colors.foregroundColor,
-              title: Text(HtmlUnescape().convert(e)),
-              onLongPress: grids == null
-                  ? null
-                  : () {
-                      Navigator.push(
-                          context,
-                          DialogRoute(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: Text(AppLocalizations.of(context)!
-                                      .addTagToExcluded),
-                                  content: Text(e),
-                                  actions: [
-                                    TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(
-                                            AppLocalizations.of(context)!.no)),
-                                    TextButton(
-                                        onPressed: () {
-                                          grids.excluded
-                                              .add(Tag.string(tag: e));
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(
-                                            AppLocalizations.of(context)!.yes))
-                                  ],
-                                );
-                              }));
-                    },
-              onTap: grids == null
-                  ? null
-                  : () {
-                      grids.onTagPressed(
-                          context, Tag.string(tag: HtmlUnescape().convert(e)));
-                      plug.unFullscreen();
-                      extra();
-                    },
-            )))
-  ];
-}
 
 String _fileDownloadUrl(String sampleUrl, String originalUrl) {
   if (path_util.extension(originalUrl) == ".zip") {
@@ -287,7 +100,7 @@ class Post implements Cell {
         IconButton(
           icon: const Icon(Icons.public),
           onPressed: () {
-            var booru = getBooru();
+            final booru = getBooru();
             launchUrl(booru.browserLink(id),
                 mode: LaunchMode.externalApplication);
             booru.close();
@@ -297,62 +110,71 @@ class Post implements Cell {
 
   @ignore
   @override
-  List<Widget>? Function(BuildContext context, dynamic extra,
-      AddInfoColorData colors) get addInfo => (BuildContext context,
-          dynamic extra, AddInfoColorData colors) {
-        var downloadUrl = _fileDownloadUrl(sampleUrl, fileUrl);
+  List<Widget>? Function(
+          BuildContext context, dynamic extra, AddInfoColorData colors)
+      get addInfo =>
+          (BuildContext context, dynamic extra, AddInfoColorData colors) {
+            final downloadUrl = _fileDownloadUrl(sampleUrl, fileUrl);
+            final tab = GridTabNotifier.of(context);
 
-        return wrapTagsSearch(
-            context,
-            extra,
-            colors,
-            [
-              ListTile(
-                textColor: colors.foregroundColor,
-                title: Text(AppLocalizations.of(context)!.pathInfoPage),
-                subtitle: Text(downloadUrl),
-                onTap: () => launchUrl(Uri.parse(downloadUrl),
-                    mode: LaunchMode.externalApplication),
-              ),
-              ListTile(
-                textColor: colors.foregroundColor,
-                title: Text(AppLocalizations.of(context)!.widthInfoPage),
-                subtitle: Text("${width}px"),
-              ),
-              ListTile(
-                textColor: colors.foregroundColor,
-                title: Text(AppLocalizations.of(context)!.heightInfoPage),
-                subtitle: Text("${height}px"),
-              ),
-              ListTile(
-                textColor: colors.foregroundColor,
-                title: Text(AppLocalizations.of(context)!.createdAtInfoPage),
-                subtitle: Text(AppLocalizations.of(context)!.date(createdAt)),
-              ),
-              ListTile(
-                textColor: colors.foregroundColor,
-                title: Text(AppLocalizations.of(context)!.sourceFileInfoPage),
-                subtitle: Text(sourceUrl),
-                onTap: sourceUrl.isEmpty
-                    ? null
-                    : () => launchUrl(Uri.parse(sourceUrl),
-                        mode: LaunchMode.externalApplication),
-              ),
-              ListTile(
-                textColor: colors.foregroundColor,
-                title: Text(AppLocalizations.of(context)!.ratingInfoPage),
-                subtitle: Text(rating),
-              ),
-              ListTile(
-                textColor: colors.foregroundColor,
-                title: Text(AppLocalizations.of(context)!.scoreInfoPage),
-                subtitle: Text(score.toString()),
-              ),
-            ],
-            filename(),
-            getTab(),
-            supplyTags: tags.split(" "));
-      };
+            return wrapTagsSearch(
+              context,
+              extra,
+              colors,
+              [
+                ListTile(
+                  textColor: colors.foregroundColor,
+                  title: Text(AppLocalizations.of(context)!.pathInfoPage),
+                  subtitle: Text(downloadUrl),
+                  onTap: () => launchUrl(Uri.parse(downloadUrl),
+                      mode: LaunchMode.externalApplication),
+                ),
+                ListTile(
+                  textColor: colors.foregroundColor,
+                  title: Text(AppLocalizations.of(context)!.widthInfoPage),
+                  subtitle: Text("${width}px"),
+                ),
+                ListTile(
+                  textColor: colors.foregroundColor,
+                  title: Text(AppLocalizations.of(context)!.heightInfoPage),
+                  subtitle: Text("${height}px"),
+                ),
+                ListTile(
+                  textColor: colors.foregroundColor,
+                  title: Text(AppLocalizations.of(context)!.createdAtInfoPage),
+                  subtitle: Text(AppLocalizations.of(context)!.date(createdAt)),
+                ),
+                ListTile(
+                  textColor: colors.foregroundColor,
+                  title: Text(AppLocalizations.of(context)!.sourceFileInfoPage),
+                  subtitle: Text(sourceUrl),
+                  onTap: sourceUrl.isEmpty
+                      ? null
+                      : () => launchUrl(Uri.parse(sourceUrl),
+                          mode: LaunchMode.externalApplication),
+                ),
+                ListTile(
+                  textColor: colors.foregroundColor,
+                  title: Text(AppLocalizations.of(context)!.ratingInfoPage),
+                  subtitle: Text(rating),
+                ),
+                ListTile(
+                  textColor: colors.foregroundColor,
+                  title: Text(AppLocalizations.of(context)!.scoreInfoPage),
+                  subtitle: Text(score.toString()),
+                ),
+              ],
+              filename(),
+              supplyTags: tags.split(" "),
+              addExcluded: (t) {
+                tab.excluded.add(Tag(tag: t, isExcluded: true));
+              },
+              launchGrid: (t) {
+                tab.onTagPressed(
+                    context, Tag.string(tag: HtmlUnescape().convert(t)));
+              },
+            );
+          };
 
   @override
   String alias(bool isList) => isList ? tags : id.toString();
@@ -408,5 +230,38 @@ class Post implements Cell {
       if (content is NetGif) FilteringMode.gif.icon,
       if (tags.contains("original")) FilteringMode.original.icon
     ]);
+  }
+
+  static List<Widget> wrapTagsSearch(
+    BuildContext context,
+    dynamic extra,
+    AddInfoColorData colors,
+    List<Widget> lists,
+    String filename, {
+    bool temporary = false,
+    bool showDeleteButton = false,
+    List<String>? supplyTags,
+    void Function(String)? launchGrid,
+    void Function(String)? addExcluded,
+  }) {
+    final data = FilterNotifier.maybeOf(context);
+    final List<String> postTags;
+    if (supplyTags == null) {
+      postTags = PostTags().getTagsPost(filename);
+    } else {
+      postTags = supplyTags;
+    }
+
+    return [
+      data?.searchFocus.hasFocus ?? false
+          ? Container()
+          : ListBody(
+              children: lists,
+            ),
+      if (postTags.isNotEmpty && data != null)
+        searchTextField(context, data, filename, showDeleteButton),
+      ...makeTags(context, extra, colors, postTags, temporary ? "" : filename,
+          launchGrid: launchGrid, addExcluded: addExcluded)
+    ];
   }
 }

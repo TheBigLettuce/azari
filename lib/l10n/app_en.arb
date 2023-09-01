@@ -741,5 +741,9 @@
                 "type": "String"
             }
         }
+    },
+    "infoHeadline": "Info",
+    "@infoHeadline": {
+        "description": "Title of the info end drawer in the image view"
     }
 }

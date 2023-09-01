@@ -96,7 +96,7 @@ class GalleryImpl implements GalleryApi {
   }
 
   @override
-  void addThumbnails(List<ThumbnailId?> thumbs, bool runCallback) {
+  void addThumbnails(List<ThumbnailId?> thumbs) {
     if (thumbs.isEmpty) {
       return;
     }
@@ -119,11 +119,6 @@ class GalleryImpl implements GalleryApi {
               Thumbnail(e.id, DateTime.now(), e.thumb, e.differenceHash, false))
           .toList());
     });
-
-    if (runCallback) {
-      _currentApi?.onThumbUpdate?.call();
-      _currentApi?.currentImages?.onThumbUpdate?.call();
-    }
   }
 
   @override
