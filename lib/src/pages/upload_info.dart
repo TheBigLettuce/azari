@@ -24,10 +24,10 @@ class UploadInfo extends StatefulWidget {
 }
 
 class _UploadInfoState extends State<UploadInfo> {
-  late StreamSubscription<void> update;
-  UploadFilesState? state;
+  late final StreamSubscription<void> update;
+  final skeletonState = SkeletonState.settings();
 
-  final SkeletonState skeletonState = SkeletonState.settings();
+  UploadFilesState? state;
 
   @override
   void initState() {
@@ -66,7 +66,7 @@ class _UploadInfoState extends State<UploadInfo> {
       builder: state == null
           ? (_, __) => const EmptyWidget()
           : ((context, indx) {
-              var upload = state!.upload[indx];
+              final upload = state!.upload[indx];
 
               return ListTile(
                 title: Text(

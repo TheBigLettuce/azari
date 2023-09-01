@@ -48,7 +48,7 @@ class Gelbooru implements BooruAPI {
   }
 
   @override
-  Uri browserLink(int id) => Uri.https("gelbooru.com", "/index.php", {
+  Uri browserLink(int id) => Uri.https(domain, "/index.php", {
         "page": "post",
         "s": "view",
         "id": id.toString(),
@@ -56,31 +56,21 @@ class Gelbooru implements BooruAPI {
 
   @override
   Future<List<String>> completeTag(String t) async {
-    var req = client.getUri(
-      Uri.https("gelbooru.com", "/index.php", {
-        "page": "dapi",
-        "s": "tag",
-        "q": "index",
-        "limit": "10",
-        "json": "1",
-        "name_pattern": "$t%",
-        "orderby": "count"
-      }),
-    );
+    final resp = await client.getUri(Uri.https(domain, "/index.php", {
+      "page": "dapi",
+      "s": "tag",
+      "q": "index",
+      "limit": "10",
+      "json": "1",
+      "name_pattern": "$t%",
+      "orderby": "count"
+    }));
 
-    return Future(() async {
-      try {
-        var resp = await req;
-        if (resp.statusCode != 200) {
-          throw "status code not 200";
-        }
+    if (resp.statusCode != 200) {
+      throw "status code not 200";
+    }
 
-        var tags = _fromGelbooruTags(resp.data["tag"]);
-        return tags;
-      } catch (e) {
-        return Future.error(e);
-      }
-    });
+    return _fromGelbooruTags(resp.data["tag"]);
   }
 
   @override
@@ -91,87 +81,80 @@ class Gelbooru implements BooruAPI {
 
   Future<List<Post>> _commonPosts(
       String tags, int p, BooruTagging excludedTags) async {
-    String excludedTagsString;
+    late final String excludedTagsString;
 
-    var excluded = excludedTags.get().map((e) => "-${e.tag} ").toList();
+    final excluded = excludedTags.get().map((e) => "-${e.tag} ").toList();
     if (excluded.isNotEmpty) {
       excludedTagsString = excluded.reduce((value, element) => value + element);
     } else {
       excludedTagsString = "";
     }
 
-    var query = {
+    final query = <String, dynamic>{
       "page": "dapi",
       "s": "post",
       "q": "index",
       "pid": p.toString(),
       "json": "1",
       "tags":
-          "${isSafeModeEnabled() ? 'rating:general' : ''} $excludedTagsString $tags",
-      "limit": numberOfElementsPerRefresh().toString()
+          "${BooruAPI.isSafeModeEnabled() ? 'rating:general' : ''} $excludedTagsString $tags",
+      "limit": BooruAPI.numberOfElementsPerRefresh().toString()
     };
 
-    var req = client.getUri(Uri.https("gelbooru.com", "/index.php", query));
+    try {
+      final resp =
+          await client.getUri(Uri.https("gelbooru.com", "/index.php", query));
 
-    return Future(() async {
-      try {
-        var r = await req;
-
-        if (r.statusCode != 200) {
-          throw "status not 200";
-        }
-
-        var json = r.data["post"];
-        if (json == null) {
-          return Future.value([]);
-        }
-
-        return _fromJson(json);
-      } catch (e) {
-        if (e is DioException) {
-          if (e.response?.statusCode == 403) {
-            return Future.error(CloudflareException());
-          }
-        }
-        return Future.error(e);
+      if (resp.statusCode != 200) {
+        throw "status not 200";
       }
-    });
+
+      final json = resp.data["post"];
+      if (json == null) {
+        return Future.value([]);
+      }
+
+      return _fromJson(json);
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response?.statusCode == 403) {
+          return Future.error(CloudflareException());
+        }
+      }
+      return Future.error(e);
+    }
   }
 
   @override
-  Future<Post> singlePost(int id) {
-    var req = client.getUri(Uri.https("gelbooru.com", "/index.php", {
-      "page": "dapi",
-      "s": "post",
-      "q": "index",
-      "id": id.toString(),
-      "json": "1"
-    }));
+  Future<Post> singlePost(int id) async {
+    try {
+      final resp = await client.getUri(Uri.https("gelbooru.com", "/index.php", {
+        "page": "dapi",
+        "s": "post",
+        "q": "index",
+        "id": id.toString(),
+        "json": "1"
+      }));
 
-    return Future(() async {
-      try {
-        var resp = await req;
-
-        if (resp.statusCode != 200) {
-          throw "status is not 200";
-        }
-
-        var json = resp.data["post"];
-        if (json == null) {
-          throw "The post has been not found.";
-        }
-
-        return _fromJson([json[0]])[0];
-      } catch (e) {
-        if (e is DioException) {
-          if (e.response?.statusCode == 403) {
-            return Future.error(CloudflareException());
-          }
-        }
-
-        return Future.error(e);
+      if (resp.statusCode != 200) {
+        throw "status is not 200";
       }
-    });
+
+      final json = resp.data["post"];
+      if (json == null) {
+        throw "The post has been not found.";
+      }
+
+      return _fromJson([json[0]])[0];
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response?.statusCode == 403) {
+          return Future.error(CloudflareException());
+        }
+      }
+
+      return Future.error(e);
+    }
   }
 
   @override
@@ -184,11 +167,11 @@ class Gelbooru implements BooruAPI {
       });
 
   List<Post> _fromJson(List<dynamic> m) {
-    List<Post> list = [];
+    final List<Post> list = [];
 
-    var dateFormatter = DateFormat("EEE MMM dd HH:mm:ss");
+    final dateFormatter = DateFormat("EEE MMM dd HH:mm:ss");
 
-    for (var post in m) {
+    for (final post in m) {
       String createdAt = post["created_at"];
       DateTime date = dateFormatter.parse(createdAt).copyWith(
           year: int.tryParse(createdAt.substring(createdAt.length - 4)));

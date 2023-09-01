@@ -11,7 +11,6 @@ import 'package:gallery/main.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/cell/cell.dart';
 import 'package:gallery/src/cell/data.dart';
-import 'package:gallery/src/pages/settings.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/schemas/tags.dart';
@@ -26,6 +25,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../db/isar.dart';
+import '../widgets/settings_label.dart';
 
 part 'post.g.dart';
 
@@ -67,11 +67,11 @@ class LoadTags extends StatelessWidget {
         : Padding(
             padding: const EdgeInsets.all(4),
             child: Column(children: [
-              const Padding(
-                padding: EdgeInsets.only(
+              Padding(
+                padding: const EdgeInsets.only(
                   bottom: 8,
                 ),
-                child: Text("Load tags"), // TODO: change
+                child: Text(AppLocalizations.of(context)!.loadTags),
               ),
               FilledButton(
                   onPressed: () {
@@ -86,8 +86,8 @@ class LoadTags extends StatelessWidget {
                       });
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(
-                              "Not a valid filename: ${e.toString()}"))); // TODO: change
+                          content: Text(AppLocalizations.of(context)!
+                              .notValidFilename(e.toString()))));
                     }
                   },
                   child: Text("From ${res!.booru.string}"))

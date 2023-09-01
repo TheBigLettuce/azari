@@ -7,11 +7,30 @@
 
 import 'dart:math';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class EmptyWidget extends StatelessWidget {
-  const EmptyWidget({super.key});
+  final Object? error;
+  const EmptyWidget({super.key, this.error});
+
+  String _unwrapError() {
+    if (error == null) {
+      return "";
+    }
+
+    if (error is DioException) {
+      final response = (error as DioException).response;
+      if (response == null) {
+        return (error as DioException).message ?? error.toString();
+      }
+
+      return "${response.statusCode}${response.statusMessage != null ? ' ${response.statusMessage}' : ''}";
+    }
+
+    return error.toString();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +44,12 @@ class EmptyWidget extends StatelessWidget {
             ),
           ),
           TextSpan(
-              text: "${AppLocalizations.of(context)!.emptyValue}...",
-              style: const TextStyle(fontStyle: FontStyle.italic)),
+              text: error == null
+                  ? "${AppLocalizations.of(context)!.emptyValue}..."
+                  : "Error: ${_unwrapError()}",
+              style: TextStyle(
+                  fontStyle: FontStyle.italic,
+                  fontSize: error != null ? 14 * 2 : null)),
         ]),
         maxLines: 2,
         textAlign: TextAlign.center,

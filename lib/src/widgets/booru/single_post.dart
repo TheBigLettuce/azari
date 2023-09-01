@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
-import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:logging/logging.dart';
@@ -21,6 +20,7 @@ import '../../schemas/download_file.dart';
 
 class SinglePost extends StatefulWidget {
   final FocusNode focus;
+
   const SinglePost(this.focus, {super.key});
 
   @override
@@ -28,9 +28,9 @@ class SinglePost extends StatefulWidget {
 }
 
 class _SinglePostState extends State<SinglePost> {
-  final BooruAPI booru = getBooru();
-  final TextEditingController controller = TextEditingController();
-  final MenuController menuController = MenuController();
+  final booru = getBooru();
+  final controller = TextEditingController();
+  final menuController = MenuController();
 
   List<Widget> menuItems = [];
   bool inProcessLoading = false;
@@ -66,14 +66,14 @@ class _SinglePostState extends State<SinglePost> {
             icon: const Icon(Icons.content_paste),
             onPressed: () async {
               try {
-                var clipboard = await Clipboard.getData(Clipboard.kTextPlain);
+                final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
                 if (clipboard == null ||
                     clipboard.text == null ||
                     clipboard.text!.isEmpty) {
                   return;
                 }
 
-                var numbers = RegExp(r'\d+')
+                final numbers = RegExp(r'\d+')
                     .allMatches(clipboard.text!)
                     .map((e) => e.input.substring(e.start, e.end))
                     .toList();
@@ -122,7 +122,7 @@ class _SinglePostState extends State<SinglePost> {
                   arrowSpinningController!.repeat();
                 }
 
-                var n = int.tryParse(controller.text);
+                final n = int.tryParse(controller.text);
                 if (n == null) {
                   throw AppLocalizations.of(context)!
                       .notANumber(controller.text);
@@ -131,7 +131,7 @@ class _SinglePostState extends State<SinglePost> {
                 Color overlayColor =
                     Theme.of(context).colorScheme.background.withOpacity(0.5);
 
-                var value = await booru.singlePost(n);
+                final value = await booru.singlePost(n);
 
                 // ignore: use_build_context_synchronously
                 Navigator.push(context, MaterialPageRoute(

@@ -43,13 +43,13 @@ class _DownloadsState extends State<Downloads> {
 
     _updates =
         settingsIsar().files.watchLazy(fireImmediately: true).listen((_) async {
-      var filesInProgress = await settingsIsar()
+      final filesInProgress = await settingsIsar()
           .files
           .filter()
           .inProgressEqualTo(true)
           .sortByDateDesc()
           .findAll();
-      var files = await settingsIsar()
+      final files = await settingsIsar()
           .files
           .filter()
           .inProgressEqualTo(false)
@@ -123,7 +123,7 @@ class _DownloadsState extends State<Downloads> {
             ? null
             : (context, indx) => ListTile(
                   onLongPress: () {
-                    var file = _files![indx];
+                    final file = _files![indx];
                     Navigator.push(
                         context,
                         DialogRoute(

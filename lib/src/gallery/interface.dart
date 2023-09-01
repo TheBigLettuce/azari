@@ -25,24 +25,3 @@ abstract class GalleryAPI<Extra, ExtraFiles, T extends Cell, F extends Cell> {
 
   void close();
 }
-
-// abstract class GalleryAPIFilesReadWrite<ExtraFiles, F extends Cell>
-    // implements GalleryAPIFilesRead<ExtraFiles, F>, GalleryAPIFilesWrite<F> {}
-
-
-// abstract class GalleryAPIWrite<T extends Cell> {
-//   Future modify(T old, T newd);
-//   Future delete(T d);
-//   Future newDirectory(String path, void Function() onDone);
-// }
-
-// abstract class GalleryAPIFilesWrite<F extends Cell> {
-//   Future uploadFiles(List<PlatformFile> l, void Function() onDone);
-//   Future deleteFiles(List<F> f, void Function() onDone);
-// }
-
-// abstract class GalleryAPIReadWrite<Extra, ExtraFiles, T extends Cell,
-//         F extends Cell>
-//     implements GalleryAPIRead<Extra, ExtraFiles, T, F>, GalleryAPIWrite<T> {
-//   GalleryAPIFilesReadWrite<ExtraFiles, F> imagesReadWrite(T d);
-// }

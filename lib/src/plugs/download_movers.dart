@@ -12,11 +12,11 @@ import 'package:gallery/src/plugs/download_movers/dart.dart';
 import 'package:gallery/src/plugs/download_movers/dummy.dart';
 
 class MoveOp {
-  String source;
-  String rootDir;
-  String targetDir;
+  final String source;
+  final String rootDir;
+  final String targetDir;
 
-  MoveOp(
+  const MoveOp(
       {required this.source, required this.rootDir, required this.targetDir});
 }
 

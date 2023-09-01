@@ -20,6 +20,7 @@ import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../db/isar.dart';
 import '../schemas/download_file.dart';
@@ -90,13 +91,14 @@ class BooruScroll extends StatefulWidget {
 }
 
 class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
-  late StreamSubscription<Settings?> settingsWatcher;
+  late final StreamSubscription<Settings?> settingsWatcher;
   late final void Function(double pos, {double? infoPos, int? selectedCell})
       updateScrollPosition;
+
   Downloader downloader = Downloader();
   bool reachedEnd = false;
 
-  late GridSkeletonState skeletonState = GridSkeletonState(
+  late final GridSkeletonState skeletonState = GridSkeletonState(
       index: kBooruGridDrawerIndex,
       onWillPop: () {
         if (widget.isPrimary) {
@@ -175,10 +177,10 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
       widget.isPrimary ? widget.grids.instance : widget.currentInstance!;
 
   Future<int> _clearAndRefresh() async {
-    var instance = _getInstance();
+    final instance = _getInstance();
 
     try {
-      var list = await booru.page(0, widget.tags, widget.grids.excluded);
+      final list = await booru.page(0, widget.tags, widget.grids.excluded);
       updateScrollPosition(0);
       await instance.writeTxn(() {
         instance.posts.clear();
@@ -196,9 +198,9 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
   }
 
   Future<void> _download(int i) async {
-    var instance = _getInstance();
+    final instance = _getInstance();
 
-    var p = instance.posts.getSync(i + 1);
+    final p = instance.posts.getSync(i + 1);
     if (p == null) {
       return Future.value();
     }
@@ -211,12 +213,12 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
   }
 
   Future<int> _addLast() async {
-    var instance = _getInstance();
+    final instance = _getInstance();
 
     if (reachedEnd) {
       return instance.posts.countSync();
     }
-    var p = instance.posts.getSync(instance.posts.countSync());
+    final p = instance.posts.getSync(instance.posts.countSync());
     if (p == null) {
       return instance.posts.countSync();
     }
@@ -246,7 +248,7 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
 
   @override
   Widget build(BuildContext context) {
-    var insets = MediaQuery.viewPaddingOf(context);
+    final insets = MediaQuery.viewPaddingOf(context);
 
     return makeGridSkeleton(
       context,
@@ -269,13 +271,21 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
             }, true)
           ],
           skeletonState.settings.picturesPerRow,
-          listView: skeletonState.settings.listViewBooru,
+          listView: skeletonState.settings.booruListView,
           keybindsDescription: AppLocalizations.of(context)!.booruGridPageName,
         ),
         hasReachedEnd: () => reachedEnd,
         mainFocus: skeletonState.mainFocus,
         scaffoldKey: skeletonState.scaffoldKey,
-
+        onError: (error) {
+          return OutlinedButton(
+            onPressed: () {
+              launchUrl(Uri.https(booru.domain),
+                  mode: LaunchMode.externalApplication);
+            },
+            child: Text(AppLocalizations.of(context)!.openInBrowser),
+          );
+        },
         aspectRatio: skeletonState.settings.ratio.value,
         getCell: (i) => _getInstance().posts.getSync(i + 1)!,
         cloudflareHook: () {

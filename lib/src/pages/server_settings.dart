@@ -44,7 +44,7 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
 
   void _checkServer(Uri url, void Function() onSuccess) async {
     try {
-      var resp = await get(url.replace(path: "/hello"));
+      final resp = await get(url.replace(path: "/hello"));
       if (resp.statusCode != 200) {
         throw "not 200";
       }
@@ -58,19 +58,19 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
 
   void _newDeviceId(String key, void Function() onSuccess) async {
     try {
-      var req = MultipartRequest(
+      final req = MultipartRequest(
           "POST",
           Uri.parse(
             settings.host,
           ).replace(path: "/device/register", queryParameters: {"key": key}));
 
-      var resp = await req.send();
+      final resp = await req.send();
 
       if (resp.statusCode != 200) {
         throw "not 200";
       }
 
-      var bytes = await resp.stream.toBytes();
+      final bytes = await resp.stream.toBytes();
 
       settingsIsar().writeTxnSync(() {
         settingsIsar().serverSettings.putSync(settings.copy(deviceId: bytes));
@@ -114,7 +114,7 @@ class _ServerSettingsPageState extends State<ServerSettingsPage> {
                         content: TextField(
                           onSubmitted: (value) {
                             try {
-                              var uri = Uri.parse(value);
+                              final uri = Uri.parse(value);
 
                               if (!uri.hasScheme) {
                                 throw AppLocalizations.of(context)!

@@ -9,7 +9,7 @@ import 'package:flutter/widgets.dart';
 
 Widget gestureDeadZones(BuildContext context,
     {required Widget child, bool left = false, bool right = false}) {
-  var systemInsets = MediaQuery.systemGestureInsetsOf(context);
+  final systemInsets = MediaQuery.systemGestureInsetsOf(context);
   if (systemInsets == EdgeInsets.zero) {
     return child;
   }

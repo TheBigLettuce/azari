@@ -50,16 +50,18 @@ ServerSettings _settings() {
 
 /// Upload files to the server.
 class Uploader {
-  final List<_HostFileAndDir> _stack = [];
+  final _stack = <_HostFileAndDir>[];
+  final client = Dio();
+  final NotificationPlug notification = chooseNotificationPlug();
+  final Isar uploadsDb = openUploadsDbIsar();
+
   int id = 0;
   bool inProgress = false;
-  var client = Dio();
-  NotificationPlug notification = chooseNotificationPlug();
-  Isar uploadsDb = openUploadsDbIsar();
 
-  List<UploadFilesStack> getStack() {
-    return uploadsDb.uploadFilesStacks.where().findAllSync();
-  }
+  int count() => _stack.length;
+
+  List<UploadFilesStack> getStack() =>
+      uploadsDb.uploadFilesStacks.where().findAllSync();
 
   void add(
     Uri host,
@@ -83,16 +85,14 @@ class Uploader {
     }
   }
 
-  int count() => _stack.length;
-
   void _start(_HostFileAndDir f) async {
     inProgress = true;
     id--;
 
-    var formData = FormData();
+    final formData = FormData();
 
-    for (var element in f.f) {
-      var mimt = lookupMimeType(element.res.name);
+    for (final element in f.f) {
+      final mimt = lookupMimeType(element.res.name);
       var tags = PostTags().getTagsPost(element.res.name);
       if (tags.isEmpty) {
         tags = await PostTags().getOnlineAndSaveTags(element.res.name);
@@ -110,13 +110,13 @@ class Uploader {
               })));
     }
 
-    var progress = await notification.newProgress(
+    final progress = await notification.newProgress(
         "${f.f.length.toString()} files", id, "Uploading", "Uploader");
 
     try {
-      var settings = _settings();
+      final settings = _settings();
 
-      var req = await client.postUri(f.host.replace(path: "/add/files"),
+      final req = await client.postUri(f.host.replace(path: "/add/files"),
           onSendProgress: (count, total) {
         if (count == total) {
           progress.done();
@@ -135,7 +135,7 @@ class Uploader {
         throw "not 200";
       }
 
-      var failed = req.data["failed"];
+      final failed = req.data["failed"];
 
       if (failed != null && (failed as List).isNotEmpty) {
         log('failed: ${req.data["failed"]}');
@@ -144,7 +144,7 @@ class Uploader {
       f.onSuccess();
 
       uploadsDb.writeTxnSync(() {
-        var stack = uploadsDb.uploadFilesStacks.getSync(f.stackId);
+        final stack = uploadsDb.uploadFilesStacks.getSync(f.stackId);
         if (stack != null) {
           uploadsDb.uploadFilesStates.deleteSync(stack.stateId);
           uploadsDb.uploadFilesStacks.deleteSync(stack.isarId!);
@@ -152,7 +152,7 @@ class Uploader {
       });
     } catch (e, trace) {
       uploadsDb.writeTxnSync(() {
-        var stack = uploadsDb.uploadFilesStacks.getSync(f.stackId);
+        final stack = uploadsDb.uploadFilesStacks.getSync(f.stackId);
         if (stack != null) {
           uploadsDb.uploadFilesStacks.putSync(stack.failed());
         }

@@ -49,11 +49,11 @@ class KDENotifications implements NotificationPlug {
   @override
   Future<NotificationProgress> newProgress(String name, _, __, ___) async {
     try {
-      var object = OrgKdeJobViewServer(
+      final object = OrgKdeJobViewServer(
           _client, "org.kde.kuiserver", DBusObjectPath("/JobViewServer"));
-      var id = await object.callrequestView("Ācārya", "", 0);
+      final id = await object.callrequestView("Ācārya", "", 0);
 
-      var notif =
+      final notif =
           OrgKdeJobViewV2(_client, "org.kde.kuiserver", DBusObjectPath(id));
 
       notif.callsetInfoMessage(name);

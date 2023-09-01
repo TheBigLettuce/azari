@@ -184,8 +184,9 @@ class SystemGalleryDirectoryFile implements Cell {
                                       context: context,
                                       builder: (context) {
                                         return AlertDialog(
-                                          title: const Text(
-                                              "Enter new name"), // TODO: change
+                                          title: Text(
+                                              AppLocalizations.of(context)!
+                                                  .enterNewNameTitle),
                                           content: TextFormField(
                                             initialValue: name,
                                             autovalidateMode:
@@ -196,7 +197,9 @@ class SystemGalleryDirectoryFile implements Cell {
                                                 errorMaxLines: 2),
                                             validator: (value) {
                                               if (value == null) {
-                                                return "Value is null";
+                                                return AppLocalizations.of(
+                                                        context)!
+                                                    .valueIsNull;
                                               }
                                               try {
                                                 PostTags().dissassembleFilename(

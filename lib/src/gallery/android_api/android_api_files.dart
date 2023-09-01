@@ -12,11 +12,12 @@ class AndroidGalleryFilesExtra {
 
   FilterInterface<SystemGalleryDirectoryFile> get filter => _impl.filter;
 
-  void loadThumbnails(int thumb) {
-    _thumbs(thumb);
-  }
+  bool get supportsDirectRefresh => false;
 
-  void _thumbs(int from) {
+  bool isTrash() => _impl.isTrash;
+  bool isFavorites() => _impl.isFavorites;
+
+  void loadThumbnails(int from) {
     try {
       final db = _impl.filter.isFiltering ? _impl.filter.to : _impl.db;
 
@@ -36,9 +37,6 @@ class AndroidGalleryFilesExtra {
     }
     _impl.isThumbsLoading = false;
   }
-
-  bool isTrash() => _impl.isTrash;
-  bool isFavorites() => _impl.isFavorites;
 
   void setOnThumbnailCallback(void Function() callback) {
     _impl.onThumbUpdate = callback;
@@ -158,8 +156,6 @@ class AndroidGalleryFilesExtra {
     }
   }
 
-  bool get supportsDirectRefresh => false;
-
   void setRefreshingStatusCallback(
       void Function(int i, bool inRefresh, bool empty) callback) {
     _impl.callback = callback;
@@ -174,12 +170,11 @@ class AndroidGalleryFilesExtra {
     _impl.filter.passFilter = f;
   }
 
-  List<SystemGalleryDirectoryFile> getCellsIds(Set<int> isarIds) {
-    return _impl.db.systemGalleryDirectoryFiles
-        .where()
-        .anyOf(isarIds, (q, element) => q.isarIdEqualTo(element))
-        .findAllSync();
-  }
+  List<SystemGalleryDirectoryFile> getCellsIds(Set<int> isarIds) =>
+      _impl.db.systemGalleryDirectoryFiles
+          .where()
+          .anyOf(isarIds, (q, element) => q.isarIdEqualTo(element))
+          .findAllSync();
 
   const AndroidGalleryFilesExtra._(this._impl);
 }
@@ -187,23 +182,26 @@ class AndroidGalleryFilesExtra {
 class _AndroidGalleryFiles
     implements
         GalleryAPIFiles<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile> {
-  Isar db;
+  final bool isTrash;
+  final bool isFavorites;
   final String bucketId;
-  void Function() unsetCurrentImages;
+  final int startTime;
+  final String target;
 
+  void Function() unsetCurrentImages;
   void Function(int i, bool inRefresh, bool empty)? callback;
   void Function()? refreshGrid;
   void Function()? onThumbUpdate;
-  final int startTime;
-  final String target;
+
   bool isThumbsLoading = false;
-  final bool isTrash;
-  final bool isFavorites;
+  Isar db;
 
   @override
-  AndroidGalleryFilesExtra getExtra() {
-    return AndroidGalleryFilesExtra._(this);
-  }
+  AndroidGalleryFilesExtra getExtra() => AndroidGalleryFilesExtra._(this);
+
+  @override
+  SystemGalleryDirectoryFile directCell(int i) =>
+      db.systemGalleryDirectoryFiles.getSync(i + 1)!;
 
   late final IsarFilter<SystemGalleryDirectoryFile> filter =
       IsarFilter<SystemGalleryDirectoryFile>(db, openAndroidGalleryInnerIsar(),
@@ -246,10 +244,6 @@ class _AndroidGalleryFiles
   }
 
   @override
-  SystemGalleryDirectoryFile directCell(int i) =>
-      db.systemGalleryDirectoryFiles.getSync(i + 1)!;
-
-  @override
   Future<int> refresh() {
     try {
       db.writeTxnSync(() => db.systemGalleryDirectoryFiles.clearSync());
@@ -275,7 +269,11 @@ class _AndroidGalleryFiles
   }
 
   _AndroidGalleryFiles(
-      this.db, this.bucketId, this.unsetCurrentImages, this.target,
-      {this.isTrash = false, this.isFavorites = false})
-      : startTime = DateTime.now().millisecondsSinceEpoch;
+    this.db,
+    this.unsetCurrentImages, {
+    required this.target,
+    required this.bucketId,
+    this.isTrash = false,
+    this.isFavorites = false,
+  }) : startTime = DateTime.now().millisecondsSinceEpoch;
 }

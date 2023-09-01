@@ -33,8 +33,8 @@ class Downloader with _CancelTokens {
   final Dio dio = Dio();
   final int maximum;
 
-  NotificationPlug notificationPlug = chooseNotificationPlug();
-  DownloadMoverPlug moverPlug;
+  final NotificationPlug notificationPlug = chooseNotificationPlug();
+  final DownloadMoverPlug moverPlug;
 
   void retry(dw_file.File f) {
     if (f.isOnHold()) {
@@ -68,7 +68,7 @@ class Downloader with _CancelTokens {
   }
 
   void cancelAndRemoveToken(int key) {
-    var t = _tokens[key];
+    final t = _tokens[key];
     if (t == null) {
       return;
     }
@@ -79,7 +79,7 @@ class Downloader with _CancelTokens {
 
   void _done() {
     if (_inWork <= maximum) {
-      var f = settingsIsar()
+      final f = settingsIsar()
           .files
           .filter()
           .inProgressEqualTo(false)
@@ -100,7 +100,7 @@ class Downloader with _CancelTokens {
   }
 
   void restart() async {
-    var f = settingsIsar()
+    final f = settingsIsar()
         .files
         .filter()
         .isFailedEqualTo(true)
@@ -115,7 +115,7 @@ class Downloader with _CancelTokens {
           .limit(6 - f.length)
           .findAllSync());
     }
-    for (var element in f) {
+    for (final element in f) {
       add(element);
     }
   }
@@ -130,8 +130,8 @@ class Downloader with _CancelTokens {
 
     if (_inWork <= maximum) {
       _inWork++;
-      var d = download.inprogress();
-      var id =
+      final d = download.inprogress();
+      final id =
           settingsIsar().writeTxnSync(() => settingsIsar().files.putSync(d));
       _addToken(id, CancelToken());
       _download(d);
@@ -140,7 +140,7 @@ class Downloader with _CancelTokens {
 
   void removeFailed() {
     settingsIsar().writeTxnSync(() {
-      var failed = settingsIsar()
+      final failed = settingsIsar()
           .files
           .filter()
           .isFailedEqualTo(true)
@@ -155,11 +155,11 @@ class Downloader with _CancelTokens {
 
   void markStale() {
     settingsIsar().writeTxnSync(() {
-      List<dw_file.File> toUpdate = [];
+      final toUpdate = <dw_file.File>[];
 
-      var inProgress =
+      final inProgress =
           settingsIsar().files.filter().inProgressEqualTo(true).findAllSync();
-      for (var element in inProgress) {
+      for (final element in inProgress) {
         if (_tokens[element.id!] == null) {
           toUpdate.add(element.failed());
         }
@@ -172,10 +172,10 @@ class Downloader with _CancelTokens {
   }
 
   void _download(dw_file.File d) async {
-    var downloadtd = Directory(
+    final downloadtd = Directory(
         path.joinAll([(await getTemporaryDirectory()).path, "downloads"]));
 
-    var dirpath = path.joinAll([downloadtd.path, d.site]);
+    final dirpath = path.joinAll([downloadtd.path, d.site]);
     try {
       if (!downloadtd.existsSync()) {
         downloadtd.createSync();
@@ -188,14 +188,13 @@ class Downloader with _CancelTokens {
       return;
     }
 
-    var filePath = path.joinAll([downloadtd.path, d.site, d.name]);
-
+    final filePath = path.joinAll([downloadtd.path, d.site, d.name]);
     if (File(filePath).existsSync()) {
       _done();
       return;
     }
 
-    var progress =
+    final progress =
         await notificationPlug.newProgress(d.name, d.id!, d.site, "Downloader");
 
     dio.download(d.url, filePath,
@@ -210,7 +209,7 @@ class Downloader with _CancelTokens {
       progress.update(count);
     })).then((value) async {
       try {
-        var settings = settingsIsar().settings.getSync(0)!;
+        final settings = settingsIsar().settings.getSync(0)!;
 
         moverPlug.move(MoveOp(
             source: filePath, rootDir: settings.path, targetDir: d.site));
@@ -245,8 +244,8 @@ class Downloader with _CancelTokens {
 
   void _removeTempContentsDownloads() async {
     try {
-      var tempd = await getTemporaryDirectory();
-      var downld = Directory(path.join(tempd.path, "downloads"));
+      final tempd = await getTemporaryDirectory();
+      final downld = Directory(path.join(tempd.path, "downloads"));
       if (!downld.existsSync()) {
         return;
       }

@@ -91,11 +91,9 @@ class Dummy extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.scheduleFrameCallback(
-      (timeStamp) {
-        _globalTab.restoreState(context);
-      },
-    );
+    WidgetsBinding.instance.scheduleFrameCallback((_) {
+      _globalTab.restoreState(context);
+    });
 
     return Container();
   }
@@ -116,7 +114,7 @@ void mainPickfile() async {
   await Permission.accessMediaLocation.request();
   PlatformFunctions.requestManageMedia();
 
-  changeErrorColors();
+  changeExceptionErrorColors();
 
   final accentColor = await PlatformFunctions.accentColor();
 
@@ -141,7 +139,7 @@ void mainPickfile() async {
   ));
 }
 
-void changeErrorColors() {
+void changeExceptionErrorColors() {
   RenderErrorBox.backgroundColor = Colors.blue.shade800;
   RenderErrorBox.textStyle = ui.TextStyle(color: Colors.white70);
 }
@@ -156,7 +154,7 @@ void main() async {
     MediaKit.ensureInitialized();
   }
 
-  changeErrorColors();
+  changeExceptionErrorColors();
 
   WidgetsFlutterBinding.ensureInitialized();
   await initalizeIsar(false);
@@ -212,17 +210,17 @@ void main() async {
           "/booru": (context) {
             changeOverlay(context);
 
-            var grids = getTab();
+            final grids = getTab();
 
-            var arguments = ModalRoute.of(context)!.settings.arguments;
+            final arguments = ModalRoute.of(context)!.settings.arguments;
             if (arguments != null) {
-              var list = grids.instance.gridRestores.where().findAllSync();
-              for (var element in list) {
+              final list = grids.instance.gridRestores.where().findAllSync();
+              for (final element in list) {
                 grids.removeSecondaryGrid(element.path);
               }
             }
 
-            var scroll = grids.instance.scrollPositionPrimarys.getSync(0);
+            final scroll = grids.instance.scrollPositionPrimarys.getSync(0);
 
             return BooruScroll.primary(
               initalScroll: scroll != null ? scroll.pos : 0,
@@ -252,8 +250,6 @@ GridTab getTab() => _globalTab;
 Settings getSettings() {
   return settingsIsar().settings.getSync(0) ?? Settings.empty();
 }
-
-class BooruArguments {}
 
 /// RestartWidget is needed for changing the boorus in the settings.
 class RestartWidget extends StatefulWidget {

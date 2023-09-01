@@ -17,7 +17,6 @@ import 'package:gallery/src/cell/data.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/widgets/booru/autocomplete_tag.dart';
-import 'package:gallery/src/widgets/cloudflare_block.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:logging/logging.dart';
@@ -26,9 +25,14 @@ import '../../keybinds/keybinds.dart';
 import 'cell.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-part 'selection.dart';
+part 'selection_interface.dart';
 part 'wrapped_selection.dart';
 part 'mutation.dart';
+part 'segments.dart';
+part 'grid_bottom_sheet_action.dart';
+part 'grid_description.dart';
+part 'search_and_focus.dart';
+part 'grid_layout.dart';
 
 class CloudflareBlockInterface {
   final BooruAPI api;
@@ -36,82 +40,11 @@ class CloudflareBlockInterface {
   const CloudflareBlockInterface(this.api);
 }
 
-/// Action which can be taken upon a selected group of cells.
-class GridBottomSheetAction<T> {
-  /// Icon of the button.
-  final IconData icon;
+class _SegSticky {
+  final String seg;
+  final bool sticky;
 
-  /// [onPress] is called when the button gets pressed,
-  /// if [showOnlyWhenSingle] is true then this is guranteed to be called
-  /// with [selected] elements zero or one.
-  final void Function(List<T> selected) onPress;
-
-  /// If [closeOnPress] is true, then the bottom sheet will be closed immediately after this
-  /// button has been pressed.
-  final bool closeOnPress;
-
-  /// If [showOnlyWhenSingle] is true, then this button will be only active if only a single
-  /// element is currently selected.
-  final bool showOnlyWhenSingle;
-
-  const GridBottomSheetAction(this.icon, this.onPress, this.closeOnPress,
-      {this.showOnlyWhenSingle = false});
-}
-
-/// Segments of the grid.
-class Segments<T> {
-  /// Under [unsegmentedLabel] appear cells on which [segment] returns null,
-  /// or are single standing.
-  final String unsegmentedLabel;
-
-  /// Segmentation function.
-  /// If [sticky] is true, then even if the cell is single standing it will appear
-  /// as a single element segment on the grid.
-  final (String? segment, bool sticky) Function(T cell) segment;
-
-  /// If [addToSticky] is not null. then it will be possible to make
-  /// segments sticky on the grid.
-  /// If [unsticky] is true, then instead of stickying, unstickying should happen.
-  final void Function(String seg, {bool? unsticky})? addToSticky;
-
-  const Segments(this.segment, this.unsegmentedLabel, {this.addToSticky});
-}
-
-/// Metadata about the grid.
-class GridDescription<T> {
-  /// Index of the element in the drawer.
-  /// Useful if the grid is displayed in the page which have entry in the drawer.
-  final int drawerIndex;
-
-  /// Displayed in the keybinds info page name.
-  final String keybindsDescription;
-
-  /// If [pageName] is not null, and [CallbackGrid.searchWidget] is null,
-  /// then a Text widget will be displayed in the app bar with this value.
-  /// If null and [CallbackGrid.searchWidget] is null, then [keybindsDescription] is used as the value.
-  final String? pageName;
-
-  /// Actions of the grid on selected cells.
-  final List<GridBottomSheetAction<T>> actions;
-
-  final GridColumn columns;
-
-  /// If [listView] is true, then grid becomes a list.
-  /// [CallbackGrid.segments] gets ignored if [listView] is true.
-  final bool listView;
-
-  /// Displayed in the app bar bottom widget.
-  final PreferredSizeWidget? bottomWidget;
-
-  const GridDescription(
-    this.drawerIndex,
-    this.actions,
-    this.columns, {
-    required this.keybindsDescription,
-    this.bottomWidget,
-    this.pageName,
-    required this.listView,
-  });
+  const _SegSticky(this.seg, this.sticky);
 }
 
 /// The grid of images.
@@ -240,6 +173,8 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
 
   final PreferredSizeWidget? footer;
 
+  final Widget Function(Object error)? onError;
+
   const CallbackGrid(
       {super.key,
       this.additionalKeybinds,
@@ -251,6 +186,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       required this.aspectRatio,
       this.cloudflareHook,
       this.pageChangeImage,
+      this.onError,
       required this.mainFocus,
       this.addIconsImage,
       this.segments,
@@ -280,24 +216,50 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   State<CallbackGrid<T>> createState() => CallbackGridState<T>();
 }
 
-class SearchAndFocus {
-  final Widget search;
-  final FocusNode focus;
-  final void Function()? onPressed;
-
-  const SearchAndFocus(this.search, this.focus, {this.onPressed});
-}
-
-class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
-    with _Selection<T> {
-  late ScrollController controller =
+class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
+  late final controller =
       ScrollController(initialScrollOffset: widget.initalScrollPosition);
-  final ScrollController fakeController = ScrollController();
+  final fakeController = ScrollController();
+
+  final GlobalKey<ImageViewState<T>> imageViewKey = GlobalKey();
+
+  late final selection =
+      SelectionInterface<T>._(setState, widget.description.actions);
 
   StreamSubscription<int>? ticker;
 
   GridMutationInterface<T>? get mutationInterface =>
       widget.immutable ? null : _state;
+
+  bool inImageView = false;
+
+  late final _Mutation<T> _state = _Mutation(
+    updateImageView: () {
+      imageViewKey.currentState?.update(_state.cellCount);
+    },
+    scrollUp: () {
+      if (widget.hideShowFab != null) {
+        widget.hideShowFab!(fab: false, foreground: inImageView);
+      }
+    },
+    unselectall: () {
+      selection.selected.clear();
+      selection.currentBottomSheet?.close();
+    },
+    immutable: widget.immutable,
+    widget: () => widget,
+    update: (f) {
+      try {
+        if (context.mounted) {
+          if (f != null) {
+            f();
+          }
+
+          setState(() {});
+        }
+      } catch (_) {}
+    },
+  );
 
   @override
   void initState() {
@@ -349,9 +311,9 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
         return;
       }
 
-      var h = MediaQuery.sizeOf(context).height;
+      final h = MediaQuery.sizeOf(context).height;
 
-      var height = h - h * 0.80;
+      final height = h - h * 0.80;
 
       if (!_state.isRefreshing &&
           _state.cellCount != 0 &&
@@ -374,8 +336,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
   }
 
   Future refresh() {
-    currentBottomSheet?.close();
-    selected.clear();
+    selection.currentBottomSheet?.close();
+    selection.selected.clear();
     if (widget.hideShowFab != null) {
       widget.hideShowFab!(fab: false, foreground: inImageView);
     }
@@ -384,7 +346,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
   }
 
   void _scrollUntill(int p) {
-    var picPerRow = widget.description.columns;
+    final picPerRow = widget.description.columns;
     // Get the full content height.
     final contentSize = controller.position.viewportDimension +
         controller.position.maxScrollExtent;
@@ -422,8 +384,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
 
     widget.mainFocus.requestFocus();
 
-    var offsetGrid = controller.offset;
-    var overlayColor =
+    final offsetGrid = controller.offset;
+    final overlayColor =
         Theme.of(context).colorScheme.background.withOpacity(0.5);
 
     Navigator.push(context, MaterialPageRoute(builder: (context) {
@@ -481,8 +443,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
         if (widget.onBack != null)
           SingleActivatorDescription(AppLocalizations.of(context)!.back,
               const SingleActivator(LogicalKeyboardKey.escape)): () {
-            selected.clear();
-            currentBottomSheet?.close();
+            selection.selected.clear();
+            selection.currentBottomSheet?.close();
             widget.onBack!();
           },
         if (widget.additionalKeybinds != null) ...widget.additionalKeybinds!,
@@ -490,244 +452,29 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
             context, widget.description.drawerIndex, widget.scaffoldKey),
       };
 
-  Widget _segmentLabel(String text, bool sticky) => Padding(
-      padding: const EdgeInsets.only(bottom: 8, top: 16, left: 8, right: 8),
-      child: GestureDetector(
-        onLongPress: widget.segments!.addToSticky != null &&
-                text != widget.segments!.unsegmentedLabel
-            ? () {
-                HapticFeedback.vibrate();
-                widget.segments!.addToSticky!(text,
-                    unsticky: sticky ? true : null);
-                _state._onRefresh();
-              }
-            : null,
-        child: SizedBox.fromSize(
-          size: Size.fromHeight(
-              (Theme.of(context).textTheme.headlineLarge?.fontSize ?? 24) + 8),
-          child: Stack(
-            children: [
-              Text(
-                text,
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineLarge
-                    ?.copyWith(letterSpacing: 2),
-              ),
-              if (sticky)
-                const Align(
-                  alignment: Alignment.centerRight,
-                  child: Icon(Icons.push_pin_outlined),
-                ),
-            ],
-          ),
-        ),
-      ));
-
-  Widget _makeList(BuildContext context) => SliverList.separated(
-        separatorBuilder: (context, index) => const Divider(
-          height: 1,
-        ),
-        itemCount: _state.cellCount,
-        itemBuilder: (context, index) {
-          var cell = _state.getCell(index);
-          var cellData = cell.getCellData(widget.description.listView);
-          if (cellData.loaded != null && cellData.loaded == false) {
-            widget.loadThumbsDirectly?.call(index);
-          }
-
-          return _WrappedSelection(
-            selectUntil: _selectUnselectUntil,
-            thisIndx: index,
-            isSelected: _isSelected(index),
-            selectionEnabled: selected.isNotEmpty,
-            selectUnselect: () => _selectOrUnselect(index, cell),
-            child: ListTile(
-              onLongPress: () => _selectOrUnselect(index, cell),
-              onTap: () => _onPressed(context, index),
-              leading: CircleAvatar(
-                backgroundColor: Theme.of(context).colorScheme.background,
-                foregroundImage: cellData.thumb,
-                onForegroundImageError: (_, __) {},
-              ),
-              title: Text(
-                cellData.name,
-                softWrap: false,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ).animate().fadeIn();
-        },
-      );
-
-  Widget _makeGrid(BuildContext context) => SliverGrid.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            childAspectRatio: widget.aspectRatio,
-            crossAxisCount: widget.description.columns.number),
-        itemCount: _state.cellCount,
-        itemBuilder: (context, indx) {
-          var m = _state.getCell(indx);
-          var cellData = m.getCellData(widget.description.listView);
-          if (cellData.loaded != null && cellData.loaded == false) {
-            widget.loadThumbsDirectly?.call(indx);
-          }
-
-          return _WrappedSelection(
-            selectionEnabled: selected.isNotEmpty,
-            thisIndx: indx,
-            selectUntil: _selectUnselectUntil,
-            selectUnselect: () => _selectOrUnselect(indx, m),
-            isSelected: _isSelected(indx),
-            child: GridCell(
-              cell: cellData,
-              hidealias: widget.hideAlias,
-              indx: indx,
-              download: widget.download,
-              tight: widget.tightMode,
-              onPressed: _onPressed,
-              onLongPress: () =>
-                  _selectOrUnselect(indx, m), //extend: maxExtend,
-            ),
-          );
-        },
-      );
-
-  Widget _makeSegmentedRow(
-    BuildContext context,
-    List<int> val,
-    double constraints,
-    void Function(int) selectUntil,
-    void Function(int, T) selectUnselect,
-    bool Function(int) isSelected,
-  ) =>
-      Row(
-        children: val.map((indx) {
-          // indx = indx - 1;
-          var m = _state.getCell(indx);
-          var cellData = m.getCellData(widget.description.listView);
-          if (cellData.loaded != null && cellData.loaded == false) {
-            widget.loadThumbsDirectly?.call(indx);
-          }
-
-          return ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: constraints),
-            child: material.AspectRatio(
-              aspectRatio: widget.aspectRatio,
-              child: _WrappedSelection(
-                selectionEnabled: selected.isNotEmpty,
-                thisIndx: indx,
-                selectUntil: selectUntil,
-                selectUnselect: () => selectUnselect(indx, m),
-                isSelected: isSelected(indx),
-                child: GridCell(
-                  cell: cellData,
-                  hidealias: widget.hideAlias,
-                  indx: indx,
-                  download: widget.download,
-                  tight: widget.tightMode,
-                  onPressed: _onPressed,
-                  onLongPress: () =>
-                      selectUnselect(indx, m), //extend: maxExtend,
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      );
-
-  Widget _makeSegments(BuildContext context) {
-    final segRows = <dynamic>[];
-    final segMap = <String, List<int>>{};
-    final stickySegs = <String, List<int>>{};
-
-    final unsegmented = <int>[];
-
-    for (var i = 0; i < _state.cellCount; i++) {
-      final (res, sticky) = widget.segments!.segment(_state.getCell(i));
-      if (res == null) {
-        unsegmented.add(i);
-      } else {
-        if (sticky) {
-          final previous = (stickySegs[res]) ?? [];
-          previous.add(i);
-          stickySegs[res] = previous;
-        } else {
-          final previous = (segMap[res]) ?? [];
-          previous.add(i);
-          segMap[res] = previous;
-        }
-      }
-    }
-
-    segMap.removeWhere((key, value) {
-      if (value.length == 1) {
-        unsegmented.add(value[0]);
-        return true;
-      }
-
-      return false;
-    });
-
-    makeRows(List<int> value) {
-      var row = <int>[];
-
-      for (final i in value) {
-        row.add(i);
-        if (row.length == widget.description.columns.number) {
-          segRows.add(row);
-          row = [];
-        }
-      }
-
-      if (row.isNotEmpty) {
-        segRows.add(row);
-      }
-    }
-
-    stickySegs.forEach((key, value) {
-      segRows.add(_SegSticky(key, true));
-
-      makeRows(value);
-    });
-
-    segMap.forEach(
-      (key, value) {
-        segRows.add(_SegSticky(key, false));
-
-        makeRows(value);
-      },
-    );
-
-    if (unsegmented.isNotEmpty) {
-      segRows.add(_SegSticky(widget.segments!.unsegmentedLabel, false));
-
-      makeRows(unsegmented);
-    }
-
-    final constraints =
-        MediaQuery.of(context).size.width / widget.description.columns.number;
-
-    return SliverList.builder(
-      itemBuilder: (context, indx) {
-        if (indx >= segRows.length) {
-          return null;
-        }
-        final val = segRows[indx];
-        if (val is _SegSticky) {
-          return _segmentLabel(val.seg, val.sticky);
-        } else if (val is List<int>) {
-          return _makeSegmentedRow(context, val, constraints, (cellindx) {},
-              (i, cell) {
-            _selectOrUnselect(i, cell);
-          }, (i) {
-            return _isSelected(i);
-          });
-        }
-
-        throw "invalid type";
-      },
+  Widget _withPadding(Widget child) {
+    return SliverPadding(
+      padding: EdgeInsets.only(
+          bottom: widget.systemNavigationInsets.bottom +
+              MediaQuery.viewPaddingOf(context).bottom +
+              (selection.currentBottomSheet != null ? 48 + 4 : 0) +
+              (widget.footer != null
+                  ? widget.footer!.preferredSize.height
+                  : 0)),
+      sliver: child,
     );
   }
+
+  GridCell _makeGridCell(T cell, int indx) => GridCell(
+        cell: cell.getCellData(widget.description.listView),
+        hidealias: widget.hideAlias,
+        indx: indx,
+        download: widget.download,
+        tight: widget.tightMode,
+        onPressed: _onPressed,
+        onLongPress: () => selection.selectOrUnselect(context, indx, cell,
+            widget.systemNavigationInsets.bottom), //extend: maxExtend,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -747,7 +494,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
           child: Stack(
             children: [
               RefreshIndicator(
-                  onRefresh: _state._onRefresh,
+                  onRefresh: _state.onRefresh,
                   child: Scrollbar(
                       interactive: false,
                       thumbVisibility:
@@ -851,8 +598,9 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
                                             wrapAppBarAction(GestureDetector(
                                               onLongPress: () {
                                                 setState(() {
-                                                  selected.clear();
-                                                  currentBottomSheet?.close();
+                                                  selection.selected.clear();
+                                                  selection.currentBottomSheet
+                                                      ?.close();
                                                 });
                                               },
                                               child: IconButton(
@@ -885,8 +633,9 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
                                         ? IconButton(
                                             onPressed: () {
                                               setState(() {
-                                                selected.clear();
-                                                currentBottomSheet?.close();
+                                                selection.selected.clear();
+                                                selection.currentBottomSheet
+                                                    ?.close();
                                               });
                                               if (widget.onBack != null) {
                                                 widget.onBack!();
@@ -913,17 +662,52 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
                           if (widget.segments == null)
                             !_state.isRefreshing && _state.cellCount == 0
                                 ? SliverToBoxAdapter(
-                                    child: _state.cloudflareBlocked == true &&
-                                            widget.cloudflareHook != null
-                                        ? CloudflareBlock(
-                                            interface: widget.cloudflareHook!(),
-                                          )
-                                        : const EmptyWidget())
-                                : withPadding(widget.description.listView
-                                    ? _makeList(context)
-                                    : _makeGrid(context))
+                                    child: Column(
+                                    children: [
+                                      EmptyWidget(
+                                        error: _state.refreshingError,
+                                      ),
+                                      if (widget.onError != null &&
+                                          _state.refreshingError != null)
+                                        widget
+                                            .onError!(_state.refreshingError!),
+                                    ],
+                                  ))
+                                : _withPadding(widget.description.listView
+                                    ? GridLayout.list<T>(
+                                        context,
+                                        _state,
+                                        selection,
+                                        widget.systemNavigationInsets.bottom,
+                                        widget.description.listView,
+                                        loadThumbsDirectly:
+                                            widget.loadThumbsDirectly,
+                                        onPressed: _onPressed)
+                                    : GridLayout.grid<T>(
+                                        context,
+                                        _state,
+                                        selection,
+                                        widget.description.columns.number,
+                                        widget.description.listView,
+                                        widget.loadThumbsDirectly,
+                                        _makeGridCell,
+                                        systemNavigationInsets: widget
+                                            .systemNavigationInsets.bottom,
+                                        aspectRatio: widget.aspectRatio,
+                                      ))
                           else
-                            withPadding(_makeSegments(context)),
+                            _withPadding(GridLayout.segments<T>(
+                                context,
+                                widget.segments!,
+                                _state,
+                                selection,
+                                widget.description.listView,
+                                widget.description.columns.number,
+                                _makeGridCell,
+                                systemNavigationInsets:
+                                    widget.systemNavigationInsets.bottom,
+                                aspectRatio: widget.aspectRatio,
+                                loadThumbsDirectly: widget.loadThumbsDirectly)),
                         ],
                       ))),
               if (widget.footer != null)
@@ -940,24 +724,4 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>>
           ),
         ));
   }
-
-  Widget withPadding(Widget child) {
-    return SliverPadding(
-      padding: EdgeInsets.only(
-          bottom: widget.systemNavigationInsets.bottom +
-              MediaQuery.viewPaddingOf(context).bottom +
-              (currentBottomSheet != null ? 48 + 4 : 0) +
-              (widget.footer != null
-                  ? widget.footer!.preferredSize.height
-                  : 0)),
-      sliver: child,
-    );
-  }
-}
-
-class _SegSticky {
-  final String seg;
-  final bool sticky;
-
-  const _SegSticky(this.seg, this.sticky);
 }

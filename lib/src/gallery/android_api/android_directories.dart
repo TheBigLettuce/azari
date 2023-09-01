@@ -7,7 +7,6 @@
 
 import 'dart:async';
 import 'dart:developer';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
@@ -20,125 +19,15 @@ import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 import 'package:gallery/src/schemas/blacklisted_directory.dart';
 import 'package:gallery/src/schemas/pinned_directories.dart';
 import 'package:gallery/src/schemas/tags.dart';
+import 'package:gallery/src/widgets/copy_move_hint_text.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
-import 'package:gallery/src/widgets/grid/cell.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:logging/logging.dart';
 import '../../booru/interface.dart';
-import '../../cell/cell.dart';
-import '../../pages/image_view.dart';
 import '../../schemas/settings.dart';
-
-class CopyMovePreview extends StatefulWidget {
-  final List<SystemGalleryDirectoryFile> files;
-  const CopyMovePreview({super.key, required this.files});
-
-  @override
-  State<CopyMovePreview> createState() => _CopyMovePreviewState();
-}
-
-class _CopyMovePreviewState extends State<CopyMovePreview> {
-  final key = GlobalKey<ImageViewState>();
-
-  int calculateWidth(int i) {
-    return 52 + (i * 14);
-  }
-
-  Widget _imagePadding(int id, Cell cellData, {bool shadow = true}) {
-    return Padding(
-      padding: EdgeInsets.only(left: id * 14),
-      child: SizedBox(
-        height: 52,
-        width: 52,
-        child: GridCell(
-          cell: cellData.getCellData(false),
-          indx: id,
-          ignoreStickers: true,
-          onPressed: (context, _) {
-            Navigator.push(context, MaterialPageRoute(builder: (context) {
-              return ImageView<Cell>(
-                  key: key,
-                  systemOverlayRestoreColor:
-                      Theme.of(context).colorScheme.background.withOpacity(0.5),
-                  updateTagScrollPos: (_, __) {},
-                  scrollUntill: (_) {},
-                  onExit: () {},
-                  addIcons: (_) {
-                    return [
-                      IconButton(
-                          onPressed: () {
-                            widget.files
-                                .removeAt(key.currentState!.currentPage);
-
-                            key.currentState!.update(widget.files.length);
-
-                            if (widget.files.isEmpty) {
-                              Navigator.pop(context);
-                            }
-
-                            setState(() {});
-                          },
-                          icon: const Icon(Icons.close_rounded))
-                    ];
-                  },
-                  focusMain: () {},
-                  getCell: (i) => widget.files[i],
-                  cellCount: widget.files.length,
-                  startingCell: id,
-                  onNearEnd: null);
-            }));
-          },
-          tight: true,
-          download: null,
-          hidealias: true,
-          shadowOnTop: shadow,
-          circle: true,
-        ),
-      ),
-    );
-  }
-
-  Widget _makeStackedImages(BuildContext context) {
-    return Stack(
-      children: () {
-        final list = <Widget>[];
-
-        final width = (MediaQuery.sizeOf(context).width - 8);
-
-        for (final e in widget.files.indexed) {
-          if (calculateWidth(e.$1) > width) {
-            break;
-          }
-
-          list.add(_imagePadding(e.$1, e.$2, shadow: e.$1 != 0));
-        }
-
-        return list.reversed.toList();
-      }(),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: MediaQuery.sizeOf(context).width,
-      height: 56,
-      child: Center(
-        child: Badge.count(
-          count: widget.files.length,
-          alignment: Alignment.topLeft,
-          child: Padding(
-            padding: const EdgeInsets.only(right: 4, left: 4, bottom: 4),
-            child: _makeStackedImages(context),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class CallbackDescription {
   final void Function(SystemGalleryDirectory? chosen, String? newDir) c;
@@ -168,8 +57,13 @@ class AndroidDirectories extends StatefulWidget {
   final CallbackDescription? callback;
   final CallbackDescriptionNested? nestedCallback;
   final bool? noDrawer;
+  final bool showBackButton;
   const AndroidDirectories(
-      {super.key, this.callback, this.nestedCallback, this.noDrawer})
+      {super.key,
+      this.callback,
+      this.nestedCallback,
+      this.noDrawer,
+      this.showBackButton = false})
       : assert(!(callback != null && nestedCallback != null));
 
   @override
@@ -257,272 +151,260 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
     var insets = MediaQuery.viewPaddingOf(context);
 
     return makeGridSkeleton<SystemGalleryDirectory>(
-        context,
-        state,
-        CallbackGrid(
-            key: state.gridKey,
-            getCell: (i) => api.directCell(i),
-            initalScrollPosition: 0,
-            scaffoldKey: state.scaffoldKey,
-            systemNavigationInsets: insets,
-            hasReachedEnd: () => true,
-            inlineMenuButtonItems: true,
-            menuButtonItems: widget.callback != null
-                ? [
-                    IconButton(
-                        onPressed: () async {
-                          try {
-                            widget.callback!(
-                                null,
-                                await PlatformFunctions.chooseDirectory(
-                                    temporary: true));
-                            Navigator.pop(context);
-                          } catch (e) {
-                            log("new folder in android_directories",
-                                level: Level.SEVERE.value, error: e);
-                            Navigator.pop(context);
-                          }
-                        },
-                        icon: const Icon(Icons.create_new_folder_outlined))
-                  ]
-                : [
-                    IconButton(
-                        onPressed: () {
-                          Navigator.push(context,
-                              MaterialPageRoute(builder: (context) {
-                            return AndroidFiles(
-                                api: extra.trash(),
-                                callback: widget.nestedCallback,
-                                dirName: "trash",
-                                bucketId: "trash");
-                          }));
-                        },
-                        icon: const Icon(Icons.delete)),
-                    IconButton(
-                        onPressed: () {
-                          Navigator.push(context,
-                              MaterialPageRoute(builder: (context) {
-                            return AndroidFiles(
-                                api: extra.favorites(),
-                                callback: widget.nestedCallback,
-                                dirName: "favorites",
-                                bucketId: "favorites");
-                          }));
-                        },
-                        icon: const Icon(Icons.star_border_outlined))
-                  ],
-            aspectRatio:
-                state.settings.gallerySettings.directoryAspectRatio?.value ?? 1,
-            hideAlias: state.settings.gallerySettings.hideDirectoryName,
-            immutable: false,
-            segments: Segments(
-              (cell) {
-                for (final booru in Booru.values) {
-                  if (booru.url == cell.name) {
-                    return ("Booru", true);
-                  }
+      context,
+      state,
+      CallbackGrid(
+          key: state.gridKey,
+          getCell: (i) => api.directCell(i),
+          initalScrollPosition: 0,
+          scaffoldKey: state.scaffoldKey,
+          onBack: widget.showBackButton ? () => Navigator.pop(context) : null,
+          systemNavigationInsets: insets,
+          hasReachedEnd: () => true,
+          inlineMenuButtonItems: true,
+          menuButtonItems: widget.callback != null
+              ? [
+                  IconButton(
+                      onPressed: () async {
+                        try {
+                          widget.callback!(
+                              null,
+                              await PlatformFunctions.chooseDirectory(
+                                  temporary: true));
+                          // ignore: use_build_context_synchronously
+                          Navigator.pop(context);
+                        } catch (e) {
+                          log("new folder in android_directories",
+                              level: Level.SEVERE.value, error: e);
+                          Navigator.pop(context);
+                        }
+                      },
+                      icon: const Icon(Icons.create_new_folder_outlined))
+                ]
+              : [
+                  IconButton(
+                      onPressed: () {
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) {
+                          return AndroidFiles(
+                              api: extra.trash(),
+                              callback: widget.nestedCallback,
+                              dirName: "trash",
+                              bucketId: "trash");
+                        }));
+                      },
+                      icon: const Icon(Icons.delete)),
+                  IconButton(
+                      onPressed: () {
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) {
+                          return AndroidFiles(
+                              api: extra.favorites(),
+                              callback: widget.nestedCallback,
+                              dirName: "favorites",
+                              bucketId: "favorites");
+                        }));
+                      },
+                      icon: const Icon(Icons.star_border_outlined))
+                ],
+          aspectRatio: state
+              .settings.gallerySettings.directoryAspectRatio.value,
+          hideAlias: state.settings.gallerySettings.hideDirectoryName,
+          immutable: false,
+          segments: Segments(
+            (cell) {
+              for (final booru in Booru.values) {
+                if (booru.url == cell.name) {
+                  return ("Booru", true);
                 }
+              }
 
-                final dirTag = PostTags().directoryTag(cell.bucketId);
-                if (dirTag != null) {
-                  return (
-                    dirTag,
-                    blacklistedDirIsar()
-                            .pinnedDirectories
-                            .getSync(fastHash(dirTag)) !=
-                        null
-                  );
-                }
-
-                final name = cell.name.split(" ");
+              final dirTag = PostTags().directoryTag(cell.bucketId);
+              if (dirTag != null) {
                 return (
-                  name.first,
+                  dirTag,
                   blacklistedDirIsar()
                           .pinnedDirectories
-                          .getSync(fastHash(name.first)) !=
+                          .getSync(fastHash(dirTag)) !=
                       null
                 );
-              },
-              "Uncategorized",
-              addToSticky: (seg, {unsticky}) {
-                if (seg == "Booru") {
-                  return;
-                }
-                if (unsticky == true) {
-                  blacklistedDirIsar().writeTxnSync(() {
-                    blacklistedDirIsar()
-                        .pinnedDirectories
-                        .deleteSync(fastHash(seg));
-                  });
-                } else {
-                  blacklistedDirIsar().writeTxnSync(() {
-                    blacklistedDirIsar()
-                        .pinnedDirectories
-                        .putSync(PinnedDirectories(seg, DateTime.now()));
-                  });
-                }
-              },
-            ),
-            mainFocus: state.mainFocus,
-            loadThumbsDirectly: extra.loadThumbs,
-            footer: widget.callback?.preview,
-            initalCellCount: widget.callback != null
-                ? extra.db.systemGalleryDirectorys.countSync()
-                : 0,
-            searchWidget: SearchAndFocus(
-                searchWidget(context,
-                    hint: AppLocalizations.of(context)!.directoriesHint),
-                searchFocus),
-            refresh: () {
-              if (widget.callback != null) {
-                return Future.value(
-                    extra.db.systemGalleryDirectorys.countSync());
-              } else {
-                _refresh();
+              }
 
-                return null;
-              }
+              final name = cell.name.split(" ");
+              return (
+                name.first,
+                blacklistedDirIsar()
+                        .pinnedDirectories
+                        .getSync(fastHash(name.first)) !=
+                    null
+              );
             },
-            overrideOnPress: (context, indx) {
-              if (widget.callback != null) {
-                widget.callback!(
-                    state.gridKey.currentState!.mutationInterface!
-                        .getCell(indx),
-                    null);
-                Navigator.pop(context);
+            "Uncategorized",
+            addToSticky: (seg, {unsticky}) {
+              if (seg == "Booru") {
+                return;
+              }
+              if (unsticky == true) {
+                blacklistedDirIsar().writeTxnSync(() {
+                  blacklistedDirIsar()
+                      .pinnedDirectories
+                      .deleteSync(fastHash(seg));
+                });
               } else {
-                var d = state.gridKey.currentState!.mutationInterface!
-                    .getCell(indx);
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AndroidFiles(
-                          api: api.images(d),
-                          dirName: d.name,
-                          callback: widget.nestedCallback,
-                          bucketId: d.bucketId),
-                    ));
+                blacklistedDirIsar().writeTxnSync(() {
+                  blacklistedDirIsar()
+                      .pinnedDirectories
+                      .putSync(PinnedDirectories(seg, DateTime.now()));
+                });
               }
             },
-            progressTicker: stream.stream,
-            hideShowFab: ({required bool fab, required bool foreground}) =>
-                state.updateFab(setState, fab: fab, foreground: foreground),
-            description: GridDescription(
-                kGalleryDrawerIndex,
-                widget.callback != null || widget.nestedCallback != null
-                    ? []
-                    : [
-                        GridBottomSheetAction(Icons.tag, (selected) {
-                          Navigator.push(
-                              context,
-                              DialogRoute(
-                                context: context,
-                                builder: (context) {
-                                  final currentTag = PostTags()
-                                      .directoryTag(selected[0].bucketId);
-                                  return AlertDialog(
-                                      title: const Text(
-                                          "Current tag"), // TODO: change
-                                      content: ListTile(
-                                        title: Text(currentTag ?? "none",
-                                            style: currentTag == null
-                                                ? const TextStyle(
-                                                    fontStyle: FontStyle.italic)
-                                                : null),
-                                        leading: IconButton(
-                                            onPressed: () {
-                                              PostTags().removeDirectoryTag(
-                                                  selected[0].bucketId);
-                                              setState(() {});
-                                              Navigator.pop(context);
-                                            },
-                                            icon: const Icon(Icons.close)),
-                                        trailing: IconButton(
-                                            onPressed: () {
-                                              Navigator.push(
-                                                  context,
-                                                  DialogRoute(
-                                                    context: context,
-                                                    builder: (context) {
-                                                      return AlertDialog(
-                                                        title: const Text(
-                                                            "Enter new tag"), // TODO: change
-                                                        content: TextFormField(
-                                                          autofocus: true,
-                                                          initialValue:
-                                                              currentTag,
-                                                          onFieldSubmitted:
-                                                              (value) {
-                                                            if (value
-                                                                .isNotEmpty) {
-                                                              PostTags()
-                                                                  .setDirectoryTag(
-                                                                      selected[
-                                                                              0]
-                                                                          .bucketId,
-                                                                      value);
-                                                              setState(() {});
-                                                              Navigator.pop(
-                                                                  context);
-                                                              Navigator.pop(
-                                                                  context);
-                                                            } else {
-                                                              ScaffoldMessenger
-                                                                      .of(
-                                                                          context)
-                                                                  .showSnackBar(
-                                                                      const SnackBar(
-                                                                          content:
-                                                                              Text("Value is empty"))); // TODO : change
-                                                            }
-                                                          },
-                                                        ),
-                                                      );
-                                                    },
-                                                  ));
-                                            },
-                                            icon: const Icon(Icons.edit)),
-                                      ));
-                                },
-                              ));
-                        }, true, showOnlyWhenSingle: true),
-                        GridBottomSheetAction(Icons.hide_image_outlined,
-                            (selected) {
-                          extra.addBlacklisted(selected
-                              .map((e) =>
-                                  BlacklistedDirectory(e.bucketId, e.name))
-                              .toList());
-                        }, true)
-                      ],
-                state.settings.gallerySettings.directoryColumns ??
-                    GridColumn.two,
-                listView: state.settings.listViewBooru,
-                bottomWidget:
-                    widget.callback != null || widget.nestedCallback != null
-                        ? gridBottomWidgetText(
+          ),
+          mainFocus: state.mainFocus,
+          loadThumbsDirectly: extra.loadThumbs,
+          footer: widget.callback?.preview,
+          initalCellCount: widget.callback != null
+              ? extra.db.systemGalleryDirectorys.countSync()
+              : 0,
+          searchWidget: SearchAndFocus(
+              searchWidget(context,
+                  hint: AppLocalizations.of(context)!.directoriesHint),
+              searchFocus),
+          refresh: () {
+            if (widget.callback != null) {
+              return Future.value(extra.db.systemGalleryDirectorys.countSync());
+            } else {
+              _refresh();
+
+              return null;
+            }
+          },
+          overrideOnPress: (context, indx) {
+            if (widget.callback != null) {
+              widget.callback!(
+                  state.gridKey.currentState!.mutationInterface!.getCell(indx),
+                  null);
+              Navigator.pop(context);
+            } else {
+              final d =
+                  state.gridKey.currentState!.mutationInterface!.getCell(indx);
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AndroidFiles(
+                        api: api.images(d),
+                        dirName: d.name,
+                        callback: widget.nestedCallback,
+                        bucketId: d.bucketId),
+                  ));
+            }
+          },
+          progressTicker: stream.stream,
+          hideShowFab: ({required bool fab, required bool foreground}) =>
+              state.updateFab(setState, fab: fab, foreground: foreground),
+          description: GridDescription(
+              kGalleryDrawerIndex,
+              widget.callback != null || widget.nestedCallback != null
+                  ? []
+                  : [
+                      GridBottomSheetAction(Icons.tag, (selected) {
+                        Navigator.push(
                             context,
-                            widget.callback != null
-                                ? widget.callback!.description
-                                : widget.nestedCallback!.description)
-                        : null,
-                keybindsDescription:
-                    AppLocalizations.of(context)!.androidGKeybindsDescription)),
-        popSenitel: widget.callback == null && widget.nestedCallback == null,
-        noDrawer: widget.noDrawer ?? false);
+                            DialogRoute(
+                              context: context,
+                              builder: (context) {
+                                final currentTag = PostTags()
+                                    .directoryTag(selected[0].bucketId);
+                                return AlertDialog(
+                                    title: Text(AppLocalizations.of(context)!
+                                        .currentTagTitle),
+                                    content: ListTile(
+                                      title: Text(
+                                          currentTag ??
+                                              AppLocalizations.of(context)!
+                                                  .directoryTagNone,
+                                          style: currentTag == null
+                                              ? const TextStyle(
+                                                  fontStyle: FontStyle.italic)
+                                              : null),
+                                      leading: IconButton(
+                                          onPressed: () {
+                                            PostTags().removeDirectoryTag(
+                                                selected[0].bucketId);
+                                            setState(() {});
+                                            Navigator.pop(context);
+                                          },
+                                          icon: const Icon(Icons.close)),
+                                      trailing: IconButton(
+                                          onPressed: () {
+                                            Navigator.push(
+                                                context,
+                                                DialogRoute(
+                                                  context: context,
+                                                  builder: (context) {
+                                                    return AlertDialog(
+                                                      title: Text(
+                                                          AppLocalizations.of(
+                                                                  context)!
+                                                              .enterNewTagTitle),
+                                                      content: TextFormField(
+                                                        autofocus: true,
+                                                        initialValue:
+                                                            currentTag,
+                                                        onFieldSubmitted:
+                                                            (value) {
+                                                          if (value
+                                                              .isNotEmpty) {
+                                                            PostTags()
+                                                                .setDirectoryTag(
+                                                                    selected[0]
+                                                                        .bucketId,
+                                                                    value);
+                                                            setState(() {});
+                                                            Navigator.pop(
+                                                                context);
+                                                            Navigator.pop(
+                                                                context);
+                                                          } else {
+                                                            ScaffoldMessenger
+                                                                    .of(context)
+                                                                .showSnackBar(SnackBar(
+                                                                    content: Text(
+                                                                        AppLocalizations.of(context)!
+                                                                            .valueIsEmpty)));
+                                                          }
+                                                        },
+                                                      ),
+                                                    );
+                                                  },
+                                                ));
+                                          },
+                                          icon: const Icon(Icons.edit)),
+                                    ));
+                              },
+                            ));
+                      }, true, showOnlyWhenSingle: true),
+                      GridBottomSheetAction(Icons.hide_image_outlined,
+                          (selected) {
+                        extra.addBlacklisted(selected
+                            .map(
+                                (e) => BlacklistedDirectory(e.bucketId, e.name))
+                            .toList());
+                      }, true)
+                    ],
+              state.settings.gallerySettings.directoryColumns,
+              listView: false,
+              bottomWidget:
+                  widget.callback != null || widget.nestedCallback != null
+                      ? copyMoveHintText(
+                          context,
+                          widget.callback != null
+                              ? widget.callback!.description
+                              : widget.nestedCallback!.description)
+                      : null,
+              keybindsDescription:
+                  AppLocalizations.of(context)!.androidGKeybindsDescription)),
+      popSenitel: widget.callback == null && widget.nestedCallback == null,
+      noDrawer: widget.noDrawer ?? false,
+    );
   }
 }
-
-PreferredSizeWidget gridBottomWidgetText(BuildContext context, String title) =>
-    PreferredSize(
-      preferredSize: const Size.fromHeight(12),
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 4),
-        child: Text(
-          title,
-          style: TextStyle(
-              fontStyle: FontStyle.italic,
-              fontSize: Theme.of(context).textTheme.titleMedium?.fontSize,
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.8)),
-        ),
-      ),
-    );

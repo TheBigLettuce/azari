@@ -20,7 +20,7 @@ class Settings {
 
   @enumerated
   final GridColumn picturesPerRow;
-  final bool listViewBooru;
+  final bool booruListView;
 
   final String path;
   @enumerated
@@ -45,7 +45,7 @@ class Settings {
       required this.quality,
       required this.autoRefresh,
       required this.autoRefreshMicroseconds,
-      required this.listViewBooru,
+      required this.booruListView,
       required this.picturesPerRow,
       required this.safeMode,
       required this.expensiveHash,
@@ -56,7 +56,7 @@ class Settings {
       {String? path,
       Booru? selectedBooru,
       DisplayQuality? quality,
-      bool? listViewBooru,
+      bool? booruListView,
       GridColumn? picturesPerRow,
       bool? autoRefresh,
       int? autoRefreshMicroseconds,
@@ -76,7 +76,7 @@ class Settings {
         autoRefresh: autoRefresh ?? this.autoRefresh,
         autoRefreshMicroseconds:
             autoRefreshMicroseconds ?? this.autoRefreshMicroseconds,
-        listViewBooru: listViewBooru ?? this.listViewBooru,
+        booruListView: booruListView ?? this.booruListView,
         picturesPerRow: picturesPerRow ?? this.picturesPerRow,
         safeMode: safeMode ?? this.safeMode,
         gallerySettings: gallerySettings ?? this.gallerySettings);
@@ -93,50 +93,64 @@ class Settings {
         picturesPerRow = (Platform.isAndroid || Platform.isIOS)
             ? GridColumn.two
             : GridColumn.six,
-        listViewBooru = false,
+        booruListView = false,
         safeMode = true,
-        gallerySettings = GallerySettings()
-          ..directoryAspectRatio = AspectRatio.zeroSeven
-          ..directoryColumns = Platform.isAndroid || Platform.isIOS
-              ? GridColumn.two
-              : GridColumn.six
-          ..hideDirectoryName = false
-          ..filesAspectRatio = AspectRatio.oneFive
-          ..filesColumns = Platform.isAndroid || Platform.isIOS
-              ? GridColumn.three
-              : GridColumn.six
-          ..hideFileName = true,
+        gallerySettings = Platform.isAndroid || Platform.isIOS
+            ? const GallerySettings()
+            : const GallerySettings.desktop(),
         ratio = AspectRatio.one;
 }
 
 @embedded
 class GallerySettings {
-  bool? hideDirectoryName;
-  @Enumerated(EnumType.ordinal32)
-  AspectRatio? directoryAspectRatio;
-  @Enumerated(EnumType.ordinal32)
-  GridColumn? directoryColumns;
-  bool? hideFileName;
-  @Enumerated(EnumType.ordinal32)
-  AspectRatio? filesAspectRatio;
-  @Enumerated(EnumType.ordinal32)
-  GridColumn? filesColumns;
+  final bool hideDirectoryName;
+  @enumerated
+  final AspectRatio directoryAspectRatio;
+  @enumerated
+  final GridColumn directoryColumns;
+
+  final bool hideFileName;
+  @enumerated
+  final AspectRatio filesAspectRatio;
+  @enumerated
+  final GridColumn filesColumns;
+  final bool filesListView;
 
   GallerySettings copy(
           {bool? hideDirectoryName,
           bool? hideFileName,
+          bool? filesListView,
           AspectRatio? filesAspectRatio,
           AspectRatio? directoryAspectRatio,
           GridColumn? filesColumns,
           GridColumn? directoryColumns}) =>
-      GallerySettings()
-        ..hideDirectoryName = hideDirectoryName ?? this.hideDirectoryName
-        ..hideFileName = hideFileName ?? this.hideFileName
-        ..directoryAspectRatio =
-            directoryAspectRatio ?? this.directoryAspectRatio
-        ..filesAspectRatio = filesAspectRatio ?? this.filesAspectRatio
-        ..filesColumns = filesColumns ?? this.filesColumns
-        ..directoryColumns = directoryColumns ?? this.directoryColumns;
+      GallerySettings(
+          hideDirectoryName: hideDirectoryName ?? this.hideDirectoryName,
+          hideFileName: hideFileName ?? this.hideFileName,
+          filesListView: filesListView ?? this.filesListView,
+          directoryAspectRatio:
+              directoryAspectRatio ?? this.directoryAspectRatio,
+          filesAspectRatio: filesAspectRatio ?? this.filesAspectRatio,
+          filesColumns: filesColumns ?? this.filesColumns,
+          directoryColumns: directoryColumns ?? this.directoryColumns);
+
+  const GallerySettings(
+      {this.directoryAspectRatio = AspectRatio.zeroSeven,
+      this.directoryColumns = GridColumn.two,
+      this.hideDirectoryName = false,
+      this.filesAspectRatio = AspectRatio.oneFive,
+      this.filesColumns = GridColumn.three,
+      this.filesListView = false,
+      this.hideFileName = true});
+
+  const GallerySettings.desktop()
+      : directoryAspectRatio = AspectRatio.zeroSeven,
+        directoryColumns = GridColumn.six,
+        hideDirectoryName = false,
+        filesListView = false,
+        filesAspectRatio = AspectRatio.oneFive,
+        filesColumns = GridColumn.six,
+        hideFileName = true;
 }
 
 enum DisplayQuality {

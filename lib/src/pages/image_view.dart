@@ -9,7 +9,6 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -19,202 +18,18 @@ import 'package:gallery/src/widgets/booru/autocomplete_tag.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/system_gestures.dart';
 import 'package:logging/logging.dart';
-import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:transparent_image/transparent_image.dart';
-import 'package:video_player/video_player.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 import '../cell/cell.dart';
 import '../keybinds/keybinds.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import '../widgets/video/photo_gallery_page_video.dart';
+import '../widgets/video/photo_gallery_page_video_linux.dart';
+
 final Color kListTileColorInInfo = Colors.white60.withOpacity(0.8);
-
-class PhotoGalleryPageVideoLinux extends StatefulWidget {
-  final String url;
-  final bool localVideo;
-
-  const PhotoGalleryPageVideoLinux(
-      {super.key, required this.url, required this.localVideo});
-
-  @override
-  State<PhotoGalleryPageVideoLinux> createState() =>
-      _PhotoGalleryPageVideoLinuxState();
-}
-
-class _PhotoGalleryPageVideoLinuxState
-    extends State<PhotoGalleryPageVideoLinux> {
-  Player player = Player();
-  VideoController? controller;
-
-  @override
-  void initState() {
-    super.initState();
-
-    controller = VideoController(player,
-        configuration: const VideoControllerConfiguration(
-            enableHardwareAcceleration: false));
-
-    player.open(Media(widget.url));
-  }
-
-  @override
-  void dispose() {
-    player.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return controller == null
-        ? const Center(
-            child: CircularProgressIndicator(),
-          )
-        : GestureDetector(
-            onDoubleTap: () {
-              player.playOrPause();
-            },
-            child: Video(controller: controller!),
-          );
-  }
-}
-
-class WakelockStack {
-  Future? current;
-
-  void diasble() {
-    current?.then((value) {
-      WakelockPlus.disable();
-    });
-  }
-
-  void enable() {
-    if (current != null) {
-      return;
-    }
-
-    current = WakelockPlus.enable()..then((value) => current = null);
-  }
-
-  void dispose() {
-    if (current != null) {
-      current?.then((value) => WakelockPlus.disable());
-    } else {
-      WakelockPlus.disable();
-    }
-  }
-}
-
-class PhotoGalleryPageVideo extends StatefulWidget {
-  final String url;
-  final bool localVideo;
-  final WakelockStack wakelock;
-  const PhotoGalleryPageVideo({
-    super.key,
-    required this.url,
-    required this.wakelock,
-    required this.localVideo,
-  });
-
-  @override
-  State<PhotoGalleryPageVideo> createState() => _PhotoGalleryPageVideoState();
-}
-
-class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
-  late VideoPlayerController controller;
-  ChewieController? chewieController;
-  bool disposed = false;
-  Object? error;
-
-  @override
-  void initState() {
-    super.initState();
-
-    widget.wakelock.enable();
-
-    if (widget.localVideo) {
-      controller = VideoPlayerController.contentUri(Uri.parse(widget.url),
-          videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true));
-    } else {
-      controller = VideoPlayerController.networkUrl(Uri.parse(widget.url),
-          videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true));
-    }
-
-    _initController();
-  }
-
-  void _initController() async {
-    controller.initialize().then((value) {
-      if (!disposed) {
-        setState(() {
-          chewieController = ChewieController(
-              videoPlayerController: controller,
-              aspectRatio: controller.value.aspectRatio,
-              autoInitialize: false,
-              looping: true,
-              allowPlaybackSpeedChanging: false,
-              showOptions: false,
-              showControls: false,
-              allowMuting: false,
-              zoomAndPan: true,
-              showControlsOnInitialize: false,
-              autoPlay: false);
-        });
-
-        chewieController!.play().onError((e, stackTrace) {
-          if (!disposed) {
-            setState(() {
-              error = e;
-            });
-          }
-        });
-      }
-    }).onError((e, stackTrace) {
-      if (!disposed) {
-        setState(() {
-          error = e;
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    widget.wakelock.diasble();
-    disposed = true;
-    controller.dispose();
-    if (chewieController != null) {
-      chewieController!.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return error != null
-        ? const Icon(Icons.error)
-        : chewieController == null
-            ? const Center(
-                child: CircularProgressIndicator(),
-              )
-            : GestureDetector(
-                // onTap: widget.onTap,
-                onDoubleTap: () {
-                  if (!disposed) {
-                    if (chewieController!.isPlaying) {
-                      chewieController!.pause();
-                    } else {
-                      chewieController!.play();
-                    }
-                  }
-                },
-                child: Chewie(controller: chewieController!),
-              );
-  }
-}
 
 class ImageView<T extends Cell> extends StatefulWidget {
   final int startingCell;
@@ -553,11 +368,11 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
   @override
   Widget build(BuildContext context) {
-    var addB = currentCell.addButtons(context);
-    Map<SingleActivatorDescription, Null Function()> bindings =
+    final addB = currentCell.addButtons(context);
+    final Map<SingleActivatorDescription, Null Function()> bindings =
         _makeBindings(context);
 
-    var insets = MediaQuery.viewInsetsOf(context);
+    final insets = MediaQuery.viewInsetsOf(context);
 
     return CallbackShortcuts(
         bindings: {
@@ -757,108 +572,103 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                   ),
                 ),
                 body: gestureDeadZones(context,
-                    child: Stack(children: [
-                      GestureDetector(
-                        onLongPress: widget.download == null
-                            ? null
-                            : () {
-                                HapticFeedback.vibrate();
-                                widget.download!(currentPage);
-                              },
-                        onTap: _onTap,
-                        child: PhotoViewGallery.builder(
-                            scaleStateChangedCallback: (value) {},
-                            loadingBuilder: (context, event) {
-                              final expectedBytes = event?.expectedTotalBytes;
-                              final loadedBytes = event?.cumulativeBytesLoaded;
-                              final value =
-                                  loadedBytes != null && expectedBytes != null
-                                      ? loadedBytes / expectedBytes
-                                      : null;
-
-                              return Container(
-                                decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                        begin: Alignment.bottomCenter,
-                                        end: Alignment.topCenter,
-                                        colors: [
-                                      ColorTween(
-                                              begin: Colors.black,
-                                              end: currentPalette
-                                                  ?.mutedColor?.color
-                                                  .withOpacity(0.7))
-                                          .lerp(value ?? 0)!,
-                                      ColorTween(
-                                              begin: Colors.black38,
-                                              end: currentPalette
-                                                  ?.mutedColor?.color
-                                                  .withOpacity(0.5))
-                                          .lerp(value ?? 0)!,
-                                      ColorTween(
-                                              begin: Colors.black12,
-                                              end: currentPalette
-                                                  ?.mutedColor?.color
-                                                  .withOpacity(0.3))
-                                          .lerp(value ?? 0)!,
-                                    ])),
-                                child: Center(
-                                  child: SizedBox(
-                                      width: 20.0,
-                                      height: 20.0,
-                                      child: CircularProgressIndicator(
-                                          color: currentPalette
-                                              ?.dominantColor?.color,
-                                          value: value)),
-                                ),
-                              );
+                    child: GestureDetector(
+                      onLongPress: widget.download == null
+                          ? null
+                          : () {
+                              HapticFeedback.vibrate();
+                              widget.download!(currentPage);
                             },
-                            enableRotation: true,
-                            backgroundDecoration: BoxDecoration(
-                                color: currentPalette?.mutedColor?.color
-                                    .withOpacity(0.7)),
-                            onPageChanged: (index) async {
-                              currentPage = index;
-                              widget.pageChange?.call(this);
-                              _loadNext(index);
+                      onTap: _onTap,
+                      child: PhotoViewGallery.builder(
+                          loadingBuilder: (context, event) {
+                            final expectedBytes = event?.expectedTotalBytes;
+                            final loadedBytes = event?.cumulativeBytesLoaded;
+                            final value =
+                                loadedBytes != null && expectedBytes != null
+                                    ? loadedBytes / expectedBytes
+                                    : null;
 
-                              widget.scrollUntill(index);
+                            return Container(
+                              decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                      begin: Alignment.bottomCenter,
+                                      end: Alignment.topCenter,
+                                      colors: [
+                                    ColorTween(
+                                            begin: Colors.black,
+                                            end: currentPalette
+                                                ?.mutedColor?.color
+                                                .withOpacity(0.7))
+                                        .lerp(value ?? 0)!,
+                                    ColorTween(
+                                            begin: Colors.black38,
+                                            end: currentPalette
+                                                ?.mutedColor?.color
+                                                .withOpacity(0.5))
+                                        .lerp(value ?? 0)!,
+                                    ColorTween(
+                                            begin: Colors.black12,
+                                            end: currentPalette
+                                                ?.mutedColor?.color
+                                                .withOpacity(0.3))
+                                        .lerp(value ?? 0)!,
+                                  ])),
+                              child: Center(
+                                child: SizedBox(
+                                    width: 20.0,
+                                    height: 20.0,
+                                    child: CircularProgressIndicator(
+                                        color: currentPalette
+                                            ?.dominantColor?.color,
+                                        value: value)),
+                              ),
+                            );
+                          },
+                          enableRotation: true,
+                          backgroundDecoration: BoxDecoration(
+                              color: currentPalette?.mutedColor?.color
+                                  .withOpacity(0.7)),
+                          onPageChanged: (index) async {
+                            currentPage = index;
+                            widget.pageChange?.call(this);
+                            _loadNext(index);
 
-                              var c = widget.getCell(index);
+                            widget.scrollUntill(index);
 
-                              fullscreenPlug.setTitle(c.alias(true));
+                            final c = widget.getCell(index);
 
-                              setState(() {
-                                currentCell = c;
-                                _extractPalette();
-                              });
-                            },
-                            pageController: controller,
-                            itemCount: cellCount,
-                            builder: (context, indx) {
-                              final fileContent =
-                                  widget.getCell(indx).fileDisplay();
+                            fullscreenPlug.setTitle(c.alias(true));
 
-                              return switch (fileContent) {
-                                AndroidImage() => _makeAndroidImage(
-                                    fileContent.size, fileContent.uri, false),
-                                AndroidGif() => _makeAndroidImage(
-                                    fileContent.size, fileContent.uri, true),
-                                NetGif() => _makeNetImage(fileContent.provider),
-                                NetImage() =>
-                                  _makeNetImage(fileContent.provider),
-                                AndroidVideo() =>
-                                  _makeVideo(fileContent.uri, true),
-                                NetVideo() =>
-                                  _makeVideo(fileContent.uri, false),
-                                EmptyContent() =>
-                                  PhotoViewGalleryPageOptions.customChild(
-                                      child: const Center(
-                                    child: Icon(Icons.error_outline),
-                                  ))
-                              };
-                            }),
-                      ),
-                    ]),
+                            setState(() {
+                              currentCell = c;
+                              _extractPalette();
+                            });
+                          },
+                          pageController: controller,
+                          itemCount: cellCount,
+                          builder: (context, indx) {
+                            final fileContent =
+                                widget.getCell(indx).fileDisplay();
+
+                            return switch (fileContent) {
+                              AndroidImage() => _makeAndroidImage(
+                                  fileContent.size, fileContent.uri, false),
+                              AndroidGif() => _makeAndroidImage(
+                                  fileContent.size, fileContent.uri, true),
+                              NetGif() => _makeNetImage(fileContent.provider),
+                              NetImage() => _makeNetImage(fileContent.provider),
+                              AndroidVideo() =>
+                                _makeVideo(fileContent.uri, true),
+                              NetVideo() => _makeVideo(fileContent.uri, false),
+                              EmptyContent() =>
+                                PhotoViewGalleryPageOptions.customChild(
+                                    child: const Center(
+                                  child: Icon(Icons.error_outline),
+                                ))
+                            };
+                          }),
+                    ),
                     left: true,
                     right: true)),
           ),

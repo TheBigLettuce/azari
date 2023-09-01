@@ -7,41 +7,19 @@
 
 part of 'callback_grid.dart';
 
-mixin _Selection<T extends Cell> on State<CallbackGrid<T>> {
+class SelectionInterface<T extends Cell> {
+  final selected = <int, T>{};
+  final List<GridBottomSheetAction<T>> addActions;
   int? lastSelected;
-  bool inImageView = false;
-  final GlobalKey<ImageViewState<T>> imageViewKey = GlobalKey();
-  late final _Mutation<T> _state = _Mutation(
-    updateImageView: () {
-      imageViewKey.currentState?.update(_state.cellCount);
-    },
-    scrollUp: () {
-      if (widget.hideShowFab != null) {
-        widget.hideShowFab!(fab: false, foreground: inImageView);
-      }
-    },
-    unselectall: () {
-      selected.clear();
-      currentBottomSheet?.close();
-    },
-    immutable: widget.immutable,
-    widget: () => widget,
-    update: (f) {
-      try {
-        if (context.mounted) {
-          if (f != null) {
-            f();
-          }
 
-          setState(() {});
-        }
-      } catch (_) {}
-    },
-  );
+  final void Function(Function()) _setState;
+
   PersistentBottomSheetController? currentBottomSheet;
-  Map<int, T> selected = {};
 
-  void _addSelection(int id, T selection) {
+  bool isSelected(int indx) => selected.containsKey(indx);
+
+  void add(BuildContext context, int id, T selection,
+      double systemNavigationInsets) {
     if (selected.isEmpty || currentBottomSheet == null) {
       currentBottomSheet = showBottomSheet(
           constraints:
@@ -53,35 +31,42 @@ mixin _Selection<T extends Cell> on State<CallbackGrid<T>> {
           builder: (context) {
             return Padding(
               padding: EdgeInsets.only(
-                  bottom: widget.systemNavigationInsets.bottom + 4,
-                  top: 48 / 2),
+                  bottom: systemNavigationInsets + 4, top: 48 / 2),
               child: Wrap(
                 alignment: WrapAlignment.center,
                 spacing: 4,
                 children: [
-                  _wrapSheetButton(context, Icons.close_rounded, () {
-                    setState(() {
-                      selected.clear();
-                      currentBottomSheet?.close();
-                    });
-                  }, true),
-                  ...widget.description.actions
-                      .map((e) => _wrapSheetButton(
-                          context,
-                          e.icon,
-                          e.showOnlyWhenSingle && selected.length != 1
-                              ? null
-                              : () {
-                                  e.onPress(selected.values.toList());
+                  wrapSheetButton(
+                    context,
+                    Icons.close_rounded,
+                    () {
+                      _setState(() {
+                        selected.clear();
+                        currentBottomSheet?.close();
+                      });
+                    },
+                    true,
+                    selected.length.toString(),
+                  ),
+                  ...addActions
+                      .map((e) => wrapSheetButton(
+                            context,
+                            e.icon,
+                            e.showOnlyWhenSingle && selected.length != 1
+                                ? null
+                                : () {
+                                    e.onPress(selected.values.toList());
 
-                                  if (e.closeOnPress) {
-                                    setState(() {
-                                      selected.clear();
-                                      currentBottomSheet?.close();
-                                    });
-                                  }
-                                },
-                          false))
+                                    if (e.closeOnPress) {
+                                      _setState(() {
+                                        selected.clear();
+                                        currentBottomSheet?.close();
+                                      });
+                                    }
+                                  },
+                            false,
+                            selected.length.toString(),
+                          ))
                       .toList()
                 ],
               ),
@@ -94,14 +79,14 @@ mixin _Selection<T extends Cell> on State<CallbackGrid<T>> {
       }
     }
 
-    setState(() {
+    _setState(() {
       selected[id] = selection;
       lastSelected = id;
     });
   }
 
-  void _removeSelection(int id) {
-    setState(() {
+  void remove(int id) {
+    _setState(() {
       selected.remove(id);
       if (selected.isEmpty) {
         currentBottomSheet?.close();
@@ -116,55 +101,52 @@ mixin _Selection<T extends Cell> on State<CallbackGrid<T>> {
     });
   }
 
-  void _selectUnselectUntil(int indx) {
+  void selectUnselectUntil(int indx, GridMutationInterface<T> state) {
     if (lastSelected != null) {
       if (lastSelected == indx) {
         return;
       }
 
-      final selection = !_isSelected(indx);
+      final selection = !isSelected(indx);
 
       if (indx < lastSelected!) {
         for (var i = lastSelected!; i >= indx; i--) {
           if (selection) {
-            selected[i] = _state.getCell(i);
+            selected[i] = state.getCell(i);
           } else {
-            _removeSelection(i);
+            remove(i);
           }
           lastSelected = i;
         }
-        setState(() {});
+        _setState(() {});
       } else if (indx > lastSelected!) {
         for (var i = lastSelected!; i <= indx; i++) {
           if (selection) {
-            selected[i] = _state.getCell(i);
+            selected[i] = state.getCell(i);
           } else {
-            _removeSelection(i);
+            remove(i);
           }
           lastSelected = i;
         }
-        setState(() {});
+        _setState(() {});
       }
 
       currentBottomSheet?.setState?.call(() {});
     }
   }
 
-  bool _isSelected(int indx) {
-    return selected.containsKey(indx);
-  }
-
-  void _selectOrUnselect(int index, T selection) {
-    if (!_isSelected(index)) {
-      _addSelection(index, selection);
+  void selectOrUnselect(BuildContext context, int index, T selection,
+      double systemNavigationInsets) {
+    if (!isSelected(index)) {
+      add(context, index, selection, systemNavigationInsets);
     } else {
-      _removeSelection(index);
+      remove(index);
     }
   }
 
-  Widget _wrapSheetButton(BuildContext context, IconData icon,
-      void Function()? onPressed, bool addBadge) {
-    var iconBtn = Padding(
+  static Widget wrapSheetButton(BuildContext context, IconData icon,
+      void Function()? onPressed, bool addBadge, String label) {
+    final iconBtn = Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 4),
       child: IconButton(
           style: ButtonStyle(
@@ -185,9 +167,11 @@ mixin _Selection<T extends Cell> on State<CallbackGrid<T>> {
 
     return addBadge
         ? Badge(
-            label: Text(selected.length.toString()),
+            label: Text(label),
             child: iconBtn,
           )
         : iconBtn;
   }
+
+  SelectionInterface._(this._setState, this.addActions);
 }

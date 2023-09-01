@@ -192,7 +192,7 @@ Widget makeSkeletonInnerSettings(BuildContext context, String pageDescription,
       Navigator.pop(context);
     },
   };
-  var insets = MediaQuery.viewPaddingOf(context);
+  final insets = MediaQuery.viewPaddingOf(context);
 
   return CallbackShortcuts(
       bindings: {

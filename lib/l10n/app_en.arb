@@ -644,5 +644,102 @@
     "blacklistedDirectoriesPageName": "Blacklisted directories",
     "@blacklistedDirectoriesPageName": {
         "description": "Blacklisted directories page"
+    },
+    "currentTagTitle": "Current tag",
+    "@currentTagTitle": {
+        "description": "Dialog title when editing a directory tag"
+    },
+    "enterNewTagTitle": "Enter new tag",
+    "@enterNewTagTitle": {
+        "description": "Dialog title when changing a directory tag"
+    },
+    "valueIsEmpty": "Value is empty",
+    "@valueIsEmpty": {
+        "description": "Displayed when directory tag field contains no text"
+    },
+    "directoryTagNone": "none",
+    "@directoryTagNone": {
+        "description": "Displayed as a placeholder when directory tag is not set"
+    },
+    "tagSavingInProgress": "Tag saving is already in progress",
+    "@tagSavingInProgress": {
+        "description": "Displayed when tag saving is already running"
+    },
+    "savingTagsSaving": "Saving",
+    "@savingTagsSaving": {
+        "description": "First half of the saving tags notification"
+    },
+    "savingTags": "Saving tags",
+    "@savingTags": {
+        "description": "Saving tags channel name"
+    },
+    "tagSingular": "tag",
+    "@tagSingular": {
+        "description": "Singular form of tag"
+    },
+    "tagPlural": "tags",
+    "@tagPlural": {
+        "description": "Plural form of tags"
+    },
+    "bulkRenameTitle": "Bulk rename",
+    "@bulkRenameTitle": {
+        "description": "Dialog title when renaming multiple files"
+    },
+    "valueIsNull": "Value is null",
+    "@valueIsNull": {
+        "description": "Displayed when text field has null string"
+    },
+    "newNameShouldntBeEmpty": "New name should not be empty",
+    "@newNameShouldntBeEmpty": {
+        "description": "Displayed when bulk rename field has empty string"
+    },
+    "newNameShouldIncludeOneStar": "New name should include one *",
+    "@newNameShouldIncludeOneStar": {
+        "description": "Displayed when bulk rename field has no *(wildcard)"
+    },
+    "youCanRestoreFromTrash": "You can restore it from the trash",
+    "@youCanRestoreFromTrash": {
+        "description": "Dialog body text when deleting a file"
+    },
+    "resultsIncomplete": "Results are incomplete",
+    "@resultsIncomplete": {
+        "description": "Displayed when loading thumbnails for the 'same' filter option"
+    },
+    "loadMoreLabel": "Load more",
+    "@loadMoreLabel": {
+        "description": "Button label which loades more thumbnails for the 'same' filter option"
+    },
+    "loaded": "Loaded",
+    "@loaded": {
+        "description": "Displayed when finally loading all the thumbnails for the 'same' filter option"
+    },
+    "openInBrowser": "Open in browser",
+    "@openInBrowser": {
+        "description": "Button which opens the current booru landing page"
+    },
+    "filesListView": "Files list view",
+    "@filesListView": {
+        "description": "Settings, if files should be displayed as a list instead of a grid"
+    },
+    "saveTagsOnlyOnDownload": "Save tags only on download",
+    "@saveTagsOnlyOnDownload": {
+        "description": "Settings, if post tags shouldn't be automatically saved on booru post loading"
+    },
+    "enterNewNameTitle": "Enter new name",
+    "@enterNewNameTitle": {
+        "description": "Dialog title when renaming a file"
+    },
+    "loadTags": "Load tags",
+    "@loadTags": {
+        "description": "Displayed above buttons which load post tags"
+    },
+    "notValidFilename": "Not a valid filename: {filename}",
+    "@notValidFilename": {
+        "description": "Displayed when the filename is not valid, and the post tags from it cannot be loaded",
+        "placeholders": {
+            "filename": {
+                "type": "String"
+            }
+        }
     }
 }

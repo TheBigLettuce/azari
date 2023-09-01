@@ -42,60 +42,51 @@ class Danbooru implements BooruAPI {
   final bool wouldBecomeStale = false;
 
   @override
-  Uri browserLink(int id) => Uri.https("danbooru.donmai.us", "/posts/$id");
+  Uri browserLink(int id) => Uri.https(domain, "/posts/$id");
 
   @override
   Future<List<String>> completeTag(String tag) async {
-    var req = client.getUri(
-      Uri.https("danbooru.donmai.us", "/tags.json", {
-        "search[name_matches]": "$tag*",
-        "search[order]": "count",
-        "limit": "10",
-      }),
-    );
+    try {
+      final resp = await client.getUri(
+        Uri.https(domain, "/tags.json", {
+          "search[name_matches]": "$tag*",
+          "search[order]": "count",
+          "limit": "10",
+        }),
+      );
 
-    return Future(() async {
-      try {
-        var resp = await req;
-        if (resp.statusCode != 200) {
-          throw "status code not 200";
-        }
-
-        var tags = _fromDanbooruTags(resp.data);
-
-        return tags;
-      } catch (e) {
-        return Future.error(e);
+      if (resp.statusCode != 200) {
+        throw "status code not 200";
       }
-    });
+
+      return _fromDanbooruTags(resp.data);
+    } catch (e) {
+      return Future.error(e);
+    }
   }
 
   @override
-  Future<Post> singlePost(int id) {
-    var req = client.getUri(Uri.https("danbooru.donmai.us", "/posts/$id.json"));
+  Future<Post> singlePost(int id) async {
+    try {
+      final resp = await client.getUri(Uri.https(domain, "/posts/$id.json"));
 
-    return Future(() async {
-      try {
-        var resp = await req;
-
-        if (resp.statusCode != 200) {
-          throw resp.data["message"];
-        }
-
-        if (resp.data == null) {
-          throw "no post";
-        }
-
-        return _fromJson([resp.data])[0];
-      } catch (e) {
-        if (e is DioException) {
-          if (e.response?.statusCode == 403) {
-            return Future.error(CloudflareException());
-          }
-        }
-        return Future.error(e);
+      if (resp.statusCode != 200) {
+        throw resp.data["message"];
       }
-    });
+
+      if (resp.data == null) {
+        throw "no post";
+      }
+
+      return (await _fromJson([resp.data]))[0];
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response?.statusCode == 403) {
+          return Future.error(CloudflareException());
+        }
+      }
+      return Future.error(e);
+    }
   }
 
   @override
@@ -108,7 +99,7 @@ class Danbooru implements BooruAPI {
       _commonPosts(tags, excludedTags, postid: postId);
 
   Future<List<Post>> _commonPosts(String tags, BooruTagging excludedTags,
-      {int? postid, int? page}) {
+      {int? postid, int? page}) async {
     if (postid == null && page == null) {
       throw "postid or page should be set";
     } else if (postid != null && page != null) {
@@ -117,18 +108,18 @@ class Danbooru implements BooruAPI {
 
     String excludedTagsString;
 
-    var excluded = excludedTags.get().map((e) => "-${e.tag} ").toList();
+    final excluded = excludedTags.get().map((e) => "-${e.tag} ").toList();
     if (excluded.isNotEmpty) {
       excludedTagsString = excluded.reduce((value, element) => value + element);
     } else {
       excludedTagsString = "";
     }
 
-    Map<String, dynamic> query = {
-      "limit": numberOfElementsPerRefresh().toString(),
+    final query = <String, dynamic>{
+      "limit": BooruAPI.numberOfElementsPerRefresh().toString(),
       "format": "json",
       "post[tags]":
-          "${isSafeModeEnabled() ? 'rating:g' : ''} $excludedTagsString $tags",
+          "${BooruAPI.isSafeModeEnabled() ? 'rating:g' : ''} $excludedTagsString $tags",
     };
 
     if (postid != null) {
@@ -139,34 +130,32 @@ class Danbooru implements BooruAPI {
       query["page"] = page.toString();
     }
 
-    var req =
-        client.getUri(Uri.https("danbooru.donmai.us", "/posts.json", query));
+    try {
+      final resp = await client
+          .getUri(Uri.https("danbooru.donmai.us", "/posts.json", query));
 
-    return Future(() async {
-      try {
-        var resp = await req;
-        if (resp.statusCode != 200) {
-          throw "status not ok";
-        }
-
-        return _fromJson(resp.data);
-      } catch (e) {
-        if (e is DioException) {
-          if (e.response?.statusCode == 403) {
-            return Future.error(CloudflareException());
-          }
-        }
-        return Future.error(e);
+      if (resp.statusCode != 200) {
+        throw "status not ok";
       }
-    });
+
+      return _fromJson(resp.data);
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response?.statusCode == 403) {
+          return Future.error(CloudflareException());
+        }
+      }
+
+      return Future.error(e);
+    }
   }
 
-  List<Post> _fromJson(List<dynamic> m) {
-    List<Post> list = [];
+  Future<List<Post>> _fromJson(List<dynamic> m) async {
+    final List<Post> list = [];
 
-    for (var e in m) {
+    for (final e in m) {
       try {
-        var post = Post(
+        final post = Post(
             height: e["image_height"],
             id: e["id"],
             score: e["score"],
@@ -183,7 +172,7 @@ class Danbooru implements BooruAPI {
             prefix: booru.prefix);
 
         list.add(post);
-      } catch (e) {
+      } catch (_) {
         continue;
       }
     }

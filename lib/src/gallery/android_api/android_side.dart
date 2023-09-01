@@ -7,6 +7,8 @@
 
 part of 'android_api_directories.dart';
 
+GalleryImpl? _global;
+
 /// Callbacks related to the gallery.
 class GalleryImpl implements GalleryApi {
   final Isar db;
@@ -46,7 +48,7 @@ class GalleryImpl implements GalleryApi {
   @override
   void updatePictures(List<DirectoryFile?> f, String bucketId, int startTime,
       bool inRefresh, bool empty) {
-    var st = _currentApi?.currentImages?.startTime;
+    final st = _currentApi?.currentImages?.startTime;
 
     if (st == null || st > startTime) {
       return;
@@ -56,7 +58,7 @@ class GalleryImpl implements GalleryApi {
       return;
     }
 
-    var db = _currentApi?.currentImages?.db;
+    final db = _currentApi?.currentImages?.db;
     if (db == null) {
       return;
     }
@@ -126,7 +128,7 @@ class GalleryImpl implements GalleryApi {
 
   @override
   List<int?> thumbsExist(List<int?> ids) {
-    List<int> response = [];
+    final response = <int>[];
     for (final id in ids.cast<int>()) {
       if (thumbnailIsar().thumbnails.where().idEqualTo(id).countSync() != 1) {
         response.add(id);
@@ -143,7 +145,7 @@ class GalleryImpl implements GalleryApi {
           ?.call(db.systemGalleryDirectorys.countSync(), inRefresh, true);
       return;
     }
-    var blacklisted = blacklistedDirIsar()
+    final blacklisted = blacklistedDirIsar()
         .blacklistedDirectorys
         .where()
         .anyOf(d.cast<Directory>(),
@@ -179,5 +181,3 @@ class GalleryImpl implements GalleryApi {
     _currentApi?.refreshGrid?.call();
   }
 }
-
-GalleryImpl? _global;

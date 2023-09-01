@@ -5,25 +5,19 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/services.dart';
-import 'package:gallery/src/plugs/platform_fullscreens.dart';
+import 'package:flutter/material.dart';
 
-class LinuxFullscreen implements PlatformFullscreensPlug {
-  final channel = const MethodChannel("lol.bruh19.azari.gallery");
-
-  @override
-  void fullscreen() {
-    channel.invokeMethod("fullscreen");
-  }
-
-  @override
-  void unFullscreen() {
-    channel.invokeMethod("default_title");
-    channel.invokeMethod("fullscreen_untoggle");
-  }
-
-  @override
-  void setTitle(String windowTitle) {
-    channel.invokeMethod("set_title", windowTitle);
-  }
-}
+PreferredSizeWidget copyMoveHintText(BuildContext context, String title) =>
+    PreferredSize(
+      preferredSize: const Size.fromHeight(12),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Text(
+          title,
+          style: TextStyle(
+              fontStyle: FontStyle.italic,
+              fontSize: Theme.of(context).textTheme.titleMedium?.fontSize,
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.8)),
+        ),
+      ),
+    );

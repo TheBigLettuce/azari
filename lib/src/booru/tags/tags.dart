@@ -71,22 +71,17 @@ class PostTags {
 
   Future<List<String>> loadFromDissassemble(
       String filename, DissolveResult dissassembled) async {
-    BooruAPI api;
-
-    Dio client = Dio(BaseOptions(
+    final Dio client = Dio(BaseOptions(
       responseType: ResponseType.json,
     ));
 
-    switch (dissassembled.booru) {
-      case Booru.danbooru:
-        api = Danbooru(
-            client, UnsaveableCookieJar(CookieJarTab().get(Booru.danbooru)));
-        break;
-      case Booru.gelbooru:
-        api = Gelbooru(
-            0, client, UnsaveableCookieJar(CookieJarTab().get(Booru.gelbooru)));
-        break;
-    }
+    final api = switch (dissassembled.booru) {
+      Booru.danbooru => Danbooru(
+          client, UnsaveableCookieJar(CookieJarTab().get(Booru.danbooru))),
+      Booru.gelbooru => Gelbooru(
+          0, client, UnsaveableCookieJar(CookieJarTab().get(Booru.gelbooru))),
+    };
+
     try {
       final post = await api.singlePost(dissassembled.id);
       if (post.tags.isEmpty) {
@@ -194,7 +189,7 @@ class PostTags {
           tagsDb.localTags.where().offset(offset).limit(40).findAllSync();
       offset += tags.length;
 
-      for (var e in tags) {
+      for (final e in tags) {
         tagsDb.writeTxnSync(() => _putTagsAndIncreaseFreq(e.tags));
       }
 
@@ -215,14 +210,11 @@ class PostTags {
 
   void addAllPostTags(List<Post> p) {
     tagsDb.writeTxnSync(() {
-      List<LocalTags> list = [];
-      for (var e in p) {
-        final elem = LocalTags(e.filename(), e.tags.split(" "));
-        list.add(elem);
-        _putTagsAndIncreaseFreq(elem.tags);
-      }
-
-      tagsDb.localTags.putAllSync(list);
+      tagsDb.localTags.putAllSync(p.map((e) {
+        final ret = LocalTags(e.filename(), e.tags.split(" "));
+        _putTagsAndIncreaseFreq(ret.tags);
+        return ret;
+      }).toList());
     });
   }
 

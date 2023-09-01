@@ -13,19 +13,19 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/widgets/booru/single_post.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/schemas/tags.dart';
-import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../booru/interface.dart';
 import '../db/isar.dart';
 import '../keybinds/keybinds.dart';
 import '../widgets/booru/autocomplete_tag.dart';
+import '../widgets/tags_widget.dart';
 import 'booru_scroll.dart';
 
 class SearchBooru extends StatefulWidget {
   final GridTab grids;
   final bool popSenitel;
+
   const SearchBooru({super.key, required this.grids, required this.popSenitel});
 
   @override
@@ -33,26 +33,28 @@ class SearchBooru extends StatefulWidget {
 }
 
 class _SearchBooruState extends State<SearchBooru> {
-  BooruAPI booru = getBooru();
-  List<Tag> _lastTags = [];
-  late final StreamSubscription<void> _lastTagsWatcher;
-  List<Tag> _excludedTags = [];
+  final booru = getBooru();
 
-  FocusNode focus = FocusNode();
-  FocusNode excludedFocus = FocusNode();
-  FocusNode singlePostFocus = FocusNode();
+  final focus = FocusNode();
+  final excludedFocus = FocusNode();
+  final singlePostFocus = FocusNode();
+
+  final textController = TextEditingController();
+  final excludedTagsTextController = TextEditingController();
+
+  final skeletonState = SkeletonState(kTagsDrawerIndex);
+
+  late final StreamSubscription<void> _lastTagsWatcher;
+
+  List<Tag> _excludedTags = [];
+  List<Tag> _lastTags = [];
 
   String searchHighlight = "";
   String excludedHighlight = "";
 
-  TextEditingController textController = TextEditingController();
-  TextEditingController excludedTagsTextController = TextEditingController();
-
   AnimationController? replaceController;
   AnimationController? deleteAllExcludedController;
   AnimationController? deleteAllController;
-
-  final SkeletonState skeletonState = SkeletonState(kTagsDrawerIndex);
 
   bool recentTagsExpanded = true;
   bool excludedTagsExpanded = true;
@@ -90,22 +92,6 @@ class _SearchBooruState extends State<SearchBooru> {
     });
   }
 
-  void _onTagPressed(Tag tag) {
-    tag = tag.trim();
-    if (tag.tag.isEmpty) {
-      return;
-    }
-
-    widget.grids.latest.add(tag);
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-      return BooruScroll.secondary(
-        grids: widget.grids,
-        instance: widget.grids.newSecondaryGrid(),
-        tags: tag.tag,
-      );
-    }));
-  }
-
   @override
   void dispose() {
     textController.dispose();
@@ -120,6 +106,22 @@ class _SearchBooruState extends State<SearchBooru> {
     booru.close();
 
     super.dispose();
+  }
+
+  void _onTagPressed(Tag tag) {
+    tag = tag.trim();
+    if (tag.tag.isEmpty) {
+      return;
+    }
+
+    widget.grids.latest.add(tag);
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+      return BooruScroll.secondary(
+        grids: widget.grids,
+        instance: widget.grids.newSecondaryGrid(),
+        tags: tag.tag,
+      );
+    }));
   }
 
   @override
@@ -343,69 +345,5 @@ class _SearchBooruState extends State<SearchBooru> {
           ),
         ],
         popSenitel: widget.popSenitel);
-  }
-}
-
-class TagsWidget extends StatelessWidget {
-  final void Function(Tag tag) deleteTag;
-  final void Function(Tag tag)? onPress;
-  final bool redBackground;
-  final List<Tag> tags;
-  const TagsWidget(
-      {super.key,
-      required this.tags,
-      this.redBackground = false,
-      required this.deleteTag,
-      required this.onPress});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 10, right: 10),
-      child: tags.isEmpty
-          ? const EmptyWidget()
-          : Wrap(
-              children: tags.map((tag) {
-                return GestureDetector(
-                  onLongPress: () {
-                    HapticFeedback.vibrate();
-                    Navigator.of(context).push(DialogRoute(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                              title: Text(AppLocalizations.of(context)!
-                                  .tagDeleteDialogTitle),
-                              content: Text(tag.tag),
-                              actions: [
-                                TextButton(
-                                    onPressed: () {
-                                      deleteTag(tag);
-                                      Navigator.of(context).pop();
-                                    },
-                                    child:
-                                        Text(AppLocalizations.of(context)!.yes))
-                              ],
-                            )));
-                  },
-                  child: ActionChip(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25)),
-                    side: redBackground
-                        ? BorderSide(color: Colors.pink.shade200)
-                        : null,
-                    backgroundColor: redBackground ? Colors.pink : null,
-                    label: Text(tag.tag,
-                        style: redBackground
-                            ? TextStyle(color: Colors.white.withOpacity(0.8))
-                            : null),
-                    onPressed: onPress == null
-                        ? null
-                        : () {
-                            onPress!(tag);
-                          },
-                  ),
-                );
-              }).toList(),
-            ),
-    );
   }
 }

@@ -10,10 +10,10 @@ import 'package:flutter/services.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
 
 class AndroidFullscreen implements PlatformFullscreensPlug {
+  final Color overlayFullscreenColor;
+
   bool isOverlaySet = false;
   bool isAppbarShown = true;
-
-  Color overlayFullscreenColor;
 
   @override
   void fullscreen() {

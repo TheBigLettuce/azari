@@ -35,7 +35,7 @@ Widget azariIcon(BuildContext context, {Color? color}) => GestureDetector(
     ); // 阿
 
 List<NavigationDrawerDestination> destinations(BuildContext context) {
-  var primaryColor = Theme.of(context).colorScheme.primary;
+  final primaryColor = Theme.of(context).colorScheme.primary;
 
   return [
     NavigationDrawerDestination(

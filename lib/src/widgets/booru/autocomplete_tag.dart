@@ -21,7 +21,7 @@ Future<List<String>> autoCompleteTag(
     return Future.value([]);
   }
 
-  var tags = tagString.trim().split(" ");
+  final tags = tagString.trim().split(" ");
 
   return tags.isEmpty || tags.last.isEmpty
       ? Future.value([])
@@ -49,7 +49,7 @@ Widget autocompleteWidget(
     textEditingController: controller,
     focusNode: focus,
     optionsViewBuilder: (context, onSelected, options) {
-      var tiles = options
+      final tiles = options
           .map((elem) => ListTile(
                 onTap: () {
                   if (submitOnPress) {
@@ -64,7 +64,7 @@ Widget autocompleteWidget(
                     return;
                   }
 
-                  List<String> tags = List.from(controller.text.split(" "));
+                  final tags = List.from(controller.text.split(" "));
 
                   if (tags.isNotEmpty) {
                     tags.removeLast();
@@ -73,7 +73,7 @@ Widget autocompleteWidget(
 
                   tags.add(elem);
 
-                  var tagsString =
+                  final tagsString =
                       tags.reduce((value, element) => "$value $element");
 
                   onSelected(tagsString);
@@ -94,7 +94,7 @@ Widget autocompleteWidget(
               itemCount: tiles.length,
               itemBuilder: (context, index) {
                 return Builder(builder: (context) {
-                  var highlight =
+                  final highlight =
                       AutocompleteHighlightedOption.of(context) == index;
                   if (highlight) {
                     highlightChanged(options.elementAt(index));
@@ -153,15 +153,14 @@ Widget autocompleteWidget(
           ));
     },
     optionsBuilder: (textEditingValue) async {
-      List<String> options = [];
       try {
-        options = await autoCompleteTag(textEditingValue.text, complF);
+        return await autoCompleteTag(textEditingValue.text, complF);
       } catch (e, trace) {
         log("autocomplete in search, excluded tags",
             level: Level.WARNING.value, error: e, stackTrace: trace);
-      }
 
-      return options;
+        return [];
+      }
     },
   );
 }
@@ -224,32 +223,35 @@ class FilterValueNotifier extends InheritedNotifier<TextEditingController> {
 
 class TagRefreshNotifier extends InheritedWidget {
   final void Function() notify;
+
   const TagRefreshNotifier(
       {super.key, required this.notify, required super.child});
+
   static void Function()? maybeOf(BuildContext context) {
-    var widget =
+    final widget =
         context.dependOnInheritedWidgetOfExactType<TagRefreshNotifier>();
+
     return widget?.notify;
   }
 
   @override
-  bool updateShouldNotify(TagRefreshNotifier oldWidget) {
-    return oldWidget.notify != notify;
-  }
+  bool updateShouldNotify(TagRefreshNotifier oldWidget) =>
+      oldWidget.notify != notify;
 }
 
 class FilterNotifier extends InheritedWidget {
   final FilterNotifierData data;
+
   const FilterNotifier({super.key, required this.data, required super.child});
+
   static FilterNotifierData? maybeOf(BuildContext context) {
-    var widget = context.dependOnInheritedWidgetOfExactType<FilterNotifier>();
+    final widget = context.dependOnInheritedWidgetOfExactType<FilterNotifier>();
+
     return widget?.data;
   }
 
   @override
-  bool updateShouldNotify(FilterNotifier oldWidget) {
-    return data != oldWidget.data;
-  }
+  bool updateShouldNotify(FilterNotifier oldWidget) => data != oldWidget.data;
 }
 
 class FilterNotifierData {
@@ -275,7 +277,8 @@ class FocusNotifier extends InheritedNotifier<FocusNode> {
       required super.child});
 
   static FocusNotifierData of(BuildContext context) {
-    var widget = context.dependOnInheritedWidgetOfExactType<FocusNotifier>()!;
+    final widget = context.dependOnInheritedWidgetOfExactType<FocusNotifier>()!;
+
     return FocusNotifierData(
         hasFocus: widget.notifier?.hasFocus ?? false,
         unfocus: widget.focusMain);

@@ -64,12 +64,10 @@ Isar? _blacklistedDirIsar;
 late String _directoryPath;
 late String _temporaryDbPath;
 late String _temporaryImagesPath;
-//Isar? _isarCopy;
 bool _initalized = false;
 
 BooruAPI booruApiFromPrefix(Booru booru, {int? page}) {
   Dio dio = Dio(BaseOptions(
-    //headers: {"user-agent": kTorUserAgent},
     responseType: ResponseType.json,
   ));
 
@@ -166,7 +164,7 @@ Isar expensiveHashIsar() => _expensiveHashIsar!;
 Isar blacklistedDirIsar() => _blacklistedDirIsar!;
 
 Isar _primaryGridIsar(Booru booru) {
-  var instance = Isar.getInstance(booru.string);
+  final instance = Isar.getInstance(booru.string);
   if (instance != null) {
     return instance;
   }
@@ -179,20 +177,11 @@ Isar _primaryGridIsar(Booru booru) {
   ], directory: _directoryPath, inspector: false, name: booru.string);
 }
 
-Isar openServerApiIsar({bool? temporary}) {
-  return Isar.openSync([DirectorySchema],
-      directory: temporary == true ? _temporaryDbPath : _directoryPath,
-      inspector: false,
-      name: temporary == true
-          ? DateTime.now().microsecondsSinceEpoch.toString()
-          : "serverApi");
-}
-
 Isar openUploadsDbIsar() {
-  var db = Isar.openSync([UploadFilesStackSchema, UploadFilesStateSchema],
+  final db = Isar.openSync([UploadFilesStackSchema, UploadFilesStateSchema],
       directory: _directoryPath, inspector: false, name: "uploadsDb");
 
-  var list = db.uploadFilesStacks
+  final list = db.uploadFilesStacks
       .filter()
       .statusEqualTo(UploadStatus.inProgress)
       .findAllSync();
@@ -206,80 +195,72 @@ Isar openUploadsDbIsar() {
   return db;
 }
 
-Isar openTagsDbIsar() {
-  return Isar.openSync(
+String _microsecSinceEpoch() =>
+    DateTime.now().microsecondsSinceEpoch.toString();
+
+void closeServerApiIsar() => Isar.getInstance("serverApi")?.close();
+void closeDirectoryIsar() => Isar.getInstance("directories")?.close();
+void closeServerApiInnerIsar(String name) =>
+    Isar.getInstance(name)?.close(deleteFromDisk: true);
+
+Isar openServerApiIsar({bool? temporary}) => Isar.openSync(
+      [DirectorySchema],
+      directory: temporary == true ? _temporaryDbPath : _directoryPath,
+      inspector: false,
+      name: temporary == true ? _microsecSinceEpoch() : "serverApi",
+    );
+
+Isar openTagsDbIsar() => Isar.openSync(
       [LocalTagsSchema, LocalTagDictionarySchema, DirectoryTagSchema],
-      directory: _directoryPath, inspector: false, name: "localTags");
-}
+      directory: _directoryPath,
+      inspector: false,
+      name: "localTags",
+    );
 
-void closeServerApiIsar() {
-  var i = Isar.getInstance("serverApi");
-  if (i != null) {
-    i.close();
-  }
-}
+Isar openServerApiInnerIsar() => Isar.openSync(
+      [DirectoryFileSchema],
+      directory: _temporaryDbPath,
+      inspector: false,
+      name: _microsecSinceEpoch(),
+    );
 
-String _microsecNow() => DateTime.now().microsecondsSinceEpoch.toString();
-
-Isar openServerApiInnerIsar() {
-  var name = DateTime.now().microsecondsSinceEpoch.toString();
-
-  return Isar.openSync(
-    [DirectoryFileSchema],
-    directory: _temporaryDbPath,
-    inspector: false,
-    name: name,
-  );
-}
-
-void closeServerApiInnerIsar(String name) {
-  var db = Isar.getInstance(name);
-  if (db != null) {
-    db.close(deleteFromDisk: true);
-  }
-}
-
-Isar openAndroidGalleryIsar({bool? temporary}) {
-  return Isar.openSync(
+Isar openAndroidGalleryIsar({bool? temporary}) => Isar.openSync(
       [SystemGalleryDirectorySchema, GalleryLastModifiedSchema],
       directory: temporary == true ? _temporaryDbPath : _directoryPath,
       inspector: false,
       name: temporary == true
-          ? DateTime.now().microsecondsSinceEpoch.toString()
-          : "systemGalleryDirectories");
-}
+          ? _microsecSinceEpoch()
+          : "systemGalleryDirectories",
+    );
 
-Isar openAndroidGalleryInnerIsar() {
-  return Isar.openSync([SystemGalleryDirectoryFileSchema],
+Isar openAndroidGalleryInnerIsar() => Isar.openSync(
+      [SystemGalleryDirectoryFileSchema],
       directory: _temporaryDbPath,
       inspector: false,
-      name: DateTime.now().microsecondsSinceEpoch.toString());
-}
+      name: _microsecSinceEpoch(),
+    );
 
-Isar openDirectoryIsar() {
-  return Isar.openSync([DirectorySchema],
-      directory: _directoryPath, inspector: false, name: "directories");
-}
+Isar openDirectoryIsar() => Isar.openSync(
+      [DirectorySchema],
+      directory: _directoryPath,
+      inspector: false,
+      name: "directories",
+    );
 
-void closeDirectoryIsar() {
-  var instance = Isar.getInstance("directories");
-  if (instance != null) {
-    instance.close();
-  }
-}
-
-Isar _restoreIsarGrid(String path) {
-  return Isar.openSync([PostSchema, SecondaryGridSchema],
-      directory: _directoryPath, inspector: false, name: path);
-}
+Isar _restoreIsarGrid(String path) => Isar.openSync(
+      [PostSchema, SecondaryGridSchema],
+      directory: _directoryPath,
+      inspector: false,
+      name: path,
+    );
 
 Future<bool> chooseDirectory(void Function(String) onError) async {
-  String resp;
+  late final String resp;
 
   if (io.Platform.isAndroid) {
     resp = (await PlatformFunctions.chooseDirectory())!;
   } else {
-    var r = await FilePicker.platform
+    final r = await FilePicker.platform
         .getDirectoryPath(dialogTitle: "Pick a directory for downloads");
     if (r == null) {
       onError("Please choose a valid directory");
@@ -288,7 +269,7 @@ Future<bool> chooseDirectory(void Function(String) onError) async {
     resp = r;
   }
 
-  var settings = settingsIsar().settings.getSync(0) ?? Settings.empty();
+  final settings = settingsIsar().settings.getSync(0) ?? Settings.empty();
   settingsIsar().writeTxnSync(
       () => settingsIsar().settings.putSync(settings.copy(path: resp)));
 

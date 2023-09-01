@@ -19,6 +19,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import '../booru/interface.dart';
 import '../schemas/settings.dart';
+import '../widgets/settings_label.dart';
 
 class Settings extends StatefulWidget {
   const Settings({super.key});
@@ -53,6 +54,7 @@ class _SettingsState extends State<Settings> {
 class SettingsList extends StatefulWidget {
   final bool sliver;
   final GlobalKey<ScaffoldState> scaffoldKey;
+
   const SettingsList({
     super.key,
     required this.sliver,
@@ -65,7 +67,9 @@ class SettingsList extends StatefulWidget {
 
 class _SettingsListState extends State<SettingsList> {
   late final StreamSubscription<schema_settings.Settings?> _watcher;
+
   schema_settings.Settings? _settings = settingsIsar().settings.getSync(0);
+  bool extendListSubtitle = false;
 
   @override
   void initState() {
@@ -81,7 +85,13 @@ class _SettingsListState extends State<SettingsList> {
     });
   }
 
-  showDialog(String s) {
+  @override
+  void dispose() {
+    _watcher.cancel();
+    super.dispose();
+  }
+
+  void showDialog(String s) {
     Navigator.of(context).push(DialogRoute(
         context: context,
         builder: (context) => AlertDialog(
@@ -96,17 +106,9 @@ class _SettingsListState extends State<SettingsList> {
             )));
   }
 
-  bool extendListSubtitle = false;
-
   void _extend() => setState(() {
         extendListSubtitle = !extendListSubtitle;
       });
-
-  @override
-  void dispose() {
-    _watcher.cancel();
-    super.dispose();
-  }
 
   List<Widget> makeList(BuildContext context, TextStyle titleStyle) => [
         settingsLabel(AppLocalizations.of(context)!.booruLabel, titleStyle),
@@ -184,12 +186,12 @@ class _SettingsListState extends State<SettingsList> {
             maxLines: extendListSubtitle ? null : 2,
           ),
           trailing: Switch(
-            value: _settings!.listViewBooru,
+            value: _settings!.booruListView,
             onChanged: (value) {
-              if (value != _settings!.listViewBooru) {
+              if (value != _settings!.booruListView) {
                 settingsIsar().writeTxnSync(() => settingsIsar()
                     .settings
-                    .putSync(_settings!.copy(listViewBooru: value)));
+                    .putSync(_settings!.copy(booruListView: value)));
               }
             },
           ),
@@ -232,7 +234,7 @@ class _SettingsListState extends State<SettingsList> {
                   .map((e) => DropdownMenuItem(
                       value: e, child: Text(e.number.toString())))
                   .toList(),
-              onChanged: _settings!.listViewBooru
+              onChanged: _settings!.booruListView
                   ? null
                   : (value) {
                       if (value != _settings!.picturesPerRow) {
@@ -319,7 +321,7 @@ class _SettingsListState extends State<SettingsList> {
                       gallerySettings: _settings!.gallerySettings
                           .copy(hideDirectoryName: value))));
             },
-            value: _settings!.gallerySettings.hideDirectoryName ?? false,
+            value: _settings!.gallerySettings.hideDirectoryName,
           ),
         ),
         ListTile(
@@ -377,7 +379,7 @@ class _SettingsListState extends State<SettingsList> {
                       gallerySettings: _settings!.gallerySettings
                           .copy(hideFileName: value))));
             },
-            value: _settings!.gallerySettings.hideFileName ?? false,
+            value: _settings!.gallerySettings.hideFileName,
           ),
         ),
         ListTile(
@@ -425,6 +427,21 @@ class _SettingsListState extends State<SettingsList> {
                 }
               },
             )),
+        ListTile(
+          title: Text(AppLocalizations.of(context)!.filesListView),
+          trailing: Switch(
+            value: _settings!.gallerySettings.filesListView,
+            onChanged: (value) {
+              if (value != _settings!.gallerySettings.filesListView) {
+                settingsIsar().writeTxnSync(() => settingsIsar()
+                    .settings
+                    .putSync(_settings!.copy(
+                        gallerySettings: _settings!.gallerySettings
+                            .copy(filesListView: value))));
+              }
+            },
+          ),
+        ),
         settingsLabel(AppLocalizations.of(context)!.licenseSetting, titleStyle),
         ListTile(
           onTap: () {
@@ -437,31 +454,25 @@ class _SettingsListState extends State<SettingsList> {
           title: const Text("GPL-2.0-only"),
         ),
         settingsLabel(AppLocalizations.of(context)!.metricsLabel, titleStyle),
-        ListTile(
-          title: const Text('Expensive "Same" algorithm'), // TODO: change
-          subtitle: Text(
-            "More accurate, at a cost of speed. Results persist.",
-            maxLines: extendListSubtitle ? null : 2,
-          ),
-          onTap: _extend,
-          trailing: Switch(
-              value: _settings!.expensiveHash,
-              onChanged: (value) {
-                settingsIsar().writeTxnSync(() {
-                  settingsIsar()
-                      .settings
-                      .putSync(_settings!.copy(expensiveHash: value));
-                });
-              }),
-        ),
+        // ListTile(
+        //   title: const Text('Expensive "Same" algorithm'),
+        //   subtitle: Text(
+        //     "More accurate, at a cost of speed. Results persist.",
+        //     maxLines: extendListSubtitle ? null : 2,
+        //   ),
+        //   onTap: _extend,
+        //   trailing: Switch(
+        //       value: _settings!.expensiveHash,
+        //       onChanged: (value) {
+        //         settingsIsar().writeTxnSync(() {
+        //           settingsIsar()
+        //               .settings
+        //               .putSync(_settings!.copy(expensiveHash: value));
+        //         });
+        //       }),
+        // ),
         ListTile(
           title: Text(AppLocalizations.of(context)!.savedTagsCount),
-          // onLongPress: () {
-          //   PostTags().rebuildTagDictionary();
-          //   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          //       content: Text(
-          //           "Tag dictionary rebuild successfully"))); // TODO: change
-          // },
           trailing: PopupMenuButton(
             icon: const Icon(Icons.more_horiz_outlined),
             itemBuilder: (context) {
@@ -505,7 +516,7 @@ class _SettingsListState extends State<SettingsList> {
           subtitle: Text(PostTags().savedTagsCount().toString()),
         ),
         ListTile(
-          title: const Text("Save tags only on download"), // TODO: change
+          title: Text(AppLocalizations.of(context)!.saveTagsOnlyOnDownload),
           trailing: Switch(
               value: _settings!.saveTagsOnlyOnDownload,
               onChanged: (value) {
@@ -601,11 +612,3 @@ class _SettingsListState extends State<SettingsList> {
           );
   }
 }
-
-Widget settingsLabel(String string, TextStyle style) => Padding(
-      padding: const EdgeInsets.only(bottom: 12, top: 18, right: 12, left: 16),
-      child: Text(
-        string,
-        style: style,
-      ),
-    );

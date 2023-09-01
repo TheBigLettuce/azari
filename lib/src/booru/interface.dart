@@ -100,18 +100,19 @@ abstract class BooruAPI {
 
   /// After the call to [close], [client] should not work.
   void close();
-}
 
-int numberOfElementsPerRefresh() {
-  var settings = settingsIsar().settings.getSync(0)!;
-  if (settings.listViewBooru) {
-    return 20;
+  static numberOfElementsPerRefresh() {
+    final settings = settingsIsar().settings.getSync(0)!;
+    if (settings.booruListView) {
+      return 20;
+    }
+
+    return 10 * settings.picturesPerRow.number;
   }
 
-  return 10 * settings.picturesPerRow.number;
+  static bool isSafeModeEnabled() =>
+      settingsIsar().settings.getSync(0)!.safeMode;
 }
-
-bool isSafeModeEnabled() => settingsIsar().settings.getSync(0)!.safeMode;
 
 class CloudflareException implements Exception {}
 
@@ -143,20 +144,15 @@ class UnsaveableCookieJar implements CookieJar {
   const UnsaveableCookieJar(CookieJar jar) : _proxy = jar;
 }
 
-//enum Rating { questionable, explicit, safe }
-
-// const String kTorUserAgent =
-//     "Mozilla/5.0 (Windows NT 10.0; rv:102.0) Gecko/20100101 Firefox/102.0"; // Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36
-
 /// Cookie jar from the booru's clients are stored here.
 /// Currently useless.
 class CookieJarTab {
   final Map<Booru, CookieJar> _tab = {};
 
   CookieJar get(Booru b) {
-    var res = _tab[b];
+    final res = _tab[b];
     if (res == null) {
-      var emptyJar = CookieJar();
+      final emptyJar = CookieJar();
       _tab[b] = emptyJar;
       return emptyJar;
     }

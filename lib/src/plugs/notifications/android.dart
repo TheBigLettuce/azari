@@ -11,13 +11,14 @@ import 'package:gallery/src/plugs/notifications.dart';
 const _max = 12;
 
 class AndroidProgress implements NotificationProgress {
-  int total = 0;
-  int _step = 0;
-  int _currentSteps = 0;
   final String group;
   final int id;
   final String name;
   final String channelName;
+
+  int total = 0;
+  int _step = 0;
+  int _currentSteps = 0;
 
   _showNotification(int progress, String name) {
     FlutterLocalNotificationsPlugin().show(

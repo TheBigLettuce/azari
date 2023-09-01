@@ -16,10 +16,11 @@ class Uploader extends StatefulWidget {
 }
 
 class _UploaderState extends State<Uploader> {
-  List<UploadFilesStack> stack = [];
-  late StreamSubscription<void> update;
+  late final StreamSubscription<void> update;
 
-  final SkeletonState skeletonState = SkeletonState.settings();
+  final skeletonState = SkeletonState.settings();
+
+  List<UploadFilesStack> stack = [];
 
   @override
   void initState() {

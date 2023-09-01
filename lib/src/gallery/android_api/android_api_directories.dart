@@ -32,12 +32,6 @@ class AndroidGalleryExtra {
   final _AndroidGallery _impl;
   FilterInterface<SystemGalleryDirectory> get filter => _impl.filter;
   void loadThumbs(int from) {
-    _loadThumbs(from);
-  }
-
-  Isar get db => _impl.db;
-
-  void _loadThumbs(int from) {
     try {
       final db = _impl.filter.isFiltering
           ? _impl.filter.to
@@ -60,12 +54,17 @@ class AndroidGalleryExtra {
     _impl.isThumbsLoading = false;
   }
 
+  Isar get db => _impl.db;
+
   GalleryAPIFiles<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile>
       trash() {
-    final instance =
-        _AndroidGalleryFiles(openAndroidGalleryInnerIsar(), "trash", () {
-      _impl.currentImages = null;
-    }, "trash", isTrash: true);
+    final instance = _AndroidGalleryFiles(
+      openAndroidGalleryInnerIsar(),
+      () => _impl.currentImages = null,
+      isTrash: true,
+      bucketId: "trash",
+      target: "trash",
+    );
     _impl.currentImages = instance;
 
     return instance;
@@ -73,10 +72,13 @@ class AndroidGalleryExtra {
 
   GalleryAPIFiles<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile>
       favorites() {
-    final instance =
-        _AndroidGalleryFiles(openAndroidGalleryInnerIsar(), "favorites", () {
-      _impl.currentImages = null;
-    }, "favorites", isFavorites: true);
+    final instance = _AndroidGalleryFiles(
+      openAndroidGalleryInnerIsar(),
+      () => _impl.currentImages = null,
+      isFavorites: true,
+      bucketId: "favorites",
+      target: "favorites",
+    );
     _impl.currentImages = instance;
 
     return instance;
@@ -114,7 +116,7 @@ class AndroidGalleryExtra {
 GalleryAPI<AndroidGalleryExtra, AndroidGalleryFilesExtra,
         SystemGalleryDirectory, SystemGalleryDirectoryFile>
     getAndroidGalleryApi({bool? temporaryDb, bool setCurrentApi = true}) {
-  var api = _AndroidGallery(temporary: temporaryDb);
+  final api = _AndroidGallery(temporary: temporaryDb);
   if (setCurrentApi) {
     _global!._setCurrentApi(api);
   }
@@ -126,11 +128,16 @@ class _AndroidGallery
     implements
         GalleryAPI<AndroidGalleryExtra, AndroidGalleryFilesExtra,
             SystemGalleryDirectory, SystemGalleryDirectoryFile> {
+  final bool? temporary;
+
   void Function(int i, bool inRefresh, bool empty)? callback;
   void Function()? refreshGrid;
   void Function()? onThumbUpdate;
+
   _AndroidGalleryFiles? currentImages;
+
   bool isThumbsLoading = false;
+
   final filter = IsarFilter<SystemGalleryDirectory>(
       GalleryImpl.instance().db, openAndroidGalleryIsar(temporary: true),
       (offset, limit, v) {
@@ -149,9 +156,7 @@ class _AndroidGallery
   Isar get db => GalleryImpl.instance().db;
 
   @override
-  AndroidGalleryExtra getExtra() {
-    return AndroidGalleryExtra._(this);
-  }
+  AndroidGalleryExtra getExtra() => AndroidGalleryExtra._(this);
 
   @override
   void close() {
@@ -186,15 +191,17 @@ class _AndroidGallery
   @override
   GalleryAPIFiles<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile> images(
       SystemGalleryDirectory d) {
-    var instance =
-        _AndroidGalleryFiles(openAndroidGalleryInnerIsar(), d.bucketId, () {
-      currentImages = null;
-    }, d.name);
+    final instance = _AndroidGalleryFiles(
+      openAndroidGalleryInnerIsar(),
+      () => currentImages = null,
+      bucketId: d.bucketId,
+      target: d.name,
+    );
+
     currentImages = instance;
+
     return instance;
   }
-
-  final bool? temporary;
 
   _AndroidGallery({this.temporary});
 }

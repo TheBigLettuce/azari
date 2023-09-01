@@ -14,6 +14,8 @@ abstract class GridMutationInterface<T extends Cell> {
 
   void unselectAll();
 
+  Future onRefresh();
+
   void setIsRefreshing(bool isRefreshing);
   void setSource(int cellCount, T Function(int i) getCell);
   void tick(int i);
@@ -31,7 +33,7 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
   @override
   void unselectAll() => unselectall();
 
-  bool cloudflareBlocked = false;
+  Object? refreshingError;
 
   int _cellCount = 0;
   bool _refreshing = false;
@@ -107,11 +109,9 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
 
       update(null);
     } catch (e) {
-      if (e is CloudflareException) {
-        cloudflareBlocked = true;
+      refreshingError = e;
 
-        update(null);
-      }
+      update(null);
     }
 
     return _cellCount;
@@ -127,6 +127,7 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
 
       _cellCount = 0;
       _refreshing = true;
+      refreshingError = null;
 
       update(null);
 
@@ -134,7 +135,8 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
     }
   }
 
-  Future _onRefresh() {
+  @override
+  Future onRefresh() {
     if (_locked) {
       return Future.value();
     }
@@ -142,6 +144,7 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
     if (!_refreshing) {
       _cellCount = 0;
       _refreshing = true;
+      refreshingError = null;
 
       update(null);
 
@@ -157,6 +160,8 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
     }
 
     _refreshing = true;
+    refreshingError = null;
+
     update(null);
 
     widget().loadNext!().then((value) {
@@ -165,11 +170,10 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
 
       update(null);
     }).onError((error, stackTrace) {
-      if (error is CloudflareException) {
-        cloudflareBlocked = true;
+      refreshingError = error;
 
-        update(null);
-      }
+      update(null);
+
       log("loading next cells in the grid",
           level: Level.WARNING.value, error: error, stackTrace: stackTrace);
     });
@@ -180,17 +184,18 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
       return Future.value(_cellCount);
     }
 
-    var valueFuture = widget().refresh();
+    final valueFuture = widget().refresh();
 
     if (valueFuture == null) {
       return Future.value();
     }
 
     _refreshing = true;
+    refreshingError = null;
 
     try {
       _refreshing = true;
-      var value = await valueFuture;
+      final value = await valueFuture;
 
       _cellCount = value;
       _refreshing = false;
@@ -201,9 +206,7 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
         widget().updateScrollPosition?.call(0);
       });
     } catch (e, stackTrace) {
-      if (e is CloudflareException) {
-        cloudflareBlocked = true;
-      }
+      refreshingError = e;
 
       _refreshing = false;
 

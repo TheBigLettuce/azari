@@ -38,10 +38,6 @@ class PlatformFunctions {
         .then((value) => value!);
   }
 
-  // static Future loadThumbnails(List<int> thumbs) async {
-  //   return _channel.invokeMethod("loadThumbnails", thumbs);
-  // }
-
   static void loadThumbnail(int thumb) {
     _channel.invokeMethod("loadThumbnail", thumb);
   }

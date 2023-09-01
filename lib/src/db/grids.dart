@@ -54,7 +54,7 @@ class GridTab {
   }
 
   Isar newSecondaryGrid() {
-    var p = DateTime.now().microsecondsSinceEpoch.toString();
+    final p = DateTime.now().microsecondsSinceEpoch.toString();
 
     _instance
         .writeTxnSync(() => _instance.gridRestores.putSync(GridRestore(p)));
@@ -64,10 +64,10 @@ class GridTab {
   }
 
   void removeSecondaryGrid(String name) {
-    var grid =
+    final grid =
         _instance.gridRestores.filter().pathEqualTo(name).findFirstSync();
     if (grid != null) {
-      var db = Isar.getInstance(grid.path);
+      final db = Isar.getInstance(grid.path);
       if (db != null) {
         db.close(deleteFromDisk: true);
       }
@@ -76,7 +76,7 @@ class GridTab {
   }
 
   void restoreState(BuildContext context) {
-    var toRestore =
+    final toRestore =
         _instance.gridRestores.where().sortByDateDesc().findAllSync();
 
     Navigator.of(context).pushReplacementNamed("/booru");
@@ -94,18 +94,18 @@ class GridTab {
     }
 
     for (true;;) {
-      var restore = toRestore.removeAt(0);
+      final restore = toRestore.removeAt(0);
 
-      var isarR = _restoreIsarGrid(restore.path);
+      final isarR = _restoreIsarGrid(restore.path);
 
-      var state = isarR.secondaryGrids.getSync(0);
+      final state = isarR.secondaryGrids.getSync(0);
 
       if (state == null) {
         removeSecondaryGrid(isarR.name);
         continue;
       }
 
-      var page = MaterialPageRoute(
+      final page = MaterialPageRoute(
         builder: (context) {
           return BooruScroll.restore(
             grids: this,
@@ -133,7 +133,7 @@ class GridTab {
   }
 
   void restoreStateNext(BuildContext context, String exclude) {
-    var toRestore = _instance.gridRestores
+    final toRestore = _instance.gridRestores
         .where()
         .pathNotEqualTo(exclude)
         .sortByDateDesc()
@@ -167,7 +167,7 @@ class IsarBooruTagging implements BooruTagging {
 
   @override
   void add(Tag t) {
-    var instance = isarCurrent;
+    final instance = isarCurrent;
 
     instance.writeTxnSync(() => instance.tags
         .putByTagIsExcludedSync(t.copyWith(isExcluded: excludedMode)));
@@ -175,7 +175,7 @@ class IsarBooruTagging implements BooruTagging {
 
   @override
   void delete(Tag t) {
-    var instance = isarCurrent;
+    final instance = isarCurrent;
 
     instance.writeTxnSync(
         () => instance.tags.deleteByTagIsExcludedSync(t.tag, excludedMode));
@@ -183,16 +183,17 @@ class IsarBooruTagging implements BooruTagging {
 
   @override
   void clear() {
-    var instance = isarCurrent;
+    final instance = isarCurrent;
 
     instance.writeTxnSync(() {
-      var all = instance.tags
-          .filter()
-          .isExcludedEqualTo(excludedMode)
-          .findAllSync()
-          .map((e) => e.isarId!)
-          .toList();
-      instance.tags.deleteAllSync(all);
+      instance.tags.deleteAllSync(
+        instance.tags
+            .filter()
+            .isExcludedEqualTo(excludedMode)
+            .findAllSync()
+            .map((e) => e.isarId!)
+            .toList(),
+      );
     });
   }
 
