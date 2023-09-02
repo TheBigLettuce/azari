@@ -148,7 +148,7 @@ class Filters {
 
         ret = () sync* {
           for (final i in distanceSet) {
-            var file = getCell(i - 1);
+            var file = getCell(i);
             file.isarId = null;
             yield file;
           }
@@ -158,7 +158,7 @@ class Filters {
           for (final i in accu!.data.values) {
             if (i.length > 1) {
               for (final v in i) {
-                var file = getCell(v - 1);
+                var file = getCell(v);
                 file.isarId = null;
                 yield file;
               }

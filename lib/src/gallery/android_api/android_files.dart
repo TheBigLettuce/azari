@@ -99,7 +99,7 @@ class _AndroidFilesState extends State<AndroidFiles>
         FilteringMode.duplicate => Filters.duplicate(cells),
         FilteringMode.original => Filters.original(cells),
         FilteringMode.same => Filters.same(context, cells, data, extra,
-            getCell: (i) => widget.api.directCell(i - 1),
+            getCell: (i) => widget.api.directCell(i),
             performSearch: () => performSearch(searchTextController.text),
             end: end,
             expensiveHash: true),
