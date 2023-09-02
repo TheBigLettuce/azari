@@ -9,7 +9,6 @@ import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:gallery/main.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/cell/cell.dart';
@@ -255,16 +254,15 @@ class SystemGalleryDirectoryFile implements Cell {
               launchGrid: (t) {
                 try {
                   final res = PostTags().dissassembleFilename(name);
-                  final tab = makeGridTab(res.booru);
+                  final tab = makeGridTab(res.booru, temporary: true);
 
                   Navigator.push(context, MaterialPageRoute(
                     builder: (context) {
                       return BooruScroll.secondary(
                           grids: tab,
-                          instance: tab.newSecondaryGrid(temporary: true),
+                          instance: tab.newSecondaryGrid(),
                           forceCloseApi: true,
-                          closeGrids:
-                              getTab().instance.name != tab.instance.name,
+                          closeGrids: false,
                           api: booruApiFromPrefix(res.booru),
                           tags: t);
                     },

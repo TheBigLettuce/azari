@@ -267,80 +267,94 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
   Widget build(BuildContext context) {
     final insets = MediaQuery.viewPaddingOf(context);
 
-    return makeGridSkeleton(
-      context,
-      skeletonState,
-      CallbackGrid<Post>(
-        key: skeletonState.gridKey,
-        systemNavigationInsets: insets,
-        registerNotifiers: [
-          (child) => GridTabNotifier(tab: widget.grids, child: child),
-          (child) => BooruAPINotifier(api: booru, child: child)
-        ],
-        description: GridDescription(
-          kBooruGridDrawerIndex,
-          [
-            GridBottomSheetAction(Icons.download, (selected) {
-              for (final element in selected) {
-                PostTags().addTagsPost(
-                    element.filename(), element.tags.split(" "), true);
-                downloader.add(
-                    File.d(element.fileUrl, booru.domain, element.filename()));
-              }
-            }, true)
-          ],
-          skeletonState.settings.picturesPerRow,
-          listView: skeletonState.settings.booruListView,
-          keybindsDescription: AppLocalizations.of(context)!.booruGridPageName,
-        ),
-        hasReachedEnd: () => reachedEnd,
-        mainFocus: skeletonState.mainFocus,
-        scaffoldKey: skeletonState.scaffoldKey,
-        onError: (error) {
-          return OutlinedButton(
-            onPressed: () {
-              launchUrl(Uri.https(booru.domain),
-                  mode: LaunchMode.externalApplication);
-            },
-            child: Text(AppLocalizations.of(context)!.openInBrowser),
-          );
-        },
-        aspectRatio: skeletonState.settings.ratio.value,
-        getCell: (i) => _getInstance().posts.getSync(i + 1)!,
-        cloudflareHook: () {
-          return CloudflareBlockInterface(booru);
-        },
-        loadNext: _addLast,
-        refresh: _clearAndRefresh,
-        hideShowFab: ({required bool fab, required bool foreground}) =>
-            skeletonState.updateFab(setState, fab: fab, foreground: foreground),
-        onBack: widget.tags.isEmpty
-            ? null
-            : () {
-                if (widget.toRestore) {
-                  widget.grids
-                      .restoreStateNext(context, widget.currentInstance!.name);
-                } else {
-                  Navigator.pop(context);
-                }
+    return BooruAPINotifier(
+        api: booru,
+        child: GridTabNotifier(
+            tab: widget.grids,
+            child: Builder(
+              builder: (context) {
+                return makeGridSkeleton(
+                    context,
+                    skeletonState,
+                    CallbackGrid<Post>(
+                      key: skeletonState.gridKey,
+                      systemNavigationInsets: insets,
+                      registerNotifiers: [
+                        (child) =>
+                            GridTabNotifier(tab: widget.grids, child: child),
+                        (child) => BooruAPINotifier(api: booru, child: child)
+                      ],
+                      description: GridDescription(
+                        kBooruGridDrawerIndex,
+                        [
+                          GridBottomSheetAction(Icons.download, (selected) {
+                            for (final element in selected) {
+                              PostTags().addTagsPost(element.filename(),
+                                  element.tags.split(" "), true);
+                              downloader.add(File.d(element.fileUrl,
+                                  booru.domain, element.filename()));
+                            }
+                          }, true)
+                        ],
+                        skeletonState.settings.picturesPerRow,
+                        listView: skeletonState.settings.booruListView,
+                        keybindsDescription:
+                            AppLocalizations.of(context)!.booruGridPageName,
+                      ),
+                      hasReachedEnd: () => reachedEnd,
+                      mainFocus: skeletonState.mainFocus,
+                      scaffoldKey: skeletonState.scaffoldKey,
+                      onError: (error) {
+                        return OutlinedButton(
+                          onPressed: () {
+                            launchUrl(Uri.https(booru.domain),
+                                mode: LaunchMode.externalApplication);
+                          },
+                          child:
+                              Text(AppLocalizations.of(context)!.openInBrowser),
+                        );
+                      },
+                      aspectRatio: skeletonState.settings.ratio.value,
+                      getCell: (i) => _getInstance().posts.getSync(i + 1)!,
+                      cloudflareHook: () {
+                        return CloudflareBlockInterface(booru);
+                      },
+                      loadNext: _addLast,
+                      refresh: _clearAndRefresh,
+                      hideShowFab: (
+                              {required bool fab, required bool foreground}) =>
+                          skeletonState.updateFab(setState,
+                              fab: fab, foreground: foreground),
+                      onBack: widget.tags.isEmpty
+                          ? null
+                          : () {
+                              if (widget.toRestore) {
+                                widget.grids.restoreStateNext(
+                                    context, widget.currentInstance!.name);
+                              } else {
+                                Navigator.pop(context);
+                              }
+                            },
+                      hideAlias: true,
+                      download: _download,
+                      updateScrollPosition: updateScrollPosition,
+                      initalScrollPosition: widget.initalScroll,
+                      initalCellCount:
+                          widget.clear ? 0 : _getInstance().posts.countSync(),
+                      searchWidget: SearchAndFocus(
+                          searchWidget(context, hint: booru.name), searchFocus,
+                          onPressed: () {
+                        if (currentlyHighlightedTag != "") {
+                          skeletonState.mainFocus.unfocus();
+                          widget.grids.onTagPressed(context,
+                              Tag.string(tag: currentlyHighlightedTag), booru);
+                        }
+                      }),
+                      pageViewScrollingOffset: widget.pageViewScrollingOffset,
+                      initalCell: widget.initalPost,
+                    ),
+                    overrideBooru: booru.booru);
               },
-        hideAlias: true,
-        download: _download,
-        updateScrollPosition: updateScrollPosition,
-        initalScrollPosition: widget.initalScroll,
-        initalCellCount: widget.clear ? 0 : _getInstance().posts.countSync(),
-        searchWidget:
-            SearchAndFocus(searchWidget(context, hint: booru.name), searchFocus,
-                onPressed: () {
-          if (currentlyHighlightedTag != "") {
-            skeletonState.mainFocus.unfocus();
-            widget.grids.onTagPressed(
-                context, Tag.string(tag: currentlyHighlightedTag));
-          }
-        }),
-        pageViewScrollingOffset: widget.pageViewScrollingOffset,
-        initalCell: widget.initalPost,
-      ),
-    );
+            )));
   }
 }

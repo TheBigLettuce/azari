@@ -14,6 +14,7 @@ import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:gallery/src/widgets/system_gestures.dart';
 
+import '../booru/interface.dart';
 import '../cell/cell.dart';
 import '../db/isar.dart';
 import '../keybinds/keybinds.dart';
@@ -83,6 +84,7 @@ Widget makeGridSkeleton<T extends Cell>(
     BuildContext context, GridSkeletonState<T> state, CallbackGrid<T> grid,
     {bool popSenitel = true,
     bool noDrawer = false,
+    Booru? overrideBooru,
     Future<bool> Function()? overrideOnPop}) {
   return WillPopScope(
     onWillPop: overrideOnPop ??
@@ -128,7 +130,9 @@ Widget makeGridSkeleton<T extends Cell>(
             : null,
         endDrawerEnableOpenDragGesture: false,
         key: state.scaffoldKey,
-        drawer: noDrawer ? null : makeDrawer(context, state.index),
+        drawer: noDrawer
+            ? null
+            : makeDrawer(context, state.index, overrideBooru: overrideBooru),
         endDrawer:
             noDrawer ? null : makeEndDrawerSettings(context, state.scaffoldKey),
         body: gestureDeadZones(

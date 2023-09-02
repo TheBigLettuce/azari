@@ -11,6 +11,7 @@ part of 'isar.dart';
 /// with its excluded and latest tags.
 class GridTab {
   final Isar _instance;
+  final bool temporary;
 
   final IsarBooruTagging _excluded;
   final IsarBooruTagging _latest;
@@ -18,15 +19,13 @@ class GridTab {
   BooruTagging get excluded => _excluded;
   BooruTagging get latest => _latest;
 
-  void onTagPressed(BuildContext context, Tag t) {
+  void onTagPressed(BuildContext context, Tag t, BooruAPI api) {
     t = t.trim();
     if (t.tag.isEmpty) {
       return;
     }
 
     latest.add(t);
-
-    final api = BooruAPINotifier.of(context);
 
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return BooruScroll.secondary(
@@ -51,12 +50,14 @@ class GridTab {
 
   void updateScrollSecondary(Isar isar, double pos, String tags, int? page,
       {int? selectedPost, double? scrollPositionTags}) {
-    isar.writeTxnSync(() => isar.secondaryGrids.putSync(SecondaryGrid(
-        tags, scrollPositionTags, selectedPost, pos,
-        page: page)));
+    if (!temporary) {
+      isar.writeTxnSync(() => isar.secondaryGrids.putSync(SecondaryGrid(
+          tags, scrollPositionTags, selectedPost, pos,
+          page: page)));
+    }
   }
 
-  Isar newSecondaryGrid({bool temporary = false}) {
+  Isar newSecondaryGrid() {
     final p = DateTime.now().microsecondsSinceEpoch.toString();
 
     if (!temporary) {
@@ -149,14 +150,14 @@ class GridTab {
     _restoreState(context, toRestore, false);
   }
 
-  GridTab._new(this._instance)
+  GridTab._new(this._instance, this.temporary)
       : _excluded =
             IsarBooruTagging(excludedMode: true, isarCurrent: _instance),
         _latest = IsarBooruTagging(excludedMode: false, isarCurrent: _instance);
 }
 
-GridTab makeGridTab(Booru newBooru) {
-  return GridTab._new(_primaryGridIsar(newBooru));
+GridTab makeGridTab(Booru newBooru, {bool temporary = false}) {
+  return GridTab._new(_primaryGridIsar(newBooru), temporary);
 }
 
 class IsarBooruTagging implements BooruTagging {

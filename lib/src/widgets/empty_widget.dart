@@ -46,7 +46,7 @@ class EmptyWidget extends StatelessWidget {
           TextSpan(
               text: error == null
                   ? "${AppLocalizations.of(context)!.emptyValue}..."
-                  : "Error: ${_unwrapError()}",
+                  : "${AppLocalizations.of(context)!.errorHalf} ${_unwrapError()}",
               style: TextStyle(
                   fontStyle: FontStyle.italic,
                   fontSize: error != null ? 14 * 2 : null)),

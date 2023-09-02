@@ -9,7 +9,6 @@ import 'package:flutter/widgets.dart';
 import 'package:gallery/src/pages/booru_scroll.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../main.dart';
 import '../booru/interface.dart';
 import 'booru/autocomplete_tag.dart';
 
@@ -68,7 +67,11 @@ mixin SearchLaunchGrid on State<BooruScroll>
   Widget searchWidget(BuildContext context, {String? hint, int? count}) =>
       autocompleteWidget(searchTextController, (s) {
         currentlyHighlightedTag = s;
-      }, (s) => getTab().onTagPressed(context, s), focusMain, booru.completeTag,
+      },
+          (s) => GridTabNotifier.of(context)
+              .onTagPressed(context, s, BooruAPINotifier.of(context)),
+          focusMain,
+          booru.completeTag,
           searchFocus,
           scrollHack: _scrollHack,
           showSearch: true,

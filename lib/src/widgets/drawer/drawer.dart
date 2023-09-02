@@ -15,6 +15,7 @@ import 'package:gallery/src/pages/downloads.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import '../../../main.dart';
+import '../../booru/interface.dart';
 import '../../db/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/pages/settings.dart' as widget;
@@ -34,7 +35,8 @@ Widget azariIcon(BuildContext context, {Color? color}) => GestureDetector(
       ),
     ); // 阿
 
-List<NavigationDrawerDestination> destinations(BuildContext context) {
+List<NavigationDrawerDestination> destinations(BuildContext context,
+    {Booru? overrideBooru}) {
   final primaryColor = Theme.of(context).colorScheme.primary;
 
   return [
@@ -44,7 +46,8 @@ List<NavigationDrawerDestination> destinations(BuildContext context) {
           Icons.image,
           color: primaryColor,
         ),
-        label: Text(settingsIsar().settings.getSync(0)!.selectedBooru.string)),
+        label: Text(overrideBooru?.string ??
+            settingsIsar().settings.getSync(0)!.selectedBooru.string)),
     NavigationDrawerDestination(
         icon: const Icon(Icons.photo_album),
         selectedIcon: Icon(
@@ -195,7 +198,8 @@ Widget? makeEndDrawerSettings(
 }
 
 Widget? makeDrawer(BuildContext context, int selectedIndex,
-    {void Function(int route, void Function() original)? overrideChooseRoute}) {
+    {void Function(int route, void Function() original)? overrideChooseRoute,
+    Booru? overrideBooru}) {
   if (!Platform.isAndroid && !Platform.isIOS) {
     return null;
   }
@@ -230,7 +234,7 @@ Widget? makeDrawer(BuildContext context, int selectedIndex,
             onInit: (controller) => iconController = controller,
             effects: [ShakeEffect(duration: 700.milliseconds, hz: 6)]),
       )),
-      ...destinations(context),
+      ...destinations(context, overrideBooru: overrideBooru),
       const Divider(),
       NavigationDrawerDestination(
           icon: const Icon(Icons.settings),

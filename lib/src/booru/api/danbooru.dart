@@ -78,7 +78,7 @@ class Danbooru implements BooruAPI {
         throw "no post";
       }
 
-      return (await _fromJson([resp.data]))[0];
+      return (await _fromJson([resp.data], null))[0];
     } catch (e) {
       if (e is DioException) {
         if (e.response?.statusCode == 403) {
@@ -106,20 +106,12 @@ class Danbooru implements BooruAPI {
       throw "only one should be set";
     }
 
-    String excludedTagsString;
-
-    final excluded = excludedTags.get().map((e) => "-${e.tag} ").toList();
-    if (excluded.isNotEmpty) {
-      excludedTagsString = excluded.reduce((value, element) => value + element);
-    } else {
-      excludedTagsString = "";
-    }
+    tags = tags.split(" ").take(2).join(" ");
 
     final query = <String, dynamic>{
       "limit": BooruAPI.numberOfElementsPerRefresh().toString(),
       "format": "json",
-      "post[tags]":
-          "${BooruAPI.isSafeModeEnabled() ? 'rating:g' : ''} $excludedTagsString $tags",
+      "post[tags]": "${BooruAPI.isSafeModeEnabled() ? 'rating:g' : ''} $tags",
     };
 
     if (postid != null) {
@@ -131,14 +123,13 @@ class Danbooru implements BooruAPI {
     }
 
     try {
-      final resp = await client
-          .getUri(Uri.https("danbooru.donmai.us", "/posts.json", query));
+      final resp = await client.getUri(Uri.https(domain, "/posts.json", query));
 
       if (resp.statusCode != 200) {
         throw "status not ok";
       }
 
-      return _fromJson(resp.data);
+      return _fromJson(resp.data, excludedTags);
     } catch (e) {
       if (e is DioException) {
         if (e.response?.statusCode == 403) {
@@ -150,11 +141,22 @@ class Danbooru implements BooruAPI {
     }
   }
 
-  Future<List<Post>> _fromJson(List<dynamic> m) async {
+  Future<List<Post>> _fromJson(
+      List<dynamic> m, BooruTagging? excludedTags) async {
     final List<Post> list = [];
+    final exclude = excludedTags?.get();
 
     for (final e in m) {
       try {
+        final String tags = e["tag_string"];
+        if (exclude != null) {
+          for (final tag in exclude) {
+            if (tags.contains(tag.tag)) {
+              continue;
+            }
+          }
+        }
+
         final post = Post(
             height: e["image_height"],
             id: e["id"],
@@ -163,7 +165,7 @@ class Danbooru implements BooruAPI {
             rating: e["rating"] ?? "?",
             createdAt: DateTime.parse(e["created_at"]),
             md5: e["md5"],
-            tags: e["tag_string"],
+            tags: tags,
             width: e["image_width"],
             fileUrl: e["file_url"],
             previewUrl: e["preview_file_url"],

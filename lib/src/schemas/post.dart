@@ -171,7 +171,9 @@ class Post implements Cell {
               },
               launchGrid: (t) {
                 tab.onTagPressed(
-                    context, Tag.string(tag: HtmlUnescape().convert(t)));
+                    context,
+                    Tag.string(tag: HtmlUnescape().convert(t)),
+                    BooruAPINotifier.of(context));
               },
             );
           };

@@ -36,7 +36,6 @@ import 'package:gallery/src/schemas/tags.dart';
 import 'package:gallery/src/schemas/thumbnail.dart';
 import 'package:gallery/src/schemas/upload_files.dart';
 import 'package:gallery/src/schemas/upload_files_state.dart';
-import 'package:gallery/src/widgets/booru/autocomplete_tag.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import '../booru/tags/tags.dart';

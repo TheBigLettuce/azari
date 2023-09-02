@@ -745,5 +745,9 @@
     "infoHeadline": "Info",
     "@infoHeadline": {
         "description": "Title of the info end drawer in the image view"
+    },
+    "errorHalf": "Error:",
+    "@errorHalf": {
+        "description": "First half of the error message on booru refresh"
     }
 }
