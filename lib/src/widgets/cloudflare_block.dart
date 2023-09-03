@@ -106,7 +106,7 @@ class _AndroidWebviewState extends State<AndroidWebview> {
           leading: IconButton(
               onPressed: () async {
                 var cookies = await CookieManager.instance().getCookies(
-                    url: WebUri.uri(Uri.https(widget.intf.api.domain)));
+                    url: WebUri.uri(Uri.https(widget.intf.api.booru.url)));
 
                 var cfClearance = cookies
                     .indexWhere((element) => element.name == "cf_clearance");
@@ -121,7 +121,7 @@ class _AndroidWebviewState extends State<AndroidWebview> {
           title: Text(AppLocalizations.of(context)!.solveCaptcha)),
       body: InAppWebView(
         initialUrlRequest: URLRequest(
-          url: WebUri.uri(Uri.https(widget.intf.api.domain)),
+          url: WebUri.uri(Uri.https(widget.intf.api.booru.url)),
         ),
         onWebViewCreated: (c) {
           controller = c;

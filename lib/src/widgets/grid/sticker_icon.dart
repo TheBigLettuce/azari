@@ -5,34 +5,19 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:isar/isar.dart';
+part of 'callback_grid.dart';
 
-part 'upload_files.g.dart';
-
-@collection
-class UploadFilesStack {
-  Id? isarId;
-
-  final int stateId;
-  final int count;
-
-  final DateTime time;
-
-  @enumerated
-  final UploadStatus status;
-
-  UploadFilesStack failed() => UploadFilesStack(
-      stateId: stateId, status: UploadStatus.failed, count: count);
-
-  UploadFilesStack(
-      {required this.stateId, required this.status, required this.count})
-      : time = DateTime.now();
-}
-
-enum UploadStatus {
-  failed("Failed"),
-  inProgress("In progress");
-
-  final String string;
-  const UploadStatus(this.string);
-}
+Widget stickerIcon(BuildContext context, IconData e) => Padding(
+      padding: const EdgeInsets.only(right: 4),
+      child: Container(
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+            color:
+                Theme.of(context).colorScheme.inversePrimary.withOpacity(0.6),
+            borderRadius: BorderRadius.circular(5)),
+        child: Icon(
+          e,
+          color: Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+        ),
+      ),
+    );

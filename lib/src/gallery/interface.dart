@@ -16,12 +16,13 @@ abstract class GalleryAPIFiles<ExtraFiles, F extends Cell> {
   void close();
 }
 
-abstract class GalleryAPI<Extra, ExtraFiles, T extends Cell, F extends Cell> {
+abstract class GalleryAPIDirectories<Extra, ExtraFiles, T extends Cell,
+    F extends Cell> {
   T directCell(int i);
 
   Future<int> refresh();
   Extra getExtra();
-  GalleryAPIFiles<ExtraFiles, F> images(T d);
+  GalleryAPIFiles<ExtraFiles, F> files(T d);
 
   void close();
 }

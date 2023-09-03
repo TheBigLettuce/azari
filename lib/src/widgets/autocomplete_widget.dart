@@ -11,11 +11,10 @@ import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../booru/interface.dart';
-import '../../db/isar.dart';
-import '../../schemas/tags.dart';
+import '../schemas/tags.dart';
+import 'notifiers/focus.dart';
 
-Future<List<String>> autoCompleteTag(
+Future<List<String>> autocompleteTag(
     String tagString, Future<List<String>> Function(String) complF) {
   if (tagString.isEmpty) {
     return Future.value([]);
@@ -156,7 +155,7 @@ Widget autocompleteWidget(
     },
     optionsBuilder: (textEditingValue) async {
       try {
-        return await autoCompleteTag(textEditingValue.text, complF);
+        return await autocompleteTag(textEditingValue.text, complF);
       } catch (e, trace) {
         log("autocomplete in search, excluded tags",
             level: Level.WARNING.value, error: e, stackTrace: trace);
@@ -210,121 +209,4 @@ InputDecoration autocompleteBarDecoration(
               borderRadius: BorderRadius.all(Radius.circular(50)))
           : InputBorder.none,
       isDense: false);
-}
-
-class FilterValueNotifier extends InheritedNotifier<TextEditingController> {
-  const FilterValueNotifier(
-      {super.key, required super.notifier, required super.child});
-
-  static String maybeOf(BuildContext context) {
-    var widget =
-        context.dependOnInheritedWidgetOfExactType<FilterValueNotifier>();
-    return widget?.notifier?.value.text ?? "";
-  }
-}
-
-class TagRefreshNotifier extends InheritedWidget {
-  final void Function() notify;
-
-  const TagRefreshNotifier(
-      {super.key, required this.notify, required super.child});
-
-  static void Function()? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<TagRefreshNotifier>();
-
-    return widget?.notify;
-  }
-
-  @override
-  bool updateShouldNotify(TagRefreshNotifier oldWidget) =>
-      oldWidget.notify != notify;
-}
-
-class BooruAPINotifier extends InheritedWidget {
-  final BooruAPI api;
-
-  static BooruAPI of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<BooruAPINotifier>();
-
-    return widget!.api;
-  }
-
-  @override
-  bool updateShouldNotify(BooruAPINotifier oldWidget) {
-    return api != oldWidget.api;
-  }
-
-  const BooruAPINotifier({super.key, required this.api, required super.child});
-}
-
-class GridTabNotifier extends InheritedWidget {
-  final GridTab tab;
-
-  @override
-  bool updateShouldNotify(GridTabNotifier oldWidget) {
-    return tab != oldWidget.tab;
-  }
-
-  static GridTab of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<GridTabNotifier>();
-
-    return widget!.tab;
-  }
-
-  const GridTabNotifier({super.key, required this.tab, required super.child});
-}
-
-class FilterNotifier extends InheritedWidget {
-  final FilterNotifierData data;
-
-  const FilterNotifier({super.key, required this.data, required super.child});
-
-  static FilterNotifierData? maybeOf(BuildContext context) {
-    final widget = context.dependOnInheritedWidgetOfExactType<FilterNotifier>();
-
-    return widget?.data;
-  }
-
-  @override
-  bool updateShouldNotify(FilterNotifier oldWidget) => data != oldWidget.data;
-}
-
-class FilterNotifierData {
-  final TextEditingController searchController;
-  final FocusNode searchFocus;
-  final void Function() focusMain;
-
-  void dispose() {
-    searchController.dispose();
-    searchFocus.dispose();
-  }
-
-  const FilterNotifierData(
-      this.focusMain, this.searchController, this.searchFocus);
-}
-
-class FocusNotifier extends InheritedNotifier<FocusNode> {
-  final void Function() focusMain;
-  const FocusNotifier(
-      {super.key,
-      required super.notifier,
-      required this.focusMain,
-      required super.child});
-
-  static FocusNotifierData of(BuildContext context) {
-    final widget = context.dependOnInheritedWidgetOfExactType<FocusNotifier>()!;
-
-    return FocusNotifierData(
-        hasFocus: widget.notifier?.hasFocus ?? false,
-        unfocus: widget.focusMain);
-  }
-}
-
-class FocusNotifierData {
-  final void Function() unfocus;
-  final bool hasFocus;
-  const FocusNotifierData({required this.hasFocus, required this.unfocus});
 }

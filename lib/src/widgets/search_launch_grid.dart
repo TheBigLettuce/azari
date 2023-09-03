@@ -10,7 +10,9 @@ import 'package:gallery/src/pages/booru_scroll.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../booru/interface.dart';
-import 'booru/autocomplete_tag.dart';
+import 'autocomplete_widget.dart';
+import 'notifiers/booru_api.dart';
+import 'notifiers/grid_tab.dart';
 
 abstract class SearchMixin<T> {
   TextEditingController get searchTextController;

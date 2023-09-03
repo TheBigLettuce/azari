@@ -16,10 +16,14 @@ class SelectionInterface<T extends Cell> {
 
   PersistentBottomSheetController? currentBottomSheet;
 
-  bool isSelected(int indx) => selected.containsKey(indx);
+  bool isSelected(int indx) =>
+      indx.isNegative ? false : selected.containsKey(indx);
 
   void add(BuildContext context, int id, T selection,
       double systemNavigationInsets) {
+    if (id.isNegative) {
+      return;
+    }
     if (selected.isEmpty || currentBottomSheet == null) {
       currentBottomSheet = showBottomSheet(
           constraints:

@@ -17,15 +17,8 @@ class AndroidGalleryFilesExtra {
   bool isTrash() => _impl.isTrash;
   bool isFavorites() => _impl.isFavorites;
 
-  void loadThumbnails(int from) {
+  void loadThumbnails(SystemGalleryDirectoryFile cell) {
     try {
-      final db = _impl.filter.isFiltering ? _impl.filter.to : _impl.db;
-
-      final cell = db.systemGalleryDirectoryFiles.getSync(from + 1);
-      if (cell == null) {
-        return;
-      }
-
       thumbnailIsar().writeTxnSync(() => thumbnailIsar().thumbnails.putSync(
           Thumbnail(cell.id, DateTime.now(), kTransparentImage, 0, true)));
 
@@ -198,8 +191,8 @@ class _AndroidGalleryFiles
       db.systemGalleryDirectoryFiles.getSync(i + 1)!;
 
   late final IsarFilter<SystemGalleryDirectoryFile> filter =
-      IsarFilter<SystemGalleryDirectoryFile>(db, openAndroidGalleryInnerIsar(),
-          (offset, limit, s) {
+      IsarFilter<SystemGalleryDirectoryFile>(
+          db, IsarDbsOpen.androidGalleryFiles(), (offset, limit, s) {
     if (filter.currentSorting == SortingMode.size) {
       return db.systemGalleryDirectoryFiles
           .filter()

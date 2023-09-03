@@ -16,7 +16,6 @@ import 'package:gallery/src/widgets/system_gestures.dart';
 
 import '../booru/interface.dart';
 import '../cell/cell.dart';
-import '../db/isar.dart';
 import '../keybinds/keybinds.dart';
 import '../pages/senitel.dart';
 import '../schemas/settings.dart';
@@ -60,7 +59,7 @@ class GridSkeletonStateFilter<T extends Cell> extends GridSkeletonState<T> {
 class GridSkeletonState<T extends Cell> extends SkeletonState {
   bool showFab;
   final GlobalKey<CallbackGridState<T>> gridKey = GlobalKey();
-  Settings settings = settingsIsar().settings.getSync(0)!;
+  Settings settings = Settings.fromDb();
   final Future<bool> Function() onWillPop;
 
   void updateFab(void Function(void Function()) setState,

@@ -14,11 +14,10 @@ import 'package:gallery/src/pages/tags.dart';
 import 'package:gallery/src/pages/downloads.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/settings.dart';
-import '../../../main.dart';
 import '../../booru/interface.dart';
 import '../../db/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/pages/settings.dart' as widget;
+import 'package:gallery/src/pages/settings.dart';
 
 const int kBooruGridDrawerIndex = 0;
 const int kGalleryDrawerIndex = 1;
@@ -27,12 +26,9 @@ const int kDownloadsDrawerIndex = 3;
 const int kSettingsDrawerIndex = 4;
 const int kComeFromRandom = -1;
 
-Widget azariIcon(BuildContext context, {Color? color}) => GestureDetector(
-      onTap: () {},
-      child: Icon(
-        const IconData(0x963F),
-        color: color,
-      ),
+Widget azariIcon(BuildContext context, {Color? color}) => Icon(
+      const IconData(0x963F),
+      color: color,
     ); // 阿
 
 List<NavigationDrawerDestination> destinations(BuildContext context,
@@ -46,8 +42,8 @@ List<NavigationDrawerDestination> destinations(BuildContext context,
           Icons.image,
           color: primaryColor,
         ),
-        label: Text(overrideBooru?.string ??
-            settingsIsar().settings.getSync(0)!.selectedBooru.string)),
+        label: Text(
+            overrideBooru?.string ?? Settings.fromDb().selectedBooru.string)),
     NavigationDrawerDestination(
         icon: const Icon(Icons.photo_album),
         selectedIcon: Icon(
@@ -99,7 +95,7 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
                       context,
                       MaterialPageRoute(
                         builder: (context) => SearchBooru(
-                          grids: getTab(),
+                          grids: GridTab.global,
                           popSenitel: false,
                           fromGallery: true,
                         ),
@@ -111,7 +107,7 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
                       context,
                       MaterialPageRoute(
                         builder: (context) => SearchBooru(
-                          grids: getTab(),
+                          grids: GridTab.global,
                           popSenitel: true,
                           fromGallery: false,
                         ),
@@ -137,7 +133,7 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
         },
       kSettingsDrawerIndex => {
           Navigator.push(context,
-              MaterialPageRoute(builder: (context) => const widget.Settings()))
+              MaterialPageRoute(builder: (context) => const SettingsWidget()))
         },
       kGalleryDrawerIndex => {
           if (Platform.isAndroid)
@@ -192,7 +188,7 @@ Widget? makeEndDrawerSettings(
     slivers: [
       endDrawerHeading(
           context, AppLocalizations.of(context)!.settingsPageName, key),
-      widget.SettingsList(sliver: true, scaffoldKey: key)
+      SettingsList(sliver: true, scaffoldKey: key)
     ],
   ));
 }

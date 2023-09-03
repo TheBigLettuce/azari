@@ -10,25 +10,25 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/main.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/pages/blacklisted_directores.dart';
-import 'package:gallery/src/schemas/settings.dart' as schema_settings;
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import '../booru/interface.dart';
 import '../schemas/settings.dart';
+import '../schemas/settings.dart' as schema show AspectRatio;
+import '../widgets/restart_widget.dart';
 import '../widgets/settings_label.dart';
 
-class Settings extends StatefulWidget {
-  const Settings({super.key});
+class SettingsWidget extends StatefulWidget {
+  const SettingsWidget({super.key});
 
   @override
-  State<Settings> createState() => _SettingsState();
+  State<SettingsWidget> createState() => _SettingsWidgetState();
 }
 
-class _SettingsState extends State<Settings> {
+class _SettingsWidgetState extends State<SettingsWidget> {
   final SkeletonState skeletonState = SkeletonState.settings();
 
   @override
@@ -66,9 +66,9 @@ class SettingsList extends StatefulWidget {
 }
 
 class _SettingsListState extends State<SettingsList> {
-  late final StreamSubscription<schema_settings.Settings?> _watcher;
+  late final StreamSubscription<Settings?> _watcher;
 
-  schema_settings.Settings? _settings = settingsIsar().settings.getSync(0);
+  Settings? _settings = Settings.fromDb();
   bool extendListSubtitle = false;
 
   @override
@@ -140,9 +140,7 @@ class _SettingsListState extends State<SettingsList> {
                 .toList(),
             onChanged: (value) {
               if (value != _settings!.selectedBooru) {
-                settingsIsar().writeTxnSync(() => settingsIsar()
-                    .settings
-                    .putSync(_settings!.copy(selectedBooru: value)));
+                Settings.saveToDb(_settings!.copy(selectedBooru: value));
 
                 RestartWidget.restartApp(context);
               }
@@ -170,13 +168,8 @@ class _SettingsListState extends State<SettingsList> {
                   child: Text(DisplayQuality.sample.string),
                 )
               ],
-              onChanged: (value) {
-                if (value != _settings!.quality) {
-                  settingsIsar().writeTxnSync(() => settingsIsar()
-                      .settings
-                      .putSync(_settings!.copy(quality: value)));
-                }
-              },
+              onChanged: (value) =>
+                  Settings.saveToDb(_settings!.copy(quality: value)),
             )),
         ListTile(
           title: Text(AppLocalizations.of(context)!.listViewSetting),
@@ -187,36 +180,26 @@ class _SettingsListState extends State<SettingsList> {
           ),
           trailing: Switch(
             value: _settings!.booruListView,
-            onChanged: (value) {
-              if (value != _settings!.booruListView) {
-                settingsIsar().writeTxnSync(() => settingsIsar()
-                    .settings
-                    .putSync(_settings!.copy(booruListView: value)));
-              }
-            },
+            onChanged: (value) =>
+                Settings.saveToDb(_settings!.copy(booruListView: value)),
           ),
         ),
         ListTile(
           title: Text(
             AppLocalizations.of(context)!.cellAspectRadio,
           ),
-          trailing: DropdownButton<schema_settings.AspectRatio>(
+          trailing: DropdownButton<schema.AspectRatio>(
             underline: Container(),
             borderRadius: BorderRadius.circular(25),
             value: _settings!.ratio,
-            items: schema_settings.AspectRatio.values
-                .map((e) => DropdownMenuItem<schema_settings.AspectRatio>(
+            items: schema.AspectRatio.values
+                .map((e) => DropdownMenuItem<schema.AspectRatio>(
                       value: e,
                       child: Text(e.value.toString()),
                     ))
                 .toList(),
-            onChanged: (value) {
-              if (value != _settings!.ratio) {
-                settingsIsar().writeTxnSync(() => settingsIsar()
-                    .settings
-                    .putSync(_settings!.copy(ratio: value)));
-              }
-            },
+            onChanged: (value) =>
+                Settings.saveToDb(_settings!.copy(ratio: value)),
           ),
         ),
         ListTile(
@@ -226,33 +209,23 @@ class _SettingsListState extends State<SettingsList> {
               AppLocalizations.of(context)!.nPerElementsInfo,
               maxLines: extendListSubtitle ? null : 2,
             ),
-            trailing: DropdownButton<schema_settings.GridColumn>(
+            trailing: DropdownButton<GridColumn>(
               underline: Container(),
               borderRadius: BorderRadius.circular(25),
               value: _settings!.picturesPerRow,
-              items: schema_settings.GridColumn.values
+              items: GridColumn.values
                   .map((e) => DropdownMenuItem(
                       value: e, child: Text(e.number.toString())))
                   .toList(),
-              onChanged: _settings!.booruListView
-                  ? null
-                  : (value) {
-                      if (value != _settings!.picturesPerRow) {
-                        settingsIsar().writeTxnSync(() => settingsIsar()
-                            .settings
-                            .putSync(_settings!.copy(picturesPerRow: value)));
-                      }
-                    },
+              onChanged: (value) =>
+                  Settings.saveToDb(_settings!.copy(picturesPerRow: value)),
             )),
         ListTile(
           title: Text(AppLocalizations.of(context)!.safeModeSetting),
           trailing: Switch(
             value: _settings!.safeMode,
-            onChanged: (value) {
-              settingsIsar().writeTxnSync(() => settingsIsar()
-                  .settings
-                  .putSync(_settings!.copy(safeMode: !_settings!.safeMode)));
-            },
+            onChanged: (value) => Settings.saveToDb(
+                _settings!.copy(safeMode: !_settings!.safeMode)),
           ),
         ),
         ListTile(
@@ -261,11 +234,8 @@ class _SettingsListState extends State<SettingsList> {
               maxLines: extendListSubtitle ? null : 2),
           onTap: _extend,
           trailing: Switch(
-            onChanged: (value) {
-              settingsIsar().writeTxnSync(() => settingsIsar()
-                  .settings
-                  .putSync(_settings!.copy(autoRefresh: value)));
-            },
+            onChanged: (value) =>
+                Settings.saveToDb(_settings!.copy(autoRefresh: value)),
             value: _settings!.autoRefresh,
           ),
         ),
@@ -287,12 +257,10 @@ class _SettingsListState extends State<SettingsList> {
                         title: Text(AppLocalizations.of(context)!.timeInHours),
                         content: TextField(
                           onSubmitted: (value) {
-                            settingsIsar().writeTxnSync(() => settingsIsar()
-                                .settings
-                                .putSync(_settings!.copy(
-                                    autoRefreshMicroseconds: int.parse(value)
-                                        .hours
-                                        .inMicroseconds)));
+                            Settings.saveToDb(_settings!.copy(
+                                autoRefreshMicroseconds:
+                                    int.parse(value).hours.inMicroseconds));
+
                             Navigator.pop(context);
                           },
                           keyboardType: TextInputType.number,
@@ -315,12 +283,11 @@ class _SettingsListState extends State<SettingsList> {
         ListTile(
           title: Text(AppLocalizations.of(context)!.dirHideNames),
           trailing: Switch(
-            onChanged: (value) {
-              settingsIsar().writeTxnSync(() => settingsIsar().settings.putSync(
-                  _settings!.copy(
-                      gallerySettings: _settings!.gallerySettings
-                          .copy(hideDirectoryName: value))));
-            },
+            onChanged: (value) => Settings.saveToDb(
+              _settings!.copy(
+                  gallerySettings: _settings!.gallerySettings
+                      .copy(hideDirectoryName: value)),
+            ),
             value: _settings!.gallerySettings.hideDirectoryName,
           ),
         ),
@@ -328,57 +295,48 @@ class _SettingsListState extends State<SettingsList> {
           title: Text(
             AppLocalizations.of(context)!.dirAspectRatio,
           ),
-          trailing: DropdownButton<schema_settings.AspectRatio>(
+          trailing: DropdownButton<schema.AspectRatio>(
             underline: Container(),
             borderRadius: BorderRadius.circular(25),
             value: _settings!.gallerySettings.directoryAspectRatio,
-            items: schema_settings.AspectRatio.values
-                .map((e) => DropdownMenuItem<schema_settings.AspectRatio>(
+            items: schema.AspectRatio.values
+                .map((e) => DropdownMenuItem<schema.AspectRatio>(
                       value: e,
                       child: Text(e.value.toString()),
                     ))
                 .toList(),
-            onChanged: (value) {
-              if (value != _settings!.gallerySettings.directoryAspectRatio) {
-                settingsIsar().writeTxnSync(() => settingsIsar()
-                    .settings
-                    .putSync(_settings!.copy(
-                        gallerySettings: _settings!.gallerySettings
-                            .copy(directoryAspectRatio: value))));
-              }
-            },
+            onChanged: (value) => Settings.saveToDb(
+              _settings!.copy(
+                  gallerySettings: _settings!.gallerySettings
+                      .copy(directoryAspectRatio: value)),
+            ),
           ),
         ),
         ListTile(
             title: Text(AppLocalizations.of(context)!.dirGridColumns),
-            trailing: DropdownButton<schema_settings.GridColumn>(
+            trailing: DropdownButton<GridColumn>(
               underline: Container(),
               borderRadius: BorderRadius.circular(25),
               value: _settings!.gallerySettings.directoryColumns,
-              items: schema_settings.GridColumn.values
+              items: GridColumn.values
                   .map((e) => DropdownMenuItem(
                       value: e, child: Text(e.number.toString())))
                   .toList(),
-              onChanged: (value) {
-                if (value != _settings!.gallerySettings.directoryColumns) {
-                  settingsIsar().writeTxnSync(() => settingsIsar()
-                      .settings
-                      .putSync(_settings!.copy(
-                          gallerySettings: _settings!.gallerySettings
-                              .copy(directoryColumns: value))));
-                }
-              },
+              onChanged: (value) => Settings.saveToDb(
+                _settings!.copy(
+                    gallerySettings: _settings!.gallerySettings
+                        .copy(directoryColumns: value)),
+              ),
             )),
         settingsLabel(AppLocalizations.of(context)!.filesLabel, titleStyle),
         ListTile(
           title: Text(AppLocalizations.of(context)!.filesHideNames),
           trailing: Switch(
-            onChanged: (value) {
-              settingsIsar().writeTxnSync(() => settingsIsar().settings.putSync(
-                  _settings!.copy(
-                      gallerySettings: _settings!.gallerySettings
-                          .copy(hideFileName: value))));
-            },
+            onChanged: (value) => Settings.saveToDb(
+              _settings!.copy(
+                  gallerySettings:
+                      _settings!.gallerySettings.copy(hideFileName: value)),
+            ),
             value: _settings!.gallerySettings.hideFileName,
           ),
         ),
@@ -386,60 +344,48 @@ class _SettingsListState extends State<SettingsList> {
           title: Text(
             AppLocalizations.of(context)!.filesAspectRatio,
           ),
-          trailing: DropdownButton<schema_settings.AspectRatio>(
+          trailing: DropdownButton<schema.AspectRatio>(
             underline: Container(),
             borderRadius: BorderRadius.circular(25),
             value: _settings!.gallerySettings.filesAspectRatio,
-            items: schema_settings.AspectRatio.values
-                .map((e) => DropdownMenuItem<schema_settings.AspectRatio>(
+            items: schema.AspectRatio.values
+                .map((e) => DropdownMenuItem<schema.AspectRatio>(
                       value: e,
                       child: Text(e.value.toString()),
                     ))
                 .toList(),
-            onChanged: (value) {
-              if (value != _settings!.gallerySettings.filesAspectRatio) {
-                settingsIsar().writeTxnSync(() => settingsIsar()
-                    .settings
-                    .putSync(_settings!.copy(
-                        gallerySettings: _settings!.gallerySettings
-                            .copy(filesAspectRatio: value))));
-              }
-            },
+            onChanged: (value) => Settings.saveToDb(
+              _settings!.copy(
+                  gallerySettings:
+                      _settings!.gallerySettings.copy(filesAspectRatio: value)),
+            ),
           ),
         ),
         ListTile(
             title: Text(AppLocalizations.of(context)!.filesGridColumns),
-            trailing: DropdownButton<schema_settings.GridColumn>(
+            trailing: DropdownButton<GridColumn>(
               underline: Container(),
               borderRadius: BorderRadius.circular(25),
               value: _settings!.gallerySettings.filesColumns,
-              items: schema_settings.GridColumn.values
+              items: GridColumn.values
                   .map((e) => DropdownMenuItem(
                       value: e, child: Text(e.number.toString())))
                   .toList(),
-              onChanged: (value) {
-                if (value != _settings!.gallerySettings.filesColumns) {
-                  settingsIsar().writeTxnSync(() => settingsIsar()
-                      .settings
-                      .putSync(_settings!.copy(
-                          gallerySettings: _settings!.gallerySettings
-                              .copy(filesColumns: value))));
-                }
-              },
+              onChanged: (value) => Settings.saveToDb(
+                _settings!.copy(
+                    gallerySettings:
+                        _settings!.gallerySettings.copy(filesColumns: value)),
+              ),
             )),
         ListTile(
           title: Text(AppLocalizations.of(context)!.filesListView),
           trailing: Switch(
             value: _settings!.gallerySettings.filesListView,
-            onChanged: (value) {
-              if (value != _settings!.gallerySettings.filesListView) {
-                settingsIsar().writeTxnSync(() => settingsIsar()
-                    .settings
-                    .putSync(_settings!.copy(
-                        gallerySettings: _settings!.gallerySettings
-                            .copy(filesListView: value))));
-              }
-            },
+            onChanged: (value) => Settings.saveToDb(
+              _settings!.copy(
+                  gallerySettings:
+                      _settings!.gallerySettings.copy(filesListView: value)),
+            ),
           ),
         ),
         settingsLabel(AppLocalizations.of(context)!.licenseSetting, titleStyle),
@@ -454,23 +400,6 @@ class _SettingsListState extends State<SettingsList> {
           title: const Text("GPL-2.0-only"),
         ),
         settingsLabel(AppLocalizations.of(context)!.metricsLabel, titleStyle),
-        // ListTile(
-        //   title: const Text('Expensive "Same" algorithm'),
-        //   subtitle: Text(
-        //     "More accurate, at a cost of speed. Results persist.",
-        //     maxLines: extendListSubtitle ? null : 2,
-        //   ),
-        //   onTap: _extend,
-        //   trailing: Switch(
-        //       value: _settings!.expensiveHash,
-        //       onChanged: (value) {
-        //         settingsIsar().writeTxnSync(() {
-        //           settingsIsar()
-        //               .settings
-        //               .putSync(_settings!.copy(expensiveHash: value));
-        //         });
-        //       }),
-        // ),
         ListTile(
           title: Text(AppLocalizations.of(context)!.savedTagsCount),
           trailing: PopupMenuButton(

@@ -10,63 +10,8 @@ import 'package:flutter/widgets.dart';
 import 'package:isar/isar.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 
+import 'contentable.dart';
 import 'data.dart';
-
-/// Content which can be presented in the image view.
-enum ContentType { image, video, androidImage, androidGif }
-
-/// Content of the file.
-/// Classes which extend this can be displayed in the image view.
-/// Android* classes should be represented differently.
-/// There is no AndroidVideo because [ContentType.video] can display the videos in Android.
-/// [NetImage] and [NetGif] are able to display local files, not only network ones.
-sealed class Contentable {
-  const Contentable();
-}
-
-/// Displays an error page in the image view.
-class EmptyContent extends Contentable {
-  const EmptyContent();
-}
-
-class AndroidGif extends Contentable {
-  final String uri;
-  final Size size;
-
-  const AndroidGif({required this.uri, required this.size});
-}
-
-class AndroidVideo extends Contentable {
-  final String uri;
-  final Size size;
-
-  const AndroidVideo({required this.uri, required this.size});
-}
-
-class AndroidImage extends Contentable {
-  final String uri;
-  final Size size;
-
-  const AndroidImage({required this.uri, required this.size});
-}
-
-class NetImage extends Contentable {
-  final ImageProvider provider;
-
-  const NetImage(this.provider);
-}
-
-class NetGif extends Contentable {
-  final ImageProvider provider;
-
-  const NetGif(this.provider);
-}
-
-class NetVideo extends Contentable {
-  final String uri;
-
-  const NetVideo(this.uri);
-}
 
 class AddInfoColorData {
   final Color borderColor;

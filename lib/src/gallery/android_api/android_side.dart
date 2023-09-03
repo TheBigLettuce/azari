@@ -29,7 +29,7 @@ class GalleryImpl implements GalleryApi {
     }
 
     _global = GalleryImpl._new(
-        openAndroidGalleryIsar(temporary: temporary), temporary);
+        IsarDbsOpen.androidGalleryDirectories(temporary: temporary), temporary);
     return _global!;
   }
 

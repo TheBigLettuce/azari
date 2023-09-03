@@ -11,7 +11,6 @@ import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/cell/cell.dart';
 import 'package:gallery/src/cell/data.dart';
 import 'package:gallery/src/schemas/settings.dart';
-import 'package:gallery/src/widgets/booru/autocomplete_tag.dart';
 import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 import 'package:isar/isar.dart';
@@ -21,20 +20,16 @@ import 'package:transparent_image/transparent_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../db/isar.dart';
+import '../booru/interface.dart';
+import '../cell/contentable.dart';
 import '../widgets/make_tags.dart';
+import '../widgets/notifiers/booru_api.dart';
+import '../widgets/notifiers/filter.dart';
+import '../widgets/notifiers/grid_tab.dart';
 import '../widgets/search_text_field.dart';
 import 'tags.dart';
 
 part 'post.g.dart';
-
-String _fileDownloadUrl(String sampleUrl, String originalUrl) {
-  if (path_util.extension(originalUrl) == ".zip") {
-    return sampleUrl;
-  } else {
-    return originalUrl;
-  }
-}
 
 @collection
 class Post implements Cell {
@@ -65,30 +60,6 @@ class Post implements Cell {
   String filename() =>
       "${prefix.isNotEmpty ? '${prefix}_' : ''}$id - $md5${ext != '.zip' ? ext : path_util.extension(sampleUrl)}";
 
-  String downloadUrl() {
-    if (path_util.extension(fileUrl) == ".zip") {
-      return sampleUrl;
-    } else {
-      return fileUrl;
-    }
-  }
-
-  Post(
-      {required this.height,
-      required this.id,
-      required this.md5,
-      required this.tags,
-      required this.width,
-      required this.fileUrl,
-      required this.prefix,
-      required this.previewUrl,
-      required this.sampleUrl,
-      required this.ext,
-      required this.sourceUrl,
-      required this.rating,
-      required this.score,
-      required this.createdAt});
-
   @ignore
   @override
   List<Widget>? Function(BuildContext context) get addButtons => (_) => [
@@ -100,7 +71,7 @@ class Post implements Cell {
         IconButton(
           icon: const Icon(Icons.public),
           onPressed: () {
-            final booru = getBooru();
+            final booru = BooruAPI.fromSettings();
             launchUrl(booru.browserLink(id),
                 mode: LaunchMode.externalApplication);
             booru.close();
@@ -114,7 +85,7 @@ class Post implements Cell {
           BuildContext context, dynamic extra, AddInfoColorData colors)
       get addInfo =>
           (BuildContext context, dynamic extra, AddInfoColorData colors) {
-            final downloadUrl = _fileDownloadUrl(sampleUrl, fileUrl);
+            final dUrl = fileDownloadUrl();
             final tab = GridTabNotifier.of(context);
 
             return wrapTagsSearch(
@@ -125,8 +96,8 @@ class Post implements Cell {
                 ListTile(
                   textColor: colors.foregroundColor,
                   title: Text(AppLocalizations.of(context)!.pathInfoPage),
-                  subtitle: Text(downloadUrl),
-                  onTap: () => launchUrl(Uri.parse(downloadUrl),
+                  subtitle: Text(dUrl),
+                  onTap: () => launchUrl(Uri.parse(dUrl),
                       mode: LaunchMode.externalApplication),
                 ),
                 ListTile(
@@ -183,7 +154,7 @@ class Post implements Cell {
 
   @override
   Contentable fileDisplay() {
-    String url = switch (settingsIsar().settings.getSync(0)!.quality) {
+    String url = switch (Settings.fromDb().quality) {
       DisplayQuality.original => fileUrl,
       DisplayQuality.sample => sampleUrl
     };
@@ -212,7 +183,13 @@ class Post implements Cell {
   }
 
   @override
-  String fileDownloadUrl() => _fileDownloadUrl(sampleUrl, fileUrl);
+  String fileDownloadUrl() {
+    if (path_util.extension(fileUrl) == ".zip") {
+      return sampleUrl;
+    } else {
+      return fileUrl;
+    }
+  }
 
   @override
   CellData getCellData(bool isList) {
@@ -266,4 +243,20 @@ class Post implements Cell {
           launchGrid: launchGrid, addExcluded: addExcluded)
     ];
   }
+
+  Post(
+      {required this.height,
+      required this.id,
+      required this.md5,
+      required this.tags,
+      required this.width,
+      required this.fileUrl,
+      required this.prefix,
+      required this.previewUrl,
+      required this.sampleUrl,
+      required this.ext,
+      required this.sourceUrl,
+      required this.rating,
+      required this.score,
+      required this.createdAt});
 }

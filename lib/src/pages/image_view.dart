@@ -14,7 +14,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
-import 'package:gallery/src/widgets/booru/autocomplete_tag.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/system_gestures.dart';
@@ -24,9 +23,14 @@ import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:transparent_image/transparent_image.dart';
 import '../cell/cell.dart';
+import '../cell/contentable.dart';
 import '../keybinds/keybinds.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import '../widgets/notifiers/filter.dart';
+import '../widgets/notifiers/filter_value.dart';
+import '../widgets/notifiers/focus.dart';
+import '../widgets/notifiers/tag_refresh.dart';
 import '../widgets/video/photo_gallery_page_video.dart';
 import '../widgets/video/photo_gallery_page_video_linux.dart';
 

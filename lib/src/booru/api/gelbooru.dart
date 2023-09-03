@@ -26,12 +26,6 @@ class Gelbooru implements BooruAPI {
   final Dio client;
 
   @override
-  final String name = "Gelbooru";
-
-  @override
-  final String domain = Booru.gelbooru.url;
-
-  @override
   final Booru booru = Booru.gelbooru;
 
   @override
@@ -44,11 +38,11 @@ class Gelbooru implements BooruAPI {
 
   @override
   void setCookies(List<Cookie> cookies) {
-    cookieJar.replaceDirectly(Uri.parse(domain), cookies);
+    cookieJar.replaceDirectly(Uri.parse(booru.url), cookies);
   }
 
   @override
-  Uri browserLink(int id) => Uri.https(domain, "/index.php", {
+  Uri browserLink(int id) => Uri.https(booru.url, "/index.php", {
         "page": "post",
         "s": "view",
         "id": id.toString(),
@@ -56,7 +50,7 @@ class Gelbooru implements BooruAPI {
 
   @override
   Future<List<String>> completeTag(String t) async {
-    final resp = await client.getUri(Uri.https(domain, "/index.php", {
+    final resp = await client.getUri(Uri.https(booru.url, "/index.php", {
       "page": "dapi",
       "s": "tag",
       "q": "index",

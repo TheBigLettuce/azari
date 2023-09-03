@@ -7,7 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
-import 'package:gallery/src/widgets/booru/autocomplete_tag.dart';
+import 'package:gallery/src/widgets/autocomplete_widget.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:gallery/src/widgets/search_launch_grid.dart';
 import 'package:isar/isar.dart';
@@ -15,6 +15,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 
 import '../cell/cell.dart';
+import 'notifiers/focus.dart';
 
 /// Result of the filter to provide to the [GridMutationInterface].
 class Result<T extends Cell> {
@@ -25,6 +26,9 @@ class Result<T extends Cell> {
 
 /// Filtering modes.
 /// Implemented outside the [FilterInterface].
+/// Some of [FilteringMode] might be virtual.
+/// Virtual [FilteringMode] means overriding the default filtering behaviour,
+/// [FilteringMode.tag] and [FilteringMode.tagReversed] override how text filtering works..
 enum FilteringMode {
   /// Filter by the favorite.
   favorite("Favorite", Icons.star_border),
@@ -44,7 +48,7 @@ enum FilteringMode {
   /// Filter by GIF.
   gif("GIF", Icons.gif_outlined),
 
-  /// Filter by tag. Virtual.
+  /// Filter by tag.
   tag("Tag", Icons.tag),
 
   /// Filter by size, from bif to small.
@@ -100,18 +104,12 @@ class IsarFilter<T extends Cell> implements FilterInterface<T> {
       Iterable<T> Function(int offset, int limit) getElems, Isar to) {
     from.writeTxnSync(() {
       var offset = 0;
-      var loopCount = 0;
       dynamic data;
 
       for (;;) {
-        loopCount++;
-
         var sorted = getElems(offset, 40);
         final end = sorted.length != 40;
         offset += 40;
-        if (loopCount > 10000) {
-          throw "infinite loop: $offset, last elems count: ${sorted.length}";
-        }
 
         if (passFilter != null) {
           (sorted, data) = passFilter!(sorted, data, end);

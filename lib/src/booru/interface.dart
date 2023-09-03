@@ -7,10 +7,12 @@
 
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
+import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/schemas/settings.dart';
-import '../db/isar.dart';
 import '../schemas/post.dart';
+import 'api/danbooru.dart';
+import 'api/gelbooru.dart';
 
 const _kDanbooruPrefix = "d";
 const _kGelbooruPrefix = "g";
@@ -34,14 +36,14 @@ enum Booru {
   /// Scheme is always assumed to be https.
   final String url;
 
+  static Booru? fromPrefix(String prefix) => switch (prefix) {
+        _kGelbooruPrefix => Booru.gelbooru,
+        _kDanbooruPrefix => Booru.danbooru,
+        String() => null,
+      };
+
   const Booru({required this.string, required this.prefix, required this.url});
 }
-
-Booru? chooseBooruPrefix(String prefix) => switch (prefix) {
-      _kGelbooruPrefix => Booru.gelbooru,
-      _kDanbooruPrefix => Booru.danbooru,
-      String() => null,
-    };
 
 /// The interface to interact with the various booru APIs.
 ///
@@ -57,12 +59,6 @@ abstract class BooruAPI {
   /// Some booru do not support pulling posts down a certain post number,
   /// this flag reflects this.
   bool get wouldBecomeStale;
-
-  /// Name of the booru, starting with an uppercase letter.
-  String get name;
-
-  /// Domain of the booru, without the scheme. It is always assumed that the scheme is https.
-  String get domain;
 
   /// Booru enum of this API. All the boorus should be added to this enum.
   Booru get booru;
@@ -101,8 +97,30 @@ abstract class BooruAPI {
   /// After the call to [close], [client] should not work.
   void close();
 
+  /// [fromSettings] returns a selected *booru API, consulting the settings.
+  /// Some *booru have no way to retreive posts down
+  /// of a post number, in this case [page] comes in handy:
+  /// that is, it makes refreshes on restore few.
+  static BooruAPI fromSettings({int? page}) {
+    return BooruAPI.fromEnum(Settings.fromDb().selectedBooru);
+  }
+
+  static BooruAPI fromEnum(Booru booru, {int? page}) {
+    Dio dio = Dio(BaseOptions(
+      responseType: ResponseType.json,
+    ));
+
+    final jar = UnsaveableCookieJar(CookieJarTab().get(booru));
+    dio.interceptors.add(CookieManager(jar));
+
+    return switch (booru) {
+      Booru.danbooru => Danbooru(dio, jar),
+      Booru.gelbooru => Gelbooru(page ?? 0, dio, jar)
+    };
+  }
+
   static numberOfElementsPerRefresh() {
-    final settings = settingsIsar().settings.getSync(0)!;
+    final settings = Settings.fromDb();
     if (settings.booruListView) {
       return 20;
     }
@@ -110,8 +128,7 @@ abstract class BooruAPI {
     return 10 * settings.picturesPerRow.number;
   }
 
-  static bool isSafeModeEnabled() =>
-      settingsIsar().settings.getSync(0)!.safeMode;
+  static bool isSafeModeEnabled() => Settings.fromDb().safeMode;
 }
 
 class CloudflareException implements Exception {}

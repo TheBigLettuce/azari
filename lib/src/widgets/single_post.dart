@@ -11,12 +11,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
-import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../schemas/download_file.dart';
+import '../booru/interface.dart';
+import '../schemas/download_file.dart';
 
 class SinglePost extends StatefulWidget {
   final FocusNode focus;
@@ -28,7 +28,7 @@ class SinglePost extends StatefulWidget {
 }
 
 class _SinglePostState extends State<SinglePost> {
-  final booru = getBooru();
+  final booru = BooruAPI.fromSettings();
   final controller = TextEditingController();
   final menuController = MenuController();
 
@@ -139,8 +139,8 @@ class _SinglePostState extends State<SinglePost> {
                     return ImageView(
                       updateTagScrollPos: (_, __) {},
                       download: (_) {
-                        Downloader().add(File.d(value.downloadUrl(),
-                            booru.domain, value.filename()));
+                        Downloader().add(File.d(value.fileDownloadUrl(),
+                            booru.booru.url, value.filename()));
                       },
                       cellCount: 1,
                       scrollUntill: (_) {},

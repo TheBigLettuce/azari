@@ -5,14 +5,24 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:isar/isar.dart';
+import 'package:flutter/material.dart';
 
-part 'favorite_media.g.dart';
+import '../../booru/interface.dart';
 
-@collection
-class FavoriteMedia {
-  final Id id;
-  @Index()
-  final DateTime time;
-  FavoriteMedia(this.id) : time = DateTime.now();
+class BooruAPINotifier extends InheritedWidget {
+  final BooruAPI api;
+
+  static BooruAPI of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<BooruAPINotifier>();
+
+    return widget!.api;
+  }
+
+  @override
+  bool updateShouldNotify(BooruAPINotifier oldWidget) {
+    return api != oldWidget.api;
+  }
+
+  const BooruAPINotifier({super.key, required this.api, required super.child});
 }

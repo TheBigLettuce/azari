@@ -11,6 +11,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:isar/isar.dart';
 
 import '../booru/interface.dart';
+import '../db/isar.dart';
 
 part 'settings.g.dart';
 
@@ -88,6 +89,15 @@ class Settings {
             ? const GallerySettings()
             : const GallerySettings.desktop(),
         ratio = AspectRatio.one;
+
+  static Settings fromDb() {
+    return settingsIsar().settings.getSync(0) ?? Settings.empty();
+  }
+
+  static void saveToDb(Settings instance) {
+    settingsIsar()
+        .writeTxnSync(() => settingsIsar().settings.putSync(instance));
+  }
 }
 
 @embedded

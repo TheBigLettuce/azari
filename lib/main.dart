@@ -18,15 +18,16 @@ import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/gallery/android_api/android_directories.dart';
 import 'package:gallery/src/gallery/android_api/api.g.dart';
 import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
-import 'package:gallery/src/gallery/uploader/uploader.dart';
 import 'package:gallery/src/pages/booru_scroll.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/grid_restore.dart';
 import 'package:gallery/src/schemas/scroll_position.dart' as scroll_pos;
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
+import 'package:gallery/src/widgets/dummy.dart';
+import 'package:gallery/src/widgets/entry.dart';
+import 'package:gallery/src/widgets/restart_widget.dart';
 // import 'package:google_fonts/google_fonts.dart';
-import 'package:introduction_screen/introduction_screen.dart';
 import 'package:isar/isar.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -85,20 +86,6 @@ ThemeData _buildTheme(Brightness brightness, Color accentColor) {
   return baseTheme;
 }
 
-/// This needed for the state restoration.
-class Dummy extends StatelessWidget {
-  const Dummy({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    WidgetsBinding.instance.scheduleFrameCallback((_) {
-      _globalTab.restoreState(context);
-    });
-
-    return Container();
-  }
-}
-
 /// Entrypoint for the second Android's Activity.
 /// Picks a file and returns to the app requested.
 @pragma('vm:entry-point')
@@ -126,7 +113,7 @@ void mainPickfile() async {
     supportedLocales: AppLocalizations.supportedLocales,
     home: Builder(
       builder: (context) {
-        changeOverlay(context);
+        changeSystemUiOverlay(context);
 
         return AndroidDirectories(
           noDrawer: true,
@@ -137,11 +124,6 @@ void mainPickfile() async {
       },
     ),
   ));
-}
-
-void changeExceptionErrorColors() {
-  RenderErrorBox.backgroundColor = Colors.blue.shade800;
-  RenderErrorBox.textStyle = ui.TextStyle(color: Colors.white70);
 }
 
 void main() async {
@@ -159,7 +141,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initalizeIsar(false);
   await initalizeDownloader();
-  initalizeUploader();
   initPostTags();
 
   if (Platform.isAndroid) {
@@ -176,7 +157,7 @@ void main() async {
               LinuxInitializationSettings(defaultActionName: "Default action"),
           android: AndroidInitializationSettings('@drawable/ic_notification')),
       onDidReceiveNotificationResponse: (details) {
-    var context = restartKey.currentContext;
+    final context = restartKey.currentContext;
     if (context != null) {
       selectDestination(context, kComeFromRandom, kDownloadsDrawerIndex);
     }
@@ -184,7 +165,7 @@ void main() async {
 
   FlutterLocalNotificationsPlugin().cancelAll();
 
-  _globalTab = makeGridTab(getSettings().selectedBooru);
+  GridTab.init();
 
   if (Platform.isAndroid) {
     Permission.notification.request().then((value) async {
@@ -202,15 +183,15 @@ void main() async {
         title: 'Ācārya',
         darkTheme: _buildTheme(Brightness.dark, accentColor),
         theme: _buildTheme(Brightness.light, accentColor),
-        home: getSettings().path == "" ? const Entry() : const Dummy(),
+        home: Settings.fromDb().path == "" ? const Entry() : const Dummy(),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         routes: {
           "/senitel": (context) => Container(),
           "/booru": (context) {
-            changeOverlay(context);
+            changeSystemUiOverlay(context);
 
-            final grids = getTab();
+            final grids = GridTab.global;
 
             final arguments = ModalRoute.of(context)!.settings.arguments;
             if (arguments != null) {
@@ -234,7 +215,12 @@ void main() async {
       )));
 }
 
-void changeOverlay(BuildContext context) {
+void changeExceptionErrorColors() {
+  RenderErrorBox.backgroundColor = Colors.blue.shade800;
+  RenderErrorBox.textStyle = ui.TextStyle(color: Colors.white70);
+}
+
+void changeSystemUiOverlay(BuildContext context) {
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(
     SystemUiOverlayStyle(
@@ -243,92 +229,5 @@ void changeOverlay(BuildContext context) {
   );
 }
 
-late GridTab _globalTab;
-
-GridTab getTab() => _globalTab;
-
-Settings getSettings() {
-  return settingsIsar().settings.getSync(0) ?? Settings.empty();
-}
-
-/// RestartWidget is needed for changing the boorus in the settings.
-class RestartWidget extends StatefulWidget {
-  final Widget child;
-  const RestartWidget({super.key, required this.child});
-
-  static void restartApp(BuildContext context) {
-    context.findAncestorStateOfType<_RestartWidgetState>()!.restartApp();
-  }
-
-  @override
-  State<RestartWidget> createState() => _RestartWidgetState();
-}
-
-class _RestartWidgetState extends State<RestartWidget> {
-  Key key = UniqueKey();
-
-  void restartApp() {
-    // this is very important, because getTab usage is random
-    _globalTab = makeGridTab(getSettings().selectedBooru);
-    setState(() {
-      key = UniqueKey();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return KeyedSubtree(key: key, child: widget.child);
-  }
-}
-
 @pragma('vm:entry-point')
 void notifBackground(NotificationResponse res) {}
-
-/// Currently forces the user to choose a directory.
-class Entry extends StatelessWidget {
-  const Entry({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    showDialog(String s) {
-      Navigator.of(context).push(DialogRoute(
-          context: context,
-          builder: (context) => AlertDialog(
-                actions: [
-                  TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: Text(AppLocalizations.of(context)!.ok))
-                ],
-                content: Text(s),
-              )));
-    }
-
-    restore() {
-      Navigator.pushReplacementNamed(context, "/booru");
-    }
-
-    return IntroductionScreen(
-      pages: [
-        PageViewModel(
-          title: AppLocalizations.of(context)!.pickDirectory,
-          bodyWidget: TextButton(
-            onPressed: () async {
-              for (true;;) {
-                if (await chooseDirectory(showDialog)) {
-                  break;
-                }
-              }
-
-              restore();
-            },
-            child: Text(AppLocalizations.of(context)!.pick),
-          ),
-        )
-      ],
-      showDoneButton: false,
-      next: Text(AppLocalizations.of(context)!.next),
-    );
-  }
-}

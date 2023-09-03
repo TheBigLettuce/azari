@@ -31,16 +31,8 @@ part 'android_side.dart';
 class AndroidGalleryExtra {
   final _AndroidGallery _impl;
   FilterInterface<SystemGalleryDirectory> get filter => _impl.filter;
-  void loadThumbs(int from) {
+  void loadThumbs(SystemGalleryDirectory cell) {
     try {
-      final db = _impl.filter.isFiltering
-          ? _impl.filter.to
-          : GalleryImpl.instance().db;
-      final cell = db.systemGalleryDirectorys.getSync(from + 1);
-      if (cell == null) {
-        return;
-      }
-
       thumbnailIsar().writeTxnSync(() => thumbnailIsar().thumbnails.putSync(
           Thumbnail(
               cell.thumbFileId, DateTime.now(), kTransparentImage, 0, true)));
@@ -58,7 +50,7 @@ class AndroidGalleryExtra {
   GalleryAPIFiles<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile>
       trash() {
     final instance = _AndroidGalleryFiles(
-      openAndroidGalleryInnerIsar(),
+      IsarDbsOpen.androidGalleryFiles(),
       () => _impl.currentImages = null,
       isTrash: true,
       bucketId: "trash",
@@ -72,7 +64,7 @@ class AndroidGalleryExtra {
   GalleryAPIFiles<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile>
       favorites() {
     final instance = _AndroidGalleryFiles(
-      openAndroidGalleryInnerIsar(),
+      IsarDbsOpen.androidGalleryFiles(),
       () => _impl.currentImages = null,
       isFavorites: true,
       bucketId: "favorites",
@@ -108,7 +100,7 @@ class AndroidGalleryExtra {
   const AndroidGalleryExtra._(this._impl);
 }
 
-GalleryAPI<AndroidGalleryExtra, AndroidGalleryFilesExtra,
+GalleryAPIDirectories<AndroidGalleryExtra, AndroidGalleryFilesExtra,
         SystemGalleryDirectory, SystemGalleryDirectoryFile>
     getAndroidGalleryApi({bool? temporaryDb, bool setCurrentApi = true}) {
   final api = _AndroidGallery(temporary: temporaryDb);
@@ -121,7 +113,7 @@ GalleryAPI<AndroidGalleryExtra, AndroidGalleryFilesExtra,
 
 class _AndroidGallery
     implements
-        GalleryAPI<AndroidGalleryExtra, AndroidGalleryFilesExtra,
+        GalleryAPIDirectories<AndroidGalleryExtra, AndroidGalleryFilesExtra,
             SystemGalleryDirectory, SystemGalleryDirectoryFile> {
   final bool? temporary;
 
@@ -132,8 +124,8 @@ class _AndroidGallery
 
   bool isThumbsLoading = false;
 
-  final filter = IsarFilter<SystemGalleryDirectory>(
-      GalleryImpl.instance().db, openAndroidGalleryIsar(temporary: true),
+  final filter = IsarFilter<SystemGalleryDirectory>(GalleryImpl.instance().db,
+      IsarDbsOpen.androidGalleryDirectories(temporary: true),
       (offset, limit, v) {
     return GalleryImpl.instance()
         .db
@@ -182,10 +174,10 @@ class _AndroidGallery
   }
 
   @override
-  GalleryAPIFiles<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile> images(
+  GalleryAPIFiles<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile> files(
       SystemGalleryDirectory d) {
     final instance = _AndroidGalleryFiles(
-      openAndroidGalleryInnerIsar(),
+      IsarDbsOpen.androidGalleryFiles(),
       () => currentImages = null,
       bucketId: d.bucketId,
       target: d.name,

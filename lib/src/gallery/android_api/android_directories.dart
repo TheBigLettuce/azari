@@ -18,6 +18,7 @@ import 'package:gallery/src/pages/senitel.dart';
 import 'package:gallery/src/schemas/android_gallery_directory.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 import 'package:gallery/src/schemas/blacklisted_directory.dart';
+import 'package:gallery/src/schemas/favorite_media.dart';
 import 'package:gallery/src/schemas/pinned_directories.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:gallery/src/widgets/copy_move_hint_text.dart';
@@ -26,6 +27,7 @@ import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import '../../booru/interface.dart';
 import '../../schemas/settings.dart';
@@ -96,6 +98,8 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
 
   bool isThumbsLoading = false;
 
+  int? trashThumbId;
+
   @override
   void initState() {
     super.initState();
@@ -137,6 +141,13 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
   }
 
   void _refresh() {
+    PlatformFunctions.trashThumbId().then((value) {
+      try {
+        setState(() {
+          trashThumbId = value;
+        });
+      } catch (_) {}
+    });
     stream.add(0);
     state.gridKey.currentState?.mutationInterface?.setIsRefreshing(true);
     api.refresh();
@@ -177,84 +188,83 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                       },
                       icon: const Icon(Icons.create_new_folder_outlined))
                 ]
-              : [
-                  IconButton(
-                      onPressed: () {
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (context) {
-                          return AndroidFiles(
-                              api: extra.trash(),
-                              callback: widget.nestedCallback,
-                              dirName: "trash",
-                              bucketId: "trash");
-                        }));
-                      },
-                      icon: const Icon(Icons.delete)),
-                  IconButton(
-                      onPressed: () {
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (context) {
-                          return AndroidFiles(
-                              api: extra.favorites(),
-                              callback: widget.nestedCallback,
-                              dirName: "favorites",
-                              bucketId: "favorites");
-                        }));
-                      },
-                      icon: const Icon(Icons.star_border_outlined))
-                ],
+              : null,
           aspectRatio: state
               .settings.gallerySettings.directoryAspectRatio.value,
           hideAlias: state.settings.gallerySettings.hideDirectoryName,
           immutable: false,
           segments: Segments(
-            (cell) {
-              for (final booru in Booru.values) {
-                if (booru.url == cell.name) {
-                  return ("Booru", true);
+              (cell) {
+                for (final booru in Booru.values) {
+                  if (booru.url == cell.name) {
+                    return ("Booru", true);
+                  }
                 }
-              }
 
-              final dirTag = PostTags().directoryTag(cell.bucketId);
-              if (dirTag != null) {
+                final dirTag = PostTags().directoryTag(cell.bucketId);
+                if (dirTag != null) {
+                  return (
+                    dirTag,
+                    blacklistedDirIsar()
+                            .pinnedDirectories
+                            .getSync(fastHash(dirTag)) !=
+                        null
+                  );
+                }
+
+                final name = cell.name.split(" ");
                 return (
-                  dirTag,
+                  name.first,
                   blacklistedDirIsar()
                           .pinnedDirectories
-                          .getSync(fastHash(dirTag)) !=
+                          .getSync(fastHash(name.first)) !=
                       null
                 );
-              }
-
-              final name = cell.name.split(" ");
-              return (
-                name.first,
-                blacklistedDirIsar()
+              },
+              "Uncategorized",
+              addToSticky: (seg, {unsticky}) {
+                if (seg == "Booru" || seg == "Special") {
+                  return;
+                }
+                if (unsticky == true) {
+                  blacklistedDirIsar().writeTxnSync(() {
+                    blacklistedDirIsar()
                         .pinnedDirectories
-                        .getSync(fastHash(name.first)) !=
-                    null
-              );
-            },
-            "Uncategorized",
-            addToSticky: (seg, {unsticky}) {
-              if (seg == "Booru") {
-                return;
-              }
-              if (unsticky == true) {
-                blacklistedDirIsar().writeTxnSync(() {
-                  blacklistedDirIsar()
-                      .pinnedDirectories
-                      .deleteSync(fastHash(seg));
-                });
-              } else {
-                blacklistedDirIsar().writeTxnSync(() {
-                  blacklistedDirIsar()
-                      .pinnedDirectories
-                      .putSync(PinnedDirectories(seg, DateTime.now()));
-                });
-              }
-            },
-          ),
+                        .deleteSync(fastHash(seg));
+                  });
+                } else {
+                  blacklistedDirIsar().writeTxnSync(() {
+                    blacklistedDirIsar()
+                        .pinnedDirectories
+                        .putSync(PinnedDirectories(seg, DateTime.now()));
+                  });
+                }
+              },
+              injectedSegments: [
+                if (blacklistedDirIsar().favoriteMedias.countSync() != 0)
+                  SystemGalleryDirectory(
+                      bucketId: "favorites",
+                      name: "Favorites", // change
+                      tag: "",
+                      volumeName: "",
+                      relativeLoc: "",
+                      lastModified: 0,
+                      thumbFileId: blacklistedDirIsar()
+                          .favoriteMedias
+                          .where()
+                          .sortByTimeDesc()
+                          .findFirstSync()!
+                          .id),
+                if (trashThumbId != null)
+                  SystemGalleryDirectory(
+                      bucketId: "trash",
+                      name: "Trash", // change
+                      tag: "",
+                      volumeName: "",
+                      relativeLoc: "",
+                      lastModified: 0,
+                      thumbFileId: trashThumbId!),
+              ]),
           mainFocus: state.mainFocus,
           loadThumbsDirectly: extra.loadThumbs,
           footer: widget.callback?.preview,
@@ -274,23 +284,33 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
               return null;
             }
           },
-          overrideOnPress: (context, indx) {
+          overrideOnPress: (context, cell) {
             if (widget.callback != null) {
-              widget.callback!(
-                  state.gridKey.currentState!.mutationInterface!.getCell(indx),
-                  null);
+              widget.callback!(cell, null);
               Navigator.pop(context);
             } else {
-              final d =
-                  state.gridKey.currentState!.mutationInterface!.getCell(indx);
+              final d = cell;
+
               Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => AndroidFiles(
-                        api: api.images(d),
-                        dirName: d.name,
-                        callback: widget.nestedCallback,
-                        bucketId: d.bucketId),
+                    builder: (context) => switch (cell.bucketId) {
+                      "favorites" => AndroidFiles(
+                          api: extra.favorites(),
+                          callback: widget.nestedCallback,
+                          dirName: "favorites",
+                          bucketId: "favorites"),
+                      "trash" => AndroidFiles(
+                          api: extra.trash(),
+                          callback: widget.nestedCallback,
+                          dirName: "trash",
+                          bucketId: "trash"),
+                      String() => AndroidFiles(
+                          api: api.files(d),
+                          dirName: d.name,
+                          callback: widget.nestedCallback,
+                          bucketId: d.bucketId)
+                    },
                   ));
             }
           },

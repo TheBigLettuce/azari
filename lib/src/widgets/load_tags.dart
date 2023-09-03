@@ -9,10 +9,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../booru/tags/tags.dart';
-import 'booru/autocomplete_tag.dart';
+import 'notifiers/tag_refresh.dart';
 
 class LoadTags extends StatelessWidget {
-  final DissolveResult? res;
+  final DisassembleResult? res;
   final String filename;
   const LoadTags({super.key, required this.res, required this.filename});
 

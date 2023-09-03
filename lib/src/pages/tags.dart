@@ -10,15 +10,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/widgets/booru/single_post.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import '../booru/interface.dart';
 import '../db/isar.dart';
 import '../keybinds/keybinds.dart';
-import '../widgets/booru/autocomplete_tag.dart';
+import '../widgets/autocomplete_widget.dart';
+import '../widgets/single_post.dart';
 import '../widgets/tags_widget.dart';
 import 'booru_scroll.dart';
 
@@ -38,7 +39,7 @@ class SearchBooru extends StatefulWidget {
 }
 
 class _SearchBooruState extends State<SearchBooru> {
-  final booru = getBooru();
+  final booru = BooruAPI.fromSettings();
 
   final focus = FocusNode();
   final excludedFocus = FocusNode();

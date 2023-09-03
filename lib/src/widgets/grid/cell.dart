@@ -9,17 +9,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:octo_image/octo_image.dart';
 import '../../cell/data.dart';
+import 'callback_grid.dart';
 
+/// The cell of [CallbackGrid].
 class GridCell<T extends CellData> extends StatefulWidget {
   final T _data;
   final int indx;
-  final void Function(BuildContext context, int cellIndx) onPressed;
+  final void Function(BuildContext context) onPressed;
   final bool hideAlias;
+
+  /// If [tight] is true, margin between the [GridCell]s on the grid is tight.
   final bool tight;
   final void Function()? onLongPress;
   final Future Function(int)? download;
+
+  /// If [shadowOnTop] is true, then on top of the [GridCell] painted [Colors.black],
+  /// with 0.5 opacity.
   final bool shadowOnTop;
+
+  /// [GridCell] is displayed in form as a beveled rectangle.
+  /// If [circle] is true, then it's displayed as a circle instead.
   final bool circle;
+
+  /// If [ignoreStickers] is true, then stickers aren't displayed on top of the cell.
   final bool ignoreStickers;
 
   const GridCell(
@@ -49,7 +61,7 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
       child: InkWell(
         borderRadius: BorderRadius.circular(15.0),
         onTap: () {
-          widget.onPressed(context, widget.indx);
+          widget.onPressed(context);
         },
         focusColor: Theme.of(context).colorScheme.primary,
         onLongPress: widget.onLongPress,
@@ -73,7 +85,7 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
                               borderRadius: BorderRadius.circular(15.0))),
                   child: Stack(
                     children: [
-                      if (widget.hideAlias)
+                      if (widget.hideAlias && !widget.shadowOnTop)
                         Container(
                           decoration:
                               const BoxDecoration(color: Colors.black45),
@@ -120,7 +132,7 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
                                     .toList(),
                               )),
                         ),
-                      if (!widget.hideAlias)
+                      if (!widget.hideAlias && !widget.shadowOnTop)
                         Container(
                           alignment: Alignment.bottomCenter,
                           decoration: BoxDecoration(
@@ -152,18 +164,3 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
     );
   }
 }
-
-Widget stickerIcon(BuildContext context, IconData e) => Padding(
-      padding: const EdgeInsets.only(right: 4),
-      child: Container(
-        padding: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-            color:
-                Theme.of(context).colorScheme.inversePrimary.withOpacity(0.6),
-            borderRadius: BorderRadius.circular(5)),
-        child: Icon(
-          e,
-          color: Theme.of(context).colorScheme.secondary.withOpacity(0.8),
-        ),
-      ),
-    );

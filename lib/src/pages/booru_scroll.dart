@@ -12,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/db/isar.dart' as db;
-import 'package:gallery/src/widgets/booru/autocomplete_tag.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/schemas/post.dart';
@@ -28,6 +27,8 @@ import '../db/isar.dart';
 import '../schemas/download_file.dart';
 import '../schemas/settings.dart';
 import '../booru/tags/tags.dart';
+import '../widgets/notifiers/booru_api.dart';
+import '../widgets/notifiers/grid_tab.dart';
 import '../widgets/search_launch_grid.dart';
 
 class BooruScroll extends StatefulWidget {
@@ -129,7 +130,7 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
   void initState() {
     super.initState();
 
-    booru = widget.api ?? db.getBooru(page: widget.booruPage);
+    booru = widget.api ?? BooruAPI.fromSettings(page: widget.booruPage);
 
     searchHook(SearchLaunchGridData(skeletonState.mainFocus, widget.tags));
 
@@ -229,7 +230,8 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
 
     PostTags().addTagsPost(p.filename(), p.tags.split(" "), true);
 
-    return downloader.add(File.d(p.downloadUrl(), booru.domain, p.filename()));
+    return downloader
+        .add(File.d(p.fileDownloadUrl(), booru.booru.url, p.filename()));
   }
 
   Future<int> _addLast() async {
@@ -292,7 +294,7 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
                               PostTags().addTagsPost(element.filename(),
                                   element.tags.split(" "), true);
                               downloader.add(File.d(element.fileUrl,
-                                  booru.domain, element.filename()));
+                                  booru.booru.url, element.filename()));
                             }
                           }, true)
                         ],
@@ -307,7 +309,7 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
                       onError: (error) {
                         return OutlinedButton(
                           onPressed: () {
-                            launchUrl(Uri.https(booru.domain),
+                            launchUrl(Uri.https(booru.booru.url),
                                 mode: LaunchMode.externalApplication);
                           },
                           child:
@@ -342,8 +344,8 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
                       initalCellCount:
                           widget.clear ? 0 : _getInstance().posts.countSync(),
                       searchWidget: SearchAndFocus(
-                          searchWidget(context, hint: booru.name), searchFocus,
-                          onPressed: () {
+                          searchWidget(context, hint: booru.booru.name),
+                          searchFocus, onPressed: () {
                         if (currentlyHighlightedTag != "") {
                           skeletonState.mainFocus.unfocus();
                           widget.grids.onTagPressed(context,

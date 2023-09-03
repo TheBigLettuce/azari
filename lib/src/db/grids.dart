@@ -7,6 +7,8 @@
 
 part of 'isar.dart';
 
+late GridTab _globalTab;
+
 /// Holds the reference to the currently active booru,
 /// with its excluded and latest tags.
 class GridTab {
@@ -154,6 +156,12 @@ class GridTab {
       : _excluded =
             IsarBooruTagging(excludedMode: true, isarCurrent: _instance),
         _latest = IsarBooruTagging(excludedMode: false, isarCurrent: _instance);
+
+  static void init() {
+    _globalTab = makeGridTab(Settings.fromDb().selectedBooru);
+  }
+
+  static GridTab get global => _globalTab;
 }
 
 GridTab makeGridTab(Booru newBooru, {bool temporary = false}) {

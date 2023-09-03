@@ -13,14 +13,14 @@ class CellData {
   /// The thumbnail image of the cell.
   final ImageProvider thumb;
 
-  /// Displayed on top of the cell.
+  /// Displayed on top of the cell, at the bottom center.
   final String name;
 
   /// Metadata of the post.
   /// Displayed on top of the cell, starting from the top left corner.
   final List<IconData> stickers;
 
-  /// If this property set to false, and [CallbackGrid.loadThumbsDirectly] is set,
+  /// If [loaded] is set to false, and [CallbackGrid.loadThumbsDirectly] is set,
   /// the grid will attempt to load the thumbnail, by calling [CallbackGrid.loadThumbsDirectly].
   /// Cells should set this only if there is an particular logic of how the thumbnails get loaded.
   final bool? loaded;

@@ -11,6 +11,7 @@ import 'package:isar/isar.dart';
 import 'package:transparent_image/transparent_image.dart';
 
 import '../cell/cell.dart';
+import '../cell/contentable.dart';
 import 'android_gallery_directory_file.dart';
 
 part 'android_gallery_directory.g.dart';
@@ -69,15 +70,14 @@ class SystemGalleryDirectory implements Cell {
   @override
   CellData getCellData(bool isList) {
     ImageProvider provier;
-    var record = androidThumbnail(thumbFileId);
+    final (thumb, loaded) = androidThumbnail(thumbFileId);
+
     try {
-      provier =
-          KeyMemoryImage(bucketId + record.$1.length.toString(), record.$1);
+      provier = KeyMemoryImage(bucketId + thumb.length.toString(), thumb);
     } catch (e) {
       provier = MemoryImage(kTransparentImage);
     }
 
-    return CellData(
-        thumb: provier, name: name, stickers: [], loaded: record.$2);
+    return CellData(thumb: provier, name: name, stickers: [], loaded: loaded);
   }
 }

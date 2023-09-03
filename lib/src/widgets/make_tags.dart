@@ -13,8 +13,9 @@ import 'package:html_unescape/html_unescape_small.dart';
 import '../booru/tags/tags.dart';
 import '../cell/cell.dart';
 import '../plugs/platform_fullscreens.dart';
-import 'booru/autocomplete_tag.dart';
 import 'load_tags.dart';
+import 'notifiers/filter.dart';
+import 'notifiers/filter_value.dart';
 
 Iterable<Widget> makeTags(
   BuildContext context,
@@ -29,7 +30,7 @@ Iterable<Widget> makeTags(
     if (filename.isEmpty) {
       return [Container()];
     }
-    DissolveResult? res;
+    DisassembleResult? res;
     try {
       res = PostTags().dissassembleFilename(filename);
     } catch (_) {}

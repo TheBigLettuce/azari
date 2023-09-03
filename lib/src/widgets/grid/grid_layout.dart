@@ -7,6 +7,8 @@
 
 part of 'callback_grid.dart';
 
+/// [CallbackGrid] supports multiple layout modes.
+/// [GridLayout] actually implements them all.
 class GridLayout {
   static Widget list<T extends Cell>(
           BuildContext context,
@@ -14,8 +16,8 @@ class GridLayout {
           SelectionInterface<T> selection,
           double systemNavigationInsets,
           bool listView,
-          {required void Function(int)? loadThumbsDirectly,
-          required void Function(BuildContext, int) onPressed}) =>
+          {required void Function(T)? loadThumbsDirectly,
+          required void Function(BuildContext, T, int) onPressed}) =>
       SliverList.separated(
         separatorBuilder: (context, index) => const Divider(
           height: 1,
@@ -25,7 +27,7 @@ class GridLayout {
           final cell = state.getCell(index);
           final cellData = cell.getCellData(listView);
           if (cellData.loaded != null && cellData.loaded == false) {
-            loadThumbsDirectly?.call(index);
+            loadThumbsDirectly?.call(cell);
           }
 
           return _WrappedSelection(
@@ -38,7 +40,7 @@ class GridLayout {
             child: ListTile(
               onLongPress: () => selection.selectOrUnselect(
                   context, index, cell, systemNavigationInsets),
-              onTap: () => onPressed(context, index),
+              onTap: () => onPressed(context, cell, index),
               leading: CircleAvatar(
                 backgroundColor: Theme.of(context).colorScheme.background,
                 foregroundImage: cellData.thumb,
@@ -60,7 +62,7 @@ class GridLayout {
           SelectionInterface<T> selection,
           int columns,
           bool listView,
-          void Function(int)? loadThumbsDirectly,
+          void Function(T)? loadThumbsDirectly,
           GridCell Function(T, int) gridCell,
           {required double systemNavigationInsets,
           required double aspectRatio}) =>
@@ -72,7 +74,7 @@ class GridLayout {
           final cell = state.getCell(indx);
           final cellData = cell.getCellData(listView);
           if (cellData.loaded != null && cellData.loaded == false) {
-            loadThumbsDirectly?.call(indx);
+            loadThumbsDirectly?.call(cell);
           }
 
           return _WrappedSelection(
@@ -97,14 +99,14 @@ class GridLayout {
     required double constraints,
     required double systemNavigationInsets,
     required double aspectRatio,
-    required void Function(int)? loadThumbsDirectly,
+    required void Function(T)? loadThumbsDirectly,
   }) =>
       Row(
         children: val.map((indx) {
           final cell = state.getCell(indx);
           final cellData = cell.getCellData(listView);
           if (cellData.loaded != null && cellData.loaded == false) {
-            loadThumbsDirectly?.call(indx);
+            loadThumbsDirectly?.call(cell);
           }
 
           return ConstrainedBox(
@@ -125,6 +127,43 @@ class GridLayout {
         }).toList(),
       );
 
+  static Widget segmentedRowCells<T extends Cell>(
+    BuildContext context,
+    GridMutationInterface<T> state,
+    SelectionInterface<T> selection,
+    List<T> val,
+    bool listView,
+    GridCell Function(T, int) gridCell, {
+    required double constraints,
+    required double systemNavigationInsets,
+    required double aspectRatio,
+    required void Function(T)? loadThumbsDirectly,
+  }) =>
+      Row(
+        children: val.map((cell) {
+          final cellData = cell.getCellData(listView);
+          if (cellData.loaded != null && cellData.loaded == false) {
+            loadThumbsDirectly?.call(cell);
+          }
+
+          return ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: constraints),
+            child: material.AspectRatio(
+              aspectRatio: aspectRatio,
+              child: _WrappedSelection(
+                selectionEnabled: selection.selected.isNotEmpty,
+                thisIndx: -1,
+                selectUntil: (i) => selection.selectUnselectUntil(i, state),
+                selectUnselect: () => selection.selectOrUnselect(
+                    context, -1, cell, systemNavigationInsets),
+                isSelected: selection.isSelected(-1),
+                child: gridCell(cell, -1),
+              ),
+            ),
+          );
+        }).toList(),
+      );
+
   static Widget segments<T extends Cell>(
     BuildContext context,
     Segments<T> segments,
@@ -135,7 +174,7 @@ class GridLayout {
     GridCell Function(T, int) gridCell, {
     required double systemNavigationInsets,
     required double aspectRatio,
-    required void Function(int)? loadThumbsDirectly,
+    required void Function(T)? loadThumbsDirectly,
   }) {
     final segRows = <dynamic>[];
     final segMap = <String, List<int>>{};
@@ -169,8 +208,8 @@ class GridLayout {
       return false;
     });
 
-    makeRows(List<int> value) {
-      var row = <int>[];
+    makeRows<J>(List<J> value) {
+      var row = <J>[];
 
       for (final i in value) {
         row.add(i);
@@ -183,6 +222,12 @@ class GridLayout {
       if (row.isNotEmpty) {
         segRows.add(row);
       }
+    }
+
+    if (segments.injectedSegments.isNotEmpty) {
+      segRows.add(_SegSticky(segments.injectedLabel, true));
+
+      makeRows(segments.injectedSegments);
     }
 
     stickySegs.forEach((key, value) {
@@ -234,8 +279,14 @@ class GridLayout {
               systemNavigationInsets: systemNavigationInsets,
               aspectRatio: aspectRatio,
               loadThumbsDirectly: loadThumbsDirectly);
+        } else if (val is List<T>) {
+          return segmentedRowCells(
+              context, state, selection, val, listView, gridCell,
+              constraints: constraints,
+              systemNavigationInsets: systemNavigationInsets,
+              aspectRatio: aspectRatio,
+              loadThumbsDirectly: loadThumbsDirectly);
         }
-
         throw "invalid type";
       },
     );

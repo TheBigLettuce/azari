@@ -9,7 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../booru/tags/tags.dart';
-import 'booru/autocomplete_tag.dart';
+import 'autocomplete_widget.dart';
+import 'notifiers/filter.dart';
+import 'notifiers/tag_refresh.dart';
 
 Widget searchTextField(BuildContext context, FilterNotifierData data,
     String filename, bool showDeleteButton) {

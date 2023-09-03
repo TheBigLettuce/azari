@@ -457,6 +457,12 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                     result.success(null)
                 }
 
+                "trashThumbId" -> {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        result.success(mover.trashThumbId(context))
+                    }
+                }
+
                 "returnUri" -> {
                     val uri = call.arguments as String
                     result.success(null)

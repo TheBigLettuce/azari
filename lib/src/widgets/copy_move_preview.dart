@@ -39,7 +39,7 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
           cell: cellData.getCellData(false),
           indx: id,
           ignoreStickers: true,
-          onPressed: (context, _) {
+          onPressed: (context) {
             Navigator.push(context, MaterialPageRoute(builder: (context) {
               return ImageView<Cell>(
                   key: key,

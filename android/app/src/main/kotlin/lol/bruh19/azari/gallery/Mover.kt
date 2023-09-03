@@ -275,6 +275,39 @@ internal class Mover(
         }
     }
 
+    fun trashThumbId(context: Context): Long? {
+        val projection = arrayOf(
+            MediaStore.Files.FileColumns._ID,
+        )
+
+        val bundle = Bundle().apply {
+            putString(ContentResolver.QUERY_ARG_SQL_SELECTION, "")
+            putInt(ContentResolver.QUERY_ARG_LIMIT, 1)
+            putString(
+                ContentResolver.QUERY_ARG_SQL_SORT_ORDER,
+                "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC"
+            )
+            putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_ONLY)
+        }
+
+        var result: Long? = null;
+
+        context.contentResolver.query(
+            MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
+            projection,
+            bundle,
+            null
+        )?.use {
+            if (!it.moveToFirst()) {
+                return@use
+            }
+
+            result = it.getLong(0)
+        }
+
+        return result
+    }
+
     private suspend fun refreshDirectoryFiles(
         dir: String,
         context: Context,
@@ -293,7 +326,6 @@ internal class Mover(
             MediaStore.Files.FileColumns.SIZE,
             MediaStore.Files.FileColumns.WIDTH
         )
-
 
         var selection =
             "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) ${if (isTrashed || showOnly != null) "" else "AND ${MediaStore.Files.FileColumns.BUCKET_ID} = ? "}AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ?"

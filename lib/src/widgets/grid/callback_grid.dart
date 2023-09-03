@@ -16,12 +16,12 @@ import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/cell/data.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/schemas/settings.dart';
-import 'package:gallery/src/widgets/booru/autocomplete_tag.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:logging/logging.dart';
 import '../../cell/cell.dart';
 import '../../keybinds/keybinds.dart';
+import '../notifiers/focus.dart';
 import 'cell.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -33,6 +33,7 @@ part 'grid_bottom_sheet_action.dart';
 part 'grid_description.dart';
 part 'search_and_focus.dart';
 part 'grid_layout.dart';
+part 'sticker_icon.dart';
 
 class CloudflareBlockInterface {
   final BooruAPI api;
@@ -81,7 +82,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
 
   /// Overrides the default behaviour of launching the image view on cell pressed.
   /// [overrideOnPress] can, for example, include calls to [Navigator.push] of routes.
-  final void Function(BuildContext context, int indx)? overrideOnPress;
+  final void Function(BuildContext context, T cell)? overrideOnPress;
 
   /// Grid gets the cell from [getCell].
   final T Function(int) getCell;
@@ -161,7 +162,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
 
   /// If [loadThumbsDirectly] is not null then the grid will call it
   /// in case when [CellData.loaded] is false.
-  final void Function(int from)? loadThumbsDirectly;
+  final void Function(T cell)? loadThumbsDirectly;
 
   /// Segments of the grid.
   /// If [segments] is not null, then the grid will try to group the cells together
@@ -276,7 +277,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
     if (widget.pageViewScrollingOffset != null && widget.initalCell != null) {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        _onPressed(context, widget.initalCell!,
+        _onPressed(
+            context, _state.getCell(widget.initalCell!), widget.initalCell!,
             offset: widget.pageViewScrollingOffset);
       });
     }
@@ -378,9 +380,10 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     controller.jumpTo(target);
   }
 
-  void _onPressed(BuildContext context, int i, {double? offset}) {
+  void _onPressed(BuildContext context, T cell, int startingCell,
+      {double? offset}) {
     if (widget.overrideOnPress != null) {
-      widget.overrideOnPress!(context, i);
+      widget.overrideOnPress!(context, cell);
       return;
     }
     inImageView = true;
@@ -411,7 +414,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
           getCell: _state.getCell,
           cellCount: _state.cellCount,
           download: widget.download,
-          startingCell: i,
+          startingCell: startingCell,
           onNearEnd: widget.loadNext == null ? null : _state._onNearEnd);
     }));
   }
@@ -475,7 +478,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         indx: indx,
         download: widget.download,
         tight: widget.tightMode,
-        onPressed: _onPressed,
+        onPressed: (context) => _onPressed(context, cell, indx),
         onLongPress: () => selection.selectOrUnselect(context, indx, cell,
             widget.systemNavigationInsets.bottom), //extend: maxExtend,
       );

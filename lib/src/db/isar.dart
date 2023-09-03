@@ -7,19 +7,13 @@
 
 import 'dart:io' as io;
 
-import 'package:dio/dio.dart';
-import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:gallery/src/booru/api/danbooru.dart';
-import 'package:gallery/src/booru/api/gelbooru.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/schemas/android_gallery_directory.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 import 'package:gallery/src/schemas/blacklisted_directory.dart';
-import 'package:gallery/src/schemas/directory.dart';
-import 'package:gallery/src/schemas/directory_file.dart';
 import 'package:gallery/src/schemas/directory_tags.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/expensive_hash.dart';
@@ -31,11 +25,8 @@ import 'package:gallery/src/schemas/pinned_directories.dart';
 import 'package:gallery/src/schemas/post.dart';
 import 'package:gallery/src/schemas/scroll_position.dart';
 import 'package:gallery/src/schemas/secondary_grid.dart';
-import 'package:gallery/src/schemas/server_settings.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:gallery/src/schemas/thumbnail.dart';
-import 'package:gallery/src/schemas/upload_files.dart';
-import 'package:gallery/src/schemas/upload_files_state.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import '../booru/tags/tags.dart';
@@ -66,46 +57,6 @@ late String _temporaryDbPath;
 late String _temporaryImagesPath;
 bool _initalized = false;
 
-BooruAPI booruApiFromPrefix(Booru booru, {int? page}) {
-  Dio dio = Dio(BaseOptions(
-    responseType: ResponseType.json,
-  ));
-
-  final jar = UnsaveableCookieJar(CookieJarTab().get(booru));
-  dio.interceptors.add(CookieManager(jar));
-
-  return switch (booru) {
-    Booru.danbooru => Danbooru(dio, jar),
-    Booru.gelbooru => Gelbooru(page ?? 0, dio, jar)
-  };
-}
-
-/// [getBooru] returns a selected *booru API.
-/// Some *booru have no way to retreive posts down
-/// of a post number, in this case [page] comes in handy:
-/// that is, it makes refreshes on restore few.
-BooruAPI getBooru({int? page}) {
-  Dio dio = Dio(BaseOptions(
-    //headers: {"user-agent": kTorUserAgent},
-    responseType: ResponseType.json,
-  ));
-
-  final settings = settingsIsar().settings.getSync(0);
-  if (settings!.selectedBooru == Booru.danbooru) {
-    final jar = UnsaveableCookieJar(CookieJarTab().get(Booru.danbooru));
-
-    dio.interceptors.add(CookieManager(jar));
-    return Danbooru(dio, jar);
-  } else if (settings.selectedBooru == Booru.gelbooru) {
-    final jar = UnsaveableCookieJar(CookieJarTab().get(Booru.gelbooru));
-
-    dio.interceptors.add(CookieManager(jar));
-    return Gelbooru(page ?? 0, dio, jar);
-  } else {
-    throw "invalid booru";
-  }
-}
-
 Future initalizeIsar(bool temporary) async {
   if (_initalized) {
     return;
@@ -131,7 +82,7 @@ Future initalizeIsar(bool temporary) async {
 
   _temporaryImagesPath = dimages.path;
 
-  await Isar.open([SettingsSchema, FileSchema, ServerSettingsSchema],
+  await Isar.open([SettingsSchema, FileSchema],
           directory: _directoryPath, inspector: false)
       .then((value) {
     _isar = value;
@@ -177,75 +128,8 @@ Isar _primaryGridIsar(Booru booru) {
   ], directory: _directoryPath, inspector: false, name: booru.string);
 }
 
-Isar openUploadsDbIsar() {
-  final db = Isar.openSync([UploadFilesStackSchema, UploadFilesStateSchema],
-      directory: _directoryPath, inspector: false, name: "uploadsDb");
-
-  final list = db.uploadFilesStacks
-      .filter()
-      .statusEqualTo(UploadStatus.inProgress)
-      .findAllSync();
-
-  if (list.isNotEmpty) {
-    db.writeTxnSync(() {
-      db.uploadFilesStacks.putAllSync(list.map((e) => e.failed()).toList());
-    });
-  }
-
-  return db;
-}
-
 String _microsecSinceEpoch() =>
     DateTime.now().microsecondsSinceEpoch.toString();
-
-void closeServerApiIsar() => Isar.getInstance("serverApi")?.close();
-void closeDirectoryIsar() => Isar.getInstance("directories")?.close();
-void closeServerApiInnerIsar(String name) =>
-    Isar.getInstance(name)?.close(deleteFromDisk: true);
-
-Isar openServerApiIsar({bool? temporary}) => Isar.openSync(
-      [DirectorySchema],
-      directory: temporary == true ? _temporaryDbPath : _directoryPath,
-      inspector: false,
-      name: temporary == true ? _microsecSinceEpoch() : "serverApi",
-    );
-
-Isar openTagsDbIsar() => Isar.openSync(
-      [LocalTagsSchema, LocalTagDictionarySchema, DirectoryTagSchema],
-      directory: _directoryPath,
-      inspector: false,
-      name: "localTags",
-    );
-
-Isar openServerApiInnerIsar() => Isar.openSync(
-      [DirectoryFileSchema],
-      directory: _temporaryDbPath,
-      inspector: false,
-      name: _microsecSinceEpoch(),
-    );
-
-Isar openAndroidGalleryIsar({bool? temporary}) => Isar.openSync(
-      [SystemGalleryDirectorySchema, GalleryLastModifiedSchema],
-      directory: temporary == true ? _temporaryDbPath : _directoryPath,
-      inspector: false,
-      name: temporary == true
-          ? _microsecSinceEpoch()
-          : "systemGalleryDirectories",
-    );
-
-Isar openAndroidGalleryInnerIsar() => Isar.openSync(
-      [SystemGalleryDirectoryFileSchema],
-      directory: _temporaryDbPath,
-      inspector: false,
-      name: _microsecSinceEpoch(),
-    );
-
-Isar openDirectoryIsar() => Isar.openSync(
-      [DirectorySchema],
-      directory: _directoryPath,
-      inspector: false,
-      name: "directories",
-    );
 
 Isar _restoreIsarGrid(String path) => Isar.openSync(
       [PostSchema, SecondaryGridSchema],
@@ -254,6 +138,39 @@ Isar _restoreIsarGrid(String path) => Isar.openSync(
       name: path,
     );
 
+class IsarDbClose {
+  static void serverApiDirectories() => Isar.getInstance("serverApi")?.close();
+  static void serverApiFiles(String name) =>
+      Isar.getInstance(name)?.close(deleteFromDisk: true);
+}
+
+class IsarDbsOpen {
+  static Isar localTags() => Isar.openSync(
+        [LocalTagsSchema, LocalTagDictionarySchema, DirectoryTagSchema],
+        directory: _directoryPath,
+        inspector: false,
+        name: "localTags",
+      );
+
+  static Isar androidGalleryDirectories({bool? temporary}) => Isar.openSync(
+        [SystemGalleryDirectorySchema, GalleryLastModifiedSchema],
+        directory: temporary == true ? _temporaryDbPath : _directoryPath,
+        inspector: false,
+        name: temporary == true
+            ? _microsecSinceEpoch()
+            : "systemGalleryDirectories",
+      );
+
+  static Isar androidGalleryFiles() => Isar.openSync(
+        [SystemGalleryDirectoryFileSchema],
+        directory: _temporaryDbPath,
+        inspector: false,
+        name: _microsecSinceEpoch(),
+      );
+}
+
+/// Pick an operating system directory.
+/// Calls [onError] in case of any error and resolves to false.
 Future<bool> chooseDirectory(void Function(String) onError) async {
   late final String resp;
 
@@ -269,9 +186,7 @@ Future<bool> chooseDirectory(void Function(String) onError) async {
     resp = r;
   }
 
-  final settings = settingsIsar().settings.getSync(0) ?? Settings.empty();
-  settingsIsar().writeTxnSync(
-      () => settingsIsar().settings.putSync(settings.copy(path: resp)));
+  Settings.saveToDb(Settings.fromDb().copy(path: resp));
 
   return Future.value(true);
 }

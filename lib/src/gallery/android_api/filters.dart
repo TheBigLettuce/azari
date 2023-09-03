@@ -7,12 +7,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/widgets/search_filter_grid.dart';
 
 import '../../booru/tags/tags.dart';
 import '../../schemas/android_gallery_directory_file.dart';
 import 'android_api_directories.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+/// Data for the [FilteringMode.same].
 class SameFilterAccumulator {
   final Map<int, Set<int>> data;
   int skipped;

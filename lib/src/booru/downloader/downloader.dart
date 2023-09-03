@@ -30,7 +30,7 @@ mixin _CancelTokens {
 
 class Downloader with _CancelTokens {
   int _inWork = 0;
-  final Dio dio = Dio();
+  final dio = Dio();
   final int maximum;
 
   final NotificationPlug notificationPlug = chooseNotificationPlug();
@@ -209,7 +209,7 @@ class Downloader with _CancelTokens {
       progress.update(count);
     })).then((value) async {
       try {
-        final settings = settingsIsar().settings.getSync(0)!;
+        final settings = Settings.fromDb();
 
         moverPlug.move(MoveOp(
             source: filePath, rootDir: settings.path, targetDir: d.site));

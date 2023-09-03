@@ -87,6 +87,10 @@ class PlatformFunctions {
     });
   }
 
+  static Future<int?> trashThumbId() {
+    return _channel.invokeMethod("trashThumbId");
+  }
+
   static void deleteFiles(List<SystemGalleryDirectoryFile> selected) {
     _channel.invokeMethod(
         "deleteFiles", selected.map((e) => e.originalUri).toList());

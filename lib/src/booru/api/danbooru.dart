@@ -20,7 +20,7 @@ class Danbooru implements BooruAPI {
 
   @override
   void setCookies(List<Cookie> cookies) {
-    cookieJar.replaceDirectly(Uri.parse(domain), cookies);
+    cookieJar.replaceDirectly(Uri.parse(booru.url), cookies);
   }
 
   @override
@@ -33,42 +33,32 @@ class Danbooru implements BooruAPI {
   final int? currentPage = null;
 
   @override
-  final String name = "Danbooru";
-
-  @override
-  final String domain = Booru.danbooru.url;
-
-  @override
   final bool wouldBecomeStale = false;
 
   @override
-  Uri browserLink(int id) => Uri.https(domain, "/posts/$id");
+  Uri browserLink(int id) => Uri.https(booru.url, "/posts/$id");
 
   @override
   Future<List<String>> completeTag(String tag) async {
-    try {
-      final resp = await client.getUri(
-        Uri.https(domain, "/tags.json", {
-          "search[name_matches]": "$tag*",
-          "search[order]": "count",
-          "limit": "10",
-        }),
-      );
+    final resp = await client.getUri(
+      Uri.https(booru.url, "/tags.json", {
+        "search[name_matches]": "$tag*",
+        "search[order]": "count",
+        "limit": "10",
+      }),
+    );
 
-      if (resp.statusCode != 200) {
-        throw "status code not 200";
-      }
-
-      return _fromDanbooruTags(resp.data);
-    } catch (e) {
-      return Future.error(e);
+    if (resp.statusCode != 200) {
+      throw "status code not 200";
     }
+
+    return _fromDanbooruTags(resp.data);
   }
 
   @override
   Future<Post> singlePost(int id) async {
     try {
-      final resp = await client.getUri(Uri.https(domain, "/posts/$id.json"));
+      final resp = await client.getUri(Uri.https(booru.url, "/posts/$id.json"));
 
       if (resp.statusCode != 200) {
         throw resp.data["message"];
@@ -106,6 +96,7 @@ class Danbooru implements BooruAPI {
       throw "only one should be set";
     }
 
+    // anonymous api calls to danbooru are limited by two tags per search req
     tags = tags.split(" ").take(2).join(" ");
 
     final query = <String, dynamic>{
@@ -123,7 +114,8 @@ class Danbooru implements BooruAPI {
     }
 
     try {
-      final resp = await client.getUri(Uri.https(domain, "/posts.json", query));
+      final resp =
+          await client.getUri(Uri.https(booru.url, "/posts.json", query));
 
       if (resp.statusCode != 200) {
         throw "status not ok";

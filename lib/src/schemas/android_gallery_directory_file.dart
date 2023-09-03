@@ -10,6 +10,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
+import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/cell/cell.dart';
 import 'package:gallery/src/cell/data.dart';
@@ -17,7 +18,6 @@ import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
 import 'package:gallery/src/pages/booru_scroll.dart';
-import 'package:gallery/src/schemas/directory_file.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/favorite_media.dart';
 import 'package:gallery/src/schemas/post.dart';
@@ -28,6 +28,8 @@ import 'package:logging/logging.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../cell/contentable.dart';
 
 part 'android_gallery_directory_file.g.dart';
 
@@ -73,6 +75,9 @@ class SystemGalleryDirectoryFile implements Cell {
     required this.originalUri,
   });
 
+  @override
+  String alias(bool isList) => name;
+
   bool isDuplicate() {
     return RegExp(r'[(][0-9].*[)][.][a-zA-Z].*').hasMatch(name);
   }
@@ -84,7 +89,7 @@ class SystemGalleryDirectoryFile implements Cell {
   @ignore
   @override
   List<Widget>? Function(BuildContext context) get addButtons => (_) {
-        DissolveResult? res;
+        DisassembleResult? res;
         try {
           res = PostTags().dissassembleFilename(name);
         } catch (_) {}
@@ -93,7 +98,7 @@ class SystemGalleryDirectoryFile implements Cell {
           if (size == 0 && res != null)
             IconButton(
                 onPressed: () {
-                  final api = booruApiFromPrefix(res!.booru);
+                  final api = BooruAPI.fromEnum(res!.booru);
 
                   api.singlePost(res.id).then((post) {
                     PlatformFunctions.deleteFiles([this]);
@@ -101,8 +106,8 @@ class SystemGalleryDirectoryFile implements Cell {
                     PostTags().addTagsPost(
                         post.filename(), post.tags.split(" "), true);
 
-                    Downloader().add(File.d(
-                        post.fileDownloadUrl(), api.domain, post.filename()));
+                    Downloader().add(File.d(post.fileDownloadUrl(),
+                        api.booru.url, post.filename()));
                   }).onError((error, stackTrace) {
                     log("loading post for download",
                         level: Level.SEVERE.value,
@@ -119,7 +124,7 @@ class SystemGalleryDirectoryFile implements Cell {
           if (res != null)
             IconButton(
                 onPressed: () {
-                  final api = booruApiFromPrefix(res!.booru);
+                  final api = BooruAPI.fromEnum(res!.booru);
 
                   launchUrl(api.browserLink(res.id),
                       mode: LaunchMode.externalApplication);
@@ -263,7 +268,7 @@ class SystemGalleryDirectoryFile implements Cell {
                           instance: tab.newSecondaryGrid(),
                           forceCloseApi: true,
                           closeGrids: false,
-                          api: booruApiFromPrefix(res.booru),
+                          api: BooruAPI.fromEnum(res.booru),
                           tags: t);
                     },
                   ));
@@ -271,9 +276,6 @@ class SystemGalleryDirectoryFile implements Cell {
               },
             );
           };
-
-  @override
-  String alias(bool isList) => name;
 
   @override
   Contentable fileDisplay() {
@@ -306,14 +308,13 @@ class SystemGalleryDirectoryFile implements Cell {
       if (isFavorite()) FilteringMode.favorite.icon,
     ];
 
-    final record = androidThumbnail(id);
+    final (thumb, loaded) = androidThumbnail(id);
 
     return CellData(
-        thumb: KeyMemoryImage(
-            id.toString() + record.$1.length.toString(), record.$1),
+        thumb: KeyMemoryImage(id.toString() + thumb.length.toString(), thumb),
         name: name,
         stickers: stickers,
-        loaded: record.$2);
+        loaded: loaded);
   }
 
   Thumbnail? getThumbnail() {
@@ -322,7 +323,7 @@ class SystemGalleryDirectoryFile implements Cell {
 }
 
 (Uint8List, bool) androidThumbnail(int id) {
-  var thumb = thumbnailIsar().thumbnails.getSync(id);
+  final thumb = thumbnailIsar().thumbnails.getSync(id);
   return thumb == null
       ? (kTransparentImage, false)
       : (thumb.data as Uint8List, true);
@@ -360,3 +361,15 @@ class KeyMemoryImage extends ImageProvider<MemoryImage> {
   @override
   int get hashCode => key.hashCode;
 }
+
+ListTile addInfoTile(
+        {required AddInfoColorData colors,
+        required String title,
+        required String subtitle,
+        Widget? trailing}) =>
+    ListTile(
+      textColor: colors.foregroundColor,
+      title: Text(title),
+      trailing: trailing,
+      subtitle: Text(subtitle),
+    );

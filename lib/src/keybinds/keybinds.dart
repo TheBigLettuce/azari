@@ -39,7 +39,7 @@ Map<SingleActivatorDescription, Null Function()> digitAndSettings(
         const SingleActivator(LogicalKeyboardKey.keyS, control: true)): () {
       if (Platform.isAndroid || Platform.isIOS) {
         Navigator.push(context, MaterialPageRoute(builder: (context) {
-          return const Settings();
+          return const SettingsWidget();
         }));
         return;
       } else {

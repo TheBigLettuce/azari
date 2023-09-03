@@ -20,8 +20,6 @@ class LocalTags {
   @Index(caseSensitive: false, type: IndexType.hashElements)
   final List<String> tags;
 
-  // final bool isOriginal;
-
   LocalTags(
       this.filename, this.tags); //: isOriginal = tags.contains("original")
 }

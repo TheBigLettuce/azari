@@ -13,6 +13,14 @@ class Segments<T> {
   /// or are single standing.
   final String unsegmentedLabel;
 
+  /// Under [injectedLabel] appear [injectedSegments].
+  /// All pinned.
+  final String injectedLabel;
+
+  /// [injectedSegments] make it possible to add foreign cell on the segmented grid.
+  /// [segment] is not called on [injectedSegments].
+  final List<T> injectedSegments;
+
   /// Segmentation function.
   /// If [sticky] is true, then even if the cell is single standing it will appear
   /// as a single element segment on the grid.
@@ -23,7 +31,10 @@ class Segments<T> {
   /// If [unsticky] is true, then instead of stickying, unstickying should happen.
   final void Function(String seg, {bool? unsticky})? addToSticky;
 
-  const Segments(this.segment, this.unsegmentedLabel, {this.addToSticky});
+  const Segments(this.segment, this.unsegmentedLabel,
+      {this.addToSticky,
+      this.injectedSegments = const [],
+      this.injectedLabel = "Special"});
 
   static Widget label(BuildContext context, String text, bool sticky,
           void Function()? onLongPress) =>

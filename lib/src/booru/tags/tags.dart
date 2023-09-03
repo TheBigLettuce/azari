@@ -33,9 +33,18 @@ bool _isInitalized = false;
 /// Tag search history.
 /// Used for both for the recent tags and the excluded.
 abstract class BooruTagging {
+  /// Get the current tags.
+  /// Last added first.
   List<Tag> get();
+
+  /// Add the [tag] to the DB.
+  /// Updates the added time if already exist.
   void add(Tag tag);
+
+  /// Delete the [tag] from the DB.
   void delete(Tag tag);
+
+  /// Delete all the tags from the DB.
   void clear();
 
   const BooruTagging();
@@ -44,7 +53,7 @@ abstract class BooruTagging {
 /// Result of disassembling of the filename in the format.
 /// All the files downloaded with the [Downloader] have a certain format
 /// of the filenames, this class represents the format.
-class DissolveResult {
+class DisassembleResult {
   /// Extension of the file.
   final String ext;
 
@@ -57,7 +66,7 @@ class DissolveResult {
   /// The post number.
   final int id;
 
-  const DissolveResult(
+  const DisassembleResult(
       {required this.booru,
       required this.ext,
       required this.hash,
@@ -69,8 +78,10 @@ class DissolveResult {
 class PostTags {
   Isar tagsDb;
 
+  /// Connects to the booru and downloads the tags from it.
+  /// Resolves to an empty list in case of any error.
   Future<List<String>> loadFromDissassemble(
-      String filename, DissolveResult dissassembled) async {
+      String filename, DisassembleResult dissassembled) async {
     final Dio client = Dio(BaseOptions(
       responseType: ResponseType.json,
     ));
@@ -104,17 +115,20 @@ class PostTags {
     }
   }
 
-  DissolveResult dissassembleFilename(String filename, {Booru? suppliedBooru}) {
+  /// Tries to disassemble the [filename] into the convenient class.
+  /// Throws on error, with the reason string.
+  DisassembleResult dissassembleFilename(String filename,
+      {Booru? suppliedBooru}) {
     final Booru booru;
     if (suppliedBooru == null) {
       final split = filename.split("_");
       if (split.isEmpty || split.length != 2) {
-        throw "No prefix";
+        throw "No prefix"; // TODO: change
       }
 
-      final newbooru = chooseBooruPrefix(split.first);
+      final newbooru = Booru.fromPrefix(split.first);
       if (newbooru == null) {
-        throw "Prefix not registred";
+        throw "Prefix not registred"; // TODO: change
       }
 
       booru = newbooru;
@@ -128,43 +142,46 @@ class PostTags {
       filename = prefix.last;
     }
 
-    final numbersAndHash = filename.split("-");
+    final numbersAndHash = filename.split(" - ");
     if (numbersAndHash.isEmpty || numbersAndHash.length != 2) {
-      throw "Filename doesn't include numbers and hash";
+      throw "Filename should include numbers and hash separated by a -,"
+          " with one space to the left of the -, and one to the right of -"; // TODO: change
     }
 
-    final id = int.tryParse(numbersAndHash.first.trimRight());
+    final id = int.tryParse(numbersAndHash.first);
     if (id == null) {
-      throw "Invalid post number";
+      throw "Invalid post number"; // TODO: change
     }
 
-    final hashAndExt = numbersAndHash.last.trimLeft().split(".");
+    final hashAndExt = numbersAndHash.last.split(".");
     if (hashAndExt.isEmpty || hashAndExt.length != 2) {
-      throw "Filename doesn't include extension";
+      throw "Filename doesn't include extension"; // TODO: change
     }
 
     final numbersLetters = RegExp(r'^[a-z0-9]+$');
     if (!numbersLetters.hasMatch(hashAndExt.first)) {
-      throw "Hash is invalid";
+      throw "Hash is invalid"; // TODO: change
     }
 
     if (hashAndExt.last.length > 6) {
-      throw "Extension is too long";
+      throw "Extension is too long"; // TODO: change
     }
 
     if (hashAndExt.first.length != 32) {
-      throw "Hash is not 32 characters";
+      throw "Hash is not 32 characters"; // TODO: change
     }
 
-    final onlyLetters = RegExp(r'^[a-zA-Z0-9]+$');
-    if (!onlyLetters.hasMatch(hashAndExt.last)) {
-      throw "Extension is invalid";
+    final lettersAndNumbers = RegExp(r'^[a-zA-Z0-9]+$');
+    if (!lettersAndNumbers.hasMatch(hashAndExt.last)) {
+      throw "Extension is invalid"; // TODO: change
     }
 
-    return DissolveResult(
+    return DisassembleResult(
         id: id, booru: booru, ext: hashAndExt.last, hash: hashAndExt.first);
   }
 
+  /// Adds tags to the db.
+  /// If [noDisassemble] is true, the [filename] should be guranteed to be in the format.
   void addTagsPost(String filename, List<String> tags, bool noDisassemble) {
     if (!noDisassemble) {
       try {
@@ -180,6 +197,8 @@ class PostTags {
     });
   }
 
+  /// Rebuilds the tag suggestions dictionary.
+  /// [rebuildTagDictionary] shouldn't be frequently run, as it might take minutes to complete.
   void rebuildTagDictionary() {
     tagsDb.writeTxnSync(() => tagsDb.localTagDictionarys.clearSync());
 
@@ -208,6 +227,7 @@ class PostTags {
         .toList());
   }
 
+  /// Saves all the tags from the posts.
   void addAllPostTags(List<Post> p) {
     tagsDb.writeTxnSync(() {
       tagsDb.localTags.putAllSync(p.map((e) {
@@ -218,15 +238,21 @@ class PostTags {
     });
   }
 
+  /// Returns tags for the [filename], or empty list if there are none.
   List<String> getTagsPost(String filename) {
     return tagsDb.localTags.getSync(fastHash(filename))?.tags ?? [];
   }
 
+  /// Returns true if tags for the [filename] includes [tag],
+  /// or false if there are no tags for [filename].
   bool containsTag(String filename, String tag) {
     return tagsDb.localTags.getSync(fastHash(filename))?.tags.contains(tag) ??
         false;
   }
 
+  /// Returns true if tags for the [filename] includes all the [tags].
+  /// [Tags] should be a string with tags separated by a space.
+  /// Or false if there are no tags for the [filename].
   bool containsTagMultiple(String filename, String tags) {
     final localTags = tagsDb.localTags.getSync(fastHash(filename))?.tags;
     if (localTags == null || localTags.isEmpty) {
@@ -241,6 +267,8 @@ class PostTags {
     return true;
   }
 
+  /// Returns true if the tags for the [filename] have "original",
+  /// or false if there are no tags for [filename].
   bool isOriginal(String filename) {
     return tagsDb.localTags
             .getSync(fastHash(filename))
@@ -262,6 +290,8 @@ class PostTags {
     return result.map((e) => e.tag).toList();
   }
 
+  /// Disassembles the [filename] and load tags online from the booru.
+  /// Resolves to an empty list in case of any error.
   Future<List<String>> getOnlineAndSaveTags(
     String filename,
   ) async {
@@ -280,6 +310,9 @@ class PostTags {
 
   PostTags._new(this.tagsDb);
 
+  /// Restore local tags from the backup.
+  /// The backup is just an copy of the Isar DB.
+  /// In case of any error reverts back.
   void restore(void Function(String? error) onDone) async {
     final tagsFile = joinAll([appStorageDir(), "localTags"]);
     final tagsBakFile = joinAll([appStorageDir(), "localTags.bak"]);
@@ -301,7 +334,7 @@ class PostTags {
       io.File("$tagsFile.isar").deleteSync();
       io.File(outputFile).renameSync("$tagsFile.isar");
 
-      tagsDb = openTagsDbIsar();
+      tagsDb = IsarDbsOpen.localTags();
 
       io.File(tagsBakFile).deleteSync();
 
@@ -333,6 +366,9 @@ class PostTags {
         () => tagsDb.directoryTags.deleteSync(fastHash(buckedId)));
   }
 
+  /// Make a copy of the tags DB.
+  /// Calls [onDone] with null error when complete,
+  /// or with non-null error when something went wrong.
   void copy(void Function(String? error) onDone) async {
     try {
       final plug = await chooseDownloadMoverPlug();
@@ -348,7 +384,7 @@ class PostTags {
 
       plug.move(MoveOp(
           source: output,
-          rootDir: settingsIsar().settings.getSync(0)!.path,
+          rootDir: Settings.fromDb().path,
           targetDir: "backup"));
       onDone(null);
     } catch (e) {
@@ -366,5 +402,5 @@ void initPostTags() {
     return;
   }
 
-  _global = PostTags._new(openTagsDbIsar());
+  _global = PostTags._new(IsarDbsOpen.localTags());
 }

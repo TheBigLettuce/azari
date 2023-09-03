@@ -431,13 +431,11 @@ class _AndroidFilesState extends State<AndroidFiles>
           menuButtonItems: [
             IconButton(
                 onPressed: () {
-                  final settings = settingsIsar().settings.getSync(0)!;
-                  settingsIsar().writeTxnSync(() => settingsIsar()
-                      .settings
-                      .putSync(settings.copy(
-                          gallerySettings: settings.gallerySettings.copy(
-                              hideFileName:
-                                  !(settings.gallerySettings.hideFileName)))));
+                  final settings = Settings.fromDb();
+                  Settings.saveToDb(settings.copy(
+                      gallerySettings: settings.gallerySettings.copy(
+                          hideFileName:
+                              !(settings.gallerySettings.hideFileName))));
                 },
                 icon: const Icon(Icons.subtitles))
           ],
