@@ -102,7 +102,7 @@ class GridLayout {
               child: _WrappedSelection(
                 selectionEnabled: selection.selected.isNotEmpty,
                 thisIndx: indx,
-                selectUntil: (i) => selection.selectUnselectUntil(i, state),
+                selectUntil: (i) {},
                 selectUnselect: () => selection.selectOrUnselect(
                     context, indx, cell, systemNavigationInsets),
                 isSelected: selection.isSelected(indx),

@@ -322,10 +322,11 @@ class _AndroidFilesState extends State<AndroidFiles>
           context: context,
           builder: (context) {
             return AlertDialog(
-              title: Text(
-                  "${AppLocalizations.of(context)!.tagDeleteDialogTitle}"
-                  " ${selected.length}"
-                  " ${selected.length == 1 ? AppLocalizations.of(context)!.itemSingular : AppLocalizations.of(context)!.itemPlural}?"),
+              title: Text(selected.length == 1
+                  ? "${AppLocalizations.of(context)!.tagDeleteDialogTitle} ${selected.first.name}"
+                  : "${AppLocalizations.of(context)!.tagDeleteDialogTitle}"
+                      " ${selected.length}"
+                      " ${AppLocalizations.of(context)!.itemPlural}"),
               content:
                   Text(AppLocalizations.of(context)!.youCanRestoreFromTrash),
               actions: [
@@ -344,6 +345,97 @@ class _AndroidFilesState extends State<AndroidFiles>
               ],
             );
           },
+        ));
+  }
+
+  GridBottomSheetAction<SystemGalleryDirectoryFile> _restoreFromTrash() {
+    return GridBottomSheetAction(Icons.restore_from_trash, (selected) {
+      PlatformFunctions.removeFromTrash(
+          selected.map((e) => e.originalUri).toList());
+    },
+        false,
+        const GridBottomSheetActionExplanation(
+          label: "Restore", // TODO: change
+          body: "Restores selected files from the trash.", // TODO: change
+        ));
+  }
+
+  GridBottomSheetAction<SystemGalleryDirectoryFile> _bulkRename() {
+    return GridBottomSheetAction(Icons.edit, (selected) {
+      _changeName(context, selected);
+    },
+        false,
+        GridBottomSheetActionExplanation(
+          label: AppLocalizations.of(context)!.bulkRenameTitle,
+          body: "Renames the selected files.\n"
+              "Currently used only to add the booru prefix.", // TODO: change
+        ));
+  }
+
+  GridBottomSheetAction<SystemGalleryDirectoryFile> _saveTagsAction() {
+    return GridBottomSheetAction(Icons.tag_rounded, (selected) {
+      _saveTags(context, selected);
+    },
+        true,
+        GridBottomSheetActionExplanation(
+          label: AppLocalizations.of(context)!.savingTags,
+          body: "Tries to load tags from the booru.\n"
+              "The filename should be in the format.", // TODO: change
+        ));
+  }
+
+  GridBottomSheetAction<SystemGalleryDirectoryFile> _addToFavoritesAction() {
+    return GridBottomSheetAction(Icons.star_border_outlined, (selected) {
+      _favoriteOrUnfavorite(context, selected);
+    },
+        false,
+        const GridBottomSheetActionExplanation(
+          label: "Favorites", // TODO: change
+          body: "Adds selected files to the favorites.", // TODO: change
+        ));
+  }
+
+  GridBottomSheetAction<SystemGalleryDirectoryFile> _deleteAction() {
+    return GridBottomSheetAction(Icons.delete, (selected) {
+      _deleteDialog(context, selected);
+    },
+        false,
+        const GridBottomSheetActionExplanation(
+          label: "Delete files", // TODO: change
+          body: "Moves to trash selected files.", // TODO: change
+        ));
+  }
+
+  GridBottomSheetAction<SystemGalleryDirectoryFile> _copyAction() {
+    return GridBottomSheetAction(Icons.copy, (selected) {
+      _moveOrCopy(context, selected, false);
+    },
+        false,
+        const GridBottomSheetActionExplanation(
+          label: "Copy", // TODO: change
+          body: "Copies selected files to a destination.", // TODO: change
+        ));
+  }
+
+  GridBottomSheetAction<SystemGalleryDirectoryFile> _moveAction() {
+    return GridBottomSheetAction(Icons.forward, (selected) {
+      _moveOrCopy(context, selected, true);
+    },
+        false,
+        const GridBottomSheetActionExplanation(
+          label: "Move", // TODO: change
+          body: "Moves selected files to a destination.", // TODO: change
+        ));
+  }
+
+  GridBottomSheetAction<SystemGalleryDirectoryFile> _chooseAction() {
+    return GridBottomSheetAction(Icons.check, (selected) {
+      widget.callback!(selected.first);
+    },
+        false,
+        const GridBottomSheetActionExplanation(
+          label: "Choose", // TODO: change
+          body: "Choose the file.", // TODO: change
         ));
   }
 
@@ -366,42 +458,17 @@ class _AndroidFilesState extends State<AndroidFiles>
           addIconsImage: (cell) {
             return widget.callback != null
                 ? [
-                    IconButton(
-                        onPressed: () {
-                          widget.callback!(cell);
-                        },
-                        icon: const Icon(Icons.check))
+                    _chooseAction(),
                   ]
                 : extra.isTrash()
                     ? [
-                        IconButton(
-                            onPressed: () {
-                              PlatformFunctions.removeFromTrash(
-                                  [cell.originalUri]);
-                            },
-                            icon: const Icon(Icons.restore_from_trash))
+                        _restoreFromTrash(),
                       ]
                     : [
-                        IconButton(
-                            onPressed: () {
-                              _favoriteOrUnfavorite(context, [cell]);
-                            },
-                            icon: const Icon(Icons.star_border)),
-                        IconButton(
-                            onPressed: () {
-                              _deleteDialog(context, [cell]);
-                            },
-                            icon: const Icon(Icons.delete)),
-                        IconButton(
-                            onPressed: () {
-                              _moveOrCopy(context, [cell], false);
-                            },
-                            icon: const Icon(Icons.copy)),
-                        IconButton(
-                            onPressed: () {
-                              _moveOrCopy(context, [cell], true);
-                            },
-                            icon: const Icon(Icons.forward))
+                        _addToFavoritesAction(),
+                        _deleteAction(),
+                        _copyAction(),
+                        _moveAction()
                       ];
           },
           aspectRatio: state.settings.gallerySettings.filesAspectRatio.value,
@@ -448,32 +515,15 @@ class _AndroidFilesState extends State<AndroidFiles>
                   ? []
                   : extra.isTrash()
                       ? [
-                          GridBottomSheetAction(Icons.restore_from_trash,
-                              (selected) {
-                            PlatformFunctions.removeFromTrash(
-                                selected.map((e) => e.originalUri).toList());
-                          }, false)
+                          _restoreFromTrash(),
                         ]
                       : [
-                          GridBottomSheetAction(Icons.edit, (selected) {
-                            _changeName(context, selected);
-                          }, false),
-                          GridBottomSheetAction(Icons.tag_rounded, (selected) {
-                            _saveTags(context, selected);
-                          }, true),
-                          GridBottomSheetAction(Icons.star_border_outlined,
-                              (selected) {
-                            _favoriteOrUnfavorite(context, selected);
-                          }, false),
-                          GridBottomSheetAction(Icons.delete, (selected) {
-                            _deleteDialog(context, selected);
-                          }, false),
-                          GridBottomSheetAction(Icons.copy, (selected) {
-                            _moveOrCopy(context, selected, false);
-                          }, false),
-                          GridBottomSheetAction(Icons.forward, (selected) {
-                            _moveOrCopy(context, selected, true);
-                          }, false)
+                          _bulkRename(),
+                          _saveTagsAction(),
+                          _addToFavoritesAction(),
+                          _deleteAction(),
+                          _copyAction(),
+                          _moveAction(),
                         ],
               state.settings.gallerySettings.filesColumns,
               listView: state.settings.gallerySettings.filesListView,

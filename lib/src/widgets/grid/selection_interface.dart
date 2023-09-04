@@ -40,37 +40,37 @@ class SelectionInterface<T extends Cell> {
                 alignment: WrapAlignment.center,
                 spacing: 4,
                 children: [
-                  wrapSheetButton(
-                    context,
-                    Icons.close_rounded,
-                    () {
-                      _setState(() {
-                        selected.clear();
-                        currentBottomSheet?.close();
-                      });
-                    },
-                    true,
-                    selected.length.toString(),
-                  ),
+                  wrapSheetButton(context, Icons.close_rounded, () {
+                    _setState(() {
+                      selected.clear();
+                      currentBottomSheet?.close();
+                    });
+                  },
+                      true,
+                      selected.length.toString(),
+                      const GridBottomSheetActionExplanation(
+                        label: "Clear selection", // TODO: change
+                        body: "Unselects every item.", // TODO: change
+                      )),
                   ...addActions
                       .map((e) => wrapSheetButton(
-                            context,
-                            e.icon,
-                            e.showOnlyWhenSingle && selected.length != 1
-                                ? null
-                                : () {
-                                    e.onPress(selected.values.toList());
+                          context,
+                          e.icon,
+                          e.showOnlyWhenSingle && selected.length != 1
+                              ? null
+                              : () {
+                                  e.onPress(selected.values.toList());
 
-                                    if (e.closeOnPress) {
-                                      _setState(() {
-                                        selected.clear();
-                                        currentBottomSheet?.close();
-                                      });
-                                    }
-                                  },
-                            false,
-                            selected.length.toString(),
-                          ))
+                                  if (e.closeOnPress) {
+                                    _setState(() {
+                                      selected.clear();
+                                      currentBottomSheet?.close();
+                                    });
+                                  }
+                                },
+                          false,
+                          selected.length.toString(),
+                          e.explanation))
                       .toList()
                 ],
               ),
@@ -148,25 +148,51 @@ class SelectionInterface<T extends Cell> {
     }
   }
 
-  static Widget wrapSheetButton(BuildContext context, IconData icon,
-      void Function()? onPressed, bool addBadge, String label) {
+  static Widget wrapSheetButton(
+      BuildContext context,
+      IconData icon,
+      void Function()? onPressed,
+      bool addBadge,
+      String label,
+      GridBottomSheetActionExplanation explanation,
+      {bool? followColorTheme}) {
     final iconBtn = Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 4),
-      child: IconButton(
+      child: GestureDetector(
+        onLongPress: () {
+          Navigator.push(
+              context,
+              DialogRoute(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: Text(explanation.label),
+                    content: Text(explanation.body),
+                  );
+                },
+              ));
+        },
+        child: IconButton(
           style: ButtonStyle(
               shape: const MaterialStatePropertyAll(RoundedRectangleBorder(
                   borderRadius: BorderRadius.all(Radius.elliptical(10, 10)))),
-              backgroundColor: MaterialStatePropertyAll(onPressed == null
-                  ? Theme.of(context).colorScheme.primary.withOpacity(0.5)
-                  : Theme.of(context).colorScheme.primary)),
+              backgroundColor: followColorTheme == true
+                  ? null
+                  : MaterialStatePropertyAll(onPressed == null
+                      ? Theme.of(context).colorScheme.primary.withOpacity(0.5)
+                      : Theme.of(context).colorScheme.primary)),
           onPressed: onPressed == null
               ? null
               : () {
                   HapticFeedback.selectionClick();
                   onPressed();
                 },
-          icon:
-              Icon(icon, color: Theme.of(context).colorScheme.inversePrimary)),
+          icon: Icon(icon,
+              color: followColorTheme == true
+                  ? null
+                  : Theme.of(context).colorScheme.inversePrimary),
+        ),
+      ),
     );
 
     return addBadge

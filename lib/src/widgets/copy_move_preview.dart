@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/widgets/grid/callback_grid.dart';
 
 import '../cell/cell.dart';
 import '../pages/image_view.dart';
@@ -50,20 +51,23 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
                   onExit: () {},
                   addIcons: (_) {
                     return [
-                      IconButton(
-                          onPressed: () {
-                            widget.files
-                                .removeAt(key.currentState!.currentPage);
+                      GridBottomSheetAction(Icons.close_rounded, (_) {
+                        widget.files.removeAt(key.currentState!.currentPage);
 
-                            key.currentState!.update(widget.files.length);
+                        key.currentState!.update(widget.files.length);
 
-                            if (widget.files.isEmpty) {
-                              Navigator.pop(context);
-                            }
+                        if (widget.files.isEmpty) {
+                          Navigator.pop(context);
+                        }
 
-                            setState(() {});
-                          },
-                          icon: const Icon(Icons.close_rounded))
+                        setState(() {});
+                      },
+                          false,
+                          const GridBottomSheetActionExplanation(
+                            label: "Exclude", // TODO: change
+                            body:
+                                "Exclude the file from the selected.", // TODO: change
+                          ))
                     ];
                   },
                   focusMain: () {},

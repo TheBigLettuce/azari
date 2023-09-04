@@ -25,6 +25,19 @@ class GridBottomSheetAction<T> {
   /// element is currently selected.
   final bool showOnlyWhenSingle;
 
-  const GridBottomSheetAction(this.icon, this.onPress, this.closeOnPress,
+  /// The information about the action.
+  /// Displayed in a dialog after long tapping.
+  final GridBottomSheetActionExplanation explanation;
+
+  const GridBottomSheetAction(
+      this.icon, this.onPress, this.closeOnPress, this.explanation,
       {this.showOnlyWhenSingle = false});
+}
+
+class GridBottomSheetActionExplanation {
+  final String label;
+  final String body;
+
+  const GridBottomSheetActionExplanation(
+      {required this.label, required this.body});
 }

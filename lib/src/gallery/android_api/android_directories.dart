@@ -133,6 +133,18 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
     super.dispose();
   }
 
+  void _joinedDirectories(String label, List<SystemGalleryDirectory> dirs) {
+    Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        return AndroidFiles(
+            api: extra.joinedDir(dirs.map((e) => e.bucketId).toList()),
+            callback: widget.nestedCallback,
+            dirName: label,
+            bucketId: "joinedDir");
+      },
+    ));
+  }
+
   void _refresh() {
     PlatformFunctions.trashThumbId().then((value) {
       try {
@@ -258,18 +270,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                     lastModified: 0,
                     thumbFileId: trashThumbId!),
             ],
-            onLabelPressed: (label, children) {
-              Navigator.push(context, MaterialPageRoute(
-                builder: (context) {
-                  return AndroidFiles(
-                      api: extra
-                          .joinedDir(children.map((e) => e.bucketId).toList()),
-                      callback: widget.nestedCallback,
-                      dirName: label,
-                      bucketId: "joinedDir");
-                },
-              ));
-            },
+            onLabelPressed: _joinedDirectories,
           ),
           mainFocus: state.mainFocus,
           footer: widget.callback?.preview,
@@ -403,14 +404,42 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                                     ));
                               },
                             ));
-                      }, true, showOnlyWhenSingle: true),
+                      },
+                          true,
+                          const GridBottomSheetActionExplanation(
+                            label: "Directory tag", // TODO: change
+                            body:
+                                "Lets you to assign a tag to the selected directory.\n"
+                                "Directory tag is used for categorizing the directories on the grid.", // TODO: change
+                          ),
+                          showOnlyWhenSingle: true),
                       GridBottomSheetAction(Icons.hide_image_outlined,
                           (selected) {
                         extra.addBlacklisted(selected
                             .map(
                                 (e) => BlacklistedDirectory(e.bucketId, e.name))
                             .toList());
-                      }, true)
+                      },
+                          true,
+                          const GridBottomSheetActionExplanation(
+                            label: "Blacklist", // TODO: change
+                            body: "Add selected directories to the blacklist.\n"
+                                "You can unblacklist the directories in the settings.", // TODO: change
+                          )),
+                      GridBottomSheetAction(Icons.merge_rounded, (selected) {
+                        _joinedDirectories(
+                          selected.length == 1
+                              ? selected.first.name
+                              : "${selected.length} directories", // TODO: change
+                          selected,
+                        );
+                      },
+                          true,
+                          const GridBottomSheetActionExplanation(
+                            label: "Join", // TODO: change
+                            body:
+                                "Join selected directories into one for viewing.", // TODO: change
+                          ))
                     ],
               state.settings.gallerySettings.directoryColumns,
               listView: false,

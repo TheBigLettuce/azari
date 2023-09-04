@@ -44,7 +44,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final void Function(int post) scrollUntill;
   final void Function(double? pos, int? selectedCell) updateTagScrollPos;
   final Future<int> Function()? onNearEnd;
-  final List<IconButton> Function(T)? addIcons;
+  final List<GridBottomSheetAction<T>> Function(T)? addIcons;
   final void Function(int i)? download;
   final double? infoScrollOffset;
   final Color systemOverlayRestoreColor;
@@ -472,7 +472,15 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                                                 .bottom),
                                         child: Wrap(
                                           spacing: 4,
-                                          children: items,
+                                          children: items
+                                              .map((e) => SelectionInterface
+                                                      .wrapSheetButton(
+                                                          context, e.icon, () {
+                                                    e.onPress([currentCell]);
+                                                  }, false, "", e.explanation,
+                                                          followColorTheme:
+                                                              true))
+                                              .toList(),
                                         ),
                                       )),
                                     ));

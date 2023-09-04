@@ -152,7 +152,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   final FocusNode? belowMainFocus;
 
   /// Supplied to [ImageView.addIcons].
-  final List<IconButton> Function(T)? addIconsImage;
+  final List<GridBottomSheetAction<T>> Function(T)? addIconsImage;
 
   /// Supplied to [ImageView.pageChange].
   final void Function(ImageViewState<T> state)? pageChangeImage;
