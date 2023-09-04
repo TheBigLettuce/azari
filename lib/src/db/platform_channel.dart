@@ -23,6 +23,10 @@ class PlatformFunctions {
     _channel.invokeMethod("refreshFiles", bucketId);
   }
 
+  static void refreshFilesMultiple(List<String> ids) {
+    _channel.invokeMethod("refreshFilesMultiple", ids);
+  }
+
   static void refreshFavorites(List<int> ids) {
     _channel.invokeMethod("refreshFavorites", ids);
   }
@@ -54,7 +58,7 @@ class PlatformFunctions {
     _channel.invokeMethod("returnUri", originalUri);
   }
 
-  static rename(String uri, String newName, {bool notify = true}) {
+  static void rename(String uri, String newName, {bool notify = true}) {
     if (newName.isEmpty) {
       return;
     }

@@ -416,7 +416,20 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
 
                 "refreshFiles" -> {
                     context.runOnUiThread {
-                        mover.refreshFiles(call.arguments as String)
+                        mover.refreshFiles(
+                            call.arguments as String,
+                            true
+                        )
+                    }
+
+                    result.success(null)
+                }
+
+                "refreshFilesMultiple" -> {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        mover.refreshFilesMultiple(
+                            call.arguments as List<String>
+                        )
                     }
 
                     result.success(null)

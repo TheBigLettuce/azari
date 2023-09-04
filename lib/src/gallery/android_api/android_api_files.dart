@@ -135,9 +135,7 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
             .map((e) => e.id)
             .toList());
       } else {
-        for (final d in directories) {
-          PlatformFunctions.refreshFiles(d);
-        }
+        PlatformFunctions.refreshFilesMultiple(directories);
       }
     } catch (e, trace) {
       log("android gallery",

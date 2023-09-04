@@ -72,6 +72,7 @@ class GalleryImpl implements GalleryApi {
     if (f.isEmpty) {
       return;
     }
+
     try {
       db.writeTxnSync(() => db.systemGalleryDirectoryFiles.putAllSync(f
           .cast<DirectoryFile>()

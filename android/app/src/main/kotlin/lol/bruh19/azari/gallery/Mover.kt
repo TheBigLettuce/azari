@@ -191,22 +191,38 @@ internal class Mover(
                 return@launch
             }
 
-            refreshDirectoryFiles("favorites", context, time, showOnly = ids)
+            refreshDirectoryFiles("favorites", context, time, inRefreshAtEnd = true, showOnly = ids)
 
             isLockedFilesMux.unlock()
         }
     }
 
-    fun refreshFiles(dirId: String, isTrashed: Boolean = false) {
+    fun refreshFiles(dirId: String, inRefreshAtEnd: Boolean, isTrashed: Boolean = false) {
         val time = Calendar.getInstance().time.time
 
         scope.launch {
             isLockedFilesMux.lock()
 
-            refreshDirectoryFiles(dirId, context, time, isTrashed = isTrashed)
+            refreshDirectoryFiles(
+                dirId,
+                context,
+                time,
+                inRefreshAtEnd = inRefreshAtEnd,
+                isTrashed = isTrashed
+            )
 
             isLockedFilesMux.unlock()
         }
+    }
+
+    suspend fun refreshFilesMultiple(dirs: List<String>) {
+        val time = Calendar.getInstance().time.time
+
+        isLockedFilesMux.lock()
+        for ((i, d) in dirs.withIndex()) {
+            refreshDirectoryFiles(d, context, time, inRefreshAtEnd = i == dirs.size - 1)
+        }
+        isLockedFilesMux.unlock()
     }
 
     fun refreshGallery() {
@@ -266,6 +282,7 @@ internal class Mover(
         dir: String,
         context: Context,
         time: Long,
+        inRefreshAtEnd: Boolean,
         isTrashed: Boolean = false,
         showOnly: List<Long>? = null
     ) {
@@ -401,7 +418,7 @@ internal class Mover(
                                 copy,
                                 dir,
                                 time,
-                                inRefreshArg = !cursor.isLast,
+                                inRefreshArg = if (inRefreshAtEnd) !cursor.isLast else true,
                                 emptyArg = false
                             ) {}
                         }.join()
@@ -416,7 +433,7 @@ internal class Mover(
                             list,
                             dir,
                             time,
-                            inRefreshArg = false,
+                            inRefreshArg = !inRefreshAtEnd,
                             emptyArg = false
                         ) {}
                     }.join()
