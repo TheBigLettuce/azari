@@ -7,7 +7,6 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/db/platform_channel.dart';
@@ -98,11 +97,15 @@ class _AndroidFilesState extends State<AndroidFiles>
         FilteringMode.gif => Filters.gif(cells),
         FilteringMode.duplicate => Filters.duplicate(cells),
         FilteringMode.original => Filters.original(cells),
-        FilteringMode.same => Filters.same(context, cells, data, extra,
-            getCell: (i) => widget.api.directCell(i),
+        FilteringMode.same => Filters.same(
+            context,
+            cells,
+            data,
+            extra,
+            getCell: (i) => widget.api.directCell(i - 1),
             performSearch: () => performSearch(searchTextController.text),
             end: end,
-            expensiveHash: true),
+          ),
       };
     });
 
@@ -155,13 +158,6 @@ class _AndroidFilesState extends State<AndroidFiles>
       setState(() {});
     });
     searchHook(state);
-
-    // hack to prevent setState on every thumb loading
-    Future.delayed(500.ms, () {
-      try {
-        setState(() {});
-      } catch (_) {}
-    });
   }
 
   @override
@@ -410,7 +406,6 @@ class _AndroidFilesState extends State<AndroidFiles>
           },
           aspectRatio: state.settings.gallerySettings.filesAspectRatio.value,
           hideAlias: state.settings.gallerySettings.hideFileName,
-          loadThumbsDirectly: extra.loadThumbnails,
           searchWidget: SearchAndFocus(
               searchWidget(context, hint: widget.dirName), searchFocus),
           mainFocus: state.mainFocus,

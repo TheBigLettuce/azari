@@ -16,8 +16,7 @@ class GridLayout {
           SelectionInterface<T> selection,
           double systemNavigationInsets,
           bool listView,
-          {required void Function(T)? loadThumbsDirectly,
-          required void Function(BuildContext, T, int) onPressed}) =>
+          {required void Function(BuildContext, T, int) onPressed}) =>
       SliverList.separated(
         separatorBuilder: (context, index) => const Divider(
           height: 1,
@@ -26,9 +25,6 @@ class GridLayout {
         itemBuilder: (context, index) {
           final cell = state.getCell(index);
           final cellData = cell.getCellData(listView);
-          if (cellData.loaded != null && cellData.loaded == false) {
-            loadThumbsDirectly?.call(cell);
-          }
 
           return _WrappedSelection(
             selectUntil: (i) => selection.selectUnselectUntil(i, state),
@@ -62,7 +58,6 @@ class GridLayout {
           SelectionInterface<T> selection,
           int columns,
           bool listView,
-          void Function(T)? loadThumbsDirectly,
           GridCell Function(T, int) gridCell,
           {required double systemNavigationInsets,
           required double aspectRatio}) =>
@@ -72,10 +67,6 @@ class GridLayout {
         itemCount: state.cellCount,
         itemBuilder: (context, indx) {
           final cell = state.getCell(indx);
-          final cellData = cell.getCellData(listView);
-          if (cellData.loaded != null && cellData.loaded == false) {
-            loadThumbsDirectly?.call(cell);
-          }
 
           return _WrappedSelection(
             selectionEnabled: selection.selected.isNotEmpty,
@@ -99,15 +90,10 @@ class GridLayout {
     required double constraints,
     required double systemNavigationInsets,
     required double aspectRatio,
-    required void Function(T)? loadThumbsDirectly,
   }) =>
       Row(
         children: val.map((indx) {
           final cell = state.getCell(indx);
-          final cellData = cell.getCellData(listView);
-          if (cellData.loaded != null && cellData.loaded == false) {
-            loadThumbsDirectly?.call(cell);
-          }
 
           return ConstrainedBox(
             constraints: BoxConstraints(maxWidth: constraints),
@@ -137,15 +123,9 @@ class GridLayout {
     required double constraints,
     required double systemNavigationInsets,
     required double aspectRatio,
-    required void Function(T)? loadThumbsDirectly,
   }) =>
       Row(
         children: val.map((cell) {
-          final cellData = cell.getCellData(listView);
-          if (cellData.loaded != null && cellData.loaded == false) {
-            loadThumbsDirectly?.call(cell);
-          }
-
           return ConstrainedBox(
             constraints: BoxConstraints(maxWidth: constraints),
             child: material.AspectRatio(
@@ -174,7 +154,6 @@ class GridLayout {
     GridCell Function(T, int) gridCell, {
     required double systemNavigationInsets,
     required double aspectRatio,
-    required void Function(T)? loadThumbsDirectly,
   }) {
     final segRows = <dynamic>[];
     final segMap = <String, List<int>>{};
@@ -225,27 +204,39 @@ class GridLayout {
     }
 
     if (segments.injectedSegments.isNotEmpty) {
-      segRows.add(_SegSticky(segments.injectedLabel, true));
+      segRows.add(_SegSticky(segments.injectedLabel, true, () {
+        // segments.onLabelPressed(
+        //     segments.injectedLabel, segments.injectedSegments);
+      }));
 
       makeRows(segments.injectedSegments);
     }
 
     stickySegs.forEach((key, value) {
-      segRows.add(_SegSticky(key, true));
+      segRows.add(_SegSticky(key, true, () {
+        segments.onLabelPressed(
+            key, value.map((e) => state.getCell(e)).toList());
+      }));
 
       makeRows(value);
     });
 
     segMap.forEach(
       (key, value) {
-        segRows.add(_SegSticky(key, false));
+        segRows.add(_SegSticky(key, false, () {
+          segments.onLabelPressed(
+              key, value.map((e) => state.getCell(e)).toList());
+        }));
 
         makeRows(value);
       },
     );
 
     if (unsegmented.isNotEmpty) {
-      segRows.add(_SegSticky(segments.unsegmentedLabel, false));
+      segRows.add(_SegSticky(segments.unsegmentedLabel, false, () {
+        segments.onLabelPressed(segments.unsegmentedLabel,
+            unsegmented.map((e) => state.getCell(e)).toList());
+      }));
 
       makeRows(unsegmented);
     }
@@ -259,11 +250,8 @@ class GridLayout {
         }
         final val = segRows[indx];
         if (val is _SegSticky) {
-          return Segments.label(
-              context,
-              val.seg,
-              val.sticky,
-              segments.addToSticky != null &&
+          return Segments.label(context, val.seg, val.sticky,
+              onLongPress: segments.addToSticky != null &&
                       val.seg != segments.unsegmentedLabel
                   ? () {
                       HapticFeedback.vibrate();
@@ -271,21 +259,32 @@ class GridLayout {
                           unsticky: val.sticky ? true : null);
                       state.onRefresh();
                     }
-                  : null);
+                  : null,
+              onPress: val.onLabelPressed);
         } else if (val is List<int>) {
           return segmentedRow(
-              context, state, selection, val, listView, gridCell,
-              constraints: constraints,
-              systemNavigationInsets: systemNavigationInsets,
-              aspectRatio: aspectRatio,
-              loadThumbsDirectly: loadThumbsDirectly);
+            context,
+            state,
+            selection,
+            val,
+            listView,
+            gridCell,
+            constraints: constraints,
+            systemNavigationInsets: systemNavigationInsets,
+            aspectRatio: aspectRatio,
+          );
         } else if (val is List<T>) {
           return segmentedRowCells(
-              context, state, selection, val, listView, gridCell,
-              constraints: constraints,
-              systemNavigationInsets: systemNavigationInsets,
-              aspectRatio: aspectRatio,
-              loadThumbsDirectly: loadThumbsDirectly);
+            context,
+            state,
+            selection,
+            val,
+            listView,
+            gridCell,
+            constraints: constraints,
+            systemNavigationInsets: systemNavigationInsets,
+            aspectRatio: aspectRatio,
+          );
         }
         throw "invalid type";
       },

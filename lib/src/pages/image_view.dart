@@ -22,6 +22,7 @@ import 'package:palette_generator/palette_generator.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:transparent_image/transparent_image.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../cell/cell.dart';
 import '../cell/contentable.dart';
 import '../keybinds/keybinds.dart';
@@ -83,8 +84,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   late int cellCount = widget.cellCount;
   bool refreshing = false;
   final FocusNode mainFocus = FocusNode();
-
-  final WakelockStack wakelock = WakelockStack();
 
   ImageProvider? fakeProvider;
 
@@ -171,6 +170,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   void initState() {
     super.initState();
 
+    WakelockPlus.enable();
+
     animationController = AnimationController(vsync: this);
 
     scrollController =
@@ -195,7 +196,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   void dispose() {
     fullscreenPlug.unFullscreen();
 
-    wakelock.dispose();
+    WakelockPlus.disable();
     animationController.dispose();
     widget.updateTagScrollPos(null, null);
     controller.dispose();
@@ -348,7 +349,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
               : PhotoGalleryPageVideo(
                   url: uri,
                   localVideo: local,
-                  wakelock: wakelock,
                 ));
 
   PhotoViewGalleryPageOptions _makeNetImage(ImageProvider provider) {

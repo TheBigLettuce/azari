@@ -176,15 +176,6 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                     }
                 }
 
-                "loadThumbnail" -> {
-                    var thumb = call.arguments
-                    if (thumb is Int) {
-                        thumb = thumb.toLong()
-                    }
-                    mover.loadThumb(thumb as Long)
-                    result.success(null)
-                }
-
                 "requestManageMedia" -> {
                     try {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -326,24 +317,6 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                     }
 
                     mover.getThumbnailCallback(id, result)
-                }
-
-                "getExpensiveHashDirectly" -> {
-                    val id: Long = when (call.arguments) {
-                        is Long -> {
-                            call.arguments as Long
-                        }
-
-                        is Int -> {
-                            (call.arguments as Int).toLong()
-                        }
-
-                        else -> {
-                            throw java.lang.Exception("id is invalid")
-                        }
-                    }
-
-                    mover.getExpensiveHashCallback(id, result)
                 }
 
                 "copyMoveFiles" -> {

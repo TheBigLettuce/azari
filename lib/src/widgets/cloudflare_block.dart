@@ -8,9 +8,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
-import 'package:cookie_jar/cookie_jar.dart' as dio;
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class CloudflareBlock extends StatefulWidget {
@@ -45,7 +43,7 @@ class _CloudflareBlockState extends State<CloudflareBlock> {
                 : () {
                     Navigator.push(context, MaterialPageRoute(
                       builder: (context) {
-                        return AndroidWebview(intf: widget.interface);
+                        return const Placeholder();
                       },
                     ));
                   },
@@ -55,83 +53,83 @@ class _CloudflareBlockState extends State<CloudflareBlock> {
   }
 }
 
-class AndroidWebview extends StatefulWidget {
-  final CloudflareBlockInterface intf;
-  const AndroidWebview({super.key, required this.intf});
+// class AndroidWebview extends StatefulWidget {
+//   final CloudflareBlockInterface intf;
+//   const AndroidWebview({super.key, required this.intf});
 
-  @override
-  State<AndroidWebview> createState() => _AndroidWebviewState();
-}
+//   @override
+//   State<AndroidWebview> createState() => _AndroidWebviewState();
+// }
 
-class _AndroidWebviewState extends State<AndroidWebview> {
-  InAppWebViewController? controller;
+// class _AndroidWebviewState extends State<AndroidWebview> {
+//   InAppWebViewController? controller;
 
-  @override
-  void initState() {
-    CookieManager.instance().deleteAllCookies();
+//   @override
+//   void initState() {
+//     CookieManager.instance().deleteAllCookies();
 
-    super.initState();
-  }
+//     super.initState();
+//   }
 
-  String _userAgent() {
-    final version = Platform.version;
-    final index = version.indexOf('.', version.indexOf('.') + 1);
-    return "Dart/${version.substring(0, index)} (dart:io)";
-  }
+//   String _userAgent() {
+//     final version = Platform.version;
+//     final index = version.indexOf('.', version.indexOf('.') + 1);
+//     return "Dart/${version.substring(0, index)} (dart:io)";
+//   }
 
-  @override
-  void dispose() {
-    //controller.
-    super.dispose();
-  }
+//   @override
+//   void dispose() {
+//     //controller.
+//     super.dispose();
+//   }
 
-  dio.Cookie _toDioCookie(Cookie c) {
-    return dio.Cookie(
-      c.name,
-      c.value,
-    )
-      ..domain = c.domain
-      ..httpOnly = c.isHttpOnly ?? true
-      ..secure = c.isSecure ?? true
-      ..path = c.path ?? "/"
-      ..expires = c.expiresDate != null
-          ? DateTime.fromMillisecondsSinceEpoch(c.expiresDate!)
-          : null;
-  }
+//   dio.Cookie _toDioCookie(Cookie c) {
+//     return dio.Cookie(
+//       c.name,
+//       c.value,
+//     )
+//       ..domain = c.domain
+//       ..httpOnly = c.isHttpOnly ?? true
+//       ..secure = c.isSecure ?? true
+//       ..path = c.path ?? "/"
+//       ..expires = c.expiresDate != null
+//           ? DateTime.fromMillisecondsSinceEpoch(c.expiresDate!)
+//           : null;
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-          leading: IconButton(
-              onPressed: () async {
-                var cookies = await CookieManager.instance().getCookies(
-                    url: WebUri.uri(Uri.https(widget.intf.api.booru.url)));
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//           leading: IconButton(
+//               onPressed: () async {
+//                 var cookies = await CookieManager.instance().getCookies(
+//                     url: WebUri.uri(Uri.https(widget.intf.api.booru.url)));
 
-                var cfClearance = cookies
-                    .indexWhere((element) => element.name == "cf_clearance");
+//                 var cfClearance = cookies
+//                     .indexWhere((element) => element.name == "cf_clearance");
 
-                if (cfClearance != -1) {
-                  widget.intf.api.setCookies([
-                    _toDioCookie(cookies[cfClearance]),
-                  ]);
-                }
-              },
-              icon: const Icon(Icons.check)),
-          title: Text(AppLocalizations.of(context)!.solveCaptcha)),
-      body: InAppWebView(
-        initialUrlRequest: URLRequest(
-          url: WebUri.uri(Uri.https(widget.intf.api.booru.url)),
-        ),
-        onWebViewCreated: (c) {
-          controller = c;
-        },
-        initialSettings: InAppWebViewSettings(
-          //useShouldInterceptRequest: true,
-          userAgent: _userAgent(),
-          safeBrowsingEnabled: false,
-        ),
-      ),
-    );
-  }
-}
+//                 if (cfClearance != -1) {
+//                   widget.intf.api.setCookies([
+//                     _toDioCookie(cookies[cfClearance]),
+//                   ]);
+//                 }
+//               },
+//               icon: const Icon(Icons.check)),
+//           title: Text(AppLocalizations.of(context)!.solveCaptcha)),
+//       body: InAppWebView(
+//         initialUrlRequest: URLRequest(
+//           url: WebUri.uri(Uri.https(widget.intf.api.booru.url)),
+//         ),
+//         onWebViewCreated: (c) {
+//           controller = c;
+//         },
+//         initialSettings: InAppWebViewSettings(
+//           //useShouldInterceptRequest: true,
+//           userAgent: _userAgent(),
+//           safeBrowsingEnabled: false,
+//         ),
+//       ),
+//     );
+//   }
+// }

@@ -8,7 +8,6 @@
 import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/db/platform_channel.dart';
@@ -121,12 +120,6 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
         setState(() {});
       }
     });
-
-    Future.delayed(500.ms, () {
-      try {
-        setState(() {});
-      } catch (_) {}
-    });
   }
 
   @override
@@ -194,79 +187,91 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
           hideAlias: state.settings.gallerySettings.hideDirectoryName,
           immutable: false,
           segments: Segments(
-              (cell) {
-                for (final booru in Booru.values) {
-                  if (booru.url == cell.name) {
-                    return ("Booru", true);
-                  }
+            (cell) {
+              for (final booru in Booru.values) {
+                if (booru.url == cell.name) {
+                  return ("Booru", true);
                 }
+              }
 
-                final dirTag = PostTags().directoryTag(cell.bucketId);
-                if (dirTag != null) {
-                  return (
-                    dirTag,
-                    blacklistedDirIsar()
-                            .pinnedDirectories
-                            .getSync(fastHash(dirTag)) !=
-                        null
-                  );
-                }
-
-                final name = cell.name.split(" ");
+              final dirTag = PostTags().directoryTag(cell.bucketId);
+              if (dirTag != null) {
                 return (
-                  name.first,
+                  dirTag,
                   blacklistedDirIsar()
                           .pinnedDirectories
-                          .getSync(fastHash(name.first)) !=
+                          .getSync(fastHash(dirTag)) !=
                       null
                 );
-              },
-              "Uncategorized",
-              addToSticky: (seg, {unsticky}) {
-                if (seg == "Booru" || seg == "Special") {
-                  return;
-                }
-                if (unsticky == true) {
-                  blacklistedDirIsar().writeTxnSync(() {
-                    blacklistedDirIsar()
+              }
+
+              final name = cell.name.split(" ");
+              return (
+                name.first.toLowerCase(),
+                blacklistedDirIsar()
                         .pinnedDirectories
-                        .deleteSync(fastHash(seg));
-                  });
-                } else {
-                  blacklistedDirIsar().writeTxnSync(() {
-                    blacklistedDirIsar()
-                        .pinnedDirectories
-                        .putSync(PinnedDirectories(seg, DateTime.now()));
-                  });
-                }
-              },
-              injectedSegments: [
-                if (blacklistedDirIsar().favoriteMedias.countSync() != 0)
-                  SystemGalleryDirectory(
-                      bucketId: "favorites",
-                      name: "Favorites", // change
-                      tag: "",
-                      volumeName: "",
-                      relativeLoc: "",
-                      lastModified: 0,
-                      thumbFileId: blacklistedDirIsar()
-                          .favoriteMedias
-                          .where()
-                          .sortByTimeDesc()
-                          .findFirstSync()!
-                          .id),
-                if (trashThumbId != null)
-                  SystemGalleryDirectory(
-                      bucketId: "trash",
-                      name: "Trash", // change
-                      tag: "",
-                      volumeName: "",
-                      relativeLoc: "",
-                      lastModified: 0,
-                      thumbFileId: trashThumbId!),
-              ]),
+                        .getSync(fastHash(name.first.toLowerCase())) !=
+                    null
+              );
+            },
+            "Uncategorized",
+            addToSticky: (seg, {unsticky}) {
+              if (seg == "Booru" || seg == "Special") {
+                return;
+              }
+              if (unsticky == true) {
+                blacklistedDirIsar().writeTxnSync(() {
+                  blacklistedDirIsar()
+                      .pinnedDirectories
+                      .deleteSync(fastHash(seg));
+                });
+              } else {
+                blacklistedDirIsar().writeTxnSync(() {
+                  blacklistedDirIsar()
+                      .pinnedDirectories
+                      .putSync(PinnedDirectories(seg, DateTime.now()));
+                });
+              }
+            },
+            injectedSegments: [
+              if (blacklistedDirIsar().favoriteMedias.countSync() != 0)
+                SystemGalleryDirectory(
+                    bucketId: "favorites",
+                    name: "Favorites", // change
+                    tag: "",
+                    volumeName: "",
+                    relativeLoc: "",
+                    lastModified: 0,
+                    thumbFileId: blacklistedDirIsar()
+                        .favoriteMedias
+                        .where()
+                        .sortByTimeDesc()
+                        .findFirstSync()!
+                        .id),
+              if (trashThumbId != null)
+                SystemGalleryDirectory(
+                    bucketId: "trash",
+                    name: "Trash", // change
+                    tag: "",
+                    volumeName: "",
+                    relativeLoc: "",
+                    lastModified: 0,
+                    thumbFileId: trashThumbId!),
+            ],
+            onLabelPressed: (label, children) {
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) {
+                  return AndroidFiles(
+                      api: extra
+                          .joinedDir(children.map((e) => e.bucketId).toList()),
+                      callback: widget.nestedCallback,
+                      dirName: label,
+                      bucketId: "joinedDir");
+                },
+              ));
+            },
+          ),
           mainFocus: state.mainFocus,
-          loadThumbsDirectly: extra.loadThumbs,
           footer: widget.callback?.preview,
           initalCellCount: widget.callback != null
               ? extra.db.systemGalleryDirectorys.countSync()

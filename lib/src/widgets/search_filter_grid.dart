@@ -77,7 +77,7 @@ enum FilteringMode {
 enum SortingMode { none, size }
 
 abstract class FilterInterface<T extends Cell> {
-  Result<T> filter(String s);
+  Result<T> filter(String s, FilteringMode mode);
   void setSortingMode(SortingMode mode);
   void resetFilter();
 }
@@ -86,7 +86,9 @@ class IsarFilter<T extends Cell> implements FilterInterface<T> {
   Isar _from;
   final Isar _to;
   bool isFiltering = false;
-  final Iterable<T> Function(int offset, int limit, String s) getElems;
+  final Iterable<T> Function(
+          int offset, int limit, String s, SortingMode sort, FilteringMode mode)
+      getElems;
   (Iterable<T>, dynamic) Function(Iterable<T>, dynamic, bool)? passFilter;
   SortingMode currentSorting = SortingMode.none;
 
@@ -147,14 +149,14 @@ class IsarFilter<T extends Cell> implements FilterInterface<T> {
   }
 
   @override
-  Result<T> filter(String s) {
+  Result<T> filter(String s, FilteringMode mode) {
     isFiltering = true;
     _to.writeTxnSync(
       () => _to.collection<T>().clearSync(),
     );
 
     _writeFromTo(_from, (offset, limit) {
-      return getElems(offset, limit, s);
+      return getElems(offset, limit, s, currentSorting, mode);
     }, _to);
 
     return Result((i) => _to.collection<T>().getSync(i + 1)!,
@@ -258,8 +260,8 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
 
       widget.instance._state.filter.setSortingMode(sorting);
 
-      var res =
-          widget.instance._state.filter.filter(searchVirtual ? "" : value);
+      var res = widget.instance._state.filter
+          .filter(searchVirtual ? "" : value, currentFilterMode);
 
       interf.setSource(res.count, (i) {
         final cell = res.cell(i);

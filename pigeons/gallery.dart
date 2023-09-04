@@ -71,21 +71,10 @@ abstract class GalleryApi {
   void updateDirectories(List<Directory> d, bool inRefresh, bool empty);
   void updatePictures(List<DirectoryFile?> f, String bucketId, int startTime,
       bool inRefresh, bool empty);
-  void addThumbnails(List<ThumbnailId> thumbs);
 
   void notify(String? target);
 
-  List<int> thumbsExist(List<int> ids);
-
   void finish(String newVersion);
-}
-
-class ThumbnailId {
-  final int id;
-  final Uint8List thumb;
-  final int differenceHash;
-
-  const ThumbnailId(this.id, this.thumb, this.differenceHash);
 }
 
 class CopyOp {

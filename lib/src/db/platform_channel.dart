@@ -7,11 +7,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gallery/src/gallery/android_api/api.g.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
+import 'package:gallery/src/schemas/thumbnail.dart';
+import 'package:isar/isar.dart';
 
-import '../schemas/expensive_hash.dart';
+import 'isar.dart';
 
 const MethodChannel _channel = MethodChannel("lol.bruh19.azari.gallery");
 
@@ -24,12 +25,6 @@ class PlatformFunctions {
 
   static void refreshFavorites(List<int> ids) {
     _channel.invokeMethod("refreshFavorites", ids);
-  }
-
-  static Future<PerceptionHash> getExpensiveHashDirectly(int id) {
-    return _channel
-        .invokeMethod("getExpensiveHashDirectly", id)
-        .then((value) => PerceptionHash(value, id));
   }
 
   static Future<String> pickFileAndCopy(String outputDir) {
@@ -139,11 +134,39 @@ class PlatformFunctions {
     }).then((value) => value ?? false);
   }
 
-  static Future<ThumbnailId> getThumbDirectly(int id) {
+  static Future<ThumbId> getThumbDirectly(int id) {
     return _channel.invokeMethod("getThumbDirectly", id).then((value) =>
-        ThumbnailId(
-            id: id, thumb: value["data"], differenceHash: value["hash"]));
+        ThumbId(id: id, thumb: value["data"], differenceHash: value["hash"]));
   }
 
   const PlatformFunctions();
+}
+
+class ThumbId {
+  final int id;
+  final Uint8List thumb;
+  final int differenceHash;
+
+  const ThumbId(
+      {required this.id, required this.thumb, required this.differenceHash});
+
+  static void addThumbnailsToDb(List<ThumbId> l) {
+    if (thumbnailIsar().thumbnails.countSync() >= 3000) {
+      thumbnailIsar().writeTxnSync(() {
+        thumbnailIsar()
+            .thumbnails
+            .where()
+            .sortByUpdatedAt()
+            .limit(l.length)
+            .deleteAllSync();
+      });
+    }
+
+    thumbnailIsar().writeTxnSync(() {
+      thumbnailIsar().thumbnails.putAllSync(l
+          .map((e) =>
+              Thumbnail(e.id, DateTime.now(), e.thumb, e.differenceHash, false))
+          .toList());
+    });
+  }
 }

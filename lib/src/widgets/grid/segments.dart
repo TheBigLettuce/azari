@@ -31,17 +31,23 @@ class Segments<T> {
   /// If [unsticky] is true, then instead of stickying, unstickying should happen.
   final void Function(String seg, {bool? unsticky})? addToSticky;
 
+  final void Function(String label, List<T> children) onLabelPressed;
+
+  static void _doNothing(_, __) {}
+
   const Segments(this.segment, this.unsegmentedLabel,
       {this.addToSticky,
+      this.onLabelPressed = _doNothing,
       this.injectedSegments = const [],
       this.injectedLabel = "Special"});
 
   static Widget label(BuildContext context, String text, bool sticky,
-          void Function()? onLongPress) =>
+          {void Function()? onLongPress, required void Function() onPress}) =>
       Padding(
           padding: const EdgeInsets.only(bottom: 8, top: 16, left: 8, right: 8),
           child: GestureDetector(
             onLongPress: onLongPress,
+            onTap: onPress,
             child: SizedBox.fromSize(
               size: Size.fromHeight(
                   (Theme.of(context).textTheme.headlineLarge?.fontSize ?? 24) +

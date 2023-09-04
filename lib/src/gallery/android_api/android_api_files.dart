@@ -35,79 +35,16 @@ class AndroidGalleryFilesExtra {
   }
 
   Iterable<(int isarId, int? h)> getDifferenceHash(
-      Iterable<SystemGalleryDirectoryFile> cells, bool expensive) sync* {
+      Iterable<SystemGalleryDirectoryFile> cells) sync* {
     for (final cell in cells) {
-      if (expensive) {
-        yield (
-          cell.isarId!,
-          expensiveHashIsar().perceptionHashs.getSync(cell.id)?.hash
-        );
-      } else {
-        yield (cell.isarId!, cell.getThumbnail()?.differenceHash);
-      }
+      yield (cell.isarId!, cell.getThumbnail()?.differenceHash);
     }
   }
 
-  void loadNextThumbnails(void Function() callback, bool expensive) async {
-    if (expensive) {
-      await _loadThumbExpensive();
-    } else {
-      await _loadThumbInexpensive();
-    }
-
-    callback();
-  }
-
-  Future<void> _loadThumbExpensive() async {
+  void loadNextThumbnails(void Function() callback) async {
     var offset = 0;
     var count = 0;
-    List<Future<PerceptionHash>> hashs = [];
-
-    for (;;) {
-      final elems = _impl.db.systemGalleryDirectoryFiles
-          .where()
-          .offset(offset)
-          .limit(40)
-          .findAllSync();
-      offset += elems.length;
-
-      if (elems.isEmpty) {
-        break;
-      }
-
-      for (final file in elems) {
-        if (expensiveHashIsar().perceptionHashs.getSync(file.id) == null) {
-          count++;
-
-          hashs.add(PlatformFunctions.getExpensiveHashDirectly(file.id));
-
-          if (hashs.length > 8) {
-            final loadedH = await hashs.wait;
-            expensiveHashIsar().writeTxnSync(() {
-              expensiveHashIsar().perceptionHashs.putAllSync(loadedH);
-            });
-            hashs.clear();
-          }
-        }
-      }
-
-      if (count >= 80) {
-        break;
-      }
-    }
-
-    if (hashs.isNotEmpty) {
-      final loadedH = await hashs.wait;
-      expensiveHashIsar().writeTxnSync(() {
-        expensiveHashIsar().perceptionHashs.putAllSync(loadedH);
-      });
-    }
-  }
-
-  Future<void> _loadThumbInexpensive() async {
-    var offset = 0;
-    var count = 0;
-    List<Future<ThumbnailId>> thumbnails = [];
+    List<Future<ThumbId>> thumbnails = [];
 
     for (;;) {
       final elems = _impl.db.systemGalleryDirectoryFiles
@@ -128,7 +65,7 @@ class AndroidGalleryFilesExtra {
           thumbnails.add(PlatformFunctions.getThumbDirectly(file.id));
 
           if (thumbnails.length > 8) {
-            GalleryImpl.instance().addThumbnails(await thumbnails.wait);
+            ThumbId.addThumbnailsToDb(await thumbnails.wait);
             thumbnails.clear();
           }
         }
@@ -140,8 +77,10 @@ class AndroidGalleryFilesExtra {
     }
 
     if (thumbnails.isNotEmpty) {
-      GalleryImpl.instance().addThumbnails(await thumbnails.wait);
+      ThumbId.addThumbnailsToDb(await thumbnails.wait);
     }
+
+    callback();
   }
 
   void setRefreshingStatusCallback(
@@ -167,21 +106,109 @@ class AndroidGalleryFilesExtra {
   const AndroidGalleryFilesExtra._(this._impl);
 }
 
+class _JoinedDirectories extends _AndroidGalleryFiles {
+  final List<String> directories;
+
+  @override
+  bool isBucketId(String dirId) {
+    for (final d in directories) {
+      if (d == dirId) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  @override
+  Future<int> refresh() {
+    try {
+      db.writeTxnSync(() => db.systemGalleryDirectoryFiles.clearSync());
+
+      if (isTrash) {
+        PlatformFunctions.refreshTrashed();
+      } else if (isFavorites) {
+        PlatformFunctions.refreshFavorites(blacklistedDirIsar()
+            .favoriteMedias
+            .where()
+            .findAllSync()
+            .map((e) => e.id)
+            .toList());
+      } else {
+        for (final d in directories) {
+          PlatformFunctions.refreshFiles(d);
+        }
+      }
+    } catch (e, trace) {
+      log("android gallery",
+          level: Level.SEVERE.value, error: e, stackTrace: trace);
+    }
+
+    return Future.value(db.systemGalleryDirectoryFiles.countSync());
+  }
+
+  _JoinedDirectories(this.directories, super.db, super.unsetCurrentImages)
+      : super(
+            bucketId: "",
+            isTrash: false,
+            isFavorites: false,
+            target: "joinedDir",
+            getElems: (offset, limit, s, sort, mode) {
+              if (sort == SortingMode.size) {
+                return db.systemGalleryDirectoryFiles
+                    .filter()
+                    .nameContains(s, caseSensitive: false)
+                    .sortBySizeDesc()
+                    .offset(offset)
+                    .limit(limit)
+                    .findAllSync();
+              }
+
+              // if (mode == FilteringMode.same) {
+              //   return db.systemGalleryDirectoryFiles
+              //       .where()
+              //       .offset(offset)
+              //       .limit(limit)
+              //       .findAllSync();
+              // }
+
+              if (s.isEmpty) {
+                return db.systemGalleryDirectoryFiles
+                    .where()
+                    .sortByLastModifiedDesc()
+                    .offset(offset)
+                    .limit(limit)
+                    .findAllSync();
+              }
+
+              return db.systemGalleryDirectoryFiles
+                  .filter()
+                  .nameContains(s, caseSensitive: false)
+                  .sortByLastModifiedDesc()
+                  .offset(offset)
+                  .limit(limit)
+                  .findAllSync();
+            });
+}
+
 class _AndroidGalleryFiles
     implements
         GalleryAPIFiles<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile> {
   final bool isTrash;
   final bool isFavorites;
-  final String bucketId;
+  final String _bucketId;
   final int startTime;
   final String target;
+
+  final Isar db;
 
   void Function() unsetCurrentImages;
   void Function(int i, bool inRefresh, bool empty)? callback;
   void Function()? refreshGrid;
 
   bool isThumbsLoading = false;
-  Isar db;
+
+  bool isBucketId(String bucketId) => _bucketId == bucketId;
 
   @override
   AndroidGalleryFilesExtra getExtra() => AndroidGalleryFilesExtra._(this);
@@ -190,34 +217,7 @@ class _AndroidGalleryFiles
   SystemGalleryDirectoryFile directCell(int i) =>
       db.systemGalleryDirectoryFiles.getSync(i + 1)!;
 
-  late final IsarFilter<SystemGalleryDirectoryFile> filter =
-      IsarFilter<SystemGalleryDirectoryFile>(
-          db, IsarDbsOpen.androidGalleryFiles(), (offset, limit, s) {
-    if (filter.currentSorting == SortingMode.size) {
-      return db.systemGalleryDirectoryFiles
-          .filter()
-          .nameContains(s, caseSensitive: false)
-          .sortBySizeDesc()
-          .offset(offset)
-          .limit(limit)
-          .findAllSync();
-    }
-
-    if (s.isEmpty) {
-      return db.systemGalleryDirectoryFiles
-          .where()
-          .offset(offset)
-          .limit(limit)
-          .findAllSync();
-    }
-
-    return db.systemGalleryDirectoryFiles
-        .filter()
-        .nameContains(s, caseSensitive: false)
-        .offset(offset)
-        .limit(limit)
-        .findAllSync();
-  });
+  final IsarFilter<SystemGalleryDirectoryFile> filter;
 
   @override
   void close() {
@@ -244,7 +244,7 @@ class _AndroidGalleryFiles
             .map((e) => e.id)
             .toList());
       } else {
-        PlatformFunctions.refreshFiles(bucketId);
+        PlatformFunctions.refreshFiles(_bucketId);
       }
     } catch (e, trace) {
       log("android gallery",
@@ -257,9 +257,46 @@ class _AndroidGalleryFiles
   _AndroidGalleryFiles(
     this.db,
     this.unsetCurrentImages, {
+    required Iterable<SystemGalleryDirectoryFile> Function(
+            int, int, String, SortingMode, FilteringMode)
+        getElems,
     required this.target,
-    required this.bucketId,
+    required String bucketId,
     this.isTrash = false,
     this.isFavorites = false,
-  }) : startTime = DateTime.now().millisecondsSinceEpoch;
+  })  : startTime = DateTime.now().millisecondsSinceEpoch,
+        _bucketId = bucketId,
+        filter = IsarFilter<SystemGalleryDirectoryFile>(
+            db, IsarDbsOpen.androidGalleryFiles(), getElems);
+}
+
+Iterable<SystemGalleryDirectoryFile> Function(
+        int, int, String, SortingMode, FilteringMode)
+    defaultGetElemsFiles(Isar db) {
+  return (offset, limit, s, sort, _) {
+    if (sort == SortingMode.size) {
+      return db.systemGalleryDirectoryFiles
+          .filter()
+          .nameContains(s, caseSensitive: false)
+          .sortBySizeDesc()
+          .offset(offset)
+          .limit(limit)
+          .findAllSync();
+    }
+
+    if (s.isEmpty) {
+      return db.systemGalleryDirectoryFiles
+          .where()
+          .offset(offset)
+          .limit(limit)
+          .findAllSync();
+    }
+
+    return db.systemGalleryDirectoryFiles
+        .filter()
+        .nameContains(s, caseSensitive: false)
+        .offset(offset)
+        .limit(limit)
+        .findAllSync();
+  };
 }

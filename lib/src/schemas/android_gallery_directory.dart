@@ -8,7 +8,6 @@
 import 'package:flutter/material.dart';
 import 'package:gallery/src/cell/data.dart';
 import 'package:isar/isar.dart';
-import 'package:transparent_image/transparent_image.dart';
 
 import '../cell/cell.dart';
 import '../cell/contentable.dart';
@@ -69,15 +68,7 @@ class SystemGalleryDirectory implements Cell {
 
   @override
   CellData getCellData(bool isList) {
-    ImageProvider provier;
-    final (thumb, loaded) = androidThumbnail(thumbFileId);
-
-    try {
-      provier = KeyMemoryImage(bucketId + thumb.length.toString(), thumb);
-    } catch (e) {
-      provier = MemoryImage(kTransparentImage);
-    }
-
-    return CellData(thumb: provier, name: name, stickers: [], loaded: loaded);
+    return CellData(
+        thumb: ThumbnailProvider(thumbFileId), name: name, stickers: []);
   }
 }

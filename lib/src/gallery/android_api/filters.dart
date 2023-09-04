@@ -94,13 +94,11 @@ class Filters {
       SameFilterAccumulator? accu,
       AndroidGalleryFilesExtra extra,
       {required bool end,
-      required bool expensiveHash,
       required SystemGalleryDirectoryFile Function(int i) getCell,
       required void Function() performSearch}) {
     accu ??= SameFilterAccumulator.empty();
 
-    for (final (isarId, hash)
-        in extra.getDifferenceHash(cells, expensiveHash)) {
+    for (final (isarId, hash) in extra.getDifferenceHash(cells)) {
       if (hash == null) {
         accu.skipped++;
         continue;
@@ -114,61 +112,6 @@ class Filters {
     }
 
     if (end) {
-      Iterable<SystemGalleryDirectoryFile> ret;
-
-      if (expensiveHash) {
-        final Set<int> distanceSet = {};
-
-        accu.data.removeWhere((key, value) {
-          if (value.length > 1) {
-            for (final e in value) {
-              distanceSet.add(e);
-            }
-            return true;
-          }
-          return false;
-        });
-
-        for (final first in accu.data.keys) {
-          for (final second in accu.data.keys) {
-            if (first == second) {
-              continue;
-            }
-
-            final distance = hammingDistance(first, second);
-            if (distance < 2) {
-              for (final e in accu.data[first]!) {
-                distanceSet.add(e);
-              }
-
-              for (final e in accu.data[second]!) {
-                distanceSet.add(e);
-              }
-            }
-          }
-        }
-
-        ret = () sync* {
-          for (final i in distanceSet) {
-            var file = getCell(i);
-            file.isarId = null;
-            yield file;
-          }
-        }();
-      } else {
-        ret = () sync* {
-          for (final i in accu!.data.values) {
-            if (i.length > 1) {
-              for (final v in i) {
-                var file = getCell(v);
-                file.isarId = null;
-                yield file;
-              }
-            }
-          }
-        }();
-      }
-
       if (accu.skipped != 0) {
         ScaffoldMessenger.of(context).removeCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -184,12 +127,25 @@ class Filters {
                         content: Text(AppLocalizations.of(context)!.loaded)));
                     performSearch();
                   } catch (_) {}
-                }, expensiveHash);
+                });
               }),
         ));
       }
 
-      return (ret, accu);
+      return (
+        () sync* {
+          for (final i in accu!.data.values) {
+            if (i.length > 1) {
+              for (final v in i) {
+                var file = getCell(v);
+                file.isarId = null;
+                yield file;
+              }
+            }
+          }
+        }(),
+        accu
+      );
     }
 
     return ([], accu);

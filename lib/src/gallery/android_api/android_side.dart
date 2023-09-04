@@ -54,7 +54,7 @@ class GalleryImpl implements GalleryApi {
       return;
     }
 
-    if (_currentApi?.currentImages?.bucketId != bucketId) {
+    if (_currentApi?.currentImages?.isBucketId(bucketId) != true) {
       return;
     }
 
@@ -91,46 +91,9 @@ class GalleryImpl implements GalleryApi {
     } catch (e) {
       log("updatePictures", level: Level.WARNING.value, error: e);
     }
+
     _currentApi?.currentImages?.callback
         ?.call(db.systemGalleryDirectoryFiles.countSync(), inRefresh, false);
-  }
-
-  @override
-  void addThumbnails(List<ThumbnailId?> thumbs) {
-    if (thumbs.isEmpty) {
-      return;
-    }
-
-    if (thumbnailIsar().thumbnails.countSync() >= 3000) {
-      thumbnailIsar().writeTxnSync(() {
-        thumbnailIsar()
-            .thumbnails
-            .where()
-            .sortByUpdatedAt()
-            .limit(thumbs.length)
-            .deleteAllSync();
-      });
-    }
-
-    thumbnailIsar().writeTxnSync(() {
-      thumbnailIsar().thumbnails.putAllSync(thumbs
-          .cast<ThumbnailId>()
-          .map((e) =>
-              Thumbnail(e.id, DateTime.now(), e.thumb, e.differenceHash, false))
-          .toList());
-    });
-  }
-
-  @override
-  List<int?> thumbsExist(List<int?> ids) {
-    final response = <int>[];
-    for (final id in ids.cast<int>()) {
-      if (thumbnailIsar().thumbnails.where().idEqualTo(id).countSync() != 1) {
-        response.add(id);
-      }
-    }
-
-    return response;
   }
 
   @override

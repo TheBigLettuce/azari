@@ -69,7 +69,6 @@ dependencies:
   palette_generator: ^0.3.3+2
   dio_cookie_manager: ^3.1.0
   cookie_jar: ^4.0.5
-  flutter_inappwebview: ^6.0.0-beta.24+1
   octo_image: ^1.0.2
   wakelock_plus: ^1.1.1
 

@@ -13,7 +13,6 @@ import 'package:flutter/material.dart' as material show AspectRatio;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/interface.dart';
-import 'package:gallery/src/cell/data.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
@@ -44,8 +43,9 @@ class CloudflareBlockInterface {
 class _SegSticky {
   final String seg;
   final bool sticky;
+  final void Function() onLabelPressed;
 
-  const _SegSticky(this.seg, this.sticky);
+  const _SegSticky(this.seg, this.sticky, this.onLabelPressed);
 }
 
 /// The grid of images.
@@ -160,10 +160,6 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   /// Currently useless.
   final CloudflareBlockInterface Function()? cloudflareHook;
 
-  /// If [loadThumbsDirectly] is not null then the grid will call it
-  /// in case when [CellData.loaded] is false.
-  final void Function(T cell)? loadThumbsDirectly;
-
   /// Segments of the grid.
   /// If [segments] is not null, then the grid will try to group the cells together
   /// by a common category name.
@@ -197,7 +193,6 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       this.registerNotifiers,
       this.immutable = true,
       this.tightMode = false,
-      this.loadThumbsDirectly,
       this.belowMainFocus,
       this.inlineMenuButtonItems = false,
       this.progressTicker,
@@ -717,8 +712,6 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                                           selection,
                                           widget.systemNavigationInsets.bottom,
                                           widget.description.listView,
-                                          loadThumbsDirectly:
-                                              widget.loadThumbsDirectly,
                                           onPressed: _onPressed)
                                       : GridLayout.grid<T>(
                                           context,
@@ -726,7 +719,6 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                                           selection,
                                           widget.description.columns.number,
                                           widget.description.listView,
-                                          widget.loadThumbsDirectly,
                                           _makeGridCell,
                                           systemNavigationInsets: widget
                                               .systemNavigationInsets.bottom,
@@ -734,18 +726,17 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                                         ))
                             else
                               _withPadding(GridLayout.segments<T>(
-                                  context,
-                                  widget.segments!,
-                                  _state,
-                                  selection,
-                                  widget.description.listView,
-                                  widget.description.columns.number,
-                                  _makeGridCell,
-                                  systemNavigationInsets:
-                                      widget.systemNavigationInsets.bottom,
-                                  aspectRatio: widget.aspectRatio,
-                                  loadThumbsDirectly:
-                                      widget.loadThumbsDirectly)),
+                                context,
+                                widget.segments!,
+                                _state,
+                                selection,
+                                widget.description.listView,
+                                widget.description.columns.number,
+                                _makeGridCell,
+                                systemNavigationInsets:
+                                    widget.systemNavigationInsets.bottom,
+                                aspectRatio: widget.aspectRatio,
+                              )),
                           ],
                         ))),
                 if (widget.footer != null)

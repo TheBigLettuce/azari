@@ -12,7 +12,6 @@ import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/android_gallery_directory.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 import 'package:gallery/src/schemas/blacklisted_directory.dart';
-import 'package:gallery/src/schemas/expensive_hash.dart';
 import 'package:gallery/src/schemas/favorite_media.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
@@ -48,14 +47,23 @@ class AndroidGalleryExtra {
   Isar get db => _impl.db;
 
   GalleryAPIFiles<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile>
+      joinedDir(List<String> directoriesId) {
+    final db = IsarDbsOpen.androidGalleryFiles();
+    final instance =
+        _JoinedDirectories(directoriesId, db, () => _impl.currentImages = null);
+    _impl.currentImages = instance;
+
+    return instance;
+  }
+
+  GalleryAPIFiles<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile>
       trash() {
-    final instance = _AndroidGalleryFiles(
-      IsarDbsOpen.androidGalleryFiles(),
-      () => _impl.currentImages = null,
-      isTrash: true,
-      bucketId: "trash",
-      target: "trash",
-    );
+    final db = IsarDbsOpen.androidGalleryFiles();
+    final instance = _AndroidGalleryFiles(db, () => _impl.currentImages = null,
+        isTrash: true,
+        bucketId: "trash",
+        target: "trash",
+        getElems: defaultGetElemsFiles(db));
     _impl.currentImages = instance;
 
     return instance;
@@ -63,13 +71,12 @@ class AndroidGalleryExtra {
 
   GalleryAPIFiles<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile>
       favorites() {
-    final instance = _AndroidGalleryFiles(
-      IsarDbsOpen.androidGalleryFiles(),
-      () => _impl.currentImages = null,
-      isFavorites: true,
-      bucketId: "favorites",
-      target: "favorites",
-    );
+    final db = IsarDbsOpen.androidGalleryFiles();
+    final instance = _AndroidGalleryFiles(db, () => _impl.currentImages = null,
+        isFavorites: true,
+        bucketId: "favorites",
+        target: "favorites",
+        getElems: defaultGetElemsFiles(db));
     _impl.currentImages = instance;
 
     return instance;
@@ -126,7 +133,7 @@ class _AndroidGallery
 
   final filter = IsarFilter<SystemGalleryDirectory>(GalleryImpl.instance().db,
       IsarDbsOpen.androidGalleryDirectories(temporary: true),
-      (offset, limit, v) {
+      (offset, limit, v, _, __) {
     return GalleryImpl.instance()
         .db
         .systemGalleryDirectorys
@@ -176,12 +183,11 @@ class _AndroidGallery
   @override
   GalleryAPIFiles<AndroidGalleryFilesExtra, SystemGalleryDirectoryFile> files(
       SystemGalleryDirectory d) {
-    final instance = _AndroidGalleryFiles(
-      IsarDbsOpen.androidGalleryFiles(),
-      () => currentImages = null,
-      bucketId: d.bucketId,
-      target: d.name,
-    );
+    final db = IsarDbsOpen.androidGalleryFiles();
+    final instance = _AndroidGalleryFiles(db, () => currentImages = null,
+        bucketId: d.bucketId,
+        target: d.name,
+        getElems: defaultGetElemsFiles(db));
 
     currentImages = instance;
 

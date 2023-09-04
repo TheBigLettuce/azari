@@ -19,7 +19,6 @@ import android.util.Size
 import android.webkit.MimeTypeMap
 import androidx.core.graphics.scale
 import androidx.documentfile.provider.DocumentFile
-import com.bumptech.glide.Glide
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -69,27 +68,20 @@ internal class Mover(
                     }
 
                     inProgress.add(newScope.launch {
-                        var res: ThumbnailId
+                        var res: Pair<ByteArray, Long>
                         try {
                             val uri = ContentUris.withAppendedId(
                                 MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
                                 uris.thumb
                             )
 
-                            val (byt, hash) = getThumb(uri)
-                            res = ThumbnailId(uris.thumb, byt, hash)
+                            res = getThumb(uri)
                         } catch (e: Exception) {
-                            res = ThumbnailId(uris.thumb, transparentImage, 0)
+                            res = Pair(transparentImage, 0)
                             Log.e("thumbnail coro", e.toString())
                         }
 
-                        CoroutineScope(coContext).launch {
-                            galleryApi.addThumbnails(
-                                listOf(res)
-                            ) {}
-                        }.join()
-
-                        uris.callback?.invoke()
+                        uris.callback.invoke(res.first, res.second)
                     })
                 } catch (e: java.lang.Exception) {
                     Log.e("thumbnails", e.toString())
@@ -155,47 +147,11 @@ internal class Mover(
         }
     }
 
-    fun thumbnailsCallback(thumb: Long, callback: () -> Unit) {
-        scope.launch {
-            thumbnailsChannel.send(ThumbOp(thumb, callback))
-        }
-    }
-
     fun getThumbnailCallback(thumb: Long, result: MethodChannel.Result) {
         scope.launch {
-            try {
-                val (t, h) = getThumb(
-                    ContentUris.withAppendedId(
-                        MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
-                        thumb
-                    )
-                )
-
-                result.success(
-                    mapOf<String, Any>(Pair("data", t), Pair("hash", h))
-                )
-            } catch (e: Exception) {
-                result.success(
-                    mapOf<String, Any>(Pair("data", transparentImage), Pair("hash", 0L))
-                )
-            }
-        }
-    }
-
-    fun getExpensiveHashCallback(id: Long, result: MethodChannel.Result) {
-        scope.launch {
-            try {
-                val scaled = Glide.with(context).asBitmap().load(
-                    ContentUris.withAppendedId(
-                        MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
-                        id
-                    )
-                ).submit(64, 64).get()
-
-                result.success(perceptionHash(scaled))
-            } catch (e: java.lang.Exception) {
-                result.success(0L)
-            }
+            thumbnailsChannel.send(ThumbOp(thumb) { byt, hash ->
+                result.success(mapOf<String, Any>(Pair("data", byt), Pair("hash", hash)))
+            })
         }
     }
 
@@ -242,16 +198,10 @@ internal class Mover(
     }
 
     fun refreshFiles(dirId: String, isTrashed: Boolean = false) {
-        if (isLockedFilesMux.isLocked) {
-            return
-        }
-
         val time = Calendar.getInstance().time.time
 
         scope.launch {
-            if (!isLockedFilesMux.tryLock()) {
-                return@launch
-            }
+            isLockedFilesMux.lock()
 
             refreshDirectoryFiles(dirId, context, time, isTrashed = isTrashed)
 
@@ -281,8 +231,12 @@ internal class Mover(
         )
 
         val bundle = Bundle().apply {
-            putString(ContentResolver.QUERY_ARG_SQL_SELECTION, "")
+            putString(
+                ContentResolver.QUERY_ARG_SQL_SELECTION,
+                "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND  ${MediaStore.Files.FileColumns.MIME_TYPE} != ?"
+            )
             putInt(ContentResolver.QUERY_ARG_LIMIT, 1)
+            putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, arrayOf("image/vnd.djvu"))
             putString(
                 ContentResolver.QUERY_ARG_SQL_SORT_ORDER,
                 "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC"
@@ -510,12 +464,6 @@ internal class Mover(
         thumb.recycle()
 
         return Pair(bytes, hash)
-    }
-
-    fun loadThumb(id: Long) {
-        scope.launch {
-            thumbnailsChannel.send(ThumbOp(id, null))
-        }
     }
 
     private suspend fun refreshMediastore(context: Context, galleryApi: GalleryApi) {

@@ -8,42 +8,13 @@
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
-
-class WakelockStack {
-  Future? current;
-
-  void diasble() {
-    current?.then((value) {
-      WakelockPlus.disable();
-    });
-  }
-
-  void enable() {
-    if (current != null) {
-      return;
-    }
-
-    current = WakelockPlus.enable()..then((value) => current = null);
-  }
-
-  void dispose() {
-    if (current != null) {
-      current?.then((value) => WakelockPlus.disable());
-    } else {
-      WakelockPlus.disable();
-    }
-  }
-}
 
 class PhotoGalleryPageVideo extends StatefulWidget {
   final String url;
   final bool localVideo;
-  final WakelockStack wakelock;
   const PhotoGalleryPageVideo({
     super.key,
     required this.url,
-    required this.wakelock,
     required this.localVideo,
   });
 
@@ -60,8 +31,6 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
   @override
   void initState() {
     super.initState();
-
-    widget.wakelock.enable();
 
     if (widget.localVideo) {
       controller = VideoPlayerController.contentUri(Uri.parse(widget.url),
@@ -111,7 +80,6 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
 
   @override
   void dispose() {
-    widget.wakelock.diasble();
     disposed = true;
     controller.dispose();
     if (chewieController != null) {

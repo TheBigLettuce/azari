@@ -308,13 +308,8 @@ class SystemGalleryDirectoryFile implements Cell {
       if (isFavorite()) FilteringMode.favorite.icon,
     ];
 
-    final (thumb, loaded) = androidThumbnail(id);
-
     return CellData(
-        thumb: KeyMemoryImage(id.toString() + thumb.length.toString(), thumb),
-        name: name,
-        stickers: stickers,
-        loaded: loaded);
+        thumb: ThumbnailProvider(id), name: name, stickers: stickers);
   }
 
   Thumbnail? getThumbnail() {
@@ -329,13 +324,20 @@ class SystemGalleryDirectoryFile implements Cell {
       : (thumb.data as Uint8List, true);
 }
 
-class KeyMemoryImage extends ImageProvider<MemoryImage> {
-  final String key;
-  final Uint8List bytes;
+class ThumbnailProvider extends ImageProvider<MemoryImage> {
+  final int id;
 
   @override
-  Future<MemoryImage> obtainKey(ImageConfiguration configuration) {
-    return Future.value(MemoryImage(bytes));
+  Future<MemoryImage> obtainKey(ImageConfiguration configuration) async {
+    final (thumb, loaded) = androidThumbnail(id);
+    if (loaded) {
+      return MemoryImage(thumb);
+    }
+    final directThumb = await PlatformFunctions.getThumbDirectly(id);
+
+    ThumbId.addThumbnailsToDb([directThumb]);
+
+    return MemoryImage(directThumb.thumb);
   }
 
   @override
@@ -353,13 +355,13 @@ class KeyMemoryImage extends ImageProvider<MemoryImage> {
       return false;
     }
 
-    return other is KeyMemoryImage && other.key == key;
+    return other is ThumbnailProvider && other.id == id;
   }
 
-  const KeyMemoryImage(this.key, this.bytes);
+  const ThumbnailProvider(this.id);
 
   @override
-  int get hashCode => key.hashCode;
+  int get hashCode => id.hashCode;
 }
 
 ListTile addInfoTile(
