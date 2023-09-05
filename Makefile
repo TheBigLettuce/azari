@@ -35,7 +35,7 @@ linuxdeploy-x86_64.AppImage:
 run: app
 	./app/gallery
 
-regenerate: 
+regenerate:
 	flutter gen-l10n
 	mkdir -p test
 	flutter pub run pigeon --input pigeons/gallery.dart

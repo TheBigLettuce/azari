@@ -238,7 +238,7 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
 
                 "refreshTrashed" -> {
                     context.runOnUiThread {
-                        mover.refreshFiles("trash", true)
+                        mover.refreshFiles("trash", inRefreshAtEnd = true, isTrashed = true)
                     }
 
                     result.success(null)
@@ -418,7 +418,7 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                     context.runOnUiThread {
                         mover.refreshFiles(
                             call.arguments as String,
-                            true
+                            inRefreshAtEnd = true,
                         )
                     }
 

@@ -158,6 +158,22 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
     api.refresh();
   }
 
+  GridBottomSheetAction<SystemGalleryDirectory> _joinedDirectoriesAction() {
+    return GridBottomSheetAction(Icons.merge_rounded, (selected) {
+      _joinedDirectories(
+        selected.length == 1
+            ? selected.first.name
+            : "${selected.length} ${AppLocalizations.of(context)!.directoriesPlural}",
+        selected,
+      );
+    },
+        true,
+        GridBottomSheetActionExplanation(
+          label: AppLocalizations.of(context)!.joinActionLabel,
+          body: AppLocalizations.of(context)!.joinActionBody,
+        ));
+  }
+
   @override
   Widget build(BuildContext context) {
     var insets = MediaQuery.viewPaddingOf(context);
@@ -188,6 +204,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                         } catch (e) {
                           log("new folder in android_directories",
                               level: Level.SEVERE.value, error: e);
+                          // ignore: use_build_context_synchronously
                           Navigator.pop(context);
                         }
                       },
@@ -326,7 +343,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
           description: GridDescription(
               kGalleryDrawerIndex,
               widget.callback != null || widget.nestedCallback != null
-                  ? []
+                  ? [_joinedDirectoriesAction()]
                   : [
                       GridBottomSheetAction(Icons.tag, (selected) {
                         Navigator.push(
@@ -406,11 +423,11 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                             ));
                       },
                           true,
-                          const GridBottomSheetActionExplanation(
-                            label: "Directory tag", // TODO: change
-                            body:
-                                "Lets you to assign a tag to the selected directory.\n"
-                                "Directory tag is used for categorizing the directories on the grid.", // TODO: change
+                          GridBottomSheetActionExplanation(
+                            label: AppLocalizations.of(context)!
+                                .directoryTagActionLabel,
+                            body: AppLocalizations.of(context)!
+                                .directoryTagActionBody,
                           ),
                           showOnlyWhenSingle: true),
                       GridBottomSheetAction(Icons.hide_image_outlined,
@@ -421,25 +438,13 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                             .toList());
                       },
                           true,
-                          const GridBottomSheetActionExplanation(
-                            label: "Blacklist", // TODO: change
-                            body: "Add selected directories to the blacklist.\n"
-                                "You can unblacklist the directories in the settings.", // TODO: change
+                          GridBottomSheetActionExplanation(
+                            label: AppLocalizations.of(context)!
+                                .blacklistActionLabel,
+                            body: AppLocalizations.of(context)!
+                                .blacklistActionBody,
                           )),
-                      GridBottomSheetAction(Icons.merge_rounded, (selected) {
-                        _joinedDirectories(
-                          selected.length == 1
-                              ? selected.first.name
-                              : "${selected.length} directories", // TODO: change
-                          selected,
-                        );
-                      },
-                          true,
-                          const GridBottomSheetActionExplanation(
-                            label: "Join", // TODO: change
-                            body:
-                                "Join selected directories into one for viewing.", // TODO: change
-                          ))
+                      _joinedDirectoriesAction()
                     ],
               state.settings.gallerySettings.directoryColumns,
               listView: false,

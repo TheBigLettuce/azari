@@ -8,9 +8,7 @@
 import 'dart:developer';
 import 'dart:io' as io;
 
-import 'package:dio/dio.dart';
-import 'package:gallery/src/booru/api/danbooru.dart';
-import 'package:gallery/src/booru/api/gelbooru.dart';
+import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/db/platform_channel.dart';
@@ -26,6 +24,7 @@ import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 late final PostTags _global;
 bool _isInitalized = false;
@@ -82,16 +81,7 @@ class PostTags {
   /// Resolves to an empty list in case of any error.
   Future<List<String>> loadFromDissassemble(
       String filename, DisassembleResult dissassembled) async {
-    final Dio client = Dio(BaseOptions(
-      responseType: ResponseType.json,
-    ));
-
-    final api = switch (dissassembled.booru) {
-      Booru.danbooru => Danbooru(
-          client, UnsaveableCookieJar(CookieJarTab().get(Booru.danbooru))),
-      Booru.gelbooru => Gelbooru(
-          0, client, UnsaveableCookieJar(CookieJarTab().get(Booru.gelbooru))),
-    };
+    final api = BooruAPI.fromEnum(dissassembled.booru);
 
     try {
       final post = await api.singlePost(dissassembled.id);
@@ -123,12 +113,12 @@ class PostTags {
     if (suppliedBooru == null) {
       final split = filename.split("_");
       if (split.isEmpty || split.length != 2) {
-        throw "No prefix"; // TODO: change
+        throw _disassembleNoPrefix;
       }
 
       final newbooru = Booru.fromPrefix(split.first);
       if (newbooru == null) {
-        throw "Prefix not registred"; // TODO: change
+        throw _disassemblePrefixNotRegistred;
       }
 
       booru = newbooru;
@@ -144,36 +134,35 @@ class PostTags {
 
     final numbersAndHash = filename.split(" - ");
     if (numbersAndHash.isEmpty || numbersAndHash.length != 2) {
-      throw "Filename should include numbers and hash separated by a -,"
-          " with one space to the left of the -, and one to the right of -"; // TODO: change
+      throw _disassembleNumbersAndHash;
     }
 
     final id = int.tryParse(numbersAndHash.first);
     if (id == null) {
-      throw "Invalid post number"; // TODO: change
+      throw _disassembleInvalidPostNumber;
     }
 
     final hashAndExt = numbersAndHash.last.split(".");
     if (hashAndExt.isEmpty || hashAndExt.length != 2) {
-      throw "Filename doesn't include extension"; // TODO: change
+      throw _disassembleNoExtension;
     }
 
     final numbersLetters = RegExp(r'^[a-z0-9]+$');
     if (!numbersLetters.hasMatch(hashAndExt.first)) {
-      throw "Hash is invalid"; // TODO: change
+      throw _disassembleHashIsInvalid;
     }
 
     if (hashAndExt.last.length > 6) {
-      throw "Extension is too long"; // TODO: change
+      throw _disassembleExtensionTooLong;
     }
 
     if (hashAndExt.first.length != 32) {
-      throw "Hash is not 32 characters"; // TODO: change
+      throw _disassembleHashIsnt32;
     }
 
     final lettersAndNumbers = RegExp(r'^[a-zA-Z0-9]+$');
     if (!lettersAndNumbers.hasMatch(hashAndExt.last)) {
-      throw "Extension is invalid"; // TODO: change
+      throw _disassembleExtensionInvalid;
     }
 
     return DisassembleResult(
@@ -397,10 +386,38 @@ class PostTags {
   }
 }
 
-void initPostTags() {
+late final String _disassembleExtensionInvalid;
+late final String _disassembleNoPrefix;
+late final String _disassembleNumbersAndHash;
+late final String _disassemblePrefixNotRegistred;
+late final String _disassembleInvalidPostNumber;
+late final String _disassembleNoExtension;
+late final String _disassembleHashIsInvalid;
+late final String _disassembleExtensionTooLong;
+late final String _disassembleHashIsnt32;
+
+void initPostTags(BuildContext context) {
   if (_isInitalized) {
     return;
   }
 
+  _isInitalized = true;
   _global = PostTags._new(IsarDbsOpen.localTags());
+
+  _disassembleExtensionInvalid =
+      AppLocalizations.of(context)!.disassembleExtensionInvalid;
+  _disassembleNoPrefix = AppLocalizations.of(context)!.disassembleNoPrefix;
+  _disassembleNumbersAndHash =
+      AppLocalizations.of(context)!.disassembleNumbersAndHash;
+  _disassemblePrefixNotRegistred =
+      AppLocalizations.of(context)!.disassemblePrefixNotRegistred;
+  _disassembleInvalidPostNumber =
+      AppLocalizations.of(context)!.disassembleInvalidPostNumber;
+  _disassembleNoExtension =
+      AppLocalizations.of(context)!.disassembleNoExtension;
+  _disassembleHashIsInvalid =
+      AppLocalizations.of(context)!.disassembleHashIsInvalid;
+  _disassembleExtensionTooLong =
+      AppLocalizations.of(context)!.disassembleExtensionTooLong;
+  _disassembleHashIsnt32 = AppLocalizations.of(context)!.disassembleHashIsnt32;
 }

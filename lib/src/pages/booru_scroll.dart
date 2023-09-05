@@ -298,10 +298,11 @@ class BooruScrollState extends State<BooruScroll> with SearchLaunchGrid {
                             }
                           },
                               true,
-                              const GridBottomSheetActionExplanation(
-                                label: "Download", // TODO: change
-                                body:
-                                    "Downloads images/videos from the booru to the download folder.", // TODO: change
+                              GridBottomSheetActionExplanation(
+                                label: AppLocalizations.of(context)!
+                                    .downloadActionLabel,
+                                body: AppLocalizations.of(context)!
+                                    .downloadActionBody,
                               ))
                         ],
                         skeletonState.settings.picturesPerRow,

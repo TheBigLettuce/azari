@@ -749,5 +749,149 @@
     "errorHalf": "Error:",
     "@errorHalf": {
         "description": "First half of the error message on booru refresh"
+    },
+    "restoreActionLabel": "Restore",
+    "@restoreActionLabel": {
+        "description": "Grid actions, restore"
+    },
+    "restoreActionBody": "Restores selected files from the trash.",
+    "@restoreActionBody": {
+        "description": "Grid actions, restore"
+    },
+    "bulkRenameActionBody": "Renames the selected files.\nCurrently used only to add the booru prefix.",
+    "@bulkRenameActionBody": {
+        "description": "Grid actions, bulk rename"
+    },
+    "saveTagsActionBody": "Tries to load tags from the booru.\nThe filename should be in the format.",
+    "@saveTagsActionBody": {
+        "description": "Grid actions, saving tags"
+    },
+    "favoritesActionLabel": "Favorites",
+    "@favoritesActionLabel": {
+        "description": "Grid actions, favorites"
+    },
+    "favoritesActionBody": "Adds selected files to the favorites.",
+    "@favoritesActionBody": {
+        "description": "Grid actions, favorites"
+    },
+    "deleteFilesActionLabel": "Delete files",
+    "@deleteFilesActionLabel": {
+        "description": "Grid actions, delete files"
+    },
+    "deleteFilesActionBody": "Moves to trash selected files.",
+    "@deleteFilesActionBody": {
+        "description": "Grid actions, delete files"
+    },
+    "copyActionLabel": "Copy",
+    "@copyActionLabel": {
+        "description": "Grid actions, copy"
+    },
+    "copyActionBody": "Copies selected files to a destination.",
+    "@copyActionBody": {
+        "description": "Grid actions, copy"
+    },
+    "moveActionLabel": "Move",
+    "@moveActionLabel": {
+        "description": "Grid actions, move"
+    },
+    "moveActionBody": "Moves selected files to a destination.",
+    "@moveActionBody": {
+        "description": "Grid actions, move"
+    },
+    "chooseActionLabel": "Choose",
+    "@chooseActionLabel": {
+        "description": "Grid actions, choose"
+    },
+    "chooseActionBody": "Choose the file.",
+    "@chooseActionBody": {
+        "description": "Grid actions, choose"
+    },
+    "disassembleNoPrefix": "No prefix",
+    "@disassembleNoPrefix": {
+        "description": "Filename disassemble errors"
+    },
+    "disassemblePrefixNotRegistred": "Prefix not registred",
+    "@disassemblePrefixNotRegistred": {
+        "description": "Filename disassemble errors"
+    },
+    "disassembleNumbersAndHash": "Filename should include numbers and hash separated by a -, with one space to the left of the -, and one to the right of -",
+    "@disassembleNumbersAndHash": {
+        "description": "Filename disassemble errors"
+    },
+    "disassembleInvalidPostNumber": "Invalid post number",
+    "@disassembleInvalidPostNumber": {
+        "description": "Filename disassemble errors"
+    },
+    "disassembleNoExtension": "Filename doesn't include extension",
+    "@disassembleNoExtension": {
+        "description": "Filename disassemble errors"
+    },
+    "disassembleHashIsInvalid": "Hash is invalid",
+    "@disassembleHashIsInvalid": {
+        "description": "Filename disassemble errors"
+    },
+    "disassembleExtensionTooLong": "Extension is too long",
+    "@disassembleExtensionTooLong": {
+        "description": "Filename disassemble errors"
+    },
+    "disassembleHashIsnt32": "Hash is not 32 characters",
+    "@disassembleHashIsnt32": {
+        "description": "Filename disassemble errors"
+    },
+    "disassembleExtensionInvalid": "Extension is invalid",
+    "@disassembleExtensionInvalid": {
+        "description": "Filename disassemble errors"
+    },
+    "directoryTagActionLabel": "Directory tag",
+    "@directoryTagActionLabel": {
+        "description": "Grid actions, directory tag"
+    },
+    "directoryTagActionBody": "Lets you to assign a tag to the selected directory.\nDirectory tag is used for categorizing the directories on the grid.",
+    "@directoryTagActionBody": {
+        "description": "Grid actions, directory tag"
+    },
+    "blacklistActionLabel": "Blacklist",
+    "@blacklistActionLabel": {
+        "description": "Grid actions, blacklist"
+    },
+    "blacklistActionBody": "Add selected directories to the blacklist.\nYou can unblacklist the directories in the settings.",
+    "@blacklistActionBody": {
+        "description": "Grid actions, blacklist"
+    },
+    "joinActionLabel": "Join",
+    "@joinActionLabel": {
+        "description": "Grid actions, join"
+    },
+    "joinActionBody": "Join selected directories into one for viewing.",
+    "@joinActionBody": {
+        "description": "Grid actions, join"
+    },
+    "directoriesPlural": "directories",
+    "@directoriesPlural": {
+        "description": "Displayed in the filter hint when joining directories"
+    },
+    "downloadActionLabel": "Download",
+    "@downloadActionLabel": {
+        "description": "Grid actions, download"
+    },
+    "downloadActionBody": "Downloads images/videos from the booru to the download folder.",
+    "@downloadActionBody": {
+        "description": "Grid actions, download"
+    },
+    "excludeActionLabel": "Exclude",
+    "@excludeActionLabel": {
+        "description": "Grid actions, exclude"
+    },
+    "excludeActionBody": "Exclude the file from the selected.",
+    "@excludeActionBody": {
+        "description": "Grid actions, exclude"
+    },
+    "clearSelectionActionLabel": "Clear selection",
+    "@clearSelectionActionLabel": {
+        "description": "Grid actions, clear selection"
+    },
+    "clearSelectionActionBody": "Unselects every item.",
+    "@clearSelectionActionBody": {
+        "description": "Grid actions, clear selection"
     }
 }

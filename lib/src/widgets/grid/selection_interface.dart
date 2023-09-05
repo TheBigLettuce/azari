@@ -48,9 +48,11 @@ class SelectionInterface<T extends Cell> {
                   },
                       true,
                       selected.length.toString(),
-                      const GridBottomSheetActionExplanation(
-                        label: "Clear selection", // TODO: change
-                        body: "Unselects every item.", // TODO: change
+                      GridBottomSheetActionExplanation(
+                        label: AppLocalizations.of(context)!
+                            .clearSelectionActionLabel,
+                        body: AppLocalizations.of(context)!
+                            .clearSelectionActionBody,
                       )),
                   ...addActions
                       .map((e) => wrapSheetButton(

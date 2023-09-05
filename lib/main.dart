@@ -30,10 +30,13 @@ import 'package:gallery/src/widgets/restart_widget.dart';
 // import 'package:google_fonts/google_fonts.dart';
 import 'package:isar/isar.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+late final String azariVersion;
 
 // shamelessly stolen from the Flutter source
 class FadeSidewaysPageTransitionBuilder implements PageTransitionsBuilder {
@@ -92,7 +95,6 @@ ThemeData _buildTheme(Brightness brightness, Color accentColor) {
 void mainPickfile() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initalizeIsar(true);
-  initPostTags();
   GalleryApi.setup(GalleryImpl(true));
 
   await Permission.photos.request();
@@ -114,6 +116,7 @@ void mainPickfile() async {
     home: Builder(
       builder: (context) {
         changeSystemUiOverlay(context);
+        initPostTags(context);
 
         return AndroidDirectories(
           noDrawer: true,
@@ -141,7 +144,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initalizeIsar(false);
   await initalizeDownloader();
-  initPostTags();
 
   if (Platform.isAndroid) {
     GalleryApi.setup(GalleryImpl(false));
@@ -167,6 +169,8 @@ void main() async {
 
   GridTab.init();
 
+  azariVersion = (await PackageInfo.fromPlatform()).version;
+
   if (Platform.isAndroid) {
     Permission.notification.request().then((value) async {
       await Permission.photos.request();
@@ -190,6 +194,7 @@ void main() async {
           "/senitel": (context) => Container(),
           "/booru": (context) {
             changeSystemUiOverlay(context);
+            initPostTags(context);
 
             final grids = GridTab.global;
 

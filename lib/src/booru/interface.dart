@@ -14,16 +14,12 @@ import '../schemas/post.dart';
 import 'api/danbooru.dart';
 import 'api/gelbooru.dart';
 
-const _kDanbooruPrefix = "d";
-const _kGelbooruPrefix = "g";
-
 /// Enum which holds all the currently supported sites by this app.
 /// All of the implementations of [BooruAPI] should be added here.
 /// Prefixes, names and urls should be unique.
 enum Booru {
-  gelbooru(string: "Gelbooru", prefix: _kGelbooruPrefix, url: "gelbooru.com"),
-  danbooru(
-      string: "Danbooru", prefix: _kDanbooruPrefix, url: "danbooru.donmai.us");
+  gelbooru(string: "Gelbooru", prefix: "g", url: "gelbooru.com"),
+  danbooru(string: "Danbooru", prefix: "d", url: "danbooru.donmai.us");
 
   // Name. starting with an uppercase letter.
   final String string;
@@ -36,11 +32,15 @@ enum Booru {
   /// Scheme is always assumed to be https.
   final String url;
 
-  static Booru? fromPrefix(String prefix) => switch (prefix) {
-        _kGelbooruPrefix => Booru.gelbooru,
-        _kDanbooruPrefix => Booru.danbooru,
-        String() => null,
-      };
+  static Booru? fromPrefix(String prefix) {
+    for (var b in Booru.values) {
+      if (b.prefix == prefix) {
+        return b;
+      }
+    }
+
+    return null;
+  }
 
   const Booru({required this.string, required this.prefix, required this.url});
 }
@@ -112,10 +112,11 @@ abstract class BooruAPI {
 
     final jar = UnsaveableCookieJar(CookieJarTab().get(booru));
     dio.interceptors.add(CookieManager(jar));
+    dio.interceptors.add(LogInterceptor());
 
     return switch (booru) {
       Booru.danbooru => Danbooru(dio, jar),
-      Booru.gelbooru => Gelbooru(page ?? 0, dio, jar)
+      Booru.gelbooru => Gelbooru(page ?? 0, dio, jar),
     };
   }
 

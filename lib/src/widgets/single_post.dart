@@ -157,6 +157,7 @@ class _SinglePostState extends State<SinglePost> {
                 ));
               } catch (e, trace) {
                 try {
+                  // ignore: use_build_context_synchronously
                   ScaffoldMessenger.of(context)
                       .showSnackBar(SnackBar(content: Text(e.toString())));
                 } catch (_) {}

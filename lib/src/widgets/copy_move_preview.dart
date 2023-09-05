@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../cell/cell.dart';
 import '../pages/image_view.dart';
@@ -63,10 +64,11 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
                         setState(() {});
                       },
                           false,
-                          const GridBottomSheetActionExplanation(
-                            label: "Exclude", // TODO: change
+                          GridBottomSheetActionExplanation(
+                            label: AppLocalizations.of(context)!
+                                .excludeActionLabel,
                             body:
-                                "Exclude the file from the selected.", // TODO: change
+                                AppLocalizations.of(context)!.excludeActionBody,
                           ))
                     ];
                   },

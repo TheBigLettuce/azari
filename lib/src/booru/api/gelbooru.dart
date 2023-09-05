@@ -26,7 +26,7 @@ class Gelbooru implements BooruAPI {
   final Dio client;
 
   @override
-  final Booru booru = Booru.gelbooru;
+  final Booru booru;
 
   @override
   int? get currentPage => _page;
@@ -97,7 +97,7 @@ class Gelbooru implements BooruAPI {
 
     try {
       final resp =
-          await client.getUri(Uri.https("gelbooru.com", "/index.php", query));
+          await client.getUri(Uri.https(booru.url, "/index.php", query));
 
       if (resp.statusCode != 200) {
         throw "status not 200";
@@ -122,7 +122,7 @@ class Gelbooru implements BooruAPI {
   @override
   Future<Post> singlePost(int id) async {
     try {
-      final resp = await client.getUri(Uri.https("gelbooru.com", "/index.php", {
+      final resp = await client.getUri(Uri.https(booru.url, "/index.php", {
         "page": "dapi",
         "s": "post",
         "q": "index",
@@ -195,5 +195,6 @@ class Gelbooru implements BooruAPI {
   @override
   void close() => client.close(force: true);
 
-  Gelbooru(int page, this.client, this.cookieJar) : _page = page;
+  Gelbooru(int page, this.client, this.cookieJar, {this.booru = Booru.gelbooru})
+      : _page = page;
 }

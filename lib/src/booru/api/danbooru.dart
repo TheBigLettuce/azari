@@ -27,7 +27,7 @@ class Danbooru implements BooruAPI {
   final Dio client;
 
   @override
-  final Booru booru = Booru.danbooru;
+  final Booru booru;
 
   @override
   final int? currentPage = null;
@@ -177,5 +177,5 @@ class Danbooru implements BooruAPI {
   @override
   void close() => client.close(force: true);
 
-  Danbooru(this.client, this.cookieJar);
+  Danbooru(this.client, this.cookieJar, {this.booru = Booru.danbooru});
 }

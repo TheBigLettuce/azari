@@ -60,7 +60,7 @@ internal class Mover(
             val inProgress = mutableListOf<Job>()
             for (uris in thumbnailsChannel) {
                 try {
-                    val newScope = CoroutineScope(coContext + Dispatchers.IO)
+                    val newScope = CoroutineScope(Dispatchers.IO)
 
                     if (inProgress.size == cap) {
                         inProgress.first().join()

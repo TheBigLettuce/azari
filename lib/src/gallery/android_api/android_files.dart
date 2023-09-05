@@ -6,6 +6,8 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:async';
+import 'dart:developer';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
@@ -20,6 +22,7 @@ import 'package:gallery/src/widgets/copy_move_hint_text.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
+import 'package:logging/logging.dart';
 import '../../schemas/settings.dart';
 import '../../widgets/copy_move_preview.dart';
 import '../../widgets/search_filter_grid.dart';
@@ -354,9 +357,9 @@ class _AndroidFilesState extends State<AndroidFiles>
           selected.map((e) => e.originalUri).toList());
     },
         false,
-        const GridBottomSheetActionExplanation(
-          label: "Restore", // TODO: change
-          body: "Restores selected files from the trash.", // TODO: change
+        GridBottomSheetActionExplanation(
+          label: AppLocalizations.of(context)!.restoreActionLabel,
+          body: AppLocalizations.of(context)!.restoreActionBody,
         ));
   }
 
@@ -367,8 +370,7 @@ class _AndroidFilesState extends State<AndroidFiles>
         false,
         GridBottomSheetActionExplanation(
           label: AppLocalizations.of(context)!.bulkRenameTitle,
-          body: "Renames the selected files.\n"
-              "Currently used only to add the booru prefix.", // TODO: change
+          body: AppLocalizations.of(context)!.bulkRenameActionBody,
         ));
   }
 
@@ -379,8 +381,7 @@ class _AndroidFilesState extends State<AndroidFiles>
         true,
         GridBottomSheetActionExplanation(
           label: AppLocalizations.of(context)!.savingTags,
-          body: "Tries to load tags from the booru.\n"
-              "The filename should be in the format.", // TODO: change
+          body: AppLocalizations.of(context)!.saveTagsActionBody,
         ));
   }
 
@@ -389,9 +390,9 @@ class _AndroidFilesState extends State<AndroidFiles>
       _favoriteOrUnfavorite(context, selected);
     },
         false,
-        const GridBottomSheetActionExplanation(
-          label: "Favorites", // TODO: change
-          body: "Adds selected files to the favorites.", // TODO: change
+        GridBottomSheetActionExplanation(
+          label: AppLocalizations.of(context)!.favoritesActionLabel,
+          body: AppLocalizations.of(context)!.favoritesActionBody,
         ));
   }
 
@@ -400,9 +401,9 @@ class _AndroidFilesState extends State<AndroidFiles>
       _deleteDialog(context, selected);
     },
         false,
-        const GridBottomSheetActionExplanation(
-          label: "Delete files", // TODO: change
-          body: "Moves to trash selected files.", // TODO: change
+        GridBottomSheetActionExplanation(
+          label: AppLocalizations.of(context)!.deleteFilesActionLabel,
+          body: AppLocalizations.of(context)!.deleteFilesActionBody,
         ));
   }
 
@@ -411,9 +412,9 @@ class _AndroidFilesState extends State<AndroidFiles>
       _moveOrCopy(context, selected, false);
     },
         false,
-        const GridBottomSheetActionExplanation(
-          label: "Copy", // TODO: change
-          body: "Copies selected files to a destination.", // TODO: change
+        GridBottomSheetActionExplanation(
+          label: AppLocalizations.of(context)!.copyActionLabel,
+          body: AppLocalizations.of(context)!.copyActionBody,
         ));
   }
 
@@ -422,9 +423,9 @@ class _AndroidFilesState extends State<AndroidFiles>
       _moveOrCopy(context, selected, true);
     },
         false,
-        const GridBottomSheetActionExplanation(
-          label: "Move", // TODO: change
-          body: "Moves selected files to a destination.", // TODO: change
+        GridBottomSheetActionExplanation(
+          label: AppLocalizations.of(context)!.moveActionLabel,
+          body: AppLocalizations.of(context)!.moveActionBody,
         ));
   }
 
@@ -433,9 +434,9 @@ class _AndroidFilesState extends State<AndroidFiles>
       widget.callback!(selected.first);
     },
         false,
-        const GridBottomSheetActionExplanation(
-          label: "Choose", // TODO: change
-          body: "Choose the file.", // TODO: change
+        GridBottomSheetActionExplanation(
+          label: AppLocalizations.of(context)!.chooseActionLabel,
+          body: AppLocalizations.of(context)!.chooseActionBody,
         ));
   }
 
@@ -491,6 +492,34 @@ class _AndroidFilesState extends State<AndroidFiles>
                   return null;
                 },
           menuButtonItems: [
+            if (widget.callback != null)
+              IconButton(
+                  onPressed: () {
+                    if (state.gridKey.currentState?.mutationInterface
+                            ?.isRefreshing !=
+                        false) {
+                      return;
+                    }
+
+                    final upTo = state
+                        .gridKey.currentState?.mutationInterface?.cellCount;
+                    if (upTo == null) {
+                      return;
+                    }
+
+                    try {
+                      final n = math.Random.secure().nextInt(upTo);
+
+                      widget.callback?.call(state
+                          .gridKey.currentState!.mutationInterface!
+                          .getCell(n));
+                    } catch (e) {
+                      log("getting random number",
+                          level: Level.WARNING.value, error: e);
+                      return;
+                    }
+                  },
+                  icon: const Icon(Icons.casino_outlined)),
             IconButton(
                 onPressed: () {
                   final settings = Settings.fromDb();
@@ -501,6 +530,7 @@ class _AndroidFilesState extends State<AndroidFiles>
                 },
                 icon: const Icon(Icons.subtitles))
           ],
+          inlineMenuButtonItems: true,
           onBack: () {
             if (currentFilteringMode() != FilteringMode.noFilter) {
               resetSearch();
