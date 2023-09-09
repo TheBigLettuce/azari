@@ -1,6 +1,6 @@
 1.3.12+6:
 — Add *booru Favorites page,
-— Improve state restoration. Hopefully it won't break. 
+— Improve state restoration. Hopefully it won't break.
 
 1.3.11:
 — Add choose random.

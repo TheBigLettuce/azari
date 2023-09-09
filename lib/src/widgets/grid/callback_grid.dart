@@ -280,7 +280,9 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       });
     });
 
-    if (widget.pageViewScrollingOffset != null && widget.initalCell != null) {
+    if (widget.initalCellCount != 0 &&
+        widget.pageViewScrollingOffset != null &&
+        widget.initalCell != null) {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
         widget.beforeImageViewRestore?.call();
 
@@ -288,7 +290,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
             context, _state.getCell(widget.initalCell!), widget.initalCell!,
             offset: widget.pageViewScrollingOffset);
       });
-    } else if (widget.initalCell != null) {
+    } else if (widget.initalCellCount != 0 && widget.initalCell != null) {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
         widget.beforeImageViewRestore?.call();
 

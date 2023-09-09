@@ -256,7 +256,7 @@ class SystemGalleryDirectoryFile implements Cell {
               launchGrid: (t) {
                 try {
                   final res = PostTags().dissassembleFilename(name);
-                  final tagManager = TagManager.fromEnum(res.booru);
+                  final tagManager = TagManager.fromEnum(res.booru, true);
 
                   tagManager.onTagPressed(context,
                       Tag(tag: t, isExcluded: false), res.booru, false);

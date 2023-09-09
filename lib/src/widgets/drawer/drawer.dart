@@ -109,7 +109,7 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
                       MaterialPageRoute(
                         builder: (context) => TagsPage(
                           tagManager: TagManager.fromEnum(
-                              Settings.fromDb().selectedBooru),
+                              Settings.fromDb().selectedBooru, false),
                           popSenitel: false,
                           fromGallery: true,
                         ),
@@ -122,7 +122,7 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
                       MaterialPageRoute(
                         builder: (context) => TagsPage(
                           tagManager: TagManager.fromEnum(
-                              Settings.fromDb().selectedBooru),
+                              Settings.fromDb().selectedBooru, false),
                           popSenitel: true,
                           fromGallery: false,
                         ),

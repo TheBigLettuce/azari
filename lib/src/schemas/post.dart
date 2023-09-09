@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/cell/cell.dart';
 import 'package:gallery/src/cell/data.dart';
+import 'package:gallery/src/db/state_restoration.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:html_unescape/html_unescape_small.dart';
@@ -104,7 +105,12 @@ class PostBase implements Cell {
       get addInfo =>
           (BuildContext context, dynamic extra, AddInfoColorData colors) {
             final dUrl = fileDownloadUrl();
-            final tagManager = TagManagerNotifier.of(context);
+            late final TagManager tagManager;
+            try {
+              tagManager = TagManagerNotifier.of(context);
+            } catch (_) {
+              tagManager = TagManager.fromEnum(Booru.fromPrefix(prefix)!, true);
+            }
 
             return wrapTagsSearch(
               context,

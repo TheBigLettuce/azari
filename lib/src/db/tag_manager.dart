@@ -10,8 +10,9 @@ part of 'state_restoration.dart';
 class TagManager {
   final IsarBooruTagging _excluded;
   final IsarBooruTagging _latest;
+  final bool _temporary;
 
-  final StateRestoration parent;
+  final StateRestoration _parent;
 
   final StreamSubscription Function(bool fire, void Function() f) watch;
 
@@ -26,7 +27,7 @@ class TagManager {
 
     latest.add(t);
 
-    if (restore) {
+    if (restore && !_temporary) {
       Navigator.push(context, MaterialPageRoute(builder: (context) {
         final instance = IsarDbsOpen.secondaryGrid(temporary: false);
 
@@ -34,7 +35,7 @@ class TagManager {
           tagManager: this,
           noRestoreOnBack: true,
           api: BooruAPI.fromEnum(booru),
-          restore: parent.insert(tags: t.tag, name: instance.name),
+          restore: _parent.insert(tags: t.tag, name: instance.name),
           instance: instance,
         );
       }));
@@ -49,13 +50,15 @@ class TagManager {
     }
   }
 
-  TagManager(this.parent, this.watch)
-      : _excluded =
+  TagManager(StateRestoration parent, this.watch, {bool temporary = false})
+      : _parent = parent,
+        _temporary = temporary,
+        _excluded =
             IsarBooruTagging(excludedMode: true, isarCurrent: parent._mainGrid),
         _latest = IsarBooruTagging(
             excludedMode: false, isarCurrent: parent._mainGrid);
 
-  static TagManager fromEnum(Booru booru) {
+  static TagManager fromEnum(Booru booru, bool temporary) {
     final mainGrid = IsarDbsOpen.primaryGrid(booru);
 
     return TagManager(
@@ -64,6 +67,7 @@ class TagManager {
           mainGrid.tags.watchLazy(fireImmediately: fire).listen((event) {
         f();
       }),
+      temporary: temporary,
     );
   }
 }
