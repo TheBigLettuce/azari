@@ -13,6 +13,7 @@ import 'package:flutter/material.dart' as material show AspectRatio;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/interface.dart';
+import 'package:gallery/src/cell/data.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
@@ -83,6 +84,8 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   /// Overrides the default behaviour of launching the image view on cell pressed.
   /// [overrideOnPress] can, for example, include calls to [Navigator.push] of routes.
   final void Function(BuildContext context, T cell)? overrideOnPress;
+
+  final bool unpressable;
 
   /// Grid gets the cell from [getCell].
   final T Function(int) getCell;
@@ -174,8 +177,12 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
 
   final List<InheritedWidget Function(Widget child)>? registerNotifiers;
 
+  final void Function()? onExitImageView;
+
+  final void Function()? beforeImageViewRestore;
+
   const CallbackGrid(
-      {super.key,
+      {required super.key,
       this.additionalKeybinds,
       required this.getCell,
       required this.initalScrollPosition,
@@ -186,9 +193,11 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       this.cloudflareHook,
       this.pageChangeImage,
       this.onError,
+      this.beforeImageViewRestore,
       required this.mainFocus,
       this.addIconsImage,
       this.segments,
+      this.onExitImageView,
       this.footer,
       this.registerNotifiers,
       this.immutable = true,
@@ -209,6 +218,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       this.onBack,
       this.initalCellCount = 0,
       this.overrideOnPress,
+      this.unpressable = false,
       required this.description});
 
   @override
@@ -272,10 +282,24 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
     if (widget.pageViewScrollingOffset != null && widget.initalCell != null) {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+        widget.beforeImageViewRestore?.call();
+
         _onPressed(
             context, _state.getCell(widget.initalCell!), widget.initalCell!,
             offset: widget.pageViewScrollingOffset);
       });
+    } else if (widget.initalCell != null) {
+      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+        widget.beforeImageViewRestore?.call();
+
+        _onPressed(
+          context,
+          _state.getCell(widget.initalCell!),
+          widget.initalCell!,
+        );
+      });
+    } else {
+      widget.beforeImageViewRestore?.call();
     }
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
@@ -400,6 +424,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
           pageChange: widget.pageChangeImage,
           onExit: () {
             inImageView = false;
+            widget.onExitImageView?.call();
           },
           addIcons: widget.addIconsImage,
           focusMain: () {
@@ -467,13 +492,15 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     );
   }
 
-  GridCell _makeGridCell(T cell, int indx) => GridCell(
-        cell: cell.getCellData(widget.description.listView),
+  GridCell _makeGridCell(BuildContext context, T cell, int indx) => GridCell(
+        cell: cell.getCellData(widget.description.listView, context: context),
         hidealias: widget.hideAlias,
         indx: indx,
         download: widget.download,
         tight: widget.tightMode,
-        onPressed: (context) => _onPressed(context, cell, indx),
+        onPressed: widget.unpressable
+            ? null
+            : (context) => _onPressed(context, cell, indx),
         onLongPress: () => selection.selectOrUnselect(context, indx, cell,
             widget.systemNavigationInsets.bottom), //extend: maxExtend,
       );
@@ -591,7 +618,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                                                         : Padding(
                                                             padding:
                                                                 const EdgeInsets
-                                                                        .only(
+                                                                    .only(
                                                                     top: 8,
                                                                     bottom: 16,
                                                                     right: 8,
@@ -691,52 +718,53 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                                     );
                                   },
                                 )),
-                            if (widget.segments == null)
-                              !_state.isRefreshing && _state.cellCount == 0
-                                  ? SliverToBoxAdapter(
-                                      child: Column(
-                                      children: [
-                                        EmptyWidget(
-                                          error: _state.refreshingError,
-                                        ),
-                                        if (widget.onError != null &&
-                                            _state.refreshingError != null)
-                                          widget.onError!(
-                                              _state.refreshingError!),
-                                      ],
-                                    ))
-                                  : _withPadding(widget.description.listView
-                                      ? GridLayout.list<T>(
-                                          context,
-                                          _state,
-                                          selection,
-                                          widget.systemNavigationInsets.bottom,
-                                          widget.description.listView,
-                                          onPressed: _onPressed)
-                                      : GridLayout.grid<T>(
-                                          context,
-                                          _state,
-                                          selection,
-                                          widget.description.columns.number,
-                                          widget.description.listView,
-                                          _makeGridCell,
-                                          systemNavigationInsets: widget
-                                              .systemNavigationInsets.bottom,
-                                          aspectRatio: widget.aspectRatio,
-                                        ))
-                            else
-                              _withPadding(GridLayout.segments<T>(
-                                context,
-                                widget.segments!,
-                                _state,
-                                selection,
-                                widget.description.listView,
-                                widget.description.columns.number,
-                                _makeGridCell,
-                                systemNavigationInsets:
-                                    widget.systemNavigationInsets.bottom,
-                                aspectRatio: widget.aspectRatio,
-                              )),
+                            !_state.isRefreshing && _state.cellCount == 0
+                                ? SliverToBoxAdapter(
+                                    child: Column(
+                                    children: [
+                                      EmptyWidget(
+                                        error: _state.refreshingError,
+                                      ),
+                                      if (widget.onError != null &&
+                                          _state.refreshingError != null)
+                                        widget
+                                            .onError!(_state.refreshingError!),
+                                    ],
+                                  ))
+                                : _withPadding(widget.segments != null
+                                    ? GridLayout.segments<T>(
+                                        context,
+                                        widget.segments!,
+                                        _state,
+                                        selection,
+                                        widget.description.listView,
+                                        widget.description.columns.number,
+                                        _makeGridCell,
+                                        systemNavigationInsets: widget
+                                            .systemNavigationInsets.bottom,
+                                        aspectRatio: widget.aspectRatio,
+                                      )
+                                    : widget.description.listView
+                                        ? GridLayout.list<T>(
+                                            context,
+                                            _state,
+                                            selection,
+                                            widget
+                                                .systemNavigationInsets.bottom,
+                                            onPressed: widget.unpressable
+                                                ? null
+                                                : _onPressed)
+                                        : GridLayout.grid<T>(
+                                            context,
+                                            _state,
+                                            selection,
+                                            widget.description.columns.number,
+                                            widget.description.listView,
+                                            _makeGridCell,
+                                            systemNavigationInsets: widget
+                                                .systemNavigationInsets.bottom,
+                                            aspectRatio: widget.aspectRatio,
+                                          )),
                           ],
                         ))),
                 if (widget.footer != null)

@@ -29,9 +29,12 @@ class GridBottomSheetAction<T> {
   /// Displayed in a dialog after long tapping.
   final GridBottomSheetActionExplanation explanation;
 
+  final Color? backgroundColor;
+  final Color? color;
+
   const GridBottomSheetAction(
       this.icon, this.onPress, this.closeOnPress, this.explanation,
-      {this.showOnlyWhenSingle = false});
+      {this.showOnlyWhenSingle = false, this.backgroundColor, this.color});
 }
 
 class GridBottomSheetActionExplanation {

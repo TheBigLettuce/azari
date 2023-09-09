@@ -17,19 +17,6 @@ class AndroidGalleryFilesExtra {
   bool isTrash() => _impl.isTrash;
   bool isFavorites() => _impl.isFavorites;
 
-  void loadThumbnails(SystemGalleryDirectoryFile cell) {
-    try {
-      thumbnailIsar().writeTxnSync(() => thumbnailIsar().thumbnails.putSync(
-          Thumbnail(cell.id, DateTime.now(), kTransparentImage, 0, true)));
-
-      PlatformFunctions.loadThumbnail(cell.id);
-    } catch (e, trace) {
-      log("loading thumbs",
-          level: Level.SEVERE.value, error: e, stackTrace: trace);
-    }
-    _impl.isThumbsLoading = false;
-  }
-
   void setRefreshGridCallback(void Function() callback) {
     _impl.refreshGrid = callback;
   }

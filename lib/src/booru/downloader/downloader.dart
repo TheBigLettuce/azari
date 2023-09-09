@@ -20,12 +20,26 @@ import '../../db/isar.dart';
 
 Downloader? _global;
 
-mixin _CancelTokens {
-  final Map<int, CancelToken> _tokens = {};
+const kDownloadOnHold = "On hold";
+const kDownloadFailed = "Failed";
+const kDownloadInProgress = "In progress";
 
-  void _addToken(int key, CancelToken t) => _tokens[key] = t;
-  void _removeToken(int key) => _tokens.remove(key);
-  bool _hasCancelKey(int id) => _tokens[id] != null;
+mixin _CancelTokens {
+  final Map<String, CancelToken> _tokens = {};
+
+  void _addToken(String url, CancelToken t) => _tokens[url] = t;
+  void _removeToken(String url) => _tokens.remove(url);
+  bool _hasCancelKey(String url) => _tokens[url] != null;
+
+  void cancelAndRemoveToken(String url) {
+    final t = _tokens[url];
+    if (t == null) {
+      return;
+    }
+
+    t.cancel();
+    _tokens.remove(url);
+  }
 }
 
 class Downloader with _CancelTokens {
@@ -40,15 +54,15 @@ class Downloader with _CancelTokens {
     if (f.isOnHold()) {
       settingsIsar()
           .writeTxnSync(() => settingsIsar().files.putSync(f.failed()));
-    } else if (_hasCancelKey(f.id!)) {
-      cancelAndRemoveToken(f.id!);
+    } else if (_hasCancelKey(f.url)) {
+      cancelAndRemoveToken(f.url);
     } else {
       add(f);
     }
   }
 
   String downloadAction(dw_file.File f) {
-    if (f.isOnHold() || _hasCancelKey(f.id!)) {
+    if (f.isOnHold() || _hasCancelKey(f.url)) {
       return "Cancel the download?";
     } else {
       return "Retry?";
@@ -56,25 +70,15 @@ class Downloader with _CancelTokens {
   }
 
   String downloadDescription(dw_file.File f) {
+    if (_hasCancelKey(f.url)) {
+      return kDownloadInProgress;
+    }
+
     if (f.isOnHold()) {
-      return "On hold";
+      return kDownloadOnHold;
     }
 
-    if (_hasCancelKey(f.id!)) {
-      return "In progress";
-    }
-
-    return "Failed";
-  }
-
-  void cancelAndRemoveToken(int key) {
-    final t = _tokens[key];
-    if (t == null) {
-      return;
-    }
-
-    t.cancel();
-    _tokens.remove(key);
+    return kDownloadFailed;
   }
 
   void _done() {
@@ -89,7 +93,7 @@ class Downloader with _CancelTokens {
         settingsIsar().writeTxnSync(
           () => settingsIsar().files.putSync(f.inprogress()),
         );
-        _addToken(f.id!, CancelToken());
+        _addToken(f.url, CancelToken());
         _download(f);
       } else {
         _inWork--;
@@ -121,7 +125,7 @@ class Downloader with _CancelTokens {
   }
 
   void add(dw_file.File download) async {
-    if (download.id != null && _hasCancelKey(download.id!)) {
+    if (download.isarId != null && _hasCancelKey(download.url)) {
       return;
     }
 
@@ -131,9 +135,8 @@ class Downloader with _CancelTokens {
     if (_inWork <= maximum) {
       _inWork++;
       final d = download.inprogress();
-      final id =
-          settingsIsar().writeTxnSync(() => settingsIsar().files.putSync(d));
-      _addToken(id, CancelToken());
+      settingsIsar().writeTxnSync(() => settingsIsar().files.putSync(d));
+      _addToken(d.url, CancelToken());
       _download(d);
     }
   }
@@ -145,7 +148,7 @@ class Downloader with _CancelTokens {
           .filter()
           .isFailedEqualTo(true)
           .findAllSync()
-          .map((e) => e.id!)
+          .map((e) => e.isarId!)
           .toList();
       if (failed.isNotEmpty) {
         settingsIsar().files.deleteAllSync(failed);
@@ -160,7 +163,7 @@ class Downloader with _CancelTokens {
       final inProgress =
           settingsIsar().files.filter().inProgressEqualTo(true).findAllSync();
       for (final element in inProgress) {
-        if (_tokens[element.id!] == null) {
+        if (_tokens[element.isarId!] == null) {
           toUpdate.add(element.failed());
         }
       }
@@ -194,13 +197,13 @@ class Downloader with _CancelTokens {
       return;
     }
 
-    final progress =
-        await notificationPlug.newProgress(d.name, d.id!, d.site, "Downloader");
+    final progress = await notificationPlug.newProgress(
+        d.name, d.isarId!, d.site, "Downloader");
 
     dio.download(d.url, filePath,
-        cancelToken: _tokens[d.id],
+        cancelToken: _tokens[d.isarId],
         deleteOnError: true, onReceiveProgress: ((count, total) {
-      if (count == total || !_hasCancelKey(d.id!)) {
+      if (count == total || !_hasCancelKey(d.url)) {
         progress.done();
         return;
       }
@@ -216,8 +219,8 @@ class Downloader with _CancelTokens {
 
         settingsIsar().writeTxnSync(
           () {
-            _removeToken(d.id!);
-            settingsIsar().files.deleteSync(d.id!);
+            _removeToken(d.url);
+            settingsIsar().files.deleteSync(d.isarId!);
           },
         );
       } catch (e, trace) {
@@ -225,7 +228,7 @@ class Downloader with _CancelTokens {
             level: Level.SEVERE.value, error: e, stackTrace: trace);
         settingsIsar().writeTxnSync(
           () {
-            _removeToken(d.id!);
+            _removeToken(d.url);
             settingsIsar().files.putSync(d.failed());
           },
         );
@@ -233,7 +236,7 @@ class Downloader with _CancelTokens {
     }).onError((error, stackTrace) {
       settingsIsar().writeTxnSync(
         () {
-          _removeToken(d.id!);
+          _removeToken(d.url);
           settingsIsar().files.putSync(d.failed());
         },
       );

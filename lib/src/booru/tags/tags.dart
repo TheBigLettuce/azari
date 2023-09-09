@@ -89,14 +89,12 @@ class PostTags {
         return [];
       }
 
-      final postTags = post.tags.split(" ");
-
       tagsDb.writeTxnSync(
-          () => tagsDb.localTags.putSync(LocalTags(filename, postTags)));
+          () => tagsDb.localTags.putSync(LocalTags(filename, post.tags)));
 
       api.close();
 
-      return postTags;
+      return post.tags;
     } catch (e, trace) {
       log("fetching post for tags",
           level: Level.SEVERE.value, error: e, stackTrace: trace);
@@ -220,7 +218,7 @@ class PostTags {
   void addAllPostTags(List<Post> p) {
     tagsDb.writeTxnSync(() {
       tagsDb.localTags.putAllSync(p.map((e) {
-        final ret = LocalTags(e.filename(), e.tags.split(" "));
+        final ret = LocalTags(e.filename(), e.tags);
         _putTagsAndIncreaseFreq(ret.tags);
         return ret;
       }).toList());

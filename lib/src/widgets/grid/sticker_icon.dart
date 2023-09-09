@@ -7,17 +7,26 @@
 
 part of 'callback_grid.dart';
 
-Widget stickerIcon(BuildContext context, IconData e) => Padding(
-      padding: const EdgeInsets.only(right: 4),
-      child: Container(
-        padding: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-            color:
-                Theme.of(context).colorScheme.inversePrimary.withOpacity(0.6),
-            borderRadius: BorderRadius.circular(5)),
-        child: Icon(
-          e,
-          color: Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+Widget stickerIcon(BuildContext context, Sticker e) => Align(
+      alignment: e.right ? Alignment.topRight : Alignment.topLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+              color: e.backgroundColor != null
+                  ? e.backgroundColor!.withOpacity(0.6)
+                  : Theme.of(context)
+                      .colorScheme
+                      .inversePrimary
+                      .withOpacity(0.6),
+              borderRadius: BorderRadius.circular(5)),
+          child: Icon(
+            e.icon,
+            color: e.color != null
+                ? e.color!.withOpacity(0.8)
+                : Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+          ),
         ),
       ),
     );

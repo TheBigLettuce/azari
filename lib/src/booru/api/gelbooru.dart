@@ -68,12 +68,13 @@ class Gelbooru implements BooruAPI {
   }
 
   @override
-  Future<List<Post>> page(int p, String tags, BooruTagging excludedTags) {
+  Future<(List<Post>, int?)> page(
+      int p, String tags, BooruTagging excludedTags) {
     _page = p + 1;
     return _commonPosts(tags, p, excludedTags);
   }
 
-  Future<List<Post>> _commonPosts(
+  Future<(List<Post>, int?)> _commonPosts(
       String tags, int p, BooruTagging excludedTags) async {
     late final String excludedTagsString;
 
@@ -105,7 +106,7 @@ class Gelbooru implements BooruAPI {
 
       final json = resp.data["post"];
       if (json == null) {
-        return Future.value([]);
+        return Future.value((<Post>[], null));
       }
 
       return _fromJson(json);
@@ -139,7 +140,7 @@ class Gelbooru implements BooruAPI {
         throw "The post has been not found.";
       }
 
-      return _fromJson([json[0]])[0];
+      return _fromJson([json[0]]).$1[0];
     } catch (e) {
       if (e is DioException) {
         if (e.response?.statusCode == 403) {
@@ -152,15 +153,16 @@ class Gelbooru implements BooruAPI {
   }
 
   @override
-  Future<List<Post>> fromPost(int _, String tags, BooruTagging excludedTags) =>
+  Future<(List<Post>, int?)> fromPost(
+          int _, String tags, BooruTagging excludedTags) =>
       _commonPosts(tags, _page, excludedTags).then((value) {
-        if (value.isNotEmpty) {
+        if (value.$1.isNotEmpty) {
           _page++;
         }
         return Future.value(value);
       });
 
-  List<Post> _fromJson(List<dynamic> m) {
+  (List<Post>, int?) _fromJson(List<dynamic> m) {
     final List<Post> list = [];
 
     final dateFormatter = DateFormat("EEE MMM dd HH:mm:ss");
@@ -175,7 +177,7 @@ class Gelbooru implements BooruAPI {
           prefix: booru.prefix,
           id: post["id"],
           md5: post["md5"],
-          tags: post["tags"],
+          tags: post["tags"].split(" "),
           score: post["score"],
           sourceUrl: post["source"],
           createdAt: date,
@@ -189,7 +191,7 @@ class Gelbooru implements BooruAPI {
               : post["sample_url"]));
     }
 
-    return list;
+    return (list, null);
   }
 
   @override

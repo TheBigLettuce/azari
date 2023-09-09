@@ -18,13 +18,9 @@ import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/gallery/android_api/android_directories.dart';
 import 'package:gallery/src/gallery/android_api/api.g.dart';
 import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
-import 'package:gallery/src/pages/booru_scroll.dart';
 import 'package:gallery/src/db/isar.dart';
-import 'package:gallery/src/schemas/grid_restore.dart';
-import 'package:gallery/src/schemas/scroll_position.dart' as scroll_pos;
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
-import 'package:gallery/src/widgets/dummy.dart';
 import 'package:gallery/src/widgets/entry.dart';
 import 'package:gallery/src/widgets/restart_widget.dart';
 // import 'package:google_fonts/google_fonts.dart';
@@ -35,6 +31,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+import 'src/pages/booru/main.dart';
 
 late final String azariVersion;
 
@@ -167,8 +165,6 @@ void main() async {
 
   FlutterLocalNotificationsPlugin().cancelAll();
 
-  GridTab.init();
-
   azariVersion = (await PackageInfo.fromPlatform()).version;
 
   if (Platform.isAndroid) {
@@ -181,40 +177,25 @@ void main() async {
     });
   }
 
+  final settings = Settings.fromDb();
+
   runApp(RestartWidget(
       key: restartKey,
       child: MaterialApp(
         title: 'Ācārya',
         darkTheme: _buildTheme(Brightness.dark, accentColor),
         theme: _buildTheme(Brightness.light, accentColor),
-        home: Settings.fromDb().path == "" ? const Entry() : const Dummy(),
+        home: settings.path.isEmpty ? const Entry() : null,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        initialRoute: settings.path.isNotEmpty ? "/booru" : null,
         routes: {
           "/senitel": (context) => Container(),
           "/booru": (context) {
             changeSystemUiOverlay(context);
             initPostTags(context);
 
-            final grids = GridTab.global;
-
-            final arguments = ModalRoute.of(context)!.settings.arguments;
-            if (arguments != null) {
-              final list = grids.instance.gridRestores.where().findAllSync();
-              for (final element in list) {
-                grids.removeSecondaryGrid(element.path);
-              }
-            }
-
-            final scroll = grids.instance.scrollPositionPrimarys.getSync(0);
-
-            return BooruScroll.primary(
-              initalScroll: scroll != null ? scroll.pos : 0,
-              time: scroll != null ? scroll.time : DateTime.now(),
-              grids: grids,
-              booruPage: scroll?.page,
-              clear: arguments != null ? true : false,
-            );
+            return const MainBooruGrid();
           }
         },
       )));

@@ -13,7 +13,6 @@ import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
 import 'package:gallery/src/gallery/android_api/android_files.dart';
-import 'package:gallery/src/pages/senitel.dart';
 import 'package:gallery/src/schemas/android_gallery_directory.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 import 'package:gallery/src/schemas/blacklisted_directory.dart';
@@ -32,7 +31,7 @@ import '../../booru/interface.dart';
 import '../../schemas/settings.dart';
 
 class CallbackDescription {
-  final void Function(SystemGalleryDirectory? chosen, String? newDir) c;
+  final Future<void> Function(SystemGalleryDirectory? chosen, String? newDir) c;
   final String description;
 
   final PreferredSizeWidget? preview;
@@ -86,10 +85,10 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
 
   late final GridSkeletonStateFilter<SystemGalleryDirectory> state =
       GridSkeletonStateFilter(
-          transform: (cell, _) => cell,
-          filter: extra.filter,
-          index: kGalleryDrawerIndex,
-          onWillPop: () => popUntilSenitel(context));
+    transform: (cell, _) => cell,
+    filter: extra.filter,
+    index: kGalleryDrawerIndex,
+  );
   late final api = getAndroidGalleryApi(
       temporaryDb: widget.callback != null || widget.nestedCallback != null,
       setCurrentApi: widget.callback == null);
@@ -108,6 +107,16 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
       setState(() {});
     });
     searchHook(state);
+
+    if (widget.callback != null) {
+      PlatformFunctions.trashThumbId().then((value) {
+        try {
+          setState(() {
+            trashThumbId = value;
+          });
+        } catch (_) {}
+      });
+    }
 
     extra.setRefreshingStatusCallback((i, inRefresh, empty) {
       state.gridKey.currentState?.mutationInterface?.unselectAll();
@@ -134,6 +143,10 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
   }
 
   void _joinedDirectories(String label, List<SystemGalleryDirectory> dirs) {
+    if (widget.callback != null || widget.nestedCallback != null) {
+      return;
+    }
+
     Navigator.push(context, MaterialPageRoute(
       builder: (context) {
         return AndroidFiles(
@@ -300,6 +313,13 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
               searchFocus),
           refresh: () {
             if (widget.callback != null) {
+              PlatformFunctions.trashThumbId().then((value) {
+                try {
+                  setState(() {
+                    trashThumbId = value;
+                  });
+                } catch (_) {}
+              });
               return Future.value(extra.db.systemGalleryDirectorys.countSync());
             } else {
               _refresh();
@@ -309,8 +329,9 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
           },
           overrideOnPress: (context, cell) {
             if (widget.callback != null) {
-              widget.callback!(cell, null);
-              Navigator.pop(context);
+              widget.callback!.c(cell, null).then((_) {
+                Navigator.pop(context);
+              });
             } else {
               final d = cell;
 

@@ -13,12 +13,9 @@ part 'thumbnail.g.dart';
 class Thumbnail {
   final Id id;
   final List<byte> data;
+  @Index()
   final int differenceHash;
   final DateTime updatedAt;
 
-  @Index()
-  final bool isEmpty;
-
-  const Thumbnail(
-      this.id, this.updatedAt, this.data, this.differenceHash, this.isEmpty);
+  const Thumbnail(this.id, this.updatedAt, this.data, this.differenceHash);
 }

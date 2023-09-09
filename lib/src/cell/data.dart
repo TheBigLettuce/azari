@@ -10,18 +10,28 @@ import 'package:flutter/widgets.dart';
 /// From this the actual grid cell as displayed on the screen gets built.
 class CellData {
   /// The thumbnail image of the cell.
-  final ImageProvider thumb;
+  final ImageProvider? thumb;
 
   /// Displayed on top of the cell, at the bottom center.
   final String name;
 
   /// Metadata of the post.
   /// Displayed on top of the cell, starting from the top left corner.
-  final List<IconData> stickers;
+  final List<Sticker> stickers;
 
   const CellData({
     required this.thumb,
     required this.name,
     required this.stickers,
   });
+}
+
+class Sticker {
+  final IconData icon;
+  final Color? color;
+  final Color? backgroundColor;
+  final bool right;
+
+  const Sticker(this.icon,
+      {this.color, this.backgroundColor, this.right = false});
 }

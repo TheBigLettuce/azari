@@ -5,10 +5,10 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:async';
 import 'dart:io' as io;
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/schemas/android_gallery_directory.dart';
@@ -16,26 +16,21 @@ import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 import 'package:gallery/src/schemas/blacklisted_directory.dart';
 import 'package:gallery/src/schemas/directory_tags.dart';
 import 'package:gallery/src/schemas/download_file.dart';
+import 'package:gallery/src/schemas/favorite_booru.dart';
 import 'package:gallery/src/schemas/gallery_last_modified.dart';
-import 'package:gallery/src/schemas/grid_restore.dart';
 import 'package:gallery/src/schemas/local_tag_dictionary.dart';
 import 'package:gallery/src/schemas/local_tags.dart';
 import 'package:gallery/src/schemas/pinned_directories.dart';
 import 'package:gallery/src/schemas/post.dart';
-import 'package:gallery/src/schemas/scroll_position.dart';
-import 'package:gallery/src/schemas/secondary_grid.dart';
+import 'package:gallery/src/schemas/grid_state.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:gallery/src/schemas/thumbnail.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
-import '../booru/tags/tags.dart';
-import '../pages/booru_scroll.dart';
 import '../schemas/favorite_media.dart';
 import '../schemas/settings.dart';
 
 import 'package:path/path.dart' as path;
-
-part 'grids.dart';
 
 String appStorageDir() => _directoryPath;
 String temporaryDbDir() => _temporaryDbPath;
@@ -80,17 +75,21 @@ Future initalizeIsar(bool temporary) async {
 
   _temporaryImagesPath = dimages.path;
 
-  await Isar.open([SettingsSchema, FileSchema],
-          directory: _directoryPath, inspector: false)
-      .then((value) {
-    _isar = value;
-  });
+  _isar = Isar.openSync([
+    SettingsSchema,
+    FavoriteBooruSchema,
+    LocalTagDictionarySchema,
+    FileSchema
+  ], directory: _directoryPath, inspector: false);
 
   if (io.Platform.isAndroid) {
     _thumbnailIsar = Isar.openSync([ThumbnailSchema],
         directory: _directoryPath, inspector: false, name: "androidThumbnails");
     _thumbnailIsar!.writeTxnSync(() {
-      _thumbnailIsar!.thumbnails.where().isEmptyEqualTo(true).deleteAllSync();
+      _thumbnailIsar!.thumbnails
+          .where()
+          .differenceHashEqualTo(0)
+          .deleteAllSync();
     });
     _blacklistedDirIsar = Isar.openSync([
       BlacklistedDirectorySchema,
@@ -107,37 +106,35 @@ Isar thumbnailIsar() => _thumbnailIsar!;
 Isar settingsIsar() => _isar!;
 Isar blacklistedDirIsar() => _blacklistedDirIsar!;
 
-Isar _primaryGridIsar(Booru booru) {
-  final instance = Isar.getInstance(booru.string);
-  if (instance != null) {
-    return instance;
-  }
-
-  return Isar.openSync([
-    GridRestoreSchema,
-    TagSchema,
-    ScrollPositionPrimarySchema,
-    PostSchema,
-  ], directory: _directoryPath, inspector: false, name: booru.string);
-}
-
 String _microsecSinceEpoch() =>
     DateTime.now().microsecondsSinceEpoch.toString();
 
-Isar _restoreIsarGrid(String path) => Isar.openSync(
-      [PostSchema, SecondaryGridSchema],
-      directory: _directoryPath,
-      inspector: false,
-      name: path,
-    );
-
-class IsarDbClose {
-  static void serverApiDirectories() => Isar.getInstance("serverApi")?.close();
-  static void serverApiFiles(String name) =>
-      Isar.getInstance(name)?.close(deleteFromDisk: true);
-}
-
 class IsarDbsOpen {
+  static Isar primaryGrid(Booru booru) {
+    final instance = Isar.getInstance(booru.string);
+    if (instance != null) {
+      return instance;
+    }
+
+    return Isar.openSync([
+      GridStateSchema,
+      TagSchema,
+      PostSchema,
+    ], directory: _directoryPath, inspector: false, name: booru.string);
+  }
+
+  static Isar secondaryGrid({bool temporary = true}) {
+    return Isar.openSync([PostSchema],
+        directory: temporary ? _temporaryDbPath : _directoryPath,
+        inspector: false,
+        name: _microsecSinceEpoch());
+  }
+
+  static Isar secondaryGridName(String name) {
+    return Isar.openSync([PostSchema],
+        directory: _directoryPath, inspector: false, name: name);
+  }
+
   static Isar localTags() => Isar.openSync(
         [LocalTagsSchema, LocalTagDictionarySchema, DirectoryTagSchema],
         directory: _directoryPath,
@@ -156,6 +153,13 @@ class IsarDbsOpen {
 
   static Isar androidGalleryFiles() => Isar.openSync(
         [SystemGalleryDirectoryFileSchema],
+        directory: _temporaryDbPath,
+        inspector: false,
+        name: _microsecSinceEpoch(),
+      );
+
+  static Isar temporarySchemas(List<CollectionSchema> schemas) => Isar.openSync(
+        schemas,
         directory: _temporaryDbPath,
         inspector: false,
         name: _microsecSinceEpoch(),

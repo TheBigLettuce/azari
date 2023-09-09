@@ -17,9 +17,6 @@ import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:gallery/src/gallery/android_api/api.g.dart';
 import 'package:gallery/src/schemas/gallery_last_modified.dart';
-import 'package:gallery/src/schemas/thumbnail.dart';
-import 'package:transparent_image/transparent_image.dart';
-
 import '../../db/platform_channel.dart';
 import '../../widgets/search_filter_grid.dart';
 import '../interface.dart';
@@ -30,19 +27,6 @@ part 'android_side.dart';
 class AndroidGalleryExtra {
   final _AndroidGallery _impl;
   FilterInterface<SystemGalleryDirectory> get filter => _impl.filter;
-  void loadThumbs(SystemGalleryDirectory cell) {
-    try {
-      thumbnailIsar().writeTxnSync(() => thumbnailIsar().thumbnails.putSync(
-          Thumbnail(
-              cell.thumbFileId, DateTime.now(), kTransparentImage, 0, true)));
-
-      PlatformFunctions.loadThumbnail(cell.thumbFileId);
-    } catch (e, trace) {
-      log("loading thumbs",
-          level: Level.SEVERE.value, error: e, stackTrace: trace);
-    }
-    _impl.isThumbsLoading = false;
-  }
 
   Isar get db => _impl.db;
 

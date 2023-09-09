@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:octo_image/octo_image.dart';
+import 'package:transparent_image/transparent_image.dart';
 import '../../cell/data.dart';
 import 'callback_grid.dart';
 
@@ -15,7 +16,7 @@ import 'callback_grid.dart';
 class GridCell<T extends CellData> extends StatefulWidget {
   final T _data;
   final int indx;
-  final void Function(BuildContext context) onPressed;
+  final void Function(BuildContext context)? onPressed;
   final bool hideAlias;
 
   /// If [tight] is true, margin between the [GridCell]s on the grid is tight.
@@ -60,9 +61,11 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
     return GestureDetector(
       child: InkWell(
         borderRadius: BorderRadius.circular(15.0),
-        onTap: () {
-          widget.onPressed(context);
-        },
+        onTap: widget.onPressed == null
+            ? null
+            : () {
+                widget.onPressed!(context);
+              },
         focusColor: Theme.of(context).colorScheme.primary,
         onLongPress: widget.onLongPress,
         onDoubleTap: widget.download != null
@@ -109,7 +112,8 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
                             ),
                           );
                         },
-                        image: widget._data.thumb,
+                        image: widget._data.thumb ??
+                            MemoryImage(kTransparentImage),
                         alignment: Alignment.center,
                         color: widget.shadowOnTop
                             ? Colors.black.withOpacity(0.5)
@@ -121,17 +125,24 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
                         height: constraints.maxHeight,
                       )),
                       if (widget._data.stickers.isNotEmpty &&
-                          !widget.ignoreStickers)
-                        Align(
-                          alignment: Alignment.topLeft,
-                          child: Padding(
-                              padding: const EdgeInsets.all(8),
-                              child: Wrap(
-                                children: widget._data.stickers
-                                    .map((e) => stickerIcon(context, e))
-                                    .toList(),
-                              )),
-                        ),
+                          !widget.ignoreStickers) ...[
+                        Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Wrap(
+                              children: widget._data.stickers
+                                  .where((element) => element.right)
+                                  .map((e) => stickerIcon(context, e))
+                                  .toList(),
+                            )),
+                        Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Wrap(
+                              children: widget._data.stickers
+                                  .where((element) => !element.right)
+                                  .map((e) => stickerIcon(context, e))
+                                  .toList(),
+                            ))
+                      ],
                       if (!widget.hideAlias && !widget.shadowOnTop)
                         Container(
                           alignment: Alignment.bottomCenter,

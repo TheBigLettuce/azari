@@ -5,6 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_animate/flutter_animate.dart';
@@ -12,6 +13,8 @@ import 'package:isar/isar.dart';
 
 import '../booru/interface.dart';
 import '../db/isar.dart';
+import 'favorite_booru.dart';
+import 'post.dart';
 
 part 'settings.g.dart';
 
@@ -97,6 +100,54 @@ class Settings {
   static void saveToDb(Settings instance) {
     settingsIsar()
         .writeTxnSync(() => settingsIsar().settings.putSync(instance));
+  }
+
+  static void addRemoveFavorites(List<PostBase> posts) {
+    final toAdd = <FavoriteBooru>[];
+    final toRemove = <String>[];
+
+    for (final post in posts) {
+      if (!isFavorite(post.fileUrl)) {
+        toAdd.add(FavoriteBooru(
+            height: post.height,
+            id: post.id,
+            md5: post.md5,
+            tags: post.tags,
+            width: post.width,
+            fileUrl: post.fileUrl,
+            prefix: post.prefix,
+            previewUrl: post.previewUrl,
+            sampleUrl: post.sampleUrl,
+            ext: post.ext,
+            sourceUrl: post.sourceUrl,
+            rating: post.rating,
+            score: post.score,
+            createdAt: post.createdAt));
+      } else {
+        toRemove.add(post.fileUrl);
+      }
+    }
+
+    if (toAdd.isEmpty && toRemove.isEmpty) {
+      return;
+    }
+
+    settingsIsar().writeTxnSync(() {
+      settingsIsar().favoriteBoorus.putAllSync(toAdd);
+      settingsIsar().favoriteBoorus.deleteAllByFileUrlSync(toRemove);
+    });
+  }
+
+  static bool isFavorite(String fileUrl) {
+    return settingsIsar().favoriteBoorus.getByFileUrlSync(fileUrl) != null;
+  }
+
+  static StreamSubscription<Settings?> watch(void Function(Settings? s) f,
+      {bool fire = false}) {
+    return settingsIsar()
+        .settings
+        .watchObject(0, fireImmediately: fire)
+        .listen(f);
   }
 }
 

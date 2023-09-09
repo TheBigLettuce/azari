@@ -68,7 +68,7 @@ class Danbooru implements BooruAPI {
         throw "no post";
       }
 
-      return (await _fromJson([resp.data], null))[0];
+      return (await _fromJson([resp.data], null)).$1[0];
     } catch (e) {
       if (e is DioException) {
         if (e.response?.statusCode == 403) {
@@ -80,15 +80,17 @@ class Danbooru implements BooruAPI {
   }
 
   @override
-  Future<List<Post>> page(int i, String tags, BooruTagging excludedTags) =>
+  Future<(List<Post>, int?)> page(
+          int i, String tags, BooruTagging excludedTags) =>
       _commonPosts(tags, excludedTags, page: i);
 
   @override
-  Future<List<Post>> fromPost(
+  Future<(List<Post>, int?)> fromPost(
           int postId, String tags, BooruTagging excludedTags) =>
       _commonPosts(tags, excludedTags, postid: postId);
 
-  Future<List<Post>> _commonPosts(String tags, BooruTagging excludedTags,
+  Future<(List<Post>, int?)> _commonPosts(
+      String tags, BooruTagging excludedTags,
       {int? postid, int? page}) async {
     if (postid == null && page == null) {
       throw "postid or page should be set";
@@ -133,18 +135,21 @@ class Danbooru implements BooruAPI {
     }
   }
 
-  Future<List<Post>> _fromJson(
+  Future<(List<Post>, int?)> _fromJson(
       List<dynamic> m, BooruTagging? excludedTags) async {
     final List<Post> list = [];
+    int? currentSkipped;
     final exclude = excludedTags?.get();
 
+    outer:
     for (final e in m) {
       try {
         final String tags = e["tag_string"];
         if (exclude != null) {
           for (final tag in exclude) {
             if (tags.contains(tag.tag)) {
-              continue;
+              currentSkipped = e["id"];
+              continue outer;
             }
           }
         }
@@ -157,7 +162,7 @@ class Danbooru implements BooruAPI {
             rating: e["rating"] ?? "?",
             createdAt: DateTime.parse(e["created_at"]),
             md5: e["md5"],
-            tags: tags,
+            tags: tags.split(" "),
             width: e["image_width"],
             fileUrl: e["file_url"],
             previewUrl: e["preview_file_url"],
@@ -171,7 +176,7 @@ class Danbooru implements BooruAPI {
       }
     }
 
-    return list;
+    return (list, currentSkipped);
   }
 
   @override

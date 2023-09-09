@@ -257,7 +257,7 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
 
                 "removeFromTrash" -> {
                     val uri = (call.arguments as List<String>).map { Uri.parse(it) }
-
+                    
                     val intent =
                         MediaStore.createTrashRequest(context.contentResolver, uri, false)
 

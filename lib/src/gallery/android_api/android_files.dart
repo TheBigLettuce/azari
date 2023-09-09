@@ -56,7 +56,7 @@ class _AndroidFilesState extends State<AndroidFiles>
 
   late final AndroidGalleryFilesExtra extra = widget.api.getExtra()
     ..setRefreshingStatusCallback((i, inRefresh, empty) {
-      if (empty && !extra.isTrash() && !extra.isFavorites()) {
+      if (empty) {
         state.gridKey.currentState?.selection.currentBottomSheet?.close();
         state.gridKey.currentState?.imageViewKey.currentState?.key.currentState
             ?.closeEndDrawer();
@@ -65,7 +65,9 @@ class _AndroidFilesState extends State<AndroidFiles>
         if (imageViewContext != null) {
           Navigator.of(imageViewContext).pop();
         }
+
         Navigator.of(context).pop();
+
         return;
       }
 
@@ -74,10 +76,12 @@ class _AndroidFilesState extends State<AndroidFiles>
       stream.add(i);
 
       if (!inRefresh) {
-        state.gridKey.currentState?.imageViewKey.currentState
-            ?.update(state.gridKey.currentState!.mutationInterface!.cellCount);
         state.gridKey.currentState?.mutationInterface?.setIsRefreshing(false);
+
         performSearch(searchTextController.text);
+        if (i == 1) {
+          state.gridKey.currentState?.imageViewKey.currentState?.hardRefresh();
+        }
         setState(() {});
       }
     })
@@ -114,42 +118,42 @@ class _AndroidFilesState extends State<AndroidFiles>
 
   late final GridSkeletonStateFilter<SystemGalleryDirectoryFile> state =
       GridSkeletonStateFilter(
-          transform: (cell, sorting) {
-            if (sorting == SortingMode.size ||
-                currentFilteringMode() == FilteringMode.same) {
-              cell.injectedStickers.add(cell.sizeSticker());
-            }
+    transform: (cell, sorting) {
+      if (sorting == SortingMode.size ||
+          currentFilteringMode() == FilteringMode.same) {
+        cell.injectedStickers.add(cell.sizeSticker());
+      }
 
-            return cell;
-          },
-          hook: (selected) {
-            if (selected == FilteringMode.tag ||
-                selected == FilteringMode.tagReversed) {
-              markSearchVirtual();
-            }
+      return cell;
+    },
+    hook: (selected) {
+      if (selected == FilteringMode.tag ||
+          selected == FilteringMode.tagReversed) {
+        markSearchVirtual();
+      }
 
-            if (selected == FilteringMode.size) {
-              return SortingMode.size;
-            }
+      if (selected == FilteringMode.size) {
+        return SortingMode.size;
+      }
 
-            return SortingMode.none;
-          },
-          filter: extra.filter,
-          index: kGalleryDrawerIndex,
-          filteringModes: {
-            FilteringMode.noFilter,
-            if (!extra.isFavorites()) FilteringMode.favorite,
-            FilteringMode.original,
-            FilteringMode.duplicate,
-            FilteringMode.same,
-            FilteringMode.tag,
-            FilteringMode.tagReversed,
-            FilteringMode.untagged,
-            FilteringMode.gif,
-            FilteringMode.size,
-            FilteringMode.video
-          },
-          onWillPop: () => Future.value(true));
+      return SortingMode.none;
+    },
+    filter: extra.filter,
+    index: kGalleryDrawerIndex,
+    filteringModes: {
+      FilteringMode.noFilter,
+      if (!extra.isFavorites()) FilteringMode.favorite,
+      FilteringMode.original,
+      FilteringMode.duplicate,
+      FilteringMode.same,
+      FilteringMode.tag,
+      FilteringMode.tagReversed,
+      FilteringMode.untagged,
+      FilteringMode.gif,
+      FilteringMode.size,
+      FilteringMode.video
+    },
+  );
 
   @override
   void initState() {
@@ -199,12 +203,28 @@ class _AndroidFilesState extends State<AndroidFiles>
                   content: Text(move
                       ? AppLocalizations.of(context)!.cantMoveSameDest
                       : AppLocalizations.of(context)!.cantCopySameDest)));
-              return;
+              return Future.value();
             }
 
-            PlatformFunctions.copyMoveFiles(
-                chosen?.relativeLoc, chosen?.volumeName, selected,
-                move: move, newDir: newDir);
+            if (chosen?.bucketId == "favorites") {
+              _favoriteOrUnfavorite(context, selected);
+            } else if (chosen?.bucketId == "trash") {
+              if (!move) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text(
+                  "Can't copy files to the trash. Use move.", // TODO: change
+                )));
+                return Future.value();
+              }
+
+              return _deleteDialog(context, selected);
+            } else {
+              PlatformFunctions.copyMoveFiles(
+                  chosen?.relativeLoc, chosen?.volumeName, selected,
+                  move: move, newDir: newDir);
+            }
+
+            return Future.value();
           },
               preview: PreferredSize(
                 preferredSize: const Size.fromHeight(52),
@@ -229,7 +249,7 @@ class _AndroidFilesState extends State<AndroidFiles>
       }
     }
 
-    _refresh();
+    GalleryImpl.instance().notify(null);
   }
 
   void _saveTags(
@@ -317,9 +337,9 @@ class _AndroidFilesState extends State<AndroidFiles>
         ));
   }
 
-  void _deleteDialog(
+  Future<void> _deleteDialog(
       BuildContext context, List<SystemGalleryDirectoryFile> selected) {
-    Navigator.push(
+    return Navigator.push(
         context,
         DialogRoute(
           context: context,
@@ -385,15 +405,21 @@ class _AndroidFilesState extends State<AndroidFiles>
         ));
   }
 
-  GridBottomSheetAction<SystemGalleryDirectoryFile> _addToFavoritesAction() {
-    return GridBottomSheetAction(Icons.star_border_outlined, (selected) {
+  GridBottomSheetAction<SystemGalleryDirectoryFile> _addToFavoritesAction(
+      SystemGalleryDirectoryFile? f) {
+    final isFavorites = f != null && f.isFavorite();
+
+    return GridBottomSheetAction(
+        isFavorites ? Icons.star_rate_rounded : Icons.star_border_rounded,
+        (selected) {
       _favoriteOrUnfavorite(context, selected);
     },
         false,
         GridBottomSheetActionExplanation(
           label: AppLocalizations.of(context)!.favoritesActionLabel,
           body: AppLocalizations.of(context)!.favoritesActionBody,
-        ));
+        ),
+        color: isFavorites ? Colors.yellow.shade900 : null);
   }
 
   GridBottomSheetAction<SystemGalleryDirectoryFile> _deleteAction() {
@@ -466,7 +492,7 @@ class _AndroidFilesState extends State<AndroidFiles>
                         _restoreFromTrash(),
                       ]
                     : [
-                        _addToFavoritesAction(),
+                        _addToFavoritesAction(cell),
                         _deleteAction(),
                         _copyAction(),
                         _moveAction()
@@ -550,7 +576,7 @@ class _AndroidFilesState extends State<AndroidFiles>
                       : [
                           _bulkRename(),
                           _saveTagsAction(),
-                          _addToFavoritesAction(),
+                          _addToFavoritesAction(null),
                           _deleteAction(),
                           _copyAction(),
                           _moveAction(),

@@ -23,28 +23,48 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../booru/interface.dart';
 import '../cell/contentable.dart';
 import '../widgets/make_tags.dart';
-import '../widgets/notifiers/booru_api.dart';
 import '../widgets/notifiers/filter.dart';
-import '../widgets/notifiers/grid_tab.dart';
+import '../widgets/notifiers/tag_manager.dart';
 import '../widgets/search_text_field.dart';
 import 'tags.dart';
 
 part 'post.g.dart';
 
 @collection
-class Post implements Cell {
+class Post extends PostBase {
+  Post(
+      {required super.height,
+      required super.id,
+      required super.md5,
+      required super.tags,
+      required super.width,
+      required super.fileUrl,
+      required super.prefix,
+      required super.previewUrl,
+      required super.sampleUrl,
+      required super.ext,
+      required super.sourceUrl,
+      required super.rating,
+      required super.score,
+      required super.createdAt});
+}
+
+class PostBase implements Cell {
   @override
   Id? isarId;
 
-  @Index(unique: true, replace: true)
+  @Index()
   final int id;
 
   final String md5;
-  final String tags;
+
+  @Index(caseSensitive: false, type: IndexType.hashElements)
+  final List<String> tags;
 
   final int width;
   final int height;
 
+  @Index(unique: true, replace: true)
   final String fileUrl;
   final String previewUrl;
   final String sampleUrl;
@@ -62,22 +82,20 @@ class Post implements Cell {
 
   @ignore
   @override
-  List<Widget>? Function(BuildContext context) get addButtons => (_) => [
-        if (tags.contains("original"))
+  List<Widget>? Function(BuildContext context) get addButtons => (context) {
+        return [
+          if (tags.contains("original")) Icon(FilteringMode.original.icon),
           IconButton(
-            icon: Icon(FilteringMode.original.icon),
-            onPressed: null,
+            icon: const Icon(Icons.public),
+            onPressed: () {
+              final booru = BooruAPI.fromEnum(Booru.fromPrefix(prefix)!);
+              launchUrl(booru.browserLink(id),
+                  mode: LaunchMode.externalApplication);
+              booru.close();
+            },
           ),
-        IconButton(
-          icon: const Icon(Icons.public),
-          onPressed: () {
-            final booru = BooruAPI.fromSettings();
-            launchUrl(booru.browserLink(id),
-                mode: LaunchMode.externalApplication);
-            booru.close();
-          },
-        ),
-      ];
+        ];
+      };
 
   @ignore
   @override
@@ -86,7 +104,7 @@ class Post implements Cell {
       get addInfo =>
           (BuildContext context, dynamic extra, AddInfoColorData colors) {
             final dUrl = fileDownloadUrl();
-            final tab = GridTabNotifier.of(context);
+            final tagManager = TagManagerNotifier.of(context);
 
             return wrapTagsSearch(
               context,
@@ -136,21 +154,22 @@ class Post implements Cell {
                 ),
               ],
               filename(),
-              supplyTags: tags.split(" "),
+              supplyTags: tags,
               addExcluded: (t) {
-                tab.excluded.add(Tag(tag: t, isExcluded: true));
+                tagManager.excluded.add(Tag(tag: t, isExcluded: true));
               },
               launchGrid: (t) {
-                tab.onTagPressed(
+                tagManager.onTagPressed(
                     context,
                     Tag.string(tag: HtmlUnescape().convert(t)),
-                    BooruAPINotifier.of(context));
+                    Booru.fromPrefix(prefix)!,
+                    true);
               },
             );
           };
 
   @override
-  String alias(bool isList) => isList ? tags : id.toString();
+  String alias(bool isList) => isList ? tags.join(" ") : id.toString();
 
   @override
   Contentable fileDisplay() {
@@ -192,7 +211,7 @@ class Post implements Cell {
   }
 
   @override
-  CellData getCellData(bool isList) {
+  CellData getCellData(bool isList, {BuildContext? context}) {
     ImageProvider provider;
     try {
       provider = CachedNetworkImageProvider(
@@ -205,9 +224,14 @@ class Post implements Cell {
     final content = fileDisplay();
 
     return CellData(thumb: provider, name: alias(isList), stickers: [
-      if (content is NetVideo) FilteringMode.video.icon,
-      if (content is NetGif) FilteringMode.gif.icon,
-      if (tags.contains("original")) FilteringMode.original.icon
+      if (context != null && Settings.isFavorite(fileUrl))
+        Sticker(Icons.favorite_rounded,
+            color: Colors.red.shade900,
+            backgroundColor: Colors.redAccent.shade100,
+            right: true),
+      if (content is NetVideo) Sticker(FilteringMode.video.icon),
+      if (content is NetGif) Sticker(FilteringMode.gif.icon),
+      if (tags.contains("original")) Sticker(FilteringMode.original.icon)
     ]);
   }
 
@@ -244,9 +268,9 @@ class Post implements Cell {
     ];
   }
 
-  Post(
-      {required this.height,
-      required this.id,
+  PostBase(
+      {required this.id,
+      required this.height,
       required this.md5,
       required this.tags,
       required this.width,
@@ -258,5 +282,6 @@ class Post implements Cell {
       required this.sourceUrl,
       required this.rating,
       required this.score,
-      required this.createdAt});
+      required this.createdAt,
+      this.isarId});
 }

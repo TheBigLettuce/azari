@@ -16,29 +16,28 @@ import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../booru/interface.dart';
-import '../db/isar.dart';
+import '../db/state_restoration.dart';
 import '../keybinds/keybinds.dart';
 import '../widgets/autocomplete_widget.dart';
 import '../widgets/single_post.dart';
 import '../widgets/tags_widget.dart';
-import 'booru_scroll.dart';
 
-class SearchBooru extends StatefulWidget {
-  final GridTab grids;
+class TagsPage extends StatefulWidget {
+  final TagManager tagManager;
   final bool popSenitel;
   final bool fromGallery;
 
-  const SearchBooru(
+  const TagsPage(
       {super.key,
-      required this.grids,
+      required this.tagManager,
       required this.popSenitel,
       required this.fromGallery});
 
   @override
-  State<SearchBooru> createState() => _SearchBooruState();
+  State<TagsPage> createState() => _TagsPageState();
 }
 
-class _SearchBooruState extends State<SearchBooru> {
+class _TagsPageState extends State<TagsPage> {
   final booru = BooruAPI.fromSettings();
 
   final focus = FocusNode();
@@ -88,11 +87,9 @@ class _SearchBooruState extends State<SearchBooru> {
     });
 
     super.initState();
-    _lastTagsWatcher = widget.grids.instance.tags
-        .watchLazy(fireImmediately: true)
-        .listen((event) {
-      _lastTags = widget.grids.latest.get();
-      _excludedTags = widget.grids.excluded.get();
+    _lastTagsWatcher = widget.tagManager.watch(true, () {
+      _lastTags = widget.tagManager.latest.get();
+      _excludedTags = widget.tagManager.excluded.get();
 
       setState(() {});
     });
@@ -114,22 +111,6 @@ class _SearchBooruState extends State<SearchBooru> {
     super.dispose();
   }
 
-  void _onTagPressed(Tag tag) {
-    tag = tag.trim();
-    if (tag.tag.isEmpty) {
-      return;
-    }
-
-    widget.grids.latest.add(tag);
-    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-      return BooruScroll.secondary(
-        grids: widget.grids,
-        instance: widget.grids.newSecondaryGrid(),
-        tags: tag.tag,
-      );
-    }));
-  }
-
   @override
   Widget build(BuildContext context) {
     return makeSkeleton(
@@ -142,11 +123,13 @@ class _SearchBooruState extends State<SearchBooru> {
             const SingleActivator(LogicalKeyboardKey.enter, shift: true)): () {
           if (focus.hasFocus) {
             if (searchHighlight.isNotEmpty) {
-              _onTagPressed(Tag.string(tag: searchHighlight));
+              widget.tagManager.onTagPressed(
+                  context, Tag.string(tag: searchHighlight), booru.booru, true);
             }
           } else if (excludedFocus.hasFocus) {
             if (excludedHighlight.isNotEmpty) {
-              widget.grids.excluded.add(Tag.string(tag: excludedHighlight));
+              widget.tagManager.excluded
+                  .add(Tag.string(tag: excludedHighlight));
               excludedTagsTextController.text = "";
             }
           }
@@ -193,14 +176,17 @@ class _SearchBooruState extends State<SearchBooru> {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 10, right: 10),
-          child: SinglePost(singlePostFocus),
+          child: SinglePost(
+            focus: singlePostFocus,
+            tagManager: widget.tagManager,
+          ),
         ),
         ExpansionPanelList(
           elevation: 0,
           dividerColor: Theme.of(context).colorScheme.background,
           expansionCallback: (panelIndex, isExpanded) => switch (panelIndex) {
-            0 => setState(() => recentTagsExpanded = !isExpanded),
-            1 => setState(() => excludedTagsExpanded = !isExpanded),
+            0 => setState(() => recentTagsExpanded = !recentTagsExpanded),
+            1 => setState(() => excludedTagsExpanded = !excludedTagsExpanded),
             int() => throw "out of range",
           },
           children: [
@@ -234,7 +220,8 @@ class _SearchBooruState extends State<SearchBooru> {
                                               deleteAllController!
                                                   .forward(from: 0)
                                                   .then((value) {
-                                                widget.grids.latest.clear();
+                                                widget.tagManager.latest
+                                                    .clear();
                                                 if (deleteAllController !=
                                                     null) {
                                                   deleteAllController!
@@ -255,28 +242,26 @@ class _SearchBooruState extends State<SearchBooru> {
                   );
                 },
                 body: TagsWidget(
-                        tags: _lastTags,
-                        deleteTag: (t) {
+                    tags: _lastTags,
+                    deleteTag: (t) {
+                      if (deleteAllController != null) {
+                        deleteAllController!.forward(from: 0).then((value) {
+                          widget.tagManager.latest.delete(t);
                           if (deleteAllController != null) {
-                            deleteAllController!.forward(from: 0).then((value) {
-                              widget.grids.latest.delete(t);
-                              if (deleteAllController != null) {
-                                deleteAllController!.reverse(from: 1);
-                              }
-                            });
-                          } else {
-                            widget.grids.latest.delete(t);
+                            deleteAllController!.reverse(from: 1);
                           }
-                        },
-                        onPress: _onTagPressed)
-                    .animate(
-                        onInit: (controller) =>
-                            deleteAllController = controller,
-                        effects: [
-                          FadeEffect(
-                              begin: 1, end: 0, duration: 200.milliseconds)
-                        ],
-                        autoPlay: false)),
+                        });
+                      } else {
+                        widget.tagManager.latest.delete(t);
+                      }
+                    },
+                    onPress: (t) => widget.tagManager
+                        .onTagPressed(context, t, booru.booru, true)).animate(
+                    onInit: (controller) => deleteAllController = controller,
+                    effects: [
+                      FadeEffect(begin: 1, end: 0, duration: 200.milliseconds)
+                    ],
+                    autoPlay: false)),
             ExpansionPanel(
                 isExpanded: excludedTagsExpanded,
                 headerBuilder: (context, isExpanded) {
@@ -302,7 +287,7 @@ class _SearchBooruState extends State<SearchBooru> {
                                       excludedTagsTextController, (s) {
                                     excludedHighlight = s;
                                   },
-                                      widget.grids.excluded.add,
+                                      widget.tagManager.excluded.add,
                                       () => focus.requestFocus(),
                                       booru.completeTag,
                                       excludedFocus,
@@ -328,13 +313,13 @@ class _SearchBooruState extends State<SearchBooru> {
                             deleteAllExcludedController!
                                 .forward(from: 0)
                                 .then((value) {
-                              widget.grids.excluded.delete(t);
+                              widget.tagManager.excluded.delete(t);
                               if (deleteAllExcludedController != null) {
                                 deleteAllExcludedController!.reverse(from: 1);
                               }
                             });
                           } else {
-                            widget.grids.excluded.delete(t);
+                            widget.tagManager.excluded.delete(t);
                           }
                         },
                         onPress: (t) {})

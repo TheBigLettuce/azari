@@ -129,10 +129,10 @@ Widget autocompleteWidget(
                   context,
                   () {
                     textEditingController.clear();
-                    //focus.unfocus();
                     if (!noUnfocus) {
                       focusMain();
                     }
+
                     onChanged?.call();
                   },
                   addItems,

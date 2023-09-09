@@ -9,7 +9,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/db/state_restoration.dart';
 import 'package:gallery/src/gallery/android_api/android_directories.dart';
+import 'package:gallery/src/pages/favorites.dart';
 import 'package:gallery/src/pages/tags.dart';
 import 'package:gallery/src/pages/downloads.dart';
 import 'package:gallery/src/schemas/download_file.dart';
@@ -21,9 +23,10 @@ import 'package:gallery/src/pages/settings.dart';
 
 const int kBooruGridDrawerIndex = 0;
 const int kGalleryDrawerIndex = 1;
-const int kTagsDrawerIndex = 2;
-const int kDownloadsDrawerIndex = 3;
-const int kSettingsDrawerIndex = 4;
+const int kFavoritesDrawerIndex = 2;
+const int kTagsDrawerIndex = 3;
+const int kDownloadsDrawerIndex = 4;
+const int kSettingsDrawerIndex = 5;
 const int kComeFromRandom = -1;
 
 Widget azariIcon(BuildContext context, {Color? color}) => Icon(
@@ -51,6 +54,16 @@ List<NavigationDrawerDestination> destinations(BuildContext context,
           color: primaryColor,
         ),
         label: Text(AppLocalizations.of(context)!.galleryLabel)),
+    NavigationDrawerDestination(
+      icon: const Icon(Icons.favorite),
+      selectedIcon: Icon(
+        Icons.favorite,
+        color: primaryColor,
+      ),
+      label: const Text(
+        "Favorites", // TODO: change
+      ),
+    ),
     NavigationDrawerDestination(
       icon: const Icon(Icons.tag),
       selectedIcon: Icon(
@@ -94,8 +107,9 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => SearchBooru(
-                          grids: GridTab.global,
+                        builder: (context) => TagsPage(
+                          tagManager: TagManager.fromEnum(
+                              Settings.fromDb().selectedBooru),
                           popSenitel: false,
                           fromGallery: true,
                         ),
@@ -106,8 +120,9 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
                   Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => SearchBooru(
-                          grids: GridTab.global,
+                        builder: (context) => TagsPage(
+                          tagManager: TagManager.fromEnum(
+                              Settings.fromDb().selectedBooru),
                           popSenitel: true,
                           fromGallery: false,
                         ),
@@ -131,9 +146,25 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
                   ModalRoute.withName("/senitel"))
             }
         },
+      kFavoritesDrawerIndex => {
+          if (from == kBooruGridDrawerIndex)
+            {
+              Navigator.pushNamed(context, "/senitel"),
+            },
+          if (from != kFavoritesDrawerIndex)
+            {
+              Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FavoritesPage(),
+                  ),
+                  ModalRoute.withName("/senitel"))
+            }
+        },
       kSettingsDrawerIndex => {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (context) => const SettingsWidget()))
+          if (from != kSettingsDrawerIndex)
+            Navigator.push(context,
+                MaterialPageRoute(builder: (context) => const SettingsWidget()))
         },
       kGalleryDrawerIndex => {
           if (Platform.isAndroid)

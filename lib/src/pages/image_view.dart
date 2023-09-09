@@ -112,8 +112,12 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
       choosePlatformFullscreenPlug(widget.systemOverlayRestoreColor);
 
   void _extractPalette() {
-    PaletteGenerator.fromImageProvider(currentCell.getCellData(false).thumb)
-        .then((value) {
+    final t = currentCell.getCellData(false).thumb;
+    if (t == null) {
+      return;
+    }
+
+    PaletteGenerator.fromImageProvider(t).then((value) {
       setState(() {
         currentPalette = value;
       });
@@ -123,44 +127,54 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     });
   }
 
+  void hardRefresh() {
+    fakeProvider = MemoryImage(kTransparentImage);
+
+    setState(() {});
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      setState(() {
+        fakeProvider = null;
+      });
+    });
+  }
+
   void refreshImage() {
     var i = currentCell.fileDisplay();
     if (i is NetImage) {
       PaintingBinding.instance.imageCache.evict(i.provider);
-      fakeProvider = MemoryImage(kTransparentImage);
 
-      setState(() {});
-      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-        setState(() {
-          fakeProvider = null;
-        });
-      });
+      hardRefresh();
     }
   }
 
-  void update(int count) {
+  void update(int count, {bool pop = true}) {
     if (count == 0) {
-      key.currentState?.closeEndDrawer();
-      Navigator.pop(context);
+      if (pop) {
+        key.currentState?.closeEndDrawer();
+        Navigator.pop(context);
+      }
       return;
     }
 
     cellCount = count;
-    if (currentPage > cellCount - 1) {
+
+    if (cellCount == 1) {
       controller.previousPage(duration: 200.ms, curve: Curves.linearToEaseOut);
-    } else {
-      if (widget.getCell(currentPage).getCellData(false).thumb !=
-          currentCell.getCellData(false).thumb) {
-        if (currentPage == 0) {
-          controller.nextPage(
-              duration: 200.ms, curve: Curves.fastLinearToSlowEaseIn);
-        } else {
-          controller.previousPage(
-              duration: 200.ms, curve: Curves.linearToEaseOut);
-        }
+
+      currentCell = widget.getCell(0);
+    } else if (currentPage > cellCount - 1) {
+      controller.previousPage(duration: 200.ms, curve: Curves.linearToEaseOut);
+    } else if (widget.getCell(currentPage).getCellData(false).thumb !=
+        currentCell.getCellData(false).thumb) {
+      if (currentPage == 0) {
+        controller.nextPage(
+            duration: 200.ms, curve: Curves.fastLinearToSlowEaseIn);
       } else {
-        currentCell = widget.getCell(currentPage);
+        controller.previousPage(
+            duration: 200.ms, curve: Curves.linearToEaseOut);
       }
+    } else {
+      currentCell = widget.getCell(currentPage);
     }
 
     setState(() {});
@@ -188,6 +202,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     currentCell = widget.getCell(widget.startingCell);
     controller = PageController(initialPage: widget.startingCell);
+
+    widget.updateTagScrollPos(null, widget.startingCell);
 
     _extractPalette();
   }
@@ -346,10 +362,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
           tightMode: true,
           child: Platform.isLinux
               ? PhotoGalleryPageVideoLinux(url: uri, localVideo: local)
-              : PhotoGalleryPageVideo(
-                  url: uri,
-                  localVideo: local,
-                ));
+              : PhotoGalleryPageVideo(url: uri, localVideo: local));
 
   PhotoViewGalleryPageOptions _makeNetImage(ImageProvider provider) {
     final options = PhotoViewGalleryPageOptions(
@@ -386,16 +399,21 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                         aspectRatio: size.aspectRatio == 0
                             ? MediaQuery.of(context).size.aspectRatio
                             : size.aspectRatio,
-                        child: AndroidView(
-                          viewType: "imageview",
-                          hitTestBehavior:
-                              PlatformViewHitTestBehavior.transparent,
-                          creationParams: {
-                            "uri": uri,
-                            if (isGif) "gif": "",
-                          },
-                          creationParamsCodec: const StandardMessageCodec(),
-                        ),
+                        child: fakeProvider != null
+                            ? Image(
+                                image: fakeProvider!,
+                              )
+                            : AndroidView(
+                                viewType: "imageview",
+                                hitTestBehavior:
+                                    PlatformViewHitTestBehavior.transparent,
+                                creationParams: {
+                                  "uri": uri,
+                                  if (isGif) "gif": "",
+                                },
+                                creationParamsCodec:
+                                    const StandardMessageCodec(),
+                              ),
                       ),
                     ),
                   ),
@@ -404,7 +422,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
   @override
   Widget build(BuildContext context) {
-    final addB = currentCell.addButtons(context);
     final Map<SingleActivatorDescription, Null Function()> bindings =
         _makeBindings(context);
 
@@ -473,13 +490,17 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                                         child: Wrap(
                                           spacing: 4,
                                           children: items
-                                              .map((e) => SelectionInterface
-                                                      .wrapSheetButton(
-                                                          context, e.icon, () {
-                                                    e.onPress([currentCell]);
-                                                  }, false, "", e.explanation,
-                                                          followColorTheme:
-                                                              true))
+                                              .map(
+                                                (e) => SelectionInterface
+                                                    .wrapSheetButton(
+                                                        context, e.icon, () {
+                                                  e.onPress([currentCell]);
+                                                }, false, "", e.explanation,
+                                                        followColorTheme: true,
+                                                        color: e.color,
+                                                        backgroundColor:
+                                                            e.backgroundColor),
+                                              )
                                               .toList(),
                                         ),
                                       )),
@@ -593,22 +614,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                           child: Text(currentCell.alias(false)),
                         ),
                         actions: [
-                          if (addB != null) ...addB,
-                          if (widget.download != null)
-                            IconButton(
-                                    onPressed: () {
-                                      if (downloadButtonController != null) {
-                                        downloadButtonController!
-                                            .forward(from: 0);
-                                      }
-                                      widget.download!(currentPage);
-                                    },
-                                    icon: const Icon(Icons.download))
-                                .animate(
-                                    onInit: (controller) =>
-                                        downloadButtonController = controller,
-                                    effects: const [ShakeEffect()],
-                                    autoPlay: false),
+                          ...(currentCell.addButtons(context) ?? []),
                           IconButton(
                               onPressed: () {
                                 key.currentState?.openEndDrawer();

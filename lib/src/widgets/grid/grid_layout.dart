@@ -15,42 +15,59 @@ class GridLayout {
           GridMutationInterface<T> state,
           SelectionInterface<T> selection,
           double systemNavigationInsets,
-          bool listView,
-          {required void Function(BuildContext, T, int) onPressed}) =>
+          {required void Function(BuildContext, T, int)? onPressed}) =>
       SliverList.separated(
         separatorBuilder: (context, index) => const Divider(
           height: 1,
         ),
         itemCount: state.cellCount,
-        itemBuilder: (context, index) {
-          final cell = state.getCell(index);
-          final cellData = cell.getCellData(listView);
+        itemBuilder: (context, index) => listTile(
+          context,
+          state,
+          selection,
+          systemNavigationInsets,
+          index: index,
+          cell: state.getCell(index),
+          onPressed: onPressed,
+        ),
+      );
 
-          return _WrappedSelection(
-            selectUntil: (i) => selection.selectUnselectUntil(i, state),
-            thisIndx: index,
-            isSelected: selection.isSelected(index),
-            selectionEnabled: selection.selected.isNotEmpty,
-            selectUnselect: () => selection.selectOrUnselect(
-                context, index, cell, systemNavigationInsets),
-            child: ListTile(
-              onLongPress: () => selection.selectOrUnselect(
-                  context, index, cell, systemNavigationInsets),
-              onTap: () => onPressed(context, cell, index),
-              leading: CircleAvatar(
+  static Widget listTile<T extends Cell>(
+      BuildContext context,
+      GridMutationInterface<T> state,
+      SelectionInterface<T> selection,
+      double systemNavigationInsets,
+      {required int index,
+      required T cell,
+      required void Function(BuildContext, T, int)? onPressed}) {
+    final cellData = cell.getCellData(true);
+
+    return _WrappedSelection(
+      selectUntil: (i) => selection.selectUnselectUntil(i, state),
+      thisIndx: index,
+      isSelected: selection.isSelected(index),
+      selectionEnabled: selection.selected.isNotEmpty,
+      selectUnselect: () => selection.selectOrUnselect(
+          context, index, cell, systemNavigationInsets),
+      child: ListTile(
+        onLongPress: () => selection.selectOrUnselect(
+            context, index, cell, systemNavigationInsets),
+        onTap: onPressed == null ? null : () => onPressed(context, cell, index),
+        leading: cellData.thumb != null
+            ? CircleAvatar(
                 backgroundColor: Theme.of(context).colorScheme.background,
                 foregroundImage: cellData.thumb,
                 onForegroundImageError: (_, __) {},
-              ),
-              title: Text(
-                cellData.name,
-                softWrap: false,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ).animate().fadeIn();
-        },
-      );
+              )
+            : null,
+        title: Text(
+          cellData.name,
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    ).animate().fadeIn();
+  }
 
   static Widget grid<T extends Cell>(
           BuildContext context,
@@ -58,7 +75,7 @@ class GridLayout {
           SelectionInterface<T> selection,
           int columns,
           bool listView,
-          GridCell Function(T, int) gridCell,
+          GridCell Function(BuildContext, T, int) gridCell,
           {required double systemNavigationInsets,
           required double aspectRatio}) =>
       SliverGrid.builder(
@@ -75,7 +92,7 @@ class GridLayout {
             selectUnselect: () => selection.selectOrUnselect(
                 context, indx, cell, systemNavigationInsets),
             isSelected: selection.isSelected(indx),
-            child: gridCell(cell, indx),
+            child: gridCell(context, cell, indx),
           );
         },
       );
@@ -86,7 +103,7 @@ class GridLayout {
     SelectionInterface<T> selection,
     List<int> val,
     bool listView,
-    GridCell Function(T, int) gridCell, {
+    GridCell Function(BuildContext, T, int) gridCell, {
     required double constraints,
     required double systemNavigationInsets,
     required double aspectRatio,
@@ -95,21 +112,28 @@ class GridLayout {
         children: val.map((indx) {
           final cell = state.getCell(indx);
 
-          return ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: constraints),
-            child: material.AspectRatio(
-              aspectRatio: aspectRatio,
-              child: _WrappedSelection(
-                selectionEnabled: selection.selected.isNotEmpty,
-                thisIndx: indx,
-                selectUntil: (i) {},
-                selectUnselect: () => selection.selectOrUnselect(
-                    context, indx, cell, systemNavigationInsets),
-                isSelected: selection.isSelected(indx),
-                child: gridCell(cell, indx),
-              ),
-            ),
-          );
+          return listView
+              ? ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: constraints),
+                  child: listTile(
+                      context, state, selection, systemNavigationInsets,
+                      index: indx, cell: cell, onPressed: null),
+                )
+              : ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: constraints),
+                  child: material.AspectRatio(
+                    aspectRatio: aspectRatio,
+                    child: _WrappedSelection(
+                      selectionEnabled: selection.selected.isNotEmpty,
+                      thisIndx: indx,
+                      selectUntil: (i) {},
+                      selectUnselect: () => selection.selectOrUnselect(
+                          context, indx, cell, systemNavigationInsets),
+                      isSelected: selection.isSelected(indx),
+                      child: gridCell(context, cell, indx),
+                    ),
+                  ),
+                );
         }).toList(),
       );
 
@@ -119,28 +143,36 @@ class GridLayout {
     SelectionInterface<T> selection,
     List<T> val,
     bool listView,
-    GridCell Function(T, int) gridCell, {
+    GridCell Function(BuildContext, T, int) gridCell, {
     required double constraints,
     required double systemNavigationInsets,
     required double aspectRatio,
   }) =>
       Row(
-        children: val.map((cell) {
-          return ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: constraints),
-            child: material.AspectRatio(
-              aspectRatio: aspectRatio,
-              child: _WrappedSelection(
-                selectionEnabled: selection.selected.isNotEmpty,
-                thisIndx: -1,
-                selectUntil: (i) => selection.selectUnselectUntil(i, state),
-                selectUnselect: () => selection.selectOrUnselect(
-                    context, -1, cell, systemNavigationInsets),
-                isSelected: selection.isSelected(-1),
-                child: gridCell(cell, -1),
-              ),
-            ),
-          );
+        children: val.indexed.map((cell) {
+          return listView
+              ? ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: constraints),
+                  child: listTile<T>(
+                      context, state, selection, systemNavigationInsets,
+                      index: cell.$1, cell: cell.$2, onPressed: null),
+                )
+              : ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: constraints),
+                  child: material.AspectRatio(
+                    aspectRatio: aspectRatio,
+                    child: _WrappedSelection(
+                      selectionEnabled: selection.selected.isNotEmpty,
+                      thisIndx: -1,
+                      selectUntil: (i) =>
+                          selection.selectUnselectUntil(i, state),
+                      selectUnselect: () => selection.selectOrUnselect(
+                          context, -1, cell.$2, systemNavigationInsets),
+                      isSelected: selection.isSelected(-1),
+                      child: gridCell(context, cell.$2, -1),
+                    ),
+                  ),
+                );
         }).toList(),
       );
 
@@ -151,7 +183,7 @@ class GridLayout {
     SelectionInterface<T> selection,
     bool listView,
     int columns,
-    GridCell Function(T, int) gridCell, {
+    GridCell Function(BuildContext, T, int) gridCell, {
     required double systemNavigationInsets,
     required double aspectRatio,
   }) {

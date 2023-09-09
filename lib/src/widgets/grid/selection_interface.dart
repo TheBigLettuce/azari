@@ -72,7 +72,9 @@ class SelectionInterface<T extends Cell> {
                                 },
                           false,
                           selected.length.toString(),
-                          e.explanation))
+                          e.explanation,
+                          color: e.color,
+                          backgroundColor: e.backgroundColor))
                       .toList()
                 ],
               ),
@@ -157,7 +159,9 @@ class SelectionInterface<T extends Cell> {
       bool addBadge,
       String label,
       GridBottomSheetActionExplanation explanation,
-      {bool? followColorTheme}) {
+      {bool? followColorTheme,
+      Color? backgroundColor,
+      Color? color}) {
     final iconBtn = Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 4),
       child: GestureDetector(
@@ -178,11 +182,16 @@ class SelectionInterface<T extends Cell> {
           style: ButtonStyle(
               shape: const MaterialStatePropertyAll(RoundedRectangleBorder(
                   borderRadius: BorderRadius.all(Radius.elliptical(10, 10)))),
-              backgroundColor: followColorTheme == true
-                  ? null
-                  : MaterialStatePropertyAll(onPressed == null
-                      ? Theme.of(context).colorScheme.primary.withOpacity(0.5)
-                      : Theme.of(context).colorScheme.primary)),
+              backgroundColor: backgroundColor != null
+                  ? MaterialStatePropertyAll(backgroundColor)
+                  : followColorTheme == true
+                      ? null
+                      : MaterialStatePropertyAll(onPressed == null
+                          ? Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.5)
+                          : Theme.of(context).colorScheme.primary)),
           onPressed: onPressed == null
               ? null
               : () {
@@ -190,9 +199,10 @@ class SelectionInterface<T extends Cell> {
                   onPressed();
                 },
           icon: Icon(icon,
-              color: followColorTheme == true
-                  ? null
-                  : Theme.of(context).colorScheme.inversePrimary),
+              color: color ??
+                  (followColorTheme == true
+                      ? null
+                      : Theme.of(context).colorScheme.inversePrimary)),
         ),
       ),
     );

@@ -67,7 +67,7 @@ class SystemGalleryDirectory implements Cell {
   String fileDownloadUrl() => "";
 
   @override
-  CellData getCellData(bool isList) {
+  CellData getCellData(bool isList, {BuildContext? context}) {
     return CellData(
         thumb: ThumbnailProvider(thumbFileId), name: name, stickers: []);
   }

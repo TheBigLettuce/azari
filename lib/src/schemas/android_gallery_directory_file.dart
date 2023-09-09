@@ -17,10 +17,10 @@ import 'package:gallery/src/cell/data.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
-import 'package:gallery/src/pages/booru_scroll.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/favorite_media.dart';
 import 'package:gallery/src/schemas/post.dart';
+import 'package:gallery/src/schemas/tags.dart';
 import 'package:gallery/src/schemas/thumbnail.dart';
 import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:isar/isar.dart';
@@ -30,6 +30,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../cell/contentable.dart';
+import '../db/state_restoration.dart';
 
 part 'android_gallery_directory_file.g.dart';
 
@@ -59,7 +60,7 @@ class SystemGalleryDirectoryFile implements Cell {
   final bool isOriginal;
 
   @ignore
-  final List<IconData> injectedStickers = [];
+  final List<Sticker> injectedStickers = [];
 
   SystemGalleryDirectoryFile({
     required this.id,
@@ -95,6 +96,8 @@ class SystemGalleryDirectoryFile implements Cell {
         } catch (_) {}
 
         return [
+          if (isDuplicate()) Icon(FilteringMode.duplicate.icon),
+          if (isOriginal) Icon(FilteringMode.original.icon),
           if (size == 0 && res != null)
             IconButton(
                 onPressed: () {
@@ -103,8 +106,7 @@ class SystemGalleryDirectoryFile implements Cell {
                   api.singlePost(res.id).then((post) {
                     PlatformFunctions.deleteFiles([this]);
 
-                    PostTags().addTagsPost(
-                        post.filename(), post.tags.split(" "), true);
+                    PostTags().addTagsPost(post.filename(), post.tags, true);
 
                     Downloader().add(File.d(post.fileDownloadUrl(),
                         api.booru.url, post.filename()));
@@ -118,9 +120,6 @@ class SystemGalleryDirectoryFile implements Cell {
                   });
                 },
                 icon: const Icon(Icons.download_outlined)),
-          if (isDuplicate()) Icon(FilteringMode.duplicate.icon),
-          if (isFavorite()) Icon(FilteringMode.favorite.icon),
-          if (isOriginal) Icon(FilteringMode.original.icon),
           if (res != null)
             IconButton(
                 onPressed: () {
@@ -140,24 +139,24 @@ class SystemGalleryDirectoryFile implements Cell {
         ];
       };
 
-  IconData sizeSticker() {
+  Sticker sizeSticker() {
     if (size == 0) {
-      return const IconData(0x4B);
+      return const Sticker(IconData(0x4B));
     }
 
     final kb = (size / 1000);
     if (kb < 1000) {
       if (kb > 500) {
-        return const IconData(0x4B);
+        return const Sticker(IconData(0x4B));
       } else {
-        return const IconData(0x6B);
+        return const Sticker(IconData(0x6B));
       }
     } else {
       final mb = kb / 1000;
       if (mb > 2) {
-        return const IconData(0x4D);
+        return const Sticker(IconData(0x4D));
       } else {
-        return const IconData(0x6D);
+        return const Sticker(IconData(0x6D));
       }
     }
   }
@@ -183,7 +182,7 @@ class SystemGalleryDirectoryFile implements Cell {
             extra,
             colors,
           ) {
-            return Post.wrapTagsSearch(
+            return PostBase.wrapTagsSearch(
               context,
               extra,
               colors,
@@ -257,20 +256,14 @@ class SystemGalleryDirectoryFile implements Cell {
               launchGrid: (t) {
                 try {
                   final res = PostTags().dissassembleFilename(name);
-                  final tab = makeGridTab(res.booru, temporary: true);
+                  final tagManager = TagManager.fromEnum(res.booru);
 
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (context) {
-                      return BooruScroll.secondary(
-                          grids: tab,
-                          instance: tab.newSecondaryGrid(),
-                          forceCloseApi: true,
-                          closeGrids: false,
-                          api: BooruAPI.fromEnum(res.booru),
-                          tags: t);
-                    },
-                  ));
-                } catch (_) {}
+                  tagManager.onTagPressed(context,
+                      Tag(tag: t, isExcluded: false), res.booru, false);
+                } catch (e) {
+                  log("launching local tag random booru",
+                      level: Level.SEVERE.value, error: e);
+                }
               },
             );
           };
@@ -296,14 +289,18 @@ class SystemGalleryDirectoryFile implements Cell {
   String fileDownloadUrl() => "";
 
   @override
-  CellData getCellData(bool isList) {
+  CellData getCellData(bool isList, {BuildContext? context}) {
     final stickers = [
       ...injectedStickers,
-      if (isVideo) FilteringMode.video.icon,
-      if (isGif) FilteringMode.gif.icon,
-      if (isOriginal) FilteringMode.original.icon,
-      if (isDuplicate()) FilteringMode.duplicate.icon,
-      if (isFavorite()) FilteringMode.favorite.icon,
+      if (isVideo) Sticker(FilteringMode.video.icon),
+      if (isGif) Sticker(FilteringMode.gif.icon),
+      if (isOriginal) Sticker(FilteringMode.original.icon),
+      if (isDuplicate()) Sticker(FilteringMode.duplicate.icon),
+      if (isFavorite())
+        Sticker(Icons.star_rounded,
+            right: true,
+            color: Colors.yellow.shade900,
+            backgroundColor: Colors.yellowAccent.shade100),
     ];
 
     return CellData(

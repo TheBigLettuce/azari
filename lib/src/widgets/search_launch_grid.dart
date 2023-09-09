@@ -6,13 +6,12 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/widgets.dart';
-import 'package:gallery/src/pages/booru_scroll.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../booru/interface.dart';
+import '../cell/cell.dart';
 import 'autocomplete_widget.dart';
 import 'notifiers/booru_api.dart';
-import 'notifiers/grid_tab.dart';
+import 'notifiers/tag_manager.dart';
 
 abstract class SearchMixin<T> {
   TextEditingController get searchTextController;
@@ -25,12 +24,19 @@ abstract class SearchMixin<T> {
 
 class SearchLaunchGridData {
   final FocusNode mainFocus;
+  final List<Widget>? addItems;
   final String searchText;
-  const SearchLaunchGridData(this.mainFocus, this.searchText);
+  final bool restorable;
+
+  const SearchLaunchGridData(
+      {required this.mainFocus,
+      required this.searchText,
+      required this.addItems,
+      required this.restorable});
 }
 
 /// Search mixin which launches a new page with a grid.
-mixin SearchLaunchGrid on State<BooruScroll>
+mixin SearchLaunchGrid<T extends Cell>
     implements SearchMixin<SearchLaunchGridData> {
   @override
   final TextEditingController searchTextController = TextEditingController();
@@ -39,16 +45,13 @@ mixin SearchLaunchGrid on State<BooruScroll>
 
   String currentlyHighlightedTag = "";
   final _ScrollHack _scrollHack = _ScrollHack();
-  late BooruAPI booru;
-  late final void Function() focusMain;
-
-  late final List<Widget>? addItems;
+  // late final BooruAPI booru;
+  late final SearchLaunchGridData _state;
 
   @override
   void searchHook(SearchLaunchGridData data, [List<Widget>? items]) {
-    addItems = items;
+    _state = data;
     searchTextController.text = data.searchText;
-    focusMain = () => data.mainFocus.requestFocus();
 
     searchFocus.addListener(() {
       if (!searchFocus.hasFocus) {
@@ -70,14 +73,14 @@ mixin SearchLaunchGrid on State<BooruScroll>
       autocompleteWidget(searchTextController, (s) {
         currentlyHighlightedTag = s;
       },
-          (s) => GridTabNotifier.of(context)
-              .onTagPressed(context, s, BooruAPINotifier.of(context)),
-          focusMain,
-          booru.completeTag,
+          (s) => TagManagerNotifier.of(context).onTagPressed(context, s,
+              BooruAPINotifier.of(context).booru, _state.restorable),
+          () => _state.mainFocus.requestFocus(),
+          BooruAPINotifier.of(context).completeTag,
           searchFocus,
           scrollHack: _scrollHack,
           showSearch: true,
-          addItems: addItems,
+          addItems: _state.addItems,
           customHint:
               "${AppLocalizations.of(context)!.searchHint} ${hint?.toLowerCase() ?? ''}");
 }

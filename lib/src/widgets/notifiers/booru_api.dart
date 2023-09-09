@@ -13,10 +13,14 @@ class BooruAPINotifier extends InheritedWidget {
   final BooruAPI api;
 
   static BooruAPI of(BuildContext context) {
+    return maybeOf(context)!;
+  }
+
+  static BooruAPI? maybeOf(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<BooruAPINotifier>();
 
-    return widget!.api;
+    return widget?.api;
   }
 
   @override

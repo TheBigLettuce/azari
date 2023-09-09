@@ -7,18 +7,27 @@
 
 import 'package:flutter/material.dart';
 
-import '../db/isar.dart';
+import '../../db/state_restoration.dart';
 
-/// This needed for the state restoration.
-class Dummy extends StatelessWidget {
-  const Dummy({super.key});
+class TagManagerNotifier extends InheritedWidget {
+  final TagManager tagManager;
 
   @override
-  Widget build(BuildContext context) {
-    WidgetsBinding.instance.scheduleFrameCallback((_) {
-      GridTab.global.restoreState(context);
-    });
-
-    return Container();
+  bool updateShouldNotify(TagManagerNotifier oldWidget) {
+    return tagManager != oldWidget.tagManager;
   }
+
+  static TagManager of(BuildContext context) {
+    return maybeOf(context)!;
+  }
+
+  static TagManager? maybeOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<TagManagerNotifier>();
+
+    return widget?.tagManager;
+  }
+
+  const TagManagerNotifier(
+      {super.key, required this.tagManager, required super.child});
 }

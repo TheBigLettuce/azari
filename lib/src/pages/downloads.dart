@@ -11,10 +11,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/db/isar.dart';
+import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
 import 'package:gallery/src/schemas/download_file.dart';
-import 'package:gallery/src/widgets/empty_widget.dart';
+import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
+import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -25,12 +27,26 @@ class Downloads extends StatefulWidget {
   State<Downloads> createState() => _DownloadsState();
 }
 
-class _DownloadsState extends State<Downloads> {
-  List<File>? _files;
-  late final StreamSubscription<void> _updates;
-  final Downloader downloader = Downloader();
+class _DownloadsState extends State<Downloads> with SearchFilterGrid<File> {
+  final loader = LinearIsarLoader<File>(FileSchema, settingsIsar(),
+      (offset, limit, s, sort, mode) {
+    return settingsIsar()
+        .files
+        .where()
+        .sortByInProgressDesc()
+        .offset(offset)
+        .limit(limit)
+        .findAllSync();
+  });
 
-  final SkeletonState skeletonState = SkeletonState(kDownloadsDrawerIndex);
+  late final StreamSubscription<void> _updates;
+  final downloader = Downloader();
+
+  late final state = GridSkeletonStateFilter<File>(
+    filter: loader.filter,
+    index: kDownloadsDrawerIndex,
+    transform: (cell, sort) => cell,
+  );
 
   AnimationController? refreshController;
   AnimationController? deleteController;
@@ -38,35 +54,21 @@ class _DownloadsState extends State<Downloads> {
   @override
   void initState() {
     super.initState();
+    searchHook(state);
 
     downloader.markStale();
 
     _updates =
         settingsIsar().files.watchLazy(fireImmediately: true).listen((_) async {
-      final filesInProgress = await settingsIsar()
-          .files
-          .filter()
-          .inProgressEqualTo(true)
-          .sortByDateDesc()
-          .findAll();
-      final files = await settingsIsar()
-          .files
-          .filter()
-          .inProgressEqualTo(false)
-          .sortByDateDesc()
-          .findAll();
-      filesInProgress.addAll(files);
-      setState(() {
-        _files = filesInProgress;
-      });
+      performSearch(searchTextController.text);
     });
   }
 
   @override
   void dispose() {
     _updates.cancel();
-
-    skeletonState.dispose();
+    disposeSearch();
+    state.dispose();
 
     super.dispose();
   }
@@ -79,51 +81,76 @@ class _DownloadsState extends State<Downloads> {
     downloader.markStale();
   }
 
-  int _inProcess() =>
-      settingsIsar().files.filter().isFailedEqualTo(false).countSync();
-
   @override
   Widget build(BuildContext context) {
-    return makeSkeleton(
-        context, AppLocalizations.of(context)!.downloadsPageName, skeletonState,
-        customTitle: Badge(
-          offset: Offset.zero,
-          alignment: Alignment.topRight,
-          isLabelVisible: _files != null ? _files!.isNotEmpty : false,
-          label: Text(
-              "${_inProcess().toString()}/${_files == null ? 0 : _files!.length.toString()}"),
-          child: Text(AppLocalizations.of(context)!.downloadsPageName),
-        ),
-        appBarActions: [
-          IconButton(
-              onPressed: () {
-                if (deleteController != null) {
-                  deleteController!.forward(from: 0);
-                }
-                downloader.removeFailed();
+    return makeGridSkeleton(
+        context,
+        state,
+        CallbackGrid<File>(
+            key: state.gridKey,
+            getCell: loader.getCell,
+            initalScrollPosition: 0,
+            scaffoldKey: state.scaffoldKey,
+            systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context),
+            hasReachedEnd: () => true,
+            aspectRatio: 1,
+            menuButtonItems: [
+              IconButton(
+                  onPressed: () {
+                    if (deleteController != null) {
+                      deleteController!.forward(from: 0);
+                    }
+                    downloader.removeFailed();
+                  },
+                  icon: const Icon(Icons.close).animate(
+                      onInit: (controller) => deleteController = controller,
+                      effects: const [FlipEffect(begin: 1, end: 0)],
+                      autoPlay: false)),
+              IconButton(
+                  onPressed: _refresh,
+                  icon: const Icon(Icons.refresh).animate(
+                      onInit: (controller) => refreshController = controller,
+                      effects: const [RotateEffect()],
+                      autoPlay: false)),
+            ],
+            inlineMenuButtonItems: true,
+            immutable: false,
+            unpressable: true,
+            hideShowFab: ({required bool fab, required bool foreground}) =>
+                state.updateFab(setState, fab: fab, foreground: foreground),
+            segments: Segments(
+              (cell) {
+                return (Downloader().downloadDescription(cell), true);
               },
-              icon: const Icon(Icons.close).animate(
-                  onInit: (controller) => deleteController = controller,
-                  effects: const [FlipEffect(begin: 1, end: 0)],
-                  autoPlay: false)),
-          IconButton(
-              onPressed: _refresh,
-              icon: const Icon(Icons.refresh).animate(
-                  onInit: (controller) => refreshController = controller,
-                  effects: const [RotateEffect()],
-                  autoPlay: false)),
-          IconButton(
-              onPressed: downloader.restart,
-              icon: const Icon(Icons.start_outlined))
-        ],
-        itemCount: _files != null ? _files!.length : 0,
-        children:
-            _files == null || _files!.isEmpty ? [const EmptyWidget()] : null,
-        builder: _files == null || _files!.isEmpty
-            ? null
-            : (context, indx) => ListTile(
-                  onLongPress: () {
-                    final file = _files![indx];
+              "Unknown",
+              onLabelPressed: (label, children) {
+                if (children.isEmpty) {
+                  return;
+                }
+
+                if (label == kDownloadFailed) {
+                  for (final d in children) {
+                    downloader.add(d);
+                  }
+                }
+              },
+            ),
+            searchWidget: SearchAndFocus(
+                searchWidget(context,
+                    hint: AppLocalizations.of(context)!
+                        .downloadsPageName
+                        .toLowerCase()),
+                searchFocus),
+            mainFocus: state.mainFocus,
+            refresh: () => Future.value(loader.count()),
+            description: GridDescription(
+                kDownloadsDrawerIndex,
+                [
+                  GridBottomSheetAction(Icons.more_horiz, (selected) {
+                    if (selected.isEmpty) {
+                      return;
+                    }
+                    final file = selected.first;
                     Navigator.push(
                         context,
                         DialogRoute(
@@ -150,8 +177,17 @@ class _DownloadsState extends State<Downloads> {
                               );
                             }));
                   },
-                  title: Text("${_files![indx].site}: ${_files![indx].name}"),
-                  subtitle: Text(downloader.downloadDescription(_files![indx])),
-                ));
+                      true,
+                      const GridBottomSheetActionExplanation(
+                        label: "Retry or delete", // TODO: change
+                        body:
+                            "Retry or delete the downloads entry.", // TODO: change
+                      ),
+                      showOnlyWhenSingle: true)
+                ],
+                GridColumn.two,
+                keybindsDescription:
+                    AppLocalizations.of(context)!.downloadsPageName,
+                listView: true)));
   }
 }

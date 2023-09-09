@@ -67,7 +67,7 @@ abstract class Cell {
   /// The thumbnail and additional information for the cell.
   /// If [isList] is true, it means the cell gets displayed as a list entry,
   /// instead of a cell on a grid.
-  CellData getCellData(bool isList);
+  CellData getCellData(bool isList, {BuildContext? context});
 
   /// Const constructor to allow implementations to have const constructors.
   const Cell();

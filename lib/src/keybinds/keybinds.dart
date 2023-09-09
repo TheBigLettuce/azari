@@ -23,16 +23,21 @@ Map<SingleActivatorDescription, Null Function()> digitAndSettings(
         selectDestination(context, from, kBooruGridDrawerIndex);
       }
     },
+    const SingleActivatorDescription(
+        "Go to the favorites", // TODO: change
+        SingleActivator(LogicalKeyboardKey.digit2, control: true)): () {
+      selectDestination(context, from, kFavoritesDrawerIndex);
+    },
     SingleActivatorDescription(AppLocalizations.of(context)!.goGallery,
-        const SingleActivator(LogicalKeyboardKey.digit2, control: true)): () {
+        const SingleActivator(LogicalKeyboardKey.digit3, control: true)): () {
       selectDestination(context, from, kGalleryDrawerIndex);
     },
     SingleActivatorDescription(AppLocalizations.of(context)!.goTags,
-        const SingleActivator(LogicalKeyboardKey.digit3, control: true)): () {
+        const SingleActivator(LogicalKeyboardKey.digit4, control: true)): () {
       selectDestination(context, from, kTagsDrawerIndex);
     },
     SingleActivatorDescription(AppLocalizations.of(context)!.goDownloads,
-        const SingleActivator(LogicalKeyboardKey.digit4, control: true)): () {
+        const SingleActivator(LogicalKeyboardKey.digit5, control: true)): () {
       selectDestination(context, from, kDownloadsDrawerIndex);
     },
     SingleActivatorDescription(AppLocalizations.of(context)!.goSettings,

@@ -33,6 +33,7 @@ class AndroidProgress implements NotificationProgress {
             playSound: false,
             enableLights: false,
             enableVibration: false,
+            importance: Importance.low,
             category: AndroidNotificationCategory.progress,
             maxProgress: total,
             progress: progress,

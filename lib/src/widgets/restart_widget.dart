@@ -7,8 +7,6 @@
 
 import 'package:flutter/material.dart';
 
-import '../db/isar.dart';
-
 /// RestartWidget is needed for changing the boorus in the settings.
 class RestartWidget extends StatefulWidget {
   final Widget child;
@@ -26,7 +24,6 @@ class _RestartWidgetState extends State<RestartWidget> {
   Key key = UniqueKey();
 
   void restartApp() {
-    GridTab.init();
     setState(() {
       key = UniqueKey();
     });
@@ -36,8 +33,4 @@ class _RestartWidgetState extends State<RestartWidget> {
   Widget build(BuildContext context) {
     return KeyedSubtree(key: key, child: widget.child);
   }
-
-  late GridTab _globalTab;
-
-  GridTab getTab() => _globalTab;
 }

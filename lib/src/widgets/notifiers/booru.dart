@@ -7,22 +7,21 @@
 
 import 'package:flutter/material.dart';
 
-import '../../db/isar.dart';
+import '../../booru/interface.dart';
 
-class GridTabNotifier extends InheritedWidget {
-  final GridTab tab;
+class BooruNotifier extends InheritedWidget {
+  final Booru booru;
+
+  static Booru of(BuildContext context) {
+    final widget = context.dependOnInheritedWidgetOfExactType<BooruNotifier>();
+
+    return widget!.booru;
+  }
 
   @override
-  bool updateShouldNotify(GridTabNotifier oldWidget) {
-    return tab != oldWidget.tab;
+  bool updateShouldNotify(BooruNotifier oldWidget) {
+    return booru != oldWidget.booru;
   }
 
-  static GridTab of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<GridTabNotifier>();
-
-    return widget!.tab;
-  }
-
-  const GridTabNotifier({super.key, required this.tab, required super.child});
+  const BooruNotifier({super.key, required this.booru, required super.child});
 }

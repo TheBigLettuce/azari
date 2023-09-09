@@ -15,6 +15,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 
 import '../cell/cell.dart';
+import '../db/isar.dart';
 import 'notifiers/focus.dart';
 
 /// Result of the filter to provide to the [GridMutationInterface].
@@ -31,7 +32,7 @@ class Result<T extends Cell> {
 /// [FilteringMode.tag] and [FilteringMode.tagReversed] override how text filtering works..
 enum FilteringMode {
   /// Filter by the favorite.
-  favorite("Favorite", Icons.star_border),
+  favorite("Favorite", Icons.star_border_rounded),
 
   /// Filter by the  "original" tag.
   original("Original", Icons.circle_outlined),
@@ -75,6 +76,41 @@ enum FilteringMode {
 /// Sorting modes.
 /// Implemented inside the [FilterInterface].
 enum SortingMode { none, size }
+
+class LinearIsarLoader<T extends Cell> {
+  final Isar instance;
+
+  final IsarFilter<T> filter;
+
+  T getCell(int i) {
+    return filter.to.collection<T>().getSync(i + 1)!;
+  }
+
+  int count() {
+    return filter.to.collection<T>().countSync();
+  }
+
+  void dispose({bool closeInstance = true}) {
+    filter.dispose();
+    if (closeInstance) {
+      instance.close(deleteFromDisk: true);
+    }
+  }
+
+  void init(void Function(Isar instance) loader) {
+    loader(instance);
+    filter.filter("", FilteringMode.noFilter);
+  }
+
+  LinearIsarLoader(
+      CollectionSchema schema,
+      this.instance,
+      Iterable<T> Function(int offset, int limit, String s, SortingMode sort,
+              FilteringMode mode)
+          passFilter)
+      : filter = IsarFilter(
+            instance, IsarDbsOpen.temporarySchemas([schema]), passFilter);
+}
 
 abstract class FilterInterface<T extends Cell> {
   Result<T> filter(String s, FilteringMode mode);
@@ -209,6 +245,14 @@ mixin SearchFilterGrid<T extends Cell>
     return _key.currentState!.currentFilterMode;
   }
 
+  void setFilteringMode(FilteringMode f) {
+    _key.currentState!.currentFilterMode = f;
+  }
+
+  void setLocalTagCompleteF(Future<List<String>> Function(String string) f) {
+    _key.currentState?.localTagCompleteFunc = f;
+  }
+
   void markSearchVirtual() {
     _key.currentState?.searchVirtual = true;
   }
@@ -244,6 +288,8 @@ class _SearchWidget<T extends Cell> extends StatefulWidget {
 class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
   bool searchVirtual = false;
   FilteringMode currentFilterMode = FilteringMode.noFilter;
+  Future<List<String>> Function(String string) localTagCompleteFunc =
+      PostTags().completeLocalTag;
   void onChanged(String value, bool direct) {
     var interf = widget.instance._state.gridKey.currentState?.mutationInterface;
     if (interf != null) {
@@ -302,10 +348,32 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
     if (widget.instance._state.filteringModes.isNotEmpty) {
       searchVirtual = false;
       currentFilterMode = FilteringMode.noFilter;
-      onChanged(widget.instance.searchTextController.text, true);
     }
+    onChanged(widget.instance.searchTextController.text, true);
+
     setState(() {});
   }
+
+  Widget _autocompleteWidget() => autocompleteWidget(
+        widget.instance.searchTextController,
+        (p0) {},
+        (p0) {},
+        () {
+          widget.instance._state.mainFocus.requestFocus();
+        },
+        localTagCompleteFunc,
+        widget.instance.searchFocus,
+        showSearch: true,
+        searchCount: widget
+            .instance._state.gridKey.currentState?.mutationInterface?.cellCount,
+        addItems: _addItems(),
+        onChanged: () {
+          onChanged(widget.instance.searchTextController.text, true);
+        },
+        customHint: _makeHint(context),
+        noUnfocus: true,
+        scrollHack: _ScrollHack(),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -313,40 +381,23 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
         focusMain: widget.instance._state.mainFocus.requestFocus,
         notifier: widget.instance.searchFocus,
         child: Builder(
-          builder: (context) => currentFilterMode == FilteringMode.tag ||
-                  currentFilterMode == FilteringMode.tagReversed
-              ? autocompleteWidget(
-                  widget.instance.searchTextController,
-                  (p0) {},
-                  (p0) {},
-                  () {
-                    widget.instance._state.mainFocus.requestFocus();
-                  },
-                  PostTags().completeLocalTag,
-                  widget.instance.searchFocus,
-                  showSearch: true,
-                  searchCount: widget.instance._state.gridKey.currentState
-                      ?.mutationInterface?.cellCount,
-                  addItems: _addItems(),
-                  onChanged: () {
-                    onChanged(widget.instance.searchTextController.text, true);
-                  },
-                  customHint: _makeHint(context),
-                  noUnfocus: true,
-                  scrollHack: _ScrollHack())
-              : TextField(
-                  focusNode: widget.instance.searchFocus,
-                  controller: widget.instance.searchTextController,
-                  decoration: autocompleteBarDecoration(
-                      context, reset, _addItems(),
-                      searchCount: widget.instance._state.gridKey.currentState
-                          ?.mutationInterface?.cellCount,
-                      showSearch: true,
-                      roundBorders: false,
-                      hint: _makeHint(context)),
-                  onChanged: (s) => onChanged(s, false),
-                ),
-        ));
+            builder: (context) => switch (currentFilterMode) {
+                  FilteringMode.tag ||
+                  FilteringMode.tagReversed =>
+                    _autocompleteWidget(),
+                  FilteringMode() => TextField(
+                      focusNode: widget.instance.searchFocus,
+                      controller: widget.instance.searchTextController,
+                      decoration: autocompleteBarDecoration(
+                          context, reset, _addItems(),
+                          searchCount: widget.instance._state.gridKey
+                              .currentState?.mutationInterface?.cellCount,
+                          showSearch: true,
+                          roundBorders: false,
+                          hint: _makeHint(context)),
+                      onChanged: (s) => onChanged(s, false),
+                    ),
+                }));
   }
 }
 

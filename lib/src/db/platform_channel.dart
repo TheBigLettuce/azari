@@ -168,8 +168,8 @@ class ThumbId {
 
     thumbnailIsar().writeTxnSync(() {
       thumbnailIsar().thumbnails.putAllSync(l
-          .map((e) =>
-              Thumbnail(e.id, DateTime.now(), e.thumb, e.differenceHash, false))
+          .map(
+              (e) => Thumbnail(e.id, DateTime.now(), e.thumb, e.differenceHash))
           .toList());
     });
   }

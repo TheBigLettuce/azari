@@ -12,16 +12,23 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/pages/image_view.dart';
+import 'package:gallery/src/schemas/favorite_booru.dart';
+import 'package:gallery/src/widgets/notifiers/booru_api.dart';
+import 'package:gallery/src/widgets/notifiers/tag_manager.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import '../actions/booru_grid.dart';
 import '../booru/interface.dart';
+import '../db/isar.dart';
+import '../db/state_restoration.dart';
 import '../schemas/download_file.dart';
 
 class SinglePost extends StatefulWidget {
   final FocusNode focus;
+  final TagManager tagManager;
 
-  const SinglePost(this.focus, {super.key});
+  const SinglePost({super.key, required this.focus, required this.tagManager});
 
   @override
   State<SinglePost> createState() => _SinglePostState();
@@ -42,6 +49,7 @@ class _SinglePostState extends State<SinglePost> {
     arrowSpinningController = null;
     controller.dispose();
     booru.close();
+
     super.dispose();
   }
 
@@ -133,16 +141,35 @@ class _SinglePostState extends State<SinglePost> {
 
                 final value = await booru.singlePost(n);
 
+                final key = GlobalKey<ImageViewState>();
+
+                final favoritesWatcher = settingsIsar()
+                    .favoriteBoorus
+                    .watchLazy(fireImmediately: false)
+                    .listen((event) {
+                  key.currentState?.setState(() {});
+                });
+
                 // ignore: use_build_context_synchronously
                 Navigator.push(context, MaterialPageRoute(
                   builder: (context) {
                     return ImageView(
+                      key: key,
+                      registerNotifiers: [
+                        (child) => TagManagerNotifier(
+                            tagManager: widget.tagManager, child: child),
+                        (child) => BooruAPINotifier(api: booru, child: child),
+                      ],
                       updateTagScrollPos: (_, __) {},
                       download: (_) {
                         Downloader().add(File.d(value.fileDownloadUrl(),
                             booru.booru.url, value.filename()));
                       },
                       cellCount: 1,
+                      addIcons: (p) => [
+                        BooruGridActions.favorites(p),
+                        BooruGridActions.download(context, booru)
+                      ],
                       scrollUntill: (_) {},
                       onExit: () {},
                       focusMain: () {},
@@ -154,7 +181,9 @@ class _SinglePostState extends State<SinglePost> {
                       systemOverlayRestoreColor: overlayColor,
                     );
                   },
-                ));
+                )).then((_) {
+                  favoritesWatcher.cancel();
+                });
               } catch (e, trace) {
                 try {
                   // ignore: use_build_context_synchronously

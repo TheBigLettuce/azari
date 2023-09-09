@@ -21,6 +21,13 @@ import '../schemas/settings.dart' as schema show AspectRatio;
 import '../widgets/restart_widget.dart';
 import '../widgets/settings_label.dart';
 
+bool _isRestart = false;
+
+bool get isRestart => _isRestart;
+void restartOver() {
+  _isRestart = false;
+}
+
 class SettingsWidget extends StatefulWidget {
   const SettingsWidget({super.key});
 
@@ -140,6 +147,8 @@ class _SettingsListState extends State<SettingsList> {
                 .toList(),
             onChanged: (value) {
               if (value != _settings!.selectedBooru) {
+                _isRestart = true;
+
                 Settings.saveToDb(_settings!.copy(selectedBooru: value));
 
                 RestartWidget.restartApp(context);

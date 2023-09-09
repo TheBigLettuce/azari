@@ -76,12 +76,13 @@ abstract class BooruAPI {
   /// This is only used to refresh the grid, the code which loads and presets the posts uses [fromPost] for further posts loading.
   /// The boorus which do not support geting posts down a certain post number should keep a page number internally,
   /// and return it in [currentPage].
-  Future<List<Post>> page(int p, String tags, BooruTagging excludedTags);
+  Future<(List<Post>, int?)> page(
+      int p, String tags, BooruTagging excludedTags);
 
   /// Get posts down a certain post number.
   /// The boorus which do not support geting posts down a certain post number should keep a page number internally,
   /// and use paging to load the posts.
-  Future<List<Post>> fromPost(
+  Future<(List<Post>, int?)> fromPost(
       int postId, String tags, BooruTagging excludedTags);
 
   /// Tag completition, this shouldn't present more than 10 at a time.
@@ -102,7 +103,7 @@ abstract class BooruAPI {
   /// of a post number, in this case [page] comes in handy:
   /// that is, it makes refreshes on restore few.
   static BooruAPI fromSettings({int? page}) {
-    return BooruAPI.fromEnum(Settings.fromDb().selectedBooru);
+    return BooruAPI.fromEnum(Settings.fromDb().selectedBooru, page: page);
   }
 
   static BooruAPI fromEnum(Booru booru, {int? page}) {
@@ -112,7 +113,6 @@ abstract class BooruAPI {
 
     final jar = UnsaveableCookieJar(CookieJarTab().get(booru));
     dio.interceptors.add(CookieManager(jar));
-    dio.interceptors.add(LogInterceptor());
 
     return switch (booru) {
       Booru.danbooru => Danbooru(dio, jar),

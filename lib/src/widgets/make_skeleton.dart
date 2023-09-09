@@ -46,21 +46,19 @@ class GridSkeletonStateFilter<T extends Cell> extends GridSkeletonState<T> {
 
   final T Function(T cell, SortingMode sort) transform;
 
-  GridSkeletonStateFilter({
-    required this.filter,
-    required super.index,
-    required this.transform,
-    this.filteringModes = const {},
-    this.hook = _doNothing,
-    required super.onWillPop,
-  });
+  GridSkeletonStateFilter(
+      {required this.filter,
+      required super.index,
+      required this.transform,
+      this.filteringModes = const {},
+      this.hook = _doNothing});
 }
 
 class GridSkeletonState<T extends Cell> extends SkeletonState {
   bool showFab;
   final GlobalKey<CallbackGridState<T>> gridKey = GlobalKey();
   Settings settings = Settings.fromDb();
-  final Future<bool> Function() onWillPop;
+  // final Future<bool> Function() onWillPop;
 
   void updateFab(void Function(void Function()) setState,
       {required bool fab, required bool foreground}) {
@@ -74,7 +72,7 @@ class GridSkeletonState<T extends Cell> extends SkeletonState {
     }
   }
 
-  GridSkeletonState({required int index, required this.onWillPop})
+  GridSkeletonState({required int index})
       : showFab = false,
         super(index);
 }
@@ -87,7 +85,9 @@ Widget makeGridSkeleton<T extends Cell>(
     Future<bool> Function()? overrideOnPop}) {
   return WillPopScope(
     onWillPop: overrideOnPop ??
-        (popSenitel ? state.onWillPop : () => Future.value(true)),
+        (popSenitel
+            ? () => popUntilSenitel(context)
+            : () => Future.value(true)),
     child: Scaffold(
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         drawerEnableOpenDragGesture:

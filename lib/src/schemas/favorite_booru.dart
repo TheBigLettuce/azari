@@ -5,15 +5,26 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'package:gallery/src/schemas/post.dart';
 import 'package:isar/isar.dart';
 
-part 'grid_restore.g.dart';
+part 'favorite_booru.g.dart';
 
 @collection
-class GridRestore {
-  Id? id;
-  @Index(unique: true, replace: true)
-  final String path;
-  final DateTime date;
-  GridRestore(this.path) : date = DateTime.now();
+class FavoriteBooru extends PostBase {
+  FavoriteBooru(
+      {required super.height,
+      required super.id,
+      required super.md5,
+      required super.tags,
+      required super.width,
+      required super.fileUrl,
+      required super.prefix,
+      required super.previewUrl,
+      required super.sampleUrl,
+      required super.ext,
+      required super.sourceUrl,
+      required super.rating,
+      required super.score,
+      required super.createdAt});
 }
