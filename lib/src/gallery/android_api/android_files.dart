@@ -93,8 +93,6 @@ class _AndroidFilesState extends State<AndroidFiles>
     })
     ..setPassFilter((cells, data, end) {
       return switch (currentFilteringMode()) {
-        FilteringMode.noFilter => (cells, data),
-        FilteringMode.size => (cells, data),
         FilteringMode.favorite => Filters.favorite(cells),
         FilteringMode.untagged => Filters.untagged(cells),
         FilteringMode.tag => Filters.tag(cells, searchTextController.text),
@@ -113,6 +111,7 @@ class _AndroidFilesState extends State<AndroidFiles>
             performSearch: () => performSearch(searchTextController.text),
             end: end,
           ),
+        FilteringMode() => (cells, data),
       };
     });
 

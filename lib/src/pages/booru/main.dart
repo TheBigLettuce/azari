@@ -84,11 +84,13 @@ class _MainBooruGridState extends State<MainBooruGrid>
         addItems: null,
         restorable: true));
 
-    if (state.settings.autoRefresh &&
+    if (api.wouldBecomeStale &&
+        state.settings.autoRefresh &&
         state.settings.autoRefreshMicroseconds != 0 &&
         restore.copy.time.isBefore(DateTime.now()
             .subtract(state.settings.autoRefreshMicroseconds.microseconds))) {
-      _clearAndRefresh();
+      mainGrid.writeTxnSync(() => mainGrid.posts.clearSync());
+      // _clearAndRefresh();
       restore.updateTime();
     }
 
@@ -211,7 +213,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
                         (child) => BooruAPINotifier(api: api, child: child),
                       ],
                       addIconsImage: (post) => [
-                        BooruGridActions.favorites(post),
+                        BooruGridActions.favorites(context, post),
                         BooruGridActions.download(context, api)
                       ],
                       onExitImageView: () =>
@@ -220,7 +222,8 @@ class _MainBooruGridState extends State<MainBooruGrid>
                         kBooruGridDrawerIndex,
                         [
                           BooruGridActions.download(context, api),
-                          BooruGridActions.favorites(null)
+                          BooruGridActions.favorites(context, null,
+                              showDeleteSnackbar: true)
                         ],
                         state.settings.picturesPerRow,
                         listView: state.settings.booruListView,

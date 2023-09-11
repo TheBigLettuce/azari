@@ -125,6 +125,11 @@ class Downloader with _CancelTokens {
   }
 
   void add(dw_file.File download) async {
+    if (Settings.fromDb().path == "") {
+      settingsIsar()
+          .writeTxnSync(() => settingsIsar().files.putSync(download.failed()));
+      return;
+    }
     if (download.isarId != null && _hasCancelKey(download.url)) {
       return;
     }

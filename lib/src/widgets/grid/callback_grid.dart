@@ -44,7 +44,7 @@ class CloudflareBlockInterface {
 class _SegSticky {
   final String seg;
   final bool sticky;
-  final void Function() onLabelPressed;
+  final void Function()? onLabelPressed;
 
   const _SegSticky(this.seg, this.sticky, this.onLabelPressed);
 }
@@ -242,6 +242,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
   bool inImageView = false;
 
+  List<int>? segTranslation;
+
   late final _Mutation<T> _state = _Mutation(
     updateImageView: () {
       imageViewKey.currentState?.update(_state.cellCount);
@@ -372,6 +374,9 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   }
 
   void _scrollUntill(int p) {
+    if (widget.segments != null) {
+      return;
+    }
     final picPerRow = widget.description.columns;
     // Get the full content height.
     final contentSize = controller.position.viewportDimension +
@@ -433,10 +438,21 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
             widget.mainFocus.requestFocus();
           },
           infoScrollOffset: offset,
+          predefinedIndexes: segTranslation,
           getCell: _state.getCell,
           cellCount: _state.cellCount,
           download: widget.download,
-          startingCell: startingCell,
+          startingCell: segTranslation != null
+              ? () {
+                  for (final (i, e) in segTranslation!.indexed) {
+                    if (e == startingCell) {
+                      return i;
+                    }
+                  }
+
+                  return 0;
+                }()
+              : startingCell,
           onNearEnd: widget.loadNext == null ? null : _state._onNearEnd);
     }));
   }
@@ -533,6 +549,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   @override
   Widget build(BuildContext context) {
     final bindings = _makeBindings(context);
+    segTranslation = null;
 
     return wrapNotifiers(context, widget.registerNotifiers, (context) {
       return CallbackShortcuts(
@@ -594,10 +611,15 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                                                     titlePadding:
                                                         EdgeInsetsDirectional
                                                             .only(
-                                                      start:
-                                                          widget.onBack != null
-                                                              ? 48
-                                                              : 0,
+                                                      start: (widget.onBack !=
+                                                                  null ||
+                                                              (widget
+                                                                      .scaffoldKey
+                                                                      .currentState
+                                                                      ?.hasDrawer ??
+                                                                  false))
+                                                          ? 48
+                                                          : 0,
                                                     ),
                                                     title: widget.searchWidget
                                                                 ?.search !=
@@ -648,9 +670,10 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                                                           .inlineMenuButtonItems))
                                                 ...widget.menuButtonItems!.map(
                                                     (e) => wrapAppBarAction(e)),
-                                            if (widget.scaffoldKey.currentState
-                                                    ?.hasDrawer ??
-                                                false)
+                                            if (widget.onBack != null &&
+                                                (widget.scaffoldKey.currentState
+                                                        ?.hasDrawer ??
+                                                    false))
                                               wrapAppBarAction(GestureDetector(
                                                 onLongPress: () {
                                                   setState(() {
@@ -703,7 +726,30 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                                               },
                                               icon:
                                                   const Icon(Icons.arrow_back))
-                                          : Container(),
+                                          : (widget.scaffoldKey.currentState
+                                                      ?.hasDrawer ??
+                                                  false)
+                                              ? wrapAppBarAction(
+                                                  GestureDetector(
+                                                  onLongPress: () {
+                                                    setState(() {
+                                                      selection.selected
+                                                          .clear();
+                                                      selection
+                                                          .currentBottomSheet
+                                                          ?.close();
+                                                    });
+                                                  },
+                                                  child: IconButton(
+                                                      onPressed: () {
+                                                        widget.scaffoldKey
+                                                            .currentState!
+                                                            .openDrawer();
+                                                      },
+                                                      icon: const Icon(
+                                                          Icons.menu)),
+                                                ))
+                                              : Container(),
                                       pinned: true,
                                       stretch: true,
                                       bottom: widget.description.bottomWidget !=
@@ -734,18 +780,39 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                                     ],
                                   ))
                                 : _withPadding(widget.segments != null
-                                    ? GridLayout.segments<T>(
-                                        context,
-                                        widget.segments!,
-                                        _state,
-                                        selection,
-                                        widget.description.listView,
-                                        widget.description.columns.number,
-                                        _makeGridCell,
-                                        systemNavigationInsets: widget
-                                            .systemNavigationInsets.bottom,
-                                        aspectRatio: widget.aspectRatio,
-                                      )
+                                    ? () {
+                                        if (widget.segments!.prebuiltSegments !=
+                                            null) {
+                                          return GridLayout.segmentsPrebuilt(
+                                            context,
+                                            widget.segments!,
+                                            _state,
+                                            selection,
+                                            widget.description.listView,
+                                            widget.description.columns.number,
+                                            _makeGridCell,
+                                            systemNavigationInsets: widget
+                                                .systemNavigationInsets.bottom,
+                                            aspectRatio: widget.aspectRatio,
+                                          );
+                                        }
+                                        final (s, t) =
+                                            GridLayout.segmentsFnc<T>(
+                                          context,
+                                          widget.segments!,
+                                          _state,
+                                          selection,
+                                          widget.description.listView,
+                                          widget.description.columns.number,
+                                          _makeGridCell,
+                                          systemNavigationInsets: widget
+                                              .systemNavigationInsets.bottom,
+                                          aspectRatio: widget.aspectRatio,
+                                        );
+                                        segTranslation = t;
+
+                                        return s;
+                                      }()
                                     : widget.description.listView
                                         ? GridLayout.list<T>(
                                             context,

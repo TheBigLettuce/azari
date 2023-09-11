@@ -192,14 +192,15 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                             BooruAPINotifier(api: widget.api, child: child),
                       ],
                       addIconsImage: (post) => [
-                        BooruGridActions.favorites(post),
+                        BooruGridActions.favorites(context, post),
                         BooruGridActions.download(context, widget.api)
                       ],
                       description: GridDescription(
                         kBooruGridDrawerIndex,
                         [
                           BooruGridActions.download(context, widget.api),
-                          BooruGridActions.favorites(null)
+                          BooruGridActions.favorites(context, null,
+                              showDeleteSnackbar: true)
                         ],
                         state.settings.picturesPerRow,
                         listView: state.settings.booruListView,

@@ -52,6 +52,8 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final void Function() onExit;
   final void Function() focusMain;
 
+  final List<int>? predefinedIndexes;
+
   final List<InheritedWidget Function(Widget)>? registerNotifiers;
 
   const ImageView(
@@ -61,6 +63,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
       required this.scrollUntill,
       required this.startingCell,
       required this.onExit,
+      this.predefinedIndexes,
       required this.getCell,
       required this.onNearEnd,
       required this.focusMain,
@@ -707,8 +710,12 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                             pageController: controller,
                             itemCount: cellCount,
                             builder: (context, indx) {
-                              final fileContent =
-                                  widget.getCell(indx).fileDisplay();
+                              final fileContent = widget.predefinedIndexes !=
+                                      null
+                                  ? widget
+                                      .getCell(widget.predefinedIndexes![indx])
+                                      .fileDisplay()
+                                  : widget.getCell(indx).fileDisplay();
 
                               return switch (fileContent) {
                                 AndroidImage() => _makeAndroidImage(

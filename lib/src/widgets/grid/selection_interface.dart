@@ -24,6 +24,7 @@ class SelectionInterface<T extends Cell> {
     if (id.isNegative) {
       return;
     }
+
     if (selected.isEmpty || currentBottomSheet == null) {
       currentBottomSheet = showBottomSheet(
           constraints:
@@ -109,32 +110,35 @@ class SelectionInterface<T extends Cell> {
     });
   }
 
-  void selectUnselectUntil(int indx, GridMutationInterface<T> state) {
+  void selectUnselectUntil(int indx, GridMutationInterface<T> state,
+      {List<int>? selectFrom}) {
     if (lastSelected != null) {
+      final last = selectFrom?.indexOf(lastSelected!) ?? lastSelected!;
+      indx = selectFrom?.indexOf(indx) ?? indx;
       if (lastSelected == indx) {
         return;
       }
 
       final selection = !isSelected(indx);
 
-      if (indx < lastSelected!) {
-        for (var i = lastSelected!; i >= indx; i--) {
+      if (indx < last) {
+        for (var i = last; i >= indx; i--) {
           if (selection) {
-            selected[i] = state.getCell(i);
+            selected[selectFrom?[i] ?? i] = state.getCell(selectFrom?[i] ?? i);
           } else {
-            remove(i);
+            remove(selectFrom?[i] ?? i);
           }
-          lastSelected = i;
+          lastSelected = selectFrom?[i] ?? i;
         }
         _setState(() {});
-      } else if (indx > lastSelected!) {
-        for (var i = lastSelected!; i <= indx; i++) {
+      } else if (indx > last) {
+        for (var i = last; i <= indx; i++) {
           if (selection) {
-            selected[i] = state.getCell(i);
+            selected[selectFrom?[i] ?? i] = state.getCell(selectFrom?[i] ?? i);
           } else {
-            remove(i);
+            remove(selectFrom?[i] ?? i);
           }
-          lastSelected = i;
+          lastSelected = selectFrom?[i] ?? i;
         }
         _setState(() {});
       }

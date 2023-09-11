@@ -119,10 +119,11 @@ class _DownloadsState extends State<Downloads> with SearchFilterGrid<File> {
             hideShowFab: ({required bool fab, required bool foreground}) =>
                 state.updateFab(setState, fab: fab, foreground: foreground),
             segments: Segments(
-              (cell) {
+              "Unknown",
+              hidePinnedIcon: true,
+              segment: (cell) {
                 return (Downloader().downloadDescription(cell), true);
               },
-              "Unknown",
               onLabelPressed: (label, children) {
                 if (children.isEmpty) {
                   return;

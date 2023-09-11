@@ -226,7 +226,7 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                           BooruAPINotifier(api: widget.api, child: child),
                     ],
                     addIconsImage: (post) => [
-                      BooruGridActions.favorites(post),
+                      BooruGridActions.favorites(context, post),
                       BooruGridActions.download(context, widget.api)
                     ],
                     onExitImageView: () =>
@@ -235,7 +235,8 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                       kBooruGridDrawerIndex,
                       [
                         BooruGridActions.download(context, widget.api),
-                        BooruGridActions.favorites(null)
+                        BooruGridActions.favorites(context, null,
+                            showDeleteSnackbar: true)
                       ],
                       state.settings.picturesPerRow,
                       listView: state.settings.booruListView,

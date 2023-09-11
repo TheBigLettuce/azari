@@ -6,56 +6,64 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:introduction_screen/introduction_screen.dart';
 
 import '../db/isar.dart';
 
-/// Currently forces the user to choose a directory.
-class Entry extends StatelessWidget {
+class Entry extends StatefulWidget {
   const Entry({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    showDialog(String s) {
-      Navigator.of(context).push(DialogRoute(
-          context: context,
-          builder: (context) => AlertDialog(
+  State<Entry> createState() => _EntryState();
+}
+
+class _EntryState extends State<Entry> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+      Navigator.push(
+          context,
+          DialogRoute(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text(
+                  "Before you continue...", // TODO: change
+                ),
+                content: const Text(
+                  "You need to choose a download directory. Without it downloads will fail without error.", // TODO: change
+                ),
                 actions: [
                   TextButton(
                       onPressed: () {
                         Navigator.pop(context);
+                        Navigator.pushReplacementNamed(context, "/booru");
                       },
-                      child: Text(AppLocalizations.of(context)!.ok))
+                      child: const Text(
+                        "Later", // TODO: change
+                      )),
+                  TextButton(
+                      onPressed: () {
+                        chooseDirectory((e) {}).then((success) {
+                          if (success) {
+                            Navigator.pop(context);
+                            Navigator.pushReplacementNamed(context, "/booru");
+                          }
+                        });
+                      },
+                      child: const Text(
+                        "Choose", // TODO: change
+                      ))
                 ],
-                content: Text(s),
-              )));
-    }
-
-    restore() {
-      Navigator.pushReplacementNamed(context, "/booru");
-    }
-
-    return IntroductionScreen(
-      pages: [
-        PageViewModel(
-          title: AppLocalizations.of(context)!.pickDirectory,
-          bodyWidget: TextButton(
-            onPressed: () async {
-              for (true;;) {
-                if (await chooseDirectory(showDialog)) {
-                  break;
-                }
-              }
-
-              restore();
+              );
             },
-            child: Text(AppLocalizations.of(context)!.pick),
-          ),
-        )
-      ],
-      showDoneButton: false,
-      next: Text(AppLocalizations.of(context)!.next),
-    );
+          ));
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container();
   }
 }

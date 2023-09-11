@@ -9,6 +9,7 @@ import 'dart:async';
 import 'dart:io' as io;
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart';
 import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/schemas/android_gallery_directory.dart';
@@ -172,7 +173,12 @@ Future<bool> chooseDirectory(void Function(String) onError) async {
   late final String resp;
 
   if (io.Platform.isAndroid) {
-    resp = (await PlatformFunctions.chooseDirectory())!;
+    try {
+      resp = (await PlatformFunctions.chooseDirectory())!;
+    } catch (e) {
+      onError((e as PlatformException).code);
+      return false;
+    }
   } else {
     final r = await FilePicker.platform
         .getDirectoryPath(dialogTitle: "Pick a directory for downloads");

@@ -16,6 +16,7 @@ import 'package:gallery/src/pages/tags.dart';
 import 'package:gallery/src/pages/downloads.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/settings.dart';
+import 'package:gallery/src/widgets/settings_label.dart';
 import '../../booru/interface.dart';
 import '../../db/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -230,7 +231,7 @@ Widget? makeDrawer(BuildContext context, int selectedIndex,
   if (!Platform.isAndroid && !Platform.isIOS) {
     return null;
   }
-  AnimationController? iconController;
+  final currentBooru = Settings.fromDb().selectedBooru;
 
   return NavigationDrawer(
     selectedIndex: selectedIndex,
@@ -247,25 +248,40 @@ Widget? makeDrawer(BuildContext context, int selectedIndex,
       }
     },
     children: [
-      DrawerHeader(
-          child: Center(
-        child: GestureDetector(
-          onTap: () {
-            if (iconController != null) {
-              iconController!.forward(from: 0);
-            }
-          },
-          child:
-              azariIcon(context, color: Theme.of(context).colorScheme.primary),
-        ).animate(
-            onInit: (controller) => iconController = controller,
-            effects: [ShakeEffect(duration: 700.milliseconds, hz: 6)]),
-      )),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 18),
+        child: ListTile(
+          title: azariIcon(context,
+                  color: Theme.of(context).colorScheme.primary)
+              .animate(
+                  effects: [ShakeEffect(duration: 700.milliseconds, hz: 6)]),
+          style: ListTileStyle.drawer,
+        ),
+      ),
       ...destinations(context, overrideBooru: overrideBooru),
-      const Divider(),
       NavigationDrawerDestination(
           icon: const Icon(Icons.settings),
-          label: Text(AppLocalizations.of(context)!.settingsLabel))
+          label: Text(AppLocalizations.of(context)!.settingsLabel)),
+      const Divider(),
+      settingsLabel(
+          "Switch booru",
+          Theme.of(context)
+              .textTheme
+              .titleSmall!
+              .copyWith(color: Theme.of(context).colorScheme.secondary)),
+      ...Booru.values
+          .where((element) => element != currentBooru)
+          .map((e) => ListTile(
+                textColor: Theme.of(context).colorScheme.primary,
+                iconColor: Theme.of(context).colorScheme.primary,
+                title: Text(
+                  e.string,
+                  style: const TextStyle(letterSpacing: 1.5),
+                ),
+                onTap: () => selectBooru(context, Settings.fromDb(), e),
+                leading: const Icon(Icons.arrow_forward_rounded),
+                style: ListTileStyle.drawer,
+              ))
     ],
   );
 }

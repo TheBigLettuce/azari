@@ -39,12 +39,14 @@ class BooruGridActions {
         ));
   }
 
-  static GridBottomSheetAction<T> favorites<T extends PostBase>(T? p) {
+  static GridBottomSheetAction<T> favorites<T extends PostBase>(
+      BuildContext context, T? p,
+      {bool showDeleteSnackbar = false}) {
     final isFavorite = p != null && Settings.isFavorite(p.fileUrl);
     return GridBottomSheetAction(
         isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
         (selected) {
-      Settings.addRemoveFavorites(selected);
+      Settings.addRemoveFavorites(context, selected, showDeleteSnackbar);
       settingsIsar().writeTxnSync(
         () {
           for (final post in selected) {

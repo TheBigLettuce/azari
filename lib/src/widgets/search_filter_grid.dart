@@ -62,7 +62,10 @@ enum FilteringMode {
   tagReversed("Tag reversed", Icons.label_off_outlined),
 
   /// Filter by no tags on image.
-  untagged("Untagged", Icons.label_off);
+  untagged("Untagged", Icons.label_off),
+
+  /// Filter by segments.
+  group("Group", Icons.group_work_outlined);
 
   /// Name displayed in search bar.
   final String string;
@@ -97,9 +100,10 @@ class LinearIsarLoader<T extends Cell> {
     }
   }
 
-  void init(void Function(Isar instance) loader) {
+  void init(void Function(Isar instance) loader,
+      {FilteringMode d = FilteringMode.noFilter}) {
     loader(instance);
-    filter.filter("", FilteringMode.noFilter);
+    filter.filter("", d);
   }
 
   LinearIsarLoader(
@@ -246,7 +250,9 @@ mixin SearchFilterGrid<T extends Cell>
   }
 
   void setFilteringMode(FilteringMode f) {
-    _key.currentState!.currentFilterMode = f;
+    if (_state.filteringModes.contains(f)) {
+      _key.currentState!.currentFilterMode = f;
+    }
   }
 
   void setLocalTagCompleteF(Future<List<String>> Function(String string) f) {
@@ -258,7 +264,7 @@ mixin SearchFilterGrid<T extends Cell>
   }
 
   void resetSearch() {
-    _key.currentState!.reset();
+    _key.currentState!.reset(true);
   }
 
   @override
@@ -287,7 +293,7 @@ class _SearchWidget<T extends Cell> extends StatefulWidget {
 
 class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
   bool searchVirtual = false;
-  FilteringMode currentFilterMode = FilteringMode.noFilter;
+  late FilteringMode currentFilterMode = widget.instance._state.defaultMode;
   Future<List<String>> Function(String string) localTagCompleteFunc =
       PostTags().completeLocalTag;
   void onChanged(String value, bool direct) {
@@ -342,12 +348,14 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
   String _makeHint(BuildContext context) =>
       "${AppLocalizations.of(context)!.filterHint}${widget.hint != null ? ' ${widget.hint}' : ''}";
 
-  void reset() {
+  void reset(bool resetFilterMode) {
     widget.instance.searchTextController.clear();
     widget.instance._state.gridKey.currentState?.mutationInterface?.restore();
     if (widget.instance._state.filteringModes.isNotEmpty) {
       searchVirtual = false;
-      currentFilterMode = FilteringMode.noFilter;
+      if (resetFilterMode) {
+        currentFilterMode = widget.instance._state.defaultMode;
+      }
     }
     onChanged(widget.instance.searchTextController.text, true);
 
@@ -389,7 +397,10 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
                       focusNode: widget.instance.searchFocus,
                       controller: widget.instance.searchTextController,
                       decoration: autocompleteBarDecoration(
-                          context, reset, _addItems(),
+                          context,
+                          () => reset(
+                              widget.instance._state.unsetFilteringModeOnReset),
+                          _addItems(),
                           searchCount: widget.instance._state.gridKey
                               .currentState?.mutationInterface?.cellCount,
                           showSearch: true,

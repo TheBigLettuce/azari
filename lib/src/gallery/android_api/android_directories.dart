@@ -229,7 +229,8 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
           hideAlias: state.settings.gallerySettings.hideDirectoryName,
           immutable: false,
           segments: Segments(
-            (cell) {
+            "Uncategorized",
+            segment: (cell) {
               for (final booru in Booru.values) {
                 if (booru.url == cell.name) {
                   return ("Booru", true);
@@ -256,7 +257,6 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                     null
               );
             },
-            "Uncategorized",
             addToSticky: (seg, {unsticky}) {
               if (seg == "Booru" || seg == "Special") {
                 return;

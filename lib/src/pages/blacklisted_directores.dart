@@ -82,6 +82,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
             systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context),
             hasReachedEnd: () => true,
             aspectRatio: 1,
+            onBack: () => Navigator.pop(context),
             immutable: false,
             searchWidget: SearchAndFocus(
                 searchWidget(

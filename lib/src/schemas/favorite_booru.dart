@@ -12,6 +12,9 @@ part 'favorite_booru.g.dart';
 
 @collection
 class FavoriteBooru extends PostBase {
+  @Index()
+  String? group;
+
   FavoriteBooru(
       {required super.height,
       required super.id,
@@ -23,6 +26,7 @@ class FavoriteBooru extends PostBase {
       required super.previewUrl,
       required super.sampleUrl,
       required super.ext,
+      this.group,
       required super.sourceUrl,
       required super.rating,
       required super.score,

@@ -24,25 +24,34 @@ class Segments<T> {
   /// Segmentation function.
   /// If [sticky] is true, then even if the cell is single standing it will appear
   /// as a single element segment on the grid.
-  final (String? segment, bool sticky) Function(T cell) segment;
+  final (String? segment, bool sticky) Function(T cell)? segment;
+
+  final Map<String, int>? prebuiltSegments;
 
   /// If [addToSticky] is not null. then it will be possible to make
   /// segments sticky on the grid.
   /// If [unsticky] is true, then instead of stickying, unstickying should happen.
   final void Function(String seg, {bool? unsticky})? addToSticky;
 
-  final void Function(String label, List<T> children) onLabelPressed;
+  final void Function(String label, List<T> children)? onLabelPressed;
 
-  static void _doNothing(_, __) {}
+  final bool hidePinnedIcon;
 
-  const Segments(this.segment, this.unsegmentedLabel,
+  const Segments(this.unsegmentedLabel,
       {this.addToSticky,
-      this.onLabelPressed = _doNothing,
+      this.segment,
+      this.prebuiltSegments,
+      this.onLabelPressed,
+      this.hidePinnedIcon = false,
       this.injectedSegments = const [],
-      this.injectedLabel = "Special"});
+      this.injectedLabel = "Special"})
+      : assert(prebuiltSegments == null || segment == null);
 
-  static Widget label(BuildContext context, String text, bool sticky,
-          {void Function()? onLongPress, required void Function() onPress}) =>
+  static Widget label(BuildContext context, String text,
+          {void Function()? onLongPress,
+          required void Function()? onPress,
+          required bool sticky,
+          required bool hidePinnedIcon}) =>
       Padding(
           padding: const EdgeInsets.only(bottom: 8, top: 16, left: 8, right: 8),
           child: GestureDetector(
@@ -56,12 +65,11 @@ class Segments<T> {
                 children: [
                   Text(
                     text,
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineLarge
-                        ?.copyWith(letterSpacing: 2),
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        letterSpacing: 2,
+                        color: Theme.of(context).colorScheme.secondary),
                   ),
-                  if (sticky)
+                  if (sticky && !hidePinnedIcon)
                     const Align(
                       alignment: Alignment.centerRight,
                       child: Icon(Icons.push_pin_outlined),

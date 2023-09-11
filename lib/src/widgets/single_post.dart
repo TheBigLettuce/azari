@@ -167,7 +167,7 @@ class _SinglePostState extends State<SinglePost> {
                       },
                       cellCount: 1,
                       addIcons: (p) => [
-                        BooruGridActions.favorites(p),
+                        BooruGridActions.favorites(context, p),
                         BooruGridActions.download(context, booru)
                       ],
                       scrollUntill: (_) {},

@@ -39,6 +39,8 @@ class SkeletonState {
 class GridSkeletonStateFilter<T extends Cell> extends GridSkeletonState<T> {
   final FilterInterface<T> filter;
   final Set<FilteringMode> filteringModes;
+  final bool unsetFilteringModeOnReset;
+  final FilteringMode defaultMode;
 
   static SortingMode _doNothing(FilteringMode m) => SortingMode.none;
 
@@ -51,7 +53,9 @@ class GridSkeletonStateFilter<T extends Cell> extends GridSkeletonState<T> {
       required super.index,
       required this.transform,
       this.filteringModes = const {},
-      this.hook = _doNothing});
+      this.defaultMode = FilteringMode.noFilter,
+      this.hook = _doNothing,
+      this.unsetFilteringModeOnReset = true});
 }
 
 class GridSkeletonState<T extends Cell> extends SkeletonState {
@@ -89,7 +93,7 @@ Widget makeGridSkeleton<T extends Cell>(
             ? () => popUntilSenitel(context)
             : () => Future.value(true)),
     child: Scaffold(
-        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        // floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
         drawerEnableOpenDragGesture:
             MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,
         floatingActionButton: state.showFab
@@ -246,15 +250,19 @@ Widget makeSkeletonInnerSettings(BuildContext context, String pageDescription,
 }
 
 Widget makeSkeleton(
-    BuildContext context, String pageDescription, SkeletonState state,
-    {List<Widget>? children,
-    Widget Function(BuildContext context, int indx)? builder,
-    Map<SingleActivatorDescription, Null Function()>? additionalBindings,
-    bool popSenitel = true,
-    int? itemCount,
-    void Function(int route, void Function() original)? overrideChooseRoute,
-    List<Widget>? appBarActions,
-    Widget? customTitle}) {
+  BuildContext context,
+  String pageDescription,
+  SkeletonState state, {
+  List<Widget>? children,
+  Widget Function(BuildContext context, int indx)? builder,
+  Map<SingleActivatorDescription, Null Function()>? additionalBindings,
+  bool popSenitel = true,
+  int? itemCount,
+  void Function(int route, void Function() original)? overrideChooseRoute,
+  List<Widget>? appBarActions,
+  Widget? customTitle,
+  NavigationBar? bottomNavBar,
+}) {
   if (children == null && builder == null ||
       children != null && builder != null) {
     throw "only one should be specified";
@@ -310,6 +318,7 @@ Widget makeSkeleton(
               drawerEnableOpenDragGesture:
                   MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,
               key: state.scaffoldKey,
+              bottomNavigationBar: bottomNavBar,
               drawer: makeDrawer(context, state.index,
                   overrideChooseRoute: overrideChooseRoute),
               endDrawer: makeEndDrawerSettings(context, state.scaffoldKey),

@@ -17,9 +17,11 @@ class TagsWidget extends StatelessWidget {
   final void Function(Tag tag)? onPress;
   final bool redBackground;
   final List<Tag> tags;
+  final Widget searchBar;
   const TagsWidget(
       {super.key,
       required this.tags,
+      required this.searchBar,
       this.redBackground = false,
       required this.deleteTag,
       required this.onPress});
@@ -28,50 +30,59 @@ class TagsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 10, right: 10),
-      child: tags.isEmpty
-          ? const EmptyWidget()
-          : Wrap(
-              children: tags.map((tag) {
-                return GestureDetector(
-                  onLongPress: () {
-                    HapticFeedback.vibrate();
-                    Navigator.of(context).push(DialogRoute(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                              title: Text(AppLocalizations.of(context)!
-                                  .tagDeleteDialogTitle),
-                              content: Text(tag.tag),
-                              actions: [
-                                TextButton(
-                                    onPressed: () {
-                                      deleteTag(tag);
-                                      Navigator.of(context).pop();
-                                    },
-                                    child:
-                                        Text(AppLocalizations.of(context)!.yes))
-                              ],
-                            )));
-                  },
-                  child: ActionChip(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25)),
-                    side: redBackground
-                        ? BorderSide(color: Colors.pink.shade200)
-                        : null,
-                    backgroundColor: redBackground ? Colors.pink : null,
-                    label: Text(tag.tag,
-                        style: redBackground
-                            ? TextStyle(color: Colors.white.withOpacity(0.8))
-                            : null),
-                    onPressed: onPress == null
-                        ? null
-                        : () {
-                            onPress!(tag);
-                          },
-                  ),
-                );
-              }).toList(),
-            ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: searchBar,
+          ),
+          tags.isEmpty
+              ? const EmptyWidget()
+              : Wrap(
+                  children: tags.map((tag) {
+                    return GestureDetector(
+                      onLongPress: () {
+                        HapticFeedback.vibrate();
+                        Navigator.of(context).push(DialogRoute(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                                  title: Text(AppLocalizations.of(context)!
+                                      .tagDeleteDialogTitle),
+                                  content: Text(tag.tag),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () {
+                                          deleteTag(tag);
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: Text(
+                                            AppLocalizations.of(context)!.yes))
+                                  ],
+                                )));
+                      },
+                      child: ActionChip(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25)),
+                        side: redBackground
+                            ? BorderSide(color: Colors.pink.shade200)
+                            : null,
+                        backgroundColor: redBackground ? Colors.pink : null,
+                        label: Text(tag.tag,
+                            style: redBackground
+                                ? TextStyle(
+                                    color: Colors.white.withOpacity(0.8))
+                                : null),
+                        onPressed: onPress == null
+                            ? null
+                            : () {
+                                onPress!(tag);
+                              },
+                      ),
+                    );
+                  }).toList(),
+                )
+        ],
+      ),
     );
   }
 }

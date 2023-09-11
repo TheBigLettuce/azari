@@ -104,6 +104,7 @@ class GridLayout {
     List<int> val,
     bool listView,
     GridCell Function(BuildContext, T, int) gridCell, {
+    List<int> Function()? predefined,
     required double constraints,
     required double systemNavigationInsets,
     required double aspectRatio,
@@ -126,7 +127,19 @@ class GridLayout {
                     child: _WrappedSelection(
                       selectionEnabled: selection.selected.isNotEmpty,
                       thisIndx: indx,
-                      selectUntil: (i) {},
+                      selectUntil: (i) {
+                        // print("$indx, $i");
+                        if (predefined != null) {
+                          // final p = predefined();
+                          // final i1 = p.indexOf(i);
+                          // final i2 = selection.lastSelected == null ? null: p.indexOf(selection.lastSelected!);
+
+                          selection.selectUnselectUntil(indx, state,
+                              selectFrom: predefined());
+                        } else {
+                          selection.selectUnselectUntil(indx, state);
+                        }
+                      },
                       selectUnselect: () => selection.selectOrUnselect(
                           context, indx, cell, systemNavigationInsets),
                       isSelected: selection.isSelected(indx),
@@ -176,7 +189,129 @@ class GridLayout {
         }).toList(),
       );
 
-  static Widget segments<T extends Cell>(
+  static Widget segmentsPrebuilt<T extends Cell>(
+    BuildContext context,
+    Segments<T> segments,
+    GridMutationInterface<T> state,
+    SelectionInterface<T> selection,
+    bool listView,
+    int columns,
+    GridCell Function(BuildContext, T, int) gridCell, {
+    required double systemNavigationInsets,
+    required double aspectRatio,
+  }) {
+    final segRows = <dynamic>[];
+
+    makeRows<J>(List<J> value) {
+      var row = <J>[];
+
+      for (final i in value) {
+        row.add(i);
+        if (row.length == columns) {
+          segRows.add(row);
+          row = [];
+        }
+      }
+
+      if (row.isNotEmpty) {
+        segRows.add(row);
+      }
+    }
+
+    if (segments.injectedSegments.isNotEmpty) {
+      segRows.add(_SegSticky(segments.injectedLabel, true, () {
+        // segments.onLabelPressed(
+        //     segments.injectedLabel, segments.injectedSegments);
+      }));
+
+      makeRows(segments.injectedSegments);
+    }
+
+    int prevCount = 0;
+    for (final e in segments.prebuiltSegments!.entries) {
+      segRows.add(_SegSticky(
+          e.key,
+          true,
+          segments.onLabelPressed == null
+              ? null
+              : () {
+                  final cells = <T>[];
+
+                  for (final i
+                      in List.generate(e.value, (index) => index + prevCount)) {
+                    cells.add(state.getCell(i - 1));
+                  }
+                  segments.onLabelPressed!(e.key, cells);
+                }));
+
+      makeRows(List.generate(e.value, (index) => index + prevCount));
+
+      prevCount += e.value;
+    }
+
+    Widget make(double constraints) {
+      return SliverList.builder(
+        itemBuilder: (context, indx) {
+          if (indx >= segRows.length) {
+            return null;
+          }
+          final val = segRows[indx];
+          if (val is _SegSticky) {
+            return Segments.label(context, val.seg,
+                sticky: val.sticky,
+                hidePinnedIcon: segments.hidePinnedIcon,
+                onLongPress: segments.addToSticky != null &&
+                        val.seg != segments.unsegmentedLabel
+                    ? () {
+                        HapticFeedback.vibrate();
+                        segments.addToSticky!(val.seg,
+                            unsticky: val.sticky ? true : null);
+                        state.onRefresh();
+                      }
+                    : null,
+                onPress: val.onLabelPressed);
+          } else if (val is List<int>) {
+            return segmentedRow(
+              context,
+              state,
+              selection,
+              val,
+              listView,
+              gridCell,
+              constraints: constraints,
+              systemNavigationInsets: systemNavigationInsets,
+              aspectRatio: aspectRatio,
+            );
+          } else if (val is List<T>) {
+            return segmentedRowCells(
+              context,
+              state,
+              selection,
+              val,
+              listView,
+              gridCell,
+              constraints: constraints,
+              systemNavigationInsets: systemNavigationInsets,
+              aspectRatio: aspectRatio,
+            );
+          }
+          throw "invalid type";
+        },
+      );
+    }
+
+    return !Platform.isAndroid
+        ? SliverLayoutBuilder(
+            builder: (context, c) {
+              final constraints = c.asBoxConstraints().minWidth / columns;
+
+              return make(constraints);
+            },
+          )
+        : make(MediaQuery.of(context).size.width / columns);
+  }
+
+  static (Widget, List<int>) segmentsFnc<T extends Cell>(
     BuildContext context,
     Segments<T> segments,
     GridMutationInterface<T> state,
@@ -194,7 +329,7 @@ class GridLayout {
     final unsegmented = <int>[];
 
     for (var i = 0; i < state.cellCount; i++) {
-      final (res, sticky) = segments.segment(state.getCell(i));
+      final (res, sticky) = segments.segment!(state.getCell(i));
       if (res == null) {
         unsegmented.add(i);
       } else {
@@ -245,81 +380,126 @@ class GridLayout {
     }
 
     stickySegs.forEach((key, value) {
-      segRows.add(_SegSticky(key, true, () {
-        segments.onLabelPressed(
-            key, value.map((e) => state.getCell(e)).toList());
-      }));
+      segRows.add(_SegSticky(
+          key,
+          true,
+          segments.onLabelPressed == null
+              ? null
+              : () {
+                  segments.onLabelPressed!(
+                      key, value.map((e) => state.getCell(e)).toList());
+                }));
 
       makeRows(value);
     });
 
     segMap.forEach(
       (key, value) {
-        segRows.add(_SegSticky(key, false, () {
-          segments.onLabelPressed(
-              key, value.map((e) => state.getCell(e)).toList());
-        }));
+        segRows.add(_SegSticky(
+            key,
+            false,
+            segments.onLabelPressed == null
+                ? null
+                : () {
+                    segments.onLabelPressed!(
+                        key, value.map((e) => state.getCell(e)).toList());
+                  }));
 
         makeRows(value);
       },
     );
 
     if (unsegmented.isNotEmpty) {
-      segRows.add(_SegSticky(segments.unsegmentedLabel, false, () {
-        segments.onLabelPressed(segments.unsegmentedLabel,
-            unsegmented.map((e) => state.getCell(e)).toList());
-      }));
+      segRows.add(_SegSticky(
+          segments.unsegmentedLabel,
+          false,
+          segments.onLabelPressed == null
+              ? null
+              : () {
+                  segments.onLabelPressed!(segments.unsegmentedLabel,
+                      unsegmented.map((e) => state.getCell(e)).toList());
+                }));
 
       makeRows(unsegmented);
     }
 
-    final constraints = MediaQuery.of(context).size.width / columns;
+    final List<int> predefined = [];
 
-    return SliverList.builder(
-      itemBuilder: (context, indx) {
-        if (indx >= segRows.length) {
-          return null;
-        }
-        final val = segRows[indx];
-        if (val is _SegSticky) {
-          return Segments.label(context, val.seg, val.sticky,
-              onLongPress: segments.addToSticky != null &&
-                      val.seg != segments.unsegmentedLabel
-                  ? () {
-                      HapticFeedback.vibrate();
-                      segments.addToSticky!(val.seg,
-                          unsticky: val.sticky ? true : null);
-                      state.onRefresh();
-                    }
-                  : null,
-              onPress: val.onLabelPressed);
-        } else if (val is List<int>) {
-          return segmentedRow(
-            context,
-            state,
-            selection,
-            val,
-            listView,
-            gridCell,
-            constraints: constraints,
-            systemNavigationInsets: systemNavigationInsets,
-            aspectRatio: aspectRatio,
-          );
-        } else if (val is List<T>) {
-          return segmentedRowCells(
-            context,
-            state,
-            selection,
-            val,
-            listView,
-            gridCell,
-            constraints: constraints,
-            systemNavigationInsets: systemNavigationInsets,
-            aspectRatio: aspectRatio,
-          );
-        }
-        throw "invalid type";
-      },
+    for (final segs in stickySegs.values) {
+      predefined.addAll(segs);
+    }
+
+    for (final segs in segMap.values) {
+      predefined.addAll(segs);
+    }
+
+    predefined.addAll(unsegmented);
+
+    Widget make(double constraints) {
+      return SliverList.builder(
+        itemBuilder: (context, indx) {
+          if (indx >= segRows.length) {
+            return null;
+          }
+          final val = segRows[indx];
+          if (val is _SegSticky) {
+            return Segments.label(context, val.seg,
+                sticky: val.sticky,
+                hidePinnedIcon: segments.hidePinnedIcon,
+                onLongPress: segments.addToSticky != null &&
+                        val.seg != segments.unsegmentedLabel
+                    ? () {
+                        HapticFeedback.vibrate();
+                        segments.addToSticky!(val.seg,
+                            unsticky: val.sticky ? true : null);
+                        state.onRefresh();
+                      }
+                    : null,
+                onPress: val.onLabelPressed);
+          } else if (val is List<int>) {
+            return segmentedRow(
+              context,
+              state,
+              selection,
+              val,
+              listView,
+              gridCell,
+              constraints: constraints,
+              systemNavigationInsets: systemNavigationInsets,
+              aspectRatio: aspectRatio,
+              predefined: () => predefined,
+            );
+          } else if (val is List<T>) {
+            return segmentedRowCells(
+              context,
+              state,
+              selection,
+              val,
+              listView,
+              gridCell,
+              constraints: constraints,
+              systemNavigationInsets: systemNavigationInsets,
+              aspectRatio: aspectRatio,
+            );
+          }
+          throw "invalid type";
+        },
+      );
+    }
+
+    // print(object);
+
+    return (
+      !Platform.isAndroid
+          ? SliverLayoutBuilder(
+              builder: (context, c) {
+                final constraints = c.asBoxConstraints().minWidth / columns;
+
+                return make(constraints);
+              },
+            )
+          : make(MediaQuery.of(context).size.width / columns),
+      predefined
     );
   }
 }

@@ -122,34 +122,49 @@ Widget autocompleteWidget(
           notifier: focus,
           child: Builder(
             builder: (context) {
-              return TextField(
-                scrollController: scrollHack,
-                cursorOpacityAnimates: true,
-                decoration: autocompleteBarDecoration(
-                  context,
-                  () {
-                    textEditingController.clear();
-                    if (!noUnfocus) {
-                      focusMain();
-                    }
+              return roundBorders
+                  ? SearchBar(
+                      leading: showSearch ? const Icon(Icons.search) : null,
+                      hintText: customHint ??
+                          AppLocalizations.of(context)!.searchHint,
+                      controller: textEditingController,
+                      focusNode: focusNode,
+                      onChanged: (value) {
+                        onChanged?.call();
+                      },
+                      onSubmitted: (value) {
+                        onSubmit(Tag.string(tag: value));
+                      },
+                    )
+                  : TextField(
+                      scrollController: scrollHack,
+                      cursorOpacityAnimates: true,
+                      decoration: autocompleteBarDecoration(
+                        context,
+                        () {
+                          textEditingController.clear();
+                          if (!noUnfocus) {
+                            focusMain();
+                          }
 
-                    onChanged?.call();
-                  },
-                  addItems,
-                  searchCount: searchCount,
-                  showSearch: showSearch,
-                  roundBorders: roundBorders,
-                  hint: customHint ?? AppLocalizations.of(context)!.searchHint,
-                ),
-                controller: textEditingController,
-                focusNode: focusNode,
-                onChanged: (value) {
-                  onChanged?.call();
-                },
-                onSubmitted: (value) {
-                  onSubmit(Tag.string(tag: value));
-                },
-              );
+                          onChanged?.call();
+                        },
+                        addItems,
+                        searchCount: searchCount,
+                        showSearch: showSearch,
+                        roundBorders: roundBorders,
+                        hint: customHint ??
+                            AppLocalizations.of(context)!.searchHint,
+                      ),
+                      controller: textEditingController,
+                      focusNode: focusNode,
+                      onChanged: (value) {
+                        onChanged?.call();
+                      },
+                      onSubmitted: (value) {
+                        onSubmit(Tag.string(tag: value));
+                      },
+                    );
             },
           ));
     },

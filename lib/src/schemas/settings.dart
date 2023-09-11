@@ -8,7 +8,9 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:isar/isar.dart';
 
 import '../booru/interface.dart';
@@ -39,6 +41,9 @@ class Settings {
   final int autoRefreshMicroseconds;
   final GallerySettings gallerySettings;
 
+  @enumerated
+  final FilteringMode favoritesPageMode;
+
   const Settings(
       {required this.path,
       required this.selectedBooru,
@@ -49,6 +54,7 @@ class Settings {
       required this.picturesPerRow,
       required this.safeMode,
       required this.gallerySettings,
+      required this.favoritesPageMode,
       required this.ratio});
   Settings copy(
       {String? path,
@@ -59,6 +65,7 @@ class Settings {
       bool? autoRefresh,
       int? autoRefreshMicroseconds,
       bool? saveTagsOnlyOnDownload,
+      FilteringMode? favoritesPageMode,
       bool? expensiveHash,
       bool? safeMode,
       AspectRatio? ratio,
@@ -68,6 +75,7 @@ class Settings {
         selectedBooru: selectedBooru ?? this.selectedBooru,
         quality: quality ?? this.quality,
         ratio: ratio ?? this.ratio,
+        favoritesPageMode: favoritesPageMode ?? this.favoritesPageMode,
         autoRefresh: autoRefresh ?? this.autoRefresh,
         autoRefreshMicroseconds:
             autoRefreshMicroseconds ?? this.autoRefreshMicroseconds,
@@ -83,6 +91,7 @@ class Settings {
         autoRefreshMicroseconds = 1.hours.inMicroseconds,
         selectedBooru = Booru.gelbooru,
         quality = DisplayQuality.sample,
+        favoritesPageMode = FilteringMode.tag,
         picturesPerRow = (Platform.isAndroid || Platform.isIOS)
             ? GridColumn.two
             : GridColumn.six,
@@ -102,7 +111,8 @@ class Settings {
         .writeTxnSync(() => settingsIsar().settings.putSync(instance));
   }
 
-  static void addRemoveFavorites(List<PostBase> posts) {
+  static void addRemoveFavorites(
+      BuildContext context, List<PostBase> posts, bool showDeleteSnackbar) {
     final toAdd = <FavoriteBooru>[];
     final toRemove = <String>[];
 
@@ -132,10 +142,31 @@ class Settings {
       return;
     }
 
+    final deleteCopy = toRemove.isEmpty
+        ? null
+        : settingsIsar().favoriteBoorus.getAllByFileUrlSync(toRemove);
+
     settingsIsar().writeTxnSync(() {
       settingsIsar().favoriteBoorus.putAllSync(toAdd);
-      settingsIsar().favoriteBoorus.deleteAllByFileUrlSync(toRemove);
+      settingsIsar()
+          .favoriteBoorus
+          .deleteAllByFileUrlSync(toRemove.map((e) => e).toList());
     });
+
+    if (deleteCopy != null && showDeleteSnackbar) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        duration: 20.seconds,
+        content: const Text(
+          "Deleted from favorites", // TODO: change
+        ),
+        action: SnackBarAction(
+            label: "Undo",
+            onPressed: () {
+              settingsIsar().writeTxnSync(() =>
+                  settingsIsar().favoriteBoorus.putAllSync(deleteCopy.cast()));
+            }),
+      ));
+    }
   }
 
   static bool isFavorite(String fileUrl) {
