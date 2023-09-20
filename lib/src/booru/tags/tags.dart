@@ -29,26 +29,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 late final PostTags _global;
 bool _isInitalized = false;
 
-/// Tag search history.
-/// Used for both for the recent tags and the excluded.
-abstract class BooruTagging {
-  /// Get the current tags.
-  /// Last added first.
-  List<Tag> get();
-
-  /// Add the [tag] to the DB.
-  /// Updates the added time if already exist.
-  void add(Tag tag);
-
-  /// Delete the [tag] from the DB.
-  void delete(Tag tag);
-
-  /// Delete all the tags from the DB.
-  void clear();
-
-  const BooruTagging();
-}
-
 /// Result of disassembling of the filename in the format.
 /// All the files downloaded with the [Downloader] have a certain format
 /// of the filenames, this class represents the format.
@@ -295,21 +275,19 @@ class PostTags {
     tagsDb.writeTxnSync(() => tagsDb.localTags.deleteSync(fastHash(filename)));
   }
 
-  PostTags._new(this.tagsDb);
-
   /// Restore local tags from the backup.
   /// The backup is just an copy of the Isar DB.
   /// In case of any error reverts back.
   void restore(void Function(String? error) onDone) async {
-    final tagsFile = joinAll([appStorageDir(), "localTags"]);
-    final tagsBakFile = joinAll([appStorageDir(), "localTags.bak"]);
+    final tagsFile = joinAll([Dbs.g.appStorageDir, "localTags"]);
+    final tagsBakFile = joinAll([Dbs.g.appStorageDir, "localTags.bak"]);
 
     try {
       final outputFile =
-          await PlatformFunctions.pickFileAndCopy(appStorageDir());
+          await PlatformFunctions.pickFileAndCopy(Dbs.g.appStorageDir);
       await Isar.openSync(
               [LocalTagsSchema, LocalTagDictionarySchema, DirectoryTagSchema],
-              directory: appStorageDir(),
+              directory: Dbs.g.appStorageDir,
               inspector: false,
               name: outputFile.split("/").last)
           .close();
@@ -343,14 +321,14 @@ class PostTags {
     return tagsDb.directoryTags.getSync(fastHash(bucketId))?.tag;
   }
 
-  void setDirectoryTag(String bucketId, String tag) {
-    tagsDb.writeTxnSync(
-        () => tagsDb.directoryTags.putSync(DirectoryTag(bucketId, tag)));
+  void setDirectoriesTag(Iterable<String> bucketIds, String tag) {
+    tagsDb.writeTxnSync(() => tagsDb.directoryTags
+        .putAllSync(bucketIds.map((e) => DirectoryTag(e, tag)).toList()));
   }
 
-  void removeDirectoryTag(String buckedId) {
-    tagsDb.writeTxnSync(
-        () => tagsDb.directoryTags.deleteSync(fastHash(buckedId)));
+  void removeDirectoriesTag(Iterable<String> buckedIds) {
+    tagsDb.writeTxnSync(() => tagsDb.directoryTags
+        .deleteAllSync(buckedIds.map((e) => fastHash(e)).toList()));
   }
 
   /// Make a copy of the tags DB.
@@ -360,10 +338,8 @@ class PostTags {
     try {
       final plug = await chooseDownloadMoverPlug();
 
-      final dir = temporaryDbDir();
-
       final output = joinAll([
-        dir,
+        Dbs.g.temporaryDbDir,
         "${DateTime.now().microsecondsSinceEpoch.toString()}_savedtags.bin"
       ]);
 
@@ -379,9 +355,9 @@ class PostTags {
     }
   }
 
-  factory PostTags() {
-    return _global;
-  }
+  PostTags._new(this.tagsDb);
+
+  static PostTags get g => _global;
 }
 
 late final String _disassembleExtensionInvalid;

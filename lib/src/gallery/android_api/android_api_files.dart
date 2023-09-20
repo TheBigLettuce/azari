@@ -115,8 +115,7 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
       if (isTrash) {
         PlatformFunctions.refreshTrashed();
       } else if (isFavorites) {
-        PlatformFunctions.refreshFavorites(blacklistedDirIsar()
-            .favoriteMedias
+        PlatformFunctions.refreshFavorites(Dbs.g.blacklisted!.favoriteMedias
             .where()
             .findAllSync()
             .map((e) => e.id)
@@ -222,8 +221,7 @@ class _AndroidGalleryFiles
       if (isTrash) {
         PlatformFunctions.refreshTrashed();
       } else if (isFavorites) {
-        PlatformFunctions.refreshFavorites(blacklistedDirIsar()
-            .favoriteMedias
+        PlatformFunctions.refreshFavorites(Dbs.g.blacklisted!.favoriteMedias
             .where()
             .findAllSync()
             .map((e) => e.id)

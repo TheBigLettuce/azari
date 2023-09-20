@@ -12,8 +12,9 @@ import 'package:html_unescape/html_unescape_small.dart';
 import 'package:path/path.dart' as path;
 
 import '../../schemas/post.dart';
-import '../tags/tags.dart';
 import 'package:intl/intl.dart';
+
+import '../tags/interface.dart';
 
 List<String> _fromGelbooruTags(List<dynamic> l) {
   return l.map((e) => HtmlUnescape().convert(e["name"] as String)).toList();

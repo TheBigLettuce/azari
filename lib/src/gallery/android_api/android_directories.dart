@@ -8,14 +8,16 @@
 import 'dart:async';
 import 'dart:developer';
 import 'package:flutter/material.dart';
+import 'package:gallery/src/actions/favorites.dart';
+import 'package:gallery/src/actions/gallery_directories.dart';
 import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
 import 'package:gallery/src/gallery/android_api/android_files.dart';
+import 'package:gallery/src/pages/booru/main.dart';
 import 'package:gallery/src/schemas/android_gallery_directory.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
-import 'package:gallery/src/schemas/blacklisted_directory.dart';
 import 'package:gallery/src/schemas/favorite_media.dart';
 import 'package:gallery/src/schemas/pinned_directories.dart';
 import 'package:gallery/src/schemas/tags.dart';
@@ -101,11 +103,12 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
   @override
   void initState() {
     super.initState();
-    settingsWatcher = settingsIsar().settings.watchObject(0).listen((event) {
-      state.settings = event!;
 
+    settingsWatcher = Settings.watch((s) {
+      state.settings = s!;
       setState(() {});
     });
+
     searchHook(state);
 
     if (widget.callback != null) {
@@ -138,24 +141,8 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
     settingsWatcher.cancel();
     disposeSearch();
     state.dispose();
-    clearTemporaryImagesDir();
+    Dbs.g.clearTemporaryImages();
     super.dispose();
-  }
-
-  void _joinedDirectories(String label, List<SystemGalleryDirectory> dirs) {
-    if (widget.callback != null || widget.nestedCallback != null) {
-      return;
-    }
-
-    Navigator.push(context, MaterialPageRoute(
-      builder: (context) {
-        return AndroidFiles(
-            api: extra.joinedDir(dirs.map((e) => e.bucketId).toList()),
-            callback: widget.nestedCallback,
-            dirName: label,
-            bucketId: "joinedDir");
-      },
-    ));
   }
 
   void _refresh() {
@@ -169,22 +156,6 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
     stream.add(0);
     state.gridKey.currentState?.mutationInterface?.setIsRefreshing(true);
     api.refresh();
-  }
-
-  GridBottomSheetAction<SystemGalleryDirectory> _joinedDirectoriesAction() {
-    return GridBottomSheetAction(Icons.merge_rounded, (selected) {
-      _joinedDirectories(
-        selected.length == 1
-            ? selected.first.name
-            : "${selected.length} ${AppLocalizations.of(context)!.directoriesPlural}",
-        selected,
-      );
-    },
-        true,
-        GridBottomSheetActionExplanation(
-          label: AppLocalizations.of(context)!.joinActionLabel,
-          body: AppLocalizations.of(context)!.joinActionBody,
-        ));
   }
 
   @override
@@ -203,30 +174,45 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
           systemNavigationInsets: insets,
           hasReachedEnd: () => true,
           inlineMenuButtonItems: true,
-          menuButtonItems: widget.callback != null
-              ? [
-                  IconButton(
-                      onPressed: () async {
-                        try {
-                          widget.callback!(
-                              null,
-                              await PlatformFunctions.chooseDirectory(
-                                  temporary: true));
-                          // ignore: use_build_context_synchronously
-                          Navigator.pop(context);
-                        } catch (e) {
-                          log("new folder in android_directories",
-                              level: Level.SEVERE.value, error: e);
-                          // ignore: use_build_context_synchronously
-                          Navigator.pop(context);
-                        }
-                      },
-                      icon: const Icon(Icons.create_new_folder_outlined))
-                ]
-              : null,
-          aspectRatio: state
-              .settings.gallerySettings.directoryAspectRatio.value,
-          hideAlias: state.settings.gallerySettings.hideDirectoryName,
+          menuButtonItems: [
+            if (widget.callback != null)
+              IconButton(
+                  onPressed: () async {
+                    try {
+                      widget.callback!(
+                          null,
+                          await PlatformFunctions.chooseDirectory(
+                              temporary: true));
+                      // ignore: use_build_context_synchronously
+                      Navigator.pop(context);
+                    } catch (e) {
+                      log("new folder in android_directories",
+                          level: Level.SEVERE.value, error: e);
+                      // ignore: use_build_context_synchronously
+                      Navigator.pop(context);
+                    }
+                  },
+                  icon: const Icon(Icons.create_new_folder_outlined)),
+            gridSettingsButton(state.settings.galleryDirectories,
+                selectRatio: (ratio) => state.settings
+                    .copy(
+                        galleryDirectories: state.settings.galleryDirectories
+                            .copy(aspectRatio: ratio))
+                    .save(),
+                selectHideName: (hideNames) => state.settings
+                    .copy(
+                        galleryDirectories: state.settings.galleryDirectories
+                            .copy(hideName: hideNames))
+                    .save(),
+                selectListView: null,
+                selectGridColumn: (columns) => state.settings
+                    .copy(
+                        galleryDirectories: state.settings.galleryDirectories
+                            .copy(columns: columns))
+                    .save()),
+          ],
+          aspectRatio: state.settings.galleryDirectories.aspectRatio.value,
+          hideAlias: state.settings.galleryDirectories.hideName,
           immutable: false,
           segments: Segments(
             "Uncategorized",
@@ -237,12 +223,11 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                 }
               }
 
-              final dirTag = PostTags().directoryTag(cell.bucketId);
+              final dirTag = PostTags.g.directoryTag(cell.bucketId);
               if (dirTag != null) {
                 return (
                   dirTag,
-                  blacklistedDirIsar()
-                          .pinnedDirectories
+                  Dbs.g.blacklisted!.pinnedDirectories
                           .getSync(fastHash(dirTag)) !=
                       null
                 );
@@ -251,8 +236,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
               final name = cell.name.split(" ");
               return (
                 name.first.toLowerCase(),
-                blacklistedDirIsar()
-                        .pinnedDirectories
+                Dbs.g.blacklisted!.pinnedDirectories
                         .getSync(fastHash(name.first.toLowerCase())) !=
                     null
               );
@@ -262,21 +246,19 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                 return;
               }
               if (unsticky == true) {
-                blacklistedDirIsar().writeTxnSync(() {
-                  blacklistedDirIsar()
-                      .pinnedDirectories
+                Dbs.g.blacklisted!.writeTxnSync(() {
+                  Dbs.g.blacklisted!.pinnedDirectories
                       .deleteSync(fastHash(seg));
                 });
               } else {
-                blacklistedDirIsar().writeTxnSync(() {
-                  blacklistedDirIsar()
-                      .pinnedDirectories
+                Dbs.g.blacklisted!.writeTxnSync(() {
+                  Dbs.g.blacklisted!.pinnedDirectories
                       .putSync(PinnedDirectories(seg, DateTime.now()));
                 });
               }
             },
             injectedSegments: [
-              if (blacklistedDirIsar().favoriteMedias.countSync() != 0)
+              if (Dbs.g.blacklisted!.favoriteMedias.countSync() != 0)
                 SystemGalleryDirectory(
                     bucketId: "favorites",
                     name: "Favorites", // change
@@ -284,8 +266,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                     volumeName: "",
                     relativeLoc: "",
                     lastModified: 0,
-                    thumbFileId: blacklistedDirIsar()
-                        .favoriteMedias
+                    thumbFileId: Dbs.g.blacklisted!.favoriteMedias
                         .where()
                         .sortByTimeDesc()
                         .findFirstSync()!
@@ -300,7 +281,9 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
                     lastModified: 0,
                     thumbFileId: trashThumbId!),
             ],
-            onLabelPressed: _joinedDirectories,
+            onLabelPressed: (label, children) =>
+                SystemGalleryDirectoriesActions.joinedDirectoriesFnc(
+                    context, label, children, extra, widget.nestedCallback),
           ),
           mainFocus: state.mainFocus,
           footer: widget.callback?.preview,
@@ -364,110 +347,38 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
           description: GridDescription(
               kGalleryDrawerIndex,
               widget.callback != null || widget.nestedCallback != null
-                  ? [_joinedDirectoriesAction()]
+                  ? [
+                      SystemGalleryDirectoriesActions.joinedDirectories(
+                          context, extra, widget.nestedCallback)
+                    ]
                   : [
-                      GridBottomSheetAction(Icons.tag, (selected) {
-                        Navigator.push(
-                            context,
-                            DialogRoute(
-                              context: context,
-                              builder: (context) {
-                                final currentTag = PostTags()
-                                    .directoryTag(selected[0].bucketId);
-                                return AlertDialog(
-                                    title: Text(AppLocalizations.of(context)!
-                                        .currentTagTitle),
-                                    content: ListTile(
-                                      title: Text(
-                                          currentTag ??
-                                              AppLocalizations.of(context)!
-                                                  .directoryTagNone,
-                                          style: currentTag == null
-                                              ? const TextStyle(
-                                                  fontStyle: FontStyle.italic)
-                                              : null),
-                                      leading: IconButton(
-                                          onPressed: () {
-                                            PostTags().removeDirectoryTag(
-                                                selected[0].bucketId);
-                                            setState(() {});
-                                            Navigator.pop(context);
-                                          },
-                                          icon: const Icon(Icons.close)),
-                                      trailing: IconButton(
-                                          onPressed: () {
-                                            Navigator.push(
-                                                context,
-                                                DialogRoute(
-                                                  context: context,
-                                                  builder: (context) {
-                                                    return AlertDialog(
-                                                      title: Text(
-                                                          AppLocalizations.of(
-                                                                  context)!
-                                                              .enterNewTagTitle),
-                                                      content: TextFormField(
-                                                        autofocus: true,
-                                                        initialValue:
-                                                            currentTag,
-                                                        onFieldSubmitted:
-                                                            (value) {
-                                                          if (value
-                                                              .isNotEmpty) {
-                                                            PostTags()
-                                                                .setDirectoryTag(
-                                                                    selected[0]
-                                                                        .bucketId,
-                                                                    value);
-                                                            setState(() {});
-                                                            Navigator.pop(
-                                                                context);
-                                                            Navigator.pop(
-                                                                context);
-                                                          } else {
-                                                            ScaffoldMessenger
-                                                                    .of(context)
-                                                                .showSnackBar(SnackBar(
-                                                                    content: Text(
-                                                                        AppLocalizations.of(context)!
-                                                                            .valueIsEmpty)));
-                                                          }
-                                                        },
-                                                      ),
-                                                    );
-                                                  },
-                                                ));
-                                          },
-                                          icon: const Icon(Icons.edit)),
-                                    ));
-                              },
-                            ));
-                      },
-                          true,
-                          GridBottomSheetActionExplanation(
-                            label: AppLocalizations.of(context)!
-                                .directoryTagActionLabel,
-                            body: AppLocalizations.of(context)!
-                                .directoryTagActionBody,
-                          ),
-                          showOnlyWhenSingle: true),
-                      GridBottomSheetAction(Icons.hide_image_outlined,
-                          (selected) {
-                        extra.addBlacklisted(selected
-                            .map(
-                                (e) => BlacklistedDirectory(e.bucketId, e.name))
-                            .toList());
-                      },
-                          true,
-                          GridBottomSheetActionExplanation(
-                            label: AppLocalizations.of(context)!
-                                .blacklistActionLabel,
-                            body: AppLocalizations.of(context)!
-                                .blacklistActionBody,
-                          )),
-                      _joinedDirectoriesAction()
+                      FavoritesActions.addToGroup(context, (selected) {
+                        final t = selected.first.tag;
+                        for (final e in selected.skip(1)) {
+                          if (t != e.tag) {
+                            return null;
+                          }
+                        }
+
+                        return t;
+                      }, (selected, value) {
+                        if (value.isEmpty) {
+                          PostTags.g.removeDirectoriesTag(
+                              selected.map((e) => e.bucketId));
+                        } else {
+                          PostTags.g.setDirectoriesTag(
+                              selected.map((e) => e.bucketId), value);
+                        }
+
+                        _refresh();
+
+                        Navigator.pop(context);
+                      }),
+                      SystemGalleryDirectoriesActions.blacklist(context, extra),
+                      SystemGalleryDirectoriesActions.joinedDirectories(
+                          context, extra, widget.nestedCallback)
                     ],
-              state.settings.gallerySettings.directoryColumns,
+              state.settings.galleryDirectories.columns,
               listView: false,
               bottomWidget:
                   widget.callback != null || widget.nestedCallback != null

@@ -31,9 +31,8 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
   late final StreamSubscription blacklistedWatcher;
   final loader = LinearIsarLoader<BlacklistedDirectory>(
       BlacklistedDirectorySchema,
-      blacklistedDirIsar(),
-      (offset, limit, s, sort, mode) => blacklistedDirIsar()
-          .blacklistedDirectorys
+      Dbs.g.blacklisted!,
+      (offset, limit, s, sort, mode) => Dbs.g.blacklisted!.blacklistedDirectorys
           .filter()
           .nameContains(s, caseSensitive: false)
           .offset(offset)
@@ -51,8 +50,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
     searchHook(state);
     // loader.init((instance) {});
 
-    blacklistedWatcher = blacklistedDirIsar()
-        .blacklistedDirectorys
+    blacklistedWatcher = Dbs.g.blacklisted!.blacklistedDirectorys
         .watchLazy(fireImmediately: true)
         .listen((event) {
       performSearch(searchTextController.text);
@@ -99,8 +97,8 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
             menuButtonItems: [
               IconButton(
                   onPressed: () {
-                    blacklistedDirIsar().writeTxnSync(() =>
-                        blacklistedDirIsar().blacklistedDirectorys.clearSync());
+                    Dbs.g.blacklisted!.writeTxnSync(() =>
+                        Dbs.g.blacklisted!.blacklistedDirectorys.clearSync());
                     GalleryImpl.instance().notify(null);
                   },
                   icon: const Icon(Icons.delete))
@@ -110,9 +108,8 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
                 kSettingsDrawerIndex,
                 [
                   GridBottomSheetAction(Icons.restore_page, (selected) {
-                    blacklistedDirIsar().writeTxnSync(() {
-                      return blacklistedDirIsar()
-                          .blacklistedDirectorys
+                    Dbs.g.blacklisted!.writeTxnSync(() {
+                      return Dbs.g.blacklisted!.blacklistedDirectorys
                           .deleteAllByBucketIdSync(
                               selected.map((e) => e.bucketId).toList());
                     });

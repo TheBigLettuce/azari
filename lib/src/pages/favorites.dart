@@ -8,9 +8,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/actions/favorites.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/booru/interface.dart';
+import 'package:gallery/src/cell/contentable.dart';
 import 'package:gallery/src/db/isar.dart';
+import 'package:gallery/src/pages/booru/main.dart';
 import 'package:gallery/src/schemas/favorite_booru.dart';
 import 'package:gallery/src/schemas/local_tag_dictionary.dart';
 import 'package:gallery/src/widgets/drawer/drawer.dart';
@@ -18,6 +21,7 @@ import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:isar/isar.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../actions/booru_grid.dart';
 import '../booru/tags/tags.dart';
@@ -42,10 +46,9 @@ class _FavoritesPageState extends State<FavoritesPage>
   bool segmented = false;
 
   late final loader = LinearIsarLoader<FavoriteBooru>(
-      FavoriteBooruSchema, settingsIsar(), (offset, limit, s, sort, mode) {
+      FavoriteBooruSchema, Dbs.g.main, (offset, limit, s, sort, mode) {
     if (mode == FilteringMode.group) {
-      return settingsIsar()
-          .favoriteBoorus
+      return Dbs.g.main.favoriteBoorus
           .filter()
           .allOf(s.split(" "), (q, element) => q.tagsElementContains(element))
           .sortByGroupDesc()
@@ -54,8 +57,7 @@ class _FavoritesPageState extends State<FavoritesPage>
           .limit(limit)
           .findAllSync();
     } else if (mode == FilteringMode.same) {
-      return settingsIsar()
-          .favoriteBoorus
+      return Dbs.g.main.favoriteBoorus
           .filter()
           .allOf(s.split(" "), (q, element) => q.tagsElementContains(element))
           .sortByMd5()
@@ -65,8 +67,7 @@ class _FavoritesPageState extends State<FavoritesPage>
           .findAllSync();
     }
 
-    return settingsIsar()
-        .favoriteBoorus
+    return Dbs.g.main.favoriteBoorus
         .filter()
         .allOf(s.split(" "), (q, element) => q.tagsElementContains(element))
         .sortByCreatedAtDesc()
@@ -88,6 +89,14 @@ class _FavoritesPageState extends State<FavoritesPage>
 
       return switch (currentFilteringMode()) {
         FilteringMode.same => _same(cells, data, end),
+        FilteringMode.gif => (
+            cells.where((element) => element.fileDisplay() is NetGif),
+            data
+          ),
+        FilteringMode.video => (
+            cells.where((element) => element.fileDisplay() is NetVideo),
+            data
+          ),
         FilteringMode() => (cells, data)
       };
     };
@@ -141,7 +150,7 @@ class _FavoritesPageState extends State<FavoritesPage>
         setState(() {});
       }
 
-      Settings.saveToDb(Settings.fromDb().copy(favoritesPageMode: selected));
+      Settings.fromDb().copy(favoritesPageMode: selected).save();
 
       return SortingMode.none;
     },
@@ -149,6 +158,8 @@ class _FavoritesPageState extends State<FavoritesPage>
     filteringModes: {
       FilteringMode.tag,
       FilteringMode.group,
+      FilteringMode.gif,
+      FilteringMode.video,
       FilteringMode.same,
     },
     transform: (FavoriteBooru cell, SortingMode sort) {
@@ -159,10 +170,11 @@ class _FavoritesPageState extends State<FavoritesPage>
   Future<void> _download(int i) async {
     final p = loader.getCell(i);
 
-    PostTags().addTagsPost(p.filename(), p.tags, true);
+    PostTags.g.addTagsPost(p.filename(), p.tags, true);
 
-    return Downloader()
-        .add(File.d(p.fileDownloadUrl(), booru.booru.url, p.filename()));
+    return Downloader.g.add(
+        DownloadFile.d(p.fileDownloadUrl(), booru.booru.url, p.filename()),
+        state.settings);
   }
 
   @override
@@ -173,8 +185,7 @@ class _FavoritesPageState extends State<FavoritesPage>
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
       setFilteringMode(state.settings.favoritesPageMode);
       setLocalTagCompleteF((string) {
-        final result = settingsIsar()
-            .localTagDictionarys
+        final result = Dbs.g.main.localTagDictionarys
             .filter()
             .tagContains(string)
             .sortByFrequencyDesc()
@@ -189,14 +200,13 @@ class _FavoritesPageState extends State<FavoritesPage>
       setState(() {});
     });
 
-    settingsWatcher = settingsIsar().settings.watchObject(0).listen((event) {
+    settingsWatcher = Dbs.g.main.settings.watchObject(0).listen((event) {
       state.settings = event!;
 
       setState(() {});
     });
 
-    favoritesWatcher = settingsIsar()
-        .favoriteBoorus
+    favoritesWatcher = Dbs.g.main.favoriteBoorus
         .watchLazy(fireImmediately: false)
         .listen((event) {
       performSearch(searchTextController.text);
@@ -212,59 +222,6 @@ class _FavoritesPageState extends State<FavoritesPage>
     disposeSearch();
 
     super.dispose();
-  }
-
-  GridBottomSheetAction<FavoriteBooru> _addToGroup() {
-    return GridBottomSheetAction(Icons.group_work_outlined, (selected) {
-      if (selected.isEmpty) {
-        return;
-      }
-
-      Navigator.push(
-          context,
-          DialogRoute(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: const Text(
-                  "Group", // TODO: change
-                ),
-                content: TextFormField(
-                  initialValue: () {
-                    final g = selected.first.group;
-                    for (final e in selected.skip(1)) {
-                      if (g != e.group) {
-                        return null;
-                      }
-                    }
-
-                    return g;
-                  }(),
-                  onFieldSubmitted: (value) {
-                    // state.gridKey.currentState?.mutationInterface
-                    //     ?.setSource(0, loader.getCell);
-
-                    segments = null;
-
-                    for (var e in selected) {
-                      e.group = value.isEmpty ? null : value;
-                    }
-                    settingsIsar().writeTxnSync(() => settingsIsar()
-                        .favoriteBoorus
-                        .putAllByFileUrlSync(selected));
-
-                    Navigator.pop(context);
-                  },
-                ),
-              );
-            },
-          ));
-    },
-        true,
-        const GridBottomSheetActionExplanation(
-          label: "Group", // TODO: change
-          body: "Add selected items to the group.", // TODO: change
-        ));
   }
 
   @override
@@ -286,30 +243,68 @@ class _FavoritesPageState extends State<FavoritesPage>
         systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context),
         hasReachedEnd: () => true,
         hideAlias: true,
+        menuButtonItems: [
+          gridSettingsButton(state.settings.favorites,
+              selectHideName: null,
+              selectRatio: (ratio) => state.settings
+                  .copy(
+                      favorites:
+                          state.settings.favorites.copy(aspectRatio: ratio))
+                  .save(),
+              selectListView: (listView) => state.settings
+                  .copy(
+                      favorites:
+                          state.settings.favorites.copy(listView: listView))
+                  .save(),
+              selectGridColumn: (columns) => state.settings
+                  .copy(
+                      favorites:
+                          state.settings.favorites.copy(columns: columns))
+                  .save())
+        ],
         download: _download,
         immutable: false,
         segments: segmented
             ? Segments(
-                "Ungrouped",
+                "Ungrouped", // TODO: change
                 hidePinnedIcon: true,
                 prebuiltSegments: segments,
               )
             : null,
-        aspectRatio: state.settings.ratio.value,
+        aspectRatio: state.settings.favorites.aspectRatio.value,
         mainFocus: state.mainFocus,
         searchWidget: SearchAndFocus(
-            searchWidget(
-              context,
-              hint: "favorites", // TODO: change
-            ),
+            searchWidget(context,
+                hint:
+                    AppLocalizations.of(context)!.favoritesLabel.toLowerCase()),
             searchFocus),
         refresh: () => Future.value(loader.count()),
         description: GridDescription(
             kFavoritesDrawerIndex,
-            [BooruGridActions.download(context, booru), _addToGroup()],
-            state.settings.picturesPerRow,
-            keybindsDescription: "Favorites",
-            listView: state.settings.booruListView),
+            [
+              BooruGridActions.download(context, booru),
+              FavoritesActions.addToGroup(context, (selected) {
+                final g = selected.first.group;
+                for (final e in selected.skip(1)) {
+                  if (g != e.group) {
+                    return null;
+                  }
+                }
+
+                return g;
+              }, (selected, value) {
+                for (var e in selected) {
+                  e.group = value.isEmpty ? null : value;
+                }
+                Dbs.g.main.writeTxnSync(() =>
+                    Dbs.g.main.favoriteBoorus.putAllByFileUrlSync(selected));
+
+                Navigator.pop(context);
+              })
+            ],
+            state.settings.favorites.columns,
+            keybindsDescription: AppLocalizations.of(context)!.favoritesLabel,
+            listView: state.settings.favorites.listView),
       ),
     );
   }

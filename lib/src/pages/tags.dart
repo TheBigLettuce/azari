@@ -37,7 +37,7 @@ class TagsPage extends StatefulWidget {
   State<TagsPage> createState() => _TagsPageState();
 }
 
-class _TagsPageState extends State<TagsPage> {
+class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
   final booru = BooruAPI.fromSettings();
 
   final focus = FocusNode();
@@ -58,8 +58,11 @@ class _TagsPageState extends State<TagsPage> {
   String excludedHighlight = "";
 
   AnimationController? replaceController;
-  AnimationController? deleteAllExcludedController;
-  AnimationController? deleteAllController;
+
+  late final AnimationController deleteAllExcludedController =
+      AnimationController(vsync: this);
+  late final AnimationController deleteAllController =
+      AnimationController(vsync: this);
 
   bool recentTagsExpanded = true;
   bool excludedTagsExpanded = true;
@@ -103,6 +106,9 @@ class _TagsPageState extends State<TagsPage> {
     excludedTagsTextController.dispose();
     _lastTagsWatcher.cancel();
     focus.dispose();
+
+    deleteAllController.dispose();
+    deleteAllExcludedController.dispose();
 
     excludedFocus.dispose();
     singlePostFocus.dispose();
@@ -183,60 +189,54 @@ class _TagsPageState extends State<TagsPage> {
                 tagManager: widget.tagManager,
               ),
               deleteTag: (t) {
-                if (deleteAllController != null) {
-                  deleteAllController!.forward(from: 0).then((value) {
-                    widget.tagManager.latest.delete(t);
-                    if (deleteAllController != null) {
-                      deleteAllController!.reverse(from: 1);
-                    }
-                  });
-                } else {
+                deleteAllController.forward(from: 0).then((value) {
                   widget.tagManager.latest.delete(t);
-                }
+                  deleteAllController.reverse(from: 1);
+                });
               },
               onPress: (t) => widget.tagManager
                   .onTagPressed(context, t, booru.booru, true)).animate(
-              onInit: (controller) => deleteAllController = controller,
+              controller: deleteAllController,
               effects: [
-                FadeEffect(begin: 1, end: 0, duration: 200.milliseconds)
+                FadeEffect(
+                  begin: 1,
+                  end: 0,
+                  duration: 150.milliseconds,
+                )
               ],
               autoPlay: false),
           1 => TagsWidget(
-                  redBackground: true,
-                  tags: _excludedTags,
-                  searchBar: autocompleteWidget(
-                    excludedTagsTextController,
-                    (s) {
-                      excludedHighlight = s;
-                    },
-                    widget.tagManager.excluded.add,
-                    () => focus.requestFocus(),
-                    booru.completeTag,
-                    excludedFocus,
-                    submitOnPress: true,
-                    roundBorders: true,
-                    showSearch: true,
-                  ),
-                  deleteTag: (t) {
-                    if (deleteAllExcludedController != null) {
-                      deleteAllExcludedController!
+                    redBackground: true,
+                    tags: _excludedTags,
+                    searchBar: autocompleteWidget(
+                      excludedTagsTextController,
+                      (s) {
+                        excludedHighlight = s;
+                      },
+                      widget.tagManager.excluded.add,
+                      () => focus.requestFocus(),
+                      booru.completeTag,
+                      excludedFocus,
+                      submitOnPress: true,
+                      roundBorders: true,
+                      showSearch: true,
+                    ),
+                    deleteTag: (t) {
+                      deleteAllExcludedController
                           .forward(from: 0)
                           .then((value) {
                         widget.tagManager.excluded.delete(t);
-                        if (deleteAllExcludedController != null) {
-                          deleteAllExcludedController!.reverse(from: 1);
-                        }
+                        deleteAllExcludedController.reverse(from: 1);
                       });
-                    } else {
-                      widget.tagManager.excluded.delete(t);
-                    }
-                  },
-                  onPress: (t) {})
-              .animate(
-                  onInit: (controller) =>
-                      deleteAllExcludedController = controller,
-                  effects: const [FadeEffect(begin: 1, end: 0)],
-                  autoPlay: false),
+                    },
+                    onPress: (t) {})
+                .animate(effects: [
+              FadeEffect(
+                begin: 1,
+                end: 0,
+                duration: 150.milliseconds,
+              )
+            ], controller: deleteAllExcludedController, autoPlay: false),
           int() => throw "invalid idx",
         }
       ],
@@ -263,17 +263,12 @@ class _TagsPageState extends State<TagsPage> {
                                 TextButton(
                                     onPressed: () {
                                       Navigator.pop(context);
-                                      if (deleteAllController != null) {
-                                        deleteAllController!
-                                            .forward(from: 0)
-                                            .then((value) {
-                                          widget.tagManager.latest.clear();
-                                          if (deleteAllController != null) {
-                                            deleteAllController!
-                                                .reverse(from: 1);
-                                          }
-                                        });
-                                      }
+                                      deleteAllController
+                                          .forward(from: 0)
+                                          .then((value) {
+                                        widget.tagManager.latest.clear();
+                                        deleteAllController.reverse(from: 1);
+                                      });
                                     },
                                     child:
                                         Text(AppLocalizations.of(context)!.yes))
@@ -290,8 +285,21 @@ class _TagsPageState extends State<TagsPage> {
       bottomNavBar: NavigationBar(
         selectedIndex: currentNavBarIndex,
         onDestinationSelected: (value) {
-          currentNavBarIndex = value;
-          setState(() {});
+          if (value == 0) {
+            deleteAllExcludedController.animateTo(1).then((_) {
+              currentNavBarIndex = value;
+
+              setState(() {});
+              deleteAllExcludedController.reset();
+            });
+          } else {
+            deleteAllController.animateTo(1).then((_) {
+              currentNavBarIndex = value;
+
+              setState(() {});
+              deleteAllController.reset();
+            });
+          }
         },
         destinations: [
           NavigationDestination(

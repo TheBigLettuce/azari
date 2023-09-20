@@ -29,8 +29,8 @@ import '../../widgets/drawer/drawer.dart';
 import '../../widgets/make_skeleton.dart';
 import '../../widgets/notifiers/booru_api.dart';
 import '../../widgets/notifiers/tag_manager.dart';
+import '../../widgets/radio_dialog.dart';
 import '../../widgets/search_launch_grid.dart';
-import 'package:gallery/src/db/isar.dart' as db;
 
 import '../settings.dart';
 
@@ -38,9 +38,88 @@ import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'secondary.dart';
+import '../../schemas/settings.dart' as schema show AspectRatio;
+
+PopupMenuButton gridSettingsButton(GridSettings gridSettings,
+    {required void Function(schema.AspectRatio?) selectRatio,
+    required void Function(bool)? selectHideName,
+    required void Function(bool)? selectListView,
+    required void Function(GridColumn?) selectGridColumn}) {
+  return PopupMenuButton(
+    icon: const Icon(Icons.more_horiz_outlined),
+    itemBuilder: (context) => [
+      if (selectListView != null)
+        _listView(gridSettings.listView, selectListView),
+      if (selectHideName != null)
+        _hideName(context, gridSettings.hideName, selectHideName),
+      _ratio(context, gridSettings.aspectRatio, selectRatio),
+      _columns(context, gridSettings.columns, selectGridColumn)
+    ],
+  );
+}
+
+PopupMenuItem _hideName(
+    BuildContext context, bool hideName, void Function(bool) select) {
+  return PopupMenuItem(
+    child: Text(hideName
+        ? "Show names" // TODO: change
+        : "Hide names"),
+    onTap: () => select(!hideName),
+  );
+}
+
+PopupMenuItem _ratio(BuildContext context, schema.AspectRatio aspectRatio,
+    void Function(schema.AspectRatio?) select) {
+  return PopupMenuItem(
+    child: Text("Ratio"),
+    onTap: () => radioDialog(
+      context,
+      schema.AspectRatio.values.map((e) => (e, e.value.toString())).toList(),
+      aspectRatio,
+      select,
+      title: AppLocalizations.of(context)!.cellAspectRadio,
+    ),
+  );
+}
+
+PopupMenuItem _columns(BuildContext context, GridColumn columns,
+    void Function(GridColumn?) select) {
+  return PopupMenuItem(
+    child: Text("Columns"),
+    onTap: () => radioDialog(
+      context,
+      GridColumn.values.map((e) => (e, e.number.toString())).toList(),
+      columns,
+      select,
+      title: AppLocalizations.of(context)!.nPerElementsSetting,
+    ),
+  );
+}
+
+PopupMenuItem _listView(bool listView, void Function(bool) select) {
+  return PopupMenuItem(
+    child: Text(listView
+        ? "Grid view" // TODO: change
+        : "List view"),
+    onTap: () => select(!listView),
+  );
+}
 
 class MainBooruGrid extends StatefulWidget {
   const MainBooruGrid({super.key});
+
+  static PopupMenuButton gridButton(Settings settings) {
+    return gridSettingsButton(
+      settings.booru,
+      selectHideName: null,
+      selectGridColumn: (columns) =>
+          settings.copy(booru: settings.booru.copy(columns: columns)).save(),
+      selectListView: (listView) =>
+          settings.copy(booru: settings.booru.copy(listView: listView)).save(),
+      selectRatio: (ratio) =>
+          settings.copy(booru: settings.booru.copy(aspectRatio: ratio)).save(),
+    );
+  }
 
   @override
   State<MainBooruGrid> createState() => _MainBooruGridState();
@@ -58,7 +137,6 @@ class _MainBooruGridState extends State<MainBooruGrid>
   late final Isar mainGrid;
   late final StateRestoration restore;
 
-  final downloader = Downloader();
   bool reachedEnd = false;
 
   final state = GridSkeletonState<Post>(index: kBooruGridDrawerIndex);
@@ -90,19 +168,16 @@ class _MainBooruGridState extends State<MainBooruGrid>
         restore.copy.time.isBefore(DateTime.now()
             .subtract(state.settings.autoRefreshMicroseconds.microseconds))) {
       mainGrid.writeTxnSync(() => mainGrid.posts.clearSync());
-      // _clearAndRefresh();
       restore.updateTime();
     }
 
-    settingsWatcher = db.settingsIsar().settings.watchObject(0).listen((event) {
-      state.settings = event!;
+    settingsWatcher = Settings.watch((s) {
+      state.settings = s!;
 
       setState(() {});
     });
 
-    favoritesWatcher = db
-        .settingsIsar()
-        .favoriteBoorus
+    favoritesWatcher = Dbs.g.main.favoriteBoorus
         .watchLazy(fireImmediately: false)
         .listen((event) {
       state.gridKey.currentState?.imageViewKey.currentState?.setState(() {});
@@ -128,12 +203,14 @@ class _MainBooruGridState extends State<MainBooruGrid>
 
   Future<int> _clearAndRefresh() async {
     try {
+      restore.updateTime();
+
       final list = await api.page(0, "", tagManager.excluded);
       restore.updateScrollPosition(0);
       currentSkipped = list.$2;
-      await mainGrid.writeTxn(() {
-        mainGrid.posts.clear();
-        return mainGrid.posts.putAllByFileUrl(list.$1);
+      mainGrid.writeTxnSync(() {
+        mainGrid.posts.clearSync();
+        return mainGrid.posts.putAllByFileUrlSync(list.$1);
       });
 
       reachedEnd = false;
@@ -150,10 +227,11 @@ class _MainBooruGridState extends State<MainBooruGrid>
       return Future.value();
     }
 
-    PostTags().addTagsPost(p.filename(), p.tags, true);
+    PostTags.g.addTagsPost(p.filename(), p.tags, true);
 
-    return downloader
-        .add(File.d(p.fileDownloadUrl(), api.booru.url, p.filename()));
+    return Downloader.g.add(
+        DownloadFile.d(p.fileDownloadUrl(), api.booru.url, p.filename()),
+        state.settings);
   }
 
   Future<int> _addLast() async {
@@ -212,6 +290,9 @@ class _MainBooruGridState extends State<MainBooruGrid>
                             tagManager: tagManager, child: child),
                         (child) => BooruAPINotifier(api: api, child: child),
                       ],
+                      menuButtonItems: [
+                        MainBooruGrid.gridButton(state.settings)
+                      ],
                       addIconsImage: (post) => [
                         BooruGridActions.favorites(context, post),
                         BooruGridActions.download(context, api)
@@ -225,8 +306,8 @@ class _MainBooruGridState extends State<MainBooruGrid>
                           BooruGridActions.favorites(context, null,
                               showDeleteSnackbar: true)
                         ],
-                        state.settings.picturesPerRow,
-                        listView: state.settings.booruListView,
+                        state.settings.booru.columns,
+                        listView: state.settings.booru.listView,
                         keybindsDescription:
                             AppLocalizations.of(context)!.booruGridPageName,
                       ),
@@ -243,7 +324,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
                               Text(AppLocalizations.of(context)!.openInBrowser),
                         );
                       },
-                      aspectRatio: state.settings.ratio.value,
+                      aspectRatio: state.settings.booru.aspectRatio.value,
                       getCell: (i) => mainGrid.posts.getSync(i + 1)!,
                       loadNext: _addLast,
                       refresh: _clearAndRefresh,

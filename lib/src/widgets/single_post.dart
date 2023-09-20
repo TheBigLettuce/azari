@@ -23,6 +23,7 @@ import '../booru/interface.dart';
 import '../db/isar.dart';
 import '../db/state_restoration.dart';
 import '../schemas/download_file.dart';
+import '../schemas/settings.dart';
 
 class SinglePost extends StatefulWidget {
   final FocusNode focus;
@@ -126,9 +127,7 @@ class _SinglePostState extends State<SinglePost> {
               inProcessLoading = true;
 
               try {
-                if (arrowSpinningController != null) {
-                  arrowSpinningController!.repeat();
-                }
+                arrowSpinningController?.repeat();
 
                 final n = int.tryParse(controller.text);
                 if (n == null) {
@@ -143,8 +142,7 @@ class _SinglePostState extends State<SinglePost> {
 
                 final key = GlobalKey<ImageViewState>();
 
-                final favoritesWatcher = settingsIsar()
-                    .favoriteBoorus
+                final favoritesWatcher = Dbs.g.main.favoriteBoorus
                     .watchLazy(fireImmediately: false)
                     .listen((event) {
                   key.currentState?.setState(() {});
@@ -162,8 +160,10 @@ class _SinglePostState extends State<SinglePost> {
                       ],
                       updateTagScrollPos: (_, __) {},
                       download: (_) {
-                        Downloader().add(File.d(value.fileDownloadUrl(),
-                            booru.booru.url, value.filename()));
+                        Downloader.g.add(
+                            DownloadFile.d(value.fileDownloadUrl(),
+                                booru.booru.url, value.filename()),
+                            Settings.fromDb());
                       },
                       cellCount: 1,
                       addIcons: (p) => [

@@ -41,23 +41,27 @@ class SelectionInterface<T extends Cell> {
                 alignment: WrapAlignment.center,
                 spacing: 4,
                 children: [
-                  wrapSheetButton(context, Icons.close_rounded, () {
-                    _setState(() {
-                      selected.clear();
-                      currentBottomSheet?.close();
-                    });
-                  },
-                      true,
-                      selected.length.toString(),
-                      GridBottomSheetActionExplanation(
-                        label: AppLocalizations.of(context)!
-                            .clearSelectionActionLabel,
-                        body: AppLocalizations.of(context)!
-                            .clearSelectionActionBody,
-                      )),
+                  WrapSheetButton(
+                    Icons.close_rounded,
+                    () {
+                      _setState(() {
+                        selected.clear();
+                        currentBottomSheet?.close();
+                      });
+                    },
+                    true,
+                    selected.length.toString(),
+                    GridBottomSheetActionExplanation(
+                      label: AppLocalizations.of(context)!
+                          .clearSelectionActionLabel,
+                      body: AppLocalizations.of(context)!
+                          .clearSelectionActionBody,
+                    ),
+                    animate: false,
+                    play: false,
+                  ),
                   ...addActions
-                      .map((e) => wrapSheetButton(
-                          context,
+                      .map((e) => WrapSheetButton(
                           e.icon,
                           e.showOnlyWhenSingle && selected.length != 1
                               ? null
@@ -74,7 +78,9 @@ class SelectionInterface<T extends Cell> {
                           false,
                           selected.length.toString(),
                           e.explanation,
+                          animate: e.animate,
                           color: e.color,
+                          play: e.play,
                           backgroundColor: e.backgroundColor))
                       .toList()
                 ],
@@ -156,68 +162,146 @@ class SelectionInterface<T extends Cell> {
     }
   }
 
-  static Widget wrapSheetButton(
-      BuildContext context,
-      IconData icon,
-      void Function()? onPressed,
-      bool addBadge,
-      String label,
-      GridBottomSheetActionExplanation explanation,
-      {bool? followColorTheme,
-      Color? backgroundColor,
-      Color? color}) {
-    final iconBtn = Padding(
-      padding: const EdgeInsets.only(top: 4, bottom: 4),
-      child: GestureDetector(
-        onLongPress: () {
-          Navigator.push(
-              context,
-              DialogRoute(
-                context: context,
-                builder: (context) {
-                  return AlertDialog(
-                    title: Text(explanation.label),
-                    content: Text(explanation.body),
-                  );
-                },
-              ));
-        },
-        child: IconButton(
-          style: ButtonStyle(
-              shape: const MaterialStatePropertyAll(RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.elliptical(10, 10)))),
-              backgroundColor: backgroundColor != null
-                  ? MaterialStatePropertyAll(backgroundColor)
-                  : followColorTheme == true
-                      ? null
-                      : MaterialStatePropertyAll(onPressed == null
-                          ? Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(0.5)
-                          : Theme.of(context).colorScheme.primary)),
-          onPressed: onPressed == null
-              ? null
-              : () {
-                  HapticFeedback.selectionClick();
-                  onPressed();
-                },
-          icon: Icon(icon,
-              color: color ??
-                  (followColorTheme == true
-                      ? null
-                      : Theme.of(context).colorScheme.inversePrimary)),
-        ),
-      ),
-    );
-
-    return addBadge
-        ? Badge(
-            label: Text(label),
-            child: iconBtn,
-          )
-        : iconBtn;
-  }
-
   SelectionInterface._(this._setState, this.addActions);
 }
+
+class WrapSheetButton extends StatefulWidget {
+  final IconData icon;
+  final void Function()? onPressed;
+  final bool addBadge;
+  final String label;
+  final GridBottomSheetActionExplanation explanation;
+  final bool? followColorTheme;
+  final Color? backgroundColor;
+  final Color? color;
+  final bool animate;
+  final bool play;
+
+  const WrapSheetButton(
+      this.icon, this.onPressed, this.addBadge, this.label, this.explanation,
+      {super.key,
+      this.followColorTheme,
+      this.backgroundColor,
+      this.color,
+      required this.play,
+      required this.animate});
+
+  @override
+  State<WrapSheetButton> createState() => _WrapSheetButtonState();
+}
+
+class _WrapSheetButtonState extends State<WrapSheetButton> {
+  AnimationController? _controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final icn = Icon(widget.icon,
+        color: widget.color ??
+            (widget.followColorTheme == true
+                ? null
+                : Theme.of(context).colorScheme.inversePrimary));
+
+    Widget iconBtn(BuildContext context) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 4, bottom: 4),
+        child: GestureDetector(
+          onLongPress: () {
+            Navigator.push(
+                context,
+                DialogRoute(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: Text(widget.explanation.label),
+                      content: Text(widget.explanation.body),
+                    );
+                  },
+                ));
+          },
+          child: IconButton(
+            style: ButtonStyle(
+                shape: const MaterialStatePropertyAll(RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.elliptical(10, 10)))),
+                backgroundColor: widget.backgroundColor != null
+                    ? MaterialStatePropertyAll(widget.backgroundColor)
+                    : widget.followColorTheme == true
+                        ? null
+                        : MaterialStatePropertyAll(widget.onPressed == null
+                            ? Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.5)
+                            : Theme.of(context).colorScheme.primary)),
+            onPressed: widget.onPressed == null
+                ? null
+                : () {
+                    if (widget.animate && widget.play) {
+                      _controller?.reset();
+                      _controller
+                          ?.animateTo(1)
+                          .then((value) => _controller?.animateBack(0));
+                    }
+                    HapticFeedback.selectionClick();
+                    widget.onPressed!();
+                  },
+            icon: widget.animate
+                ? Animate(
+                    effects: [
+                      ScaleEffect(
+                          duration: 150.ms,
+                          begin: const Offset(1, 1),
+                          end: const Offset(2, 2),
+                          curve: Curves.easeInOutBack),
+                    ],
+                    onInit: (controller) {
+                      _controller = controller;
+                    },
+                    autoPlay: false,
+                    child: icn,
+                  )
+                : icn,
+          ),
+        ),
+      );
+    }
+
+    return widget.addBadge
+        ? Badge(
+            label: Text(widget.label),
+            child: iconBtn(context),
+          )
+        : iconBtn(context);
+  }
+}
+
+// class AnimationNotifierData {
+//   AnimationController? controller;
+// }
+
+// class AnimationNotifier extends InheritedWidget {
+//   final AnimationNotifierData _data;
+
+//   static void update(BuildContext context, AnimationController controller) {
+//     final widget =
+//         context.dependOnInheritedWidgetOfExactType<AnimationNotifier>();
+
+//     print(controller);
+
+//     widget!._data.controller = controller;
+//   }
+
+//   static void start(BuildContext context) {
+//     final widget =
+//         context.dependOnInheritedWidgetOfExactType<AnimationNotifier>();
+
+//     widget!._data.controller!.animateTo(1);
+//   }
+
+//   @override
+//   bool updateShouldNotify(AnimationNotifier oldWidget) {
+//     return _data != oldWidget._data;
+//   }
+
+//   AnimationNotifier({super.key, required super.child})
+//       : _data = AnimationNotifierData();
+// }

@@ -155,10 +155,9 @@ class ThumbId {
       {required this.id, required this.thumb, required this.differenceHash});
 
   static void addThumbnailsToDb(List<ThumbId> l) {
-    if (thumbnailIsar().thumbnails.countSync() >= 3000) {
-      thumbnailIsar().writeTxnSync(() {
-        thumbnailIsar()
-            .thumbnails
+    if (Dbs.g.thumbnail!.thumbnails.countSync() >= 3000) {
+      Dbs.g.thumbnail!.writeTxnSync(() {
+        Dbs.g.thumbnail!.thumbnails
             .where()
             .sortByUpdatedAt()
             .limit(l.length)
@@ -166,8 +165,8 @@ class ThumbId {
       });
     }
 
-    thumbnailIsar().writeTxnSync(() {
-      thumbnailIsar().thumbnails.putAllSync(l
+    Dbs.g.thumbnail!.writeTxnSync(() {
+      Dbs.g.thumbnail!.thumbnails.putAllSync(l
           .map(
               (e) => Thumbnail(e.id, DateTime.now(), e.thumb, e.differenceHash))
           .toList());

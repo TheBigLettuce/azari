@@ -34,10 +34,10 @@ class LoadTags extends StatelessWidget {
                     try {
                       final notifier = TagRefreshNotifier.maybeOf(context);
 
-                      PostTags()
+                      PostTags.g
                           .loadFromDissassemble(filename, res!)
                           .then((value) {
-                        PostTags().addTagsPost(filename, value, true);
+                        PostTags.g.addTagsPost(filename, value, true);
                         notifier?.call();
                       });
                     } catch (e) {

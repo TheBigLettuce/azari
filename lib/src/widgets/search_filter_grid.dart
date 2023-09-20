@@ -295,7 +295,7 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
   bool searchVirtual = false;
   late FilteringMode currentFilterMode = widget.instance._state.defaultMode;
   Future<List<String>> Function(String string) localTagCompleteFunc =
-      PostTags().completeLocalTag;
+      PostTags.g.completeLocalTag;
   void onChanged(String value, bool direct) {
     var interf = widget.instance._state.gridKey.currentState?.mutationInterface;
     if (interf != null) {

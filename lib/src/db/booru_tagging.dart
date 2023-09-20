@@ -8,7 +8,7 @@
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:isar/isar.dart';
 
-import '../booru/tags/tags.dart';
+import '../booru/tags/interface.dart';
 
 class IsarBooruTagging implements BooruTagging {
   final Isar isarCurrent;

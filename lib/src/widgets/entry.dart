@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../db/isar.dart';
 
@@ -28,21 +29,17 @@ class _EntryState extends State<Entry> {
             context: context,
             builder: (context) {
               return AlertDialog(
-                title: const Text(
-                  "Before you continue...", // TODO: change
-                ),
-                content: const Text(
-                  "You need to choose a download directory. Without it downloads will fail without error.", // TODO: change
-                ),
+                title:
+                    Text(AppLocalizations.of(context)!.beforeYouContinueTitle),
+                content:
+                    Text(AppLocalizations.of(context)!.needChooseDirectory),
                 actions: [
                   TextButton(
                       onPressed: () {
                         Navigator.pop(context);
                         Navigator.pushReplacementNamed(context, "/booru");
                       },
-                      child: const Text(
-                        "Later", // TODO: change
-                      )),
+                      child: Text(AppLocalizations.of(context)!.later)),
                   TextButton(
                       onPressed: () {
                         chooseDirectory((e) {}).then((success) {
@@ -52,9 +49,7 @@ class _EntryState extends State<Entry> {
                           }
                         });
                       },
-                      child: const Text(
-                        "Choose", // TODO: change
-                      ))
+                      child: Text(AppLocalizations.of(context)!.choose))
                 ],
               );
             },

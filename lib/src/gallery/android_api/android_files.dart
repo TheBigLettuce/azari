@@ -15,6 +15,7 @@ import 'package:gallery/src/db/platform_channel.dart';
 import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
 import 'package:gallery/src/gallery/android_api/android_directories.dart';
 import 'package:gallery/src/gallery/interface.dart';
+import 'package:gallery/src/pages/booru/main.dart';
 import 'package:gallery/src/plugs/notifications.dart';
 import 'package:gallery/src/schemas/android_gallery_directory_file.dart';
 import 'package:gallery/src/schemas/favorite_media.dart';
@@ -158,8 +159,8 @@ class _AndroidFilesState extends State<AndroidFiles>
   void initState() {
     super.initState();
 
-    settingsWatcher = settingsIsar().settings.watchObject(0).listen((event) {
-      state.settings = event!;
+    settingsWatcher = Settings.watch((s) {
+      state.settings = s!;
 
       setState(() {});
     });
@@ -240,11 +241,11 @@ class _AndroidFilesState extends State<AndroidFiles>
       BuildContext context, List<SystemGalleryDirectoryFile> selected) {
     for (final fav in selected) {
       if (fav.isFavorite()) {
-        blacklistedDirIsar().writeTxnSync(
-            () => blacklistedDirIsar().favoriteMedias.deleteSync(fav.id));
+        Dbs.g.blacklisted!.writeTxnSync(
+            () => Dbs.g.blacklisted!.favoriteMedias.deleteSync(fav.id));
       } else {
-        blacklistedDirIsar().writeTxnSync(() =>
-            blacklistedDirIsar().favoriteMedias.putSync(FavoriteMedia(fav.id)));
+        Dbs.g.blacklisted!.writeTxnSync(() =>
+            Dbs.g.blacklisted!.favoriteMedias.putSync(FavoriteMedia(fav.id)));
       }
     }
 
@@ -271,8 +272,8 @@ class _AndroidFilesState extends State<AndroidFiles>
     for (final (i, elem) in selected.indexed) {
       notifi.update(i, "$i/${selected.length}");
 
-      if (PostTags().getTagsPost(elem.name).isEmpty) {
-        await PostTags().getOnlineAndSaveTags(elem.name);
+      if (PostTags.g.getTagsPost(elem.name).isEmpty) {
+        await PostTags.g.getOnlineAndSaveTags(elem.name);
       }
     }
     notifi.done();
@@ -415,10 +416,12 @@ class _AndroidFilesState extends State<AndroidFiles>
     },
         false,
         GridBottomSheetActionExplanation(
-          label: AppLocalizations.of(context)!.favoritesActionLabel,
+          label: AppLocalizations.of(context)!.favoritesLabel,
           body: AppLocalizations.of(context)!.favoritesActionBody,
         ),
-        color: isFavorites ? Colors.yellow.shade900 : null);
+        color: isFavorites ? Colors.yellow.shade900 : null,
+        animate: f != null,
+        play: !isFavorites);
   }
 
   GridBottomSheetAction<SystemGalleryDirectoryFile> _deleteAction() {
@@ -497,8 +500,8 @@ class _AndroidFilesState extends State<AndroidFiles>
                         _moveAction()
                       ];
           },
-          aspectRatio: state.settings.gallerySettings.filesAspectRatio.value,
-          hideAlias: state.settings.gallerySettings.hideFileName,
+          aspectRatio: state.settings.galleryFiles.aspectRatio.value,
+          hideAlias: state.settings.galleryFiles.hideName,
           searchWidget: SearchAndFocus(
               searchWidget(context, hint: widget.dirName), searchFocus),
           mainFocus: state.mainFocus,
@@ -545,15 +548,27 @@ class _AndroidFilesState extends State<AndroidFiles>
                     }
                   },
                   icon: const Icon(Icons.casino_outlined)),
-            IconButton(
-                onPressed: () {
-                  final settings = Settings.fromDb();
-                  Settings.saveToDb(settings.copy(
-                      gallerySettings: settings.gallerySettings.copy(
-                          hideFileName:
-                              !(settings.gallerySettings.hideFileName))));
-                },
-                icon: const Icon(Icons.subtitles))
+            gridSettingsButton(state.settings.galleryFiles,
+                selectRatio: (ratio) => state.settings
+                    .copy(
+                        galleryFiles: state.settings.galleryFiles
+                            .copy(aspectRatio: ratio))
+                    .save(),
+                selectHideName: (hideNames) => state.settings
+                    .copy(
+                        galleryFiles: state.settings.galleryFiles
+                            .copy(hideName: hideNames))
+                    .save(),
+                selectListView: (listView) => state.settings
+                    .copy(
+                        galleryFiles: state.settings.galleryFiles
+                            .copy(listView: listView))
+                    .save(),
+                selectGridColumn: (columns) => state.settings
+                    .copy(
+                        galleryFiles:
+                            state.settings.galleryFiles.copy(columns: columns))
+                    .save()),
           ],
           inlineMenuButtonItems: true,
           onBack: () {
@@ -580,8 +595,8 @@ class _AndroidFilesState extends State<AndroidFiles>
                           _copyAction(),
                           _moveAction(),
                         ],
-              state.settings.gallerySettings.filesColumns,
-              listView: state.settings.gallerySettings.filesListView,
+              state.settings.galleryFiles.columns,
+              listView: state.settings.galleryFiles.listView,
               bottomWidget: widget.callback != null
                   ? copyMoveHintText(
                       context, AppLocalizations.of(context)!.chooseFileNotice)

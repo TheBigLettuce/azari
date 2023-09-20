@@ -33,7 +33,7 @@ class Filters {
 
     return (
       cells.where((element) =>
-          PostTags().containsTagMultiple(element.name, searchText)),
+          PostTags.g.containsTagMultiple(element.name, searchText)),
       null
     );
   }
@@ -46,7 +46,7 @@ class Filters {
 
     return (
       cells.where((element) =>
-          !PostTags().containsTagMultiple(element.name, searchText)),
+          !PostTags.g.containsTagMultiple(element.name, searchText)),
       null
     );
   }
@@ -59,7 +59,7 @@ class Filters {
   static (Iterable<SystemGalleryDirectoryFile>, dynamic) untagged(
       Iterable<SystemGalleryDirectoryFile> cells) {
     return (
-      cells.where((element) => PostTags().getTagsPost(element.name).isEmpty),
+      cells.where((element) => PostTags.g.getTagsPost(element.name).isEmpty),
       null
     );
   }
@@ -83,7 +83,7 @@ class Filters {
       Iterable<SystemGalleryDirectoryFile> cells) {
     return (
       cells
-          .where((element) => PostTags().containsTag(element.name, "original")),
+          .where((element) => PostTags.g.containsTag(element.name, "original")),
       null
     );
   }

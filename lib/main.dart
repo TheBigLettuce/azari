@@ -104,6 +104,7 @@ void mainPickfile() async {
   changeExceptionErrorColors();
 
   final accentColor = await PlatformFunctions.accentColor();
+  azariVersion = (await PackageInfo.fromPlatform()).version;
 
   runApp(MaterialApp(
     title: 'Ācārya',

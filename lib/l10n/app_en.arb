@@ -766,8 +766,8 @@
     "@saveTagsActionBody": {
         "description": "Grid actions, saving tags"
     },
-    "favoritesActionLabel": "Favorites",
-    "@favoritesActionLabel": {
+    "favoritesLabel": "Favorites",
+    "@favoritesLabel": {
         "description": "Grid actions, favorites"
     },
     "favoritesActionBody": "Adds selected files to the favorites.",
@@ -893,5 +893,41 @@
     "clearSelectionActionBody": "Unselects every item.",
     "@clearSelectionActionBody": {
         "description": "Grid actions, clear selection"
+    },
+    "choose": "Choose",
+    "@choose": {
+        "description": "Choose a download directory, button in the dialog"
+    },
+    "later": "Later",
+    "@later": {
+        "description": "Later button in the download directory dialog"
+    },
+    "needChooseDirectory": "You need to choose a download directory. Without it downloads will fail without error.",
+    "@needChooseDirectory": {
+        "description": "Download directory dialog body"
+    },
+    "beforeYouContinueTitle": "Before you continue...",
+    "@beforeYouContinueTitle": {
+        "description": "Download directory dialog title"
+    },
+    "deletedFromFavorites": "Deleted from favorites",
+    "@deletedFromFavorites": {
+        "description": "Showed when an booru image gets deleted from favorites"
+    },
+    "undoLabel": "Undo",
+    "@undoLabel": {
+        "description": "Button to undo an action"
+    },
+    "ungrouped": "Ungrouped",
+    "@ungrouped": {
+        "description": "Grid segment ungrouped"
+    },
+    "groupActionLabel": "Group",
+    "@groupActionLabel": {
+        "description": "Grid actions, group"
+    },
+    "groupActionBody": "Add selected items to the group.",
+    "@groupActionBody": {
+        "description": "Grid actions, group"
     }
 }

@@ -10,7 +10,7 @@ import 'package:dio/dio.dart';
 import 'package:gallery/src/schemas/post.dart';
 
 import '../interface.dart';
-import '../tags/tags.dart';
+import '../tags/interface.dart';
 
 List<String> _fromDanbooruTags(List<dynamic> l) =>
     l.map((e) => e["name"] as String).toList();

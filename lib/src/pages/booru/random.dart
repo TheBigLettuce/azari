@@ -10,6 +10,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/pages/booru/main.dart';
 import 'package:gallery/src/schemas/favorite_booru.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:isar/isar.dart';
@@ -29,7 +30,6 @@ import '../../widgets/make_skeleton.dart';
 import '../../widgets/notifiers/booru_api.dart';
 import '../../widgets/notifiers/tag_manager.dart';
 import '../../widgets/search_launch_grid.dart';
-import 'package:gallery/src/db/isar.dart' as db;
 
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -55,7 +55,6 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
 
   int? currentSkipped;
 
-  final downloader = Downloader();
   bool reachedEnd = false;
 
   final Isar instance = IsarDbsOpen.secondaryGrid(temporary: true);
@@ -78,9 +77,7 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
       setState(() {});
     });
 
-    favoritesWatcher = db
-        .settingsIsar()
-        .favoriteBoorus
+    favoritesWatcher = Dbs.g.main.favoriteBoorus
         .watchLazy(fireImmediately: false)
         .listen((event) {
       state.gridKey.currentState?.imageViewKey.currentState?.setState(() {});
@@ -128,10 +125,11 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
       return Future.value();
     }
 
-    PostTags().addTagsPost(p.filename(), p.tags, true);
+    PostTags.g.addTagsPost(p.filename(), p.tags, true);
 
-    return downloader
-        .add(File.d(p.fileDownloadUrl(), widget.api.booru.url, p.filename()));
+    return Downloader.g.add(
+        DownloadFile.d(p.fileDownloadUrl(), widget.api.booru.url, p.filename()),
+        state.settings);
   }
 
   Future<int> _addLast() async {
@@ -191,6 +189,9 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                         (child) =>
                             BooruAPINotifier(api: widget.api, child: child),
                       ],
+                      menuButtonItems: [
+                        MainBooruGrid.gridButton(state.settings)
+                      ],
                       addIconsImage: (post) => [
                         BooruGridActions.favorites(context, post),
                         BooruGridActions.download(context, widget.api)
@@ -202,8 +203,8 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                           BooruGridActions.favorites(context, null,
                               showDeleteSnackbar: true)
                         ],
-                        state.settings.picturesPerRow,
-                        listView: state.settings.booruListView,
+                        state.settings.booru.columns,
+                        listView: state.settings.booru.listView,
                         keybindsDescription:
                             AppLocalizations.of(context)!.booruGridPageName,
                       ),
@@ -220,7 +221,7 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                               Text(AppLocalizations.of(context)!.openInBrowser),
                         );
                       },
-                      aspectRatio: state.settings.ratio.value,
+                      aspectRatio: state.settings.booru.aspectRatio.value,
                       getCell: (i) => instance.posts.getSync(i + 1)!,
                       loadNext: _addLast,
                       refresh: _clearAndRefresh,

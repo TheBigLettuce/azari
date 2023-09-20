@@ -31,6 +31,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../cell/contentable.dart';
 import '../db/state_restoration.dart';
+import 'settings.dart';
 
 part 'android_gallery_directory_file.g.dart';
 
@@ -84,20 +85,33 @@ class SystemGalleryDirectoryFile implements Cell {
   }
 
   bool isFavorite() {
-    return blacklistedDirIsar().favoriteMedias.getSync(id) != null;
+    return Dbs.g.blacklisted!.favoriteMedias.getSync(id) != null;
   }
 
   @ignore
   @override
-  List<Widget>? Function(BuildContext context) get addButtons => (_) {
+  List<Widget>? Function(BuildContext context) get addButtons => (context) {
         DisassembleResult? res;
         try {
-          res = PostTags().dissassembleFilename(name);
+          res = PostTags.g.dissassembleFilename(name);
         } catch (_) {}
 
-        return [
+        final stickers = [
           if (isDuplicate()) Icon(FilteringMode.duplicate.icon),
           if (isOriginal) Icon(FilteringMode.original.icon),
+        ];
+
+        return [
+          if (stickers.isNotEmpty) ...[
+            ...stickers,
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                  maxHeight: Theme.of(context).iconTheme.size ?? 24),
+              child: VerticalDivider(
+                color: Theme.of(context).iconTheme.color,
+              ),
+            )
+          ],
           if (size == 0 && res != null)
             IconButton(
                 onPressed: () {
@@ -106,10 +120,12 @@ class SystemGalleryDirectoryFile implements Cell {
                   api.singlePost(res.id).then((post) {
                     PlatformFunctions.deleteFiles([this]);
 
-                    PostTags().addTagsPost(post.filename(), post.tags, true);
+                    PostTags.g.addTagsPost(post.filename(), post.tags, true);
 
-                    Downloader().add(File.d(post.fileDownloadUrl(),
-                        api.booru.url, post.filename()));
+                    Downloader.g.add(
+                        DownloadFile.d(post.fileDownloadUrl(), api.booru.url,
+                            post.filename()),
+                        Settings.fromDb());
                   }).onError((error, stackTrace) {
                     log("loading post for download",
                         level: Level.SEVERE.value,
@@ -217,7 +233,7 @@ class SystemGalleryDirectoryFile implements Cell {
                                                   .valueIsNull;
                                             }
                                             try {
-                                              PostTags()
+                                              PostTags.g
                                                   .dissassembleFilename(value);
                                               return null;
                                             } catch (e) {
@@ -253,18 +269,20 @@ class SystemGalleryDirectoryFile implements Cell {
               name,
               temporary: GalleryImpl.instance().temporary,
               showDeleteButton: true,
-              launchGrid: (t) {
-                try {
-                  final res = PostTags().dissassembleFilename(name);
-                  final tagManager = TagManager.fromEnum(res.booru, true);
+              launchGrid: GalleryImpl.instance().temporary
+                  ? null
+                  : (t) {
+                      try {
+                        final res = PostTags.g.dissassembleFilename(name);
+                        final tagManager = TagManager.fromEnum(res.booru, true);
 
-                  tagManager.onTagPressed(context,
-                      Tag(tag: t, isExcluded: false), res.booru, false);
-                } catch (e) {
-                  log("launching local tag random booru",
-                      level: Level.SEVERE.value, error: e);
-                }
-              },
+                        tagManager.onTagPressed(context,
+                            Tag(tag: t, isExcluded: false), res.booru, false);
+                      } catch (e) {
+                        log("launching local tag random booru",
+                            level: Level.SEVERE.value, error: e);
+                      }
+                    },
             );
           };
 
@@ -308,12 +326,12 @@ class SystemGalleryDirectoryFile implements Cell {
   }
 
   Thumbnail? getThumbnail() {
-    return thumbnailIsar().thumbnails.getSync(id);
+    return Dbs.g.thumbnail!.thumbnails.getSync(id);
   }
 }
 
 (Uint8List, bool) androidThumbnail(int id) {
-  final thumb = thumbnailIsar().thumbnails.getSync(id);
+  final thumb = Dbs.g.thumbnail!.thumbnails.getSync(id);
   return thumb == null
       ? (kTransparentImage, false)
       : (thumb.data as Uint8List, true);

@@ -85,7 +85,16 @@ class PostBase implements Cell {
   @override
   List<Widget>? Function(BuildContext context) get addButtons => (context) {
         return [
-          if (tags.contains("original")) Icon(FilteringMode.original.icon),
+          if (tags.contains("original")) ...[
+            Icon(FilteringMode.original.icon),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                  maxHeight: Theme.of(context).iconTheme.size ?? 24),
+              child: VerticalDivider(
+                color: Theme.of(context).iconTheme.color,
+              ),
+            )
+          ],
           IconButton(
             icon: const Icon(Icons.public),
             onPressed: () {
@@ -256,7 +265,7 @@ class PostBase implements Cell {
     final data = FilterNotifier.maybeOf(context);
     final List<String> postTags;
     if (supplyTags == null) {
-      postTags = PostTags().getTagsPost(filename);
+      postTags = PostTags.g.getTagsPost(filename);
     } else {
       postTags = supplyTags;
     }

@@ -8,11 +8,11 @@
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
-import 'package:gallery/src/booru/tags/tags.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import '../schemas/post.dart';
 import 'api/danbooru.dart';
 import 'api/gelbooru.dart';
+import 'tags/interface.dart';
 
 /// Enum which holds all the currently supported sites by this app.
 /// All of the implementations of [BooruAPI] should be added here.
@@ -122,11 +122,11 @@ abstract class BooruAPI {
 
   static numberOfElementsPerRefresh() {
     final settings = Settings.fromDb();
-    if (settings.booruListView) {
+    if (settings.booru.listView) {
       return 20;
     }
 
-    return 10 * settings.picturesPerRow.number;
+    return 10 * settings.booru.columns.number;
   }
 
   static bool isSafeModeEnabled() => Settings.fromDb().safeMode;

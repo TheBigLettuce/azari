@@ -11,11 +11,12 @@ import 'package:gallery/src/cell/data.dart';
 import 'package:isar/isar.dart';
 
 import '../cell/cell.dart';
+import '../db/isar.dart';
 
 part 'download_file.g.dart';
 
 @collection
-class File implements Cell {
+class DownloadFile implements Cell {
   @override
   Id? isarId;
 
@@ -34,16 +35,23 @@ class File implements Cell {
 
   bool isOnHold() => isFailed == false && inProgress == false;
 
-  File inprogress() => File(url, true, false, site, name, isarId: isarId);
-  File failed() => File(url, false, true, site, name, isarId: isarId);
-  File onHold() => File(url, false, false, site, name, isarId: isarId);
+  void save() {
+    Dbs.g.main.writeTxnSync(() => Dbs.g.main.downloadFiles.putSync(this));
+  }
 
-  File.d(this.url, this.site, this.name, {this.isarId})
+  DownloadFile inprogress() =>
+      DownloadFile(url, true, false, site, name, isarId: isarId);
+  DownloadFile failed() =>
+      DownloadFile(url, false, true, site, name, isarId: isarId);
+  DownloadFile onHold() =>
+      DownloadFile(url, false, false, site, name, isarId: isarId);
+
+  DownloadFile.d(this.url, this.site, this.name, {this.isarId})
       : inProgress = true,
         isFailed = false,
         date = DateTime.now();
 
-  File(this.url, this.inProgress, this.isFailed, this.site, this.name,
+  DownloadFile(this.url, this.inProgress, this.isFailed, this.site, this.name,
       {this.isarId})
       : date = DateTime.now();
 

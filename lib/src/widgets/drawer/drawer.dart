@@ -61,9 +61,7 @@ List<NavigationDrawerDestination> destinations(BuildContext context,
         Icons.favorite,
         color: primaryColor,
       ),
-      label: const Text(
-        "Favorites", // TODO: change
-      ),
+      label: Text(AppLocalizations.of(context)!.favoritesLabel),
     ),
     NavigationDrawerDestination(
       icon: const Icon(Icons.tag),
@@ -74,7 +72,7 @@ List<NavigationDrawerDestination> destinations(BuildContext context,
       label: Text(AppLocalizations.of(context)!.tagsLabel),
     ),
     NavigationDrawerDestination(
-        icon: settingsIsar().files.countSync() != 0
+        icon: Dbs.g.main.downloadFiles.countSync() != 0
             ? const Badge(
                 child: Icon(Icons.download),
               )

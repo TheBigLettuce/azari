@@ -85,7 +85,7 @@ class GalleryImpl implements GalleryApi {
               height: e.height,
               width: e.width,
               isGif: e.isGif,
-              isOriginal: PostTags().isOriginal(e.name),
+              isOriginal: PostTags.g.isOriginal(e.name),
               originalUri: e.originalUri,
               isVideo: e.isVideo))
           .toList()));
@@ -104,8 +104,7 @@ class GalleryImpl implements GalleryApi {
           ?.call(db.systemGalleryDirectorys.countSync(), inRefresh, true);
       return;
     }
-    final blacklisted = blacklistedDirIsar()
-        .blacklistedDirectorys
+    final blacklisted = Dbs.g.blacklisted!.blacklistedDirectorys
         .where()
         .anyOf(d.cast<Directory>(),
             (q, element) => q.bucketIdEqualTo(element.bucketId))
@@ -120,7 +119,7 @@ class GalleryImpl implements GalleryApi {
           .map((e) => SystemGalleryDirectory(
               bucketId: e.bucketId,
               name: e.name,
-              tag: PostTags().directoryTag(e.bucketId) ?? "",
+              tag: PostTags.g.directoryTag(e.bucketId) ?? "",
               volumeName: e.volumeName,
               relativeLoc: e.relativeLoc,
               thumbFileId: e.thumbFileId,

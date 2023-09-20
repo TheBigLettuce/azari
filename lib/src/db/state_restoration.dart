@@ -7,6 +7,7 @@
 
 import 'package:isar/isar.dart';
 
+import '../booru/tags/interface.dart';
 import '../pages/settings.dart';
 import '../schemas/grid_state.dart';
 import 'dart:async';
@@ -14,7 +15,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../booru/interface.dart';
-import '../booru/tags/tags.dart';
 import '../pages/booru/random.dart';
 import '../pages/booru/secondary.dart';
 import '../schemas/tags.dart';

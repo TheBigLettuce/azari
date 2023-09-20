@@ -29,12 +29,13 @@ import '../../widgets/make_skeleton.dart';
 import '../../widgets/notifiers/booru_api.dart';
 import '../../widgets/notifiers/tag_manager.dart';
 import '../../widgets/search_launch_grid.dart';
-import 'package:gallery/src/db/isar.dart' as db;
 
 import '../settings.dart';
 
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import 'main.dart';
 
 class SecondaryBooruGrid extends StatefulWidget {
   final StateRestoration restore;
@@ -63,7 +64,6 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
 
   int? currentSkipped;
 
-  final downloader = Downloader();
   bool reachedEnd = false;
 
   late final state = GridSkeletonState<Post>(index: kBooruGridDrawerIndex);
@@ -84,9 +84,7 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
       setState(() {});
     });
 
-    favoritesWatcher = db
-        .settingsIsar()
-        .favoriteBoorus
+    favoritesWatcher = Dbs.g.main.favoriteBoorus
         .watchLazy(fireImmediately: false)
         .listen((event) {
       state.gridKey.currentState?.imageViewKey.currentState?.setState(() {});
@@ -140,10 +138,11 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
       return Future.value();
     }
 
-    PostTags().addTagsPost(p.filename(), p.tags, true);
+    PostTags.g.addTagsPost(p.filename(), p.tags, true);
 
-    return downloader
-        .add(File.d(p.fileDownloadUrl(), widget.api.booru.url, p.filename()));
+    return Downloader.g.add(
+        DownloadFile.d(p.fileDownloadUrl(), widget.api.booru.url, p.filename()),
+        state.settings);
   }
 
   Future<int> _addLast() async {
@@ -225,6 +224,7 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                       (child) =>
                           BooruAPINotifier(api: widget.api, child: child),
                     ],
+                    menuButtonItems: [MainBooruGrid.gridButton(state.settings)],
                     addIconsImage: (post) => [
                       BooruGridActions.favorites(context, post),
                       BooruGridActions.download(context, widget.api)
@@ -238,8 +238,8 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                         BooruGridActions.favorites(context, null,
                             showDeleteSnackbar: true)
                       ],
-                      state.settings.picturesPerRow,
-                      listView: state.settings.booruListView,
+                      state.settings.booru.columns,
+                      listView: state.settings.booru.listView,
                       keybindsDescription:
                           AppLocalizations.of(context)!.booruGridPageName,
                     ),
@@ -256,7 +256,7 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                             Text(AppLocalizations.of(context)!.openInBrowser),
                       );
                     },
-                    aspectRatio: state.settings.ratio.value,
+                    aspectRatio: state.settings.booru.aspectRatio.value,
                     getCell: (i) => widget.instance.posts.getSync(i + 1)!,
                     loadNext: _addLast,
                     refresh: _clearAndRefresh,

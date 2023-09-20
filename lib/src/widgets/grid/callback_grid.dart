@@ -262,9 +262,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     update: (f) {
       try {
         if (context.mounted) {
-          if (f != null) {
-            f();
-          }
+          f?.call();
 
           setState(() {});
         }
@@ -409,6 +407,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   void _onPressed(BuildContext context, T cell, int startingCell,
       {double? offset}) {
     if (widget.overrideOnPress != null) {
+      widget.mainFocus.requestFocus();
       widget.overrideOnPress!(context, cell);
       return;
     }
@@ -659,17 +658,15 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                                                                       .ellipsis,
                                                             ),
                                                           ))),
-                                            if (Platform.isAndroid ||
-                                                Platform.isIOS)
-                                              if (widget.menuButtonItems !=
-                                                      null &&
-                                                  (widget.menuButtonItems!
-                                                              .length ==
-                                                          1 ||
-                                                      widget
-                                                          .inlineMenuButtonItems))
-                                                ...widget.menuButtonItems!.map(
-                                                    (e) => wrapAppBarAction(e)),
+                                            if (widget.menuButtonItems !=
+                                                    null &&
+                                                (widget.menuButtonItems!
+                                                            .length ==
+                                                        1 ||
+                                                    widget
+                                                        .inlineMenuButtonItems))
+                                              ...widget.menuButtonItems!.map(
+                                                  (e) => wrapAppBarAction(e)),
                                             if (widget.onBack != null &&
                                                 (widget.scaffoldKey.currentState
                                                         ?.hasDrawer ??

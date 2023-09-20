@@ -17,7 +17,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/make_skeleton.dart';
 import '../booru/interface.dart';
 import '../schemas/settings.dart';
-import '../schemas/settings.dart' as schema show AspectRatio;
+import '../widgets/radio_dialog.dart';
 import '../widgets/restart_widget.dart';
 import '../widgets/settings_label.dart';
 
@@ -31,7 +31,7 @@ void restartOver() {
 void selectBooru(BuildContext context, Settings settings, Booru value) {
   _isRestart = true;
 
-  Settings.saveToDb(settings.copy(selectedBooru: value));
+  settings.copy(selectedBooru: value).save();
 
   RestartWidget.restartApp(context);
 }
@@ -89,14 +89,11 @@ class _SettingsListState extends State<SettingsList> {
   void initState() {
     super.initState();
 
-    _watcher = settingsIsar()
-        .settings
-        .watchObject(0, fireImmediately: true)
-        .listen((event) {
+    _watcher = Settings.watch((s) {
       setState(() {
-        _settings = event;
+        _settings = s;
       });
-    });
+    }, fire: true);
   }
 
   @override
@@ -116,50 +113,9 @@ class _SettingsListState extends State<SettingsList> {
                     },
                     child: Text(AppLocalizations.of(context)!.ok))
               ],
-              title: const Text(
-                "Error", // TODO: change
-              ),
+              title: Text(AppLocalizations.of(context)!.errorHalf),
               content: Text(s),
             )));
-  }
-
-  static void _radioDialog<T>(BuildContext context, List<(T, String)> values,
-      T groupValue, void Function(T? value) onChanged,
-      {required String title}) {
-    Navigator.push(
-        context,
-        DialogRoute(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              actions: [
-                TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text(
-                      "Back", // TODO: change
-                    ))
-              ],
-              title: Text(title),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: values
-                    .map((e) => RadioListTile(
-                        shape: const BeveledRectangleBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(5))),
-                        value: e.$1,
-                        title: Text(e.$2),
-                        groupValue: groupValue,
-                        onChanged: (value) {
-                          onChanged(value);
-                          Navigator.pop(context);
-                        }))
-                    .toList(),
-              ),
-            );
-          },
-        ));
   }
 
   List<Widget> makeList(BuildContext context, TextStyle titleStyle) => [
@@ -174,7 +130,7 @@ class _SettingsListState extends State<SettingsList> {
         ListTile(
           title: Text(AppLocalizations.of(context)!.selectedBooruSetting),
           subtitle: Text(_settings!.selectedBooru.string),
-          onTap: () => _radioDialog(
+          onTap: () => radioDialog(
               context,
               Booru.values.map((e) => (e, e.string)).toList(),
               _settings!.selectedBooru, (value) {
@@ -185,57 +141,24 @@ class _SettingsListState extends State<SettingsList> {
         ),
         ListTile(
           title: Text(AppLocalizations.of(context)!.imageDisplayQualitySetting),
-          onTap: () => _radioDialog(
+          onTap: () => radioDialog(
             context,
             DisplayQuality.values.map((e) => (e, e.string)).toList(),
             _settings!.quality,
-            (value) => Settings.saveToDb(_settings!.copy(quality: value)),
+            (value) => _settings!.copy(quality: value).save(),
             title: AppLocalizations.of(context)!.imageDisplayQualitySetting,
           ),
           subtitle: Text(_settings!.quality.string),
         ),
         SwitchListTile(
-          value: _settings!.booruListView,
-          onChanged: (value) =>
-              Settings.saveToDb(_settings!.copy(booruListView: value)),
-          title: Text(AppLocalizations.of(context)!.listViewSetting),
-          subtitle: Text(AppLocalizations.of(context)!.listViewInfo),
-        ),
-        ListTile(
-          title: Text(AppLocalizations.of(context)!.cellAspectRadio),
-          subtitle: Text(_settings!.ratio.value.toString()),
-          onTap: () => _radioDialog(
-            context,
-            schema.AspectRatio.values
-                .map((e) => (e, e.value.toString()))
-                .toList(),
-            _settings!.ratio,
-            (value) => Settings.saveToDb(_settings!.copy(ratio: value)),
-            title: AppLocalizations.of(context)!.cellAspectRadio,
-          ),
-        ),
-        ListTile(
-          title: Text(AppLocalizations.of(context)!.nPerElementsSetting),
-          onTap: () => _radioDialog(
-            context,
-            GridColumn.values.map((e) => (e, e.number.toString())).toList(),
-            _settings!.picturesPerRow,
-            (value) =>
-                Settings.saveToDb(_settings!.copy(picturesPerRow: value)),
-            title: AppLocalizations.of(context)!.nPerElementsSetting,
-          ),
-          subtitle: Text(_settings!.picturesPerRow.number.toString()),
-        ),
-        SwitchListTile(
           value: _settings!.safeMode,
-          onChanged: (value) => Settings.saveToDb(
-              _settings!.copy(safeMode: !_settings!.safeMode)),
+          onChanged: (value) =>
+              _settings!.copy(safeMode: !_settings!.safeMode).save(),
           title: Text(AppLocalizations.of(context)!.safeModeSetting),
         ),
         SwitchListTile(
           value: _settings!.autoRefresh,
-          onChanged: (value) =>
-              Settings.saveToDb(_settings!.copy(autoRefresh: value)),
+          onChanged: (value) => _settings!.copy(autoRefresh: value).save(),
           title: Text(AppLocalizations.of(context)!.autoRefresh),
           subtitle: Text(AppLocalizations.of(context)!.autoRefreshSubtitle),
         ),
@@ -255,9 +178,11 @@ class _SettingsListState extends State<SettingsList> {
                       title: Text(AppLocalizations.of(context)!.timeInHours),
                       content: TextField(
                         onSubmitted: (value) {
-                          Settings.saveToDb(_settings!.copy(
-                              autoRefreshMicroseconds:
-                                  int.parse(value).hours.inMicroseconds));
+                          _settings!
+                              .copy(
+                                  autoRefreshMicroseconds:
+                                      int.parse(value).hours.inMicroseconds)
+                              .save();
 
                           Navigator.pop(context);
                         },
@@ -271,98 +196,6 @@ class _SettingsListState extends State<SettingsList> {
                   },
                 ));
           },
-        ),
-        settingsLabel(AppLocalizations.of(context)!.dirLabel, titleStyle),
-        SwitchListTile(
-          value: _settings!.gallerySettings.hideDirectoryName,
-          onChanged: (value) => Settings.saveToDb(_settings!.copy(
-              gallerySettings:
-                  _settings!.gallerySettings.copy(hideDirectoryName: value))),
-          title: Text(AppLocalizations.of(context)!.dirHideNames),
-        ),
-        ListTile(
-          title: Text(AppLocalizations.of(context)!.dirAspectRatio),
-          subtitle: Text(
-              _settings!.gallerySettings.directoryAspectRatio.value.toString()),
-          onTap: () => _radioDialog(
-            context,
-            schema.AspectRatio.values
-                .map((e) => (e, e.value.toString()))
-                .toList(),
-            _settings!.gallerySettings.directoryAspectRatio,
-            (value) => Settings.saveToDb(
-              _settings!.copy(
-                  gallerySettings: _settings!.gallerySettings
-                      .copy(directoryAspectRatio: value)),
-            ),
-            title: AppLocalizations.of(context)!.dirAspectRatio,
-          ),
-        ),
-        ListTile(
-          title: Text(AppLocalizations.of(context)!.dirGridColumns),
-          subtitle: Text(
-              _settings!.gallerySettings.directoryColumns.number.toString()),
-          onTap: () => _radioDialog(
-            context,
-            GridColumn.values.map((e) => (e, e.number.toString())).toList(),
-            _settings!.gallerySettings.directoryColumns,
-            (value) => Settings.saveToDb(_settings!.copy(
-                gallerySettings:
-                    _settings!.gallerySettings.copy(directoryColumns: value))),
-            title: AppLocalizations.of(context)!.dirGridColumns,
-          ),
-        ),
-        settingsLabel(AppLocalizations.of(context)!.filesLabel, titleStyle),
-        SwitchListTile(
-          value: _settings!.gallerySettings.hideFileName,
-          onChanged: (value) => Settings.saveToDb(_settings!.copy(
-              gallerySettings:
-                  _settings!.gallerySettings.copy(hideFileName: value))),
-          title: Text(AppLocalizations.of(context)!.filesHideNames),
-        ),
-        ListTile(
-          title: Text(AppLocalizations.of(context)!.filesAspectRatio),
-          subtitle: Text(
-              _settings!.gallerySettings.filesAspectRatio.value.toString()),
-          onTap: () => _radioDialog(
-            context,
-            schema.AspectRatio.values
-                .map((e) => (e, e.value.toString()))
-                .toList(),
-            _settings!.gallerySettings.filesAspectRatio,
-            (value) => Settings.saveToDb(
-              _settings!.copy(
-                  gallerySettings:
-                      _settings!.gallerySettings.copy(filesAspectRatio: value)),
-            ),
-            title: AppLocalizations.of(context)!.filesAspectRatio,
-          ),
-        ),
-        ListTile(
-            title: Text(AppLocalizations.of(context)!.filesGridColumns),
-            subtitle:
-                Text(_settings!.gallerySettings.filesColumns.number.toString()),
-            onTap: () => _radioDialog(
-                  context,
-                  GridColumn.values
-                      .map((e) => (e, e.number.toString()))
-                      .toList(),
-                  _settings!.gallerySettings.filesColumns,
-                  (value) => Settings.saveToDb(
-                    _settings!.copy(
-                        gallerySettings: _settings!.gallerySettings
-                            .copy(filesColumns: value)),
-                  ),
-                  title: AppLocalizations.of(context)!.filesGridColumns,
-                )),
-        SwitchListTile(
-          value: _settings!.gallerySettings.filesListView,
-          onChanged: (value) => Settings.saveToDb(
-            _settings!.copy(
-                gallerySettings:
-                    _settings!.gallerySettings.copy(filesListView: value)),
-          ),
-          title: Text(AppLocalizations.of(context)!.filesListView),
         ),
         settingsLabel(AppLocalizations.of(context)!.licenseSetting, titleStyle),
         ListTile(
@@ -385,7 +218,7 @@ class _SettingsListState extends State<SettingsList> {
                 PopupMenuItem(
                     child: TextButton(
                   onPressed: () {
-                    PostTags().restore((err) {
+                    PostTags.g.restore((err) {
                       if (err != null) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                             duration: 1.minutes,
@@ -401,7 +234,7 @@ class _SettingsListState extends State<SettingsList> {
                 PopupMenuItem(
                     child: TextButton(
                   onPressed: () {
-                    PostTags().copy((err) {
+                    PostTags.g.copy((err) {
                       if (err != null) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                             content: Text(AppLocalizations.of(context)!
@@ -418,7 +251,7 @@ class _SettingsListState extends State<SettingsList> {
               ];
             },
           ),
-          subtitle: Text(PostTags().savedTagsCount().toString()),
+          subtitle: Text(PostTags.g.savedTagsCount().toString()),
         ),
         if (Platform.isAndroid)
           ListTile(
@@ -435,7 +268,7 @@ class _SettingsListState extends State<SettingsList> {
         if (Platform.isAndroid)
           ListTile(
             title: Text(AppLocalizations.of(context)!.thumbnailsCSize),
-            subtitle: Text(_calculateMBSize(thumbnailIsar().getSizeSync())),
+            subtitle: Text(_calculateMBSize(Dbs.g.thumbnail!.getSizeSync())),
             trailing: PopupMenuButton(
               itemBuilder: (context) {
                 return [
@@ -460,8 +293,9 @@ class _SettingsListState extends State<SettingsList> {
                                                     .no)),
                                         TextButton(
                                             onPressed: () {
-                                              thumbnailIsar().writeTxnSync(() =>
-                                                  thumbnailIsar().clearSync());
+                                              Dbs.g.thumbnail!.writeTxnSync(
+                                                  () => Dbs.g.thumbnail!
+                                                      .clearSync());
 
                                               setState(() {});
                                               Navigator.pop(context);

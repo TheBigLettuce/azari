@@ -9,6 +9,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/actions/downloads.dart';
 import 'package:gallery/src/booru/downloader/downloader.dart';
 import 'package:gallery/src/db/isar.dart';
 import 'package:gallery/src/schemas/settings.dart';
@@ -27,11 +28,11 @@ class Downloads extends StatefulWidget {
   State<Downloads> createState() => _DownloadsState();
 }
 
-class _DownloadsState extends State<Downloads> with SearchFilterGrid<File> {
-  final loader = LinearIsarLoader<File>(FileSchema, settingsIsar(),
+class _DownloadsState extends State<Downloads>
+    with SearchFilterGrid<DownloadFile> {
+  final loader = LinearIsarLoader<DownloadFile>(DownloadFileSchema, Dbs.g.main,
       (offset, limit, s, sort, mode) {
-    return settingsIsar()
-        .files
+    return Dbs.g.main.downloadFiles
         .where()
         .sortByInProgressDesc()
         .offset(offset)
@@ -40,9 +41,8 @@ class _DownloadsState extends State<Downloads> with SearchFilterGrid<File> {
   });
 
   late final StreamSubscription<void> _updates;
-  final downloader = Downloader();
 
-  late final state = GridSkeletonStateFilter<File>(
+  late final state = GridSkeletonStateFilter<DownloadFile>(
     filter: loader.filter,
     index: kDownloadsDrawerIndex,
     transform: (cell, sort) => cell,
@@ -56,10 +56,11 @@ class _DownloadsState extends State<Downloads> with SearchFilterGrid<File> {
     super.initState();
     searchHook(state);
 
-    downloader.markStale();
+    Downloader.g.markStale();
 
-    _updates =
-        settingsIsar().files.watchLazy(fireImmediately: true).listen((_) async {
+    _updates = Dbs.g.main.downloadFiles
+        .watchLazy(fireImmediately: true)
+        .listen((_) async {
       performSearch(searchTextController.text);
     });
   }
@@ -78,7 +79,7 @@ class _DownloadsState extends State<Downloads> with SearchFilterGrid<File> {
       refreshController!.forward(from: 0);
     }
 
-    downloader.markStale();
+    Downloader.g.markStale();
   }
 
   @override
@@ -86,7 +87,7 @@ class _DownloadsState extends State<Downloads> with SearchFilterGrid<File> {
     return makeGridSkeleton(
         context,
         state,
-        CallbackGrid<File>(
+        CallbackGrid<DownloadFile>(
             key: state.gridKey,
             getCell: loader.getCell,
             initalScrollPosition: 0,
@@ -100,7 +101,7 @@ class _DownloadsState extends State<Downloads> with SearchFilterGrid<File> {
                     if (deleteController != null) {
                       deleteController!.forward(from: 0);
                     }
-                    downloader.removeFailed();
+                    Downloader.g.removeFailed();
                   },
                   icon: const Icon(Icons.close).animate(
                       onInit: (controller) => deleteController = controller,
@@ -119,10 +120,10 @@ class _DownloadsState extends State<Downloads> with SearchFilterGrid<File> {
             hideShowFab: ({required bool fab, required bool foreground}) =>
                 state.updateFab(setState, fab: fab, foreground: foreground),
             segments: Segments(
-              "Unknown",
+              "Unknown", // TODO: change
               hidePinnedIcon: true,
               segment: (cell) {
-                return (Downloader().downloadDescription(cell), true);
+                return (Downloader.g.downloadDescription(cell), true);
               },
               onLabelPressed: (label, children) {
                 if (children.isEmpty) {
@@ -131,7 +132,7 @@ class _DownloadsState extends State<Downloads> with SearchFilterGrid<File> {
 
                 if (label == kDownloadFailed) {
                   for (final d in children) {
-                    downloader.add(d);
+                    Downloader.g.add(d, state.settings);
                   }
                 }
               },
@@ -147,44 +148,7 @@ class _DownloadsState extends State<Downloads> with SearchFilterGrid<File> {
             description: GridDescription(
                 kDownloadsDrawerIndex,
                 [
-                  GridBottomSheetAction(Icons.more_horiz, (selected) {
-                    if (selected.isEmpty) {
-                      return;
-                    }
-                    final file = selected.first;
-                    Navigator.push(
-                        context,
-                        DialogRoute(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                actions: [
-                                  TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text(
-                                          AppLocalizations.of(context)!.no)),
-                                  TextButton(
-                                      onPressed: () {
-                                        downloader.retry(file);
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text(
-                                          AppLocalizations.of(context)!.yes)),
-                                ],
-                                title: Text(downloader.downloadAction(file)),
-                                content: Text(file.name),
-                              );
-                            }));
-                  },
-                      true,
-                      const GridBottomSheetActionExplanation(
-                        label: "Retry or delete", // TODO: change
-                        body:
-                            "Retry or delete the downloads entry.", // TODO: change
-                      ),
-                      showOnlyWhenSingle: true)
+                  DownloadsActions.retryOrDelete(context),
                 ],
                 GridColumn.two,
                 keybindsDescription:

@@ -33,22 +33,36 @@ import '../schemas/settings.dart';
 
 import 'package:path/path.dart' as path;
 
-String appStorageDir() => _directoryPath;
-String temporaryDbDir() => _temporaryDbPath;
-String temporaryImagesDir() => _temporaryImagesPath;
-void clearTemporaryImagesDir() {
-  io.Directory(_temporaryImagesPath)
-    ..createSync()
-    ..deleteSync(recursive: true)
-    ..createSync();
+class Dbs {
+  final Isar main;
+  final Isar? thumbnail;
+  final Isar? blacklisted;
+
+  final String directory;
+  final String temporaryDbDir;
+  final String temporaryImagesDir;
+
+  String get appStorageDir => directory;
+
+  void clearTemporaryImages() {
+    io.Directory(temporaryImagesDir)
+      ..createSync()
+      ..deleteSync(recursive: true)
+      ..createSync();
+  }
+
+  const Dbs._(
+      {required this.blacklisted,
+      required this.directory,
+      required this.main,
+      required this.temporaryDbDir,
+      required this.temporaryImagesDir,
+      required this.thumbnail});
+
+  static Dbs get g => _dbs;
 }
 
-Isar? _isar;
-Isar? _thumbnailIsar;
-Isar? _blacklistedDirIsar;
-late String _directoryPath;
-late String _temporaryDbPath;
-late String _temporaryImagesPath;
+late final Dbs _dbs;
 bool _initalized = false;
 
 Future initalizeIsar(bool temporary) async {
@@ -57,55 +71,62 @@ Future initalizeIsar(bool temporary) async {
   }
   _initalized = true;
 
-  _directoryPath = (await getApplicationSupportDirectory()).path;
+  final directoryPath = (await getApplicationSupportDirectory()).path;
 
-  final d = io.Directory(path.joinAll([_directoryPath, "temporary"]));
+  final d = io.Directory(path.joinAll([directoryPath, "temporary"]));
   d.createSync();
   if (!temporary) {
     d.deleteSync(recursive: true);
     d.createSync();
   }
-  _temporaryDbPath = d.path;
+  final temporaryDbPath = d.path;
 
-  final dimages = io.Directory(path.joinAll([_directoryPath, "temp_images"]));
+  final dimages = io.Directory(path.joinAll([directoryPath, "temp_images"]));
   dimages.createSync();
   if (!temporary) {
     dimages.deleteSync(recursive: true);
     dimages.createSync();
   }
 
-  _temporaryImagesPath = dimages.path;
+  final temporaryImagesPath = dimages.path;
 
-  _isar = Isar.openSync([
+  final main = Isar.openSync([
     SettingsSchema,
     FavoriteBooruSchema,
     LocalTagDictionarySchema,
-    FileSchema
-  ], directory: _directoryPath, inspector: false);
+    DownloadFileSchema
+  ], directory: directoryPath, inspector: false);
+
+  Isar? thumbnailIsar;
+  Isar? blacklistedDirIsar;
 
   if (io.Platform.isAndroid) {
-    _thumbnailIsar = Isar.openSync([ThumbnailSchema],
-        directory: _directoryPath, inspector: false, name: "androidThumbnails");
-    _thumbnailIsar!.writeTxnSync(() {
-      _thumbnailIsar!.thumbnails
+    thumbnailIsar = Isar.openSync([ThumbnailSchema],
+        directory: directoryPath, inspector: false, name: "androidThumbnails");
+    thumbnailIsar.writeTxnSync(() {
+      thumbnailIsar!.thumbnails
           .where()
           .differenceHashEqualTo(0)
           .deleteAllSync();
     });
-    _blacklistedDirIsar = Isar.openSync([
+    blacklistedDirIsar = Isar.openSync([
       BlacklistedDirectorySchema,
       PinnedDirectoriesSchema,
       FavoriteMediaSchema
     ],
-        directory: _directoryPath,
+        directory: _dbs.directory,
         inspector: false,
         name: "androidBlacklistedDir");
   }
-}
 
-Isar thumbnailIsar() => _thumbnailIsar!;
-Isar settingsIsar() => _isar!;
-Isar blacklistedDirIsar() => _blacklistedDirIsar!;
+  _dbs = Dbs._(
+      directory: directoryPath,
+      main: main,
+      temporaryDbDir: temporaryDbPath,
+      temporaryImagesDir: temporaryImagesPath,
+      blacklisted: blacklistedDirIsar,
+      thumbnail: thumbnailIsar);
+}
 
 String _microsecSinceEpoch() =>
     DateTime.now().microsecondsSinceEpoch.toString();
@@ -121,31 +142,31 @@ class IsarDbsOpen {
       GridStateSchema,
       TagSchema,
       PostSchema,
-    ], directory: _directoryPath, inspector: false, name: booru.string);
+    ], directory: _dbs.directory, inspector: false, name: booru.string);
   }
 
   static Isar secondaryGrid({bool temporary = true}) {
     return Isar.openSync([PostSchema],
-        directory: temporary ? _temporaryDbPath : _directoryPath,
+        directory: temporary ? _dbs.temporaryDbDir : _dbs.directory,
         inspector: false,
         name: _microsecSinceEpoch());
   }
 
   static Isar secondaryGridName(String name) {
     return Isar.openSync([PostSchema],
-        directory: _directoryPath, inspector: false, name: name);
+        directory: _dbs.directory, inspector: false, name: name);
   }
 
   static Isar localTags() => Isar.openSync(
         [LocalTagsSchema, LocalTagDictionarySchema, DirectoryTagSchema],
-        directory: _directoryPath,
+        directory: _dbs.directory,
         inspector: false,
         name: "localTags",
       );
 
   static Isar androidGalleryDirectories({bool? temporary}) => Isar.openSync(
         [SystemGalleryDirectorySchema, GalleryLastModifiedSchema],
-        directory: temporary == true ? _temporaryDbPath : _directoryPath,
+        directory: temporary == true ? _dbs.temporaryDbDir : _dbs.directory,
         inspector: false,
         name: temporary == true
             ? _microsecSinceEpoch()
@@ -154,14 +175,14 @@ class IsarDbsOpen {
 
   static Isar androidGalleryFiles() => Isar.openSync(
         [SystemGalleryDirectoryFileSchema],
-        directory: _temporaryDbPath,
+        directory: _dbs.temporaryDbDir,
         inspector: false,
         name: _microsecSinceEpoch(),
       );
 
   static Isar temporarySchemas(List<CollectionSchema> schemas) => Isar.openSync(
         schemas,
-        directory: _temporaryDbPath,
+        directory: _dbs.temporaryDbDir,
         inspector: false,
         name: _microsecSinceEpoch(),
       );
@@ -189,7 +210,7 @@ Future<bool> chooseDirectory(void Function(String) onError) async {
     resp = r;
   }
 
-  Settings.saveToDb(Settings.fromDb().copy(path: resp));
+  Settings.fromDb().copy(path: resp).save();
 
   return Future.value(true);
 }

@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:isar/isar.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../booru/interface.dart';
 import '../db/isar.dart';
@@ -24,65 +25,70 @@ part 'settings.g.dart';
 class Settings {
   final Id id = 0;
 
-  @enumerated
-  final GridColumn picturesPerRow;
-  final bool booruListView;
-
   final String path;
   @enumerated
   final Booru selectedBooru;
   @enumerated
   final DisplayQuality quality;
   @enumerated
-  final AspectRatio ratio;
   final bool safeMode;
 
   final bool autoRefresh;
   final int autoRefreshMicroseconds;
-  final GallerySettings gallerySettings;
+
+  final GridSettings booru;
+  final GridSettings galleryDirectories;
+  final GridSettings galleryFiles;
+  final GridSettings favorites;
 
   @enumerated
   final FilteringMode favoritesPageMode;
 
-  const Settings(
-      {required this.path,
-      required this.selectedBooru,
-      required this.quality,
-      required this.autoRefresh,
-      required this.autoRefreshMicroseconds,
-      required this.booruListView,
-      required this.picturesPerRow,
-      required this.safeMode,
-      required this.gallerySettings,
-      required this.favoritesPageMode,
-      required this.ratio});
-  Settings copy(
-      {String? path,
-      Booru? selectedBooru,
-      DisplayQuality? quality,
-      bool? booruListView,
-      GridColumn? picturesPerRow,
-      bool? autoRefresh,
-      int? autoRefreshMicroseconds,
-      bool? saveTagsOnlyOnDownload,
-      FilteringMode? favoritesPageMode,
-      bool? expensiveHash,
-      bool? safeMode,
-      AspectRatio? ratio,
-      GallerySettings? gallerySettings}) {
+  const Settings({
+    required this.path,
+    required this.selectedBooru,
+    required this.quality,
+    required this.autoRefresh,
+    required this.autoRefreshMicroseconds,
+    required this.safeMode,
+    required this.favoritesPageMode,
+    required this.booru,
+    required this.favorites,
+    required this.galleryDirectories,
+    required this.galleryFiles,
+  });
+
+  Settings copy({
+    String? path,
+    Booru? selectedBooru,
+    DisplayQuality? quality,
+    bool? booruListView,
+    GridColumn? picturesPerRow,
+    bool? autoRefresh,
+    int? autoRefreshMicroseconds,
+    bool? saveTagsOnlyOnDownload,
+    FilteringMode? favoritesPageMode,
+    bool? expensiveHash,
+    bool? safeMode,
+    AspectRatio? ratio,
+    GridSettings? galleryDirectories,
+    GridSettings? galleryFiles,
+    GridSettings? favorites,
+    GridSettings? booru,
+  }) {
     return Settings(
         path: path ?? this.path,
         selectedBooru: selectedBooru ?? this.selectedBooru,
         quality: quality ?? this.quality,
-        ratio: ratio ?? this.ratio,
         favoritesPageMode: favoritesPageMode ?? this.favoritesPageMode,
         autoRefresh: autoRefresh ?? this.autoRefresh,
         autoRefreshMicroseconds:
             autoRefreshMicroseconds ?? this.autoRefreshMicroseconds,
-        booruListView: booruListView ?? this.booruListView,
-        picturesPerRow: picturesPerRow ?? this.picturesPerRow,
         safeMode: safeMode ?? this.safeMode,
-        gallerySettings: gallerySettings ?? this.gallerySettings);
+        galleryFiles: galleryFiles ?? this.galleryFiles,
+        galleryDirectories: galleryDirectories ?? this.galleryDirectories,
+        favorites: favorites ?? this.favorites,
+        booru: booru ?? this.booru);
   }
 
   Settings.empty()
@@ -92,23 +98,31 @@ class Settings {
         selectedBooru = Booru.gelbooru,
         quality = DisplayQuality.sample,
         favoritesPageMode = FilteringMode.tag,
-        picturesPerRow = (Platform.isAndroid || Platform.isIOS)
-            ? GridColumn.two
-            : GridColumn.six,
-        booruListView = false,
         safeMode = true,
-        gallerySettings = Platform.isAndroid || Platform.isIOS
-            ? const GallerySettings()
-            : const GallerySettings.desktop(),
-        ratio = AspectRatio.one;
+        booru = GridSettings(
+          columns: (Platform.isAndroid || Platform.isIOS)
+              ? GridColumn.two
+              : GridColumn.six,
+        ),
+        galleryDirectories = GridSettings(
+            columns: (Platform.isAndroid || Platform.isIOS)
+                ? GridColumn.two
+                : GridColumn.six),
+        galleryFiles = GridSettings(
+            columns: (Platform.isAndroid || Platform.isIOS)
+                ? GridColumn.two
+                : GridColumn.six),
+        favorites = GridSettings(
+            columns: (Platform.isAndroid || Platform.isIOS)
+                ? GridColumn.two
+                : GridColumn.six);
 
   static Settings fromDb() {
-    return settingsIsar().settings.getSync(0) ?? Settings.empty();
+    return Dbs.g.main.settings.getSync(0) ?? Settings.empty();
   }
 
-  static void saveToDb(Settings instance) {
-    settingsIsar()
-        .writeTxnSync(() => settingsIsar().settings.putSync(instance));
+  void save() {
+    Dbs.g.main.writeTxnSync(() => Dbs.g.main.settings.putSync(this));
   }
 
   static void addRemoveFavorites(
@@ -144,94 +158,64 @@ class Settings {
 
     final deleteCopy = toRemove.isEmpty
         ? null
-        : settingsIsar().favoriteBoorus.getAllByFileUrlSync(toRemove);
+        : Dbs.g.main.favoriteBoorus.getAllByFileUrlSync(toRemove);
 
-    settingsIsar().writeTxnSync(() {
-      settingsIsar().favoriteBoorus.putAllSync(toAdd);
-      settingsIsar()
-          .favoriteBoorus
+    Dbs.g.main.writeTxnSync(() {
+      Dbs.g.main.favoriteBoorus.putAllSync(toAdd);
+      Dbs.g.main.favoriteBoorus
           .deleteAllByFileUrlSync(toRemove.map((e) => e).toList());
     });
 
     if (deleteCopy != null && showDeleteSnackbar) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         duration: 20.seconds,
-        content: const Text(
-          "Deleted from favorites", // TODO: change
-        ),
+        content: Text(AppLocalizations.of(context)!.deletedFromFavorites),
         action: SnackBarAction(
-            label: "Undo",
+            label: AppLocalizations.of(context)!.undoLabel,
             onPressed: () {
-              settingsIsar().writeTxnSync(() =>
-                  settingsIsar().favoriteBoorus.putAllSync(deleteCopy.cast()));
+              Dbs.g.main.writeTxnSync(() =>
+                  Dbs.g.main.favoriteBoorus.putAllSync(deleteCopy.cast()));
             }),
       ));
     }
   }
 
   static bool isFavorite(String fileUrl) {
-    return settingsIsar().favoriteBoorus.getByFileUrlSync(fileUrl) != null;
+    return Dbs.g.main.favoriteBoorus.getByFileUrlSync(fileUrl) != null;
   }
 
   static StreamSubscription<Settings?> watch(void Function(Settings? s) f,
       {bool fire = false}) {
-    return settingsIsar()
-        .settings
-        .watchObject(0, fireImmediately: fire)
-        .listen(f);
+    return Dbs.g.main.settings.watchObject(0, fireImmediately: fire).listen(f);
   }
 }
 
 @embedded
-class GallerySettings {
-  final bool hideDirectoryName;
+class GridSettings {
+  final bool hideName;
   @enumerated
-  final AspectRatio directoryAspectRatio;
+  final AspectRatio aspectRatio;
   @enumerated
-  final GridColumn directoryColumns;
+  final GridColumn columns;
+  final bool listView;
 
-  final bool hideFileName;
-  @enumerated
-  final AspectRatio filesAspectRatio;
-  @enumerated
-  final GridColumn filesColumns;
-  final bool filesListView;
+  GridSettings copy(
+      {bool? hideName,
+      AspectRatio? aspectRatio,
+      GridColumn? columns,
+      bool? listView}) {
+    return GridSettings(
+        aspectRatio: aspectRatio ?? this.aspectRatio,
+        hideName: hideName ?? this.hideName,
+        columns: columns ?? this.columns,
+        listView: listView ?? this.listView);
+  }
 
-  GallerySettings copy(
-          {bool? hideDirectoryName,
-          bool? hideFileName,
-          bool? filesListView,
-          AspectRatio? filesAspectRatio,
-          AspectRatio? directoryAspectRatio,
-          GridColumn? filesColumns,
-          GridColumn? directoryColumns}) =>
-      GallerySettings(
-          hideDirectoryName: hideDirectoryName ?? this.hideDirectoryName,
-          hideFileName: hideFileName ?? this.hideFileName,
-          filesListView: filesListView ?? this.filesListView,
-          directoryAspectRatio:
-              directoryAspectRatio ?? this.directoryAspectRatio,
-          filesAspectRatio: filesAspectRatio ?? this.filesAspectRatio,
-          filesColumns: filesColumns ?? this.filesColumns,
-          directoryColumns: directoryColumns ?? this.directoryColumns);
-
-  const GallerySettings(
-      {this.directoryAspectRatio = AspectRatio.zeroSeven,
-      this.directoryColumns = GridColumn.two,
-      this.hideDirectoryName = false,
-      this.filesAspectRatio = AspectRatio.oneFive,
-      this.filesColumns = GridColumn.three,
-      this.filesListView = false,
-      this.hideFileName = true});
-
-  const GallerySettings.desktop()
-      : directoryAspectRatio = AspectRatio.zeroSeven,
-        directoryColumns = GridColumn.six,
-        hideDirectoryName = false,
-        filesListView = false,
-        filesAspectRatio = AspectRatio.oneFive,
-        filesColumns = GridColumn.six,
-        hideFileName = true;
+  const GridSettings(
+      {this.aspectRatio = AspectRatio.one,
+      this.columns = GridColumn.three,
+      this.listView = false,
+      this.hideName = false});
 }
 
 enum DisplayQuality {

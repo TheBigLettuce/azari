@@ -67,8 +67,8 @@ class AndroidGalleryExtra {
   }
 
   void addBlacklisted(List<BlacklistedDirectory> bucketIds) {
-    blacklistedDirIsar().writeTxnSync(
-        () => blacklistedDirIsar().blacklistedDirectorys.putAllSync(bucketIds));
+    Dbs.g.blacklisted!.writeTxnSync(
+        () => Dbs.g.blacklisted!.blacklistedDirectorys.putAllSync(bucketIds));
     _impl.refreshGrid?.call();
   }
 

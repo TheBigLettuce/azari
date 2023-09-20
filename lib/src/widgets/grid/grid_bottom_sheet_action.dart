@@ -31,10 +31,16 @@ class GridBottomSheetAction<T> {
 
   final Color? backgroundColor;
   final Color? color;
+  final bool animate;
+  final bool play;
 
   const GridBottomSheetAction(
       this.icon, this.onPress, this.closeOnPress, this.explanation,
-      {this.showOnlyWhenSingle = false, this.backgroundColor, this.color});
+      {this.showOnlyWhenSingle = false,
+      this.backgroundColor,
+      this.color,
+      this.animate = false,
+      this.play = true});
 }
 
 class GridBottomSheetActionExplanation {

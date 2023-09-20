@@ -10,7 +10,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
 import 'package:gallery/src/plugs/notifications.dart';
-import 'package:gallery/src/schemas/download_file.dart' as dw_file;
+import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:isar/isar.dart';
 import 'package:path/path.dart' as path;
@@ -20,9 +20,9 @@ import '../../db/isar.dart';
 
 Downloader? _global;
 
-const kDownloadOnHold = "On hold";
-const kDownloadFailed = "Failed";
-const kDownloadInProgress = "In progress";
+const kDownloadOnHold = "On hold"; // TODO: change
+const kDownloadFailed = "Failed"; // TODO: change
+const kDownloadInProgress = "In progress"; // TODO: change
 
 mixin _CancelTokens {
   final Map<String, CancelToken> _tokens = {};
@@ -50,26 +50,25 @@ class Downloader with _CancelTokens {
   final NotificationPlug notificationPlug = chooseNotificationPlug();
   final DownloadMoverPlug moverPlug;
 
-  void retry(dw_file.File f) {
+  void retry(DownloadFile f, Settings settings) {
     if (f.isOnHold()) {
-      settingsIsar()
-          .writeTxnSync(() => settingsIsar().files.putSync(f.failed()));
+      f.failed().save();
     } else if (_hasCancelKey(f.url)) {
       cancelAndRemoveToken(f.url);
     } else {
-      add(f);
+      add(f, settings);
     }
   }
 
-  String downloadAction(dw_file.File f) {
+  String downloadAction(DownloadFile f) {
     if (f.isOnHold() || _hasCancelKey(f.url)) {
-      return "Cancel the download?";
+      return "Cancel the download?"; // TODO: change
     } else {
-      return "Retry?";
+      return "Retry?"; // TODO: change
     }
   }
 
-  String downloadDescription(dw_file.File f) {
+  String downloadDescription(DownloadFile f) {
     if (_hasCancelKey(f.url)) {
       return kDownloadInProgress;
     }
@@ -83,16 +82,14 @@ class Downloader with _CancelTokens {
 
   void _done() {
     if (_inWork <= maximum) {
-      final f = settingsIsar()
-          .files
+      final f = Dbs.g.main.downloadFiles
           .filter()
           .inProgressEqualTo(false)
           .isFailedEqualTo(false)
           .findFirstSync();
       if (f != null) {
-        settingsIsar().writeTxnSync(
-          () => settingsIsar().files.putSync(f.inprogress()),
-        );
+        f.inprogress().save();
+
         _addToken(f.url, CancelToken());
         _download(f);
       } else {
@@ -103,70 +100,69 @@ class Downloader with _CancelTokens {
     }
   }
 
-  void restart() async {
-    final f = settingsIsar()
-        .files
+  void restart(Settings settings) async {
+    final f = Dbs.g.main.downloadFiles
         .filter()
         .isFailedEqualTo(true)
         .sortByDateDesc()
         .findAllSync();
 
     if (f.length < 6) {
-      f.addAll(settingsIsar()
-          .files
+      f.addAll(Dbs.g.main.downloadFiles
           .where()
           .sortByDateDesc()
           .limit(6 - f.length)
           .findAllSync());
     }
+
     for (final element in f) {
-      add(element);
+      add(element, settings);
     }
   }
 
-  void add(dw_file.File download) async {
-    if (Settings.fromDb().path == "") {
-      settingsIsar()
-          .writeTxnSync(() => settingsIsar().files.putSync(download.failed()));
+  void add(DownloadFile download, Settings settings) async {
+    if (settings.path == "") {
+      download.failed().save();
+
       return;
     }
     if (download.isarId != null && _hasCancelKey(download.url)) {
       return;
     }
 
-    settingsIsar()
-        .writeTxnSync(() => settingsIsar().files.putSync(download.onHold()));
+    download.onHold().save();
 
     if (_inWork <= maximum) {
       _inWork++;
-      final d = download.inprogress();
-      settingsIsar().writeTxnSync(() => settingsIsar().files.putSync(d));
+      final d = download.inprogress()..save();
+
       _addToken(d.url, CancelToken());
       _download(d);
     }
   }
 
   void removeFailed() {
-    settingsIsar().writeTxnSync(() {
-      final failed = settingsIsar()
-          .files
+    Dbs.g.main.writeTxnSync(() {
+      final failed = Dbs.g.main.downloadFiles
           .filter()
           .isFailedEqualTo(true)
           .findAllSync()
           .map((e) => e.isarId!)
           .toList();
       if (failed.isNotEmpty) {
-        settingsIsar().files.deleteAllSync(failed);
+        Dbs.g.main.downloadFiles.deleteAllSync(failed);
       }
     });
   }
 
   void markStale() {
-    settingsIsar().writeTxnSync(() {
-      final toUpdate = <dw_file.File>[];
+    Dbs.g.main.writeTxnSync(() {
+      final toUpdate = <DownloadFile>[];
 
-      final inProgress =
-          settingsIsar().files.filter().inProgressEqualTo(true).findAllSync();
+      final inProgress = Dbs.g.main.downloadFiles
+          .filter()
+          .inProgressEqualTo(true)
+          .findAllSync();
       for (final element in inProgress) {
         if (_tokens[element.isarId!] == null) {
           toUpdate.add(element.failed());
@@ -174,12 +170,12 @@ class Downloader with _CancelTokens {
       }
 
       if (toUpdate.isNotEmpty) {
-        settingsIsar().files.putAllSync(toUpdate);
+        Dbs.g.main.downloadFiles.putAllSync(toUpdate);
       }
     });
   }
 
-  void _download(dw_file.File d) async {
+  void _download(DownloadFile d) async {
     final downloadtd = Directory(
         path.joinAll([(await getTemporaryDirectory()).path, "downloads"]));
 
@@ -222,29 +218,21 @@ class Downloader with _CancelTokens {
         moverPlug.move(MoveOp(
             source: filePath, rootDir: settings.path, targetDir: d.site));
 
-        settingsIsar().writeTxnSync(
+        Dbs.g.main.writeTxnSync(
           () {
             _removeToken(d.url);
-            settingsIsar().files.deleteSync(d.isarId!);
+            Dbs.g.main.downloadFiles.deleteSync(d.isarId!);
           },
         );
       } catch (e, trace) {
         log("writting downloaded file ${d.name} to uri",
             level: Level.SEVERE.value, error: e, stackTrace: trace);
-        settingsIsar().writeTxnSync(
-          () {
-            _removeToken(d.url);
-            settingsIsar().files.putSync(d.failed());
-          },
-        );
+        d.failed().save();
+        _removeToken(d.url);
       }
     }).onError((error, stackTrace) {
-      settingsIsar().writeTxnSync(
-        () {
-          _removeToken(d.url);
-          settingsIsar().files.putSync(d.failed());
-        },
-      );
+      d.failed().save();
+      _removeToken(d.url);
 
       progress.error(error.toString());
     }).whenComplete(() => _done());
@@ -269,13 +257,7 @@ class Downloader with _CancelTokens {
 
   Downloader._new(this.maximum, this.moverPlug);
 
-  factory Downloader() {
-    if (_global != null) {
-      return _global!;
-    } else {
-      throw "downloader isnt initalized";
-    }
-  }
+  static Downloader get g => _global!;
 }
 
 Future<Downloader> initalizeDownloader() async {

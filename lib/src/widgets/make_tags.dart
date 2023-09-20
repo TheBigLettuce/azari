@@ -32,7 +32,7 @@ Iterable<Widget> makeTags(
     }
     DisassembleResult? res;
     try {
-      res = PostTags().dissassembleFilename(filename);
+      res = PostTags.g.dissassembleFilename(filename);
     } catch (_) {}
 
     return [

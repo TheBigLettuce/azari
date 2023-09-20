@@ -25,7 +25,7 @@ Widget searchTextField(BuildContext context, FilterNotifierData data,
                 IconButton(
                     onPressed: () {
                       final notifier = TagRefreshNotifier.maybeOf(context);
-                      PostTags().deletePostTags(filename);
+                      PostTags.g.deletePostTags(filename);
                       notifier?.call();
                     },
                     icon: const Icon(Icons.delete))

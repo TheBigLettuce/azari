@@ -107,7 +107,7 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                                 if (!temporary) {
                                     context.contentResolver.takePersistableUriPermission(
                                         Uri.parse(it),
-                                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                                     )
                                 }
 
@@ -116,7 +116,19 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                             }
                         }
 
-                        context.startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), 1)
+                        val i = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+                        i.addFlags(
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+                        )
+                        if (temporary) {
+                            i.addFlags(
+                                Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                            )
+                        }
+
+                        context.startActivityForResult(i, 1)
                     }
                 }
 
@@ -257,7 +269,7 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
 
                 "removeFromTrash" -> {
                     val uri = (call.arguments as List<String>).map { Uri.parse(it) }
-                    
+
                     val intent =
                         MediaStore.createTrashRequest(context.contentResolver, uri, false)
 

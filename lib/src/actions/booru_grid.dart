@@ -23,13 +23,14 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 class BooruGridActions {
   static GridBottomSheetAction<T> download<T extends PostBase>(
       BuildContext context, BooruAPI api) {
-    final downloader = Downloader();
-
     return GridBottomSheetAction(Icons.download, (selected) {
+      final settings = Settings.fromDb();
+
       for (final element in selected) {
-        PostTags().addTagsPost(element.filename(), element.tags, true);
-        downloader
-            .add(File.d(element.fileUrl, api.booru.url, element.filename()));
+        PostTags.g.addTagsPost(element.filename(), element.tags, true);
+        Downloader.g.add(
+            DownloadFile.d(element.fileUrl, api.booru.url, element.filename()),
+            settings);
       }
     },
         true,
@@ -47,14 +48,13 @@ class BooruGridActions {
         isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
         (selected) {
       Settings.addRemoveFavorites(context, selected, showDeleteSnackbar);
-      settingsIsar().writeTxnSync(
+      Dbs.g.main.writeTxnSync(
         () {
           for (final post in selected) {
-            settingsIsar().localTagDictionarys.putAllSync(post.tags
+            Dbs.g.main.localTagDictionarys.putAllSync(post.tags
                 .map((e) => LocalTagDictionary(
                     HtmlUnescape().convert(e),
-                    (settingsIsar()
-                                .localTagDictionarys
+                    (Dbs.g.main.localTagDictionarys
                                 .getSync(fastHash(e))
                                 ?.frequency ??
                             0) +
@@ -69,6 +69,8 @@ class BooruGridActions {
           label: "Favorite", // TODO: change
           body: "Add selected posts to the favorites.", // TODO: change
         ),
-        color: isFavorite ? Colors.red.shade900 : null);
+        color: isFavorite ? Colors.red.shade900 : null,
+        animate: p != null,
+        play: !isFavorite);
   }
 }
