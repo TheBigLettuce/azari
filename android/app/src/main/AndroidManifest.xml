@@ -22,8 +22,7 @@
     <application
         android:name=".App"
         android:icon="@mipmap/ic_launcher"
-        android:label="Ācārya"
-        android:usesCleartextTraffic="true">
+        android:label="Ācārya">
         <activity
             android:name=".PickFileActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"

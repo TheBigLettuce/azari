@@ -56,14 +56,12 @@ class DownloadFile implements Cell {
       : date = DateTime.now();
 
   @override
-  @ignore
-  List<Widget>? Function(BuildContext context) get addButtons => (_) => null;
+  List<Widget>? addButtons(BuildContext context) => null;
 
   @override
-  @ignore
-  List<Widget>? Function(
-          BuildContext context, dynamic extra, AddInfoColorData colors)
-      get addInfo => (_, __, ___) => null;
+  List<Widget>? addInfo(
+          BuildContext context, dynamic extra, AddInfoColorData colors) =>
+      null;
 
   @override
   String alias(bool isList) => name;

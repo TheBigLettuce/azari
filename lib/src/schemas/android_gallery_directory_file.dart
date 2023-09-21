@@ -81,79 +81,78 @@ class SystemGalleryDirectoryFile implements Cell {
   String alias(bool isList) => name;
 
   bool isDuplicate() {
-    return RegExp(r'[(][0-9].*[)][.][a-zA-Z].*').hasMatch(name);
+    return RegExp(r'[(][0-9].*[)][.][a-zA-Z0-9].*').hasMatch(name);
   }
 
   bool isFavorite() {
     return Dbs.g.blacklisted!.favoriteMedias.getSync(id) != null;
   }
 
-  @ignore
   @override
-  List<Widget>? Function(BuildContext context) get addButtons => (context) {
-        DisassembleResult? res;
-        try {
-          res = PostTags.g.dissassembleFilename(name);
-        } catch (_) {}
+  List<Widget>? addButtons(BuildContext context) {
+    DisassembleResult? res;
+    try {
+      res = PostTags.g.dissassembleFilename(name);
+    } catch (_) {}
 
-        final stickers = [
-          if (isDuplicate()) Icon(FilteringMode.duplicate.icon),
-          if (isOriginal) Icon(FilteringMode.original.icon),
-        ];
+    final stickers = [
+      if (isDuplicate()) Icon(FilteringMode.duplicate.icon),
+      if (isOriginal) Icon(FilteringMode.original.icon),
+    ];
 
-        return [
-          if (stickers.isNotEmpty) ...[
-            ...stickers,
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                  maxHeight: Theme.of(context).iconTheme.size ?? 24),
-              child: VerticalDivider(
-                color: Theme.of(context).iconTheme.color,
-              ),
-            )
-          ],
-          if (size == 0 && res != null)
-            IconButton(
-                onPressed: () {
-                  final api = BooruAPI.fromEnum(res!.booru);
+    return [
+      if (stickers.isNotEmpty) ...[
+        ...stickers,
+        ConstrainedBox(
+          constraints:
+              BoxConstraints(maxHeight: Theme.of(context).iconTheme.size ?? 24),
+          child: VerticalDivider(
+            color: Theme.of(context).iconTheme.color,
+          ),
+        )
+      ],
+      if (size == 0 && res != null)
+        IconButton(
+            onPressed: () {
+              final api = BooruAPI.fromEnum(res!.booru);
 
-                  api.singlePost(res.id).then((post) {
-                    PlatformFunctions.deleteFiles([this]);
+              api.singlePost(res.id).then((post) {
+                PlatformFunctions.deleteFiles([this]);
 
-                    PostTags.g.addTagsPost(post.filename(), post.tags, true);
+                PostTags.g.addTagsPost(post.filename(), post.tags, true);
 
-                    Downloader.g.add(
-                        DownloadFile.d(post.fileDownloadUrl(), api.booru.url,
-                            post.filename()),
-                        Settings.fromDb());
-                  }).onError((error, stackTrace) {
-                    log("loading post for download",
-                        level: Level.SEVERE.value,
-                        error: error,
-                        stackTrace: stackTrace);
-                  }).whenComplete(() {
-                    api.close();
-                  });
-                },
-                icon: const Icon(Icons.download_outlined)),
-          if (res != null)
-            IconButton(
-                onPressed: () {
-                  final api = BooruAPI.fromEnum(res!.booru);
+                Downloader.g.add(
+                    DownloadFile.d(
+                        post.fileDownloadUrl(), api.booru.url, post.filename()),
+                    Settings.fromDb());
+              }).onError((error, stackTrace) {
+                log("loading post for download",
+                    level: Level.SEVERE.value,
+                    error: error,
+                    stackTrace: stackTrace);
+              }).whenComplete(() {
+                api.close();
+              });
+            },
+            icon: const Icon(Icons.download_outlined)),
+      if (res != null)
+        IconButton(
+            onPressed: () {
+              final api = BooruAPI.fromEnum(res!.booru);
 
-                  launchUrl(api.browserLink(res.id),
-                      mode: LaunchMode.externalApplication);
+              launchUrl(api.browserLink(res.id),
+                  mode: LaunchMode.externalApplication);
 
-                  api.close();
-                },
-                icon: const Icon(Icons.public)),
-          IconButton(
-              onPressed: () {
-                PlatformFunctions.share(originalUri);
-              },
-              icon: const Icon(Icons.share))
-        ];
-      };
+              api.close();
+            },
+            icon: const Icon(Icons.public)),
+      IconButton(
+          onPressed: () {
+            PlatformFunctions.share(originalUri);
+          },
+          icon: const Icon(Icons.share))
+    ];
+  }
 
   Sticker sizeSticker() {
     if (size == 0) {
@@ -189,102 +188,91 @@ class SystemGalleryDirectoryFile implements Cell {
     return "${res.toStringAsFixed(1)} KB";
   }
 
-  @ignore
   @override
-  List<Widget>? Function(
-          BuildContext context, dynamic extra, AddInfoColorData colors)
-      get addInfo => (
-            context,
-            extra,
-            colors,
-          ) {
-            return PostBase.wrapTagsSearch(
-              context,
-              extra,
-              colors,
-              [
-                addInfoTile(
-                    colors: colors,
-                    title: AppLocalizations.of(context)!.nameTitle,
-                    subtitle: name,
-                    trailing: GalleryImpl.instance().temporary
-                        ? null
-                        : IconButton(
-                            onPressed: () {
-                              Navigator.push(
-                                  context,
-                                  DialogRoute(
-                                    context: context,
-                                    builder: (context) {
-                                      return AlertDialog(
-                                        title: Text(
-                                            AppLocalizations.of(context)!
-                                                .enterNewNameTitle),
-                                        content: TextFormField(
-                                          initialValue: name,
-                                          autovalidateMode:
-                                              AutovalidateMode.always,
-                                          decoration: const InputDecoration(
-                                              errorMaxLines: 2),
-                                          validator: (value) {
-                                            if (value == null) {
-                                              return AppLocalizations.of(
-                                                      context)!
-                                                  .valueIsNull;
-                                            }
-                                            try {
-                                              PostTags.g
-                                                  .dissassembleFilename(value);
-                                              return null;
-                                            } catch (e) {
-                                              return e.toString();
-                                            }
-                                          },
-                                          onFieldSubmitted: (value) {
-                                            PlatformFunctions.rename(
-                                                originalUri, value);
-                                            Navigator.pop(context);
-                                          },
-                                        ),
-                                      );
-                                    },
-                                  ));
+  List<Widget>? addInfo(
+      BuildContext context, dynamic extra, AddInfoColorData colors) {
+    return PostBase.wrapTagsSearch(
+      context,
+      extra,
+      colors,
+      [
+        addInfoTile(
+            colors: colors,
+            title: AppLocalizations.of(context)!.nameTitle,
+            subtitle: name,
+            trailing: GalleryImpl.g.temporary
+                ? null
+                : IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          DialogRoute(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: Text(AppLocalizations.of(context)!
+                                    .enterNewNameTitle),
+                                content: TextFormField(
+                                  initialValue: name,
+                                  autovalidateMode: AutovalidateMode.always,
+                                  decoration:
+                                      const InputDecoration(errorMaxLines: 2),
+                                  validator: (value) {
+                                    if (value == null) {
+                                      return AppLocalizations.of(context)!
+                                          .valueIsNull;
+                                    }
+                                    try {
+                                      PostTags.g.dissassembleFilename(value);
+                                      return null;
+                                    } catch (e) {
+                                      return e.toString();
+                                    }
+                                  },
+                                  onFieldSubmitted: (value) {
+                                    PlatformFunctions.rename(
+                                        originalUri, value);
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              );
                             },
-                            icon: const Icon(Icons.edit))),
-                addInfoTile(
-                    colors: colors,
-                    title: AppLocalizations.of(context)!.dateModified,
-                    subtitle: lastModified.toString()),
-                addInfoTile(
-                    colors: colors,
-                    title: AppLocalizations.of(context)!.widthInfoPage,
-                    subtitle: "${width}px"),
-                addInfoTile(
-                    colors: colors,
-                    title: AppLocalizations.of(context)!.heightInfoPage,
-                    subtitle: "${height}px"),
-                addInfoTile(
-                    colors: colors, title: "Size", subtitle: kbMbSize(size))
-              ],
-              name,
-              temporary: GalleryImpl.instance().temporary,
-              showDeleteButton: true,
-              launchGrid: GalleryImpl.instance().temporary
-                  ? null
-                  : (t) {
-                      try {
-                        final res = PostTags.g.dissassembleFilename(name);
-                        final tagManager = TagManager.fromEnum(res.booru, true);
-
-                        tagManager.onTagPressed(context,
-                            Tag(tag: t, isExcluded: false), res.booru, false);
-                      } catch (e) {
-                        log("launching local tag random booru",
-                            level: Level.SEVERE.value, error: e);
-                      }
+                          ));
                     },
-            );
-          };
+                    icon: const Icon(Icons.edit))),
+        addInfoTile(
+            colors: colors,
+            title: AppLocalizations.of(context)!.dateModified,
+            subtitle: lastModified.toString()),
+        addInfoTile(
+            colors: colors,
+            title: AppLocalizations.of(context)!.widthInfoPage,
+            subtitle: "${width}px"),
+        addInfoTile(
+            colors: colors,
+            title: AppLocalizations.of(context)!.heightInfoPage,
+            subtitle: "${height}px"),
+        addInfoTile(colors: colors, title: "Size", subtitle: kbMbSize(size))
+      ],
+      name,
+      temporary: GalleryImpl.g.temporary,
+      showDeleteButton: true,
+      launchGrid: GalleryImpl.g.temporary
+          ? null
+          : (t) {
+              try {
+                final res = PostTags.g.dissassembleFilename(name);
+                final tagManager = TagManager.fromEnum(res.booru, true);
+
+                tagManager.onTagPressed(
+                    context, Tag(tag: t, isExcluded: false), res.booru, false);
+              } catch (e) {
+                log("launching local tag random booru",
+                    level: Level.SEVERE.value, error: e);
+              }
+            },
+    );
+  }
 
   @override
   Contentable fileDisplay() {

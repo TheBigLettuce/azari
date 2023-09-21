@@ -81,107 +81,103 @@ class PostBase implements Cell {
   String filename() =>
       "${prefix.isNotEmpty ? '${prefix}_' : ''}$id - $md5${ext != '.zip' ? ext : path_util.extension(sampleUrl)}";
 
-  @ignore
   @override
-  List<Widget>? Function(BuildContext context) get addButtons => (context) {
-        return [
-          if (tags.contains("original")) ...[
-            Icon(FilteringMode.original.icon),
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                  maxHeight: Theme.of(context).iconTheme.size ?? 24),
-              child: VerticalDivider(
-                color: Theme.of(context).iconTheme.color,
-              ),
-            )
-          ],
-          IconButton(
-            icon: const Icon(Icons.public),
-            onPressed: () {
-              final booru = BooruAPI.fromEnum(Booru.fromPrefix(prefix)!);
-              launchUrl(booru.browserLink(id),
-                  mode: LaunchMode.externalApplication);
-              booru.close();
-            },
+  List<Widget>? addButtons(BuildContext context) {
+    return [
+      if (tags.contains("original")) ...[
+        Icon(FilteringMode.original.icon),
+        ConstrainedBox(
+          constraints:
+              BoxConstraints(maxHeight: Theme.of(context).iconTheme.size ?? 24),
+          child: VerticalDivider(
+            color: Theme.of(context).iconTheme.color,
           ),
-        ];
-      };
+        )
+      ],
+      IconButton(
+        icon: const Icon(Icons.public),
+        onPressed: () {
+          final booru = BooruAPI.fromEnum(Booru.fromPrefix(prefix)!);
+          launchUrl(booru.browserLink(id),
+              mode: LaunchMode.externalApplication);
+          booru.close();
+        },
+      ),
+    ];
+  }
 
-  @ignore
   @override
-  List<Widget>? Function(
-          BuildContext context, dynamic extra, AddInfoColorData colors)
-      get addInfo =>
-          (BuildContext context, dynamic extra, AddInfoColorData colors) {
-            final dUrl = fileDownloadUrl();
-            late final TagManager tagManager;
-            try {
-              tagManager = TagManagerNotifier.of(context);
-            } catch (_) {
-              tagManager = TagManager.fromEnum(Booru.fromPrefix(prefix)!, true);
-            }
+  List<Widget>? addInfo(
+      BuildContext context, dynamic extra, AddInfoColorData colors) {
+    final dUrl = fileDownloadUrl();
+    late final TagManager tagManager;
+    try {
+      tagManager = TagManagerNotifier.of(context);
+    } catch (_) {
+      tagManager = TagManager.fromEnum(Booru.fromPrefix(prefix)!, true);
+    }
 
-            return wrapTagsSearch(
-              context,
-              extra,
-              colors,
-              [
-                ListTile(
-                  textColor: colors.foregroundColor,
-                  title: Text(AppLocalizations.of(context)!.pathInfoPage),
-                  subtitle: Text(dUrl),
-                  onTap: () => launchUrl(Uri.parse(dUrl),
-                      mode: LaunchMode.externalApplication),
-                ),
-                ListTile(
-                  textColor: colors.foregroundColor,
-                  title: Text(AppLocalizations.of(context)!.widthInfoPage),
-                  subtitle: Text("${width}px"),
-                ),
-                ListTile(
-                  textColor: colors.foregroundColor,
-                  title: Text(AppLocalizations.of(context)!.heightInfoPage),
-                  subtitle: Text("${height}px"),
-                ),
-                ListTile(
-                  textColor: colors.foregroundColor,
-                  title: Text(AppLocalizations.of(context)!.createdAtInfoPage),
-                  subtitle: Text(AppLocalizations.of(context)!.date(createdAt)),
-                ),
-                ListTile(
-                  textColor: colors.foregroundColor,
-                  title: Text(AppLocalizations.of(context)!.sourceFileInfoPage),
-                  subtitle: Text(sourceUrl),
-                  onTap: sourceUrl.isEmpty
-                      ? null
-                      : () => launchUrl(Uri.parse(sourceUrl),
-                          mode: LaunchMode.externalApplication),
-                ),
-                ListTile(
-                  textColor: colors.foregroundColor,
-                  title: Text(AppLocalizations.of(context)!.ratingInfoPage),
-                  subtitle: Text(rating),
-                ),
-                ListTile(
-                  textColor: colors.foregroundColor,
-                  title: Text(AppLocalizations.of(context)!.scoreInfoPage),
-                  subtitle: Text(score.toString()),
-                ),
-              ],
-              filename(),
-              supplyTags: tags,
-              addExcluded: (t) {
-                tagManager.excluded.add(Tag(tag: t, isExcluded: true));
-              },
-              launchGrid: (t) {
-                tagManager.onTagPressed(
-                    context,
-                    Tag.string(tag: HtmlUnescape().convert(t)),
-                    Booru.fromPrefix(prefix)!,
-                    true);
-              },
-            );
-          };
+    return wrapTagsSearch(
+      context,
+      extra,
+      colors,
+      [
+        ListTile(
+          textColor: colors.foregroundColor,
+          title: Text(AppLocalizations.of(context)!.pathInfoPage),
+          subtitle: Text(dUrl),
+          onTap: () =>
+              launchUrl(Uri.parse(dUrl), mode: LaunchMode.externalApplication),
+        ),
+        ListTile(
+          textColor: colors.foregroundColor,
+          title: Text(AppLocalizations.of(context)!.widthInfoPage),
+          subtitle: Text("${width}px"),
+        ),
+        ListTile(
+          textColor: colors.foregroundColor,
+          title: Text(AppLocalizations.of(context)!.heightInfoPage),
+          subtitle: Text("${height}px"),
+        ),
+        ListTile(
+          textColor: colors.foregroundColor,
+          title: Text(AppLocalizations.of(context)!.createdAtInfoPage),
+          subtitle: Text(AppLocalizations.of(context)!.date(createdAt)),
+        ),
+        ListTile(
+          textColor: colors.foregroundColor,
+          title: Text(AppLocalizations.of(context)!.sourceFileInfoPage),
+          subtitle: Text(sourceUrl),
+          onTap: sourceUrl.isEmpty
+              ? null
+              : () => launchUrl(Uri.parse(sourceUrl),
+                  mode: LaunchMode.externalApplication),
+        ),
+        ListTile(
+          textColor: colors.foregroundColor,
+          title: Text(AppLocalizations.of(context)!.ratingInfoPage),
+          subtitle: Text(rating),
+        ),
+        ListTile(
+          textColor: colors.foregroundColor,
+          title: Text(AppLocalizations.of(context)!.scoreInfoPage),
+          subtitle: Text(score.toString()),
+        ),
+      ],
+      filename(),
+      supplyTags: tags,
+      addExcluded: (t) {
+        tagManager.excluded.add(Tag(tag: t, isExcluded: true));
+      },
+      launchGrid: (t) {
+        tagManager.onTagPressed(
+            context,
+            Tag.string(tag: HtmlUnescape().convert(t)),
+            Booru.fromPrefix(prefix)!,
+            true);
+      },
+    );
+  }
 
   @override
   String alias(bool isList) => isList ? tags.join(" ") : id.toString();

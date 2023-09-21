@@ -31,7 +31,7 @@ class Settings {
   @enumerated
   final DisplayQuality quality;
   @enumerated
-  final bool safeMode;
+  final SafeMode safeMode;
 
   final bool autoRefresh;
   final int autoRefreshMicroseconds;
@@ -69,7 +69,7 @@ class Settings {
     bool? saveTagsOnlyOnDownload,
     FilteringMode? favoritesPageMode,
     bool? expensiveHash,
-    bool? safeMode,
+    SafeMode? safeMode,
     AspectRatio? ratio,
     GridSettings? galleryDirectories,
     GridSettings? galleryFiles,
@@ -98,7 +98,7 @@ class Settings {
         selectedBooru = Booru.gelbooru,
         quality = DisplayQuality.sample,
         favoritesPageMode = FilteringMode.tag,
-        safeMode = true,
+        safeMode = SafeMode.normal,
         booru = GridSettings(
           columns: (Platform.isAndroid || Platform.isIOS)
               ? GridColumn.two
@@ -216,6 +216,16 @@ class GridSettings {
       this.columns = GridColumn.three,
       this.listView = false,
       this.hideName = false});
+}
+
+enum SafeMode {
+  normal("Normal"),
+  none("None"),
+  relaxed("Relaxed");
+
+  final String string;
+
+  const SafeMode(this.string);
 }
 
 enum DisplayQuality {

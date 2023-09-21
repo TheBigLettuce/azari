@@ -15,35 +15,7 @@ class GalleryImpl implements GalleryApi {
   final bool temporary;
   bool isSavingTags = false;
 
-  @override
-  void finish(String version) {
-    db.writeTxnSync(
-        () => db.galleryLastModifieds.putSync(GalleryLastModified(version)));
-  }
-
-  factory GalleryImpl.instance() => _global!;
-
-  factory GalleryImpl(bool temporary) {
-    if (_global != null) {
-      return _global!;
-    }
-
-    _global = GalleryImpl._new(
-        IsarDbsOpen.androidGalleryDirectories(temporary: temporary), temporary);
-    return _global!;
-  }
-
   _AndroidGallery? _currentApi;
-
-  void _setCurrentApi(_AndroidGallery api) {
-    _currentApi = api;
-  }
-
-  void _unsetCurrentApi() {
-    _currentApi = null;
-  }
-
-  GalleryImpl._new(this.db, this.temporary);
 
   @override
   void updatePictures(List<DirectoryFile?> f, String bucketId, int startTime,
@@ -138,4 +110,26 @@ class GalleryImpl implements GalleryApi {
     }
     _currentApi?.refreshGrid?.call();
   }
+
+  static GalleryImpl get g => _global!;
+
+  factory GalleryImpl(bool temporary) {
+    if (_global != null) {
+      return _global!;
+    }
+
+    _global = GalleryImpl._new(
+        IsarDbsOpen.androidGalleryDirectories(temporary: temporary), temporary);
+    return _global!;
+  }
+
+  void _setCurrentApi(_AndroidGallery api) {
+    _currentApi = api;
+  }
+
+  void _unsetCurrentApi() {
+    _currentApi = null;
+  }
+
+  GalleryImpl._new(this.db, this.temporary);
 }

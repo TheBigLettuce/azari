@@ -8,6 +8,7 @@
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:gallery/src/booru/interface.dart';
+import 'package:gallery/src/schemas/settings.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 import 'package:path/path.dart' as path;
 
@@ -86,14 +87,19 @@ class Gelbooru implements BooruAPI {
       excludedTagsString = "";
     }
 
+    String safeModeS() => switch (Settings.fromDb().safeMode) {
+          SafeMode.none => "",
+          SafeMode.normal => 'rating:general',
+          SafeMode.relaxed => '-rating:explicit -rating:questionable',
+        };
+
     final query = <String, dynamic>{
       "page": "dapi",
       "s": "post",
       "q": "index",
       "pid": p.toString(),
       "json": "1",
-      "tags":
-          "${BooruAPI.isSafeModeEnabled() ? 'rating:general' : ''} $excludedTagsString $tags",
+      "tags": "${safeModeS()} $excludedTagsString $tags",
       "limit": BooruAPI.numberOfElementsPerRefresh().toString()
     };
 

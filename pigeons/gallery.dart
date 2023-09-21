@@ -73,8 +73,6 @@ abstract class GalleryApi {
       bool inRefresh, bool empty);
 
   void notify(String? target);
-
-  void finish(String newVersion);
 }
 
 class CopyOp {

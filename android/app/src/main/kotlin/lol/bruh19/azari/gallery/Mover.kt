@@ -572,17 +572,6 @@ internal class Mover(
                 Log.e("refreshMediastore", "cursor block fail", e)
             }
         }
-
-        val version = MediaStore.getVersion(
-            context,
-            MediaStore.getVolumeName(MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        )
-
-        CoroutineScope(coContext).launch {
-            galleryApi.finish(
-                version
-            ) {}
-        }.join()
     }
 
     fun add(op: MoveOp) {

@@ -128,8 +128,6 @@ abstract class BooruAPI {
 
     return 10 * settings.booru.columns.number;
   }
-
-  static bool isSafeModeEnabled() => Settings.fromDb().safeMode;
 }
 
 class CloudflareException implements Exception {}

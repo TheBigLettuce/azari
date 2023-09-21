@@ -132,7 +132,7 @@ class _SettingsListState extends State<SettingsList> {
           subtitle: Text(_settings!.selectedBooru.string),
           onTap: () => radioDialog(
               context,
-              Booru.values.map((e) => (e, e.string)).toList(),
+              Booru.values.map((e) => (e, e.string)),
               _settings!.selectedBooru, (value) {
             if (value != null && value != _settings!.selectedBooru) {
               selectBooru(context, _settings!, value);
@@ -143,18 +143,22 @@ class _SettingsListState extends State<SettingsList> {
           title: Text(AppLocalizations.of(context)!.imageDisplayQualitySetting),
           onTap: () => radioDialog(
             context,
-            DisplayQuality.values.map((e) => (e, e.string)).toList(),
+            DisplayQuality.values.map((e) => (e, e.string)),
             _settings!.quality,
             (value) => _settings!.copy(quality: value).save(),
             title: AppLocalizations.of(context)!.imageDisplayQualitySetting,
           ),
           subtitle: Text(_settings!.quality.string),
         ),
-        SwitchListTile(
-          value: _settings!.safeMode,
-          onChanged: (value) =>
-              _settings!.copy(safeMode: !_settings!.safeMode).save(),
+        ListTile(
           title: Text(AppLocalizations.of(context)!.safeModeSetting),
+          onTap: () => radioDialog(
+              context,
+              SafeMode.values.map((e) => (e, e.string)),
+              _settings!.safeMode,
+              (value) => _settings!.copy(safeMode: value).save(),
+              title: AppLocalizations.of(context)!.safeModeSetting),
+          subtitle: Text(_settings!.safeMode.string),
         ),
         SwitchListTile(
           value: _settings!.autoRefresh,

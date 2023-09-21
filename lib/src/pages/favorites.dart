@@ -48,9 +48,19 @@ class _FavoritesPageState extends State<FavoritesPage>
   late final loader = LinearIsarLoader<FavoriteBooru>(
       FavoriteBooruSchema, Dbs.g.main, (offset, limit, s, sort, mode) {
     if (mode == FilteringMode.group) {
+      if (s.isEmpty) {
+        return Dbs.g.main.favoriteBoorus
+            .where()
+            .sortByGroupDesc()
+            .thenByCreatedAtDesc()
+            .offset(offset)
+            .limit(limit)
+            .findAllSync();
+      }
+
       return Dbs.g.main.favoriteBoorus
           .filter()
-          .allOf(s.split(" "), (q, element) => q.tagsElementContains(element))
+          .groupContains(s)
           .sortByGroupDesc()
           .thenByCreatedAtDesc()
           .offset(offset)
@@ -200,8 +210,8 @@ class _FavoritesPageState extends State<FavoritesPage>
       setState(() {});
     });
 
-    settingsWatcher = Dbs.g.main.settings.watchObject(0).listen((event) {
-      state.settings = event!;
+    settingsWatcher = Settings.watch((s) {
+      state.settings = s!;
 
       setState(() {});
     });

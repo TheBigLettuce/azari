@@ -8,7 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-void radioDialog<T>(BuildContext context, List<(T, String)> values,
+void radioDialog<T>(BuildContext context, Iterable<(T, String)> values,
     T groupValue, void Function(T? value) onChanged,
     {required String title}) {
   Navigator.push(

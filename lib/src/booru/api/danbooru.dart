@@ -9,6 +9,7 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:gallery/src/schemas/post.dart';
 
+import '../../schemas/settings.dart';
 import '../interface.dart';
 import '../tags/interface.dart';
 
@@ -101,10 +102,16 @@ class Danbooru implements BooruAPI {
     // anonymous api calls to danbooru are limited by two tags per search req
     tags = tags.split(" ").take(2).join(" ");
 
+    String safeModeS() => switch (Settings.fromDb().safeMode) {
+          SafeMode.normal => "rating:g",
+          SafeMode.none => '',
+          SafeMode.relaxed => "rating:g,s",
+        };
+
     final query = <String, dynamic>{
       "limit": BooruAPI.numberOfElementsPerRefresh().toString(),
       "format": "json",
-      "post[tags]": "${BooruAPI.isSafeModeEnabled() ? 'rating:g' : ''} $tags",
+      "post[tags]": "${safeModeS()} $tags",
     };
 
     if (postid != null) {

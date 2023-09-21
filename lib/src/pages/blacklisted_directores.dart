@@ -99,7 +99,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
                   onPressed: () {
                     Dbs.g.blacklisted!.writeTxnSync(() =>
                         Dbs.g.blacklisted!.blacklistedDirectorys.clearSync());
-                    GalleryImpl.instance().notify(null);
+                    GalleryImpl.g.notify(null);
                   },
                   icon: const Icon(Icons.delete))
             ],

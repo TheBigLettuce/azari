@@ -7,7 +7,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:isar/isar.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 
 import 'contentable.dart';
@@ -44,13 +43,11 @@ abstract class Cell {
 
   /// Additional information about the cell.
   /// This gets displayed in the "Info" list view, in the image view.
-  @ignore
-  List<Widget>? Function(
-      BuildContext context, dynamic extra, AddInfoColorData colors) get addInfo;
+  List<Widget>? addInfo(
+      BuildContext context, dynamic extra, AddInfoColorData colors);
 
   /// Additional buttons which get diplayed in the image view's appbar.
-  @ignore
-  List<Widget>? Function(BuildContext context) get addButtons;
+  List<Widget>? addButtons(BuildContext context);
 
   /// File that gets displayed in the image view.
   /// This can be unimplemented.

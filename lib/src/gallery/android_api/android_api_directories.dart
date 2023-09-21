@@ -16,7 +16,6 @@ import 'package:gallery/src/schemas/favorite_media.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:gallery/src/gallery/android_api/api.g.dart';
-import 'package:gallery/src/schemas/gallery_last_modified.dart';
 import '../../db/platform_channel.dart';
 import '../../widgets/search_filter_grid.dart';
 import '../interface.dart';
@@ -115,12 +114,10 @@ class _AndroidGallery
 
   bool isThumbsLoading = false;
 
-  final filter = IsarFilter<SystemGalleryDirectory>(GalleryImpl.instance().db,
-      IsarDbsOpen.androidGalleryDirectories(temporary: true),
+  final filter = IsarFilter<SystemGalleryDirectory>(
+      GalleryImpl.g.db, IsarDbsOpen.androidGalleryDirectories(temporary: true),
       (offset, limit, v, _, __) {
-    return GalleryImpl.instance()
-        .db
-        .systemGalleryDirectorys
+    return GalleryImpl.g.db.systemGalleryDirectorys
         .filter()
         .nameContains(v, caseSensitive: false)
         .or()
@@ -130,7 +127,7 @@ class _AndroidGallery
         .findAllSync();
   });
 
-  Isar get db => GalleryImpl.instance().db;
+  Isar get db => GalleryImpl.g.db;
 
   @override
   AndroidGalleryExtra getExtra() => AndroidGalleryExtra._(this);
@@ -148,7 +145,7 @@ class _AndroidGallery
 
   @override
   SystemGalleryDirectory directCell(int i) =>
-      GalleryImpl.instance().db.systemGalleryDirectorys.getSync(i + 1)!;
+      GalleryImpl.g.db.systemGalleryDirectorys.getSync(i + 1)!;
 
   @override
   Future<int> refresh() {

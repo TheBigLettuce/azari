@@ -18,7 +18,6 @@ import 'package:gallery/src/schemas/blacklisted_directory.dart';
 import 'package:gallery/src/schemas/directory_tags.dart';
 import 'package:gallery/src/schemas/download_file.dart';
 import 'package:gallery/src/schemas/favorite_booru.dart';
-import 'package:gallery/src/schemas/gallery_last_modified.dart';
 import 'package:gallery/src/schemas/local_tag_dictionary.dart';
 import 'package:gallery/src/schemas/local_tags.dart';
 import 'package:gallery/src/schemas/pinned_directories.dart';
@@ -114,7 +113,7 @@ Future initalizeIsar(bool temporary) async {
       PinnedDirectoriesSchema,
       FavoriteMediaSchema
     ],
-        directory: _dbs.directory,
+        directory: directoryPath,
         inspector: false,
         name: "androidBlacklistedDir");
   }
@@ -165,7 +164,7 @@ class IsarDbsOpen {
       );
 
   static Isar androidGalleryDirectories({bool? temporary}) => Isar.openSync(
-        [SystemGalleryDirectorySchema, GalleryLastModifiedSchema],
+        [SystemGalleryDirectorySchema],
         directory: temporary == true ? _dbs.temporaryDbDir : _dbs.directory,
         inspector: false,
         name: temporary == true

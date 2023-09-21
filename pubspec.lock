@@ -597,38 +597,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.5.0"
-  media_kit:
-    dependency: "direct main"
-    description:
-      name: media_kit
-      sha256: "080cfb5af8d04f8cc454cb4c5ea34b19de5b8e1a1b3af62a34e766364b5244ad"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.11"
-  media_kit_libs_linux:
-    dependency: "direct main"
-    description:
-      name: media_kit_libs_linux
-      sha256: "3b7c272179639a914dc8a50bf8a3f2df0e9a503bd727c88fab499dbdf6cb1eb8"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.2"
-  media_kit_native_event_loop:
-    dependency: "direct main"
-    description:
-      name: media_kit_native_event_loop
-      sha256: e37ce6fb5fa71b8cf513c6a6cd591367743a342a385e7da621a047dd8ef6f4a4
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.7"
-  media_kit_video:
-    dependency: "direct main"
-    description:
-      name: media_kit_video
-      sha256: "89d3c2cdb0f74d1bb597a9c9a7678f656fe538d20620ad1317b7354fd5d1af15"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.12"
   meta:
     dependency: transitive
     description:
@@ -877,14 +845,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.27.7"
-  safe_local_storage:
-    dependency: transitive
-    description:
-      name: safe_local_storage
-      sha256: ede4eb6cb7d88a116b3d3bf1df70790b9e2038bc37cb19112e381217c74d9440
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.2"
   shelf:
     dependency: transitive
     description:
@@ -1050,14 +1010,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.2"
-  uri_parser:
-    dependency: transitive
-    description:
-      name: uri_parser
-      sha256: "6543c9fd86d2862fac55d800a43e67c0dcd1a41677cb69c2f8edfe73bbcf1835"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.2"
   url_launcher:
     dependency: "direct main"
     description:

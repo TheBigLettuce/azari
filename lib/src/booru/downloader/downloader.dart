@@ -156,22 +156,22 @@ class Downloader with _CancelTokens {
   }
 
   void markStale() {
+    final toUpdate = <DownloadFile>[];
+
+    final inProgress =
+        Dbs.g.main.downloadFiles.filter().inProgressEqualTo(true).findAllSync();
+    for (final element in inProgress) {
+      if (_tokens[element.isarId!] == null) {
+        toUpdate.add(element.failed());
+      }
+    }
+
+    if (toUpdate.isEmpty) {
+      return;
+    }
+
     Dbs.g.main.writeTxnSync(() {
-      final toUpdate = <DownloadFile>[];
-
-      final inProgress = Dbs.g.main.downloadFiles
-          .filter()
-          .inProgressEqualTo(true)
-          .findAllSync();
-      for (final element in inProgress) {
-        if (_tokens[element.isarId!] == null) {
-          toUpdate.add(element.failed());
-        }
-      }
-
-      if (toUpdate.isNotEmpty) {
-        Dbs.g.main.downloadFiles.putAllSync(toUpdate);
-      }
+      Dbs.g.main.downloadFiles.putAllSync(toUpdate);
     });
   }
 
@@ -227,12 +227,12 @@ class Downloader with _CancelTokens {
       } catch (e, trace) {
         log("writting downloaded file ${d.name} to uri",
             level: Level.SEVERE.value, error: e, stackTrace: trace);
-        d.failed().save();
         _removeToken(d.url);
+        d.failed().save();
       }
     }).onError((error, stackTrace) {
-      d.failed().save();
       _removeToken(d.url);
+      d.failed().save();
 
       progress.error(error.toString());
     }).whenComplete(() => _done());

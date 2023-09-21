@@ -33,7 +33,6 @@ import '../widgets/notifiers/filter_value.dart';
 import '../widgets/notifiers/focus.dart';
 import '../widgets/notifiers/tag_refresh.dart';
 import '../widgets/video/photo_gallery_page_video.dart';
-import '../widgets/video/photo_gallery_page_video_linux.dart';
 
 final Color kListTileColorInInfo = Colors.white60.withOpacity(0.8);
 
@@ -371,8 +370,23 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
           disableGestures: true,
           tightMode: true,
           child: Platform.isLinux
-              ? PhotoGalleryPageVideoLinux(url: uri, localVideo: local)
-              : PhotoGalleryPageVideo(url: uri, localVideo: local));
+              ? const Center(child: Icon(Icons.error_outline))
+              : PhotoGalleryPageVideo(
+                  url: uri,
+                  localVideo: local,
+                  loadingColor: ColorTween(
+                              begin: previousPallete?.dominantColor?.color,
+                              end: currentPalette?.dominantColor?.color)
+                          .transform(_animationController.value) ??
+                      Colors.black,
+                  backgroundColor: ColorTween(
+                              begin: previousPallete?.mutedColor?.color
+                                  .withOpacity(0.7),
+                              end: currentPalette?.mutedColor?.color
+                                  .withOpacity(0.7))
+                          .transform(_animationController.value) ??
+                      Theme.of(context).colorScheme.primary,
+                ));
 
   PhotoViewGalleryPageOptions _makeNetImage(ImageProvider provider) {
     final options = PhotoViewGalleryPageOptions(
@@ -410,9 +424,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                             ? MediaQuery.of(context).size.aspectRatio
                             : size.aspectRatio,
                         child: fakeProvider != null
-                            ? Image(
-                                image: fakeProvider!,
-                              )
+                            ? Image(image: fakeProvider!)
                             : AndroidView(
                                 viewType: "imageview",
                                 hitTestBehavior:
@@ -758,6 +770,14 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                                           width: 20.0,
                                           height: 20.0,
                                           child: CircularProgressIndicator(
+                                              backgroundColor: ColorTween(
+                                                      begin: previousPallete
+                                                          ?.mutedColor?.color
+                                                          .withOpacity(0.7),
+                                                      end: currentPalette?.mutedColor?.color
+                                                          .withOpacity(0.7))
+                                                  .transform(_animationController
+                                                      .value),
                                               color: ColorTween(
                                                       begin: previousPallete
                                                           ?.dominantColor
@@ -765,9 +785,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                                                       end: currentPalette
                                                           ?.dominantColor
                                                           ?.color)
-                                                  .transform(
-                                                      _animationController
-                                                          .value),
+                                                  .transform(_animationController.value),
                                               value: value)),
                                     ),
                                   );

@@ -249,17 +249,17 @@ class _AndroidFilesState extends State<AndroidFiles>
       }
     }
 
-    GalleryImpl.instance().notify(null);
+    GalleryImpl.g.notify(null);
   }
 
   void _saveTags(
       BuildContext context, List<SystemGalleryDirectoryFile> selected) async {
-    if (GalleryImpl.instance().isSavingTags) {
+    if (GalleryImpl.g.isSavingTags) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(AppLocalizations.of(context)!.tagSavingInProgress)));
       return;
     }
-    GalleryImpl.instance().isSavingTags = true;
+    GalleryImpl.g.isSavingTags = true;
 
     final notifi = await chooseNotificationPlug().newProgress(
         "${AppLocalizations.of(context)!.savingTagsSaving}"
@@ -277,8 +277,8 @@ class _AndroidFilesState extends State<AndroidFiles>
       }
     }
     notifi.done();
-    GalleryImpl.instance().notify(null);
-    GalleryImpl.instance().isSavingTags = false;
+    GalleryImpl.g.notify(null);
+    GalleryImpl.g.isSavingTags = false;
   }
 
   void _changeName(
