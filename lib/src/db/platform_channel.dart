@@ -143,6 +143,11 @@ class PlatformFunctions {
         ThumbId(id: id, thumb: value["data"], differenceHash: value["hash"]));
   }
 
+  static Future<ThumbId> getThumbNetwork(String url, int id) {
+    return _channel.invokeMethod("getThumbNetwork", url).then((value) =>
+        ThumbId(id: id, thumb: value["data"], differenceHash: value["hash"]));
+  }
+
   const PlatformFunctions();
 }
 

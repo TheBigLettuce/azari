@@ -331,7 +331,7 @@ class _SettingsListState extends State<SettingsList> {
 
   @override
   Widget build(BuildContext context) {
-    var titleStyle = Theme.of(context)
+    final titleStyle = Theme.of(context)
         .textTheme
         .titleSmall!
         .copyWith(color: Theme.of(context).colorScheme.secondary);

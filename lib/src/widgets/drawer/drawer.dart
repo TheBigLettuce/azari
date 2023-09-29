@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/state_restoration.dart';
 import 'package:gallery/src/gallery/android_api/android_directories.dart';
+import 'package:gallery/src/pages/bookmarks.dart';
 import 'package:gallery/src/pages/favorites.dart';
 import 'package:gallery/src/pages/tags.dart';
 import 'package:gallery/src/pages/downloads.dart';
@@ -25,9 +26,10 @@ import 'package:gallery/src/pages/settings.dart';
 const int kBooruGridDrawerIndex = 0;
 const int kGalleryDrawerIndex = 1;
 const int kFavoritesDrawerIndex = 2;
-const int kTagsDrawerIndex = 3;
-const int kDownloadsDrawerIndex = 4;
-const int kSettingsDrawerIndex = 5;
+const int kBookmarksDrawerIndex = 3;
+const int kTagsDrawerIndex = 4;
+const int kDownloadsDrawerIndex = 5;
+const int kSettingsDrawerIndex = 6;
 const int kComeFromRandom = -1;
 
 Widget azariIcon(BuildContext context, {Color? color}) => Icon(
@@ -41,20 +43,22 @@ List<NavigationDrawerDestination> destinations(BuildContext context,
 
   return [
     NavigationDrawerDestination(
-        icon: const Icon(Icons.image),
-        selectedIcon: Icon(
-          Icons.image,
-          color: primaryColor,
-        ),
-        label: Text(
-            overrideBooru?.string ?? Settings.fromDb().selectedBooru.string)),
+      icon: const Icon(Icons.image),
+      selectedIcon: Icon(
+        Icons.image,
+        color: primaryColor,
+      ),
+      label:
+          Text(overrideBooru?.string ?? Settings.fromDb().selectedBooru.string),
+    ),
     NavigationDrawerDestination(
-        icon: const Icon(Icons.photo_album),
-        selectedIcon: Icon(
-          Icons.photo_album,
-          color: primaryColor,
-        ),
-        label: Text(AppLocalizations.of(context)!.galleryLabel)),
+      icon: const Icon(Icons.photo_album),
+      selectedIcon: Icon(
+        Icons.photo_album,
+        color: primaryColor,
+      ),
+      label: Text(AppLocalizations.of(context)!.galleryLabel),
+    ),
     NavigationDrawerDestination(
       icon: const Icon(Icons.favorite),
       selectedIcon: Icon(
@@ -62,6 +66,14 @@ List<NavigationDrawerDestination> destinations(BuildContext context,
         color: primaryColor,
       ),
       label: Text(AppLocalizations.of(context)!.favoritesLabel),
+    ),
+    NavigationDrawerDestination(
+      icon: const Icon(Icons.bookmark),
+      selectedIcon: Icon(
+        Icons.bookmark,
+        color: primaryColor,
+      ),
+      label: const Text("Bookmarks"), // TODO: change
     ),
     NavigationDrawerDestination(
       icon: const Icon(Icons.tag),
@@ -92,6 +104,21 @@ void selectDestination(BuildContext context, int from, int selectedIndex) =>
             {
               Navigator.popUntil(context, ModalRoute.withName("/senitel")),
               Navigator.pop(context),
+            }
+        },
+      kBookmarksDrawerIndex => {
+          if (from == kBooruGridDrawerIndex)
+            {
+              Navigator.pushNamed(context, "/senitel"),
+            },
+          if (from != kBookmarksDrawerIndex)
+            {
+              Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const Bookmarks(),
+                  ),
+                  ModalRoute.withName("/senitel")),
             }
         },
       kTagsDrawerIndex => {

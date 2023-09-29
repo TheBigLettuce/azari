@@ -230,6 +230,7 @@ class _AndroidFilesState extends State<AndroidFiles>
                 preferredSize: const Size.fromHeight(52),
                 child: CopyMovePreview(
                   files: selected,
+                  size: 52,
                 ),
               )),
         );

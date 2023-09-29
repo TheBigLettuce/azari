@@ -71,7 +71,7 @@ PopupMenuItem _hideName(
 PopupMenuItem _ratio(BuildContext context, schema.AspectRatio aspectRatio,
     void Function(schema.AspectRatio?) select) {
   return PopupMenuItem(
-    child: Text("Ratio"),
+    child: const Text("Ratio"), // TODO: change
     onTap: () => radioDialog(
       context,
       schema.AspectRatio.values.map((e) => (e, e.value.toString())).toList(),
@@ -85,7 +85,7 @@ PopupMenuItem _ratio(BuildContext context, schema.AspectRatio aspectRatio,
 PopupMenuItem _columns(BuildContext context, GridColumn columns,
     void Function(GridColumn?) select) {
   return PopupMenuItem(
-    child: Text("Columns"),
+    child: const Text("Columns"), // TODO: change
     onTap: () => radioDialog(
       context,
       GridColumn.values.map((e) => (e, e.number.toString())).toList(),
@@ -230,7 +230,11 @@ class _MainBooruGridState extends State<MainBooruGrid>
     PostTags.g.addTagsPost(p.filename(), p.tags, true);
 
     return Downloader.g.add(
-        DownloadFile.d(p.fileDownloadUrl(), api.booru.url, p.filename()),
+        DownloadFile.d(
+            url: p.fileDownloadUrl(),
+            site: api.booru.url,
+            name: p.filename(),
+            thumbUrl: p.previewUrl),
         state.settings);
   }
 

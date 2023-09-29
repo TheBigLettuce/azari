@@ -487,8 +487,6 @@ class GridLayout {
       );
     }
 
-    // print(object);
-
     return (
       !Platform.isAndroid
           ? SliverLayoutBuilder(

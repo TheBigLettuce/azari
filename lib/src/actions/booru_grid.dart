@@ -29,7 +29,11 @@ class BooruGridActions {
       for (final element in selected) {
         PostTags.g.addTagsPost(element.filename(), element.tags, true);
         Downloader.g.add(
-            DownloadFile.d(element.fileUrl, api.booru.url, element.filename()),
+            DownloadFile.d(
+                url: element.fileUrl,
+                site: api.booru.url,
+                name: element.filename(),
+                thumbUrl: element.previewUrl),
             settings);
       }
     },

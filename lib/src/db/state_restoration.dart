@@ -5,6 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'package:gallery/src/schemas/grid_state_booru.dart';
 import 'package:isar/isar.dart';
 
 import '../booru/tags/interface.dart';
@@ -36,6 +37,26 @@ class StateRestoration {
         scrollPositionTags: infoPos,
         page: getPage?.call(),
         selectedPost: selectedCell)));
+  }
+
+  int secondaryCount() => _mainGrid.gridStates.countSync() - 1;
+
+  void moveToBookmarks(Booru booru) {
+    final prev = _mainGrid.gridStates.getByNameSync(copy.name)!;
+
+    _mainGrid.writeTxnSync(() => _mainGrid.gridStates.deleteSync(prev.id!));
+
+    prev.id = null;
+
+    Dbs.g.main.writeTxnSync(() => Dbs.g.main.gridStateBoorus.putSync(
+        GridStateBooru(booru,
+            tags: prev.tags,
+            scrollPositionTags: prev.scrollPositionTags,
+            selectedPost: prev.selectedPost,
+            scrollPositionGrid: prev.scrollPositionGrid,
+            name: prev.name,
+            time: prev.time,
+            page: prev.page)));
   }
 
   void updateTime() {
@@ -82,8 +103,12 @@ class StateRestoration {
   }
 
   StateRestoration? last() {
-    final res = _mainGrid.gridStates.where().sortByTimeDesc().findFirstSync()!;
-    if (res.name == _mainGrid.name) {
+    var res = _mainGrid.gridStates
+        .where()
+        .nameNotEqualTo(_mainGrid.name)
+        .sortByTimeDesc()
+        .findFirstSync();
+    if (res == null) {
       return null;
     }
 

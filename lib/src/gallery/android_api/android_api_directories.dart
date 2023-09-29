@@ -80,6 +80,10 @@ class AndroidGalleryExtra {
     _impl.callback = callback;
   }
 
+  void setTemporarySet(void Function(int, bool) callback) {
+    _impl.temporarySet = callback;
+  }
+
   void setPassFilter(
       (Iterable<SystemGalleryDirectory>, dynamic) Function(
               Iterable<SystemGalleryDirectory>, dynamic, bool)?
@@ -96,6 +100,8 @@ GalleryAPIDirectories<AndroidGalleryExtra, AndroidGalleryFilesExtra,
   final api = _AndroidGallery(temporary: temporaryDb);
   if (setCurrentApi) {
     _global!._setCurrentApi(api);
+  } else {
+    _global!._temporaryApis.add(api);
   }
 
   return api;
@@ -106,9 +112,11 @@ class _AndroidGallery
         GalleryAPIDirectories<AndroidGalleryExtra, AndroidGalleryFilesExtra,
             SystemGalleryDirectory, SystemGalleryDirectoryFile> {
   final bool? temporary;
+  final time = DateTime.now();
 
   void Function(int i, bool inRefresh, bool empty)? callback;
   void Function()? refreshGrid;
+  void Function(int, bool)? temporarySet;
 
   _AndroidGalleryFiles? currentImages;
 
@@ -140,6 +148,8 @@ class _AndroidGallery
     currentImages = null;
     if (temporary == false) {
       _global!._unsetCurrentApi();
+    } else if (temporary == true) {
+      _global!._temporaryApis.removeWhere((element) => element.time == time);
     }
   }
 

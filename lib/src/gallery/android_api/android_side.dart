@@ -13,6 +13,8 @@ GalleryImpl? _global;
 class GalleryImpl implements GalleryApi {
   final Isar db;
   final bool temporary;
+  final List<_AndroidGallery> _temporaryApis = [];
+
   bool isSavingTags = false;
 
   _AndroidGallery? _currentApi;
@@ -74,6 +76,9 @@ class GalleryImpl implements GalleryApi {
     if (empty) {
       _currentApi?.callback
           ?.call(db.systemGalleryDirectorys.countSync(), inRefresh, true);
+      for (final api in _temporaryApis) {
+        api.temporarySet?.call(db.systemGalleryDirectorys.countSync(), true);
+      }
       return;
     }
     final blacklisted = Dbs.g.blacklisted!.blacklistedDirectorys
@@ -101,6 +106,9 @@ class GalleryImpl implements GalleryApi {
 
     _currentApi?.callback
         ?.call(db.systemGalleryDirectorys.countSync(), inRefresh, false);
+    for (final api in _temporaryApis) {
+      api.temporarySet?.call(db.systemGalleryDirectorys.countSync(), false);
+    }
   }
 
   @override
@@ -109,6 +117,9 @@ class GalleryImpl implements GalleryApi {
       _currentApi?.currentImages?.refreshGrid?.call();
     }
     _currentApi?.refreshGrid?.call();
+    for (final api in _temporaryApis) {
+      api.refreshGrid?.call();
+    }
   }
 
   static GalleryImpl get g => _global!;

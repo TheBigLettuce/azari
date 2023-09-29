@@ -95,6 +95,7 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                     }
                 }
 
+
                 "chooseDirectory" -> {
                     CoroutineScope(Dispatchers.IO).launch {
                         callbackMux.lock()
@@ -311,6 +312,10 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                             moveInternalMux.unlock()
                         }
                     }
+                }
+
+                "getThumbNetwork" -> {
+                    mover.getThumbnailNetwork(call.arguments as String, result)
                 }
 
                 "getThumbDirectly" -> {

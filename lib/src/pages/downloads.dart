@@ -101,7 +101,7 @@ class _DownloadsState extends State<Downloads>
                     if (deleteController != null) {
                       deleteController!.forward(from: 0);
                     }
-                    Downloader.g.removeFailed();
+                    Downloader.g.removeAll();
                   },
                   icon: const Icon(Icons.close).animate(
                       onInit: (controller) => deleteController = controller,

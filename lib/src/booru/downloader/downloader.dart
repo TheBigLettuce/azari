@@ -141,17 +141,9 @@ class Downloader with _CancelTokens {
     }
   }
 
-  void removeFailed() {
+  void removeAll() {
     Dbs.g.main.writeTxnSync(() {
-      final failed = Dbs.g.main.downloadFiles
-          .filter()
-          .isFailedEqualTo(true)
-          .findAllSync()
-          .map((e) => e.isarId!)
-          .toList();
-      if (failed.isNotEmpty) {
-        Dbs.g.main.downloadFiles.deleteAllSync(failed);
-      }
+      Dbs.g.main.downloadFiles.clearSync();
     });
   }
 

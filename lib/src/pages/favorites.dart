@@ -183,7 +183,11 @@ class _FavoritesPageState extends State<FavoritesPage>
     PostTags.g.addTagsPost(p.filename(), p.tags, true);
 
     return Downloader.g.add(
-        DownloadFile.d(p.fileDownloadUrl(), booru.booru.url, p.filename()),
+        DownloadFile.d(
+            url: p.fileDownloadUrl(),
+            site: booru.booru.url,
+            name: p.filename(),
+            thumbUrl: p.previewUrl),
         state.settings);
   }
 

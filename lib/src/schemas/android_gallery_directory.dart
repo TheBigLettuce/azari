@@ -65,6 +65,6 @@ class SystemGalleryDirectory implements Cell {
   @override
   CellData getCellData(bool isList, {BuildContext? context}) {
     return CellData(
-        thumb: ThumbnailProvider(thumbFileId), name: name, stickers: []);
+        thumb: ThumbnailProvider(thumbFileId, null), name: name, stickers: []);
   }
 }

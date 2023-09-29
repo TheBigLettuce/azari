@@ -37,8 +37,8 @@ data class FilesDest(
 )
 
 data class MoveOp(val source: String, val rootUri: Uri, val dir: String)
-data class ThumbOp(
-    val thumb: Long,
+data class ThumbOp<T>(
+    val thumb: T,
     val callback: ((ByteArray, Long) -> Unit)
 )
 

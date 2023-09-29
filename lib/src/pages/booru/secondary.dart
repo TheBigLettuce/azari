@@ -65,6 +65,7 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
   int? currentSkipped;
 
   bool reachedEnd = false;
+  bool addedToBookmarks = false;
 
   late final state = GridSkeletonState<Post>(index: kBooruGridDrawerIndex);
 
@@ -103,11 +104,16 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
 
     state.dispose();
 
-    if (!isRestart) {
-      widget.instance.close(deleteFromDisk: true);
-      widget.restore.removeSelf();
-    } else {
+    if (addedToBookmarks) {
       widget.instance.close(deleteFromDisk: false);
+      widget.restore.moveToBookmarks(widget.api.booru);
+    } else {
+      if (!isRestart) {
+        widget.instance.close(deleteFromDisk: true);
+        widget.restore.removeSelf();
+      } else {
+        widget.instance.close(deleteFromDisk: false);
+      }
     }
 
     super.dispose();
@@ -141,7 +147,11 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
     PostTags.g.addTagsPost(p.filename(), p.tags, true);
 
     return Downloader.g.add(
-        DownloadFile.d(p.fileDownloadUrl(), widget.api.booru.url, p.filename()),
+        DownloadFile.d(
+            url: p.fileDownloadUrl(),
+            site: widget.api.booru.url,
+            name: p.filename(),
+            thumbUrl: p.previewUrl),
         state.settings);
   }
 
@@ -224,7 +234,20 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                       (child) =>
                           BooruAPINotifier(api: widget.api, child: child),
                     ],
-                    menuButtonItems: [MainBooruGrid.gridButton(state.settings)],
+                    menuButtonItems: [
+                      IconButton(
+                          onPressed: () {
+                            addedToBookmarks = true;
+                            ScaffoldMessenger.of(state.gridKey.currentContext!)
+                                .showSnackBar(const SnackBar(
+                                    content: Text(
+                              "Bookmarked", // TODO: change
+                            )));
+                            Navigator.pop(context);
+                          },
+                          icon: const Icon(Icons.bookmark_add)),
+                      MainBooruGrid.gridButton(state.settings)
+                    ],
                     addIconsImage: (post) => [
                       BooruGridActions.favorites(context, post),
                       BooruGridActions.download(context, widget.api)
@@ -243,6 +266,7 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                       keybindsDescription:
                           AppLocalizations.of(context)!.booruGridPageName,
                     ),
+                    inlineMenuButtonItems: true,
                     hasReachedEnd: () => reachedEnd,
                     mainFocus: state.mainFocus,
                     scaffoldKey: state.scaffoldKey,
@@ -257,6 +281,7 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                       );
                     },
                     aspectRatio: state.settings.booru.aspectRatio.value,
+                    backButtonBadge: widget.restore.secondaryCount(),
                     getCell: (i) => widget.instance.posts.getSync(i + 1)!,
                     loadNext: _addLast,
                     refresh: _clearAndRefresh,

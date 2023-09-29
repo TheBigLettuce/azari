@@ -167,7 +167,8 @@ class PostBase implements Cell {
       filename(),
       supplyTags: tags,
       addExcluded: (t) {
-        tagManager.excluded.add(Tag(tag: t, isExcluded: true));
+        tagManager.excluded
+            .add(Tag(tag: t, isExcluded: true, time: DateTime.now()));
       },
       launchGrid: (t) {
         tagManager.onTagPressed(

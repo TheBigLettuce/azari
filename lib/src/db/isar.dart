@@ -28,6 +28,7 @@ import 'package:gallery/src/schemas/thumbnail.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import '../schemas/favorite_media.dart';
+import '../schemas/grid_state_booru.dart';
 import '../schemas/settings.dart';
 
 import 'package:path/path.dart' as path;
@@ -93,6 +94,7 @@ Future initalizeIsar(bool temporary) async {
     SettingsSchema,
     FavoriteBooruSchema,
     LocalTagDictionarySchema,
+    GridStateBooruSchema,
     DownloadFileSchema
   ], directory: directoryPath, inspector: false);
 

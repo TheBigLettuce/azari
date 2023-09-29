@@ -61,6 +61,7 @@ class AndroidDirectories extends StatefulWidget {
   final CallbackDescriptionNested? nestedCallback;
   final bool? noDrawer;
   final bool showBackButton;
+
   const AndroidDirectories(
       {super.key,
       this.callback,
@@ -79,9 +80,14 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
   bool proceed = true;
   late final extra = api.getExtra()
     ..setRefreshGridCallback(() {
-      if (state.gridKey.currentState?.mutationInterface?.isRefreshing ==
-          false) {
-        _refresh();
+      if (widget.callback != null) {
+        stream.add(0);
+        state.gridKey.currentState?.mutationInterface?.setIsRefreshing(true);
+      } else {
+        if (state.gridKey.currentState?.mutationInterface?.isRefreshing ==
+            false) {
+          _refresh();
+        }
       }
     });
 
@@ -103,6 +109,15 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
   @override
   void initState() {
     super.initState();
+    if (widget.callback != null) {
+      extra.setTemporarySet((i, end) {
+        stream.add(i);
+
+        if (end) {
+          state.gridKey.currentState?.mutationInterface?.setIsRefreshing(false);
+        }
+      });
+    }
 
     settingsWatcher = Settings.watch((s) {
       state.settings = s!;
@@ -142,6 +157,7 @@ class _AndroidDirectoriesState extends State<AndroidDirectories>
     disposeSearch();
     state.dispose();
     Dbs.g.clearTemporaryImages();
+
     super.dispose();
   }
 

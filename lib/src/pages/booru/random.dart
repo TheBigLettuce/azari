@@ -7,14 +7,17 @@
 
 import 'dart:async';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/pages/booru/main.dart';
 import 'package:gallery/src/schemas/favorite_booru.dart';
+import 'package:gallery/src/schemas/grid_state_booru.dart';
 import 'package:gallery/src/schemas/tags.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart';
 
 import '../../actions/booru_grid.dart';
 import '../../booru/downloader/downloader.dart';
@@ -38,10 +41,13 @@ class RandomBooruGrid extends StatefulWidget {
   final BooruAPI api;
   final String tags;
   final TagManager tagManager;
+  final GridStateBooru? state;
+
   const RandomBooruGrid(
       {super.key,
       required this.api,
       required this.tagManager,
+      this.state,
       required this.tags});
 
   @override
@@ -53,11 +59,16 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
   late final StreamSubscription<Settings?> settingsWatcher;
   late final StreamSubscription favoritesWatcher;
 
+  (double, double?, int?)? _currentScroll;
+
   int? currentSkipped;
 
   bool reachedEnd = false;
+  bool addedToBookmarks = false;
 
-  final Isar instance = IsarDbsOpen.secondaryGrid(temporary: true);
+  late final Isar instance = widget.state != null
+      ? IsarDbsOpen.secondaryGridName(widget.state!.name)
+      : IsarDbsOpen.secondaryGrid(temporary: true);
 
   late final state = GridSkeletonState<Post>(index: kBooruGridDrawerIndex);
 
@@ -96,7 +107,22 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
 
     state.dispose();
 
-    instance.close(deleteFromDisk: true);
+    if (addedToBookmarks && widget.state == null) {
+      instance.close(deleteFromDisk: false);
+      final f = File.fromUri(
+          Uri.file(joinAll([Dbs.g.temporaryDbDir, "${instance.name}.isar"])));
+      f.renameSync(joinAll([Dbs.g.appStorageDir, "${instance.name}.isar"]));
+      Dbs.g.main.writeTxnSync(() => Dbs.g.main.gridStateBoorus.putSync(
+          GridStateBooru(widget.api.booru,
+              tags: widget.tags,
+              scrollPositionTags: _currentScroll!.$2,
+              selectedPost: _currentScroll!.$3,
+              scrollPositionGrid: _currentScroll!.$1,
+              name: instance.name,
+              time: DateTime.now())));
+    } else {
+      instance.close(deleteFromDisk: widget.state != null ? false : true);
+    }
 
     super.dispose();
   }
@@ -128,7 +154,11 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
     PostTags.g.addTagsPost(p.filename(), p.tags, true);
 
     return Downloader.g.add(
-        DownloadFile.d(p.fileDownloadUrl(), widget.api.booru.url, p.filename()),
+        DownloadFile.d(
+            url: p.fileDownloadUrl(),
+            site: widget.api.booru.url,
+            name: p.filename(),
+            thumbUrl: p.previewUrl),
         state.settings);
   }
 
@@ -190,6 +220,19 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                             BooruAPINotifier(api: widget.api, child: child),
                       ],
                       menuButtonItems: [
+                        if (widget.state == null)
+                          IconButton(
+                              onPressed: () {
+                                addedToBookmarks = true;
+                                ScaffoldMessenger.of(
+                                        state.gridKey.currentContext!)
+                                    .showSnackBar(const SnackBar(
+                                        content: Text(
+                                  "Bookmarked", // TODO: change
+                                )));
+                                Navigator.pop(context);
+                              },
+                              icon: const Icon(Icons.bookmark_add)),
                         MainBooruGrid.gridButton(state.settings)
                       ],
                       addIconsImage: (post) => [
@@ -210,6 +253,7 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                       ),
                       hasReachedEnd: () => reachedEnd,
                       mainFocus: state.mainFocus,
+                      inlineMenuButtonItems: true,
                       scaffoldKey: state.scaffoldKey,
                       onError: (error) {
                         return OutlinedButton(
@@ -232,7 +276,28 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                       onBack: () => Navigator.pop(context),
                       hideAlias: true,
                       download: _download,
-                      initalScrollPosition: 0,
+                      initalCell: widget.state?.selectedPost,
+                      initalCellCount:
+                          widget.state != null ? instance.posts.countSync() : 0,
+                      updateScrollPosition: widget.state != null
+                          ? (pos, {infoPos, selectedCell}) {
+                              final prev = Dbs.g.main.gridStateBoorus
+                                  .getByNameSync(widget.state!.name)!;
+
+                              Dbs.g.main.writeTxnSync(() => Dbs
+                                  .g.main.gridStateBoorus
+                                  .putByNameSync(prev.copy(true,
+                                      scrollPositionGrid: pos,
+                                      scrollPositionTags: infoPos,
+                                      page: widget.api.currentPage,
+                                      selectedPost: selectedCell)));
+                            }
+                          : (pos, {infoPos, selectedCell}) {
+                              _currentScroll = (pos, infoPos, selectedCell);
+                            },
+                      pageViewScrollingOffset: widget.state?.scrollPositionTags,
+                      initalScrollPosition:
+                          widget.state?.scrollPositionGrid ?? 0,
                       searchWidget: SearchAndFocus(
                           searchWidget(context, hint: widget.api.booru.name),
                           searchFocus, onPressed: () {

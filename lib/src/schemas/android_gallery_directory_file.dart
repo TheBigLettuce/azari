@@ -123,7 +123,10 @@ class SystemGalleryDirectoryFile implements Cell {
 
                 Downloader.g.add(
                     DownloadFile.d(
-                        post.fileDownloadUrl(), api.booru.url, post.filename()),
+                        url: post.fileDownloadUrl(),
+                        site: api.booru.url,
+                        name: post.filename(),
+                        thumbUrl: post.previewUrl),
                     Settings.fromDb());
               }).onError((error, stackTrace) {
                 log("loading post for download",
@@ -265,7 +268,10 @@ class SystemGalleryDirectoryFile implements Cell {
                 final tagManager = TagManager.fromEnum(res.booru, true);
 
                 tagManager.onTagPressed(
-                    context, Tag(tag: t, isExcluded: false), res.booru, false);
+                    context,
+                    Tag(tag: t, isExcluded: false, time: DateTime.now()),
+                    res.booru,
+                    false);
               } catch (e) {
                 log("launching local tag random booru",
                     level: Level.SEVERE.value, error: e);
@@ -310,7 +316,9 @@ class SystemGalleryDirectoryFile implements Cell {
     ];
 
     return CellData(
-        thumb: ThumbnailProvider(id), name: name, stickers: stickers);
+        thumb: ThumbnailProvider(id, isVideo ? name : null),
+        name: name,
+        stickers: stickers);
   }
 
   Thumbnail? getThumbnail() {
@@ -327,6 +335,7 @@ class SystemGalleryDirectoryFile implements Cell {
 
 class ThumbnailProvider extends ImageProvider<MemoryImage> {
   final int id;
+  final String? fileName;
 
   @override
   Future<MemoryImage> obtainKey(ImageConfiguration configuration) async {
@@ -335,10 +344,38 @@ class ThumbnailProvider extends ImageProvider<MemoryImage> {
       return MemoryImage(thumb);
     }
     final directThumb = await PlatformFunctions.getThumbDirectly(id);
+    if (directThumb.differenceHash == 0 && fileName != null) {
+      try {
+        final res = PostTags.g.dissassembleFilename(fileName!);
+        final api = BooruAPI.fromEnum(res.booru);
+        MemoryImage? image;
 
-    ThumbId.addThumbnailsToDb([directThumb]);
+        try {
+          final post = await api.singlePost(res.id);
 
-    return MemoryImage(directThumb.thumb);
+          final t =
+              await PlatformFunctions.getThumbNetwork(post.previewUrl, id);
+
+          ThumbId.addThumbnailsToDb([t]);
+
+          image = MemoryImage(t.thumb);
+        } catch (e) {
+          log("video thumb 2", level: Level.WARNING.value, error: e);
+        }
+
+        api.close();
+
+        return image ?? MemoryImage(kTransparentImage);
+      } catch (_) {
+        ThumbId.addThumbnailsToDb([directThumb]);
+
+        return MemoryImage(directThumb.thumb);
+      }
+    } else {
+      ThumbId.addThumbnailsToDb([directThumb]);
+
+      return MemoryImage(directThumb.thumb);
+    }
   }
 
   @override
@@ -359,7 +396,7 @@ class ThumbnailProvider extends ImageProvider<MemoryImage> {
     return other is ThumbnailProvider && other.id == id;
   }
 
-  const ThumbnailProvider(this.id);
+  const ThumbnailProvider(this.id, this.fileName);
 
   @override
   int get hashCode => id.hashCode;

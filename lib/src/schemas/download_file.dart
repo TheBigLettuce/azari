@@ -5,6 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/widgets.dart';
 import 'package:gallery/src/cell/contentable.dart';
 import 'package:gallery/src/cell/data.dart';
@@ -25,6 +26,8 @@ class DownloadFile implements Cell {
   @Index(unique: true, replace: true)
   final String name;
 
+  final String thumbUrl;
+
   final DateTime date;
 
   final String site;
@@ -39,20 +42,29 @@ class DownloadFile implements Cell {
     Dbs.g.main.writeTxnSync(() => Dbs.g.main.downloadFiles.putSync(this));
   }
 
-  DownloadFile inprogress() =>
-      DownloadFile(url, true, false, site, name, isarId: isarId);
-  DownloadFile failed() =>
-      DownloadFile(url, false, true, site, name, isarId: isarId);
-  DownloadFile onHold() =>
-      DownloadFile(url, false, false, site, name, isarId: isarId);
+  DownloadFile inprogress() => DownloadFile(true, false,
+      isarId: isarId, url: url, thumbUrl: thumbUrl, name: name, site: site);
+  DownloadFile failed() => DownloadFile(false, true,
+      isarId: isarId, url: url, thumbUrl: thumbUrl, name: name, site: site);
+  DownloadFile onHold() => DownloadFile(false, false,
+      isarId: isarId, url: url, thumbUrl: thumbUrl, name: name, site: site);
 
-  DownloadFile.d(this.url, this.site, this.name, {this.isarId})
+  DownloadFile.d(
+      {this.isarId,
+      required this.name,
+      required this.url,
+      required this.thumbUrl,
+      required this.site})
       : inProgress = true,
         isFailed = false,
         date = DateTime.now();
 
-  DownloadFile(this.url, this.inProgress, this.isFailed, this.site, this.name,
-      {this.isarId})
+  DownloadFile(this.inProgress, this.isFailed,
+      {this.isarId,
+      required this.name,
+      required this.url,
+      required this.thumbUrl,
+      required this.site})
       : date = DateTime.now();
 
   @override
@@ -77,6 +89,8 @@ class DownloadFile implements Cell {
   }
 
   @override
-  CellData getCellData(bool isList, {BuildContext? context}) =>
-      CellData(thumb: null, name: name, stickers: []);
+  CellData getCellData(bool isList, {BuildContext? context}) => CellData(
+      thumb: thumbUrl.isEmpty ? null : CachedNetworkImageProvider(thumbUrl),
+      name: name,
+      stickers: []);
 }

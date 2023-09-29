@@ -14,11 +14,13 @@ import '../pages/image_view.dart';
 import '../schemas/android_gallery_directory_file.dart';
 import 'grid/cell.dart';
 
-const kCopyMoveSize = 52.0;
+// const kCopyMoveSize = 52.0;
 
 class CopyMovePreview extends StatefulWidget {
   final List<SystemGalleryDirectoryFile> files;
-  const CopyMovePreview({super.key, required this.files});
+  final double size;
+
+  const CopyMovePreview({super.key, required this.files, required this.size});
 
   @override
   State<CopyMovePreview> createState() => _CopyMovePreviewState();
@@ -28,15 +30,15 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
   final key = GlobalKey<ImageViewState>();
 
   int calculateWidth(int i) {
-    return kCopyMoveSize.toInt() + (i * 14);
+    return widget.size.toInt() + (i * 14);
   }
 
   Widget _thumbPadding(int id, Cell cellData, {bool shadow = true}) {
     return Padding(
       padding: EdgeInsets.only(left: id * 14),
       child: SizedBox(
-        height: kCopyMoveSize,
-        width: kCopyMoveSize,
+        height: widget.size,
+        width: widget.size,
         child: GridCell(
           cell: cellData.getCellData(false),
           indx: id,
@@ -109,7 +111,7 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
   Widget build(BuildContext context) {
     return SizedBox(
       width: MediaQuery.sizeOf(context).width,
-      height: kCopyMoveSize - 4,
+      height: widget.size - 4,
       child: Center(
         child: Badge.count(
           count: widget.files.length,

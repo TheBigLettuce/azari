@@ -16,18 +16,22 @@ class Tag {
   @Index(unique: true, replace: true, composite: [CompositeIndex("isExcluded")])
   final String tag;
   final bool isExcluded;
+  @Index()
   final DateTime time;
 
   Tag trim() {
-    return Tag(tag: tag.trim(), isExcluded: isExcluded);
+    return Tag(tag: tag.trim(), isExcluded: isExcluded, time: time);
   }
 
-  Tag({required this.tag, required this.isExcluded}) : time = DateTime.now();
+  Tag({required this.tag, required this.isExcluded, required this.time});
   Tag.string({required this.tag})
       : isExcluded = false,
         time = DateTime.now();
-  Tag copyWith({String? tag, bool? isExcluded}) {
-    return Tag(isExcluded: isExcluded ?? this.isExcluded, tag: tag ?? this.tag);
+  Tag copyWith({String? tag, bool? isExcluded, DateTime? time}) {
+    return Tag(
+        isExcluded: isExcluded ?? this.isExcluded,
+        tag: tag ?? this.tag,
+        time: time ?? this.time);
   }
 }
 

@@ -28,6 +28,7 @@ class FavoritesActions {
               return AlertDialog(
                 title: Text(AppLocalizations.of(context)!.groupActionLabel),
                 content: TextFormField(
+                  autofocus: true,
                   initialValue: initalValue(selected),
                   onFieldSubmitted: (value) => onSubmitted(selected, value),
                 ),
@@ -35,7 +36,7 @@ class FavoritesActions {
             },
           ));
     },
-        true,
+        false,
         GridBottomSheetActionExplanation(
           label: AppLocalizations.of(context)!.groupActionLabel,
           body: AppLocalizations.of(context)!.groupActionBody,

@@ -7,11 +7,17 @@
 
 import 'package:isar/isar.dart';
 
-part 'grid_state.g.dart';
+import '../booru/interface.dart';
+import 'grid_state.dart';
+
+part 'grid_state_booru.g.dart';
 
 @collection
-class GridState extends GridStateBase {
-  GridState(
+class GridStateBooru extends GridStateBase {
+  @enumerated
+  final Booru booru;
+
+  GridStateBooru(this.booru,
       {required super.tags,
       required super.scrollPositionTags,
       required super.selectedPost,
@@ -20,7 +26,7 @@ class GridState extends GridStateBase {
       required super.time,
       super.page});
 
-  GridState.empty(String name, String tags)
+  GridStateBooru.empty(this.booru, String name, String tags)
       : super(
             tags: tags,
             name: name,
@@ -30,15 +36,16 @@ class GridState extends GridStateBase {
             page: null,
             time: DateTime.now());
 
-  GridState copy(bool replaceScrollTagsSelectedPost,
+  GridStateBooru copy(bool replaceScrollTagsSelectedPost,
           {String? name,
+          Booru? booru,
           String? tags,
           double? scrollPositionGrid,
           int? selectedPost,
           double? scrollPositionTags,
           DateTime? time,
           int? page}) =>
-      GridState(
+      GridStateBooru(booru ?? this.booru,
           tags: tags ?? this.tags,
           scrollPositionTags: replaceScrollTagsSelectedPost
               ? scrollPositionTags
@@ -50,30 +57,4 @@ class GridState extends GridStateBase {
           page: page ?? this.page,
           time: time ?? this.time,
           name: name ?? this.name);
-}
-
-class GridStateBase {
-  Id? id;
-
-  @Index(unique: true, replace: true)
-  final String name;
-  @Index()
-  final DateTime time;
-
-  final String tags;
-
-  final double scrollPositionGrid;
-
-  final int? selectedPost;
-  final double? scrollPositionTags;
-  final int? page;
-
-  GridStateBase(
-      {required this.tags,
-      required this.scrollPositionTags,
-      required this.selectedPost,
-      required this.scrollPositionGrid,
-      required this.name,
-      this.page,
-      required this.time});
 }

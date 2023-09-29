@@ -19,6 +19,7 @@ import android.util.Size
 import android.webkit.MimeTypeMap
 import androidx.core.graphics.scale
 import androidx.documentfile.provider.DocumentFile
+import com.bumptech.glide.Glide
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -49,7 +50,7 @@ internal class Mover(
     } else {
         Runtime.getRuntime().availableProcessors() - 1
     }
-    private val thumbnailsChannel = Channel<ThumbOp>(capacity = cap)
+    private val thumbnailsChannel = Channel<ThumbOp<Any>>(capacity = cap)
     private val scope = CoroutineScope(coContext + Dispatchers.IO)
 
     private val isLockedDirMux = Mutex()
@@ -68,14 +69,21 @@ internal class Mover(
                     }
 
                     inProgress.add(newScope.launch {
+
                         var res: Pair<ByteArray, Long>
                         try {
-                            val uri = ContentUris.withAppendedId(
-                                MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
-                                uris.thumb
-                            )
+                            res = if (uris.thumb is String) {
+                                getThumb(Uri.parse(uris.thumb), true)
+                            } else if (uris.thumb is Long) {
+                                val uri = ContentUris.withAppendedId(
+                                    MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                                    uris.thumb
+                                )
 
-                            res = getThumb(uri)
+                                getThumb(uri, false)
+                            } else {
+                                throw Exception("invalid .thumb type")
+                            }
                         } catch (e: Exception) {
                             res = Pair(transparentImage, 0)
                             Log.e("thumbnail coro", e.toString())
@@ -144,6 +152,14 @@ internal class Mover(
                     Path(op.source).deleteIfExists()
                 }
             }
+        }
+    }
+
+    fun getThumbnailNetwork(url: String, result: MethodChannel.Result) {
+        scope.launch {
+            thumbnailsChannel.send(ThumbOp(url) { byt, hash ->
+                result.success(mapOf<String, Any>(Pair("data", byt), Pair("hash", hash)))
+            })
         }
     }
 
@@ -465,8 +481,8 @@ internal class Mover(
         return hash
     }
 
-    private fun getThumb(uri: Uri): Pair<ByteArray, Long> {
-        val thumb = context.contentResolver.loadThumbnail(uri, Size(320, 320), null)
+    private fun getThumb(uri: Uri, network: Boolean): Pair<ByteArray, Long> {
+        val thumb = if (network) Glide.with(context).asBitmap() .load(uri).submit().get()  else  context.contentResolver.loadThumbnail(uri, Size(320, 320), null)
         val stream = ByteArrayOutputStream()
 
         val scaled = thumb.scale(9, 8)

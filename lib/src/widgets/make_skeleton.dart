@@ -10,6 +10,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/search_filter_grid.dart';
 import 'package:gallery/src/widgets/system_gestures.dart';
@@ -340,7 +341,9 @@ Widget makeSkeleton(
                                 Expanded(
                                     child: FlexibleSpaceBar(
                                         title: customTitle ??
-                                            Text(pageDescription))),
+                                            Text(
+                                              pageDescription,
+                                            ))),
                                 if (appBarActions != null)
                                   ...appBarActions
                                       .map((e) => wrapAppBarAction(e))
@@ -352,17 +355,22 @@ Widget makeSkeleton(
                             SliverPadding(
                               padding: EdgeInsets.only(bottom: insets.bottom),
                               sliver: SliverList.list(
-                                children: children,
+                                children: children.isEmpty
+                                    ? const [EmptyWidget()]
+                                    : children,
                               ),
                             ),
                           if (builder != null)
-                            SliverPadding(
-                              padding: EdgeInsets.only(bottom: insets.bottom),
-                              sliver: SliverList.builder(
-                                itemBuilder: builder,
-                                itemCount: itemCount,
-                              ),
-                            )
+                            itemCount == 0
+                                ? const SliverToBoxAdapter(child: EmptyWidget())
+                                : SliverPadding(
+                                    padding:
+                                        EdgeInsets.only(bottom: insets.bottom),
+                                    sliver: SliverList.builder(
+                                      itemBuilder: builder,
+                                      itemCount: itemCount,
+                                    ),
+                                  )
                         ],
                       ))),
             ),

@@ -81,6 +81,8 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   /// which would call this callback when pressed.
   final void Function()? onBack;
 
+  final int? backButtonBadge;
+
   /// Overrides the default behaviour of launching the image view on cell pressed.
   /// [overrideOnPress] can, for example, include calls to [Navigator.push] of routes.
   final void Function(BuildContext context, T cell)? overrideOnPress;
@@ -201,6 +203,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       this.footer,
       this.registerNotifiers,
       this.immutable = true,
+      this.backButtonBadge,
       this.tightMode = false,
       this.belowMainFocus,
       this.inlineMenuButtonItems = false,
@@ -722,7 +725,14 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                                                 }
                                               },
                                               icon:
-                                                  const Icon(Icons.arrow_back))
+                                                  widget.backButtonBadge != null
+                                                      ? Badge.count(
+                                                          count: widget
+                                                              .backButtonBadge!,
+                                                          child: const Icon(
+                                                              Icons.arrow_back))
+                                                      : const Icon(
+                                                          Icons.arrow_back))
                                           : (widget.scaffoldKey.currentState
                                                       ?.hasDrawer ??
                                                   false)

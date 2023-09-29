@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/widgets/settings_label.dart';
 
 import '../schemas/tags.dart';
 import 'empty_widget.dart';
@@ -18,6 +19,7 @@ class TagsWidget extends StatelessWidget {
   final bool redBackground;
   final List<Tag> tags;
   final Widget searchBar;
+
   const TagsWidget(
       {super.key,
       required this.tags,
@@ -26,63 +28,99 @@ class TagsWidget extends StatelessWidget {
       required this.deleteTag,
       required this.onPress});
 
+  Widget _make(BuildContext context) {
+    final listWraps = <Widget>[];
+    final list = <Widget>[];
+
+    (int, int, int)? time;
+
+    final titleStyle = Theme.of(context)
+        .textTheme
+        .titleSmall!
+        .copyWith(color: Theme.of(context).colorScheme.secondary);
+
+    for (final e in tags) {
+      if (time == null) {
+        time = (e.time.day, e.time.month, e.time.year);
+      } else if (time != (e.time.day, e.time.month, e.time.year)) {
+        listWraps.add(timeLabel(time, titleStyle));
+        listWraps.add(Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: Wrap(
+            children: list.map((e) => e).toList(),
+          ),
+        ));
+
+        time = (e.time.day, e.time.month, e.time.year);
+
+        list.clear();
+      }
+
+      list.add(GestureDetector(
+        onLongPress: () {
+          HapticFeedback.vibrate();
+          Navigator.of(context).push(DialogRoute(
+              context: context,
+              builder: (context) => AlertDialog(
+                    title: Text(
+                        AppLocalizations.of(context)!.tagDeleteDialogTitle),
+                    content: Text(e.tag),
+                    actions: [
+                      TextButton(
+                          onPressed: () {
+                            deleteTag(e);
+                            Navigator.of(context).pop();
+                          },
+                          child: Text(AppLocalizations.of(context)!.yes))
+                    ],
+                  )));
+        },
+        child: ActionChip(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+          side: redBackground ? BorderSide(color: Colors.pink.shade200) : null,
+          backgroundColor: redBackground ? Colors.pink : null,
+          label: Text(e.tag,
+              style: redBackground
+                  ? TextStyle(color: Colors.white.withOpacity(0.8))
+                  : null),
+          onPressed: onPress == null
+              ? null
+              : () {
+                  onPress!(e);
+                },
+        ),
+      ));
+    }
+
+    if (list.isNotEmpty) {
+      final t = tags.last.time;
+      listWraps.add(timeLabel((t.day, t.month, t.year), titleStyle));
+      listWraps.add(Padding(
+        padding: const EdgeInsets.only(left: 16),
+        child: Wrap(
+          children: list.map((e) => e).toList(),
+        ),
+      ));
+    }
+
+    return Column(
+        crossAxisAlignment: CrossAxisAlignment.start, children: listWraps);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 10, right: 10),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 10, left: 10, right: 10),
             child: searchBar,
           ),
-          tags.isEmpty
-              ? const EmptyWidget()
-              : Wrap(
-                  children: tags.map((tag) {
-                    return GestureDetector(
-                      onLongPress: () {
-                        HapticFeedback.vibrate();
-                        Navigator.of(context).push(DialogRoute(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                                  title: Text(AppLocalizations.of(context)!
-                                      .tagDeleteDialogTitle),
-                                  content: Text(tag.tag),
-                                  actions: [
-                                    TextButton(
-                                        onPressed: () {
-                                          deleteTag(tag);
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: Text(
-                                            AppLocalizations.of(context)!.yes))
-                                  ],
-                                )));
-                      },
-                      child: ActionChip(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25)),
-                        side: redBackground
-                            ? BorderSide(color: Colors.pink.shade200)
-                            : null,
-                        backgroundColor: redBackground ? Colors.pink : null,
-                        label: Text(tag.tag,
-                            style: redBackground
-                                ? TextStyle(
-                                    color: Colors.white.withOpacity(0.8))
-                                : null),
-                        onPressed: onPress == null
-                            ? null
-                            : () {
-                                onPress!(tag);
-                              },
-                      ),
-                    );
-                  }).toList(),
-                )
-        ],
-      ),
+        ),
+        tags.isEmpty ? const EmptyWidget() : _make(context)
+      ],
     );
   }
 }

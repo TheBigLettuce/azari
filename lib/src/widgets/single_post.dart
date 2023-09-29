@@ -161,8 +161,11 @@ class _SinglePostState extends State<SinglePost> {
                       updateTagScrollPos: (_, __) {},
                       download: (_) {
                         Downloader.g.add(
-                            DownloadFile.d(value.fileDownloadUrl(),
-                                booru.booru.url, value.filename()),
+                            DownloadFile.d(
+                                url: value.fileDownloadUrl(),
+                                site: booru.booru.url,
+                                name: value.filename(),
+                                thumbUrl: value.previewUrl),
                             Settings.fromDb());
                       },
                       cellCount: 1,

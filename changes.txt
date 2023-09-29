@@ -1,3 +1,6 @@
+1.4.2+8:
+— Add bookmarks.
+
 1.4.1+7:
 — Add more animations,
 — No further support for GNU/Linux than build succeeding.

@@ -14,3 +14,14 @@ Widget settingsLabel(String string, TextStyle style) => Padding(
         style: style,
       ),
     );
+
+Widget timeLabel((int, int, int) time, TextStyle titleStyle) {
+  final timeNow = DateTime.now();
+
+  if (time == (timeNow.day, timeNow.month, timeNow.year)) {
+    return settingsLabel("Today", titleStyle);
+  } else {
+    return settingsLabel(
+        "${time.$1}/${time.$2}/${time.$3.toString().substring(2)}", titleStyle);
+  }
+}
