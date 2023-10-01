@@ -108,6 +108,23 @@ PopupMenuItem _listView(bool listView, void Function(bool) select) {
 class MainBooruGrid extends StatefulWidget {
   const MainBooruGrid({super.key});
 
+  static Widget bookmarkButton(
+      BuildContext context, GridSkeletonState state, void Function() f) {
+    return IconButton(
+        onPressed: () {
+          f();
+          ScaffoldMessenger.of(state.scaffoldKey.currentContext!)
+              .showSnackBar(const SnackBar(
+                  content: Text(
+            "Bookmarked", // TODO: change
+          )));
+          state.gridKey.currentState?.selection.currentBottomSheet?.close();
+          state.gridKey.currentState?.selection.selected.clear();
+          Navigator.pop(context);
+        },
+        icon: const Icon(Icons.bookmark_add));
+  }
+
   static PopupMenuButton gridButton(Settings settings) {
     return gridSettingsButton(
       settings.booru,
@@ -351,7 +368,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
                                 return SecondaryBooruGrid(
                                   restore: last,
                                   noRestoreOnBack: false,
-                                  api: BooruAPI.fromEnum(api.booru),
+                                  api: BooruAPI.fromEnum(api.booru, page: null),
                                   tagManager: tagManager,
                                   instance: IsarDbsOpen.secondaryGridName(
                                       last.copy.name),

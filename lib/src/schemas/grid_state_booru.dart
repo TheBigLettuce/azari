@@ -24,7 +24,7 @@ class GridStateBooru extends GridStateBase {
       required super.scrollPositionGrid,
       required super.name,
       required super.time,
-      super.page});
+      required super.page});
 
   GridStateBooru.empty(this.booru, String name, String tags)
       : super(

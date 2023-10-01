@@ -97,7 +97,8 @@ class PostBase implements Cell {
       IconButton(
         icon: const Icon(Icons.public),
         onPressed: () {
-          final booru = BooruAPI.fromEnum(Booru.fromPrefix(prefix)!);
+          final booru =
+              BooruAPI.fromEnum(Booru.fromPrefix(prefix)!, page: null);
           launchUrl(booru.browserLink(id),
               mode: LaunchMode.externalApplication);
           booru.close();

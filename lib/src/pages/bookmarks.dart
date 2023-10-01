@@ -113,10 +113,12 @@ class _BookmarksState extends State<Bookmarks> {
           icon: const Icon(Icons.delete),
         ),
         onTap: () {
+          Dbs.g.main.writeTxnSync(() => Dbs.g.main.gridStateBoorus
+              .putByNameSync(e.copy(false, time: DateTime.now())));
           Navigator.push(context, MaterialPageRoute(
             builder: (context) {
               return RandomBooruGrid(
-                api: BooruAPI.fromEnum(e.booru),
+                api: BooruAPI.fromEnum(e.booru, page: e.page),
                 tagManager: TagManager.fromEnum(e.booru, true),
                 tags: e.tags,
                 state: e,

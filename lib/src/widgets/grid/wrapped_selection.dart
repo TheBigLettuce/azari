@@ -14,6 +14,7 @@ class _WrappedSelection extends StatelessWidget {
   final int thisIndx;
   final void Function() selectUnselect;
   final void Function(int indx) selectUntil;
+
   const _WrappedSelection(
       {required this.child,
       required this.isSelected,

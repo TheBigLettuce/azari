@@ -115,6 +115,7 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
       Dbs.g.main.writeTxnSync(() => Dbs.g.main.gridStateBoorus.putSync(
           GridStateBooru(widget.api.booru,
               tags: widget.tags,
+              page: widget.api.currentPage,
               scrollPositionTags: _currentScroll!.$2,
               selectedPost: _currentScroll!.$3,
               scrollPositionGrid: _currentScroll!.$1,
@@ -221,18 +222,9 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                       ],
                       menuButtonItems: [
                         if (widget.state == null)
-                          IconButton(
-                              onPressed: () {
-                                addedToBookmarks = true;
-                                ScaffoldMessenger.of(
-                                        state.gridKey.currentContext!)
-                                    .showSnackBar(const SnackBar(
-                                        content: Text(
-                                  "Bookmarked", // TODO: change
-                                )));
-                                Navigator.pop(context);
-                              },
-                              icon: const Icon(Icons.bookmark_add)),
+                          MainBooruGrid.bookmarkButton(context, state, () {
+                            addedToBookmarks = true;
+                          }),
                         MainBooruGrid.gridButton(state.settings)
                       ],
                       addIconsImage: (post) => [

@@ -18,7 +18,7 @@ class GridState extends GridStateBase {
       required super.scrollPositionGrid,
       required super.name,
       required super.time,
-      super.page});
+      required super.page});
 
   GridState.empty(String name, String tags)
       : super(
@@ -74,6 +74,6 @@ class GridStateBase {
       required this.selectedPost,
       required this.scrollPositionGrid,
       required this.name,
-      this.page,
+      required this.page,
       required this.time});
 }

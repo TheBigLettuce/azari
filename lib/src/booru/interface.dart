@@ -106,7 +106,7 @@ abstract class BooruAPI {
     return BooruAPI.fromEnum(Settings.fromDb().selectedBooru, page: page);
   }
 
-  static BooruAPI fromEnum(Booru booru, {int? page}) {
+  static BooruAPI fromEnum(Booru booru, {required int? page}) {
     Dio dio = Dio(BaseOptions(
       responseType: ResponseType.json,
     ));

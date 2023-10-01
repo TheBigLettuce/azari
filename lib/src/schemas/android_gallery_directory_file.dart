@@ -114,7 +114,7 @@ class SystemGalleryDirectoryFile implements Cell {
       if (size == 0 && res != null)
         IconButton(
             onPressed: () {
-              final api = BooruAPI.fromEnum(res!.booru);
+              final api = BooruAPI.fromEnum(res!.booru, page: null);
 
               api.singlePost(res.id).then((post) {
                 PlatformFunctions.deleteFiles([this]);
@@ -141,7 +141,7 @@ class SystemGalleryDirectoryFile implements Cell {
       if (res != null)
         IconButton(
             onPressed: () {
-              final api = BooruAPI.fromEnum(res!.booru);
+              final api = BooruAPI.fromEnum(res!.booru, page: null);
 
               launchUrl(api.browserLink(res.id),
                   mode: LaunchMode.externalApplication);
@@ -347,7 +347,7 @@ class ThumbnailProvider extends ImageProvider<MemoryImage> {
     if (directThumb.differenceHash == 0 && fileName != null) {
       try {
         final res = PostTags.g.dissassembleFilename(fileName!);
-        final api = BooruAPI.fromEnum(res.booru);
+        final api = BooruAPI.fromEnum(res.booru, page: null);
         MemoryImage? image;
 
         try {

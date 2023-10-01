@@ -27,8 +27,8 @@ class IsarBooruTagging implements BooruTagging {
   void add(Tag t) {
     final instance = isarCurrent;
 
-    instance.writeTxnSync(() => instance.tags
-        .putByTagIsExcludedSync(t.copyWith(isExcluded: excludedMode)));
+    instance.writeTxnSync(() => instance.tags.putByTagIsExcludedSync(
+        t.copyWith(isExcluded: excludedMode, time: DateTime.now())));
   }
 
   @override

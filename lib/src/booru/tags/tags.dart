@@ -61,7 +61,7 @@ class PostTags {
   /// Resolves to an empty list in case of any error.
   Future<List<String>> loadFromDissassemble(
       String filename, DisassembleResult dissassembled) async {
-    final api = BooruAPI.fromEnum(dissassembled.booru);
+    final api = BooruAPI.fromEnum(dissassembled.booru, page: null);
 
     try {
       final post = await api.singlePost(dissassembled.id);

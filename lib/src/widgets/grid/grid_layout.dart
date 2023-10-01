@@ -128,12 +128,7 @@ class GridLayout {
                       selectionEnabled: selection.selected.isNotEmpty,
                       thisIndx: indx,
                       selectUntil: (i) {
-                        // print("$indx, $i");
                         if (predefined != null) {
-                          // final p = predefined();
-                          // final i1 = p.indexOf(i);
-                          // final i2 = selection.lastSelected == null ? null: p.indexOf(selection.lastSelected!);
-
                           selection.selectUnselectUntil(indx, state,
                               selectFrom: predefined());
                         } else {

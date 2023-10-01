@@ -273,35 +273,3 @@ class _WrapSheetButtonState extends State<WrapSheetButton> {
         : iconBtn(context);
   }
 }
-
-// class AnimationNotifierData {
-//   AnimationController? controller;
-// }
-
-// class AnimationNotifier extends InheritedWidget {
-//   final AnimationNotifierData _data;
-
-//   static void update(BuildContext context, AnimationController controller) {
-//     final widget =
-//         context.dependOnInheritedWidgetOfExactType<AnimationNotifier>();
-
-//     print(controller);
-
-//     widget!._data.controller = controller;
-//   }
-
-//   static void start(BuildContext context) {
-//     final widget =
-//         context.dependOnInheritedWidgetOfExactType<AnimationNotifier>();
-
-//     widget!._data.controller!.animateTo(1);
-//   }
-
-//   @override
-//   bool updateShouldNotify(AnimationNotifier oldWidget) {
-//     return _data != oldWidget._data;
-//   }
-
-//   AnimationNotifier({super.key, required super.child})
-//       : _data = AnimationNotifierData();
-// }

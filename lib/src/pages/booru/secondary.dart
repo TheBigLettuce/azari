@@ -203,7 +203,7 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
           return SecondaryBooruGrid(
             restore: next,
             noRestoreOnBack: false,
-            api: BooruAPI.fromEnum(widget.api.booru),
+            api: BooruAPI.fromEnum(widget.api.booru, page: null),
             tagManager: widget.tagManager,
             instance: IsarDbsOpen.secondaryGridName(next.copy.name),
           );
@@ -235,17 +235,9 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                           BooruAPINotifier(api: widget.api, child: child),
                     ],
                     menuButtonItems: [
-                      IconButton(
-                          onPressed: () {
-                            addedToBookmarks = true;
-                            ScaffoldMessenger.of(state.gridKey.currentContext!)
-                                .showSnackBar(const SnackBar(
-                                    content: Text(
-                              "Bookmarked", // TODO: change
-                            )));
-                            Navigator.pop(context);
-                          },
-                          icon: const Icon(Icons.bookmark_add)),
+                      MainBooruGrid.bookmarkButton(context, state, () {
+                        addedToBookmarks = true;
+                      }),
                       MainBooruGrid.gridButton(state.settings)
                     ],
                     addIconsImage: (post) => [

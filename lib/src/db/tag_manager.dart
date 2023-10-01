@@ -34,7 +34,7 @@ class TagManager {
         return SecondaryBooruGrid(
           tagManager: this,
           noRestoreOnBack: true,
-          api: BooruAPI.fromEnum(booru),
+          api: BooruAPI.fromEnum(booru, page: null),
           restore: _parent.insert(tags: t.tag, name: instance.name),
           instance: instance,
         );
@@ -43,7 +43,7 @@ class TagManager {
       Navigator.push(context, MaterialPageRoute(builder: (context) {
         return RandomBooruGrid(
           tagManager: this,
-          api: BooruAPI.fromEnum(booru),
+          api: BooruAPI.fromEnum(booru, page: null),
           tags: t.tag,
         );
       }));
