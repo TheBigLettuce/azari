@@ -1,3 +1,8 @@
+1.4.3:
+— Add *booru image translation notes.
+
+***
+
 1.4.2+8:
 — Add bookmarks.
 

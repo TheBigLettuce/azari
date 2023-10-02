@@ -31,6 +31,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../cell/contentable.dart';
 import '../db/state_restoration.dart';
+import '../widgets/translation_notes.dart';
 import 'settings.dart';
 
 part 'android_gallery_directory_file.g.dart';
@@ -98,6 +99,8 @@ class SystemGalleryDirectoryFile implements Cell {
     final stickers = [
       if (isDuplicate()) Icon(FilteringMode.duplicate.icon),
       if (isOriginal) Icon(FilteringMode.original.icon),
+      if (PostTags.g.containsTag(name, "translated"))
+        const Icon(Icons.translate_outlined),
     ];
 
     return [
@@ -194,6 +197,11 @@ class SystemGalleryDirectoryFile implements Cell {
   @override
   List<Widget>? addInfo(
       BuildContext context, dynamic extra, AddInfoColorData colors) {
+    DisassembleResult? res;
+    try {
+      res = PostTags.g.dissassembleFilename(name);
+    } catch (_) {}
+
     return PostBase.wrapTagsSearch(
       context,
       extra,
@@ -255,7 +263,10 @@ class SystemGalleryDirectoryFile implements Cell {
             colors: colors,
             title: AppLocalizations.of(context)!.heightInfoPage,
             subtitle: "${height}px"),
-        addInfoTile(colors: colors, title: "Size", subtitle: kbMbSize(size))
+        addInfoTile(colors: colors, title: "Size", subtitle: kbMbSize(size)),
+        if (res != null && PostTags.g.containsTag(name, "translated"))
+          TranslationNotes.tile(context, colors.foregroundColor, res.id,
+              () => BooruAPI.fromEnum(res!.booru, page: null)),
       ],
       name,
       temporary: GalleryImpl.g.temporary,

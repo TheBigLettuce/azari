@@ -11,6 +11,7 @@ import 'package:gallery/src/booru/interface.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 import 'package:path/path.dart' as path;
+import 'package:xml/xml.dart';
 
 import '../../schemas/post.dart';
 import 'package:intl/intl.dart';
@@ -49,6 +50,29 @@ class Gelbooru implements BooruAPI {
         "s": "view",
         "id": id.toString(),
       });
+
+  @override
+  Future<Iterable<String>> notes(int postId) async {
+    final resp = await client.getUri(
+        Uri.https(booru.url, "/index.php", {
+          "page": "dapi",
+          "s": "note",
+          "q": "index",
+          "post_id": postId.toString(),
+        }),
+        options: Options(
+          responseType: ResponseType.plain,
+        ));
+
+    if (resp.statusCode != 200) {
+      throw "status code not 200";
+    }
+
+    final doc = XmlDocument.parse(resp.data);
+
+    return doc.children.first.children
+        .map((e) => stripHtml(e.getAttribute("body")!));
+  }
 
   @override
   Future<List<String>> completeTag(String t) async {

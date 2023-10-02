@@ -79,6 +79,10 @@ abstract class BooruAPI {
   Future<(List<Post>, int?)> page(
       int p, String tags, BooruTagging excludedTags);
 
+  /// Get the post's notes.
+  /// Usually used for translations.
+  Future<Iterable<String>> notes(int postId);
+
   /// Get posts down a certain post number.
   /// The boorus which do not support geting posts down a certain post number should keep a page number internally,
   /// and use paging to load the posts.
@@ -107,7 +111,7 @@ abstract class BooruAPI {
   }
 
   static BooruAPI fromEnum(Booru booru, {required int? page}) {
-    Dio dio = Dio(BaseOptions(
+    final dio = Dio(BaseOptions(
       responseType: ResponseType.json,
     ));
 
@@ -128,6 +132,17 @@ abstract class BooruAPI {
 
     return 10 * settings.booru.columns.number;
   }
+}
+
+String stripHtml(String s) {
+  var first = s.indexOf("\u003c");
+
+  while (first != -1) {
+    s = s.replaceRange(first, s.indexOf("\u003e") + 1, "");
+    first = s.indexOf("\u003c");
+  }
+
+  return s;
 }
 
 class CloudflareException implements Exception {}

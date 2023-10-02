@@ -40,6 +40,20 @@ class Danbooru implements BooruAPI {
   Uri browserLink(int id) => Uri.https(booru.url, "/posts/$id");
 
   @override
+  Future<Iterable<String>> notes(int postId) async {
+    final resp = await client.getUri(Uri.https(booru.url, "/notes.json", {
+      "search[post_id]": postId.toString(),
+    }));
+
+    if (resp.statusCode != 200) {
+      throw "status code not 200";
+    }
+
+    return Future.value(
+        (resp.data as List<dynamic>).map((e) => stripHtml(e["body"])));
+  }
+
+  @override
   Future<List<String>> completeTag(String tag) async {
     final resp = await client.getUri(
       Uri.https(booru.url, "/tags.json", {

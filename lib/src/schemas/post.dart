@@ -13,6 +13,7 @@ import 'package:gallery/src/cell/data.dart';
 import 'package:gallery/src/db/state_restoration.dart';
 import 'package:gallery/src/schemas/settings.dart';
 import 'package:gallery/src/widgets/search_filter_grid.dart';
+import 'package:gallery/src/widgets/translation_notes.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 import 'package:isar/isar.dart';
 import 'package:mime/mime.dart';
@@ -83,9 +84,14 @@ class PostBase implements Cell {
 
   @override
   List<Widget>? addButtons(BuildContext context) {
+    final icons = [
+      if (tags.contains("original")) Icon(FilteringMode.original.icon),
+      if (tags.contains("translated")) const Icon(Icons.translate_outlined),
+    ];
+
     return [
-      if (tags.contains("original")) ...[
-        Icon(FilteringMode.original.icon),
+      if (icons.isNotEmpty) ...[
+        ...icons,
         ConstrainedBox(
           constraints:
               BoxConstraints(maxHeight: Theme.of(context).iconTheme.size ?? 24),
@@ -164,6 +170,9 @@ class PostBase implements Cell {
           title: Text(AppLocalizations.of(context)!.scoreInfoPage),
           subtitle: Text(score.toString()),
         ),
+        if (tags.contains("translated"))
+          TranslationNotes.tile(context, colors.foregroundColor, id,
+              () => BooruAPI.fromEnum(Booru.fromPrefix(prefix)!, page: null)),
       ],
       filename(),
       supplyTags: tags,

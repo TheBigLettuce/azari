@@ -195,8 +195,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     WakelockPlus.enable();
 
-    // animationController = AnimationController(vsync: this);
-
     scrollController =
         ScrollController(initialScrollOffset: widget.infoScrollOffset ?? 0);
 
