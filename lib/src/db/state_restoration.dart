@@ -5,22 +5,22 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:gallery/src/schemas/grid_state_booru.dart';
+import 'package:gallery/src/db/schemas/grid_state_booru.dart';
 import 'package:isar/isar.dart';
 
-import '../booru/tags/interface.dart';
-import '../pages/settings.dart';
-import '../schemas/grid_state.dart';
+import '../interfaces/tags.dart';
+import '../pages/settings/settings_widget.dart';
+import 'schemas/grid_state.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../booru/interface.dart';
+import '../interfaces/booru.dart';
 import '../pages/booru/random.dart';
 import '../pages/booru/secondary.dart';
-import '../schemas/tags.dart';
+import 'schemas/tags.dart';
 import 'booru_tagging.dart';
-import 'isar.dart';
+import 'initalize_db.dart';
 
 part 'tag_manager.dart';
 

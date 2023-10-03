@@ -9,17 +9,20 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/actions/downloads.dart';
-import 'package:gallery/src/booru/downloader/downloader.dart';
-import 'package:gallery/src/db/isar.dart';
-import 'package:gallery/src/schemas/settings.dart';
-import 'package:gallery/src/widgets/drawer/drawer.dart';
-import 'package:gallery/src/schemas/download_file.dart';
+import 'package:gallery/src/widgets/grid/actions/downloads.dart';
+import 'package:gallery/src/net/downloader.dart';
+import 'package:gallery/src/db/initalize_db.dart';
+import 'package:gallery/src/db/schemas/settings.dart';
+import 'package:gallery/src/db/schemas/download_file.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
-import 'package:gallery/src/widgets/make_skeleton.dart';
-import 'package:gallery/src/widgets/search_filter_grid.dart';
+import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+import '../db/linear_isar_loader.dart';
+import '../widgets/skeletons/drawer/destinations.dart';
+import '../widgets/skeletons/grid_skeleton_state_filter.dart';
+import '../widgets/skeletons/make_grid_skeleton.dart';
 
 class Downloads extends StatefulWidget {
   const Downloads({super.key});

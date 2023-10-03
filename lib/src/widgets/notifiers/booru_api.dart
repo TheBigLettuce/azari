@@ -7,7 +7,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../booru/interface.dart';
+import '../../interfaces/booru.dart';
 
 class BooruAPINotifier extends InheritedWidget {
   final BooruAPI api;

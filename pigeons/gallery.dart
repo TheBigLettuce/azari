@@ -9,7 +9,7 @@ import 'package:pigeon/pigeon.dart';
 
 @ConfigurePigeon(
   PigeonOptions(
-      dartOut: "lib/src/gallery/android_api/api.g.dart",
+      dartOut: "lib/src/plugs/gallery/android/api.g.dart",
       dartTestOut: "test/test_api.g.dart",
       kotlinOut:
           "android/app/src/main/kotlin/lol/bruh19/azari/gallery/Gallery.kt",

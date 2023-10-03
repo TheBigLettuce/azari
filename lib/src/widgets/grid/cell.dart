@@ -9,8 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:octo_image/octo_image.dart';
 import 'package:transparent_image/transparent_image.dart';
-import '../../cell/data.dart';
+import 'cell_data.dart';
 import 'callback_grid.dart';
+import 'sticker.dart';
 
 /// The cell of [CallbackGrid].
 class GridCell<T extends CellData> extends StatefulWidget {
@@ -131,7 +132,7 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
                             child: Wrap(
                               children: widget._data.stickers
                                   .where((element) => element.right)
-                                  .map((e) => stickerIcon(context, e))
+                                  .map((e) => Sticker.widget(context, e))
                                   .toList(),
                             )),
                         Padding(
@@ -139,7 +140,7 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
                             child: Wrap(
                               children: widget._data.stickers
                                   .where((element) => !element.right)
-                                  .map((e) => stickerIcon(context, e))
+                                  .map((e) => Sticker.widget(context, e))
                                   .toList(),
                             ))
                       ],

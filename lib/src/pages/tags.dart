@@ -10,16 +10,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/widgets/drawer/drawer.dart';
-import 'package:gallery/src/schemas/tags.dart';
-import 'package:gallery/src/widgets/make_skeleton.dart';
+import 'package:gallery/src/db/schemas/tags.dart';
+import 'package:gallery/src/widgets/skeletons/make_skeleton.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../booru/interface.dart';
+import '../interfaces/booru.dart';
 import '../db/state_restoration.dart';
-import '../keybinds/keybinds.dart';
-import '../widgets/autocomplete_widget.dart';
+import '../widgets/skeletons/drawer/destinations.dart';
+import '../widgets/search_bar/autocomplete/autocomplete_widget.dart';
+import '../widgets/keybinds/single_activator_description.dart';
 import '../widgets/single_post.dart';
+import '../widgets/skeletons/skeleton_state.dart';
 import '../widgets/tags_widget.dart';
 
 class TagsPage extends StatefulWidget {

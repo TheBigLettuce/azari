@@ -8,25 +8,29 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/actions/favorites.dart';
-import 'package:gallery/src/booru/downloader/downloader.dart';
-import 'package:gallery/src/booru/interface.dart';
-import 'package:gallery/src/cell/contentable.dart';
-import 'package:gallery/src/db/isar.dart';
+import 'package:gallery/src/widgets/grid/actions/favorites.dart';
+import 'package:gallery/src/net/downloader.dart';
+import 'package:gallery/src/interfaces/booru.dart';
+import 'package:gallery/src/interfaces/contentable.dart';
+import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/pages/booru/main.dart';
-import 'package:gallery/src/schemas/favorite_booru.dart';
-import 'package:gallery/src/schemas/local_tag_dictionary.dart';
-import 'package:gallery/src/widgets/drawer/drawer.dart';
+import 'package:gallery/src/db/schemas/favorite_booru.dart';
+import 'package:gallery/src/db/schemas/local_tag_dictionary.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
-import 'package:gallery/src/widgets/make_skeleton.dart';
-import 'package:gallery/src/widgets/search_filter_grid.dart';
+import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../actions/booru_grid.dart';
-import '../booru/tags/tags.dart';
-import '../schemas/download_file.dart';
-import '../schemas/settings.dart';
+import '../db/linear_isar_loader.dart';
+import '../interfaces/filtering/filtering_mode.dart';
+import '../interfaces/filtering/sorting_mode.dart';
+import '../widgets/skeletons/drawer/destinations.dart';
+import '../widgets/grid/actions/booru_grid.dart';
+import '../db/post_tags.dart';
+import '../db/schemas/download_file.dart';
+import '../db/schemas/settings.dart';
+import '../widgets/skeletons/grid_skeleton_state_filter.dart';
+import '../widgets/skeletons/make_grid_skeleton.dart';
 
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});

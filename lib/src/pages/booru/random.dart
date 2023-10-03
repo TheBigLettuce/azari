@@ -12,30 +12,31 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/pages/booru/main.dart';
-import 'package:gallery/src/schemas/favorite_booru.dart';
-import 'package:gallery/src/schemas/grid_state_booru.dart';
-import 'package:gallery/src/schemas/tags.dart';
+import 'package:gallery/src/db/schemas/favorite_booru.dart';
+import 'package:gallery/src/db/schemas/grid_state_booru.dart';
+import 'package:gallery/src/db/schemas/tags.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-import '../../actions/booru_grid.dart';
-import '../../booru/downloader/downloader.dart';
-import '../../booru/interface.dart';
-import '../../booru/tags/tags.dart';
-import '../../db/isar.dart';
+import '../../widgets/skeletons/drawer/destinations.dart';
+import '../../widgets/grid/actions/booru_grid.dart';
+import '../../net/downloader.dart';
+import '../../interfaces/booru.dart';
+import '../../db/post_tags.dart';
+import '../../db/initalize_db.dart';
 import '../../db/state_restoration.dart';
-import '../../schemas/download_file.dart';
-import '../../schemas/post.dart';
-import '../../schemas/settings.dart';
-import '../../widgets/drawer/drawer.dart';
-import '../../widgets/make_skeleton.dart';
+import '../../db/schemas/download_file.dart';
+import '../../db/schemas/post.dart';
+import '../../db/schemas/settings.dart';
+import '../../widgets/search_bar/search_launch_grid_data.dart';
+import '../../widgets/skeletons/grid_skeleton_state.dart';
+import '../../widgets/skeletons/make_grid_skeleton.dart';
 import '../../widgets/notifiers/booru_api.dart';
 import '../../widgets/notifiers/tag_manager.dart';
-import '../../widgets/search_launch_grid.dart';
-
-import 'package:gallery/src/widgets/grid/callback_grid.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../widgets/search_bar/search_launch_grid.dart';
+import '../../widgets/grid/callback_grid.dart';
 
 class RandomBooruGrid extends StatefulWidget {
   final BooruAPI api;
@@ -67,8 +68,8 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
   bool addedToBookmarks = false;
 
   late final Isar instance = widget.state != null
-      ? IsarDbsOpen.secondaryGridName(widget.state!.name)
-      : IsarDbsOpen.secondaryGrid(temporary: true);
+      ? DbsOpen.secondaryGridName(widget.state!.name)
+      : DbsOpen.secondaryGrid(temporary: true);
 
   late final state = GridSkeletonState<Post>(index: kBooruGridDrawerIndex);
 

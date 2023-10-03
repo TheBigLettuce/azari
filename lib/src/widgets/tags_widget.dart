@@ -8,10 +8,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/widgets/settings_label.dart';
 
-import '../schemas/tags.dart';
+import '../db/schemas/tags.dart';
 import 'empty_widget.dart';
+import 'time_label.dart';
 
 class TagsWidget extends StatelessWidget {
   final void Function(Tag tag) deleteTag;

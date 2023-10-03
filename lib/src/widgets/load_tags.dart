@@ -8,7 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../booru/tags/tags.dart';
+import '../db/post_tags.dart';
 import 'notifiers/tag_refresh.dart';
 
 class LoadTags extends StatelessWidget {

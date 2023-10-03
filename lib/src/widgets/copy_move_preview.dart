@@ -9,16 +9,29 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../cell/cell.dart';
+import '../interfaces/cell.dart';
 import '../pages/image_view.dart';
-import '../schemas/android_gallery_directory_file.dart';
+import '../db/schemas/system_gallery_directory_file.dart';
 import 'grid/cell.dart';
-
-// const kCopyMoveSize = 52.0;
 
 class CopyMovePreview extends StatefulWidget {
   final List<SystemGalleryDirectoryFile> files;
   final double size;
+
+  static PreferredSizeWidget hintWidget(BuildContext context, String title) =>
+      PreferredSize(
+        preferredSize: const Size.fromHeight(12),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Text(
+            title,
+            style: TextStyle(
+                fontStyle: FontStyle.italic,
+                fontSize: Theme.of(context).textTheme.titleMedium?.fontSize,
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.8)),
+          ),
+        ),
+      );
 
   const CopyMovePreview({super.key, required this.files, required this.size});
 

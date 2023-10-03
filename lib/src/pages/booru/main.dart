@@ -11,34 +11,36 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/schemas/favorite_booru.dart';
-import 'package:gallery/src/schemas/tags.dart';
+import 'package:gallery/src/db/schemas/favorite_booru.dart';
+import 'package:gallery/src/db/schemas/tags.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 
-import '../../actions/booru_grid.dart';
-import '../../booru/downloader/downloader.dart';
-import '../../booru/interface.dart';
-import '../../booru/tags/tags.dart';
-import '../../db/isar.dart';
+import '../../widgets/skeletons/drawer/destinations.dart';
+import '../../widgets/grid/actions/booru_grid.dart';
+import '../../net/downloader.dart';
+import '../../interfaces/booru.dart';
+import '../../db/post_tags.dart';
+import '../../db/initalize_db.dart';
 import '../../db/state_restoration.dart';
-import '../../schemas/download_file.dart';
-import '../../schemas/post.dart';
-import '../../schemas/settings.dart';
-import '../../widgets/drawer/drawer.dart';
-import '../../widgets/make_skeleton.dart';
+import '../../db/schemas/download_file.dart';
+import '../../db/schemas/post.dart';
+import '../../db/schemas/settings.dart';
+import '../../widgets/search_bar/search_launch_grid_data.dart';
+import '../../widgets/skeletons/grid_skeleton_state.dart';
 import '../../widgets/notifiers/booru_api.dart';
 import '../../widgets/notifiers/tag_manager.dart';
 import '../../widgets/radio_dialog.dart';
-import '../../widgets/search_launch_grid.dart';
+import '../../widgets/search_bar/search_launch_grid.dart';
 
-import '../settings.dart';
+import '../../widgets/skeletons/make_grid_skeleton.dart';
+import '../settings/settings_widget.dart';
 
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'secondary.dart';
-import '../../schemas/settings.dart' as schema show AspectRatio;
+import '../../db/schemas/settings.dart' as schema show AspectRatio;
 
 PopupMenuButton gridSettingsButton(GridSettings gridSettings,
     {required void Function(schema.AspectRatio?) selectRatio,
@@ -162,7 +164,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
   void initState() {
     super.initState();
 
-    mainGrid = IsarDbsOpen.primaryGrid(state.settings.selectedBooru);
+    mainGrid = DbsOpen.primaryGrid(state.settings.selectedBooru);
     restore = StateRestoration(
         mainGrid, state.settings.selectedBooru.string, () => api.currentPage);
     api = BooruAPI.fromSettings(page: restore.copy.page);
@@ -370,8 +372,8 @@ class _MainBooruGridState extends State<MainBooruGrid>
                                   noRestoreOnBack: false,
                                   api: BooruAPI.fromEnum(api.booru, page: null),
                                   tagManager: tagManager,
-                                  instance: IsarDbsOpen.secondaryGridName(
-                                      last.copy.name),
+                                  instance:
+                                      DbsOpen.secondaryGridName(last.copy.name),
                                 );
                               },
                             ));

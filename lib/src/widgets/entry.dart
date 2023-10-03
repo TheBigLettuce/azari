@@ -8,7 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../db/isar.dart';
+import '../db/schemas/settings.dart';
 
 class Entry extends StatefulWidget {
   const Entry({super.key});
@@ -42,7 +42,7 @@ class _EntryState extends State<Entry> {
                       child: Text(AppLocalizations.of(context)!.later)),
                   TextButton(
                       onPressed: () {
-                        chooseDirectory((e) {}).then((success) {
+                        Settings.chooseDirectory((e) {}).then((success) {
                           if (success) {
                             Navigator.pop(context);
                             Navigator.pushReplacementNamed(context, "/booru");

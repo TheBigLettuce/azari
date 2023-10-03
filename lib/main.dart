@@ -10,15 +10,13 @@ import 'dart:io';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:gallery/src/booru/downloader/downloader.dart';
-import 'package:gallery/src/booru/tags/tags.dart';
-import 'package:gallery/src/db/platform_channel.dart';
-import 'package:gallery/src/gallery/android_api/android_directories.dart';
-import 'package:gallery/src/gallery/android_api/api.g.dart';
-import 'package:gallery/src/gallery/android_api/android_api_directories.dart';
-import 'package:gallery/src/db/isar.dart';
-import 'package:gallery/src/schemas/settings.dart';
-import 'package:gallery/src/widgets/drawer/drawer.dart';
+import 'package:gallery/src/net/downloader.dart';
+import 'package:gallery/src/db/post_tags.dart';
+import 'package:gallery/src/plugs/gallery.dart';
+import 'package:gallery/src/plugs/platform_channel.dart';
+import 'package:gallery/src/pages/gallery/directories.dart';
+import 'package:gallery/src/db/initalize_db.dart';
+import 'package:gallery/src/db/schemas/settings.dart';
 import 'package:gallery/src/widgets/entry.dart';
 import 'package:gallery/src/widgets/restart_widget.dart';
 // import 'package:google_fonts/google_fonts.dart';
@@ -28,6 +26,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'src/pages/booru/main.dart';
+import 'src/widgets/skeletons/drawer/destinations.dart';
+import 'src/widgets/skeletons/drawer/select_destination.dart';
 
 late final String azariVersion;
 
@@ -87,8 +87,8 @@ ThemeData _buildTheme(Brightness brightness, Color accentColor) {
 @pragma('vm:entry-point')
 void mainPickfile() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initalizeIsar(true);
-  GalleryApi.setup(GalleryImpl(true));
+  await initalizeDb(true);
+  initalizeGalleryPlug(true);
 
   await Permission.photos.request();
   await Permission.videos.request();
@@ -112,7 +112,7 @@ void mainPickfile() async {
         changeSystemUiOverlay(context);
         initPostTags(context);
 
-        return AndroidDirectories(
+        return GalleryDirectories(
           noDrawer: true,
           nestedCallback: CallbackDescriptionNested("Choose file", (chosen) {
             PlatformFunctions.returnUri(chosen.originalUri);
@@ -132,14 +132,12 @@ void main() async {
   // }
 
   WidgetsFlutterBinding.ensureInitialized();
-  await initalizeIsar(false);
+  await initalizeDb(false);
   await initalizeDownloader();
 
   changeExceptionErrorColors();
 
-  if (Platform.isAndroid) {
-    GalleryApi.setup(GalleryImpl(false));
-  }
+  initalizeGalleryPlug(false);
 
   final accentColor = await PlatformFunctions.accentColor();
 

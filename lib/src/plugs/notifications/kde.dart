@@ -9,8 +9,8 @@ import 'package:dbus/dbus.dart';
 import 'package:gallery/src/plugs/notifications.dart';
 import 'package:gallery/src/plugs/notifications/dummy.dart';
 
-import '../../dbus/job_view.g.dart';
-import '../../dbus/job_view_server.g.dart';
+import '../../../dbus/job_view.g.dart';
+import '../../../dbus/job_view_server.g.dart';
 
 class KDENotificationProgress extends NotificationProgress {
   final OrgKdeJobViewV2 _job;

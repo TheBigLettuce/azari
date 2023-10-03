@@ -7,7 +7,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../booru/interface.dart';
+import '../interfaces/booru.dart';
 
 class TranslationNotes extends StatefulWidget {
   final int postId;

@@ -12,16 +12,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/material.dart' as material show AspectRatio;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/booru/interface.dart';
-import 'package:gallery/src/cell/data.dart';
+import 'package:gallery/src/interfaces/booru.dart';
 import 'package:gallery/src/pages/image_view.dart';
-import 'package:gallery/src/schemas/settings.dart';
+import 'package:gallery/src/db/schemas/settings.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
-import 'package:gallery/src/widgets/make_skeleton.dart';
 import 'package:logging/logging.dart';
-import '../../cell/cell.dart';
-import '../../keybinds/keybinds.dart';
+import '../../interfaces/cell.dart';
+import '../../interfaces/grid_mutation_interface.dart';
+import '../keybinds/describe_keys.dart';
+import '../keybinds/digit_and_settings.dart';
+import '../keybinds/keybind_description.dart';
+import '../keybinds/single_activator_description.dart';
 import '../notifiers/focus.dart';
+import '../skeletons/wrap_app_bar_action.dart';
 import 'cell.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -33,7 +36,6 @@ part 'grid_bottom_sheet_action.dart';
 part 'grid_description.dart';
 part 'search_and_focus.dart';
 part 'grid_layout.dart';
-part 'sticker_icon.dart';
 
 class CloudflareBlockInterface {
   final BooruAPI api;

@@ -7,28 +7,16 @@
 
 part of 'callback_grid.dart';
 
-abstract class GridMutationInterface<T extends Cell> {
-  int get cellCount;
-  bool get isRefreshing;
-  bool get mutated;
-
-  void unselectAll();
-
-  Future onRefresh();
-
-  void setIsRefreshing(bool isRefreshing);
-  void setSource(int cellCount, T Function(int i) getCell);
-  void tick(int i);
-  void restore();
-  T getCell(int i);
-}
-
 class _Mutation<T extends Cell> implements GridMutationInterface<T> {
-  int? _cellCountFilter;
-  T Function(int i)? _filterGetCell;
   final void Function() scrollUp;
   final void Function() unselectall;
   final void Function() updateImageView;
+  final void Function(void Function()? f) update;
+
+  final CallbackGrid<T> Function() widget;
+  T Function(int i)? _filterGetCell;
+
+  int? _cellCountFilter;
 
   @override
   void unselectAll() => unselectall();
@@ -218,9 +206,6 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
 
     return;
   }
-
-  final CallbackGrid<T> Function() widget;
-  final void Function(void Function()? f) update;
 
   _Mutation(
       {required bool immutable,

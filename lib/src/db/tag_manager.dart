@@ -29,7 +29,7 @@ class TagManager {
 
     if (restore && !_temporary) {
       Navigator.push(context, MaterialPageRoute(builder: (context) {
-        final instance = IsarDbsOpen.secondaryGrid(temporary: false);
+        final instance = DbsOpen.secondaryGrid(temporary: false);
 
         return SecondaryBooruGrid(
           tagManager: this,
@@ -59,7 +59,7 @@ class TagManager {
             excludedMode: false, isarCurrent: parent._mainGrid);
 
   static TagManager fromEnum(Booru booru, bool temporary) {
-    final mainGrid = IsarDbsOpen.primaryGrid(booru);
+    final mainGrid = DbsOpen.primaryGrid(booru);
 
     return TagManager(
       StateRestoration(mainGrid, mainGrid.name, () => null),

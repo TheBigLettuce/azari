@@ -8,18 +8,19 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/booru/interface.dart';
+import 'package:gallery/src/interfaces/booru.dart';
 import 'package:gallery/src/db/state_restoration.dart';
 import 'package:gallery/src/pages/booru/random.dart';
-import 'package:gallery/src/schemas/grid_state_booru.dart';
-import 'package:gallery/src/widgets/drawer/drawer.dart';
-import 'package:gallery/src/widgets/make_skeleton.dart';
-import 'package:gallery/src/widgets/settings_label.dart';
+import 'package:gallery/src/db/schemas/grid_state_booru.dart';
+import 'package:gallery/src/widgets/skeletons/make_skeleton.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../db/isar.dart';
-import '../schemas/settings.dart';
+import '../db/initalize_db.dart';
+import '../db/schemas/settings.dart';
+import '../widgets/skeletons/drawer/destinations.dart';
+import '../widgets/skeletons/skeleton_state.dart';
+import '../widgets/time_label.dart';
 
 class Bookmarks extends StatefulWidget {
   const Bookmarks({super.key});
@@ -89,7 +90,7 @@ class _BookmarksState extends State<Bookmarks> {
                       actions: [
                         TextButton(
                             onPressed: () {
-                              IsarDbsOpen.secondaryGridName(e.name)
+                              DbsOpen.secondaryGridName(e.name)
                                   .close(deleteFromDisk: true)
                                   .then((value) {
                                 if (value) {
