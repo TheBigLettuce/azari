@@ -5,6 +5,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/post_tags.dart';
 import 'package:gallery/src/interfaces/search_mixin.dart';
@@ -44,31 +46,77 @@ mixin SearchFilterGrid<T extends Cell>
     searchFocus.dispose();
   }
 
+  late FilteringMode _currentFilterMode = _state.defaultMode;
+  bool _searchVirtual = false;
+  Future<List<String>> Function(String string) _localTagCompleteFunc =
+      PostTags.g.completeLocalTag;
+
+  void _onChanged(String value, bool direct) {
+    var interf = _state.gridKey.currentState?.mutationInterface;
+    if (interf != null) {
+      final sorting = _state.hook(_currentFilterMode);
+      // if (!direct) {
+      //   value = value.trim();
+      //   if (value.isEmpty) {
+      //     interf.restore();
+      //     widget.instance._state.filter.resetFilter();
+      //     setState(() {});
+      //     return;
+      //   }
+      // }
+
+      _state.filter.setSortingMode(sorting);
+
+      var res =
+          _state.filter.filter(_searchVirtual ? "" : value, _currentFilterMode);
+
+      interf.setSource(res.count, (i) {
+        final cell = res.cell(i);
+        return _state.transform(cell, sorting);
+      });
+      _key.currentState?.update();
+    }
+  }
+
   void performSearch(String s) {
     searchTextController.text = s;
-    _key.currentState?.onChanged(s, true);
+    _onChanged(s, true);
   }
 
   FilteringMode currentFilteringMode() {
-    return _key.currentState!.currentFilterMode;
+    return _currentFilterMode;
   }
 
   void setFilteringMode(FilteringMode f) {
     if (_state.filteringModes.contains(f)) {
-      _key.currentState!.currentFilterMode = f;
+      _currentFilterMode = f;
     }
   }
 
   void setLocalTagCompleteF(Future<List<String>> Function(String string) f) {
-    _key.currentState?.localTagCompleteFunc = f;
+    _localTagCompleteFunc = f;
+  }
+
+  void _reset(bool resetFilterMode) {
+    searchTextController.clear();
+    _state.gridKey.currentState?.mutationInterface?.restore();
+    if (_state.filteringModes.isNotEmpty) {
+      _searchVirtual = false;
+      if (resetFilterMode) {
+        _currentFilterMode = _state.defaultMode;
+      }
+    }
+    _onChanged(searchTextController.text, true);
+
+    _key.currentState?.update();
   }
 
   void markSearchVirtual() {
-    _key.currentState?.searchVirtual = true;
+    _searchVirtual = true;
   }
 
   void resetSearch() {
-    _key.currentState!.reset(true);
+    _reset(true);
   }
 
   @override

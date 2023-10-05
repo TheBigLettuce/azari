@@ -27,6 +27,9 @@ class BlacklistedDirectory implements Cell {
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override
+  List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
+
+  @override
   List<Widget>? addInfo(
           BuildContext context, dynamic extra, AddInfoColorData colors) =>
       null;

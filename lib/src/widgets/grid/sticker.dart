@@ -13,9 +13,9 @@ class Sticker {
   final Color? backgroundColor;
   final bool right;
 
-  static Widget widget(BuildContext context, Sticker e) => Align(
-        alignment: e.right ? Alignment.topRight : Alignment.topLeft,
-        child: Padding(
+  static Widget widget(BuildContext context, Sticker e,
+      {void Function()? onPressed}) {
+    Widget make() => Padding(
           padding: const EdgeInsets.only(bottom: 4),
           child: Container(
             padding: const EdgeInsets.all(2),
@@ -34,8 +34,12 @@ class Sticker {
                   : Theme.of(context).colorScheme.secondary.withOpacity(0.8),
             ),
           ),
-        ),
-      );
+        );
+
+    return onPressed != null
+        ? GestureDetector(onTap: onPressed, child: make())
+        : make();
+  }
 
   const Sticker(this.icon,
       {this.color, this.backgroundColor, this.right = false});

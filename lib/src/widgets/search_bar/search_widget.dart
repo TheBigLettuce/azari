@@ -23,35 +23,8 @@ class _SearchWidget<T extends Cell> extends StatefulWidget {
 }
 
 class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
-  bool searchVirtual = false;
-  late FilteringMode currentFilterMode = widget.instance._state.defaultMode;
-  Future<List<String>> Function(String string) localTagCompleteFunc =
-      PostTags.g.completeLocalTag;
-  void onChanged(String value, bool direct) {
-    var interf = widget.instance._state.gridKey.currentState?.mutationInterface;
-    if (interf != null) {
-      final sorting = widget.instance._state.hook(currentFilterMode);
-      // if (!direct) {
-      //   value = value.trim();
-      //   if (value.isEmpty) {
-      //     interf.restore();
-      //     widget.instance._state.filter.resetFilter();
-      //     setState(() {});
-      //     return;
-      //   }
-      // }
-
-      widget.instance._state.filter.setSortingMode(sorting);
-
-      var res = widget.instance._state.filter
-          .filter(searchVirtual ? "" : value, currentFilterMode);
-
-      interf.setSource(res.count, (i) {
-        final cell = res.cell(i);
-        return widget.instance._state.transform(cell, sorting);
-      });
-      setState(() {});
-    }
+  void update() {
+    setState(() {});
   }
 
   List<Widget> _addItems() => [
@@ -62,14 +35,15 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
                   .map((e) => PopupMenuItem(value: e, child: Text(e.string)))
                   .toList();
             },
-            initialValue: currentFilterMode,
+            initialValue: widget.instance._currentFilterMode,
             onSelected: (value) {
-              searchVirtual = false;
-              currentFilterMode = value;
-              onChanged(widget.instance.searchTextController.text, true);
+              widget.instance._searchVirtual = false;
+              widget.instance._currentFilterMode = value;
+              widget.instance
+                  ._onChanged(widget.instance.searchTextController.text, true);
             },
             icon: Icon(
-              currentFilterMode.icon,
+              widget.instance._currentFilterMode.icon,
             ),
             padding: EdgeInsets.zero,
           ),
@@ -79,20 +53,6 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
   String _makeHint(BuildContext context) =>
       "${AppLocalizations.of(context)!.filterHint}${widget.hint != null ? ' ${widget.hint}' : ''}";
 
-  void reset(bool resetFilterMode) {
-    widget.instance.searchTextController.clear();
-    widget.instance._state.gridKey.currentState?.mutationInterface?.restore();
-    if (widget.instance._state.filteringModes.isNotEmpty) {
-      searchVirtual = false;
-      if (resetFilterMode) {
-        currentFilterMode = widget.instance._state.defaultMode;
-      }
-    }
-    onChanged(widget.instance.searchTextController.text, true);
-
-    setState(() {});
-  }
-
   Widget _autocompleteWidget() => autocompleteWidget(
         widget.instance.searchTextController,
         (p0) {},
@@ -100,14 +60,17 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
         () {
           widget.instance._state.mainFocus.requestFocus();
         },
-        localTagCompleteFunc,
+        widget.instance._localTagCompleteFunc,
         widget.instance.searchFocus,
-        showSearch: true,
+        showSearch: !Platform.isAndroid,
+        roundBorders: false,
+        ignoreFocusNotifier: Platform.isAndroid,
         searchCount: widget
             .instance._state.gridKey.currentState?.mutationInterface?.cellCount,
         addItems: _addItems(),
         onChanged: () {
-          onChanged(widget.instance.searchTextController.text, true);
+          widget.instance
+              ._onChanged(widget.instance.searchTextController.text, true);
         },
         customHint: _makeHint(context),
         noUnfocus: true,
@@ -116,29 +79,24 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return FocusNotifier(
-        focusMain: widget.instance._state.mainFocus.requestFocus,
-        notifier: widget.instance.searchFocus,
-        child: Builder(
-            builder: (context) => switch (currentFilterMode) {
-                  FilteringMode.tag ||
-                  FilteringMode.tagReversed =>
-                    _autocompleteWidget(),
-                  FilteringMode() => TextField(
-                      focusNode: widget.instance.searchFocus,
-                      controller: widget.instance.searchTextController,
-                      decoration: autocompleteBarDecoration(
-                          context,
-                          () => reset(
-                              widget.instance._state.unsetFilteringModeOnReset),
-                          _addItems(),
-                          searchCount: widget.instance._state.gridKey
-                              .currentState?.mutationInterface?.cellCount,
-                          showSearch: true,
-                          roundBorders: false,
-                          hint: _makeHint(context)),
-                      onChanged: (s) => onChanged(s, false),
-                    ),
-                }));
+    return switch (widget.instance._currentFilterMode) {
+      FilteringMode.tag || FilteringMode.tagReversed => _autocompleteWidget(),
+      FilteringMode() => TextField(
+          focusNode: widget.instance.searchFocus,
+          controller: widget.instance.searchTextController,
+          decoration: autocompleteBarDecoration(
+              context,
+              () => widget.instance
+                  ._reset(widget.instance._state.unsetFilteringModeOnReset),
+              _addItems(),
+              searchCount: widget.instance._state.gridKey.currentState
+                  ?.mutationInterface?.cellCount,
+              roundBorders: false,
+              ignoreFocusNotifier: Platform.isAndroid,
+              showSearch: !Platform.isAndroid,
+              hint: _makeHint(context)),
+          onChanged: (s) => widget.instance._onChanged(s, false),
+        ),
+    };
   }
 }

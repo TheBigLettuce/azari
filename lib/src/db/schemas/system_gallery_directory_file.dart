@@ -90,6 +90,52 @@ class SystemGalleryDirectoryFile implements Cell {
     return Dbs.g.blacklisted.favoriteMedias.getSync(id) != null;
   }
 
+  List<(IconData, void Function()?)> _stickers(BuildContext? context) {
+    return [
+      if (isVideo) (FilteringMode.video.icon, null),
+      if (isGif) (FilteringMode.gif.icon, null),
+      if (isOriginal) (FilteringMode.original.icon, null),
+      if (isDuplicate()) (FilteringMode.duplicate.icon, null),
+      if (PostTags.g.containsTag(name, "translated"))
+        (
+          Icons.translate_outlined,
+          context == null
+              ? null
+              : () {
+                  DisassembleResult? res;
+                  try {
+                    res = PostTags.g.dissassembleFilename(name);
+                  } catch (_) {
+                    return;
+                  }
+
+                  Navigator.push(
+                    context,
+                    DialogRoute(
+                      context: context,
+                      builder: (context) {
+                        return TranslationNotes(
+                          postId: res!.id,
+                          api: BooruAPI.fromEnum(res.booru, page: null),
+                        );
+                      },
+                    ),
+                  );
+                }
+        )
+    ];
+  }
+
+  @override
+  List<(IconData, void Function()?)>? addStickers(BuildContext context) {
+    final stickers = [
+      ...injectedStickers.map((e) => e.icon).map((e) => (e, null)),
+      ..._stickers(context),
+    ];
+
+    return stickers.isEmpty ? null : stickers;
+  }
+
   @override
   List<Widget>? addButtons(BuildContext context) {
     DisassembleResult? res;
@@ -97,24 +143,7 @@ class SystemGalleryDirectoryFile implements Cell {
       res = PostTags.g.dissassembleFilename(name);
     } catch (_) {}
 
-    final stickers = [
-      if (isDuplicate()) Icon(FilteringMode.duplicate.icon),
-      if (isOriginal) Icon(FilteringMode.original.icon),
-      if (PostTags.g.containsTag(name, "translated"))
-        const Icon(Icons.translate_outlined),
-    ];
-
     return [
-      if (stickers.isNotEmpty) ...[
-        ...stickers,
-        ConstrainedBox(
-          constraints:
-              BoxConstraints(maxHeight: Theme.of(context).iconTheme.size ?? 24),
-          child: VerticalDivider(
-            color: Theme.of(context).iconTheme.color,
-          ),
-        )
-      ],
       if (size == 0 && res != null)
         IconButton(
             onPressed: () {
@@ -155,7 +184,7 @@ class SystemGalleryDirectoryFile implements Cell {
             icon: const Icon(Icons.public)),
       IconButton(
           onPressed: () {
-            PlatformFunctions.share(originalUri);
+            PlatformFunctions.shareMedia(originalUri);
           },
           icon: const Icon(Icons.share))
     ];
@@ -316,12 +345,9 @@ class SystemGalleryDirectoryFile implements Cell {
 
   @override
   CellData getCellData(bool isList, {BuildContext? context}) {
-    final stickers = [
+    final stickers = <Sticker>[
       ...injectedStickers,
-      if (isVideo) Sticker(FilteringMode.video.icon),
-      if (isGif) Sticker(FilteringMode.gif.icon),
-      if (isOriginal) Sticker(FilteringMode.original.icon),
-      if (isDuplicate()) Sticker(FilteringMode.duplicate.icon),
+      ..._stickers(context).map((e) => Sticker(e.$1)),
       if (isFavorite())
         Sticker(Icons.star_rounded,
             right: true,
@@ -357,6 +383,7 @@ class ThumbnailProvider extends ImageProvider<MemoryImage> {
     if (loaded) {
       return MemoryImage(thumb);
     }
+
     final directThumb = await PlatformFunctions.getThumbDirectly(id);
     if (directThumb.differenceHash == 0 && fileName != null) {
       try {
@@ -393,12 +420,8 @@ class ThumbnailProvider extends ImageProvider<MemoryImage> {
   }
 
   @override
-  ImageStreamCompleter loadBuffer(
-      ImageProvider key,
-      // ignore: deprecated_member_use
-      DecoderBufferCallback decode) {
-    // ignore: deprecated_member_use
-    return key.loadBuffer(key, decode);
+  ImageStreamCompleter loadImage(MemoryImage key, ImageDecoderCallback decode) {
+    return key.loadImage(key, decode);
   }
 
   @override

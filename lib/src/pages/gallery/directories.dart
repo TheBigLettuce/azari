@@ -192,6 +192,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
           onBack: widget.showBackButton ? () => Navigator.pop(context) : null,
           systemNavigationInsets: insets,
           hasReachedEnd: () => true,
+          showCount: true,
           inlineMenuButtonItems: true,
           menuButtonItems: [
             if (widget.callback != null)

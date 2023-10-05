@@ -15,7 +15,8 @@ class GridLayout {
           GridMutationInterface<T> state,
           SelectionInterface<T> selection,
           double systemNavigationInsets,
-          {required void Function(BuildContext, T, int)? onPressed}) =>
+          {required void Function(BuildContext, T, int)? onPressed,
+          required bool box}) =>
       SliverList.separated(
         separatorBuilder: (context, index) => const Divider(
           height: 1,
@@ -77,7 +78,8 @@ class GridLayout {
           bool listView,
           GridCell Function(BuildContext, T, int) gridCell,
           {required double systemNavigationInsets,
-          required double aspectRatio}) =>
+          required double aspectRatio,
+          required bool box}) =>
       SliverGrid.builder(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             childAspectRatio: aspectRatio, crossAxisCount: columns),
@@ -185,16 +187,16 @@ class GridLayout {
       );
 
   static Widget segmentsPrebuilt<T extends Cell>(
-    BuildContext context,
-    Segments<T> segments,
-    GridMutationInterface<T> state,
-    SelectionInterface<T> selection,
-    bool listView,
-    int columns,
-    GridCell Function(BuildContext, T, int) gridCell, {
-    required double systemNavigationInsets,
-    required double aspectRatio,
-  }) {
+      BuildContext context,
+      Segments<T> segments,
+      GridMutationInterface<T> state,
+      SelectionInterface<T> selection,
+      bool listView,
+      int columns,
+      GridCell Function(BuildContext, T, int) gridCell,
+      {required double systemNavigationInsets,
+      required double aspectRatio,
+      required bool box}) {
     final segRows = <dynamic>[];
 
     makeRows<J>(List<J> value) {
@@ -316,6 +318,7 @@ class GridLayout {
     GridCell Function(BuildContext, T, int) gridCell, {
     required double systemNavigationInsets,
     required double aspectRatio,
+    required bool box,
   }) {
     final segRows = <dynamic>[];
     final segMap = <String, List<int>>{};

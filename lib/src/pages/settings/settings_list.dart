@@ -213,18 +213,17 @@ class _SettingsListState extends State<SettingsList> {
           ),
           subtitle: Text(PostTags.g.savedTagsCount().toString()),
         ),
-        if (Platform.isAndroid)
-          ListTile(
-            title: Text(
-                AppLocalizations.of(context)!.blacklistedDirectoriesPageName),
-            onTap: () {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const BlacklistedDirectories(),
-                  ));
-            },
-          ),
+        ListTile(
+          title: Text(
+              AppLocalizations.of(context)!.blacklistedDirectoriesPageName),
+          onTap: () {
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const BlacklistedDirectories(),
+                ));
+          },
+        ),
         if (Platform.isAndroid)
           ListTile(
             title: Text(AppLocalizations.of(context)!.thumbnailsCSize),

@@ -26,10 +26,25 @@ Widget makeGridSkeleton<T extends Cell>(
     Booru? overrideBooru,
     Future<bool> Function()? overrideOnPop}) {
   return WillPopScope(
-    onWillPop: overrideOnPop ??
-        (popSenitel
-            ? () => popUntilSenitel(context)
-            : () => Future.value(true)),
+    onWillPop: () {
+      Future<bool> pop() => overrideOnPop != null
+          ? overrideOnPop()
+          : popSenitel
+              ? popUntilSenitel(context)
+              : Future.value(true);
+
+      final s = state.gridKey.currentState;
+      if (s == null) {
+        return pop();
+      }
+
+      if (s.showSearchBar && !s.flexibleAppBar) {
+        s.showSearchBar = false;
+        s.setState(() {});
+        return Future.value(false);
+      }
+      return pop();
+    },
     child: Scaffold(
         // floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
         drawerEnableOpenDragGesture:

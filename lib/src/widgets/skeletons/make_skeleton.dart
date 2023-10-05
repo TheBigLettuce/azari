@@ -35,7 +35,7 @@ Widget makeSkeleton(
   void Function(int route, void Function() original)? overrideChooseRoute,
   List<Widget>? appBarActions,
   Widget? customTitle,
-  NavigationBar? bottomNavBar,
+  TabBar? tabBar,
 }) {
   if (children == null && builder == null ||
       children != null && builder != null) {
@@ -46,7 +46,89 @@ Widget makeSkeleton(
     throw "itemCount should be supplied";
   }
 
-  var insets = MediaQuery.viewPaddingOf(context);
+  final insets = MediaQuery.viewPaddingOf(context);
+
+  PreferredSizeWidget? makeAppBar() {
+    if (tabBar == null) {
+      return null;
+    }
+
+    return AppBar(
+      automaticallyImplyLeading: true,
+      actions: appBarActions != null
+          ? appBarActions.map((e) => wrapAppBarAction(e)).toList()
+          : [Container()],
+      bottom: tabBar,
+      title: customTitle ??
+          Text(
+            pageDescription,
+          ),
+    );
+  }
+
+  Widget makeBox() {
+    if (children?.length == 1) {
+      return children!.first;
+    }
+
+    if (children != null) {
+      return ListView(
+        children: children,
+      );
+    }
+
+    if (builder != null) {
+      return ListView.builder(
+        itemBuilder: builder,
+        itemCount: itemCount,
+      );
+    }
+
+    return Container();
+  }
+
+  Widget makeSliver() => CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 152,
+            collapsedHeight: 64,
+            automaticallyImplyLeading: true,
+            actions: [Container()],
+            flexibleSpace: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                    child: FlexibleSpaceBar(
+                        title: customTitle ??
+                            Text(
+                              pageDescription,
+                            ))),
+                if (appBarActions != null)
+                  ...appBarActions.map((e) => wrapAppBarAction(e)).toList()
+              ],
+            ),
+          ),
+          if (children != null)
+            children.isEmpty
+                ? const SliverFillRemaining(child: Center(child: EmptyWidget()))
+                : SliverPadding(
+                    padding: EdgeInsets.only(bottom: insets.bottom),
+                    sliver: SliverList.list(
+                      children: children,
+                    ),
+                  ),
+          if (builder != null)
+            itemCount == 0
+                ? const SliverFillRemaining(child: Center(child: EmptyWidget()))
+                : SliverPadding(
+                    padding: EdgeInsets.only(bottom: insets.bottom),
+                    sliver: SliverList.builder(
+                      itemBuilder: builder,
+                      itemCount: itemCount,
+                    ),
+                  )
+        ],
+      );
 
   Map<SingleActivatorDescription, Null Function()> bindings = {
     SingleActivatorDescription(AppLocalizations.of(context)!.back,
@@ -89,63 +171,20 @@ Widget makeSkeleton(
             onWillPop: () =>
                 !popSenitel ? Future.value(true) : popUntilSenitel(context),
             child: Scaffold(
+              appBar: makeAppBar(),
               drawerEnableOpenDragGesture:
                   MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,
               key: state.scaffoldKey,
-              bottomNavigationBar: bottomNavBar,
               drawer: makeDrawer(context, state.index,
                   overrideChooseRoute: overrideChooseRoute),
               endDrawer: makeEndDrawerSettings(context, state.scaffoldKey),
               body: gestureDeadZones(context,
                   child: addRail(
-                      context,
-                      state.index,
-                      state.scaffoldKey,
-                      CustomScrollView(
-                        slivers: [
-                          SliverAppBar(
-                            expandedHeight: 152,
-                            collapsedHeight: 64,
-                            automaticallyImplyLeading: true,
-                            actions: [Container()],
-                            flexibleSpace: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                    child: FlexibleSpaceBar(
-                                        title: customTitle ??
-                                            Text(
-                                              pageDescription,
-                                            ))),
-                                if (appBarActions != null)
-                                  ...appBarActions
-                                      .map((e) => wrapAppBarAction(e))
-                                      .toList()
-                              ],
-                            ),
-                          ),
-                          if (children != null)
-                            SliverPadding(
-                              padding: EdgeInsets.only(bottom: insets.bottom),
-                              sliver: SliverList.list(
-                                children: children.isEmpty
-                                    ? const [EmptyWidget()]
-                                    : children,
-                              ),
-                            ),
-                          if (builder != null)
-                            itemCount == 0
-                                ? const SliverToBoxAdapter(child: EmptyWidget())
-                                : SliverPadding(
-                                    padding:
-                                        EdgeInsets.only(bottom: insets.bottom),
-                                    sliver: SliverList.builder(
-                                      itemBuilder: builder,
-                                      itemCount: itemCount,
-                                    ),
-                                  )
-                        ],
-                      ))),
+                    context,
+                    state.index,
+                    state.scaffoldKey,
+                    tabBar == null ? makeSliver() : makeBox(),
+                  )),
             ),
           )));
 }

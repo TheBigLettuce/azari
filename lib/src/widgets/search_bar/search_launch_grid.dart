@@ -5,6 +5,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:io';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -59,7 +61,9 @@ mixin SearchLaunchGrid<T extends Cell>
           BooruAPINotifier.of(context).completeTag,
           searchFocus,
           scrollHack: _scrollHack,
-          showSearch: true,
+          showSearch: !Platform.isAndroid,
+          roundBorders: false,
+          ignoreFocusNotifier: Platform.isAndroid,
           addItems: _state.addItems,
           customHint:
               "${AppLocalizations.of(context)!.searchHint} ${hint?.toLowerCase() ?? ''}");

@@ -126,7 +126,7 @@ class _AndroidGallery implements GalleryAPIDirectories {
         .filter()
         .nameContains(v, caseSensitive: false)
         .or()
-        .tagEqualTo(v)
+        .tagContains(v, caseSensitive: false)
         .offset(offset)
         .limit(limit)
         .findAllSync();

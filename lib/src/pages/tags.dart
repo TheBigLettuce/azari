@@ -45,6 +45,8 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
   final excludedFocus = FocusNode();
   final singlePostFocus = FocusNode();
 
+  late final tabController = TabController(length: 2, vsync: this);
+
   final textController = TextEditingController();
   final excludedTagsTextController = TextEditingController();
 
@@ -116,6 +118,7 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
     skeletonState.dispose();
 
     booru.close();
+    tabController.dispose();
 
     super.dispose();
   }
@@ -182,8 +185,8 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
       skeletonState,
       additionalBindings: bindings,
       children: [
-        switch (currentNavBarIndex) {
-          0 => TagsWidget(
+        TabBarView(controller: tabController, children: [
+          TagsWidget(
               tags: _lastTags,
               searchBar: SinglePost(
                 focus: singlePostFocus,
@@ -206,40 +209,37 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
                 )
               ],
               autoPlay: false),
-          1 => TagsWidget(
-                    redBackground: true,
-                    tags: _excludedTags,
-                    searchBar: autocompleteWidget(
-                      excludedTagsTextController,
-                      (s) {
-                        excludedHighlight = s;
-                      },
-                      widget.tagManager.excluded.add,
-                      () => focus.requestFocus(),
-                      booru.completeTag,
-                      excludedFocus,
-                      submitOnPress: true,
-                      roundBorders: true,
-                      showSearch: true,
-                    ),
-                    deleteTag: (t) {
-                      deleteAllExcludedController
-                          .forward(from: 0)
-                          .then((value) {
-                        widget.tagManager.excluded.delete(t);
-                        deleteAllExcludedController.reverse(from: 1);
-                      });
+          TagsWidget(
+                  redBackground: true,
+                  tags: _excludedTags,
+                  searchBar: autocompleteWidget(
+                    excludedTagsTextController,
+                    (s) {
+                      excludedHighlight = s;
                     },
-                    onPress: (t) {})
-                .animate(effects: [
-              FadeEffect(
-                begin: 1,
-                end: 0,
-                duration: 150.milliseconds,
-              )
-            ], controller: deleteAllExcludedController, autoPlay: false),
-          int() => throw "invalid idx",
-        }
+                    widget.tagManager.excluded.add,
+                    () => focus.requestFocus(),
+                    booru.completeTag,
+                    excludedFocus,
+                    submitOnPress: true,
+                    roundBorders: true,
+                    showSearch: true,
+                  ),
+                  deleteTag: (t) {
+                    deleteAllExcludedController.forward(from: 0).then((value) {
+                      widget.tagManager.excluded.delete(t);
+                      deleteAllExcludedController.reverse(from: 1);
+                    });
+                  },
+                  onPress: (t) {})
+              .animate(effects: [
+            FadeEffect(
+              begin: 1,
+              end: 0,
+              duration: 150.milliseconds,
+            )
+          ], controller: deleteAllExcludedController, autoPlay: false),
+        ])
       ],
       popSenitel: widget.popSenitel,
       appBarActions: currentNavBarIndex == 0
@@ -283,39 +283,22 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
           : currentNavBarIndex == 1
               ? []
               : null,
-      bottomNavBar: NavigationBar(
-        selectedIndex: currentNavBarIndex,
-        onDestinationSelected: (value) {
-          if (value == 0) {
-            deleteAllExcludedController.animateTo(1).then((_) {
-              currentNavBarIndex = value;
-
-              setState(() {});
-              deleteAllExcludedController.reset();
-            });
-          } else {
-            deleteAllController.animateTo(1).then((_) {
-              currentNavBarIndex = value;
-
-              setState(() {});
-              deleteAllController.reset();
-            });
-          }
-        },
-        destinations: [
-          NavigationDestination(
-              label: "Recent",
+      tabBar: TabBar(
+        tabs: [
+          Tab(
+              text: "Recent",
               icon: Badge.count(
                 count: _lastTags.length,
                 child: const Icon(Icons.label),
               )),
-          NavigationDestination(
-              label: "Excluded",
+          Tab(
+              text: "Excluded",
               icon: Badge.count(
                 count: _excludedTags.length,
                 child: const Icon(Icons.label_off_rounded),
               ))
         ],
+        controller: tabController,
       ),
       overrideChooseRoute: widget.fromGallery
           ? (route, original) {

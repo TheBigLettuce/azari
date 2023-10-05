@@ -29,8 +29,10 @@ class AndroidFullscreen implements PlatformFullscreensPlug {
   @override
   void unFullscreen() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle(systemNavigationBarColor: overlayFullscreenColor));
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: overlayFullscreenColor,
+      systemNavigationBarColor: overlayFullscreenColor,
+    ));
   }
 
   @override

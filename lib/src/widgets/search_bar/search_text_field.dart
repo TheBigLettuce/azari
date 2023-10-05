@@ -32,6 +32,7 @@ Widget searchTextField(BuildContext context, FilterNotifierData data,
               ]
             : null,
         showSearch: true,
+        ignoreFocusNotifier: false,
         roundBorders: false,
         hint: AppLocalizations.of(context)!.filterHint),
     focusNode: data.searchFocus,

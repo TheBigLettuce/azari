@@ -5,6 +5,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/post_tags.dart';
@@ -24,6 +26,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../interfaces/booru.dart';
 import '../../interfaces/contentable.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
+import '../../plugs/platform_channel.dart';
 import '../../widgets/grid/sticker.dart';
 import '../../widgets/make_tags.dart';
 import '../../widgets/notifiers/filter.dart';
@@ -85,22 +88,7 @@ class PostBase implements Cell {
 
   @override
   List<Widget>? addButtons(BuildContext context) {
-    final icons = [
-      if (tags.contains("original")) Icon(FilteringMode.original.icon),
-      if (tags.contains("translated")) const Icon(Icons.translate_outlined),
-    ];
-
     return [
-      if (icons.isNotEmpty) ...[
-        ...icons,
-        ConstrainedBox(
-          constraints:
-              BoxConstraints(maxHeight: Theme.of(context).iconTheme.size ?? 24),
-          child: VerticalDivider(
-            color: Theme.of(context).iconTheme.color,
-          ),
-        )
-      ],
       IconButton(
         icon: const Icon(Icons.public),
         onPressed: () {
@@ -111,7 +99,50 @@ class PostBase implements Cell {
           booru.close();
         },
       ),
+      if (Platform.isAndroid)
+        IconButton(
+            onPressed: () {
+              PlatformFunctions.shareMedia(fileUrl, url: true);
+            },
+            icon: const Icon(Icons.share))
     ];
+  }
+
+  List<(IconData, void Function()?)> _stickers(
+      Contentable content, BuildContext? context) {
+    return [
+      if (content is NetVideo) (FilteringMode.video.icon, null),
+      if (content is NetGif) (FilteringMode.gif.icon, null),
+      if (tags.contains("original")) (FilteringMode.original.icon, null),
+      if (tags.contains("translated"))
+        (
+          Icons.translate_outlined,
+          context == null
+              ? null
+              : () {
+                  Navigator.push(
+                    context,
+                    DialogRoute(
+                      context: context,
+                      builder: (context) {
+                        return TranslationNotes(
+                          postId: id,
+                          api: BooruAPI.fromEnum(Booru.fromPrefix(prefix)!,
+                              page: null),
+                        );
+                      },
+                    ),
+                  );
+                }
+        )
+    ];
+  }
+
+  @override
+  List<(IconData, void Function()?)>? addStickers(BuildContext context) {
+    final icons = _stickers(fileDisplay(), context);
+
+    return icons.isEmpty ? null : icons;
   }
 
   @override
@@ -252,9 +283,7 @@ class PostBase implements Cell {
             color: Colors.red.shade900,
             backgroundColor: Colors.redAccent.shade100,
             right: true),
-      if (content is NetVideo) Sticker(FilteringMode.video.icon),
-      if (content is NetGif) Sticker(FilteringMode.gif.icon),
-      if (tags.contains("original")) Sticker(FilteringMode.original.icon)
+      ..._stickers(content, context).map((e) => Sticker(e.$1))
     ]);
   }
 

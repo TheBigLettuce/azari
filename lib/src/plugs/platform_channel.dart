@@ -113,8 +113,8 @@ class PlatformFunctions {
         {"source": op.source, "rootUri": op.rootDir, "dir": op.targetDir});
   }
 
-  static void share(String originalUri) {
-    _channel.invokeMethod("shareMedia", originalUri);
+  static void shareMedia(String originalUri, {bool url = false}) {
+    _channel.invokeMethod("shareMedia", {"uri": originalUri, "isUrl": url});
   }
 
   static Future<bool> moveInternal(String internalAppDir, List<String> uris) {

@@ -98,6 +98,7 @@ class _DownloadsState extends State<Downloads>
             systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context),
             hasReachedEnd: () => true,
             aspectRatio: 1,
+            showCount: true,
             menuButtonItems: [
               IconButton(
                   onPressed: () {

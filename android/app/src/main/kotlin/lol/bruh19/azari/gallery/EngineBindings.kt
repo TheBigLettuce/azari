@@ -421,11 +421,18 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                 }
 
                 "shareMedia" -> {
-                    val media = Uri.parse(call.arguments as String)
+                    val media = call.argument<String>("uri")!!
+                    val isUrl = call.argument<Boolean>("isUrl")!!
+
                     val intent = Intent().apply {
                         action = Intent.ACTION_SEND
-                        putExtra(Intent.EXTRA_STREAM, media)
-                        type = context.contentResolver.getType(media)
+                        if (isUrl) putExtra(Intent.EXTRA_TEXT, media) else putExtra(
+                            Intent.EXTRA_STREAM,
+                            Uri.parse(media)
+                        )
+                        type = if (isUrl) "text/plain" else context.contentResolver.getType(
+                            Uri.parse(media)
+                        )
                     }
                     context.startActivity(Intent.createChooser(intent, null))
                     result.success(null)

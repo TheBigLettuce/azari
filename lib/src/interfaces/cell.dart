@@ -49,6 +49,8 @@ abstract class Cell {
   /// Additional buttons which get diplayed in the image view's appbar.
   List<Widget>? addButtons(BuildContext context);
 
+  List<(IconData, void Function()?)>? addStickers(BuildContext context);
+
   /// File that gets displayed in the image view.
   /// This can be unimplemented.
   /// Not implementing this assumes that clicking on the grid will take to an other page,

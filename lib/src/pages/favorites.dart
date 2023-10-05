@@ -90,7 +90,12 @@ class _FavoritesPageState extends State<FavoritesPage>
         .findAllSync();
   })
     ..filter.passFilter = (cells, data, end) {
-      if (currentFilteringMode() == FilteringMode.group) {
+      final filterMode = currentFilteringMode();
+      if (filterMode == null) {
+        return (cells, data);
+      }
+
+      if (filterMode == FilteringMode.group) {
         segments = segments ?? {};
 
         for (final e in cells) {
@@ -101,7 +106,7 @@ class _FavoritesPageState extends State<FavoritesPage>
         segments = null;
       }
 
-      return switch (currentFilteringMode()) {
+      return switch (filterMode) {
         FilteringMode.same => _same(cells, data, end),
         FilteringMode.gif => (
             cells.where((element) => element.fileDisplay() is NetGif),
@@ -253,6 +258,7 @@ class _FavoritesPageState extends State<FavoritesPage>
             state.updateFab(setState, fab: fab, foreground: foreground),
         getCell: loader.getCell,
         initalScrollPosition: 0,
+        showCount: true,
         scaffoldKey: state.scaffoldKey,
         addIconsImage: (p) => [
           BooruGridActions.favorites(context, p, showDeleteSnackbar: true),

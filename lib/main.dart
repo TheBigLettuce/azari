@@ -202,8 +202,10 @@ void changeSystemUiOverlay(BuildContext context) {
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(
     SystemUiOverlayStyle(
-        systemNavigationBarColor:
-            Theme.of(context).colorScheme.background.withOpacity(0.5)),
+      statusBarColor: Theme.of(context).colorScheme.background.withOpacity(0.5),
+      systemNavigationBarColor:
+          Theme.of(context).colorScheme.background.withOpacity(0.5),
+    ),
   );
 }
 

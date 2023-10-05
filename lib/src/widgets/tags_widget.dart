@@ -29,8 +29,23 @@ class TagsWidget extends StatelessWidget {
       required this.onPress});
 
   Widget _make(BuildContext context) {
-    final listWraps = <Widget>[];
+    final listWraps = <Widget>[
+      Padding(
+        padding:
+            const EdgeInsets.only(bottom: 10, left: 10, right: 10, top: 10),
+        child: searchBar,
+      )
+    ];
     final list = <Widget>[];
+
+    if (tags.isEmpty) {
+      return Column(
+        children: [
+          ...listWraps,
+          const Expanded(child: Center(child: EmptyWidget()))
+        ],
+      );
+    }
 
     (int, int, int)? time;
 
@@ -104,23 +119,11 @@ class TagsWidget extends StatelessWidget {
       ));
     }
 
-    return Column(
-        crossAxisAlignment: CrossAxisAlignment.start, children: listWraps);
+    return ListView(children: listWraps);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 10, left: 10, right: 10),
-            child: searchBar,
-          ),
-        ),
-        tags.isEmpty ? const EmptyWidget() : _make(context)
-      ],
-    );
+    return _make(context);
   }
 }

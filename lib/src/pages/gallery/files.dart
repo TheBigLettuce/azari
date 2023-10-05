@@ -100,7 +100,12 @@ class _GalleryFilesState extends State<GalleryFiles>
       }
     })
     ..setPassFilter((cells, data, end) {
-      return switch (currentFilteringMode()) {
+      final filterMode = currentFilteringMode();
+      if (filterMode == null) {
+        return (cells, data);
+      }
+
+      return switch (filterMode) {
         FilteringMode.favorite => Filters.favorite(cells),
         FilteringMode.untagged => Filters.untagged(cells),
         FilteringMode.tag => Filters.tag(cells, searchTextController.text),
@@ -510,6 +515,7 @@ class _GalleryFilesState extends State<GalleryFiles>
           },
           aspectRatio: state.settings.galleryFiles.aspectRatio.value,
           hideAlias: state.settings.galleryFiles.hideName,
+          showCount: true,
           searchWidget: SearchAndFocus(
               searchWidget(context, hint: widget.dirName), searchFocus),
           mainFocus: state.mainFocus,
@@ -580,7 +586,8 @@ class _GalleryFilesState extends State<GalleryFiles>
           ],
           inlineMenuButtonItems: true,
           onBack: () {
-            if (currentFilteringMode() != FilteringMode.noFilter) {
+            final filterMode = currentFilteringMode();
+            if (filterMode != null && filterMode != FilteringMode.noFilter) {
               resetSearch();
               return;
             }
@@ -612,7 +619,8 @@ class _GalleryFilesState extends State<GalleryFiles>
               keybindsDescription: widget.dirName)),
       noDrawer: widget.callback != null,
       overrideOnPop: () {
-        if (currentFilteringMode() != FilteringMode.noFilter) {
+        final filterMode = currentFilteringMode();
+        if (filterMode != null && filterMode != FilteringMode.noFilter) {
           resetSearch();
           return Future.value(false);
         }

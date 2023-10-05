@@ -51,7 +51,6 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
   void initState() {
     super.initState();
     searchHook(state);
-    // loader.init((instance) {});
 
     blacklistedWatcher = Dbs.g.blacklisted.blacklistedDirectorys
         .watchLazy(fireImmediately: true)
@@ -95,6 +94,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
                 searchFocus),
             mainFocus: state.mainFocus,
             unpressable: true,
+            showCount: true,
             hideShowFab: ({required bool fab, required bool foreground}) =>
                 state.updateFab(setState, fab: fab, foreground: foreground),
             menuButtonItems: [

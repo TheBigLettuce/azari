@@ -127,17 +127,22 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
                       )),
                       if (widget._data.stickers.isNotEmpty &&
                           !widget.ignoreStickers) ...[
+                        Align(
+                          alignment: Alignment.topRight,
+                          child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Wrap(
+                                direction: Axis.vertical,
+                                children: widget._data.stickers
+                                    .where((element) => element.right)
+                                    .map((e) => Sticker.widget(context, e))
+                                    .toList(),
+                              )),
+                        ),
                         Padding(
                             padding: const EdgeInsets.all(8),
                             child: Wrap(
-                              children: widget._data.stickers
-                                  .where((element) => element.right)
-                                  .map((e) => Sticker.widget(context, e))
-                                  .toList(),
-                            )),
-                        Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Wrap(
+                              direction: Axis.vertical,
                               children: widget._data.stickers
                                   .where((element) => !element.right)
                                   .map((e) => Sticker.widget(context, e))

@@ -13,19 +13,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/main.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/gesture_dead_zones.dart';
+import 'package:gallery/src/widgets/grid/sticker.dart';
 import 'package:logging/logging.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import '../interfaces/cell.dart';
-import '../interfaces/contentable.dart';
-import '../widgets/skeletons/drawer/end_drawer_heading.dart';
-import '../widgets/keybinds/describe_keys.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../widgets/keybinds/keybind_description.dart';
@@ -34,6 +32,10 @@ import '../widgets/notifiers/filter.dart';
 import '../widgets/notifiers/filter_value.dart';
 import '../widgets/notifiers/focus.dart';
 import '../widgets/notifiers/tag_refresh.dart';
+import '../interfaces/cell.dart';
+import '../interfaces/contentable.dart';
+import '../widgets/skeletons/drawer/end_drawer_heading.dart';
+import '../widgets/keybinds/describe_keys.dart';
 import '../widgets/video/photo_gallery_page_video.dart';
 
 final Color kListTileColorInInfo = Colors.white60.withOpacity(0.8);
@@ -87,7 +89,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   late ScrollController scrollController;
   late int cellCount = widget.cellCount;
   bool refreshing = false;
-  final FocusNode mainFocus = FocusNode();
+  final mainFocus = FocusNode();
 
   ImageProvider? fakeProvider;
 
@@ -442,12 +444,246 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                 )),
           ));
 
-  @override
-  Widget build(BuildContext context) {
+  PreferredSizeWidget _makeAppBar(BuildContext context) {
+    final s = currentCell.addStickers(context);
+    final b = currentCell.addButtons(context);
+    final size = s == null
+        ? AppBar().preferredSize
+        : Size.fromHeight(AppBar().preferredSize.height + 36);
+
+    return PreferredSize(
+      preferredSize: size,
+      child: IgnorePointer(
+        ignoring: !isAppbarShown,
+        child: Column(
+          children: [
+            AppBar(
+              automaticallyImplyLeading: false,
+              foregroundColor: ColorTween(
+                begin: previousPallete?.dominantColor?.bodyTextColor
+                        .withOpacity(0.8) ??
+                    kListTileColorInInfo,
+                end: currentPalette?.dominantColor?.bodyTextColor
+                        .withOpacity(0.8) ??
+                    kListTileColorInInfo,
+              ).transform(_animationController.value),
+              backgroundColor: ColorTween(
+                begin: previousPallete?.dominantColor?.color.withOpacity(0.5) ??
+                    Colors.black.withOpacity(0.5),
+                end: currentPalette?.dominantColor?.color.withOpacity(0.5) ??
+                    Colors.black.withOpacity(0.5),
+              ).transform(_animationController.value),
+              leading: const BackButton(),
+              title: GestureDetector(
+                onLongPress: () {
+                  Clipboard.setData(
+                      ClipboardData(text: currentCell.alias(false)));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content:
+                          Text(AppLocalizations.of(context)!.copiedClipboard)));
+                },
+                child: Text(currentCell.alias(false)),
+              ),
+              actions: [
+                if (b != null) ...b,
+                IconButton(
+                    onPressed: () {
+                      key.currentState?.openEndDrawer();
+                    },
+                    icon: const Icon(Icons.info_outline))
+              ],
+            ),
+            if (s != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Wrap(
+                  spacing: 4,
+                  children: s
+                      .map((e) => Sticker.widget(
+                            context,
+                            Sticker(e.$1,
+                                color: ColorTween(
+                                  begin: previousPallete
+                                          ?.dominantColor?.bodyTextColor
+                                          .withOpacity(0.8) ??
+                                      kListTileColorInInfo,
+                                  end: currentPalette
+                                          ?.dominantColor?.bodyTextColor
+                                          .withOpacity(0.8) ??
+                                      kListTileColorInInfo,
+                                ).transform(_animationController.value),
+                                backgroundColor: ColorTween(
+                                  begin: previousPallete?.dominantColor?.color
+                                          .withOpacity(0.5) ??
+                                      Colors.black.withOpacity(0.5),
+                                  end: currentPalette?.dominantColor?.color
+                                          .withOpacity(0.5) ??
+                                      Colors.black.withOpacity(0.5),
+                                ).transform(_animationController.value)),
+                            onPressed: e.$2,
+                          ))
+                      .toList(),
+                ),
+              ),
+          ],
+        ),
+      ).animate(
+        effects: [FadeEffect(begin: 1, end: 0, duration: 500.milliseconds)],
+        autoPlay: false,
+        target: isAppbarShown ? 0 : 1,
+      ),
+    );
+  }
+
+  Widget? _makeBottomSheet(BuildContext context) {
+    if (!isAppbarShown) {
+      return null;
+    }
+
+    final items = widget.addIcons!(currentCell);
+
+    return Theme(
+        data: Theme.of(context).copyWith(
+          iconButtonTheme: IconButtonThemeData(
+              style: ButtonStyle(
+                  shape: const MaterialStatePropertyAll(RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.all(Radius.elliptical(10, 10)))),
+                  backgroundColor: MaterialStatePropertyAll(ColorTween(
+                          begin: previousPallete?.dominantColor?.color
+                                  .withOpacity(0.5) ??
+                              Colors.black.withOpacity(0.5),
+                          end: currentPalette?.dominantColor?.color
+                                  .withOpacity(0.5) ??
+                              Colors.black.withOpacity(0.5))
+                      .transform(_animationController.value)))),
+        ),
+        child: SizedBox.fromSize(
+          size: Size.fromHeight(
+              kToolbarHeight + MediaQuery.viewPaddingOf(context).bottom),
+          child: Center(
+              child: Padding(
+            padding: EdgeInsets.only(
+                bottom: MediaQuery.viewPaddingOf(context).bottom),
+            child: Wrap(
+              spacing: 4,
+              children: items
+                  .map(
+                    (e) => WrapSheetButton(e.icon, () {
+                      e.onPress([currentCell]);
+                    }, false, "", e.explanation,
+                        followColorTheme: true,
+                        color: e.color,
+                        play: e.play,
+                        backgroundColor: e.backgroundColor,
+                        animate: e.animate),
+                  )
+                  .toList(),
+            ),
+          )),
+        ));
+  }
+
+  Widget _wrapNotifiers(Widget Function(BuildContext context) f) {
+    return TagRefreshNotifier(
+        notify: () {
+          try {
+            setState(() {});
+          } catch (_) {}
+        },
+        child: FilterValueNotifier(
+            notifier: searchData.searchController,
+            child: FilterNotifier(
+              data: searchData,
+              child: FocusNotifier(
+                  notifier: searchData.searchFocus,
+                  focusMain: () {
+                    mainFocus.requestFocus();
+                  },
+                  child: Builder(
+                    builder: f,
+                  )),
+            )));
+  }
+
+  Widget _makeEndDrawer(BuildContext context) {
+    final insets = MediaQuery.viewInsetsOf(context);
+
+    return Drawer(
+      backgroundColor: ColorTween(
+              begin: previousPallete?.mutedColor?.color.withOpacity(0.85) ??
+                  Theme.of(context).colorScheme.surface.withOpacity(0.5),
+              end: currentPalette?.mutedColor?.color.withOpacity(0.85) ??
+                  Theme.of(context).colorScheme.surface.withOpacity(0.5))
+          .transform(_animationController.value),
+      child: CustomScrollView(
+        controller: scrollController,
+        slivers: [
+          endDrawerHeading(
+              context, AppLocalizations.of(context)!.infoHeadline, key,
+              titleColor: ColorTween(
+                      begin: previousPallete?.dominantColor?.titleTextColor ??
+                          Theme.of(context)
+                              .colorScheme
+                              .surface
+                              .withOpacity(0.5),
+                      end: currentPalette?.dominantColor?.titleTextColor ??
+                          Theme.of(context)
+                              .colorScheme
+                              .surface
+                              .withOpacity(0.5))
+                  .transform(_animationController.value),
+              backroundColor: ColorTween(
+                      begin: previousPallete?.dominantColor?.color
+                              .withOpacity(0.5) ??
+                          Theme.of(context)
+                              .colorScheme
+                              .surface
+                              .withOpacity(0.5),
+                      end: currentPalette?.dominantColor?.color.withOpacity(0.5) ??
+                          Theme.of(context).colorScheme.surface.withOpacity(0.5))
+                  .transform(_animationController.value)),
+          _wrapNotifiers((context) {
+            final addInfo = currentCell.addInfo(context, () {
+              widget.updateTagScrollPos(scrollController.offset, currentPage);
+            },
+                AddInfoColorData(
+                  borderColor: Theme.of(context).colorScheme.outlineVariant,
+                  foregroundColor: ColorTween(
+                          begin: previousPallete?.mutedColor?.bodyTextColor ??
+                              kListTileColorInInfo,
+                          end: currentPalette?.mutedColor?.bodyTextColor ??
+                              kListTileColorInInfo)
+                      .transform(_animationController.value)!,
+                  systemOverlayColor: widget.systemOverlayRestoreColor,
+                ));
+
+            return Theme(
+              data: Theme.of(context).copyWith(
+                  hintColor: ColorTween(
+                          begin: previousPallete?.mutedColor?.bodyTextColor ??
+                              kListTileColorInInfo,
+                          end: currentPalette?.mutedColor?.bodyTextColor ??
+                              kListTileColorInInfo)
+                      .transform(_animationController.value)),
+              child: SliverPadding(
+                padding: EdgeInsets.only(
+                    bottom: insets.bottom +
+                        MediaQuery.of(context).viewPadding.bottom),
+                sliver: SliverList.list(
+                    children: [if (addInfo != null) ...addInfo]),
+              ),
+            );
+          })
+        ],
+      ),
+    );
+  }
+
+  Widget _wrapSkeleton(
+      BuildContext context, Widget Function(BuildContext context) f) {
     final Map<SingleActivatorDescription, Null Function()> bindings =
         _makeBindings(context);
-
-    final insets = MediaQuery.viewInsetsOf(context);
 
     return CallbackGridState.wrapNotifiers(context, widget.registerNotifiers,
         (context) {
@@ -487,378 +723,137 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                         .transform(_animationController.value),
                   )),
               child: Builder(
-                builder: (context) {
-                  return Scaffold(
-                      key: key,
-                      extendBodyBehindAppBar: true,
-                      endDrawerEnableOpenDragGesture: false,
-                      resizeToAvoidBottomInset: false,
-                      bottomSheet: !isAppbarShown
-                          ? null
-                          : widget.addIcons != null
-                              ? () {
-                                  final items = widget.addIcons!(currentCell);
-                                  if (items.isNotEmpty) {
-                                    return Theme(
-                                        data: Theme.of(context).copyWith(
-                                          iconButtonTheme: IconButtonThemeData(
-                                              style: ButtonStyle(
-                                                  shape: const MaterialStatePropertyAll(
-                                                      RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius.all(
-                                                                  Radius.elliptical(
-                                                                      10, 10)))),
-                                                  backgroundColor: MaterialStatePropertyAll(ColorTween(
-                                                          begin: previousPallete
-                                                                  ?.dominantColor
-                                                                  ?.color
-                                                                  .withOpacity(0.5) ??
-                                                              Colors.black.withOpacity(0.5),
-                                                          end: currentPalette?.dominantColor?.color.withOpacity(0.5) ?? Colors.black.withOpacity(0.5))
-                                                      .transform(_animationController.value)))),
-                                        ),
-                                        child: SizedBox.fromSize(
-                                          size: Size.fromHeight(kToolbarHeight +
-                                              MediaQuery.viewPaddingOf(context)
-                                                  .bottom),
-                                          child: Center(
-                                              child: Padding(
-                                            padding: EdgeInsets.only(
-                                                bottom:
-                                                    MediaQuery.viewPaddingOf(
-                                                            context)
-                                                        .bottom),
-                                            child: Wrap(
-                                              spacing: 4,
-                                              children: items
-                                                  .map(
-                                                    (e) => WrapSheetButton(
-                                                        e.icon, () {
-                                                      e.onPress([currentCell]);
-                                                    }, false, "", e.explanation,
-                                                        followColorTheme: true,
-                                                        color: e.color,
-                                                        play: e.play,
-                                                        backgroundColor:
-                                                            e.backgroundColor,
-                                                        animate: e.animate),
-                                                  )
-                                                  .toList(),
-                                            ),
-                                          )),
-                                        ));
-                                  }
-                                }()
-                              : null,
-                      endDrawer: Drawer(
-                        backgroundColor: ColorTween(
-                                begin: previousPallete?.mutedColor?.color
-                                        .withOpacity(0.85) ??
-                                    Theme.of(context)
-                                        .colorScheme
-                                        .surface
-                                        .withOpacity(0.5),
-                                end: currentPalette?.mutedColor?.color
-                                        .withOpacity(0.85) ??
-                                    Theme.of(context)
-                                        .colorScheme
-                                        .surface
-                                        .withOpacity(0.5))
-                            .transform(_animationController.value),
-                        child: CustomScrollView(
-                          controller: scrollController,
-                          slivers: [
-                            endDrawerHeading(
-                                context, AppLocalizations.of(context)!.infoHeadline, key,
-                                titleColor: ColorTween(
-                                        begin: previousPallete?.dominantColor?.titleTextColor ??
-                                            Theme.of(context)
-                                                .colorScheme
-                                                .surface
-                                                .withOpacity(0.5),
-                                        end: currentPalette?.dominantColor?.titleTextColor ??
-                                            Theme.of(context)
-                                                .colorScheme
-                                                .surface
-                                                .withOpacity(0.5))
-                                    .transform(_animationController.value),
-                                backroundColor: ColorTween(
-                                        begin: previousPallete?.dominantColor?.color.withOpacity(0.5) ??
-                                            Theme.of(context).colorScheme.surface.withOpacity(0.5),
-                                        end: currentPalette?.dominantColor?.color.withOpacity(0.5) ?? Theme.of(context).colorScheme.surface.withOpacity(0.5))
-                                    .transform(_animationController.value)),
-                            TagRefreshNotifier(
-                                notify: () {
-                                  try {
-                                    setState(() {});
-                                  } catch (_) {}
-                                },
-                                child: FilterValueNotifier(
-                                    notifier: searchData.searchController,
-                                    child: FilterNotifier(
-                                      data: searchData,
-                                      child: FocusNotifier(
-                                          notifier: searchData.searchFocus,
-                                          focusMain: () {
-                                            mainFocus.requestFocus();
-                                          },
-                                          child: Builder(
-                                            builder: (context) {
-                                              final addInfo = currentCell
-                                                  .addInfo(context, () {
-                                                widget.updateTagScrollPos(
-                                                    scrollController.offset,
-                                                    currentPage);
-                                              },
-                                                      AddInfoColorData(
-                                                        borderColor:
-                                                            Theme.of(context)
-                                                                .colorScheme
-                                                                .outlineVariant,
-                                                        foregroundColor: ColorTween(
-                                                                begin: previousPallete
-                                                                        ?.mutedColor
-                                                                        ?.bodyTextColor ??
-                                                                    kListTileColorInInfo,
-                                                                end: currentPalette
-                                                                        ?.mutedColor
-                                                                        ?.bodyTextColor ??
-                                                                    kListTileColorInInfo)
-                                                            .transform(
-                                                                _animationController
-                                                                    .value)!,
-                                                        systemOverlayColor: widget
-                                                            .systemOverlayRestoreColor,
-                                                      ));
-
-                                              return Theme(
-                                                data: Theme.of(context).copyWith(
-                                                    hintColor: ColorTween(
-                                                            begin: previousPallete
-                                                                    ?.mutedColor
-                                                                    ?.bodyTextColor ??
-                                                                kListTileColorInInfo,
-                                                            end: currentPalette
-                                                                    ?.mutedColor
-                                                                    ?.bodyTextColor ??
-                                                                kListTileColorInInfo)
-                                                        .transform(
-                                                            _animationController
-                                                                .value)),
-                                                child: SliverPadding(
-                                                  padding: EdgeInsets.only(
-                                                      bottom: insets.bottom +
-                                                          MediaQuery.of(context)
-                                                              .viewPadding
-                                                              .bottom),
-                                                  sliver: SliverList.list(
-                                                      children: [
-                                                        if (addInfo != null)
-                                                          ...addInfo
-                                                      ]),
-                                                ),
-                                              );
-                                            },
-                                          )),
-                                    )))
-                          ],
-                        ),
-                      ),
-                      appBar: PreferredSize(
-                        preferredSize: AppBar().preferredSize,
-                        child: IgnorePointer(
-                          ignoring: !isAppbarShown,
-                          child: AppBar(
-                            automaticallyImplyLeading: false,
-                            foregroundColor: ColorTween(
-                                    begin: previousPallete
-                                            ?.dominantColor?.bodyTextColor
-                                            .withOpacity(0.8) ??
-                                        kListTileColorInInfo,
-                                    end: currentPalette
-                                            ?.dominantColor?.bodyTextColor
-                                            .withOpacity(0.8) ??
-                                        kListTileColorInInfo)
-                                .transform(_animationController.value),
-                            backgroundColor: ColorTween(
-                                    begin: previousPallete?.dominantColor?.color
-                                            .withOpacity(0.5) ??
-                                        Colors.black.withOpacity(0.5),
-                                    end: currentPalette?.dominantColor?.color
-                                            .withOpacity(0.5) ??
-                                        Colors.black.withOpacity(0.5))
-                                .transform(_animationController.value),
-                            leading: const BackButton(),
-                            title: GestureDetector(
-                              onLongPress: () {
-                                Clipboard.setData(ClipboardData(
-                                    text: currentCell.alias(false)));
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text(
-                                            AppLocalizations.of(context)!
-                                                .copiedClipboard)));
-                              },
-                              child: Text(currentCell.alias(false)),
-                            ),
-                            actions: [
-                              ...(currentCell.addButtons(context) ?? []),
-                              IconButton(
-                                  onPressed: () {
-                                    key.currentState?.openEndDrawer();
-                                  },
-                                  icon: const Icon(Icons.info_outline))
-                            ],
-                          ),
-                        ).animate(
-                          effects: [
-                            FadeEffect(
-                                begin: 1, end: 0, duration: 500.milliseconds)
-                          ],
-                          autoPlay: false,
-                          target: isAppbarShown ? 0 : 1,
-                        ),
-                      ),
-                      body: gestureDeadZones(context,
-                          child: GestureDetector(
-                            onLongPress: widget.download == null
-                                ? null
-                                : () {
-                                    HapticFeedback.vibrate();
-                                    widget.download!(currentPage);
-                                  },
-                            onTap: _onTap,
-                            child: PhotoViewGallery.builder(
-                                loadingBuilder: (context, event) {
-                                  final expectedBytes =
-                                      event?.expectedTotalBytes;
-                                  final loadedBytes =
-                                      event?.cumulativeBytesLoaded;
-                                  final value = loadedBytes != null &&
-                                          expectedBytes != null
-                                      ? loadedBytes / expectedBytes
-                                      : null;
-
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                            begin: Alignment.bottomCenter,
-                                            end: Alignment.topCenter,
-                                            colors: [
-                                          ColorTween(
-                                                  begin: Colors.black,
-                                                  end: currentPalette
-                                                      ?.mutedColor?.color
-                                                      .withOpacity(0.7))
-                                              .lerp(value ?? 0)!,
-                                          ColorTween(
-                                                  begin: Colors.black38,
-                                                  end: currentPalette
-                                                      ?.mutedColor?.color
-                                                      .withOpacity(0.5))
-                                              .lerp(value ?? 0)!,
-                                          ColorTween(
-                                                  begin: Colors.black12,
-                                                  end: currentPalette
-                                                      ?.mutedColor?.color
-                                                      .withOpacity(0.3))
-                                              .lerp(value ?? 0)!,
-                                        ])),
-                                    child: Center(
-                                      child: SizedBox(
-                                          width: 20.0,
-                                          height: 20.0,
-                                          child: CircularProgressIndicator(
-                                              backgroundColor: ColorTween(
-                                                      begin: previousPallete
-                                                          ?.mutedColor?.color
-                                                          .withOpacity(0.7),
-                                                      end: currentPalette?.mutedColor?.color
-                                                          .withOpacity(0.7))
-                                                  .transform(_animationController
-                                                      .value),
-                                              color: ColorTween(
-                                                      begin: previousPallete
-                                                          ?.dominantColor
-                                                          ?.color,
-                                                      end: currentPalette
-                                                          ?.dominantColor
-                                                          ?.color)
-                                                  .transform(_animationController.value),
-                                              value: value)),
-                                    ),
-                                  );
-                                },
-                                enableRotation: true,
-                                backgroundDecoration: BoxDecoration(
-                                    color: ColorTween(
-                                            begin: previousPallete
-                                                ?.mutedColor?.color
-                                                .withOpacity(0.7),
-                                            end: currentPalette
-                                                ?.mutedColor?.color
-                                                .withOpacity(0.7))
-                                        .transform(_animationController.value)),
-                                onPageChanged: (index) async {
-                                  currentPage = index;
-                                  widget.pageChange?.call(this);
-                                  _loadNext(index);
-
-                                  widget.scrollUntill(index);
-
-                                  final c = widget.getCell(index);
-
-                                  fullscreenPlug.setTitle(c.alias(true));
-
-                                  setState(() {
-                                    currentCell = c;
-                                    _extractPalette();
-                                  });
-                                },
-                                pageController: controller,
-                                itemCount: cellCount,
-                                builder: (context, indx) {
-                                  final fileContent = widget
-                                              .predefinedIndexes !=
-                                          null
-                                      ? widget
-                                          .getCell(
-                                              widget.predefinedIndexes![indx])
-                                          .fileDisplay()
-                                      : widget.getCell(indx).fileDisplay();
-
-                                  return switch (fileContent) {
-                                    AndroidImage() => _makeAndroidImage(
-                                        fileContent.size,
-                                        fileContent.uri,
-                                        false),
-                                    AndroidGif() => _makeAndroidImage(
-                                        fileContent.size,
-                                        fileContent.uri,
-                                        true),
-                                    NetGif() =>
-                                      _makeNetImage(fileContent.provider),
-                                    NetImage() =>
-                                      _makeNetImage(fileContent.provider),
-                                    AndroidVideo() =>
-                                      _makeVideo(fileContent.uri, true),
-                                    NetVideo() =>
-                                      _makeVideo(fileContent.uri, false),
-                                    EmptyContent() =>
-                                      PhotoViewGalleryPageOptions.customChild(
-                                          child: const Center(
-                                        child: Icon(Icons.error_outline),
-                                      ))
-                                  };
-                                }),
-                          ),
-                          left: true,
-                          right: true));
-                },
+                builder: f,
               ),
             ),
           ));
+    });
+  }
+
+  Widget _loadingBuilder(BuildContext context, ImageChunkEvent? event) {
+    final expectedBytes = event?.expectedTotalBytes;
+    final loadedBytes = event?.cumulativeBytesLoaded;
+    final value = loadedBytes != null && expectedBytes != null
+        ? loadedBytes / expectedBytes
+        : null;
+
+    return Container(
+      decoration: BoxDecoration(
+          gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [
+            ColorTween(
+              begin: Colors.black,
+              end: currentPalette?.mutedColor?.color.withOpacity(0.7),
+            ).lerp(value ?? 0)!,
+            ColorTween(
+              begin: Colors.black38,
+              end: currentPalette?.mutedColor?.color.withOpacity(0.5),
+            ).lerp(value ?? 0)!,
+            ColorTween(
+              begin: Colors.black12,
+              end: currentPalette?.mutedColor?.color.withOpacity(0.3),
+            ).lerp(value ?? 0)!,
+          ])),
+      child: Center(
+        child: SizedBox(
+            width: 20.0,
+            height: 20.0,
+            child: CircularProgressIndicator(
+                backgroundColor: ColorTween(
+                  begin: previousPallete?.mutedColor?.color.withOpacity(0.7),
+                  end: currentPalette?.mutedColor?.color.withOpacity(0.7),
+                ).transform(_animationController.value),
+                color: ColorTween(
+                  begin: previousPallete?.dominantColor?.color,
+                  end: currentPalette?.dominantColor?.color,
+                ).transform(_animationController.value),
+                value: value)),
+      ),
+    );
+  }
+
+  BoxDecoration _photoBackgroundDecoration() {
+    return BoxDecoration(
+      color: ColorTween(
+        begin: previousPallete?.mutedColor?.color.withOpacity(0.7),
+        end: currentPalette?.mutedColor?.color.withOpacity(0.7),
+      ).transform(_animationController.value),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _wrapSkeleton(context, (context) {
+      return Scaffold(
+        key: key,
+        extendBodyBehindAppBar: true,
+        endDrawerEnableOpenDragGesture: false,
+        resizeToAvoidBottomInset: false,
+        bottomSheet: _makeBottomSheet(context),
+        endDrawer: _makeEndDrawer(context),
+        appBar: _makeAppBar(context),
+        body: gestureDeadZones(
+          context,
+          child: GestureDetector(
+            onLongPress: widget.download == null
+                ? null
+                : () {
+                    HapticFeedback.vibrate();
+                    widget.download!(currentPage);
+                  },
+            onTap: _onTap,
+            child: PhotoViewGallery.builder(
+                loadingBuilder: _loadingBuilder,
+                enableRotation: true,
+                backgroundDecoration: _photoBackgroundDecoration(),
+                onPageChanged: (index) async {
+                  currentPage = index;
+                  widget.pageChange?.call(this);
+                  _loadNext(index);
+                  widget.updateTagScrollPos(null, index);
+
+                  widget.scrollUntill(index);
+
+                  final c = widget.getCell(index);
+
+                  fullscreenPlug.setTitle(c.alias(true));
+
+                  setState(() {
+                    currentCell = c;
+                    _extractPalette();
+                  });
+                },
+                pageController: controller,
+                itemCount: cellCount,
+                builder: (context, indx) {
+                  final fileContent = widget.predefinedIndexes != null
+                      ? widget
+                          .getCell(widget.predefinedIndexes![indx])
+                          .fileDisplay()
+                      : widget.getCell(indx).fileDisplay();
+
+                  return switch (fileContent) {
+                    AndroidImage() => _makeAndroidImage(
+                        fileContent.size, fileContent.uri, false),
+                    AndroidGif() => _makeAndroidImage(
+                        fileContent.size, fileContent.uri, true),
+                    NetGif() => _makeNetImage(fileContent.provider),
+                    NetImage() => _makeNetImage(fileContent.provider),
+                    AndroidVideo() => _makeVideo(fileContent.uri, true),
+                    NetVideo() => _makeVideo(fileContent.uri, false),
+                    EmptyContent() => PhotoViewGalleryPageOptions.customChild(
+                          child: const Center(
+                        child: Icon(Icons.error_outline),
+                      ))
+                  };
+                }),
+          ),
+          left: true,
+          right: true,
+        ),
+      );
     });
   }
 }

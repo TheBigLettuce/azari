@@ -12,12 +12,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/material.dart' as material show AspectRatio;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/main.dart';
 import 'package:gallery/src/interfaces/booru.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/db/schemas/settings.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
+import 'package:gallery/src/widgets/skeletons/drawer/azari_icon.dart';
 import 'package:logging/logging.dart';
 import '../../interfaces/cell.dart';
+import '../../interfaces/filtering/filter_result.dart';
 import '../../interfaces/grid_mutation_interface.dart';
 import '../keybinds/describe_keys.dart';
 import '../keybinds/digit_and_settings.dart';
@@ -185,6 +188,10 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
 
   final void Function()? beforeImageViewRestore;
 
+  final bool showCount;
+
+  final List<FilterResult<T> Function()>? tabBar;
+
   const CallbackGrid(
       {required super.key,
       this.additionalKeybinds,
@@ -197,6 +204,9 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       this.cloudflareHook,
       this.pageChangeImage,
       this.onError,
+      this.tabBar,
+      this.showCount = false,
+      // this.flexibleAppBar = true,
       this.beforeImageViewRestore,
       required this.mainFocus,
       this.addIconsImage,
@@ -231,6 +241,8 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
 }
 
 class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
+  final flexibleAppBar = !Platform.isAndroid;
+
   late final controller =
       ScrollController(initialScrollOffset: widget.initalScrollPosition);
   final fakeController = ScrollController();
@@ -246,6 +258,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       widget.immutable ? null : _state;
 
   bool inImageView = false;
+  late bool showSearchBar = widget.searchWidget != null && flexibleAppBar;
 
   List<int>? segTranslation;
 
@@ -423,6 +436,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     final offsetGrid = controller.offset;
     final overlayColor =
         Theme.of(context).colorScheme.background.withOpacity(0.5);
+    final brightness = Theme.of(context).brightness;
 
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return ImageView<T>(
@@ -436,6 +450,16 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
           onExit: () {
             inImageView = false;
             widget.onExitImageView?.call();
+            SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+            SystemChrome.setSystemUIOverlayStyle(
+              SystemUiOverlayStyle(
+                statusBarColor: overlayColor,
+                statusBarIconBrightness: brightness == Brightness.light
+                    ? Brightness.dark
+                    : Brightness.light,
+                systemNavigationBarColor: overlayColor,
+              ),
+            );
           },
           addIcons: widget.addIconsImage,
           focusMain: () {
@@ -550,6 +574,344 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     ));
   }
 
+  Widget? _flexibleSpace(BuildContext context) {
+    if (!flexibleAppBar) {
+      return null;
+    }
+
+    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Expanded(
+          child: FlexibleSpaceBar(
+              titlePadding: EdgeInsetsDirectional.only(
+                start: (widget.onBack != null ||
+                        (widget.scaffoldKey.currentState?.hasDrawer ?? false))
+                    ? 48
+                    : 0,
+              ),
+              title: Animate(
+                target: widget.searchWidget?.search != null && showSearchBar
+                    ? 0
+                    : 1,
+                effects: [
+                  const FadeEffect(begin: 1, end: 0),
+                  SwapEffect(
+                    builder: (context, child) {
+                      return Padding(
+                        padding: const EdgeInsets.only(
+                            top: 8, bottom: 16, right: 8, left: 8),
+                        child: Text(
+                          widget.description.pageName ??
+                              widget.description.keybindsDescription,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    },
+                  )
+                ],
+                child: Padding(
+                  padding: EdgeInsets.only(
+                      bottom: widget
+                              .description.bottomWidget?.preferredSize.height ??
+                          0 + (_state.isRefreshing ? 4 : 0)),
+                  child: widget.searchWidget?.search,
+                ),
+              ))),
+      if (widget.menuButtonItems != null &&
+          (widget.menuButtonItems!.length == 1 || widget.inlineMenuButtonItems))
+        ...widget.menuButtonItems!.map((e) => wrapAppBarAction(e)),
+      if (widget.onBack != null &&
+          (widget.scaffoldKey.currentState?.hasDrawer ?? false))
+        wrapAppBarAction(GestureDetector(
+          onLongPress: () {
+            setState(() {
+              selection.selected.clear();
+              selection.currentBottomSheet?.close();
+            });
+          },
+          child: IconButton(
+              onPressed: () {
+                widget.scaffoldKey.currentState!.openDrawer();
+              },
+              icon: const Icon(Icons.menu)),
+        )),
+      if (widget.menuButtonItems != null &&
+          widget.menuButtonItems!.length != 1 &&
+          !widget.inlineMenuButtonItems)
+        wrapAppBarAction(PopupMenuButton(
+            position: PopupMenuPosition.under,
+            itemBuilder: (context) {
+              return widget.menuButtonItems!
+                  .map(
+                    (e) => PopupMenuItem(
+                      enabled: false,
+                      child: e,
+                    ),
+                  )
+                  .toList();
+            })),
+    ]);
+  }
+
+  Widget? _makeTitle(BuildContext context) {
+    Widget make() {
+      return Badge.count(
+        count: _state.cellCount,
+        isLabelVisible: widget.showCount,
+        child: const Text("阿"),
+      );
+    }
+
+    if (flexibleAppBar) {
+      return null;
+    }
+
+    if (widget.searchWidget == null) {
+      return make();
+    }
+
+    return Animate(
+      effects: [
+        const FadeEffect(begin: 1, end: 0),
+        SwapEffect(builder: (context, _) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: widget.searchWidget!.search,
+          );
+        })
+      ],
+      target: showSearchBar ? 1 : 0,
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            showSearchBar = !showSearchBar;
+          });
+        },
+        child: make(),
+      ),
+    );
+  }
+
+  List<Widget> _makeActions(BuildContext context) {
+    if (flexibleAppBar || widget.menuButtonItems == null || showSearchBar) {
+      return [Container()];
+    }
+
+    return (!widget.inlineMenuButtonItems && widget.menuButtonItems!.length > 1)
+        ? [
+            PopupMenuButton(
+                position: PopupMenuPosition.under,
+                itemBuilder: (context) {
+                  return widget.menuButtonItems!
+                      .map(
+                        (e) => PopupMenuItem(
+                          enabled: false,
+                          child: e,
+                        ),
+                      )
+                      .toList();
+                })
+          ]
+        : [
+            ...widget.menuButtonItems!,
+          ];
+  }
+
+  Widget? _makeLeading(BuildContext context) {
+    if (showSearchBar && !flexibleAppBar) {
+      return IconButton(
+          onPressed: () {
+            if (widget.searchWidget?.focus.hasFocus ?? false) {
+              widget.mainFocus.requestFocus();
+            } else {
+              setState(() {
+                showSearchBar = !showSearchBar;
+              });
+            }
+          },
+          icon: const Icon(Icons.arrow_back));
+    }
+
+    if (widget.onBack != null) {
+      return IconButton(
+          onPressed: () {
+            setState(() {
+              selection.selected.clear();
+              selection.currentBottomSheet?.close();
+            });
+            if (widget.onBack != null) {
+              widget.onBack!();
+            }
+          },
+          icon: widget.backButtonBadge != null
+              ? Badge.count(
+                  count: widget.backButtonBadge!,
+                  child: const Icon(Icons.arrow_back))
+              : const Icon(Icons.arrow_back));
+    } else if (widget.scaffoldKey.currentState?.hasDrawer ?? false) {
+      return GestureDetector(
+        onLongPress: () {
+          setState(() {
+            selection.selected.clear();
+            selection.currentBottomSheet?.close();
+          });
+        },
+        child: IconButton(
+            onPressed: () {
+              widget.scaffoldKey.currentState!.openDrawer();
+            },
+            icon: const Icon(Icons.menu)),
+      );
+    }
+
+    return null;
+  }
+
+  Widget _makeGridBox(BuildContext context, FilterResult<T> Function()? res) {
+    return _makeGridBody(context, res);
+  }
+
+  Widget _makeGrid(BuildContext context) => Scrollbar(
+      interactive: false,
+      thumbVisibility: Platform.isAndroid || Platform.isIOS ? false : true,
+      thickness: 6,
+      controller: controller,
+      child: CustomScrollView(
+        controller: controller,
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          FocusNotifier(
+              notifier: widget.searchWidget?.focus,
+              focusMain: () {
+                widget.mainFocus.requestFocus();
+              },
+              child: Builder(
+                builder: (context) {
+                  return SliverAppBar(
+                    systemOverlayStyle: SystemUiOverlayStyle(
+                      statusBarColor: Theme.of(context)
+                          .colorScheme
+                          .background
+                          .withOpacity(0.5),
+                      systemNavigationBarColor: Theme.of(context)
+                          .colorScheme
+                          .background
+                          .withOpacity(0.50),
+                    ),
+                    backgroundColor: Theme.of(context)
+                        .colorScheme
+                        .background
+                        .withOpacity(0.95),
+                    expandedHeight: flexibleAppBar
+                        ? FocusNotifier.of(context).hasFocus
+                            ? 64
+                            : 152 +
+                                (widget.description.bottomWidget?.preferredSize
+                                        .height ??
+                                    0)
+                        : null,
+                    collapsedHeight: flexibleAppBar ? 64 : null,
+                    automaticallyImplyLeading: false,
+                    actions: _makeActions(context),
+                    centerTitle: true,
+                    title: _makeTitle(context),
+                    flexibleSpace: _flexibleSpace(context),
+                    leading: _makeLeading(context),
+                    pinned: showSearchBar,
+                    stretch: true,
+                    snap: !showSearchBar,
+                    floating: !showSearchBar,
+                    bottom: widget.description.bottomWidget != null
+                        ? widget.description.bottomWidget!
+                        : PreferredSize(
+                            preferredSize: const Size.fromHeight(4),
+                            child: !_state.isRefreshing
+                                ? Container()
+                                : const LinearProgressIndicator(),
+                          ),
+                  );
+                },
+              )),
+          _makeGridBody(context, null),
+        ],
+      ));
+
+  Widget _makeGridBody(BuildContext context, FilterResult<T> Function()? res) {
+    Widget emptyWidget() => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              EmptyWidget(
+                error: _state.refreshingError,
+              ),
+              if (widget.onError != null && _state.refreshingError != null)
+                widget.onError!(_state.refreshingError!),
+            ],
+          ),
+        );
+
+    return !_state.isRefreshing && _state.cellCount == 0
+        ? res != null
+            ? emptyWidget()
+            : SliverFillRemaining(
+                child: emptyWidget(),
+              )
+        : _withPadding(widget.segments != null
+            ? () {
+                if (widget.segments!.prebuiltSegments != null) {
+                  return GridLayout.segmentsPrebuilt(
+                    context,
+                    widget.segments!,
+                    _state,
+                    selection,
+                    widget.description.listView,
+                    widget.description.columns.number,
+                    _makeGridCell,
+                    systemNavigationInsets:
+                        widget.systemNavigationInsets.bottom,
+                    aspectRatio: widget.aspectRatio,
+                    box: box,
+                  );
+                }
+                final (s, t) = GridLayout.segmentsFnc<T>(
+                  context,
+                  widget.segments!,
+                  _state,
+                  selection,
+                  widget.description.listView,
+                  widget.description.columns.number,
+                  _makeGridCell,
+                  systemNavigationInsets: widget.systemNavigationInsets.bottom,
+                  aspectRatio: widget.aspectRatio,
+                  box: box,
+                );
+                segTranslation = t;
+
+                return s;
+              }()
+            : widget.description.listView
+                ? GridLayout.list<T>(
+                    context,
+                    _state,
+                    selection,
+                    widget.systemNavigationInsets.bottom,
+                    onPressed: widget.unpressable ? null : _onPressed,
+                    box: box,
+                  )
+                : GridLayout.grid<T>(
+                    context,
+                    _state,
+                    selection,
+                    widget.description.columns.number,
+                    widget.description.listView,
+                    _makeGridCell,
+                    systemNavigationInsets:
+                        widget.systemNavigationInsets.bottom,
+                    aspectRatio: widget.aspectRatio,
+                    box: box,
+                  ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final bindings = _makeBindings(context);
@@ -570,281 +932,21 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
             child: Stack(
               children: [
                 RefreshIndicator(
-                    onRefresh: _state.onRefresh,
-                    child: Scrollbar(
-                        interactive: false,
-                        thumbVisibility:
-                            Platform.isAndroid || Platform.isIOS ? false : true,
-                        thickness: 6,
-                        controller: controller,
-                        child: CustomScrollView(
-                          controller: controller,
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          slivers: [
-                            FocusNotifier(
-                                notifier: widget.searchWidget?.focus,
-                                focusMain: () {
-                                  widget.mainFocus.requestFocus();
-                                },
-                                child: Builder(
-                                  builder: (context) {
-                                    return SliverAppBar(
-                                      backgroundColor: Theme.of(context)
-                                          .colorScheme
-                                          .background
-                                          .withOpacity(0.90),
-                                      expandedHeight:
-                                          FocusNotifier.of(context).hasFocus
-                                              ? 64
-                                              : 152 +
-                                                  (widget
-                                                          .description
-                                                          .bottomWidget
-                                                          ?.preferredSize
-                                                          .height ??
-                                                      0),
-                                      collapsedHeight: 64,
-                                      automaticallyImplyLeading: false,
-                                      actions: [Container()],
-                                      flexibleSpace: Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Expanded(
-                                                child: FlexibleSpaceBar(
-                                                    titlePadding:
-                                                        EdgeInsetsDirectional
-                                                            .only(
-                                                      start: (widget.onBack !=
-                                                                  null ||
-                                                              (widget
-                                                                      .scaffoldKey
-                                                                      .currentState
-                                                                      ?.hasDrawer ??
-                                                                  false))
-                                                          ? 48
-                                                          : 0,
-                                                    ),
-                                                    title: widget.searchWidget
-                                                                ?.search !=
-                                                            null
-                                                        ? Padding(
-                                                            padding: EdgeInsets.only(
-                                                                bottom: widget
-                                                                        .description
-                                                                        .bottomWidget
-                                                                        ?.preferredSize
-                                                                        .height ??
-                                                                    0 +
-                                                                        (_state.isRefreshing
-                                                                            ? 4
-                                                                            : 0)),
-                                                            child: widget
-                                                                .searchWidget
-                                                                ?.search,
-                                                          )
-                                                        : Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .only(
-                                                                    top: 8,
-                                                                    bottom: 16,
-                                                                    right: 8,
-                                                                    left: 8),
-                                                            child: Text(
-                                                              widget.description
-                                                                      .pageName ??
-                                                                  widget
-                                                                      .description
-                                                                      .keybindsDescription,
-                                                              maxLines: 1,
-                                                              overflow:
-                                                                  TextOverflow
-                                                                      .ellipsis,
-                                                            ),
-                                                          ))),
-                                            if (widget.menuButtonItems !=
-                                                    null &&
-                                                (widget.menuButtonItems!
-                                                            .length ==
-                                                        1 ||
-                                                    widget
-                                                        .inlineMenuButtonItems))
-                                              ...widget.menuButtonItems!.map(
-                                                  (e) => wrapAppBarAction(e)),
-                                            if (widget.onBack != null &&
-                                                (widget.scaffoldKey.currentState
-                                                        ?.hasDrawer ??
-                                                    false))
-                                              wrapAppBarAction(GestureDetector(
-                                                onLongPress: () {
-                                                  setState(() {
-                                                    selection.selected.clear();
-                                                    selection.currentBottomSheet
-                                                        ?.close();
-                                                  });
-                                                },
-                                                child: IconButton(
-                                                    onPressed: () {
-                                                      widget.scaffoldKey
-                                                          .currentState!
-                                                          .openDrawer();
-                                                    },
-                                                    icon:
-                                                        const Icon(Icons.menu)),
-                                              )),
-                                            if (widget.menuButtonItems !=
-                                                    null &&
-                                                widget.menuButtonItems!
-                                                        .length !=
-                                                    1 &&
-                                                !widget.inlineMenuButtonItems)
-                                              wrapAppBarAction(PopupMenuButton(
-                                                  position:
-                                                      PopupMenuPosition.under,
-                                                  itemBuilder: (context) {
-                                                    return widget
-                                                        .menuButtonItems!
-                                                        .map(
-                                                          (e) => PopupMenuItem(
-                                                            enabled: false,
-                                                            child: e,
-                                                          ),
-                                                        )
-                                                        .toList();
-                                                  }))
-                                          ]),
-                                      leading: widget.onBack != null
-                                          ? IconButton(
-                                              onPressed: () {
-                                                setState(() {
-                                                  selection.selected.clear();
-                                                  selection.currentBottomSheet
-                                                      ?.close();
-                                                });
-                                                if (widget.onBack != null) {
-                                                  widget.onBack!();
-                                                }
-                                              },
-                                              icon:
-                                                  widget.backButtonBadge != null
-                                                      ? Badge.count(
-                                                          count: widget
-                                                              .backButtonBadge!,
-                                                          child: const Icon(
-                                                              Icons.arrow_back))
-                                                      : const Icon(
-                                                          Icons.arrow_back))
-                                          : (widget.scaffoldKey.currentState
-                                                      ?.hasDrawer ??
-                                                  false)
-                                              ? wrapAppBarAction(
-                                                  GestureDetector(
-                                                  onLongPress: () {
-                                                    setState(() {
-                                                      selection.selected
-                                                          .clear();
-                                                      selection
-                                                          .currentBottomSheet
-                                                          ?.close();
-                                                    });
-                                                  },
-                                                  child: IconButton(
-                                                      onPressed: () {
-                                                        widget.scaffoldKey
-                                                            .currentState!
-                                                            .openDrawer();
-                                                      },
-                                                      icon: const Icon(
-                                                          Icons.menu)),
-                                                ))
-                                              : Container(),
-                                      pinned: true,
-                                      stretch: true,
-                                      bottom: widget.description.bottomWidget !=
-                                              null
-                                          ? widget.description.bottomWidget!
-                                          : _state.isRefreshing
-                                              ? const PreferredSize(
-                                                  preferredSize:
-                                                      Size.fromHeight(4),
-                                                  child:
-                                                      LinearProgressIndicator(),
-                                                )
-                                              : null,
-                                    );
-                                  },
-                                )),
-                            !_state.isRefreshing && _state.cellCount == 0
-                                ? SliverToBoxAdapter(
-                                    child: Column(
-                                    children: [
-                                      EmptyWidget(
-                                        error: _state.refreshingError,
-                                      ),
-                                      if (widget.onError != null &&
-                                          _state.refreshingError != null)
-                                        widget
-                                            .onError!(_state.refreshingError!),
-                                    ],
-                                  ))
-                                : _withPadding(widget.segments != null
-                                    ? () {
-                                        if (widget.segments!.prebuiltSegments !=
-                                            null) {
-                                          return GridLayout.segmentsPrebuilt(
-                                            context,
-                                            widget.segments!,
-                                            _state,
-                                            selection,
-                                            widget.description.listView,
-                                            widget.description.columns.number,
-                                            _makeGridCell,
-                                            systemNavigationInsets: widget
-                                                .systemNavigationInsets.bottom,
-                                            aspectRatio: widget.aspectRatio,
-                                          );
-                                        }
-                                        final (s, t) =
-                                            GridLayout.segmentsFnc<T>(
-                                          context,
-                                          widget.segments!,
-                                          _state,
-                                          selection,
-                                          widget.description.listView,
-                                          widget.description.columns.number,
-                                          _makeGridCell,
-                                          systemNavigationInsets: widget
-                                              .systemNavigationInsets.bottom,
-                                          aspectRatio: widget.aspectRatio,
-                                        );
-                                        segTranslation = t;
-
-                                        return s;
-                                      }()
-                                    : widget.description.listView
-                                        ? GridLayout.list<T>(
-                                            context,
-                                            _state,
-                                            selection,
-                                            widget
-                                                .systemNavigationInsets.bottom,
-                                            onPressed: widget.unpressable
-                                                ? null
-                                                : _onPressed)
-                                        : GridLayout.grid<T>(
-                                            context,
-                                            _state,
-                                            selection,
-                                            widget.description.columns.number,
-                                            widget.description.listView,
-                                            _makeGridCell,
-                                            systemNavigationInsets: widget
-                                                .systemNavigationInsets.bottom,
-                                            aspectRatio: widget.aspectRatio,
-                                          )),
-                          ],
-                        ))),
+                  onRefresh: _state.onRefresh,
+                  child: widget.tabBar != null
+                      ? DefaultTabController(
+                          length: widget.tabBar!.length,
+                          child: Builder(
+                            builder: (context) {
+                              return TabBarView(
+                                children: widget.tabBar!
+                                    .map((e) => _makeGridBox(context, e))
+                                    .toList(),
+                              );
+                            },
+                          ))
+                      : _makeGrid(context),
+                ),
                 if (widget.footer != null)
                   Align(
                     alignment: Alignment.bottomLeft,

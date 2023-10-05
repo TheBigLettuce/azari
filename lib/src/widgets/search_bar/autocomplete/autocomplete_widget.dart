@@ -12,7 +12,6 @@ import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../../db/schemas/tags.dart';
-import '../../notifiers/focus.dart';
 import 'autocomplete_bar_decoration.dart';
 import 'autocomplete_tag.dart';
 
@@ -29,6 +28,7 @@ Widget autocompleteWidget(
     bool roundBorders = false,
     String? customHint,
     bool showSearch = false,
+    bool ignoreFocusNotifier = false,
     int? searchCount,
     bool noUnfocus = false,
     void Function()? onChanged,
@@ -104,56 +104,48 @@ Widget autocompleteWidget(
     },
     fieldViewBuilder:
         (context, textEditingController, focusNode, onFieldSubmitted) {
-      return FocusNotifier(
-          focusMain: focusMain,
-          notifier: focus,
-          child: Builder(
-            builder: (context) {
-              return roundBorders
-                  ? SearchBar(
-                      leading: showSearch ? const Icon(Icons.search) : null,
-                      hintText: customHint ??
-                          AppLocalizations.of(context)!.searchHint,
-                      controller: textEditingController,
-                      focusNode: focusNode,
-                      onChanged: (value) {
-                        onChanged?.call();
-                      },
-                      onSubmitted: (value) {
-                        onSubmit(Tag.string(tag: value));
-                      },
-                    )
-                  : TextField(
-                      scrollController: scrollHack,
-                      cursorOpacityAnimates: true,
-                      decoration: autocompleteBarDecoration(
-                        context,
-                        () {
-                          textEditingController.clear();
-                          if (!noUnfocus) {
-                            focusMain();
-                          }
+      return roundBorders
+          ? SearchBar(
+              leading: showSearch ? const Icon(Icons.search) : null,
+              hintText: customHint ?? AppLocalizations.of(context)!.searchHint,
+              controller: textEditingController,
+              focusNode: focusNode,
+              onChanged: (value) {
+                onChanged?.call();
+              },
+              onSubmitted: (value) {
+                onSubmit(Tag.string(tag: value));
+              },
+            )
+          : TextField(
+              scrollController: scrollHack,
+              cursorOpacityAnimates: true,
+              decoration: autocompleteBarDecoration(
+                context,
+                () {
+                  textEditingController.clear();
+                  if (!noUnfocus) {
+                    focusMain();
+                  }
 
-                          onChanged?.call();
-                        },
-                        addItems,
-                        searchCount: searchCount,
-                        showSearch: showSearch,
-                        roundBorders: roundBorders,
-                        hint: customHint ??
-                            AppLocalizations.of(context)!.searchHint,
-                      ),
-                      controller: textEditingController,
-                      focusNode: focusNode,
-                      onChanged: (value) {
-                        onChanged?.call();
-                      },
-                      onSubmitted: (value) {
-                        onSubmit(Tag.string(tag: value));
-                      },
-                    );
-            },
-          ));
+                  onChanged?.call();
+                },
+                addItems,
+                ignoreFocusNotifier: ignoreFocusNotifier,
+                searchCount: searchCount,
+                showSearch: showSearch,
+                roundBorders: roundBorders,
+                hint: customHint ?? AppLocalizations.of(context)!.searchHint,
+              ),
+              controller: textEditingController,
+              focusNode: focusNode,
+              onChanged: (value) {
+                onChanged?.call();
+              },
+              onSubmitted: (value) {
+                onSubmit(Tag.string(tag: value));
+              },
+            );
     },
     optionsBuilder: (textEditingValue) async {
       try {

@@ -68,6 +68,9 @@ class DownloadFile implements Cell {
       : date = DateTime.now();
 
   @override
+  List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
+
+  @override
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override

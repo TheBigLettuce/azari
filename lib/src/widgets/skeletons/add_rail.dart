@@ -15,7 +15,7 @@ import 'drawer/select_destination.dart';
 
 Widget addRail(BuildContext context, int selectedIndex,
     GlobalKey<ScaffoldState> key, Widget child) {
-  if (Platform.isAndroid || Platform.isIOS) {
+  if (Platform.isAndroid || Platform.isIOS || selectedIndex == 6) {
     return child;
   }
 

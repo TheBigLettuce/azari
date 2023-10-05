@@ -14,9 +14,10 @@ InputDecoration autocompleteBarDecoration(
     {required bool showSearch,
     int? searchCount,
     required bool roundBorders,
+    required bool ignoreFocusNotifier,
     required String hint}) {
   return InputDecoration(
-      prefixIcon: FocusNotifier.of(context).hasFocus
+      prefixIcon: !ignoreFocusNotifier && FocusNotifier.of(context).hasFocus
           ? IconButton(
               onPressed: FocusNotifier.of(context).unfocus,
               icon: Badge.count(
