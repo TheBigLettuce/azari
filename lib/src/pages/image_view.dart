@@ -9,11 +9,11 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/main.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/gesture_dead_zones.dart';
@@ -118,8 +118,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   late PlatformFullscreensPlug fullscreenPlug =
       choosePlatformFullscreenPlug(widget.systemOverlayRestoreColor);
 
-  void _extractPalette() {
-    final t = currentCell.getCellData(false).thumb;
+  void _extractPalette(BuildContext context) {
+    final t = currentCell.getCellData(false, context: context).thumb;
     if (t == null) {
       return;
     }
@@ -157,7 +157,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     }
   }
 
-  void update(int count, {bool pop = true}) {
+  void update(BuildContext context, int count, {bool pop = true}) {
     if (count == 0) {
       if (pop) {
         key.currentState?.closeEndDrawer();
@@ -174,8 +174,11 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
       currentCell = widget.getCell(0);
     } else if (currentPage > cellCount - 1) {
       controller.previousPage(duration: 200.ms, curve: Curves.linearToEaseOut);
-    } else if (widget.getCell(currentPage).getCellData(false).thumb !=
-        currentCell.getCellData(false).thumb) {
+    } else if (widget
+            .getCell(currentPage)
+            .getCellData(false, context: context)
+            .thumb !=
+        currentCell.getCellData(false, context: context).thumb) {
       if (currentPage == 0) {
         controller.nextPage(
             duration: 200.ms, curve: Curves.fastLinearToSlowEaseIn);
@@ -216,7 +219,9 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     widget.updateTagScrollPos(null, widget.startingCell);
 
-    _extractPalette();
+    WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+      _extractPalette(context);
+    });
   }
 
   @override
@@ -377,14 +382,22 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                   url: uri,
                   localVideo: local,
                   loadingColor: ColorTween(
-                              begin: previousPallete?.dominantColor?.color,
-                              end: currentPalette?.dominantColor?.color)
+                              begin: previousPallete?.dominantColor?.color
+                                  .harmonizeWith(
+                                      Theme.of(context).colorScheme.primary),
+                              end: currentPalette?.dominantColor?.color
+                                  .harmonizeWith(
+                                      Theme.of(context).colorScheme.primary))
                           .transform(_animationController.value) ??
-                      Colors.black,
+                      Theme.of(context).colorScheme.background,
                   backgroundColor: ColorTween(
                               begin: previousPallete?.mutedColor?.color
+                                  .harmonizeWith(
+                                      Theme.of(context).colorScheme.primary)
                                   .withOpacity(0.7),
                               end: currentPalette?.mutedColor?.color
+                                  .harmonizeWith(
+                                      Theme.of(context).colorScheme.primary)
                                   .withOpacity(0.7))
                           .transform(_animationController.value) ??
                       Theme.of(context).colorScheme.primary,
@@ -461,16 +474,22 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
               automaticallyImplyLeading: false,
               foregroundColor: ColorTween(
                 begin: previousPallete?.dominantColor?.bodyTextColor
+                        .harmonizeWith(Theme.of(context).colorScheme.primary)
                         .withOpacity(0.8) ??
                     kListTileColorInInfo,
                 end: currentPalette?.dominantColor?.bodyTextColor
+                        .harmonizeWith(Theme.of(context).colorScheme.primary)
                         .withOpacity(0.8) ??
                     kListTileColorInInfo,
               ).transform(_animationController.value),
               backgroundColor: ColorTween(
-                begin: previousPallete?.dominantColor?.color.withOpacity(0.5) ??
+                begin: previousPallete?.dominantColor?.color
+                        .harmonizeWith(Theme.of(context).colorScheme.primary)
+                        .withOpacity(0.5) ??
                     Colors.black.withOpacity(0.5),
-                end: currentPalette?.dominantColor?.color.withOpacity(0.5) ??
+                end: currentPalette?.dominantColor?.color
+                        .harmonizeWith(Theme.of(context).colorScheme.primary)
+                        .withOpacity(0.5) ??
                     Colors.black.withOpacity(0.5),
               ).transform(_animationController.value),
               leading: const BackButton(),
@@ -505,18 +524,30 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                                 color: ColorTween(
                                   begin: previousPallete
                                           ?.dominantColor?.bodyTextColor
+                                          .harmonizeWith(Theme.of(context)
+                                              .colorScheme
+                                              .primary)
                                           .withOpacity(0.8) ??
                                       kListTileColorInInfo,
                                   end: currentPalette
                                           ?.dominantColor?.bodyTextColor
+                                          .harmonizeWith(Theme.of(context)
+                                              .colorScheme
+                                              .primary)
                                           .withOpacity(0.8) ??
                                       kListTileColorInInfo,
                                 ).transform(_animationController.value),
                                 backgroundColor: ColorTween(
                                   begin: previousPallete?.dominantColor?.color
+                                          .harmonizeWith(Theme.of(context)
+                                              .colorScheme
+                                              .primary)
                                           .withOpacity(0.5) ??
                                       Colors.black.withOpacity(0.5),
                                   end: currentPalette?.dominantColor?.color
+                                          .harmonizeWith(Theme.of(context)
+                                              .colorScheme
+                                              .primary)
                                           .withOpacity(0.5) ??
                                       Colors.black.withOpacity(0.5),
                                 ).transform(_animationController.value)),
@@ -551,9 +582,13 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                           BorderRadius.all(Radius.elliptical(10, 10)))),
                   backgroundColor: MaterialStatePropertyAll(ColorTween(
                           begin: previousPallete?.dominantColor?.color
+                                  .harmonizeWith(
+                                      Theme.of(context).colorScheme.primary)
                                   .withOpacity(0.5) ??
                               Colors.black.withOpacity(0.5),
                           end: currentPalette?.dominantColor?.color
+                                  .harmonizeWith(
+                                      Theme.of(context).colorScheme.primary)
                                   .withOpacity(0.5) ??
                               Colors.black.withOpacity(0.5))
                       .transform(_animationController.value)))),
@@ -611,9 +646,13 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     return Drawer(
       backgroundColor: ColorTween(
-              begin: previousPallete?.mutedColor?.color.withOpacity(0.85) ??
+              begin: previousPallete?.mutedColor?.color
+                      .harmonizeWith(Theme.of(context).colorScheme.primary)
+                      .withOpacity(0.85) ??
                   Theme.of(context).colorScheme.surface.withOpacity(0.5),
-              end: currentPalette?.mutedColor?.color.withOpacity(0.85) ??
+              end: currentPalette?.mutedColor?.color
+                      .harmonizeWith(Theme.of(context).colorScheme.primary)
+                      .withOpacity(0.85) ??
                   Theme.of(context).colorScheme.surface.withOpacity(0.5))
           .transform(_animationController.value),
       child: CustomScrollView(
@@ -622,12 +661,12 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
           endDrawerHeading(
               context, AppLocalizations.of(context)!.infoHeadline, key,
               titleColor: ColorTween(
-                      begin: previousPallete?.dominantColor?.titleTextColor ??
+                      begin: previousPallete?.dominantColor?.titleTextColor.harmonizeWith(Theme.of(context).colorScheme.primary) ??
                           Theme.of(context)
                               .colorScheme
                               .surface
                               .withOpacity(0.5),
-                      end: currentPalette?.dominantColor?.titleTextColor ??
+                      end: currentPalette?.dominantColor?.titleTextColor.harmonizeWith(Theme.of(context).colorScheme.primary) ??
                           Theme.of(context)
                               .colorScheme
                               .surface
@@ -635,13 +674,10 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                   .transform(_animationController.value),
               backroundColor: ColorTween(
                       begin: previousPallete?.dominantColor?.color
+                              .harmonizeWith(Theme.of(context).colorScheme.primary)
                               .withOpacity(0.5) ??
-                          Theme.of(context)
-                              .colorScheme
-                              .surface
-                              .withOpacity(0.5),
-                      end: currentPalette?.dominantColor?.color.withOpacity(0.5) ??
-                          Theme.of(context).colorScheme.surface.withOpacity(0.5))
+                          Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                      end: currentPalette?.dominantColor?.color.harmonizeWith(Theme.of(context).colorScheme.primary).withOpacity(0.5) ?? Theme.of(context).colorScheme.surface.withOpacity(0.5))
                   .transform(_animationController.value)),
           _wrapNotifiers((context) {
             final addInfo = currentCell.addInfo(context, () {
@@ -650,9 +686,13 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                 AddInfoColorData(
                   borderColor: Theme.of(context).colorScheme.outlineVariant,
                   foregroundColor: ColorTween(
-                          begin: previousPallete?.mutedColor?.bodyTextColor ??
+                          begin: previousPallete?.mutedColor?.bodyTextColor
+                                  .harmonizeWith(
+                                      Theme.of(context).colorScheme.primary) ??
                               kListTileColorInInfo,
-                          end: currentPalette?.mutedColor?.bodyTextColor ??
+                          end: currentPalette?.mutedColor?.bodyTextColor
+                                  .harmonizeWith(
+                                      Theme.of(context).colorScheme.primary) ??
                               kListTileColorInInfo)
                       .transform(_animationController.value)!,
                   systemOverlayColor: widget.systemOverlayRestoreColor,
@@ -661,9 +701,13 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
             return Theme(
               data: Theme.of(context).copyWith(
                   hintColor: ColorTween(
-                          begin: previousPallete?.mutedColor?.bodyTextColor ??
+                          begin: previousPallete?.mutedColor?.bodyTextColor
+                                  .harmonizeWith(
+                                      Theme.of(context).colorScheme.primary) ??
                               kListTileColorInInfo,
-                          end: currentPalette?.mutedColor?.bodyTextColor ??
+                          end: currentPalette?.mutedColor?.bodyTextColor
+                                  .harmonizeWith(
+                                      Theme.of(context).colorScheme.primary) ??
                               kListTileColorInInfo)
                       .transform(_animationController.value)),
               child: SliverPadding(
@@ -705,9 +749,13 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                       color: ColorTween(
                               begin: previousPallete
                                       ?.dominantColor?.bodyTextColor
+                                      .harmonizeWith(
+                                          Theme.of(context).colorScheme.primary)
                                       .withOpacity(0.8) ??
                                   kListTileColorInInfo,
                               end: currentPalette?.dominantColor?.bodyTextColor
+                                      .harmonizeWith(
+                                          Theme.of(context).colorScheme.primary)
                                       .withOpacity(0.8) ??
                                   kListTileColorInInfo)
                           .transform(_animationController.value)),
@@ -715,9 +763,13 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                     shape: const Border(),
                     backgroundColor: ColorTween(
                             begin: previousPallete?.dominantColor?.color
+                                    .harmonizeWith(
+                                        Theme.of(context).colorScheme.primary)
                                     .withOpacity(0.5) ??
                                 Colors.black.withOpacity(0.5),
                             end: currentPalette?.dominantColor?.color
+                                    .harmonizeWith(
+                                        Theme.of(context).colorScheme.primary)
                                     .withOpacity(0.5) ??
                                 Colors.black.withOpacity(0.5))
                         .transform(_animationController.value),
@@ -744,16 +796,27 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
               end: Alignment.topCenter,
               colors: [
             ColorTween(
-              begin: Colors.black,
-              end: currentPalette?.mutedColor?.color.withOpacity(0.7),
+              begin: Theme.of(context).colorScheme.background,
+              end: currentPalette?.mutedColor?.color
+                  .harmonizeWith(Theme.of(context).colorScheme.primary),
             ).lerp(value ?? 0)!,
             ColorTween(
-              begin: Colors.black38,
-              end: currentPalette?.mutedColor?.color.withOpacity(0.5),
+              begin: Theme.of(context).colorScheme.background.withOpacity(0.7),
+              end: currentPalette?.mutedColor?.color
+                  .harmonizeWith(Theme.of(context).colorScheme.primary)
+                  .withOpacity(0.7),
             ).lerp(value ?? 0)!,
             ColorTween(
-              begin: Colors.black12,
-              end: currentPalette?.mutedColor?.color.withOpacity(0.3),
+              begin: Theme.of(context).colorScheme.background.withOpacity(0.5),
+              end: currentPalette?.mutedColor?.color
+                  .harmonizeWith(Theme.of(context).colorScheme.primary)
+                  .withOpacity(0.5),
+            ).lerp(value ?? 0)!,
+            ColorTween(
+              begin: Theme.of(context).colorScheme.background.withOpacity(0.3),
+              end: currentPalette?.mutedColor?.color
+                  .harmonizeWith(Theme.of(context).colorScheme.primary)
+                  .withOpacity(0.3),
             ).lerp(value ?? 0)!,
           ])),
       child: Center(
@@ -762,12 +825,18 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
             height: 20.0,
             child: CircularProgressIndicator(
                 backgroundColor: ColorTween(
-                  begin: previousPallete?.mutedColor?.color.withOpacity(0.7),
-                  end: currentPalette?.mutedColor?.color.withOpacity(0.7),
+                  begin: previousPallete?.mutedColor?.color
+                      .harmonizeWith(Theme.of(context).colorScheme.primary)
+                      .withOpacity(0.7),
+                  end: currentPalette?.mutedColor?.color
+                      .harmonizeWith(Theme.of(context).colorScheme.primary)
+                      .withOpacity(0.7),
                 ).transform(_animationController.value),
                 color: ColorTween(
-                  begin: previousPallete?.dominantColor?.color,
-                  end: currentPalette?.dominantColor?.color,
+                  begin: previousPallete?.dominantColor?.color
+                      .harmonizeWith(Theme.of(context).colorScheme.primary),
+                  end: currentPalette?.dominantColor?.color
+                      .harmonizeWith(Theme.of(context).colorScheme.primary),
                 ).transform(_animationController.value),
                 value: value)),
       ),
@@ -777,8 +846,12 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   BoxDecoration _photoBackgroundDecoration() {
     return BoxDecoration(
       color: ColorTween(
-        begin: previousPallete?.mutedColor?.color.withOpacity(0.7),
-        end: currentPalette?.mutedColor?.color.withOpacity(0.7),
+        begin: previousPallete?.mutedColor?.color
+            .harmonizeWith(Theme.of(context).colorScheme.primary)
+            .withOpacity(0.7),
+        end: currentPalette?.mutedColor?.color
+            .harmonizeWith(Theme.of(context).colorScheme.primary)
+            .withOpacity(0.7),
       ).transform(_animationController.value),
     );
   }
@@ -822,7 +895,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
                   setState(() {
                     currentCell = c;
-                    _extractPalette();
+                    _extractPalette(context);
                   });
                 },
                 pageController: controller,

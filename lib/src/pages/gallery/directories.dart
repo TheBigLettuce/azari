@@ -41,11 +41,14 @@ class CallbackDescription {
 
   final PreferredSizeWidget? preview;
 
+  final bool joinable;
+
   void call(SystemGalleryDirectory? chosen, String? newDir) {
     c(chosen, newDir);
   }
 
-  const CallbackDescription(this.description, this.c, {this.preview});
+  const CallbackDescription(this.description, this.c,
+      {this.preview, required this.joinable});
 }
 
 class CallbackDescriptionNested {
@@ -300,9 +303,12 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                     lastModified: 0,
                     thumbFileId: trashThumbId!),
             ],
-            onLabelPressed: (label, children) =>
-                SystemGalleryDirectoriesActions.joinedDirectoriesFnc(
-                    context, label, children, extra, widget.nestedCallback),
+            onLabelPressed: widget.callback != null &&
+                    !widget.callback!.joinable
+                ? null
+                : (label, children) =>
+                    SystemGalleryDirectoriesActions.joinedDirectoriesFnc(
+                        context, label, children, extra, widget.nestedCallback),
           ),
           mainFocus: state.mainFocus,
           footer: widget.callback?.preview,
@@ -329,6 +335,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
               return null;
             }
           },
+          showSearchBarFirst: widget.callback != null,
           overrideOnPress: (context, cell) {
             if (widget.callback != null) {
               widget.callback!.c(cell, null).then((_) {
@@ -367,8 +374,9 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
               kGalleryDrawerIndex,
               widget.callback != null || widget.nestedCallback != null
                   ? [
-                      SystemGalleryDirectoriesActions.joinedDirectories(
-                          context, extra, widget.nestedCallback)
+                      if (widget.callback == null || widget.callback!.joinable)
+                        SystemGalleryDirectoriesActions.joinedDirectories(
+                            context, extra, widget.nestedCallback)
                     ]
                   : [
                       FavoritesActions.addToGroup(context, (selected) {

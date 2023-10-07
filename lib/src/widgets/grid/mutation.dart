@@ -14,6 +14,7 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
   final void Function(void Function()? f) update;
 
   final CallbackGrid<T> Function() widget;
+
   T Function(int i)? _filterGetCell;
 
   int? _cellCountFilter;

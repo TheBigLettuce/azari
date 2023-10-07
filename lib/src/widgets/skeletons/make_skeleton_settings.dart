@@ -47,7 +47,12 @@ Widget makeSkeletonSettings(BuildContext context, String pageDescription,
                   SliverAppBar.large(
                     expandedHeight: 160,
                     flexibleSpace: FlexibleSpaceBar(
-                      title: Text(pageDescription),
+                      title: Text(
+                        pageDescription,
+                        style: TextStyle(
+                            color:
+                                Theme.of(context).textTheme.bodyLarge?.color),
+                      ),
                     ),
                   ),
                   SliverPadding(

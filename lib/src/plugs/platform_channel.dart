@@ -7,6 +7,7 @@
 
 import 'dart:io';
 
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
@@ -52,6 +53,9 @@ class PlatformFunctions {
       final int c = await _channel.invokeMethod("accentColor");
       return Color(c);
     } catch (e) {
+      try {
+        return (await DynamicColorPlugin.getAccentColor())!;
+      } catch (_) {}
       return Colors.limeAccent;
     }
   }

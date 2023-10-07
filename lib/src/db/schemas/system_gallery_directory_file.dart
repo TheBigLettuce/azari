@@ -8,6 +8,7 @@
 import 'dart:developer';
 import 'dart:typed_data';
 
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/interfaces/booru.dart';
@@ -344,15 +345,17 @@ class SystemGalleryDirectoryFile implements Cell {
   String fileDownloadUrl() => "";
 
   @override
-  CellData getCellData(bool isList, {BuildContext? context}) {
+  CellData getCellData(bool isList, {required BuildContext context}) {
     final stickers = <Sticker>[
       ...injectedStickers,
       ..._stickers(context).map((e) => Sticker(e.$1)),
       if (isFavorite())
         Sticker(Icons.star_rounded,
             right: true,
-            color: Colors.yellow.shade900,
-            backgroundColor: Colors.yellowAccent.shade100),
+            color: Colors.yellow.shade900
+                .harmonizeWith(Theme.of(context).colorScheme.primary),
+            backgroundColor: Colors.yellowAccent.shade100
+                .harmonizeWith(Theme.of(context).colorScheme.primary)),
     ];
 
     return CellData(

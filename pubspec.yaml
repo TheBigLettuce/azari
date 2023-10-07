@@ -69,6 +69,7 @@ dependencies:
   wakelock_plus: ^1.1.1
   package_info_plus: ^4.1.0
   xml: ^6.3.0
+  dynamic_color: ^1.6.7
 
 dev_dependencies:
   flutter_test:

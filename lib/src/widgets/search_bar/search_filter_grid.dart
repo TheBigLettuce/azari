@@ -15,7 +15,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../interfaces/cell.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
-import '../notifiers/focus.dart';
 import '../skeletons/grid_skeleton_state_filter.dart';
 import 'autocomplete/autocomplete_bar_decoration.dart';
 

@@ -100,9 +100,12 @@ Widget makeSkeleton(
                 Expanded(
                     child: FlexibleSpaceBar(
                         title: customTitle ??
-                            Text(
-                              pageDescription,
-                            ))),
+                            Text(pageDescription,
+                                style: TextStyle(
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge
+                                        ?.color)))),
                 if (appBarActions != null)
                   ...appBarActions.map((e) => wrapAppBarAction(e)).toList()
               ],

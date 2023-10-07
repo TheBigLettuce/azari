@@ -11,12 +11,12 @@ part of 'callback_grid.dart';
 /// [GridLayout] actually implements them all.
 class GridLayout {
   static Widget list<T extends Cell>(
-          BuildContext context,
-          GridMutationInterface<T> state,
-          SelectionInterface<T> selection,
-          double systemNavigationInsets,
-          {required void Function(BuildContext, T, int)? onPressed,
-          required bool box}) =>
+    BuildContext context,
+    GridMutationInterface<T> state,
+    SelectionInterface<T> selection,
+    double systemNavigationInsets, {
+    required void Function(BuildContext, T, int)? onPressed,
+  }) =>
       SliverList.separated(
         separatorBuilder: (context, index) => const Divider(
           height: 1,
@@ -41,7 +41,7 @@ class GridLayout {
       {required int index,
       required T cell,
       required void Function(BuildContext, T, int)? onPressed}) {
-    final cellData = cell.getCellData(true);
+    final cellData = cell.getCellData(true, context: context);
 
     return _WrappedSelection(
       selectUntil: (i) => selection.selectUnselectUntil(i, state),
@@ -71,15 +71,15 @@ class GridLayout {
   }
 
   static Widget grid<T extends Cell>(
-          BuildContext context,
-          GridMutationInterface<T> state,
-          SelectionInterface<T> selection,
-          int columns,
-          bool listView,
-          GridCell Function(BuildContext, T, int) gridCell,
-          {required double systemNavigationInsets,
-          required double aspectRatio,
-          required bool box}) =>
+    BuildContext context,
+    GridMutationInterface<T> state,
+    SelectionInterface<T> selection,
+    int columns,
+    bool listView,
+    GridCell Function(BuildContext, T, int) gridCell, {
+    required double systemNavigationInsets,
+    required double aspectRatio,
+  }) =>
       SliverGrid.builder(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             childAspectRatio: aspectRatio, crossAxisCount: columns),
@@ -187,16 +187,16 @@ class GridLayout {
       );
 
   static Widget segmentsPrebuilt<T extends Cell>(
-      BuildContext context,
-      Segments<T> segments,
-      GridMutationInterface<T> state,
-      SelectionInterface<T> selection,
-      bool listView,
-      int columns,
-      GridCell Function(BuildContext, T, int) gridCell,
-      {required double systemNavigationInsets,
-      required double aspectRatio,
-      required bool box}) {
+    BuildContext context,
+    Segments<T> segments,
+    GridMutationInterface<T> state,
+    SelectionInterface<T> selection,
+    bool listView,
+    int columns,
+    GridCell Function(BuildContext, T, int) gridCell, {
+    required double systemNavigationInsets,
+    required double aspectRatio,
+  }) {
     final segRows = <dynamic>[];
 
     makeRows<J>(List<J> value) {
@@ -318,7 +318,6 @@ class GridLayout {
     GridCell Function(BuildContext, T, int) gridCell, {
     required double systemNavigationInsets,
     required double aspectRatio,
-    required bool box,
   }) {
     final segRows = <dynamic>[];
     final segMap = <String, List<int>>{};

@@ -46,10 +46,12 @@ PopupMenuButton gridSettingsButton(GridSettings gridSettings,
     {required void Function(schema.AspectRatio?) selectRatio,
     required void Function(bool)? selectHideName,
     required void Function(bool)? selectListView,
-    required void Function(GridColumn?) selectGridColumn}) {
+    required void Function(GridColumn?) selectGridColumn,
+    SafeMode? safeMode}) {
   return PopupMenuButton(
     icon: const Icon(Icons.more_horiz_outlined),
     itemBuilder: (context) => [
+      if (safeMode != null) _safeMode(context, safeMode),
       if (selectListView != null)
         _listView(gridSettings.listView, selectListView),
       if (selectHideName != null)
@@ -57,6 +59,21 @@ PopupMenuButton gridSettingsButton(GridSettings gridSettings,
       _ratio(context, gridSettings.aspectRatio, selectRatio),
       _columns(context, gridSettings.columns, selectGridColumn)
     ],
+  );
+}
+
+PopupMenuItem _safeMode(BuildContext context, SafeMode safeMode) {
+  return PopupMenuItem(
+    child: Text("Safe mode"),
+    onTap: () => radioDialog(
+      context,
+      SafeMode.values.map((e) => (e, e.string)),
+      safeMode,
+      (value) {
+        Settings.fromDb().copy(safeMode: value).save();
+      },
+      title: "Safe mode", // TODO: change
+    ),
   );
 }
 
@@ -131,6 +148,7 @@ class MainBooruGrid extends StatefulWidget {
     return gridSettingsButton(
       settings.booru,
       selectHideName: null,
+      safeMode: settings.safeMode,
       selectGridColumn: (columns) =>
           settings.copy(booru: settings.booru.copy(columns: columns)).save(),
       selectListView: (listView) =>

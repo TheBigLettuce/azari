@@ -8,6 +8,7 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/post_tags.dart';
 import 'package:gallery/src/interfaces/cell.dart';
@@ -265,7 +266,7 @@ class PostBase implements Cell {
   }
 
   @override
-  CellData getCellData(bool isList, {BuildContext? context}) {
+  CellData getCellData(bool isList, {required BuildContext context}) {
     ImageProvider provider;
     try {
       provider = CachedNetworkImageProvider(
@@ -278,10 +279,12 @@ class PostBase implements Cell {
     final content = fileDisplay();
 
     return CellData(thumb: provider, name: alias(isList), stickers: [
-      if (context != null && Settings.isFavorite(fileUrl))
+      if (Settings.isFavorite(fileUrl))
         Sticker(Icons.favorite_rounded,
-            color: Colors.red.shade900,
-            backgroundColor: Colors.redAccent.shade100,
+            color: Colors.red.shade900
+                .harmonizeWith(Theme.of(context).colorScheme.primary),
+            backgroundColor: Colors.redAccent.shade100
+                .harmonizeWith(Theme.of(context).colorScheme.primary),
             right: true),
       ..._stickers(content, context).map((e) => Sticker(e.$1))
     ]);

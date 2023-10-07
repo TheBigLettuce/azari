@@ -7,6 +7,7 @@
 
 import 'dart:io';
 
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -202,7 +203,6 @@ void changeSystemUiOverlay(BuildContext context) {
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(
     SystemUiOverlayStyle(
-      statusBarColor: Theme.of(context).colorScheme.background.withOpacity(0.5),
       systemNavigationBarColor:
           Theme.of(context).colorScheme.background.withOpacity(0.5),
     ),

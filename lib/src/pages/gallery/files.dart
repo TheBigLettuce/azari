@@ -101,9 +101,6 @@ class _GalleryFilesState extends State<GalleryFiles>
     })
     ..setPassFilter((cells, data, end) {
       final filterMode = currentFilteringMode();
-      if (filterMode == null) {
-        return (cells, data);
-      }
 
       return switch (filterMode) {
         FilteringMode.favorite => Filters.favorite(cells),
@@ -244,7 +241,8 @@ class _GalleryFilesState extends State<GalleryFiles>
                   files: selected,
                   size: 52,
                 ),
-              )),
+              ),
+              joinable: false),
         );
       },
     ));
@@ -587,7 +585,7 @@ class _GalleryFilesState extends State<GalleryFiles>
           inlineMenuButtonItems: true,
           onBack: () {
             final filterMode = currentFilteringMode();
-            if (filterMode != null && filterMode != FilteringMode.noFilter) {
+            if (filterMode != FilteringMode.noFilter) {
               resetSearch();
               return;
             }
@@ -620,7 +618,7 @@ class _GalleryFilesState extends State<GalleryFiles>
       noDrawer: widget.callback != null,
       overrideOnPop: () {
         final filterMode = currentFilteringMode();
-        if (filterMode != null && filterMode != FilteringMode.noFilter) {
+        if (filterMode != FilteringMode.noFilter) {
           resetSearch();
           return Future.value(false);
         }

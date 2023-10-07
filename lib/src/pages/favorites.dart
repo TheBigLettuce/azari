@@ -91,9 +91,6 @@ class _FavoritesPageState extends State<FavoritesPage>
   })
     ..filter.passFilter = (cells, data, end) {
       final filterMode = currentFilteringMode();
-      if (filterMode == null) {
-        return (cells, data);
-      }
 
       if (filterMode == FilteringMode.group) {
         segments = segments ?? {};

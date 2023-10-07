@@ -40,6 +40,7 @@ Widget makeGridSkeleton<T extends Cell>(
 
       if (s.showSearchBar && !s.flexibleAppBar) {
         s.showSearchBar = false;
+        // ignore: invalid_use_of_protected_member
         s.setState(() {});
         return Future.value(false);
       }

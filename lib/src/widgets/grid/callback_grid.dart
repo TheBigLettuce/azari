@@ -12,15 +12,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/material.dart' as material show AspectRatio;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/main.dart';
 import 'package:gallery/src/interfaces/booru.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/db/schemas/settings.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
-import 'package:gallery/src/widgets/skeletons/drawer/azari_icon.dart';
 import 'package:logging/logging.dart';
 import '../../interfaces/cell.dart';
-import '../../interfaces/filtering/filter_result.dart';
 import '../../interfaces/grid_mutation_interface.dart';
 import '../keybinds/describe_keys.dart';
 import '../keybinds/digit_and_settings.dart';
@@ -189,8 +186,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   final void Function()? beforeImageViewRestore;
 
   final bool showCount;
-
-  final List<FilterResult<T> Function()>? tabBar;
+  final bool showSearchBarFirst;
 
   const CallbackGrid(
       {required super.key,
@@ -204,8 +200,8 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       this.cloudflareHook,
       this.pageChangeImage,
       this.onError,
-      this.tabBar,
       this.showCount = false,
+      this.showSearchBarFirst = false,
       // this.flexibleAppBar = true,
       this.beforeImageViewRestore,
       required this.mainFocus,
@@ -258,13 +254,14 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       widget.immutable ? null : _state;
 
   bool inImageView = false;
-  late bool showSearchBar = widget.searchWidget != null && flexibleAppBar;
+  late bool showSearchBar = (widget.searchWidget != null && flexibleAppBar) ||
+      widget.showSearchBarFirst;
 
   List<int>? segTranslation;
 
   late final _Mutation<T> _state = _Mutation(
     updateImageView: () {
-      imageViewKey.currentState?.update(_state.cellCount);
+      imageViewKey.currentState?.update(context, _state.cellCount);
     },
     scrollUp: () {
       if (widget.hideShowFab != null) {
@@ -290,6 +287,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
   @override
   void initState() {
+    print(showSearchBar);
     super.initState();
 
     ticker = widget.progressTicker?.listen((event) {
@@ -436,7 +434,6 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     final offsetGrid = controller.offset;
     final overlayColor =
         Theme.of(context).colorScheme.background.withOpacity(0.5);
-    final brightness = Theme.of(context).brightness;
 
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return ImageView<T>(
@@ -450,16 +447,6 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
           onExit: () {
             inImageView = false;
             widget.onExitImageView?.call();
-            SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-            SystemChrome.setSystemUIOverlayStyle(
-              SystemUiOverlayStyle(
-                statusBarColor: overlayColor,
-                statusBarIconBrightness: brightness == Brightness.light
-                    ? Brightness.dark
-                    : Brightness.light,
-                systemNavigationBarColor: overlayColor,
-              ),
-            );
           },
           addIcons: widget.addIconsImage,
           focusMain: () {
@@ -658,7 +645,10 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       return Badge.count(
         count: _state.cellCount,
         isLabelVisible: widget.showCount,
-        child: const Text("阿"),
+        child: Text(
+          "阿",
+          style: TextStyle(color: Theme.of(context).colorScheme.primary),
+        ),
       );
     }
 
@@ -683,11 +673,20 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       target: showSearchBar ? 1 : 0,
       child: GestureDetector(
         onTap: () {
+          if (!showSearchBar) {
+            widget.searchWidget?.focus.requestFocus();
+          }
           setState(() {
             showSearchBar = !showSearchBar;
           });
         },
-        child: make(),
+        child: AbsorbPointer(
+          child: SizedBox(
+            width: 64,
+            height: 64,
+            child: Center(child: make()),
+          ),
+        ),
       ),
     );
   }
@@ -767,16 +766,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     return null;
   }
 
-  Widget _makeGridBox(BuildContext context, FilterResult<T> Function()? res) {
-    return _makeGridBody(context, res);
-  }
-
-  Widget _makeGrid(BuildContext context) => Scrollbar(
-      interactive: false,
-      thumbVisibility: Platform.isAndroid || Platform.isIOS ? false : true,
-      thickness: 6,
-      controller: controller,
-      child: CustomScrollView(
+  Widget _makeGrid(BuildContext context) => CustomScrollView(
         controller: controller,
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
@@ -788,16 +778,6 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
               child: Builder(
                 builder: (context) {
                   return SliverAppBar(
-                    systemOverlayStyle: SystemUiOverlayStyle(
-                      statusBarColor: Theme.of(context)
-                          .colorScheme
-                          .background
-                          .withOpacity(0.5),
-                      systemNavigationBarColor: Theme.of(context)
-                          .colorScheme
-                          .background
-                          .withOpacity(0.50),
-                    ),
                     backgroundColor: Theme.of(context)
                         .colorScheme
                         .background
@@ -817,7 +797,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                     title: _makeTitle(context),
                     flexibleSpace: _flexibleSpace(context),
                     leading: _makeLeading(context),
-                    pinned: showSearchBar,
+                    pinned: true,
                     stretch: true,
                     snap: !showSearchBar,
                     floating: !showSearchBar,
@@ -826,91 +806,80 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                         : PreferredSize(
                             preferredSize: const Size.fromHeight(4),
                             child: !_state.isRefreshing
-                                ? Container()
+                                ? const Padding(
+                                    padding: EdgeInsets.only(top: 4),
+                                    child: SizedBox(),
+                                  )
                                 : const LinearProgressIndicator(),
                           ),
                   );
                 },
               )),
-          _makeGridBody(context, null),
+          !_state.isRefreshing && _state.cellCount == 0
+              ? SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        EmptyWidget(
+                          error: _state.refreshingError,
+                        ),
+                        if (widget.onError != null &&
+                            _state.refreshingError != null)
+                          widget.onError!(_state.refreshingError!),
+                      ],
+                    ),
+                  ),
+                )
+              : _withPadding(widget.segments != null
+                  ? () {
+                      if (widget.segments!.prebuiltSegments != null) {
+                        return GridLayout.segmentsPrebuilt(
+                          context,
+                          widget.segments!,
+                          _state,
+                          selection,
+                          widget.description.listView,
+                          widget.description.columns.number,
+                          _makeGridCell,
+                          systemNavigationInsets:
+                              widget.systemNavigationInsets.bottom,
+                          aspectRatio: widget.aspectRatio,
+                        );
+                      }
+                      final (s, t) = GridLayout.segmentsFnc<T>(
+                        context,
+                        widget.segments!,
+                        _state,
+                        selection,
+                        widget.description.listView,
+                        widget.description.columns.number,
+                        _makeGridCell,
+                        systemNavigationInsets:
+                            widget.systemNavigationInsets.bottom,
+                        aspectRatio: widget.aspectRatio,
+                      );
+                      segTranslation = t;
+
+                      return s;
+                    }()
+                  : widget.description.listView
+                      ? GridLayout.list<T>(context, _state, selection,
+                          widget.systemNavigationInsets.bottom,
+                          onPressed: widget.unpressable ? null : _onPressed)
+                      : GridLayout.grid<T>(
+                          context,
+                          _state,
+                          selection,
+                          widget.description.columns.number,
+                          widget.description.listView,
+                          _makeGridCell,
+                          systemNavigationInsets:
+                              widget.systemNavigationInsets.bottom,
+                          aspectRatio: widget.aspectRatio,
+                        )),
         ],
-      ));
-
-  Widget _makeGridBody(BuildContext context, FilterResult<T> Function()? res) {
-    Widget emptyWidget() => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              EmptyWidget(
-                error: _state.refreshingError,
-              ),
-              if (widget.onError != null && _state.refreshingError != null)
-                widget.onError!(_state.refreshingError!),
-            ],
-          ),
-        );
-
-    return !_state.isRefreshing && _state.cellCount == 0
-        ? res != null
-            ? emptyWidget()
-            : SliverFillRemaining(
-                child: emptyWidget(),
-              )
-        : _withPadding(widget.segments != null
-            ? () {
-                if (widget.segments!.prebuiltSegments != null) {
-                  return GridLayout.segmentsPrebuilt(
-                    context,
-                    widget.segments!,
-                    _state,
-                    selection,
-                    widget.description.listView,
-                    widget.description.columns.number,
-                    _makeGridCell,
-                    systemNavigationInsets:
-                        widget.systemNavigationInsets.bottom,
-                    aspectRatio: widget.aspectRatio,
-                    box: box,
-                  );
-                }
-                final (s, t) = GridLayout.segmentsFnc<T>(
-                  context,
-                  widget.segments!,
-                  _state,
-                  selection,
-                  widget.description.listView,
-                  widget.description.columns.number,
-                  _makeGridCell,
-                  systemNavigationInsets: widget.systemNavigationInsets.bottom,
-                  aspectRatio: widget.aspectRatio,
-                  box: box,
-                );
-                segTranslation = t;
-
-                return s;
-              }()
-            : widget.description.listView
-                ? GridLayout.list<T>(
-                    context,
-                    _state,
-                    selection,
-                    widget.systemNavigationInsets.bottom,
-                    onPressed: widget.unpressable ? null : _onPressed,
-                    box: box,
-                  )
-                : GridLayout.grid<T>(
-                    context,
-                    _state,
-                    selection,
-                    widget.description.columns.number,
-                    widget.description.listView,
-                    _makeGridCell,
-                    systemNavigationInsets:
-                        widget.systemNavigationInsets.bottom,
-                    aspectRatio: widget.aspectRatio,
-                    box: box,
-                  ));
-  }
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -932,21 +901,14 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
             child: Stack(
               children: [
                 RefreshIndicator(
-                  onRefresh: _state.onRefresh,
-                  child: widget.tabBar != null
-                      ? DefaultTabController(
-                          length: widget.tabBar!.length,
-                          child: Builder(
-                            builder: (context) {
-                              return TabBarView(
-                                children: widget.tabBar!
-                                    .map((e) => _makeGridBox(context, e))
-                                    .toList(),
-                              );
-                            },
-                          ))
-                      : _makeGrid(context),
-                ),
+                    onRefresh: _state.onRefresh,
+                    child: Scrollbar(
+                        interactive: false,
+                        thumbVisibility:
+                            Platform.isAndroid || Platform.isIOS ? false : true,
+                        thickness: 6,
+                        controller: controller,
+                        child: _makeGrid(context))),
                 if (widget.footer != null)
                   Align(
                     alignment: Alignment.bottomLeft,

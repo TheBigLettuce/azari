@@ -20,7 +20,7 @@ class CopyMovePreview extends StatefulWidget {
 
   static PreferredSizeWidget hintWidget(BuildContext context, String title) =>
       PreferredSize(
-        preferredSize: const Size.fromHeight(12),
+        preferredSize: const Size.fromHeight(27),
         child: Padding(
           padding: const EdgeInsets.only(bottom: 4),
           child: Text(
@@ -46,14 +46,15 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
     return widget.size.toInt() + (i * 14);
   }
 
-  Widget _thumbPadding(int id, Cell cellData, {bool shadow = true}) {
+  Widget _thumbPadding(BuildContext context, int id, Cell cellData,
+      {bool shadow = true}) {
     return Padding(
       padding: EdgeInsets.only(left: id * 14),
       child: SizedBox(
         height: widget.size,
         width: widget.size,
         child: GridCell(
-          cell: cellData.getCellData(false),
+          cell: cellData.getCellData(false, context: context),
           indx: id,
           ignoreStickers: true,
           onPressed: (context) {
@@ -70,7 +71,7 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
                       GridBottomSheetAction(Icons.close_rounded, (_) {
                         widget.files.removeAt(key.currentState!.currentPage);
 
-                        key.currentState!.update(widget.files.length);
+                        key.currentState!.update(context, widget.files.length);
 
                         if (widget.files.isEmpty) {
                           Navigator.pop(context);
@@ -114,7 +115,7 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
         break;
       }
 
-      list.add(_thumbPadding(e.$1, e.$2, shadow: e.$1 != 0));
+      list.add(_thumbPadding(context, e.$1, e.$2, shadow: e.$1 != 0));
     }
 
     return list.reversed.toList();
