@@ -47,7 +47,9 @@ enum FilteringMode {
   untagged("Untagged", Icons.label_off),
 
   /// Filter by segments.
-  group("Group", Icons.group_work_outlined);
+  group("Group", Icons.group_work_outlined),
+
+  ungrouped("Ungrouped", Icons.fiber_manual_record_rounded);
 
   /// Name displayed in search bar.
   final String string;

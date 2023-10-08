@@ -20,7 +20,6 @@ import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../db/linear_isar_loader.dart';
-import '../widgets/skeletons/drawer/destinations.dart';
 import '../widgets/skeletons/grid_skeleton_state_filter.dart';
 import '../widgets/skeletons/make_grid_skeleton.dart';
 
@@ -47,7 +46,6 @@ class _DownloadsState extends State<Downloads>
 
   late final state = GridSkeletonStateFilter<DownloadFile>(
     filter: loader.filter,
-    index: kDownloadsDrawerIndex,
     transform: (cell, sort) => cell,
   );
 
@@ -98,7 +96,9 @@ class _DownloadsState extends State<Downloads>
             systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context),
             hasReachedEnd: () => true,
             aspectRatio: 1,
+            hideShowNavBar: (hide) {},
             showCount: true,
+            onBack: () => Navigator.pop(context),
             menuButtonItems: [
               IconButton(
                   onPressed: () {
@@ -121,8 +121,6 @@ class _DownloadsState extends State<Downloads>
             inlineMenuButtonItems: true,
             immutable: false,
             unpressable: true,
-            hideShowFab: ({required bool fab, required bool foreground}) =>
-                state.updateFab(setState, fab: fab, foreground: foreground),
             segments: Segments(
               "Unknown", // TODO: change
               hidePinnedIcon: true,
@@ -149,12 +147,9 @@ class _DownloadsState extends State<Downloads>
                 searchFocus),
             mainFocus: state.mainFocus,
             refresh: () => Future.value(loader.count()),
-            description: GridDescription(
-                kDownloadsDrawerIndex,
-                [
-                  DownloadsActions.retryOrDelete(context),
-                ],
-                GridColumn.two,
+            description: GridDescription([
+              DownloadsActions.retryOrDelete(context),
+            ], GridColumn.two,
                 keybindsDescription:
                     AppLocalizations.of(context)!.downloadsPageName,
                 listView: true)));

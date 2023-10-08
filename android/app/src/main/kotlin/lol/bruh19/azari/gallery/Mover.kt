@@ -33,6 +33,7 @@ import okio.buffer
 import okio.sink
 import okio.use
 import java.io.ByteArrayOutputStream
+import java.io.FileOutputStream
 import java.util.Calendar
 import kotlin.coroutines.CoroutineContext
 import kotlin.io.path.Path
@@ -124,10 +125,11 @@ internal class Mover(
                                 ?: throw Exception("could not create the destination file")
 
 
-                        val docStream = context.contentResolver.openOutputStream(docDest.uri, "w")
+                        val docFd = context.contentResolver.openFile(docDest.uri, "w", null)
                             ?: throw Exception("could not get an output stream")
                         val fileSrc = FileSystem.SYSTEM.openReadOnly(op.source.toPath())
 
+                        val docStream = FileOutputStream(docFd.fileDescriptor)
 
                         val buffer = docStream.sink().buffer()
                         val src = fileSrc.source()
@@ -135,10 +137,13 @@ internal class Mover(
                         buffer.flush()
                         docStream.flush()
 
+                        docStream.fd.sync()
+
                         src.close()
                         buffer.close()
                         fileSrc.close()
                         docStream.close()
+                        docFd.close()
                     } catch (e: Exception) {
                         Log.e("downloader", e.toString())
                     }
@@ -482,7 +487,8 @@ internal class Mover(
     }
 
     private fun getThumb(uri: Uri, network: Boolean): Pair<ByteArray, Long> {
-        val thumb = if (network) Glide.with(context).asBitmap() .load(uri).submit().get()  else  context.contentResolver.loadThumbnail(uri, Size(320, 320), null)
+        val thumb = if (network) Glide.with(context).asBitmap().load(uri).submit()
+            .get() else context.contentResolver.loadThumbnail(uri, Size(320, 320), null)
         val stream = ByteArrayOutputStream()
 
         val scaled = thumb.scale(9, 8)

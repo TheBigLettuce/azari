@@ -7,17 +7,13 @@
 
 import 'package:flutter/material.dart';
 
-import 'drawer/destinations.dart';
-
 class SkeletonState {
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
   final FocusNode mainFocus = FocusNode();
-  final int index;
 
   void dispose() {
     mainFocus.dispose();
   }
 
-  SkeletonState.settings() : index = kSettingsDrawerIndex;
-  SkeletonState(this.index);
+  SkeletonState();
 }

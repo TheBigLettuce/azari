@@ -24,7 +24,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../db/linear_isar_loader.dart';
 import '../interfaces/filtering/filtering_mode.dart';
 import '../interfaces/filtering/sorting_mode.dart';
-import '../widgets/skeletons/drawer/destinations.dart';
 import '../widgets/grid/actions/booru_grid.dart';
 import '../db/post_tags.dart';
 import '../db/schemas/download_file.dart';
@@ -33,7 +32,11 @@ import '../widgets/skeletons/grid_skeleton_state_filter.dart';
 import '../widgets/skeletons/make_grid_skeleton.dart';
 
 class FavoritesPage extends StatefulWidget {
-  const FavoritesPage({super.key});
+  final void Function(bool hide) hideShowNavBar;
+  final Future<bool> Function() procPop;
+
+  const FavoritesPage(
+      {super.key, required this.hideShowNavBar, required this.procPop});
 
   @override
   State<FavoritesPage> createState() => _FavoritesPageState();
@@ -105,6 +108,11 @@ class _FavoritesPageState extends State<FavoritesPage>
 
       return switch (filterMode) {
         FilteringMode.same => _same(cells, data, end),
+        FilteringMode.ungrouped => (
+            cells.where(
+                (element) => element.group == null || element.group!.isEmpty),
+            data
+          ),
         FilteringMode.gif => (
             cells.where((element) => element.fileDisplay() is NetGif),
             data
@@ -153,7 +161,6 @@ class _FavoritesPageState extends State<FavoritesPage>
   }
 
   late final state = GridSkeletonStateFilter<FavoriteBooru>(
-    index: kFavoritesDrawerIndex,
     filter: loader.filter,
     unsetFilteringModeOnReset: false,
     hook: (selected) {
@@ -174,6 +181,7 @@ class _FavoritesPageState extends State<FavoritesPage>
     filteringModes: {
       FilteringMode.tag,
       FilteringMode.group,
+      FilteringMode.ungrouped,
       FilteringMode.gif,
       FilteringMode.video,
       FilteringMode.same,
@@ -247,86 +255,95 @@ class _FavoritesPageState extends State<FavoritesPage>
   @override
   Widget build(BuildContext context) {
     return makeGridSkeleton<FavoriteBooru>(
-      context,
-      state,
-      CallbackGrid(
-        key: state.gridKey,
-        hideShowFab: ({required bool fab, required bool foreground}) =>
-            state.updateFab(setState, fab: fab, foreground: foreground),
-        getCell: loader.getCell,
-        initalScrollPosition: 0,
-        showCount: true,
-        scaffoldKey: state.scaffoldKey,
-        addIconsImage: (p) => [
-          BooruGridActions.favorites(context, p, showDeleteSnackbar: true),
-          BooruGridActions.download(context, booru)
-        ],
-        systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context),
-        hasReachedEnd: () => true,
-        hideAlias: true,
-        menuButtonItems: [
-          gridSettingsButton(state.settings.favorites,
-              selectHideName: null,
-              selectRatio: (ratio) => state.settings
-                  .copy(
-                      favorites:
-                          state.settings.favorites.copy(aspectRatio: ratio))
-                  .save(),
-              selectListView: (listView) => state.settings
-                  .copy(
-                      favorites:
-                          state.settings.favorites.copy(listView: listView))
-                  .save(),
-              selectGridColumn: (columns) => state.settings
-                  .copy(
-                      favorites:
-                          state.settings.favorites.copy(columns: columns))
-                  .save())
-        ],
-        download: _download,
-        immutable: false,
-        segments: segmented
-            ? Segments(
-                "Ungrouped", // TODO: change
-                hidePinnedIcon: true,
-                prebuiltSegments: segments,
-              )
-            : null,
-        aspectRatio: state.settings.favorites.aspectRatio.value,
-        mainFocus: state.mainFocus,
-        searchWidget: SearchAndFocus(
-            searchWidget(context,
-                hint:
-                    AppLocalizations.of(context)!.favoritesLabel.toLowerCase()),
-            searchFocus),
-        refresh: () => Future.value(loader.count()),
-        description: GridDescription(
-            kFavoritesDrawerIndex,
-            [
-              BooruGridActions.download(context, booru),
-              FavoritesActions.addToGroup(context, (selected) {
-                final g = selected.first.group;
-                for (final e in selected.skip(1)) {
-                  if (g != e.group) {
-                    return null;
-                  }
+        context,
+        state,
+        CallbackGrid(
+          key: state.gridKey,
+          getCell: loader.getCell,
+          initalScrollPosition: 0,
+          showCount: true,
+          hideShowNavBar: widget.hideShowNavBar,
+          scaffoldKey: state.scaffoldKey,
+          addIconsImage: (p) => [
+            BooruGridActions.favorites(context, p, showDeleteSnackbar: true),
+            BooruGridActions.download(context, booru)
+          ],
+          systemNavigationInsets: EdgeInsets.only(
+              bottom: MediaQuery.systemGestureInsetsOf(context).bottom +
+                  (Scaffold.of(context).widget.bottomNavigationBar != null
+                      ? 80
+                      : 0)),
+          hasReachedEnd: () => true,
+          hideAlias: true,
+          menuButtonItems: [
+            gridSettingsButton(state.settings.favorites,
+                selectHideName: null,
+                selectRatio: (ratio) => state.settings
+                    .copy(
+                        favorites:
+                            state.settings.favorites.copy(aspectRatio: ratio))
+                    .save(),
+                selectListView: (listView) => state.settings
+                    .copy(
+                        favorites:
+                            state.settings.favorites.copy(listView: listView))
+                    .save(),
+                selectGridColumn: (columns) => state.settings
+                    .copy(
+                        favorites:
+                            state.settings.favorites.copy(columns: columns))
+                    .save())
+          ],
+          download: _download,
+          immutable: false,
+          addFabPadding:
+              Scaffold.of(context).widget.bottomNavigationBar == null,
+          segments: segmented
+              ? Segments(
+                  "Ungrouped", // TODO: change
+                  hidePinnedIcon: true,
+                  prebuiltSegments: segments,
+                )
+              : null,
+          aspectRatio: state.settings.favorites.aspectRatio.value,
+          mainFocus: state.mainFocus,
+          searchWidget: SearchAndFocus(
+              searchWidget(context,
+                  hint: AppLocalizations.of(context)!
+                      .favoritesLabel
+                      .toLowerCase()),
+              searchFocus),
+          refresh: () => Future.value(loader.count()),
+          description: GridDescription([
+            BooruGridActions.download(context, booru),
+            FavoritesActions.addToGroup(context, (selected) {
+              final g = selected.first.group;
+              for (final e in selected.skip(1)) {
+                if (g != e.group) {
+                  return null;
                 }
+              }
 
-                return g;
-              }, (selected, value) {
-                for (var e in selected) {
-                  e.group = value.isEmpty ? null : value;
-                }
-                Dbs.g.main.writeTxnSync(() =>
-                    Dbs.g.main.favoriteBoorus.putAllByFileUrlSync(selected));
+              return g;
+            }, (selected, value) {
+              for (var e in selected) {
+                e.group = value.isEmpty ? null : value;
+              }
+              Dbs.g.main.writeTxnSync(() =>
+                  Dbs.g.main.favoriteBoorus.putAllByFileUrlSync(selected));
 
-                Navigator.pop(context);
-              })
-            ],
-            state.settings.favorites.columns,
-            keybindsDescription: AppLocalizations.of(context)!.favoritesLabel,
-            listView: state.settings.favorites.listView),
-      ),
-    );
+              Navigator.pop(context);
+            })
+          ], state.settings.favorites.columns,
+              keybindsDescription: AppLocalizations.of(context)!.favoritesLabel,
+              listView: state.settings.favorites.listView),
+        ), overrideOnPop: () {
+      if (searchTextController.text.isNotEmpty) {
+        resetSearch();
+        return Future.value(false);
+      }
+
+      return widget.procPop();
+    });
   }
 }

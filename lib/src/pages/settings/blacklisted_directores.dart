@@ -18,7 +18,6 @@ import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../db/linear_isar_loader.dart';
-import '../../widgets/skeletons/drawer/destinations.dart';
 import '../../widgets/skeletons/grid_skeleton_state_filter.dart';
 import '../../widgets/skeletons/make_grid_skeleton.dart';
 
@@ -43,7 +42,6 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
           .findAllSync());
   late final state = GridSkeletonStateFilter<BlacklistedDirectory>(
     filter: loader.filter,
-    index: kSettingsDrawerIndex,
     transform: (cell, sort) => cell,
   );
 
@@ -71,7 +69,9 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
 
   @override
   Widget build(BuildContext context) {
-    return makeGridSkeleton(
+    return Scaffold(
+      key: state.scaffoldKey,
+      body: makeGridSkeleton(
         context,
         state,
         CallbackGrid<BlacklistedDirectory>(
@@ -84,6 +84,8 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
             aspectRatio: 1,
             onBack: () => Navigator.pop(context),
             immutable: false,
+            addFabPadding: true,
+            hideShowNavBar: (hide) {},
             searchWidget: SearchAndFocus(
                 searchWidget(
                   context,
@@ -95,8 +97,6 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
             mainFocus: state.mainFocus,
             unpressable: true,
             showCount: true,
-            hideShowFab: ({required bool fab, required bool foreground}) =>
-                state.updateFab(setState, fab: fab, foreground: foreground),
             menuButtonItems: [
               IconButton(
                   onPressed: () {
@@ -107,27 +107,24 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
                   icon: const Icon(Icons.delete))
             ],
             refresh: () => Future.value(loader.count()),
-            description: GridDescription(
-                kSettingsDrawerIndex,
-                [
-                  GridBottomSheetAction(Icons.restore_page, (selected) {
-                    Dbs.g.blacklisted.writeTxnSync(() {
-                      return Dbs.g.blacklisted.blacklistedDirectorys
-                          .deleteAllByBucketIdSync(
-                              selected.map((e) => e.bucketId).toList());
-                    });
-                  },
-                      true,
-                      const GridBottomSheetActionExplanation(
-                        label: "Unblacklist", // TODO: change
-                        body:
-                            "Unblacklist selected directories.", // TODO: change
-                      ))
-                ],
-                GridColumn.two,
+            description: GridDescription([
+              GridBottomSheetAction(Icons.restore_page, (selected) {
+                Dbs.g.blacklisted.writeTxnSync(() {
+                  return Dbs.g.blacklisted.blacklistedDirectorys
+                      .deleteAllByBucketIdSync(
+                          selected.map((e) => e.bucketId).toList());
+                });
+              },
+                  true,
+                  const GridBottomSheetActionExplanation(
+                    label: "Unblacklist", // TODO: change
+                    body: "Unblacklist selected directories.", // TODO: change
+                  ))
+            ], GridColumn.two,
                 keybindsDescription: AppLocalizations.of(context)!
                     .blacklistedDirectoriesPageName,
                 listView: true)),
-        popSenitel: false);
+      ),
+    );
   }
 }

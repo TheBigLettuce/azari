@@ -31,7 +31,7 @@ import 'package:logging/logging.dart';
 
 import '../../interfaces/booru.dart';
 import '../../db/schemas/settings.dart';
-import '../../widgets/skeletons/drawer/destinations.dart';
+import '../../interfaces/filtering/filtering_mode.dart';
 import '../../widgets/skeletons/grid_skeleton_state_filter.dart';
 import '../../widgets/skeletons/make_grid_skeleton.dart';
 
@@ -67,12 +67,16 @@ class GalleryDirectories extends StatefulWidget {
   final CallbackDescriptionNested? nestedCallback;
   final bool? noDrawer;
   final bool showBackButton;
+  final void Function(bool hide)? hideShowNavBar;
+  final Future<bool> Function() procPop;
 
   const GalleryDirectories(
       {super.key,
       this.callback,
       this.nestedCallback,
       this.noDrawer,
+      required this.hideShowNavBar,
+      required this.procPop,
       this.showBackButton = false})
       : assert(!(callback != null && nestedCallback != null));
 
@@ -101,7 +105,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
       GridSkeletonStateFilter(
     transform: (cell, _) => cell,
     filter: extra.filter,
-    index: kGalleryDrawerIndex,
   );
   late final api = chooseGalleryPlug().galleryApi(
       temporaryDb: widget.callback != null || widget.nestedCallback != null,
@@ -182,243 +185,263 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
 
   @override
   Widget build(BuildContext context) {
-    var insets = MediaQuery.viewPaddingOf(context);
-
     return makeGridSkeleton<SystemGalleryDirectory>(
-      context,
-      state,
-      CallbackGrid(
-          key: state.gridKey,
-          getCell: (i) => api.directCell(i),
-          initalScrollPosition: 0,
-          scaffoldKey: state.scaffoldKey,
-          onBack: widget.showBackButton ? () => Navigator.pop(context) : null,
-          systemNavigationInsets: insets,
-          hasReachedEnd: () => true,
-          showCount: true,
-          inlineMenuButtonItems: true,
-          menuButtonItems: [
-            if (widget.callback != null)
-              IconButton(
-                  onPressed: () async {
-                    try {
-                      widget.callback!(
-                          null,
-                          await PlatformFunctions.chooseDirectory(
-                              temporary: true));
-                      // ignore: use_build_context_synchronously
-                      Navigator.pop(context);
-                    } catch (e) {
-                      log("new folder in android_directories",
-                          level: Level.SEVERE.value, error: e);
-                      // ignore: use_build_context_synchronously
-                      Navigator.pop(context);
-                    }
-                  },
-                  icon: const Icon(Icons.create_new_folder_outlined)),
-            gridSettingsButton(state.settings.galleryDirectories,
-                selectRatio: (ratio) => state.settings
-                    .copy(
-                        galleryDirectories: state.settings.galleryDirectories
-                            .copy(aspectRatio: ratio))
-                    .save(),
-                selectHideName: (hideNames) => state.settings
-                    .copy(
-                        galleryDirectories: state.settings.galleryDirectories
-                            .copy(hideName: hideNames))
-                    .save(),
-                selectListView: null,
-                selectGridColumn: (columns) => state.settings
-                    .copy(
-                        galleryDirectories: state.settings.galleryDirectories
-                            .copy(columns: columns))
-                    .save()),
-          ],
-          aspectRatio: state.settings.galleryDirectories.aspectRatio.value,
-          hideAlias: state.settings.galleryDirectories.hideName,
-          immutable: false,
-          segments: Segments(
-            "Uncategorized",
-            segment: (cell) {
-              for (final booru in Booru.values) {
-                if (booru.url == cell.name) {
-                  return ("Booru", true);
+        context,
+        state,
+        CallbackGrid(
+            key: state.gridKey,
+            getCell: (i) => api.directCell(i),
+            initalScrollPosition: 0,
+            scaffoldKey: state.scaffoldKey,
+            onBack: widget.showBackButton ? () => Navigator.pop(context) : null,
+            systemNavigationInsets: EdgeInsets.only(
+                bottom: MediaQuery.of(context).systemGestureInsets.bottom +
+                    (Scaffold.of(context).widget.bottomNavigationBar != null
+                        ? 80
+                        : 0)),
+            hasReachedEnd: () => true,
+            showCount: true,
+            hideShowNavBar: (hide) {
+              widget.hideShowNavBar?.call(hide);
+            },
+            addFabPadding: widget.callback != null ||
+                widget.nestedCallback != null ||
+                Scaffold.of(context).widget.bottomNavigationBar == null,
+            inlineMenuButtonItems: true,
+            menuButtonItems: [
+              if (widget.callback != null)
+                IconButton(
+                    onPressed: () async {
+                      try {
+                        widget.callback!(
+                            null,
+                            await PlatformFunctions.chooseDirectory(
+                                temporary: true));
+                        // ignore: use_build_context_synchronously
+                        Navigator.pop(context);
+                      } catch (e) {
+                        log("new folder in android_directories",
+                            level: Level.SEVERE.value, error: e);
+                        // ignore: use_build_context_synchronously
+                        Navigator.pop(context);
+                      }
+                    },
+                    icon: const Icon(Icons.create_new_folder_outlined)),
+              gridSettingsButton(state.settings.galleryDirectories,
+                  selectRatio: (ratio) => state.settings
+                      .copy(
+                          galleryDirectories: state.settings.galleryDirectories
+                              .copy(aspectRatio: ratio))
+                      .save(),
+                  selectHideName: (hideNames) => state.settings
+                      .copy(
+                          galleryDirectories: state.settings.galleryDirectories
+                              .copy(hideName: hideNames))
+                      .save(),
+                  selectListView: null,
+                  selectGridColumn: (columns) => state.settings
+                      .copy(
+                          galleryDirectories: state.settings.galleryDirectories
+                              .copy(columns: columns))
+                      .save()),
+            ],
+            aspectRatio: state.settings.galleryDirectories.aspectRatio.value,
+            hideAlias: state.settings.galleryDirectories.hideName,
+            immutable: false,
+            segments: Segments(
+              "Uncategorized",
+              segment: (cell) {
+                for (final booru in Booru.values) {
+                  if (booru.url == cell.name) {
+                    return ("Booru", true);
+                  }
                 }
-              }
 
-              final dirTag = PostTags.g.directoryTag(cell.bucketId);
-              if (dirTag != null) {
+                final dirTag = PostTags.g.directoryTag(cell.bucketId);
+                if (dirTag != null) {
+                  return (
+                    dirTag,
+                    Dbs.g.blacklisted.pinnedDirectories
+                            .getSync(fastHash(dirTag)) !=
+                        null
+                  );
+                }
+
+                final name = cell.name.split(" ");
                 return (
-                  dirTag,
+                  name.first.toLowerCase(),
                   Dbs.g.blacklisted.pinnedDirectories
-                          .getSync(fastHash(dirTag)) !=
+                          .getSync(fastHash(name.first.toLowerCase())) !=
                       null
                 );
-              }
+              },
+              addToSticky: (seg, {unsticky}) {
+                if (seg == "Booru" || seg == "Special") {
+                  return;
+                }
+                if (unsticky == true) {
+                  Dbs.g.blacklisted.writeTxnSync(() {
+                    Dbs.g.blacklisted.pinnedDirectories
+                        .deleteSync(fastHash(seg));
+                  });
+                } else {
+                  Dbs.g.blacklisted.writeTxnSync(() {
+                    Dbs.g.blacklisted.pinnedDirectories
+                        .putSync(PinnedDirectories(seg, DateTime.now()));
+                  });
+                }
+              },
+              injectedSegments: [
+                if (Dbs.g.blacklisted.favoriteMedias.countSync() != 0)
+                  SystemGalleryDirectory(
+                      bucketId: "favorites",
+                      name: "Favorites", // change
+                      tag: "",
+                      volumeName: "",
+                      relativeLoc: "",
+                      lastModified: 0,
+                      thumbFileId: Dbs.g.blacklisted.favoriteMedias
+                          .where()
+                          .sortByTimeDesc()
+                          .findFirstSync()!
+                          .id),
+                if (trashThumbId != null)
+                  SystemGalleryDirectory(
+                      bucketId: "trash",
+                      name: "Trash", // change
+                      tag: "",
+                      volumeName: "",
+                      relativeLoc: "",
+                      lastModified: 0,
+                      thumbFileId: trashThumbId!),
+              ],
+              onLabelPressed:
+                  widget.callback != null && !widget.callback!.joinable
+                      ? null
+                      : (label, children) =>
+                          SystemGalleryDirectoriesActions.joinedDirectoriesFnc(
+                              context,
+                              label,
+                              children,
+                              extra,
+                              widget.nestedCallback),
+            ),
+            mainFocus: state.mainFocus,
+            footer: widget.callback?.preview,
+            initalCellCount: widget.callback != null
+                ? extra.db.systemGalleryDirectorys.countSync()
+                : 0,
+            searchWidget: SearchAndFocus(
+                searchWidget(context,
+                    hint: AppLocalizations.of(context)!.directoriesHint),
+                searchFocus),
+            refresh: () {
+              if (widget.callback != null) {
+                PlatformFunctions.trashThumbId().then((value) {
+                  try {
+                    setState(() {
+                      trashThumbId = value;
+                    });
+                  } catch (_) {}
+                });
+                return Future.value(
+                    extra.db.systemGalleryDirectorys.countSync());
+              } else {
+                _refresh();
 
-              final name = cell.name.split(" ");
-              return (
-                name.first.toLowerCase(),
-                Dbs.g.blacklisted.pinnedDirectories
-                        .getSync(fastHash(name.first.toLowerCase())) !=
-                    null
-              );
-            },
-            addToSticky: (seg, {unsticky}) {
-              if (seg == "Booru" || seg == "Special") {
-                return;
+                return null;
               }
-              if (unsticky == true) {
-                Dbs.g.blacklisted.writeTxnSync(() {
-                  Dbs.g.blacklisted.pinnedDirectories.deleteSync(fastHash(seg));
+            },
+            showSearchBarFirst: widget.callback != null,
+            overrideOnPress: (context, cell) {
+              if (widget.callback != null) {
+                widget.callback!.c(cell, null).then((_) {
+                  Navigator.pop(context);
                 });
               } else {
-                Dbs.g.blacklisted.writeTxnSync(() {
-                  Dbs.g.blacklisted.pinnedDirectories
-                      .putSync(PinnedDirectories(seg, DateTime.now()));
-                });
+                final d = cell;
+
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => switch (cell.bucketId) {
+                        "favorites" => GalleryFiles(
+                            api: extra.favorites(),
+                            callback: widget.nestedCallback,
+                            dirName: "favorites",
+                            bucketId: "favorites"),
+                        "trash" => GalleryFiles(
+                            api: extra.trash(),
+                            callback: widget.nestedCallback,
+                            dirName: "trash",
+                            bucketId: "trash"),
+                        String() => GalleryFiles(
+                            api: api.files(d),
+                            dirName: d.name,
+                            callback: widget.nestedCallback,
+                            bucketId: d.bucketId)
+                      },
+                    ));
               }
             },
-            injectedSegments: [
-              if (Dbs.g.blacklisted.favoriteMedias.countSync() != 0)
-                SystemGalleryDirectory(
-                    bucketId: "favorites",
-                    name: "Favorites", // change
-                    tag: "",
-                    volumeName: "",
-                    relativeLoc: "",
-                    lastModified: 0,
-                    thumbFileId: Dbs.g.blacklisted.favoriteMedias
-                        .where()
-                        .sortByTimeDesc()
-                        .findFirstSync()!
-                        .id),
-              if (trashThumbId != null)
-                SystemGalleryDirectory(
-                    bucketId: "trash",
-                    name: "Trash", // change
-                    tag: "",
-                    volumeName: "",
-                    relativeLoc: "",
-                    lastModified: 0,
-                    thumbFileId: trashThumbId!),
-            ],
-            onLabelPressed: widget.callback != null &&
-                    !widget.callback!.joinable
-                ? null
-                : (label, children) =>
-                    SystemGalleryDirectoriesActions.joinedDirectoriesFnc(
-                        context, label, children, extra, widget.nestedCallback),
-          ),
-          mainFocus: state.mainFocus,
-          footer: widget.callback?.preview,
-          initalCellCount: widget.callback != null
-              ? extra.db.systemGalleryDirectorys.countSync()
-              : 0,
-          searchWidget: SearchAndFocus(
-              searchWidget(context,
-                  hint: AppLocalizations.of(context)!.directoriesHint),
-              searchFocus),
-          refresh: () {
-            if (widget.callback != null) {
-              PlatformFunctions.trashThumbId().then((value) {
-                try {
-                  setState(() {
-                    trashThumbId = value;
-                  });
-                } catch (_) {}
-              });
-              return Future.value(extra.db.systemGalleryDirectorys.countSync());
-            } else {
-              _refresh();
+            progressTicker: stream.stream,
+            description: GridDescription(
+                widget.callback != null || widget.nestedCallback != null
+                    ? [
+                        if (widget.callback == null ||
+                            widget.callback!.joinable)
+                          SystemGalleryDirectoriesActions.joinedDirectories(
+                              context, extra, widget.nestedCallback)
+                      ]
+                    : [
+                        FavoritesActions.addToGroup(context, (selected) {
+                          final t = selected.first.tag;
+                          for (final e in selected.skip(1)) {
+                            if (t != e.tag) {
+                              return null;
+                            }
+                          }
 
-              return null;
-            }
-          },
-          showSearchBarFirst: widget.callback != null,
-          overrideOnPress: (context, cell) {
-            if (widget.callback != null) {
-              widget.callback!.c(cell, null).then((_) {
-                Navigator.pop(context);
-              });
-            } else {
-              final d = cell;
+                          return t;
+                        }, (selected, value) {
+                          if (value.isEmpty) {
+                            PostTags.g.removeDirectoriesTag(
+                                selected.map((e) => e.bucketId));
+                          } else {
+                            PostTags.g.setDirectoriesTag(
+                                selected.map((e) => e.bucketId), value);
+                          }
 
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => switch (cell.bucketId) {
-                      "favorites" => GalleryFiles(
-                          api: extra.favorites(),
-                          callback: widget.nestedCallback,
-                          dirName: "favorites",
-                          bucketId: "favorites"),
-                      "trash" => GalleryFiles(
-                          api: extra.trash(),
-                          callback: widget.nestedCallback,
-                          dirName: "trash",
-                          bucketId: "trash"),
-                      String() => GalleryFiles(
-                          api: api.files(d),
-                          dirName: d.name,
-                          callback: widget.nestedCallback,
-                          bucketId: d.bucketId)
-                    },
-                  ));
-            }
-          },
-          progressTicker: stream.stream,
-          hideShowFab: ({required bool fab, required bool foreground}) =>
-              state.updateFab(setState, fab: fab, foreground: foreground),
-          description: GridDescription(
-              kGalleryDrawerIndex,
-              widget.callback != null || widget.nestedCallback != null
-                  ? [
-                      if (widget.callback == null || widget.callback!.joinable)
+                          _refresh();
+
+                          Navigator.pop(context);
+                        }),
+                        SystemGalleryDirectoriesActions.blacklist(
+                            context, extra),
                         SystemGalleryDirectoriesActions.joinedDirectories(
                             context, extra, widget.nestedCallback)
-                    ]
-                  : [
-                      FavoritesActions.addToGroup(context, (selected) {
-                        final t = selected.first.tag;
-                        for (final e in selected.skip(1)) {
-                          if (t != e.tag) {
-                            return null;
-                          }
-                        }
+                      ],
+                state.settings.galleryDirectories.columns,
+                listView: false,
+                bottomWidget:
+                    widget.callback != null || widget.nestedCallback != null
+                        ? CopyMovePreview.hintWidget(
+                            context,
+                            widget.callback != null
+                                ? widget.callback!.description
+                                : widget.nestedCallback!.description)
+                        : null,
+                keybindsDescription:
+                    AppLocalizations.of(context)!.androidGKeybindsDescription)),
+        noDrawer: widget.noDrawer ?? false, overrideOnPop: () {
+      final filterMode = currentFilteringMode();
+      if (filterMode != FilteringMode.noFilter ||
+          searchTextController.text.isNotEmpty) {
+        resetSearch();
+        return Future.value(false);
+      }
 
-                        return t;
-                      }, (selected, value) {
-                        if (value.isEmpty) {
-                          PostTags.g.removeDirectoriesTag(
-                              selected.map((e) => e.bucketId));
-                        } else {
-                          PostTags.g.setDirectoriesTag(
-                              selected.map((e) => e.bucketId), value);
-                        }
-
-                        _refresh();
-
-                        Navigator.pop(context);
-                      }),
-                      SystemGalleryDirectoriesActions.blacklist(context, extra),
-                      SystemGalleryDirectoriesActions.joinedDirectories(
-                          context, extra, widget.nestedCallback)
-                    ],
-              state.settings.galleryDirectories.columns,
-              listView: false,
-              bottomWidget:
-                  widget.callback != null || widget.nestedCallback != null
-                      ? CopyMovePreview.hintWidget(
-                          context,
-                          widget.callback != null
-                              ? widget.callback!.description
-                              : widget.nestedCallback!.description)
-                      : null,
-              keybindsDescription:
-                  AppLocalizations.of(context)!.androidGKeybindsDescription)),
-      popSenitel: widget.callback == null && widget.nestedCallback == null,
-      noDrawer: widget.noDrawer ?? false,
-    );
+      return widget.procPop();
+    });
   }
 }

@@ -20,7 +20,6 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../widgets/skeletons/drawer/destinations.dart';
 import '../../widgets/grid/actions/booru_grid.dart';
 import '../../net/downloader.dart';
 import '../../interfaces/booru.dart';
@@ -71,7 +70,7 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
       ? DbsOpen.secondaryGridName(widget.state!.name)
       : DbsOpen.secondaryGrid(temporary: true);
 
-  late final state = GridSkeletonState<Post>(index: kBooruGridDrawerIndex);
+  late final state = GridSkeletonState<Post>();
 
   @override
   void initState() {
@@ -201,20 +200,21 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
 
   @override
   Widget build(BuildContext context) {
-    final insets = MediaQuery.viewPaddingOf(context);
-
-    return BooruAPINotifier(
-        api: widget.api,
-        child: TagManagerNotifier(
-            tagManager: widget.tagManager,
-            child: Builder(
-              builder: (context) {
-                return makeGridSkeleton(
+    return Scaffold(
+      body: BooruAPINotifier(
+          api: widget.api,
+          child: TagManagerNotifier(
+              tagManager: widget.tagManager,
+              child: Builder(
+                builder: (context) {
+                  return makeGridSkeleton(
                     context,
                     state,
                     CallbackGrid<Post>(
                       key: state.gridKey,
-                      systemNavigationInsets: insets,
+                      hideShowNavBar: (hide) {},
+                      systemNavigationInsets:
+                          MediaQuery.of(context).systemGestureInsets,
                       registerNotifiers: [
                         (child) => TagManagerNotifier(
                             tagManager: widget.tagManager, child: child),
@@ -233,7 +233,6 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                         BooruGridActions.download(context, widget.api)
                       ],
                       description: GridDescription(
-                        kBooruGridDrawerIndex,
                         [
                           BooruGridActions.download(context, widget.api),
                           BooruGridActions.favorites(context, null,
@@ -262,10 +261,6 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                       getCell: (i) => instance.posts.getSync(i + 1)!,
                       loadNext: _addLast,
                       refresh: _clearAndRefresh,
-                      hideShowFab: (
-                              {required bool fab, required bool foreground}) =>
-                          state.updateFab(setState,
-                              fab: fab, foreground: foreground),
                       onBack: () => Navigator.pop(context),
                       hideAlias: true,
                       download: _download,
@@ -305,8 +300,9 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                       }),
                     ),
                     overrideBooru: widget.api.booru,
-                    popSenitel: false);
-              },
-            )));
+                  );
+                },
+              ))),
+    );
   }
 }

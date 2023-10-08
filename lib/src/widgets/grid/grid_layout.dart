@@ -48,6 +48,7 @@ class GridLayout {
       thisIndx: index,
       isSelected: selection.isSelected(index),
       selectionEnabled: selection.selected.isNotEmpty,
+      scrollController: selection.controller,
       selectUnselect: () => selection.selectOrUnselect(
           context, index, cell, systemNavigationInsets),
       child: ListTile(
@@ -90,6 +91,7 @@ class GridLayout {
           return _WrappedSelection(
             selectionEnabled: selection.selected.isNotEmpty,
             thisIndx: indx,
+            scrollController: selection.controller,
             selectUntil: (i) => selection.selectUnselectUntil(i, state),
             selectUnselect: () => selection.selectOrUnselect(
                 context, indx, cell, systemNavigationInsets),
@@ -129,6 +131,7 @@ class GridLayout {
                     child: _WrappedSelection(
                       selectionEnabled: selection.selected.isNotEmpty,
                       thisIndx: indx,
+                      scrollController: selection.controller,
                       selectUntil: (i) {
                         if (predefined != null) {
                           selection.selectUnselectUntil(indx, state,
@@ -174,6 +177,7 @@ class GridLayout {
                     child: _WrappedSelection(
                       selectionEnabled: selection.selected.isNotEmpty,
                       thisIndx: -1,
+                      scrollController: selection.controller,
                       selectUntil: (i) =>
                           selection.selectUnselectUntil(i, state),
                       selectUnselect: () => selection.selectOrUnselect(

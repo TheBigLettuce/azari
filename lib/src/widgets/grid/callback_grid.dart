@@ -20,7 +20,6 @@ import 'package:logging/logging.dart';
 import '../../interfaces/cell.dart';
 import '../../interfaces/grid_mutation_interface.dart';
 import '../keybinds/describe_keys.dart';
-import '../keybinds/digit_and_settings.dart';
 import '../keybinds/keybind_description.dart';
 import '../keybinds/single_activator_description.dart';
 import '../notifiers/focus.dart';
@@ -66,10 +65,6 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   /// If [refresh] returns null, it means no posts can be loaded more,
   /// which means that if [loadNext] is not null it wont be called more.
   final Future<int>? Function() refresh;
-
-  /// [hideShowFab] gets called when viewport gets scrolled, when not null.
-  final void Function({required bool fab, required bool foreground})?
-      hideShowFab;
 
   /// [updateScrollPosition] gets called when grid first builds and then when scrolling stops,
   ///  if not null. Useful when it is desirable to persist the scroll position of the grid.
@@ -188,6 +183,11 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   final bool showCount;
   final bool showSearchBarFirst;
 
+  final bool addFabPadding;
+  final void Function(bool hide) hideShowNavBar;
+
+  final Widget? overrideBackButton;
+
   const CallbackGrid(
       {required super.key,
       this.additionalKeybinds,
@@ -200,9 +200,11 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       this.cloudflareHook,
       this.pageChangeImage,
       this.onError,
+      required this.hideShowNavBar,
       this.showCount = false,
+      this.overrideBackButton,
+      this.addFabPadding = false,
       this.showSearchBarFirst = false,
-      // this.flexibleAppBar = true,
       this.beforeImageViewRestore,
       required this.mainFocus,
       this.addIconsImage,
@@ -223,7 +225,6 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       this.loadNext,
       required this.refresh,
       this.updateScrollPosition,
-      this.hideShowFab,
       this.download,
       this.hideAlias,
       this.onBack,
@@ -245,8 +246,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
   final GlobalKey<ImageViewState<T>> imageViewKey = GlobalKey();
 
-  late final selection =
-      SelectionInterface<T>._(setState, widget.description.actions);
+  late final selection = SelectionInterface<T>._(
+      setState, widget.description.actions, widget.hideShowNavBar, controller);
 
   StreamSubscription<int>? ticker;
 
@@ -259,14 +260,26 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
   List<int>? segTranslation;
 
+  bool showFab = false;
+
+  void updateFab({required bool fab, required bool foreground}) {
+    if (fab != showFab) {
+      showFab = fab;
+      if (!foreground) {
+        try {
+          // widget.hideShowNavBar(!showFab);
+          setState(() {});
+        } catch (_) {}
+      }
+    }
+  }
+
   late final _Mutation<T> _state = _Mutation(
     updateImageView: () {
       imageViewKey.currentState?.update(context, _state.cellCount);
     },
     scrollUp: () {
-      if (widget.hideShowFab != null) {
-        widget.hideShowFab!(fab: false, foreground: inImageView);
-      }
+      updateFab(fab: false, foreground: inImageView);
     },
     unselectall: () {
       selection.selected.clear();
@@ -287,7 +300,6 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
   @override
   void initState() {
-    print(showSearchBar);
     super.initState();
 
     ticker = widget.progressTicker?.listen((event) {
@@ -326,14 +338,12 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
           widget.updateScrollPosition?.call(controller.offset);
         }
 
-        if (widget.hideShowFab != null) {
-          if (controller.offset == 0) {
-            widget.hideShowFab!(fab: false, foreground: inImageView);
-          } else {
-            widget.hideShowFab!(
-                fab: !controller.position.isScrollingNotifier.value,
-                foreground: inImageView);
-          }
+        if (controller.offset == 0) {
+          updateFab(fab: false, foreground: inImageView);
+        } else {
+          updateFab(
+              fab: !controller.position.isScrollingNotifier.value,
+              foreground: inImageView);
         }
       });
     });
@@ -380,9 +390,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   Future refresh() {
     selection.currentBottomSheet?.close();
     selection.selected.clear();
-    if (widget.hideShowFab != null) {
-      widget.hideShowFab!(fab: false, foreground: inImageView);
-    }
+    updateFab(fab: false, foreground: inImageView);
 
     return _state._refresh();
   }
@@ -508,8 +516,6 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
             widget.onBack!();
           },
         if (widget.additionalKeybinds != null) ...widget.additionalKeybinds!,
-        ...digitAndSettings(
-            context, widget.description.drawerIndex, widget.scaffoldKey),
       };
 
   Widget _withPadding(Widget child) {
@@ -517,7 +523,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       padding: EdgeInsets.only(
           bottom: widget.systemNavigationInsets.bottom +
               MediaQuery.viewPaddingOf(context).bottom +
-              (selection.currentBottomSheet != null ? 48 + 4 : 0) +
+              (selection.currentBottomSheet != null ? 84 : 0) +
               (widget.footer != null
                   ? widget.footer!.preferredSize.height
                   : 0)),
@@ -571,6 +577,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
           child: FlexibleSpaceBar(
               titlePadding: EdgeInsetsDirectional.only(
                 start: (widget.onBack != null ||
+                        widget.overrideBackButton != null ||
                         (widget.scaffoldKey.currentState?.hasDrawer ?? false))
                     ? 48
                     : 0,
@@ -747,6 +754,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                   count: widget.backButtonBadge!,
                   child: const Icon(Icons.arrow_back))
               : const Icon(Icons.arrow_back));
+    } else if (widget.overrideBackButton != null) {
+      return widget.overrideBackButton;
     } else if (widget.scaffoldKey.currentState?.hasDrawer ?? false) {
       return GestureDetector(
         onLongPress: () {
@@ -919,6 +928,43 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                       child: widget.footer!,
                     ),
                   ),
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: !showFab
+                      ? null
+                      : GestureDetector(
+                          onLongPress: () {
+                            final scroll = controller.position.maxScrollExtent;
+                            if (scroll.isInfinite || scroll == 0) {
+                              return;
+                            }
+
+                            controller.animateTo(scroll,
+                                duration: 200.ms, curve: Curves.linear);
+                          },
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                                right: 4,
+                                bottom: widget.systemNavigationInsets.bottom +
+                                    (!widget.addFabPadding
+                                        ? 0
+                                        : (selection.currentBottomSheet != null
+                                                ? 84
+                                                : 0) +
+                                            (widget.footer != null
+                                                ? widget.footer!.preferredSize
+                                                    .height
+                                                : 0))),
+                            child: FloatingActionButton(
+                              onPressed: () {
+                                controller.animateTo(0,
+                                    duration: 200.ms, curve: Curves.linear);
+                              },
+                              child: const Icon(Icons.arrow_upward),
+                            ),
+                          ),
+                        ).animate().fadeIn(),
+                ),
               ],
             ),
           ));

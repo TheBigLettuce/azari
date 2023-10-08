@@ -7,7 +7,6 @@
 
 import 'dart:io';
 
-import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -17,8 +16,6 @@ import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/plugs/platform_channel.dart';
 import 'package:gallery/src/pages/gallery/directories.dart';
 import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/db/schemas/settings.dart';
-import 'package:gallery/src/widgets/entry.dart';
 import 'package:gallery/src/widgets/restart_widget.dart';
 // import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -26,9 +23,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import 'src/pages/booru/main.dart';
-import 'src/widgets/skeletons/drawer/destinations.dart';
-import 'src/widgets/skeletons/drawer/select_destination.dart';
+import 'src/pages/home.dart';
 
 late final String azariVersion;
 
@@ -63,6 +58,10 @@ class FadeSidewaysPageTransitionBuilder implements PageTransitionsBuilder {
 ThemeData _buildTheme(Brightness brightness, Color accentColor) {
   var baseTheme = ThemeData(
     brightness: brightness,
+    menuTheme: const MenuThemeData(
+        style: MenuStyle(
+            shape: MaterialStatePropertyAll(RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(15)))))),
     popupMenuTheme: const PopupMenuThemeData(
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(15)))),
@@ -113,11 +112,15 @@ void mainPickfile() async {
         changeSystemUiOverlay(context);
         initPostTags(context);
 
-        return GalleryDirectories(
-          noDrawer: true,
-          nestedCallback: CallbackDescriptionNested("Choose file", (chosen) {
-            PlatformFunctions.returnUri(chosen.originalUri);
-          }),
+        return Scaffold(
+          body: GalleryDirectories(
+            noDrawer: true,
+            procPop: () => Future.value(true),
+            hideShowNavBar: null,
+            nestedCallback: CallbackDescriptionNested("Choose file", (chosen) {
+              PlatformFunctions.returnUri(chosen.originalUri);
+            }),
+          ),
         );
       },
     ),
@@ -125,13 +128,6 @@ void mainPickfile() async {
 }
 
 void main() async {
-  // if (Platform.isLinux) {
-  //   await Isar.initializeIsarCore(libraries: {
-  //     Abi.current(): path.joinAll(
-  //         [path.dirname(Platform.resolvedExecutable), "lib", "libisar.so"])
-  //   });
-  // }
-
   WidgetsFlutterBinding.ensureInitialized();
   await initalizeDb(false);
   await initalizeDownloader();
@@ -151,9 +147,7 @@ void main() async {
           android: AndroidInitializationSettings('@drawable/ic_notification')),
       onDidReceiveNotificationResponse: (details) {
     final context = restartKey.currentContext;
-    if (context != null) {
-      selectDestination(context, kComeFromRandom, kDownloadsDrawerIndex);
-    }
+    if (context != null) {}
   }, onDidReceiveBackgroundNotificationResponse: notifBackground);
 
   FlutterLocalNotificationsPlugin().cancelAll();
@@ -170,27 +164,15 @@ void main() async {
     });
   }
 
-  final settings = Settings.fromDb();
-
   runApp(RestartWidget(
       key: restartKey,
       child: MaterialApp(
         title: 'Ācārya',
         darkTheme: _buildTheme(Brightness.dark, accentColor),
         theme: _buildTheme(Brightness.light, accentColor),
-        home: settings.path.isEmpty ? const Entry() : null,
+        home: const Home(),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        initialRoute: settings.path.isNotEmpty ? "/booru" : null,
-        routes: {
-          "/senitel": (context) => Container(),
-          "/booru": (context) {
-            changeSystemUiOverlay(context);
-            initPostTags(context);
-
-            return const MainBooruGrid();
-          }
-        },
       )));
 }
 

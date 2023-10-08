@@ -25,7 +25,6 @@ class GridSkeletonStateFilter<T extends Cell> extends GridSkeletonState<T> {
 
   GridSkeletonStateFilter(
       {required this.filter,
-      required super.index,
       required this.transform,
       this.filteringModes = const {},
       this.defaultMode = FilteringMode.noFilter,

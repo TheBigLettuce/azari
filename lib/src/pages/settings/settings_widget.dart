@@ -26,7 +26,7 @@ class SettingsWidget extends StatefulWidget {
 }
 
 class _SettingsWidgetState extends State<SettingsWidget> {
-  final skeletonState = SkeletonState.settings();
+  final skeletonState = SkeletonState();
 
   @override
   void dispose() {

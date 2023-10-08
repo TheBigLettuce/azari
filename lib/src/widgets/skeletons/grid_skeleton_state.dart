@@ -13,24 +13,9 @@ import '../grid/callback_grid.dart';
 import 'skeleton_state.dart';
 
 class GridSkeletonState<T extends Cell> extends SkeletonState {
-  bool showFab;
   final GlobalKey<CallbackGridState<T>> gridKey = GlobalKey();
   Settings settings = Settings.fromDb();
   // final Future<bool> Function() onWillPop;
 
-  void updateFab(void Function(void Function()) setState,
-      {required bool fab, required bool foreground}) {
-    if (fab != showFab) {
-      showFab = fab;
-      if (!foreground) {
-        try {
-          setState(() {});
-        } catch (_) {}
-      }
-    }
-  }
-
-  GridSkeletonState({required int index})
-      : showFab = false,
-        super(index);
+  GridSkeletonState();
 }

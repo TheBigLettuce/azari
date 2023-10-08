@@ -100,6 +100,9 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                     CoroutineScope(Dispatchers.IO).launch {
                         callbackMux.lock()
                         val temporary = call.arguments as Boolean
+
+                        val i = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+
                         callback = {
                             if (it == null) {
                                 callbackMux.unlock()
@@ -108,7 +111,7 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                                 if (!temporary) {
                                     context.contentResolver.takePersistableUriPermission(
                                         Uri.parse(it),
-                                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                                        (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                                     )
                                 }
 
@@ -117,15 +120,16 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                             }
                         }
 
-                        val i = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-                        i.addFlags(
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
-                        )
                         if (temporary) {
                             i.addFlags(
                                 Intent.FLAG_GRANT_READ_URI_PERMISSION or
                                         Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                            )
+                        } else {
+                            i.addFlags(
+                                Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or
+                                        Intent.FLAG_GRANT_PREFIX_URI_PERMISSION
                             )
                         }
 

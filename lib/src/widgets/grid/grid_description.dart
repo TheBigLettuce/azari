@@ -9,10 +9,6 @@ part of 'callback_grid.dart';
 
 /// Metadata about the grid.
 class GridDescription<T> {
-  /// Index of the element in the drawer.
-  /// Useful if the grid is displayed in the page which have entry in the drawer.
-  final int drawerIndex;
-
   /// Displayed in the keybinds info page name.
   final String keybindsDescription;
 
@@ -34,7 +30,6 @@ class GridDescription<T> {
   final PreferredSizeWidget? bottomWidget;
 
   const GridDescription(
-    this.drawerIndex,
     this.actions,
     this.columns, {
     required this.keybindsDescription,

@@ -13,6 +13,8 @@ class SelectionInterface<T extends Cell> {
   int? lastSelected;
 
   final void Function(Function()) _setState;
+  final void Function(bool hide) hideShowNavBar;
+  final ScrollController controller;
 
   PersistentBottomSheetController? currentBottomSheet;
 
@@ -26,6 +28,7 @@ class SelectionInterface<T extends Cell> {
     }
 
     if (selected.isEmpty || currentBottomSheet == null) {
+      hideShowNavBar(true);
       currentBottomSheet = showBottomSheet(
           constraints:
               BoxConstraints(minWidth: MediaQuery.of(context).size.width),
@@ -36,7 +39,8 @@ class SelectionInterface<T extends Cell> {
           builder: (context) {
             return Padding(
               padding: EdgeInsets.only(
-                  bottom: systemNavigationInsets + 4, top: 48 / 2),
+                  bottom: 4 + MediaQuery.of(context).systemGestureInsets.bottom,
+                  top: 48 / 2),
               child: Wrap(
                 alignment: WrapAlignment.center,
                 spacing: 4,
@@ -87,7 +91,12 @@ class SelectionInterface<T extends Cell> {
               ),
             );
           })
-        ..closed.then((value) => currentBottomSheet = null);
+        ..closed.then((value) {
+          currentBottomSheet = null;
+          WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+            hideShowNavBar(false);
+          });
+        });
     } else {
       if (currentBottomSheet != null && currentBottomSheet!.setState != null) {
         currentBottomSheet!.setState!(() {});
@@ -162,7 +171,8 @@ class SelectionInterface<T extends Cell> {
     }
   }
 
-  SelectionInterface._(this._setState, this.addActions);
+  SelectionInterface._(
+      this._setState, this.addActions, this.hideShowNavBar, this.controller);
 }
 
 class WrapSheetButton extends StatefulWidget {
