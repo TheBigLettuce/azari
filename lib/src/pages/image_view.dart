@@ -566,7 +566,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     );
   }
 
-  Widget? _makeBottomSheet(BuildContext context) {
+  Widget? _makeBottomBar(BuildContext context) {
     if (!isAppbarShown) {
       return null;
     }
@@ -593,29 +593,22 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                               Colors.black.withOpacity(0.5))
                       .transform(_animationController.value)))),
         ),
-        child: SizedBox.fromSize(
-          size: Size.fromHeight(
-              kToolbarHeight + MediaQuery.viewPaddingOf(context).bottom),
-          child: Center(
-              child: Padding(
-            padding: EdgeInsets.only(
-                bottom: MediaQuery.viewPaddingOf(context).bottom),
-            child: Wrap(
-              spacing: 4,
-              children: items
-                  .map(
-                    (e) => WrapSheetButton(e.icon, () {
-                      e.onPress([currentCell]);
-                    }, false, "", e.explanation,
-                        followColorTheme: true,
-                        color: e.color,
-                        play: e.play,
-                        backgroundColor: e.backgroundColor,
-                        animate: e.animate),
-                  )
-                  .toList(),
-            ),
-          )),
+        child: BottomAppBar(
+          child: Wrap(
+            spacing: 4,
+            children: items
+                .map(
+                  (e) => WrapSheetButton(e.icon, () {
+                    e.onPress([currentCell]);
+                  }, false, "", e.explanation,
+                      followColorTheme: true,
+                      color: e.color,
+                      play: e.play,
+                      backgroundColor: e.backgroundColor,
+                      animate: e.animate),
+                )
+                .toList(),
+          ),
         ));
   }
 
@@ -759,9 +752,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                                       .withOpacity(0.8) ??
                                   kListTileColorInInfo)
                           .transform(_animationController.value)),
-                  bottomSheetTheme: BottomSheetThemeData(
-                    shape: const Border(),
-                    backgroundColor: ColorTween(
+                  bottomAppBarTheme: BottomAppBarTheme(
+                    color: ColorTween(
                             begin: previousPallete?.dominantColor?.color
                                     .harmonizeWith(
                                         Theme.of(context).colorScheme.primary)
@@ -862,9 +854,10 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
       return Scaffold(
         key: key,
         extendBodyBehindAppBar: true,
+        extendBody: true,
         endDrawerEnableOpenDragGesture: false,
         resizeToAvoidBottomInset: false,
-        bottomSheet: _makeBottomSheet(context),
+        bottomNavigationBar: _makeBottomBar(context),
         endDrawer: _makeEndDrawer(context),
         appBar: _makeAppBar(context),
         body: gestureDeadZones(

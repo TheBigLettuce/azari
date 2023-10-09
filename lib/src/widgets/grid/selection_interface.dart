@@ -13,10 +13,16 @@ class SelectionInterface<T extends Cell> {
   int? lastSelected;
 
   final void Function(Function()) _setState;
-  final void Function(bool hide) hideShowNavBar;
+  final SelectionGlue<T> glue;
   final ScrollController controller;
 
-  PersistentBottomSheetController? currentBottomSheet;
+  void reset() {
+    selected.clear();
+    glue.close();
+    lastSelected = null;
+
+    _setState(() {});
+  }
 
   bool isSelected(int indx) =>
       indx.isNegative ? false : selected.containsKey(indx);
@@ -27,80 +33,8 @@ class SelectionInterface<T extends Cell> {
       return;
     }
 
-    if (selected.isEmpty || currentBottomSheet == null) {
-      hideShowNavBar(true);
-      currentBottomSheet = showBottomSheet(
-          constraints:
-              BoxConstraints(minWidth: MediaQuery.of(context).size.width),
-          backgroundColor:
-              Theme.of(context).colorScheme.surface.withOpacity(0.8),
-          context: context,
-          enableDrag: false,
-          builder: (context) {
-            return Padding(
-              padding: EdgeInsets.only(
-                  bottom: 4 + MediaQuery.of(context).systemGestureInsets.bottom,
-                  top: 48 / 2),
-              child: Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 4,
-                children: [
-                  WrapSheetButton(
-                    Icons.close_rounded,
-                    () {
-                      _setState(() {
-                        selected.clear();
-                        currentBottomSheet?.close();
-                      });
-                    },
-                    true,
-                    selected.length.toString(),
-                    GridBottomSheetActionExplanation(
-                      label: AppLocalizations.of(context)!
-                          .clearSelectionActionLabel,
-                      body: AppLocalizations.of(context)!
-                          .clearSelectionActionBody,
-                    ),
-                    animate: false,
-                    play: false,
-                  ),
-                  ...addActions
-                      .map((e) => WrapSheetButton(
-                          e.icon,
-                          e.showOnlyWhenSingle && selected.length != 1
-                              ? null
-                              : () {
-                                  e.onPress(selected.values.toList());
-
-                                  if (e.closeOnPress) {
-                                    _setState(() {
-                                      selected.clear();
-                                      currentBottomSheet?.close();
-                                    });
-                                  }
-                                },
-                          false,
-                          selected.length.toString(),
-                          e.explanation,
-                          animate: e.animate,
-                          color: e.color,
-                          play: e.play,
-                          backgroundColor: e.backgroundColor))
-                      .toList()
-                ],
-              ),
-            );
-          })
-        ..closed.then((value) {
-          currentBottomSheet = null;
-          WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-            hideShowNavBar(false);
-          });
-        });
-    } else {
-      if (currentBottomSheet != null && currentBottomSheet!.setState != null) {
-        currentBottomSheet!.setState!(() {});
-      }
+    if (selected.isEmpty) {
+      glue.open(addActions, this);
     }
 
     _setState(() {
@@ -113,14 +47,8 @@ class SelectionInterface<T extends Cell> {
     _setState(() {
       selected.remove(id);
       if (selected.isEmpty) {
-        currentBottomSheet?.close();
-        currentBottomSheet = null;
+        glue.close();
         lastSelected = null;
-      } else {
-        if (currentBottomSheet != null &&
-            currentBottomSheet!.setState != null) {
-          currentBottomSheet!.setState!(() {});
-        }
       }
     });
   }
@@ -157,13 +85,15 @@ class SelectionInterface<T extends Cell> {
         }
         _setState(() {});
       }
-
-      currentBottomSheet?.setState?.call(() {});
     }
   }
 
   void selectOrUnselect(BuildContext context, int index, T selection,
       double systemNavigationInsets) {
+    if (addActions.isEmpty) {
+      return;
+    }
+
     if (!isSelected(index)) {
       add(context, index, selection, systemNavigationInsets);
     } else {
@@ -172,7 +102,7 @@ class SelectionInterface<T extends Cell> {
   }
 
   SelectionInterface._(
-      this._setState, this.addActions, this.hideShowNavBar, this.controller);
+      this._setState, this.addActions, this.glue, this.controller);
 }
 
 class WrapSheetButton extends StatefulWidget {

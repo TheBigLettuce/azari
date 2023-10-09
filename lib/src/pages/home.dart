@@ -16,6 +16,7 @@ import '../db/post_tags.dart';
 import '../db/schemas/settings.dart';
 import '../db/state_restoration.dart';
 import '../interfaces/booru.dart';
+import '../widgets/grid/selection_glue_state.dart';
 import '../widgets/skeletons/make_home_skeleton.dart';
 import '../widgets/skeletons/skeleton_state.dart';
 import 'booru/main.dart';
@@ -23,7 +24,7 @@ import 'favorites.dart';
 import 'gallery/directories.dart';
 import 'more_page.dart';
 import 'settings/settings_widget.dart';
-import 'tags.dart';
+import 'tags_page.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -35,9 +36,10 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   final state = SkeletonState();
   int currentRoute = 0;
-  bool showNavBar = true;
   late final controller = AnimationController(vsync: this);
   final menuController = MenuController();
+
+  final glueState = SelectionGlueState();
 
   late final Isar mainGrid;
 
@@ -100,23 +102,17 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     }
   }
 
-  void _hideShowNavBar(bool hide) {
-    setState(() {
-      showNavBar = !hide;
-    });
-  }
-
   Widget _currentPage(BuildContext context) => switch (currentRoute) {
         0 => MainBooruGrid(
             mainGrid: mainGrid,
-            hideShowNavBar: _hideShowNavBar,
+            glue: glueState.glue(context, setState),
             procPop: _procPop),
         1 => GalleryDirectories(
-            hideShowNavBar: _hideShowNavBar,
+            glue: glueState.glue(context, setState),
             procPop: _procPop,
           ),
         2 => FavoritesPage(
-            hideShowNavBar: _hideShowNavBar,
+            glue: glueState.glue(context, setState),
             procPop: _procPop,
           ),
         3 => WillPopScope(
@@ -156,61 +152,83 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return makeHomeSkeleton(
-        context,
-        "Home",
-        state,
-        Animate(
+      context,
+      "Home",
+      state,
+      (context) {
+        return Animate(
             target: 0,
             effects: [FadeEffect(duration: 50.ms, begin: 1, end: 0)],
             controller: controller,
-            child: _currentPage(context)),
-        showNavBar: showNavBar,
-        selectedRoute: currentRoute, onDestinationSelected: (route) {
-      _switchPage(route);
-    }, destinations: [
-      MenuAnchor(
-        anchorTapClosesMenu: true,
-        alignmentOffset: const Offset(8, 8),
-        controller: menuController,
-        menuChildren: Booru.values
-            .map((e) => ListTile(
-                  title: Text(e.string),
+            child: _currentPage(context));
+      },
+      navBar: Animate(
+          target: glueState.actions == null ? 0 : 1,
+          effects: [
+            const MoveEffect(
+                curve: Curves.easeOutQuint,
+                begin: Offset.zero,
+                end: Offset(0, kBottomNavigationBarHeight)),
+            SwapEffect(
+              builder: (context, _) {
+                return glueState.widget(context) ?? const SizedBox();
+              },
+            )
+          ],
+          child: NavigationBar(
+            backgroundColor:
+                Theme.of(context).colorScheme.surface.withOpacity(0.95),
+            selectedIndex: currentRoute,
+            onDestinationSelected: (route) {
+              _switchPage(route);
+            },
+            destinations: [
+              MenuAnchor(
+                anchorTapClosesMenu: true,
+                alignmentOffset: const Offset(8, 8),
+                controller: menuController,
+                menuChildren: Booru.values
+                    .map((e) => ListTile(
+                          title: Text(e.string),
+                          onTap: () {
+                            selectBooru(context, Settings.fromDb(), e);
+                          },
+                        ))
+                    .toList(),
+                child: GestureDetector(
                   onTap: () {
-                    selectBooru(context, Settings.fromDb(), e);
+                    _switchPage(0);
                   },
-                ))
-            .toList(),
-        child: GestureDetector(
-          onTap: () {
-            _switchPage(0);
-          },
-          onLongPress: () {
-            menuController.open();
-          },
-          child: AbsorbPointer(
-            child: NavigationDestination(
-              icon: const Icon(Icons.image),
-              label: Settings.fromDb().selectedBooru.string,
-            ),
-          ),
-        ),
-      ),
-      NavigationDestination(
-        icon: const Icon(Icons.photo_album),
-        label: AppLocalizations.of(context)!.galleryLabel,
-      ),
-      NavigationDestination(
-        icon: const Icon(Icons.favorite),
-        label: AppLocalizations.of(context)!.favoritesLabel,
-      ),
-      NavigationDestination(
-        icon: const Icon(Icons.tag),
-        label: AppLocalizations.of(context)!.tagsLabel,
-      ),
-      const NavigationDestination(
-        icon: Icon(Icons.more_horiz),
-        label: "More", // TODO: change
-      )
-    ]);
+                  onLongPress: () {
+                    menuController.open();
+                  },
+                  child: AbsorbPointer(
+                    child: NavigationDestination(
+                      icon: const Icon(Icons.image),
+                      label: Settings.fromDb().selectedBooru.string,
+                    ),
+                  ),
+                ),
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.photo_album),
+                label: AppLocalizations.of(context)!.galleryLabel,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.favorite),
+                label: AppLocalizations.of(context)!.favoritesLabel,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.tag),
+                label: AppLocalizations.of(context)!.tagsLabel,
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.more_horiz),
+                label: "More", // TODO: change
+              )
+            ],
+          )),
+      selectedRoute: currentRoute,
+    );
   }
 }

@@ -32,11 +32,10 @@ import '../widgets/skeletons/grid_skeleton_state_filter.dart';
 import '../widgets/skeletons/make_grid_skeleton.dart';
 
 class FavoritesPage extends StatefulWidget {
-  final void Function(bool hide) hideShowNavBar;
   final Future<bool> Function() procPop;
+  final SelectionGlue<FavoriteBooru> glue;
 
-  const FavoritesPage(
-      {super.key, required this.hideShowNavBar, required this.procPop});
+  const FavoritesPage({super.key, required this.procPop, required this.glue});
 
   @override
   State<FavoritesPage> createState() => _FavoritesPageState();
@@ -262,7 +261,7 @@ class _FavoritesPageState extends State<FavoritesPage>
           getCell: loader.getCell,
           initalScrollPosition: 0,
           showCount: true,
-          hideShowNavBar: widget.hideShowNavBar,
+          selectionGlue: widget.glue,
           scaffoldKey: state.scaffoldKey,
           addIconsImage: (p) => [
             BooruGridActions.favorites(context, p, showDeleteSnackbar: true),
@@ -340,6 +339,10 @@ class _FavoritesPageState extends State<FavoritesPage>
         ), overrideOnPop: () {
       if (searchTextController.text.isNotEmpty) {
         resetSearch();
+        return Future.value(false);
+      }
+      if (widget.glue.isOpen()) {
+        state.gridKey.currentState?.selection.reset();
         return Future.value(false);
       }
 

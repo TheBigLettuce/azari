@@ -112,7 +112,11 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.tagsInfoPage),
+        centerTitle: true,
+        title: Text(
+          "阿",
+          style: TextStyle(color: Theme.of(context).colorScheme.primary),
+        ),
         bottom: TabBar(
           tabs: [
             Tab(

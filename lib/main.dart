@@ -23,7 +23,9 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import 'src/db/schemas/system_gallery_directory.dart';
 import 'src/pages/home.dart';
+import 'src/widgets/grid/wrap_grid_page.dart';
 
 late final String azariVersion;
 
@@ -112,16 +114,17 @@ void mainPickfile() async {
         changeSystemUiOverlay(context);
         initPostTags(context);
 
-        return Scaffold(
-          body: GalleryDirectories(
-            noDrawer: true,
-            procPop: () => Future.value(true),
-            hideShowNavBar: null,
-            nestedCallback: CallbackDescriptionNested("Choose file", (chosen) {
-              PlatformFunctions.returnUri(chosen.originalUri);
-            }),
-          ),
-        );
+        return WrappedGridPage<SystemGalleryDirectory>(
+            scaffoldKey: GlobalKey(),
+            f: (glue) => GalleryDirectories(
+                  noDrawer: true,
+                  procPop: () => Future.value(true),
+                  glue: glue,
+                  nestedCallback:
+                      CallbackDescriptionNested("Choose file", (chosen) {
+                    PlatformFunctions.returnUri(chosen.originalUri);
+                  }),
+                ));
       },
     ),
   ));

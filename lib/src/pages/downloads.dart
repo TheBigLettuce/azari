@@ -20,6 +20,7 @@ import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../db/linear_isar_loader.dart';
+import '../widgets/grid/wrap_grid_page.dart';
 import '../widgets/skeletons/grid_skeleton_state_filter.dart';
 import '../widgets/skeletons/make_grid_skeleton.dart';
 
@@ -85,73 +86,87 @@ class _DownloadsState extends State<Downloads>
 
   @override
   Widget build(BuildContext context) {
-    return makeGridSkeleton(
-        context,
-        state,
-        CallbackGrid<DownloadFile>(
-            key: state.gridKey,
-            getCell: loader.getCell,
-            initalScrollPosition: 0,
-            scaffoldKey: state.scaffoldKey,
-            systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context),
-            hasReachedEnd: () => true,
-            aspectRatio: 1,
-            hideShowNavBar: (hide) {},
-            showCount: true,
-            onBack: () => Navigator.pop(context),
-            menuButtonItems: [
-              IconButton(
-                  onPressed: () {
-                    if (deleteController != null) {
-                      deleteController!.forward(from: 0);
-                    }
-                    Downloader.g.removeAll();
-                  },
-                  icon: const Icon(Icons.close).animate(
-                      onInit: (controller) => deleteController = controller,
-                      effects: const [FlipEffect(begin: 1, end: 0)],
-                      autoPlay: false)),
-              IconButton(
-                  onPressed: _refresh,
-                  icon: const Icon(Icons.refresh).animate(
-                      onInit: (controller) => refreshController = controller,
-                      effects: const [RotateEffect()],
-                      autoPlay: false)),
-            ],
-            inlineMenuButtonItems: true,
-            immutable: false,
-            unpressable: true,
-            segments: Segments(
-              "Unknown", // TODO: change
-              hidePinnedIcon: true,
-              segment: (cell) {
-                return (Downloader.g.downloadDescription(cell), true);
-              },
-              onLabelPressed: (label, children) {
-                if (children.isEmpty) {
-                  return;
+    return WrappedGridPage<DownloadFile>(
+        scaffoldKey: state.scaffoldKey,
+        f: (glue) => makeGridSkeleton(
+              context,
+              state,
+              CallbackGrid<DownloadFile>(
+                  key: state.gridKey,
+                  getCell: loader.getCell,
+                  initalScrollPosition: 0,
+                  scaffoldKey: state.scaffoldKey,
+                  systemNavigationInsets:
+                      MediaQuery.systemGestureInsetsOf(context),
+                  hasReachedEnd: () => true,
+                  aspectRatio: 1,
+                  selectionGlue: glue,
+                  showCount: true,
+                  onBack: () => Navigator.pop(context),
+                  menuButtonItems: [
+                    IconButton(
+                        onPressed: () {
+                          if (deleteController != null) {
+                            deleteController!.forward(from: 0);
+                          }
+                          Downloader.g.removeAll();
+                        },
+                        icon: const Icon(Icons.close).animate(
+                            onInit: (controller) =>
+                                deleteController = controller,
+                            effects: const [FlipEffect(begin: 1, end: 0)],
+                            autoPlay: false)),
+                    IconButton(
+                        onPressed: _refresh,
+                        icon: const Icon(Icons.refresh).animate(
+                            onInit: (controller) =>
+                                refreshController = controller,
+                            effects: const [RotateEffect()],
+                            autoPlay: false)),
+                  ],
+                  inlineMenuButtonItems: true,
+                  immutable: false,
+                  unpressable: true,
+                  segments: Segments(
+                    "Unknown", // TODO: change
+                    hidePinnedIcon: true,
+                    segment: (cell) {
+                      return (Downloader.g.downloadDescription(cell), true);
+                    },
+                    onLabelPressed: (label, children) {
+                      if (children.isEmpty) {
+                        return;
+                      }
+
+                      if (label == kDownloadFailed) {
+                        for (final d in children) {
+                          Downloader.g.add(d, state.settings);
+                        }
+                      }
+                    },
+                  ),
+                  searchWidget: SearchAndFocus(
+                      searchWidget(context,
+                          hint: AppLocalizations.of(context)!
+                              .downloadsPageName
+                              .toLowerCase()),
+                      searchFocus),
+                  mainFocus: state.mainFocus,
+                  refresh: () => Future.value(loader.count()),
+                  description: GridDescription([
+                    DownloadsActions.retryOrDelete(context),
+                  ], GridColumn.two,
+                      keybindsDescription:
+                          AppLocalizations.of(context)!.downloadsPageName,
+                      listView: true)),
+              overrideOnPop: () {
+                if (glue.isOpen()) {
+                  state.gridKey.currentState?.selection.reset();
+                  return Future.value(false);
                 }
 
-                if (label == kDownloadFailed) {
-                  for (final d in children) {
-                    Downloader.g.add(d, state.settings);
-                  }
-                }
+                return Future.value(true);
               },
-            ),
-            searchWidget: SearchAndFocus(
-                searchWidget(context,
-                    hint: AppLocalizations.of(context)!
-                        .downloadsPageName
-                        .toLowerCase()),
-                searchFocus),
-            mainFocus: state.mainFocus,
-            refresh: () => Future.value(loader.count()),
-            description: GridDescription([
-              DownloadsActions.retryOrDelete(context),
-            ], GridColumn.two,
-                keybindsDescription:
-                    AppLocalizations.of(context)!.downloadsPageName,
-                listView: true)));
+            ));
   }
 }

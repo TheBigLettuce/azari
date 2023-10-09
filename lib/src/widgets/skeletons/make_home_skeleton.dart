@@ -19,11 +19,9 @@ Widget makeHomeSkeleton(
   BuildContext context,
   String pageDescription,
   SkeletonState state,
-  Widget child, {
+  Widget Function(BuildContext) f, {
   required int selectedRoute,
-  required bool showNavBar,
-  required void Function(int) onDestinationSelected,
-  required List<Widget> destinations,
+  required Widget? navBar,
 }) {
   Map<SingleActivatorDescription, Null Function()> bindings = {};
 
@@ -45,16 +43,8 @@ Widget makeHomeSkeleton(
             MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,
         key: state.scaffoldKey,
         endDrawer: makeEndDrawerSettings(context, state.scaffoldKey),
-        bottomNavigationBar: !showNavBar
-            ? null
-            : NavigationBar(
-                backgroundColor:
-                    Theme.of(context).colorScheme.surface.withOpacity(0.95),
-                selectedIndex: selectedRoute,
-                onDestinationSelected: onDestinationSelected,
-                destinations: destinations,
-              ),
-        body: gestureDeadZones(context, child: child),
+        bottomNavigationBar: navBar,
+        body: gestureDeadZones(context, child: Builder(builder: f)),
       ),
     ),
   );

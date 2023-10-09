@@ -19,7 +19,6 @@ import '../../db/schemas/settings.dart';
 import '../../interfaces/booru.dart';
 import '../../widgets/radio_dialog.dart';
 import '../../widgets/settings_label.dart';
-import 'blacklisted_directores.dart';
 import 'settings_widget.dart';
 
 class SettingsList extends StatefulWidget {

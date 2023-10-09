@@ -15,7 +15,6 @@ import 'package:gallery/src/db/schemas/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/grid_state_booru.dart';
 import 'package:gallery/src/db/schemas/tags.dart';
 import 'package:gallery/src/pages/booru/random.dart';
-import 'package:gallery/src/pages/settings/settings_widget.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 
@@ -66,7 +65,7 @@ PopupMenuButton gridSettingsButton(GridSettings gridSettings,
 
 PopupMenuItem _safeMode(BuildContext context, SafeMode safeMode) {
   return PopupMenuItem(
-    child: Text("Safe mode"),
+    child: const Text("Safe mode"), // TODO: change
     onTap: () => radioDialog(
       context,
       SafeMode.values.map((e) => (e, e.string)),
@@ -128,17 +127,17 @@ PopupMenuItem _listView(bool listView, void Function(bool) select) {
 
 class MainBooruGrid extends StatefulWidget {
   final Isar mainGrid;
-  final void Function(bool hide) hideShowNavBar;
   final Future<bool> Function() procPop;
+  final SelectionGlue<Post> glue;
 
   const MainBooruGrid(
       {super.key,
       required this.mainGrid,
-      required this.hideShowNavBar,
+      required this.glue,
       required this.procPop});
 
-  static Widget bookmarkButton(
-      BuildContext context, GridSkeletonState state, void Function() f) {
+  static Widget bookmarkButton(BuildContext context, GridSkeletonState state,
+      SelectionGlue glue, void Function() f) {
     return IconButton(
         onPressed: () {
           f();
@@ -147,7 +146,7 @@ class MainBooruGrid extends StatefulWidget {
                   content: Text(
             "Bookmarked", // TODO: change
           )));
-          state.gridKey.currentState?.selection.currentBottomSheet?.close();
+          glue.close();
           state.gridKey.currentState?.selection.selected.clear();
           Navigator.pop(context);
         },
@@ -337,7 +336,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
                                     null
                                 ? 80
                                 : 0)),
-                    hideShowNavBar: widget.hideShowNavBar,
+                    selectionGlue: widget.glue,
                     registerNotifiers: [
                       (child) => TagManagerNotifier(
                           tagManager: tagManager, child: child),
@@ -442,6 +441,8 @@ class _MainBooruGridState extends State<MainBooruGrid>
                                           ));
                                     },
                                     onTap: () {
+                                      Navigator.pop(context);
+
                                       Dbs.g.main.writeTxnSync(() => Dbs
                                           .g.main.gridStateBoorus
                                           .putByNameSync(e.copy(false,
@@ -543,6 +544,11 @@ class _MainBooruGridState extends State<MainBooruGrid>
                   ),
                   overrideBooru: api.booru,
                   overrideOnPop: () {
+                    if (widget.glue.isOpen()) {
+                      state.gridKey.currentState?.selection.reset();
+                      return Future.value(false);
+                    }
+
                     return widget.procPop();
                   },
                 );

@@ -24,10 +24,12 @@ import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../db/schemas/settings.dart';
+import '../../db/schemas/system_gallery_directory.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
 import '../../interfaces/filtering/sorting_mode.dart';
 import '../../plugs/gallery.dart';
 import '../../widgets/copy_move_preview.dart';
+import '../../widgets/grid/wrap_grid_page.dart';
 import '../../widgets/search_bar/search_filter_grid.dart';
 import '../../plugs/gallery/android/filters.dart';
 import '../../widgets/skeletons/grid_skeleton_state_filter.dart';
@@ -64,7 +66,7 @@ class _GalleryFilesState extends State<GalleryFiles>
   late final GalleryFilesExtra extra = widget.api.getExtra()
     ..setRefreshingStatusCallback((i, inRefresh, empty) {
       if (empty) {
-        state.gridKey.currentState?.selection.currentBottomSheet?.close();
+        // state.gridKey.currentState?.selection.currentBottomSheet?.close();
         state.gridKey.currentState?.imageViewKey.currentState?.key.currentState
             ?.closeEndDrawer();
         final imageViewContext =
@@ -194,60 +196,62 @@ class _GalleryFilesState extends State<GalleryFiles>
       List<SystemGalleryDirectoryFile> selected, bool move) {
     Navigator.push(context, MaterialPageRoute(
       builder: (context) {
-        return Scaffold(
-          body: GalleryDirectories(
-            showBackButton: true,
-            hideShowNavBar: null,
-            procPop: () {
-              return Future.value(true);
-            },
-            callback: CallbackDescription(
-                move
-                    ? AppLocalizations.of(context)!.chooseMoveDestination
-                    : AppLocalizations.of(context)!.chooseCopyDestination,
-                (chosen, newDir) {
-              if (chosen == null && newDir == null) {
-                throw "both are empty";
-              }
+        return WrappedGridPage<SystemGalleryDirectory>(
+            scaffoldKey: GlobalKey(),
+            f: (glue) => GalleryDirectories(
+                  showBackButton: true,
+                  glue: glue,
+                  procPop: () {
+                    return Future.value(true);
+                  },
+                  callback: CallbackDescription(
+                      move
+                          ? AppLocalizations.of(context)!.chooseMoveDestination
+                          : AppLocalizations.of(context)!.chooseCopyDestination,
+                      (chosen, newDir) {
+                    if (chosen == null && newDir == null) {
+                      throw "both are empty";
+                    }
 
-              if (chosen != null && chosen.bucketId == widget.bucketId) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(move
-                        ? AppLocalizations.of(context)!.cantMoveSameDest
-                        : AppLocalizations.of(context)!.cantCopySameDest)));
-                return Future.value();
-              }
+                    if (chosen != null && chosen.bucketId == widget.bucketId) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(move
+                              ? AppLocalizations.of(context)!.cantMoveSameDest
+                              : AppLocalizations.of(context)!
+                                  .cantCopySameDest)));
+                      return Future.value();
+                    }
 
-              if (chosen?.bucketId == "favorites") {
-                _favoriteOrUnfavorite(context, selected);
-              } else if (chosen?.bucketId == "trash") {
-                if (!move) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text(
-                    "Can't copy files to the trash. Use move.", // TODO: change
-                  )));
-                  return Future.value();
-                }
+                    if (chosen?.bucketId == "favorites") {
+                      _favoriteOrUnfavorite(context, selected);
+                    } else if (chosen?.bucketId == "trash") {
+                      if (!move) {
+                        ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(
+                                content: Text(
+                          "Can't copy files to the trash. Use move.", // TODO: change
+                        )));
+                        return Future.value();
+                      }
 
-                return _deleteDialog(context, selected);
-              } else {
-                PlatformFunctions.copyMoveFiles(
-                    chosen?.relativeLoc, chosen?.volumeName, selected,
-                    move: move, newDir: newDir);
-              }
+                      return _deleteDialog(context, selected);
+                    } else {
+                      PlatformFunctions.copyMoveFiles(
+                          chosen?.relativeLoc, chosen?.volumeName, selected,
+                          move: move, newDir: newDir);
+                    }
 
-              return Future.value();
-            },
-                preview: PreferredSize(
-                  preferredSize: const Size.fromHeight(52),
-                  child: CopyMovePreview(
-                    files: selected,
-                    size: 52,
-                  ),
-                ),
-                joinable: false),
-          ),
-        );
+                    return Future.value();
+                  },
+                      preview: PreferredSize(
+                        preferredSize: const Size.fromHeight(52),
+                        child: CopyMovePreview(
+                          files: selected,
+                          size: 52,
+                        ),
+                      ),
+                      joinable: false),
+                ));
       },
     ));
   }
@@ -425,7 +429,7 @@ class _GalleryFilesState extends State<GalleryFiles>
     final isFavorites = f != null && f.isFavorite();
 
     return GridBottomSheetAction(
-        isFavorites ? Icons.star_rate_rounded : Icons.star_border_rounded,
+        isFavorites ? Icons.star_rounded : Icons.star_border_rounded,
         (selected) {
       _favoriteOrUnfavorite(context, selected);
     },
@@ -485,151 +489,156 @@ class _GalleryFilesState extends State<GalleryFiles>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: state.scaffoldKey,
-      body: makeGridSkeleton<SystemGalleryDirectoryFile>(
-        context,
-        state,
-        CallbackGrid(
-            key: state.gridKey,
-            getCell: (i) => widget.api.directCell(i),
-            initalScrollPosition: 0,
-            scaffoldKey: state.scaffoldKey,
-            systemNavigationInsets: MediaQuery.of(context).systemGestureInsets,
-            hasReachedEnd: () => true,
-            immutable: false,
-            addFabPadding: true,
-            hideShowNavBar: (hide) {},
-            tightMode: true,
-            addIconsImage: (cell) {
-              return widget.callback != null
-                  ? [
-                      _chooseAction(),
-                    ]
-                  : extra.isTrash
-                      ? [
-                          _restoreFromTrash(),
-                        ]
-                      : [
-                          _addToFavoritesAction(cell),
-                          _deleteAction(),
-                          _copyAction(),
-                          _moveAction()
-                        ];
-            },
-            aspectRatio: state.settings.galleryFiles.aspectRatio.value,
-            hideAlias: state.settings.galleryFiles.hideName,
-            showCount: true,
-            searchWidget: SearchAndFocus(
-                searchWidget(context, hint: widget.dirName), searchFocus),
-            mainFocus: state.mainFocus,
-            refresh: extra.supportsDirectRefresh
-                ? () async {
-                    final i = await widget.api.refresh();
-
-                    performSearch(searchTextController.text);
-
-                    return i;
-                  }
-                : () {
-                    _refresh();
-                    return null;
-                  },
-            menuButtonItems: [
-              if (widget.callback != null)
-                IconButton(
-                    onPressed: () {
-                      if (state.gridKey.currentState?.mutationInterface
-                              ?.isRefreshing !=
-                          false) {
-                        return;
-                      }
-
-                      final upTo = state
-                          .gridKey.currentState?.mutationInterface?.cellCount;
-                      if (upTo == null) {
-                        return;
-                      }
-
-                      try {
-                        final n = math.Random.secure().nextInt(upTo);
-
-                        widget.callback?.call(state
-                            .gridKey.currentState!.mutationInterface!
-                            .getCell(n));
-                      } catch (e) {
-                        log("getting random number",
-                            level: Level.WARNING.value, error: e);
-                        return;
-                      }
-                    },
-                    icon: const Icon(Icons.casino_outlined)),
-              gridSettingsButton(state.settings.galleryFiles,
-                  selectRatio: (ratio) => state.settings
-                      .copy(
-                          galleryFiles: state.settings.galleryFiles
-                              .copy(aspectRatio: ratio))
-                      .save(),
-                  selectHideName: (hideNames) => state.settings
-                      .copy(
-                          galleryFiles: state.settings.galleryFiles
-                              .copy(hideName: hideNames))
-                      .save(),
-                  selectListView: (listView) => state.settings
-                      .copy(
-                          galleryFiles: state.settings.galleryFiles
-                              .copy(listView: listView))
-                      .save(),
-                  selectGridColumn: (columns) => state.settings
-                      .copy(
-                          galleryFiles: state.settings.galleryFiles
-                              .copy(columns: columns))
-                      .save()),
-            ],
-            inlineMenuButtonItems: true,
-            onBack: () {
-              final filterMode = currentFilteringMode();
-              if (filterMode != FilteringMode.noFilter) {
-                resetSearch();
-                return;
-              }
-              Navigator.pop(context);
-            },
-            progressTicker: stream.stream,
-            description: GridDescription(
-                widget.callback != null
-                    ? []
-                    : extra.isTrash
+    return WrappedGridPage<SystemGalleryDirectoryFile>(
+        scaffoldKey: state.scaffoldKey,
+        f: (glue) => makeGridSkeleton<SystemGalleryDirectoryFile>(
+              context,
+              state,
+              CallbackGrid(
+                  key: state.gridKey,
+                  getCell: (i) => widget.api.directCell(i),
+                  initalScrollPosition: 0,
+                  scaffoldKey: state.scaffoldKey,
+                  systemNavigationInsets:
+                      MediaQuery.of(context).systemGestureInsets,
+                  hasReachedEnd: () => true,
+                  immutable: false,
+                  addFabPadding: true,
+                  selectionGlue: glue,
+                  tightMode: true,
+                  addIconsImage: (cell) {
+                    return widget.callback != null
                         ? [
-                            _restoreFromTrash(),
+                            _chooseAction(),
                           ]
-                        : [
-                            _bulkRename(),
-                            _saveTagsAction(),
-                            _addToFavoritesAction(null),
-                            _deleteAction(),
-                            _copyAction(),
-                            _moveAction(),
-                          ],
-                state.settings.galleryFiles.columns,
-                listView: state.settings.galleryFiles.listView,
-                bottomWidget: widget.callback != null
-                    ? CopyMovePreview.hintWidget(
-                        context, AppLocalizations.of(context)!.chooseFileNotice)
-                    : null,
-                keybindsDescription: widget.dirName)),
-        noDrawer: widget.callback != null,
-        overrideOnPop: () {
-          final filterMode = currentFilteringMode();
-          if (filterMode != FilteringMode.noFilter ||
-              searchTextController.text.isNotEmpty) {
-            resetSearch();
-            return Future.value(false);
-          }
+                        : extra.isTrash
+                            ? [
+                                _restoreFromTrash(),
+                              ]
+                            : [
+                                _addToFavoritesAction(cell),
+                                _deleteAction(),
+                                _copyAction(),
+                                _moveAction()
+                              ];
+                  },
+                  aspectRatio: state.settings.galleryFiles.aspectRatio.value,
+                  hideAlias: state.settings.galleryFiles.hideName,
+                  showCount: true,
+                  searchWidget: SearchAndFocus(
+                      searchWidget(context, hint: widget.dirName), searchFocus),
+                  mainFocus: state.mainFocus,
+                  refresh: extra.supportsDirectRefresh
+                      ? () async {
+                          final i = await widget.api.refresh();
 
-          return Future.value(true);
-        },
-      ),
-    );
+                          performSearch(searchTextController.text);
+
+                          return i;
+                        }
+                      : () {
+                          _refresh();
+                          return null;
+                        },
+                  menuButtonItems: [
+                    if (widget.callback != null)
+                      IconButton(
+                          onPressed: () {
+                            if (state.gridKey.currentState?.mutationInterface
+                                    ?.isRefreshing !=
+                                false) {
+                              return;
+                            }
+
+                            final upTo = state.gridKey.currentState
+                                ?.mutationInterface?.cellCount;
+                            if (upTo == null) {
+                              return;
+                            }
+
+                            try {
+                              final n = math.Random.secure().nextInt(upTo);
+
+                              widget.callback?.call(state
+                                  .gridKey.currentState!.mutationInterface!
+                                  .getCell(n));
+                            } catch (e) {
+                              log("getting random number",
+                                  level: Level.WARNING.value, error: e);
+                              return;
+                            }
+                          },
+                          icon: const Icon(Icons.casino_outlined)),
+                    gridSettingsButton(state.settings.galleryFiles,
+                        selectRatio: (ratio) => state.settings
+                            .copy(
+                                galleryFiles: state.settings.galleryFiles
+                                    .copy(aspectRatio: ratio))
+                            .save(),
+                        selectHideName: (hideNames) => state.settings
+                            .copy(
+                                galleryFiles: state.settings.galleryFiles
+                                    .copy(hideName: hideNames))
+                            .save(),
+                        selectListView: (listView) => state.settings
+                            .copy(
+                                galleryFiles: state.settings.galleryFiles
+                                    .copy(listView: listView))
+                            .save(),
+                        selectGridColumn: (columns) => state.settings
+                            .copy(
+                                galleryFiles: state.settings.galleryFiles
+                                    .copy(columns: columns))
+                            .save()),
+                  ],
+                  inlineMenuButtonItems: true,
+                  onBack: () {
+                    final filterMode = currentFilteringMode();
+                    if (filterMode != FilteringMode.noFilter) {
+                      resetSearch();
+                      return;
+                    }
+                    Navigator.pop(context);
+                  },
+                  progressTicker: stream.stream,
+                  description: GridDescription(
+                      widget.callback != null
+                          ? []
+                          : extra.isTrash
+                              ? [
+                                  _restoreFromTrash(),
+                                ]
+                              : [
+                                  _bulkRename(),
+                                  _saveTagsAction(),
+                                  _addToFavoritesAction(null),
+                                  _deleteAction(),
+                                  _copyAction(),
+                                  _moveAction(),
+                                ],
+                      state.settings.galleryFiles.columns,
+                      listView: state.settings.galleryFiles.listView,
+                      bottomWidget: widget.callback != null
+                          ? CopyMovePreview.hintWidget(context,
+                              AppLocalizations.of(context)!.chooseFileNotice)
+                          : null,
+                      keybindsDescription: widget.dirName)),
+              noDrawer: widget.callback != null,
+              overrideOnPop: () {
+                final filterMode = currentFilteringMode();
+                if (filterMode != FilteringMode.noFilter ||
+                    searchTextController.text.isNotEmpty) {
+                  resetSearch();
+                  return Future.value(false);
+                }
+
+                if (glue.isOpen()) {
+                  state.gridKey.currentState?.selection.reset();
+                  return Future.value(false);
+                }
+
+                return Future.value(true);
+              },
+            ));
   }
 }

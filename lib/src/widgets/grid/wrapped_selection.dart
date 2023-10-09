@@ -12,6 +12,7 @@ class _WrappedSelection extends StatelessWidget {
   final bool isSelected;
   final bool selectionEnabled;
   final int thisIndx;
+  final double bottomPadding;
   final ScrollController scrollController;
   final void Function() selectUnselect;
   final void Function(int indx) selectUntil;
@@ -21,6 +22,7 @@ class _WrappedSelection extends StatelessWidget {
       required this.isSelected,
       required this.selectUnselect,
       required this.thisIndx,
+      required this.bottomPadding,
       required this.scrollController,
       required this.selectionEnabled,
       required this.selectUntil});
@@ -29,21 +31,34 @@ class _WrappedSelection extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget make() => Stack(
           children: [
-            GestureDetector(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                selectUnselect();
-              },
-              onLongPress: () {
-                selectUntil(thisIndx);
-                HapticFeedback.vibrate();
-              },
-              child: AbsorbPointer(
-                absorbing: selectionEnabled,
-                child: child,
-              ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                  padding: const EdgeInsets.all(0.5),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        selectUnselect();
+                      },
+                      onLongPress: () {
+                        selectUntil(thisIndx);
+                        HapticFeedback.vibrate();
+                      },
+                      child: AbsorbPointer(
+                        absorbing: selectionEnabled,
+                        child: child,
+                      ),
+                    ),
+                  )),
             ),
-            if (isSelected)
+            if (isSelected) ...[
               GestureDetector(
                 onTap: () {
                   HapticFeedback.selectionClick();
@@ -74,7 +89,8 @@ class _WrappedSelection extends StatelessWidget {
                     ),
                   ),
                 ),
-              ),
+              )
+            ],
           ],
         );
 
@@ -96,14 +112,13 @@ class _WrappedSelection extends StatelessWidget {
         }
 
         final height = MediaQuery.of(context).size.height;
-        if (details.offset.dy < 50 && scrollController.offset > 100) {
+        if (details.offset.dy < 120 && scrollController.offset > 100) {
           scrollController.animateTo(scrollController.offset - 100,
               duration: 200.ms, curve: Curves.linear);
-        } else if (details.offset.dy >
-                (height * 0.80) -
-                    (84 + MediaQuery.systemGestureInsetsOf(context).bottom) &&
+        } else if (details.offset.dy + bottomPadding >
+                (height * 0.9) - (bottomPadding) &&
             scrollController.offset <
-                scrollController.position.maxScrollExtent * 0.9) {
+                scrollController.position.maxScrollExtent * 0.99) {
           scrollController.animateTo(scrollController.offset + 100,
               duration: 200.ms, curve: Curves.linear);
         }

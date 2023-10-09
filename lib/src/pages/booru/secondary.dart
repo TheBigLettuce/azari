@@ -16,6 +16,7 @@ import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../widgets/grid/selection_glue_state.dart';
 import 'main.dart';
 
 import '../../widgets/grid/actions/booru_grid.dart';
@@ -60,6 +61,8 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
     with SearchLaunchGrid<Post> {
   late final StreamSubscription<Settings?> settingsWatcher;
   late final StreamSubscription favoritesWatcher;
+
+  final glueState = SelectionGlueState();
 
   int? currentSkipped;
 
@@ -215,101 +218,112 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
   Widget build(BuildContext context) {
     return Scaffold(
       key: state.scaffoldKey,
-      body: BooruAPINotifier(
-          api: widget.api,
-          child: TagManagerNotifier(
-              tagManager: widget.tagManager,
-              child: Builder(
-                builder: (context) {
-                  return makeGridSkeleton(
-                    context,
-                    state,
-                    CallbackGrid<Post>(
-                      key: state.gridKey,
-                      hideShowNavBar: (hide) {},
-                      systemNavigationInsets:
-                          MediaQuery.of(context).systemGestureInsets,
-                      registerNotifiers: [
-                        (child) => TagManagerNotifier(
-                            tagManager: widget.tagManager, child: child),
-                        (child) =>
-                            BooruAPINotifier(api: widget.api, child: child),
-                      ],
-                      menuButtonItems: [
-                        MainBooruGrid.bookmarkButton(context, state, () {
-                          addedToBookmarks = true;
-                        }),
-                        MainBooruGrid.gridButton(state.settings)
-                      ],
-                      addIconsImage: (post) => [
-                        BooruGridActions.favorites(context, post),
-                        BooruGridActions.download(context, widget.api)
-                      ],
-                      onExitImageView: () =>
-                          widget.restore.removeScrollTagsSelectedPost(),
-                      description: GridDescription(
-                        [
-                          BooruGridActions.download(context, widget.api),
-                          BooruGridActions.favorites(context, null,
-                              showDeleteSnackbar: true)
+      bottomNavigationBar: glueState.widget(context),
+      body: Builder(
+        builder: (context) => BooruAPINotifier(
+            api: widget.api,
+            child: TagManagerNotifier(
+                tagManager: widget.tagManager,
+                child: Builder(
+                  builder: (context) {
+                    return makeGridSkeleton(
+                      context,
+                      state,
+                      CallbackGrid<Post>(
+                        key: state.gridKey,
+                        selectionGlue: glueState.glue(context, setState),
+                        systemNavigationInsets:
+                            MediaQuery.of(context).systemGestureInsets,
+                        registerNotifiers: [
+                          (child) => TagManagerNotifier(
+                              tagManager: widget.tagManager, child: child),
+                          (child) =>
+                              BooruAPINotifier(api: widget.api, child: child),
                         ],
-                        state.settings.booru.columns,
-                        listView: state.settings.booru.listView,
-                        keybindsDescription:
-                            AppLocalizations.of(context)!.booruGridPageName,
+                        menuButtonItems: [
+                          MainBooruGrid.bookmarkButton(
+                              context, state, glueState.glue(context, setState),
+                              () {
+                            addedToBookmarks = true;
+                          }),
+                          MainBooruGrid.gridButton(state.settings)
+                        ],
+                        addIconsImage: (post) => [
+                          BooruGridActions.favorites(context, post),
+                          BooruGridActions.download(context, widget.api)
+                        ],
+                        onExitImageView: () =>
+                            widget.restore.removeScrollTagsSelectedPost(),
+                        description: GridDescription(
+                          [
+                            BooruGridActions.download(context, widget.api),
+                            BooruGridActions.favorites(context, null,
+                                showDeleteSnackbar: true)
+                          ],
+                          state.settings.booru.columns,
+                          listView: state.settings.booru.listView,
+                          keybindsDescription:
+                              AppLocalizations.of(context)!.booruGridPageName,
+                        ),
+                        inlineMenuButtonItems: true,
+                        hasReachedEnd: () => reachedEnd,
+                        mainFocus: state.mainFocus,
+                        scaffoldKey: state.scaffoldKey,
+                        onError: (error) {
+                          return OutlinedButton(
+                            onPressed: () {
+                              launchUrl(Uri.https(widget.api.booru.url),
+                                  mode: LaunchMode.externalApplication);
+                            },
+                            child: Text(
+                                AppLocalizations.of(context)!.openInBrowser),
+                          );
+                        },
+                        aspectRatio: state.settings.booru.aspectRatio.value,
+                        backButtonBadge: widget.restore.secondaryCount(),
+                        getCell: (i) => widget.instance.posts.getSync(i + 1)!,
+                        loadNext: _addLast,
+                        refresh: _clearAndRefresh,
+                        initalCellCount: widget.instance.posts.countSync(),
+                        onBack: () {
+                          _restore(context);
+                        },
+                        hideAlias: true,
+                        download: _download,
+                        updateScrollPosition:
+                            widget.restore.updateScrollPosition,
+                        initalScrollPosition:
+                            widget.restore.copy.scrollPositionGrid,
+                        searchWidget: SearchAndFocus(
+                            searchWidget(context, hint: widget.api.booru.name),
+                            searchFocus, onPressed: () {
+                          if (currentlyHighlightedTag != "") {
+                            state.mainFocus.unfocus();
+                            widget.tagManager.onTagPressed(
+                                context,
+                                Tag.string(tag: currentlyHighlightedTag),
+                                widget.api.booru,
+                                true);
+                          }
+                        }),
+                        pageViewScrollingOffset:
+                            widget.restore.copy.scrollPositionTags,
+                        initalCell: widget.restore.copy.selectedPost,
                       ),
-                      inlineMenuButtonItems: true,
-                      hasReachedEnd: () => reachedEnd,
-                      mainFocus: state.mainFocus,
-                      scaffoldKey: state.scaffoldKey,
-                      onError: (error) {
-                        return OutlinedButton(
-                          onPressed: () {
-                            launchUrl(Uri.https(widget.api.booru.url),
-                                mode: LaunchMode.externalApplication);
-                          },
-                          child:
-                              Text(AppLocalizations.of(context)!.openInBrowser),
-                        );
-                      },
-                      aspectRatio: state.settings.booru.aspectRatio.value,
-                      backButtonBadge: widget.restore.secondaryCount(),
-                      getCell: (i) => widget.instance.posts.getSync(i + 1)!,
-                      loadNext: _addLast,
-                      refresh: _clearAndRefresh,
-                      initalCellCount: widget.instance.posts.countSync(),
-                      onBack: () {
-                        _restore(context);
-                      },
-                      hideAlias: true,
-                      download: _download,
-                      updateScrollPosition: widget.restore.updateScrollPosition,
-                      initalScrollPosition:
-                          widget.restore.copy.scrollPositionGrid,
-                      searchWidget: SearchAndFocus(
-                          searchWidget(context, hint: widget.api.booru.name),
-                          searchFocus, onPressed: () {
-                        if (currentlyHighlightedTag != "") {
-                          state.mainFocus.unfocus();
-                          widget.tagManager.onTagPressed(
-                              context,
-                              Tag.string(tag: currentlyHighlightedTag),
-                              widget.api.booru,
-                              true);
+                      overrideBooru: widget.api.booru,
+                      overrideOnPop: () {
+                        if (glueState.actions != null) {
+                          state.gridKey.currentState?.selection.reset();
+                          return Future.value(false);
                         }
-                      }),
-                      pageViewScrollingOffset:
-                          widget.restore.copy.scrollPositionTags,
-                      initalCell: widget.restore.copy.selectedPost,
-                    ),
-                    overrideBooru: widget.api.booru,
-                    overrideOnPop: () {
-                      _restore(context);
-                      return Future.value(false);
-                    },
-                  );
-                },
-              ))),
+
+                        _restore(context);
+                        return Future.value(false);
+                      },
+                    );
+                  },
+                ))),
+      ),
     );
   }
 }

@@ -23,7 +23,6 @@ import '../keybinds/describe_keys.dart';
 import '../keybinds/keybind_description.dart';
 import '../keybinds/single_activator_description.dart';
 import '../notifiers/focus.dart';
-import '../skeletons/wrap_app_bar_action.dart';
 import 'cell.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -48,6 +47,16 @@ class _SegSticky {
   final void Function()? onLabelPressed;
 
   const _SegSticky(this.seg, this.sticky, this.onLabelPressed);
+}
+
+class SelectionGlue<T extends Cell> {
+  final void Function(List<GridBottomSheetAction<T>> actions,
+      SelectionInterface<T> selection) open;
+  final void Function() close;
+  final bool Function() isOpen;
+
+  const SelectionGlue(
+      {required this.close, required this.open, required this.isOpen});
 }
 
 /// The grid of images.
@@ -184,8 +193,8 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   final bool showSearchBarFirst;
 
   final bool addFabPadding;
-  final void Function(bool hide) hideShowNavBar;
 
+  final SelectionGlue<T> selectionGlue;
   final Widget? overrideBackButton;
 
   const CallbackGrid(
@@ -200,7 +209,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       this.cloudflareHook,
       this.pageChangeImage,
       this.onError,
-      required this.hideShowNavBar,
+      required this.selectionGlue,
       this.showCount = false,
       this.overrideBackButton,
       this.addFabPadding = false,
@@ -238,8 +247,6 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
 }
 
 class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
-  final flexibleAppBar = !Platform.isAndroid;
-
   late final controller =
       ScrollController(initialScrollOffset: widget.initalScrollPosition);
   final fakeController = ScrollController();
@@ -247,7 +254,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   final GlobalKey<ImageViewState<T>> imageViewKey = GlobalKey();
 
   late final selection = SelectionInterface<T>._(
-      setState, widget.description.actions, widget.hideShowNavBar, controller);
+      setState, widget.description.actions, widget.selectionGlue, controller);
 
   StreamSubscription<int>? ticker;
 
@@ -255,8 +262,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       widget.immutable ? null : _state;
 
   bool inImageView = false;
-  late bool showSearchBar = (widget.searchWidget != null && flexibleAppBar) ||
-      widget.showSearchBarFirst;
+  late bool showSearchBar =
+      widget.searchWidget == null ? false : widget.showSearchBarFirst;
 
   List<int>? segTranslation;
 
@@ -283,7 +290,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     },
     unselectall: () {
       selection.selected.clear();
-      selection.currentBottomSheet?.close();
+      selection.glue.close();
     },
     immutable: widget.immutable,
     widget: () => widget,
@@ -388,8 +395,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   }
 
   Future refresh() {
-    selection.currentBottomSheet?.close();
     selection.selected.clear();
+    selection.glue.close();
     updateFab(fab: false, foreground: inImageView);
 
     return _state._refresh();
@@ -512,7 +519,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
           SingleActivatorDescription(AppLocalizations.of(context)!.back,
               const SingleActivator(LogicalKeyboardKey.escape)): () {
             selection.selected.clear();
-            selection.currentBottomSheet?.close();
+            selection.glue.close();
             widget.onBack!();
           },
         if (widget.additionalKeybinds != null) ...widget.additionalKeybinds!,
@@ -523,7 +530,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       padding: EdgeInsets.only(
           bottom: widget.systemNavigationInsets.bottom +
               MediaQuery.viewPaddingOf(context).bottom +
-              (selection.currentBottomSheet != null ? 84 : 0) +
+              (widget.selectionGlue.isOpen() ? 84 : 0) +
               (widget.footer != null
                   ? widget.footer!.preferredSize.height
                   : 0)),
@@ -567,86 +574,6 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     ));
   }
 
-  Widget? _flexibleSpace(BuildContext context) {
-    if (!flexibleAppBar) {
-      return null;
-    }
-
-    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Expanded(
-          child: FlexibleSpaceBar(
-              titlePadding: EdgeInsetsDirectional.only(
-                start: (widget.onBack != null ||
-                        widget.overrideBackButton != null ||
-                        (widget.scaffoldKey.currentState?.hasDrawer ?? false))
-                    ? 48
-                    : 0,
-              ),
-              title: Animate(
-                target: widget.searchWidget?.search != null && showSearchBar
-                    ? 0
-                    : 1,
-                effects: [
-                  const FadeEffect(begin: 1, end: 0),
-                  SwapEffect(
-                    builder: (context, child) {
-                      return Padding(
-                        padding: const EdgeInsets.only(
-                            top: 8, bottom: 16, right: 8, left: 8),
-                        child: Text(
-                          widget.description.pageName ??
-                              widget.description.keybindsDescription,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      );
-                    },
-                  )
-                ],
-                child: Padding(
-                  padding: EdgeInsets.only(
-                      bottom: widget
-                              .description.bottomWidget?.preferredSize.height ??
-                          0 + (_state.isRefreshing ? 4 : 0)),
-                  child: widget.searchWidget?.search,
-                ),
-              ))),
-      if (widget.menuButtonItems != null &&
-          (widget.menuButtonItems!.length == 1 || widget.inlineMenuButtonItems))
-        ...widget.menuButtonItems!.map((e) => wrapAppBarAction(e)),
-      if (widget.onBack != null &&
-          (widget.scaffoldKey.currentState?.hasDrawer ?? false))
-        wrapAppBarAction(GestureDetector(
-          onLongPress: () {
-            setState(() {
-              selection.selected.clear();
-              selection.currentBottomSheet?.close();
-            });
-          },
-          child: IconButton(
-              onPressed: () {
-                widget.scaffoldKey.currentState!.openDrawer();
-              },
-              icon: const Icon(Icons.menu)),
-        )),
-      if (widget.menuButtonItems != null &&
-          widget.menuButtonItems!.length != 1 &&
-          !widget.inlineMenuButtonItems)
-        wrapAppBarAction(PopupMenuButton(
-            position: PopupMenuPosition.under,
-            itemBuilder: (context) {
-              return widget.menuButtonItems!
-                  .map(
-                    (e) => PopupMenuItem(
-                      enabled: false,
-                      child: e,
-                    ),
-                  )
-                  .toList();
-            })),
-    ]);
-  }
-
   Widget? _makeTitle(BuildContext context) {
     Widget make() {
       return Badge.count(
@@ -657,10 +584,6 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
           style: TextStyle(color: Theme.of(context).colorScheme.primary),
         ),
       );
-    }
-
-    if (flexibleAppBar) {
-      return null;
     }
 
     if (widget.searchWidget == null) {
@@ -699,7 +622,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   }
 
   List<Widget> _makeActions(BuildContext context) {
-    if (flexibleAppBar || widget.menuButtonItems == null || showSearchBar) {
+    if (widget.menuButtonItems == null || showSearchBar) {
       return [Container()];
     }
 
@@ -724,7 +647,21 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   }
 
   Widget? _makeLeading(BuildContext context) {
-    if (showSearchBar && !flexibleAppBar) {
+    if (selection.selected.isNotEmpty) {
+      return IconButton(
+          onPressed: () {
+            selection.selected.clear();
+            selection.glue.close();
+            setState(() {});
+          },
+          icon: Badge.count(
+              count: selection.selected.length,
+              child: const Icon(
+                Icons.close_rounded,
+              )));
+    }
+
+    if (showSearchBar) {
       return IconButton(
           onPressed: () {
             if (widget.searchWidget?.focus.hasFocus ?? false) {
@@ -743,7 +680,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
           onPressed: () {
             setState(() {
               selection.selected.clear();
-              selection.currentBottomSheet?.close();
+              selection.glue.close();
             });
             if (widget.onBack != null) {
               widget.onBack!();
@@ -761,7 +698,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         onLongPress: () {
           setState(() {
             selection.selected.clear();
-            selection.currentBottomSheet?.close();
+            selection.glue.close();
           });
         },
         child: IconButton(
@@ -791,25 +728,15 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                         .colorScheme
                         .background
                         .withOpacity(0.95),
-                    expandedHeight: flexibleAppBar
-                        ? FocusNotifier.of(context).hasFocus
-                            ? 64
-                            : 152 +
-                                (widget.description.bottomWidget?.preferredSize
-                                        .height ??
-                                    0)
-                        : null,
-                    collapsedHeight: flexibleAppBar ? 64 : null,
                     automaticallyImplyLeading: false,
                     actions: _makeActions(context),
                     centerTitle: true,
                     title: _makeTitle(context),
-                    flexibleSpace: _flexibleSpace(context),
                     leading: _makeLeading(context),
                     pinned: true,
                     stretch: true,
-                    snap: !showSearchBar,
-                    floating: !showSearchBar,
+                    snap: !showSearchBar && selection.selected.isEmpty,
+                    floating: !showSearchBar && selection.selected.isEmpty,
                     bottom: widget.description.bottomWidget != null
                         ? widget.description.bottomWidget!
                         : PreferredSize(
@@ -948,7 +875,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                                 bottom: widget.systemNavigationInsets.bottom +
                                     (!widget.addFabPadding
                                         ? 0
-                                        : (selection.currentBottomSheet != null
+                                        : (widget.selectionGlue.isOpen()
                                                 ? 84
                                                 : 0) +
                                             (widget.footer != null
@@ -963,7 +890,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                               child: const Icon(Icons.arrow_upward),
                             ),
                           ),
-                        ).animate().fadeIn(),
+                        ).animate().fadeIn(curve: Curves.easeInOutCirc),
                 ),
               ],
             ),

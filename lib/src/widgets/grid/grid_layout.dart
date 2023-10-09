@@ -42,16 +42,20 @@ class GridLayout {
       required T cell,
       required void Function(BuildContext, T, int)? onPressed}) {
     final cellData = cell.getCellData(true, context: context);
+    final selected = selection.isSelected(index);
 
     return _WrappedSelection(
       selectUntil: (i) => selection.selectUnselectUntil(i, state),
       thisIndx: index,
-      isSelected: selection.isSelected(index),
+      isSelected: selected,
       selectionEnabled: selection.selected.isNotEmpty,
       scrollController: selection.controller,
+      bottomPadding: systemNavigationInsets,
       selectUnselect: () => selection.selectOrUnselect(
           context, index, cell, systemNavigationInsets),
       child: ListTile(
+        textColor:
+            selected ? Theme.of(context).colorScheme.inversePrimary : null,
         onLongPress: () => selection.selectOrUnselect(
             context, index, cell, systemNavigationInsets),
         onTap: onPressed == null ? null : () => onPressed(context, cell, index),
@@ -91,6 +95,7 @@ class GridLayout {
           return _WrappedSelection(
             selectionEnabled: selection.selected.isNotEmpty,
             thisIndx: indx,
+            bottomPadding: systemNavigationInsets,
             scrollController: selection.controller,
             selectUntil: (i) => selection.selectUnselectUntil(i, state),
             selectUnselect: () => selection.selectOrUnselect(
@@ -131,6 +136,7 @@ class GridLayout {
                     child: _WrappedSelection(
                       selectionEnabled: selection.selected.isNotEmpty,
                       thisIndx: indx,
+                      bottomPadding: systemNavigationInsets,
                       scrollController: selection.controller,
                       selectUntil: (i) {
                         if (predefined != null) {
@@ -177,6 +183,7 @@ class GridLayout {
                     child: _WrappedSelection(
                       selectionEnabled: selection.selected.isNotEmpty,
                       thisIndx: -1,
+                      bottomPadding: systemNavigationInsets,
                       scrollController: selection.controller,
                       selectUntil: (i) =>
                           selection.selectUnselectUntil(i, state),

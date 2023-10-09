@@ -67,15 +67,15 @@ class GalleryDirectories extends StatefulWidget {
   final CallbackDescriptionNested? nestedCallback;
   final bool? noDrawer;
   final bool showBackButton;
-  final void Function(bool hide)? hideShowNavBar;
   final Future<bool> Function() procPop;
+  final SelectionGlue<SystemGalleryDirectory> glue;
 
   const GalleryDirectories(
       {super.key,
       this.callback,
       this.nestedCallback,
       this.noDrawer,
-      required this.hideShowNavBar,
+      required this.glue,
       required this.procPop,
       this.showBackButton = false})
       : assert(!(callback != null && nestedCallback != null));
@@ -196,17 +196,13 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
             onBack: widget.showBackButton ? () => Navigator.pop(context) : null,
             systemNavigationInsets: EdgeInsets.only(
                 bottom: MediaQuery.of(context).systemGestureInsets.bottom +
-                    (Scaffold.of(context).widget.bottomNavigationBar != null
-                        ? 80
-                        : 0)),
+                    (widget.glue.isOpen() ? 80 : 0)),
             hasReachedEnd: () => true,
             showCount: true,
-            hideShowNavBar: (hide) {
-              widget.hideShowNavBar?.call(hide);
-            },
+            selectionGlue: widget.glue,
             addFabPadding: widget.callback != null ||
                 widget.nestedCallback != null ||
-                Scaffold.of(context).widget.bottomNavigationBar == null,
+                !widget.glue.isOpen(),
             inlineMenuButtonItems: true,
             menuButtonItems: [
               if (widget.callback != null)
@@ -438,6 +434,11 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
       if (filterMode != FilteringMode.noFilter ||
           searchTextController.text.isNotEmpty) {
         resetSearch();
+        return Future.value(false);
+      }
+
+      if (widget.glue.isOpen()) {
+        state.gridKey.currentState?.selection.reset();
         return Future.value(false);
       }
 
