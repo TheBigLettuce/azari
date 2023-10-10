@@ -134,47 +134,41 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
           ],
           controller: tabController,
         ),
-        actions: currentNavBarIndex == 0
-            ? [
-                IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          DialogRoute(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: Text(AppLocalizations.of(context)!
-                                    .tagsDeletionDialogTitle),
-                                actions: [
-                                  TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text(
-                                          AppLocalizations.of(context)!.no)),
-                                  TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                        deleteAllController
-                                            .forward(from: 0)
-                                            .then((value) {
-                                          widget.tagManager.latest.clear();
-                                          deleteAllController.reverse(from: 1);
-                                        });
-                                      },
-                                      child: Text(
-                                          AppLocalizations.of(context)!.yes))
-                                ],
-                              );
-                            },
-                          ));
-                    },
-                    icon: const Icon(Icons.delete)),
-              ]
-            : currentNavBarIndex == 1
-                ? []
-                : null,
+        actions: [
+          IconButton(
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    DialogRoute(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: Text(AppLocalizations.of(context)!
+                              .tagsDeletionDialogTitle),
+                          actions: [
+                            TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: Text(AppLocalizations.of(context)!.no)),
+                            TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  deleteAllController
+                                      .forward(from: 0)
+                                      .then((value) {
+                                    widget.tagManager.latest.clear();
+                                    deleteAllController.reverse(from: 1);
+                                  });
+                                },
+                                child: Text(AppLocalizations.of(context)!.yes))
+                          ],
+                        );
+                      },
+                    ));
+              },
+              icon: const Icon(Icons.delete))
+        ],
       ),
       body: TabBarView(controller: tabController, children: [
         TagsWidget(
