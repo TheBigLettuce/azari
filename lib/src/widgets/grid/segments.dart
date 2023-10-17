@@ -31,7 +31,8 @@ class Segments<T> {
   /// If [addToSticky] is not null. then it will be possible to make
   /// segments sticky on the grid.
   /// If [unsticky] is true, then instead of stickying, unstickying should happen.
-  final void Function(String seg, {bool? unsticky})? addToSticky;
+  /// If [addToSticky] returns true, calls [HapticFeedback.selectionClick].
+  final bool Function(String seg, {bool? unsticky})? addToSticky;
 
   final void Function(String label, List<T> children)? onLabelPressed;
 

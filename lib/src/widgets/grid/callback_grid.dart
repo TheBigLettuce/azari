@@ -8,6 +8,7 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart' as material show AspectRatio;
 import 'package:flutter/services.dart';
@@ -45,8 +46,10 @@ class _SegSticky {
   final String seg;
   final bool sticky;
   final void Function()? onLabelPressed;
+  final bool unstickable;
 
-  const _SegSticky(this.seg, this.sticky, this.onLabelPressed);
+  const _SegSticky(this.seg, this.sticky, this.onLabelPressed,
+      {this.unstickable = true});
 }
 
 class SelectionGlue<T extends Cell> {
@@ -547,8 +550,12 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         onPressed: widget.unpressable
             ? null
             : (context) => _onPressed(context, cell, indx),
-        onLongPress: () => selection.selectOrUnselect(context, indx, cell,
-            widget.systemNavigationInsets.bottom), //extend: maxExtend,
+        onLongPress: indx.isNegative
+            ? null
+            : () {
+                selection.selectOrUnselect(
+                    context, indx, cell, widget.systemNavigationInsets.bottom);
+              }, //extend: maxExtend,
       );
 
   static Widget wrapNotifiers(

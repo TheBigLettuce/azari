@@ -346,126 +346,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
                     addFabPadding:
                         Scaffold.of(context).widget.bottomNavigationBar == null,
                     menuButtonItems: [
-                      PopupMenuButton(
-                          itemBuilder: (context) {
-                            final list = <PopupMenuEntry>[];
-                            final l = Dbs.g.main.gridStateBoorus
-                                .where()
-                                .sortByTimeDesc()
-                                .findAllSync();
-
-                            if (l.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text("No bookmarks")));
-                              return [];
-                            }
-
-                            final titleStyle = Theme.of(context)
-                                .textTheme
-                                .titleSmall!
-                                .copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .secondary);
-
-                            (int, int, int)? time;
-
-                            for (final e in l) {
-                              if (time == null ||
-                                  time !=
-                                      (e.time.day, e.time.month, e.time.year)) {
-                                time = (e.time.day, e.time.month, e.time.year);
-
-                                list.add(PopupMenuItem(
-                                  enabled: false,
-                                  child: timeLabel(time, titleStyle),
-                                ));
-                              }
-
-                              list.add(PopupMenuItem(
-                                  enabled: false,
-                                  child: ListTile(
-                                    title: Text(e.tags),
-                                    subtitle: Text(e.booru.string),
-                                    onLongPress: () {
-                                      Navigator.push(
-                                          context,
-                                          DialogRoute(
-                                            context: context,
-                                            builder: (context) {
-                                              return AlertDialog(
-                                                title: const Text(
-                                                  "Delete", // TODO: change
-                                                ),
-                                                content: ListTile(
-                                                  title: Text(e.tags),
-                                                  subtitle:
-                                                      Text(e.time.toString()),
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                      onPressed: () {
-                                                        DbsOpen.secondaryGridName(
-                                                                e.name)
-                                                            .close(
-                                                                deleteFromDisk:
-                                                                    true)
-                                                            .then((value) {
-                                                          if (value) {
-                                                            Dbs.g.main.writeTxnSync(() => Dbs
-                                                                .g
-                                                                .main
-                                                                .gridStateBoorus
-                                                                .deleteByNameSync(
-                                                                    e.name));
-                                                          }
-                                                        });
-
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Text(
-                                                          AppLocalizations.of(
-                                                                  context)!
-                                                              .yes)),
-                                                  TextButton(
-                                                      onPressed: () =>
-                                                          Navigator.pop(
-                                                              context),
-                                                      child: Text(
-                                                          AppLocalizations.of(
-                                                                  context)!
-                                                              .no)),
-                                                ],
-                                              );
-                                            },
-                                          ));
-                                    },
-                                    onTap: () {
-                                      Navigator.pop(context);
-
-                                      Dbs.g.main.writeTxnSync(() => Dbs
-                                          .g.main.gridStateBoorus
-                                          .putByNameSync(e.copy(false,
-                                              time: DateTime.now())));
-                                      Navigator.push(context, MaterialPageRoute(
-                                        builder: (context) {
-                                          return RandomBooruGrid(
-                                            api: BooruAPI.fromEnum(e.booru,
-                                                page: e.page),
-                                            tagManager: TagManager.fromEnum(
-                                                e.booru, true),
-                                            tags: e.tags,
-                                            state: e,
-                                          );
-                                        },
-                                      ));
-                                    },
-                                  )));
-                            }
-
-                            return list;
-                          },
-                          icon: const Icon(Icons.bookmark_rounded)),
+                      const BookmarkButton(),
                       MainBooruGrid.gridButton(state.settings)
                     ],
                     addIconsImage: (post) => [
@@ -554,5 +435,118 @@ class _MainBooruGridState extends State<MainBooruGrid>
                 );
               },
             )));
+  }
+}
+
+class BookmarkButton extends StatefulWidget {
+  const BookmarkButton({super.key});
+
+  @override
+  State<BookmarkButton> createState() => _BookmarkButtonState();
+}
+
+class _BookmarkButtonState extends State<BookmarkButton> {
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton(
+        itemBuilder: (context) {
+          final timeNow = DateTime.now();
+          final list = <PopupMenuEntry>[];
+          final l =
+              Dbs.g.main.gridStateBoorus.where().sortByTimeDesc().findAllSync();
+
+          if (l.isEmpty) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text("No bookmarks")));
+            return [];
+          }
+
+          final titleStyle = Theme.of(context)
+              .textTheme
+              .titleSmall!
+              .copyWith(color: Theme.of(context).colorScheme.secondary);
+
+          (int, int, int)? time;
+
+          for (final e in l) {
+            if (time == null ||
+                time != (e.time.day, e.time.month, e.time.year)) {
+              time = (e.time.day, e.time.month, e.time.year);
+
+              list.add(PopupMenuItem(
+                enabled: false,
+                child: timeLabel(time, titleStyle, timeNow),
+              ));
+            }
+
+            list.add(PopupMenuItem(
+                enabled: false,
+                child: ListTile(
+                  title: Text(e.tags),
+                  subtitle: Text(e.booru.string),
+                  onLongPress: () {
+                    Navigator.push(
+                        context,
+                        DialogRoute(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: const Text(
+                                "Delete", // TODO: change
+                              ),
+                              content: ListTile(
+                                title: Text(e.tags),
+                                subtitle: Text(e.time.toString()),
+                              ),
+                              actions: [
+                                TextButton(
+                                    onPressed: () {
+                                      DbsOpen.secondaryGridName(e.name)
+                                          .close(deleteFromDisk: true)
+                                          .then((value) {
+                                        if (value) {
+                                          Dbs.g.main.writeTxnSync(() => Dbs
+                                              .g.main.gridStateBoorus
+                                              .deleteByNameSync(e.name));
+                                        }
+
+                                        Navigator.pop(context);
+                                        Navigator.pop(context);
+                                      });
+                                    },
+                                    child: Text(
+                                        AppLocalizations.of(context)!.yes)),
+                                TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child:
+                                        Text(AppLocalizations.of(context)!.no)),
+                              ],
+                            );
+                          },
+                        ));
+                  },
+                  onTap: () {
+                    Navigator.pop(context);
+
+                    Dbs.g.main.writeTxnSync(() => Dbs.g.main.gridStateBoorus
+                        .putByNameSync(e.copy(false, time: DateTime.now())));
+
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (context) {
+                        return RandomBooruGrid(
+                          api: BooruAPI.fromEnum(e.booru, page: e.page),
+                          tagManager: TagManager.fromEnum(e.booru, true),
+                          tags: e.tags,
+                          state: e,
+                        );
+                      },
+                    ));
+                  },
+                )));
+          }
+
+          return list;
+        },
+        icon: const Icon(Icons.bookmark_rounded));
   }
 }

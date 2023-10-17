@@ -5,15 +5,31 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
+// import 'package:gallery/src/db/schemas/tags.dart';
+import 'package:isar/isar.dart';
 
-import 'settings_label.dart';
+import '../../interfaces/booru.dart';
 
-Widget timeLabel((int, int, int) time, TextStyle titleStyle, DateTime now) {
-  if (time == (now.day, now.month, now.year)) {
-    return settingsLabel("Today", titleStyle);
-  } else {
-    return settingsLabel(
-        "${time.$1}/${time.$2}/${time.$3.toString().substring(2)}", titleStyle);
-  }
+part 'note.g.dart';
+
+@collection
+class NoteBooru extends NoteBase {
+  @Index(unique: true, replace: true, composite: [CompositeIndex("booru")])
+  final int postId;
+  @enumerated
+  final Booru booru;
+
+  static void add(NoteBooru note) {}
+
+  static void remove() {}
+
+  NoteBooru(super.text, {required this.postId, required this.booru});
+}
+
+class NoteBase {
+  Id? id;
+
+  final String text;
+
+  NoteBase(this.text);
 }

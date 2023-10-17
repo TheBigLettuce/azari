@@ -70,12 +70,22 @@ class SelectionGlueState {
       });
 
   Widget? widget(BuildContext context) => actions?.isNotEmpty ?? false
-      ? BottomAppBar(
-          color: Theme.of(context).colorScheme.surface.withOpacity(0.95),
-          child: Wrap(
-            spacing: 4,
-            children: actions!,
-          ),
+      ? Stack(
+          fit: StackFit.passthrough,
+          children: [
+            const SizedBox(
+                height: 80,
+                child: AbsorbPointer(
+                  child: SizedBox.shrink(),
+                )),
+            BottomAppBar(
+              color: Theme.of(context).colorScheme.surface.withOpacity(0.95),
+              child: Wrap(
+                spacing: 4,
+                children: actions!,
+              ),
+            )
+          ],
         )
       : null;
 

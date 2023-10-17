@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/pages/notes_page.dart';
 
 import '../widgets/skeletons/drawer/azari_icon.dart';
 import 'downloads.dart';
@@ -25,6 +26,21 @@ class MorePage extends StatelessWidget {
       ),
       body: ListView(
         children: [
+          ListTile(
+            style: ListTileStyle.drawer,
+            leading: Icon(
+              Icons.notes_outlined,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            title: Text("Notes"),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) {
+                  return const NotesPage();
+                },
+              ));
+            },
+          ),
           ListTile(
             style: ListTileStyle.drawer,
             leading: Icon(

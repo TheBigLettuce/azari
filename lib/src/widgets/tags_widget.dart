@@ -37,6 +37,7 @@ class TagsWidget extends StatelessWidget {
       )
     ];
     final list = <Widget>[];
+    final timeNow = DateTime.now();
 
     if (tags.isEmpty) {
       return Column(
@@ -58,7 +59,7 @@ class TagsWidget extends StatelessWidget {
       if (time == null) {
         time = (e.time.day, e.time.month, e.time.year);
       } else if (time != (e.time.day, e.time.month, e.time.year)) {
-        listWraps.add(timeLabel(time, titleStyle));
+        listWraps.add(timeLabel(time, titleStyle, timeNow));
         listWraps.add(Padding(
           padding: const EdgeInsets.only(left: 16),
           child: Wrap(
@@ -110,7 +111,7 @@ class TagsWidget extends StatelessWidget {
 
     if (list.isNotEmpty) {
       final t = tags.last.time;
-      listWraps.add(timeLabel((t.day, t.month, t.year), titleStyle));
+      listWraps.add(timeLabel((t.day, t.month, t.year), titleStyle, timeNow));
       listWraps.add(Padding(
         padding: const EdgeInsets.only(left: 16),
         child: Wrap(

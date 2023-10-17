@@ -227,10 +227,8 @@ class GridLayout {
     }
 
     if (segments.injectedSegments.isNotEmpty) {
-      segRows.add(_SegSticky(segments.injectedLabel, true, () {
-        // segments.onLabelPressed(
-        //     segments.injectedLabel, segments.injectedSegments);
-      }));
+      segRows.add(
+          _SegSticky(segments.injectedLabel, true, null, unstickable: false));
 
       makeRows(segments.injectedSegments);
     }
@@ -268,15 +266,18 @@ class GridLayout {
             return Segments.label(context, val.seg,
                 sticky: val.sticky,
                 hidePinnedIcon: segments.hidePinnedIcon,
-                onLongPress: segments.addToSticky != null &&
-                        val.seg != segments.unsegmentedLabel
-                    ? () {
-                        HapticFeedback.vibrate();
-                        segments.addToSticky!(val.seg,
-                            unsticky: val.sticky ? true : null);
-                        state.onRefresh();
-                      }
-                    : null,
+                onLongPress: !val.unstickable
+                    ? null
+                    : segments.addToSticky != null &&
+                            val.seg != segments.unsegmentedLabel
+                        ? () {
+                            if (segments.addToSticky!(val.seg,
+                                unsticky: val.sticky ? true : null)) {
+                              HapticFeedback.vibrate();
+                              state.onRefresh();
+                            }
+                          }
+                        : null,
                 onPress: val.onLabelPressed);
           } else if (val is List<int>) {
             return segmentedRow(
@@ -336,6 +337,8 @@ class GridLayout {
 
     final unsegmented = <int>[];
 
+    segments.addToSticky;
+
     for (var i = 0; i < state.cellCount; i++) {
       final (res, sticky) = segments.segment!(state.getCell(i));
       if (res == null) {
@@ -379,10 +382,8 @@ class GridLayout {
     }
 
     if (segments.injectedSegments.isNotEmpty) {
-      segRows.add(_SegSticky(segments.injectedLabel, true, () {
-        // segments.onLabelPressed(
-        //     segments.injectedLabel, segments.injectedSegments);
-      }));
+      segRows.add(
+          _SegSticky(segments.injectedLabel, true, null, unstickable: false));
 
       makeRows(segments.injectedSegments);
     }
@@ -454,15 +455,18 @@ class GridLayout {
             return Segments.label(context, val.seg,
                 sticky: val.sticky,
                 hidePinnedIcon: segments.hidePinnedIcon,
-                onLongPress: segments.addToSticky != null &&
-                        val.seg != segments.unsegmentedLabel
-                    ? () {
-                        HapticFeedback.vibrate();
-                        segments.addToSticky!(val.seg,
-                            unsticky: val.sticky ? true : null);
-                        state.onRefresh();
-                      }
-                    : null,
+                onLongPress: !val.unstickable
+                    ? null
+                    : segments.addToSticky != null &&
+                            val.seg != segments.unsegmentedLabel
+                        ? () {
+                            if (segments.addToSticky!(val.seg,
+                                unsticky: val.sticky ? true : null)) {
+                              HapticFeedback.vibrate();
+                              state.onRefresh();
+                            }
+                          }
+                        : null,
                 onPress: val.onLabelPressed);
           } else if (val is List<int>) {
             return segmentedRow(

@@ -19,9 +19,11 @@ Widget gestureDeadZones(BuildContext context,
       child,
       if (left)
         Align(
-          alignment: Alignment.centerLeft,
+          alignment: Alignment.bottomLeft,
           child: Padding(
-            padding: const EdgeInsets.only(top: kToolbarHeight),
+            padding: EdgeInsets.only(
+                top: kToolbarHeight +
+                    MediaQuery.systemGestureInsetsOf(context).top),
             child: AbsorbPointer(
               child: SizedBox(width: systemInsets.left, child: Container()),
             ),
@@ -29,9 +31,11 @@ Widget gestureDeadZones(BuildContext context,
         ),
       if (right)
         Align(
-          alignment: Alignment.centerRight,
+          alignment: Alignment.bottomRight,
           child: Padding(
-            padding: const EdgeInsets.only(top: kToolbarHeight),
+            padding: EdgeInsets.only(
+                top: kToolbarHeight +
+                    MediaQuery.systemGestureInsetsOf(context).top),
             child: AbsorbPointer(
               child: SizedBox(width: systemInsets.left, child: Container()),
             ),

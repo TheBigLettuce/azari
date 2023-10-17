@@ -240,6 +240,27 @@ class _FavoritesPageState extends State<FavoritesPage>
     });
   }
 
+  GridBottomSheetAction<FavoriteBooru> _groupButton(BuildContext context) {
+    return FavoritesActions.addToGroup(context, (selected) {
+      final g = selected.first.group;
+      for (final e in selected.skip(1)) {
+        if (g != e.group) {
+          return null;
+        }
+      }
+
+      return g;
+    }, (selected, value) {
+      for (var e in selected) {
+        e.group = value.isEmpty ? null : value;
+      }
+      Dbs.g.main.writeTxnSync(
+          () => Dbs.g.main.favoriteBoorus.putAllByFileUrlSync(selected));
+
+      Navigator.pop(context);
+    });
+  }
+
   @override
   void dispose() {
     settingsWatcher.cancel();
@@ -265,7 +286,8 @@ class _FavoritesPageState extends State<FavoritesPage>
           scaffoldKey: state.scaffoldKey,
           addIconsImage: (p) => [
             BooruGridActions.favorites(context, p, showDeleteSnackbar: true),
-            BooruGridActions.download(context, booru)
+            BooruGridActions.download(context, booru),
+            _groupButton(context)
           ],
           systemNavigationInsets: EdgeInsets.only(
               bottom: MediaQuery.systemGestureInsetsOf(context).bottom +
@@ -315,24 +337,7 @@ class _FavoritesPageState extends State<FavoritesPage>
           refresh: () => Future.value(loader.count()),
           description: GridDescription([
             BooruGridActions.download(context, booru),
-            FavoritesActions.addToGroup(context, (selected) {
-              final g = selected.first.group;
-              for (final e in selected.skip(1)) {
-                if (g != e.group) {
-                  return null;
-                }
-              }
-
-              return g;
-            }, (selected, value) {
-              for (var e in selected) {
-                e.group = value.isEmpty ? null : value;
-              }
-              Dbs.g.main.writeTxnSync(() =>
-                  Dbs.g.main.favoriteBoorus.putAllByFileUrlSync(selected));
-
-              Navigator.pop(context);
-            })
+            _groupButton(context)
           ], state.settings.favorites.columns,
               keybindsDescription: AppLocalizations.of(context)!.favoritesLabel,
               listView: state.settings.favorites.listView),

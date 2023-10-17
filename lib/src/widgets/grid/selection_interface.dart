@@ -99,6 +99,8 @@ class SelectionInterface<T extends Cell> {
     } else {
       remove(index);
     }
+
+    HapticFeedback.selectionClick();
   }
 
   SelectionInterface._(

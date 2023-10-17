@@ -43,14 +43,17 @@ class _WrappedSelection extends StatelessWidget {
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: GestureDetector(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        selectUnselect();
-                      },
-                      onLongPress: () {
-                        selectUntil(thisIndx);
-                        HapticFeedback.vibrate();
-                      },
+                      onTap: thisIndx.isNegative
+                          ? null
+                          : () {
+                              selectUnselect();
+                            },
+                      onLongPress: thisIndx.isNegative
+                          ? null
+                          : () {
+                              selectUntil(thisIndx);
+                              HapticFeedback.vibrate();
+                            },
                       child: AbsorbPointer(
                         absorbing: selectionEnabled,
                         child: child,
@@ -60,10 +63,11 @@ class _WrappedSelection extends StatelessWidget {
             ),
             if (isSelected) ...[
               GestureDetector(
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  selectUnselect();
-                },
+                onTap: thisIndx.isNegative
+                    ? null
+                    : () {
+                        selectUnselect();
+                      },
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Align(
@@ -94,44 +98,45 @@ class _WrappedSelection extends StatelessWidget {
           ],
         );
 
-    return DragTarget(
-      onAccept: (data) {
-        HapticFeedback.selectionClick();
-        selectUnselect();
-      },
-      onLeave: (data) {
-        if (scrollController.position.isScrollingNotifier.value && isSelected) {
-          return;
-        }
-        HapticFeedback.selectionClick();
-        selectUnselect();
-      },
-      onMove: (details) {
-        if (scrollController.position.isScrollingNotifier.value) {
-          return;
-        }
+    return thisIndx.isNegative
+        ? make()
+        : DragTarget(
+            onAccept: (data) {
+              selectUnselect();
+            },
+            onLeave: (data) {
+              if (scrollController.position.isScrollingNotifier.value &&
+                  isSelected) {
+                return;
+              }
+              selectUnselect();
+            },
+            onMove: (details) {
+              if (scrollController.position.isScrollingNotifier.value) {
+                return;
+              }
 
-        final height = MediaQuery.of(context).size.height;
-        if (details.offset.dy < 120 && scrollController.offset > 100) {
-          scrollController.animateTo(scrollController.offset - 100,
-              duration: 200.ms, curve: Curves.linear);
-        } else if (details.offset.dy + bottomPadding >
-                (height * 0.9) - (bottomPadding) &&
-            scrollController.offset <
-                scrollController.position.maxScrollExtent * 0.99) {
-          scrollController.animateTo(scrollController.offset + 100,
-              duration: 200.ms, curve: Curves.linear);
-        }
-      },
-      onWillAccept: (data) => true,
-      builder: (context, _, __) {
-        return Draggable(
-          data: 1,
-          affinity: Axis.horizontal,
-          feedback: const SizedBox(),
-          child: make(),
-        );
-      },
-    );
+              final height = MediaQuery.of(context).size.height;
+              if (details.offset.dy < 120 && scrollController.offset > 100) {
+                scrollController.animateTo(scrollController.offset - 100,
+                    duration: 200.ms, curve: Curves.linear);
+              } else if (details.offset.dy + bottomPadding >
+                      (height * 0.9) - (bottomPadding) &&
+                  scrollController.offset <
+                      scrollController.position.maxScrollExtent * 0.99) {
+                scrollController.animateTo(scrollController.offset + 100,
+                    duration: 200.ms, curve: Curves.linear);
+              }
+            },
+            onWillAccept: (data) => true,
+            builder: (context, _, __) {
+              return Draggable(
+                data: 1,
+                affinity: Axis.horizontal,
+                feedback: const SizedBox(),
+                child: make(),
+              );
+            },
+          );
   }
 }

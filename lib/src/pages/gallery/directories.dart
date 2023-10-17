@@ -69,6 +69,7 @@ class GalleryDirectories extends StatefulWidget {
   final bool showBackButton;
   final Future<bool> Function() procPop;
   final SelectionGlue<SystemGalleryDirectory> glue;
+  final double bottomPadding;
 
   const GalleryDirectories(
       {super.key,
@@ -77,6 +78,7 @@ class GalleryDirectories extends StatefulWidget {
       this.noDrawer,
       required this.glue,
       required this.procPop,
+      this.bottomPadding = 0,
       this.showBackButton = false})
       : assert(!(callback != null && nestedCallback != null));
 
@@ -196,7 +198,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
             onBack: widget.showBackButton ? () => Navigator.pop(context) : null,
             systemNavigationInsets: EdgeInsets.only(
                 bottom: MediaQuery.of(context).systemGestureInsets.bottom +
-                    (widget.glue.isOpen() ? 80 : 0)),
+                    (widget.glue.isOpen() ? 80 : widget.bottomPadding)),
             hasReachedEnd: () => true,
             showCount: true,
             selectionGlue: widget.glue,
@@ -273,7 +275,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
               },
               addToSticky: (seg, {unsticky}) {
                 if (seg == "Booru" || seg == "Special") {
-                  return;
+                  return false;
                 }
                 if (unsticky == true) {
                   Dbs.g.blacklisted.writeTxnSync(() {
@@ -286,6 +288,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                         .putSync(PinnedDirectories(seg, DateTime.now()));
                   });
                 }
+
+                return true;
               },
               injectedSegments: [
                 if (Dbs.g.blacklisted.favoriteMedias.countSync() != 0)

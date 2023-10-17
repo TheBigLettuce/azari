@@ -106,10 +106,12 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         0 => MainBooruGrid(
             mainGrid: mainGrid,
             glue: glueState.glue(context, setState),
-            procPop: _procPop),
+            procPop: _procPop,
+          ),
         1 => GalleryDirectories(
             glue: glueState.glue(context, setState),
             procPop: _procPop,
+            bottomPadding: 80,
           ),
         2 => FavoritesPage(
             glue: glueState.glue(context, setState),
@@ -183,32 +185,27 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
               _switchPage(route);
             },
             destinations: [
-              MenuAnchor(
-                anchorTapClosesMenu: true,
-                alignmentOffset: const Offset(8, 8),
-                controller: menuController,
-                menuChildren: Booru.values
-                    .map((e) => ListTile(
-                          title: Text(e.string),
-                          onTap: () {
-                            selectBooru(context, Settings.fromDb(), e);
-                          },
-                        ))
-                    .toList(),
-                child: GestureDetector(
-                  onTap: () {
-                    _switchPage(0);
-                  },
-                  onLongPress: () {
-                    menuController.open();
-                  },
-                  child: AbsorbPointer(
-                    child: NavigationDestination(
-                      icon: const Icon(Icons.image),
-                      label: Settings.fromDb().selectedBooru.string,
-                    ),
+              NavigationDestination(
+                icon: MenuAnchor(
+                  anchorTapClosesMenu: true,
+                  alignmentOffset: const Offset(8, 8),
+                  controller: menuController,
+                  menuChildren: Booru.values
+                      .map((e) => ListTile(
+                            title: Text(e.string),
+                            onTap: () {
+                              selectBooru(context, Settings.fromDb(), e);
+                            },
+                          ))
+                      .toList(),
+                  child: GestureDetector(
+                    onLongPress: () {
+                      menuController.open();
+                    },
+                    child: const Icon(Icons.image),
                   ),
                 ),
+                label: Settings.fromDb().selectedBooru.string,
               ),
               NavigationDestination(
                 icon: const Icon(Icons.photo_album),
