@@ -200,6 +200,8 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   final SelectionGlue<T> selectionGlue;
   final Widget? overrideBackButton;
 
+  final NoteInterface<T>? noteInterface;
+
   const CallbackGrid(
       {required super.key,
       this.additionalKeybinds,
@@ -235,6 +237,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       this.initalCell,
       this.pageViewScrollingOffset,
       this.loadNext,
+      this.noteInterface,
       required this.refresh,
       this.updateScrollPosition,
       this.download,
@@ -473,6 +476,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
           infoScrollOffset: offset,
           predefinedIndexes: segTranslation,
           getCell: _state.getCell,
+          noteInterface: widget.noteInterface,
           cellCount: _state.cellCount,
           download: widget.download,
           startingCell: segTranslation != null

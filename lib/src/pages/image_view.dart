@@ -8,12 +8,14 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/db/schemas/note.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/gesture_dead_zones.dart';
@@ -40,6 +42,19 @@ import '../widgets/video/photo_gallery_page_video.dart';
 
 final Color kListTileColorInInfo = Colors.white60.withOpacity(0.8);
 
+class NoteInterface<T extends Cell> {
+  final void Function(String text, T cell) addNote;
+  final NoteBase? Function(T cell) load;
+  final void Function(T cell, int indx, String newCell) replace;
+  final void Function(T cell, int indx) delete;
+
+  const NoteInterface(
+      {required this.addNote,
+      required this.delete,
+      required this.load,
+      required this.replace});
+}
+
 class ImageView<T extends Cell> extends StatefulWidget {
   final int startingCell;
   final T Function(int i) getCell;
@@ -59,6 +74,8 @@ class ImageView<T extends Cell> extends StatefulWidget {
 
   final List<InheritedWidget Function(Widget)>? registerNotifiers;
 
+  final NoteInterface<T>? noteInterface;
+
   const ImageView(
       {super.key,
       required this.updateTagScrollPos,
@@ -70,6 +87,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
       required this.getCell,
       required this.onNearEnd,
       required this.focusMain,
+      this.noteInterface,
       required this.systemOverlayRestoreColor,
       this.pageChange,
       this.infoScrollOffset,
@@ -87,9 +105,12 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   late T currentCell;
   late int currentPage = widget.startingCell;
   late ScrollController scrollController;
+  final textController = TextEditingController();
   late int cellCount = widget.cellCount;
   bool refreshing = false;
   final mainFocus = FocusNode();
+
+  NoteBase? notes;
 
   ImageProvider? fakeProvider;
 
@@ -114,6 +135,9 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   }, TextEditingController(), FocusNode());
 
   bool isAppbarShown = true;
+  bool extendNotes = false;
+
+  final random = math.Random();
 
   late PlatformFullscreensPlug fullscreenPlug =
       choosePlatformFullscreenPlug(widget.systemOverlayRestoreColor);
@@ -219,6 +243,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     widget.updateTagScrollPos(null, widget.startingCell);
 
+    notes = widget.noteInterface?.load(currentCell);
+
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
       _extractPalette(context);
     });
@@ -236,6 +262,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     widget.onExit();
 
+    textController.dispose();
     currentPageController?.dispose();
 
     super.dispose();
@@ -471,6 +498,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
         child: Column(
           children: [
             AppBar(
+              scrolledUnderElevation: 0,
               automaticallyImplyLeading: false,
               foregroundColor: ColorTween(
                 begin: previousPallete?.dominantColor?.bodyTextColor
@@ -571,7 +599,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
       return null;
     }
 
-    final items = widget.addIcons!(currentCell);
+    final items = widget.addIcons?.call(currentCell);
 
     return Theme(
         data: Theme.of(context).copyWith(
@@ -594,21 +622,72 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                       .transform(_animationController.value)))),
         ),
         child: BottomAppBar(
-          child: Wrap(
-            spacing: 4,
-            children: items
-                .map(
-                  (e) => WrapSheetButton(e.icon, () {
-                    e.onPress([currentCell]);
-                  }, false, "", e.explanation,
-                      followColorTheme: true,
-                      color: e.color,
-                      play: e.play,
-                      backgroundColor: e.backgroundColor,
-                      animate: e.animate),
-                )
-                .toList(),
-          ),
+          child: Stack(children: [
+            if (items != null)
+              Wrap(
+                spacing: 4,
+                children: items
+                    .map(
+                      (e) => WrapSheetButton(e.icon, () {
+                        e.onPress([currentCell]);
+                      }, false, "", e.explanation,
+                          followColorTheme: true,
+                          color: e.color,
+                          play: e.play,
+                          backgroundColor: e.backgroundColor,
+                          animate: e.animate),
+                    )
+                    .toList(),
+              ),
+            if (widget.noteInterface != null)
+              Align(
+                  alignment: Alignment.centerRight,
+                  child: FloatingActionButton(
+                    elevation: 0,
+                    heroTag: null,
+                    onPressed: () {
+                      textController.text = "";
+
+                      Navigator.push(
+                          context,
+                          DialogRoute(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: const Text("New note"), // TODO: change
+                                content: TextFormField(
+                                  autofocus: true,
+                                  controller: textController,
+                                  maxLines: null,
+                                  minLines: 4,
+                                  autovalidateMode: AutovalidateMode.always,
+                                  validator: (value) {
+                                    if ((value?.isEmpty ?? true)) {
+                                      return "Value is empty";
+                                    }
+
+                                    return null;
+                                  },
+                                ),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () {
+                                        widget.noteInterface!.addNote(
+                                            textController.text, currentCell);
+                                        notes = widget.noteInterface!
+                                            .load(currentCell);
+                                        setState(() {});
+                                        Navigator.pop(context);
+                                      },
+                                      child: Text("Add"))
+                                ],
+                              );
+                            },
+                          ));
+                    },
+                    child: Icon(Icons.edit_square),
+                  ))
+          ]),
         ));
   }
 
@@ -724,53 +803,69 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     return CallbackGridState.wrapNotifiers(context, widget.registerNotifiers,
         (context) {
-      return CallbackShortcuts(
-          bindings: {
-            ...bindings,
-            ...keybindDescription(
-                context,
-                describeKeys(bindings),
-                AppLocalizations.of(context)!.imageViewPageName,
-                widget.focusMain)
+      return WillPopScope(
+          onWillPop: () {
+            if (extendNotes) {
+              setState(() {
+                extendNotes = false;
+              });
+              return Future.value(false);
+            }
+
+            return Future.value(true);
           },
-          child: Focus(
-            autofocus: true,
-            focusNode: mainFocus,
-            child: Theme(
-              data: Theme.of(context).copyWith(
-                  iconTheme: IconThemeData(
-                      color: ColorTween(
-                              begin: previousPallete
-                                      ?.dominantColor?.bodyTextColor
-                                      .harmonizeWith(
-                                          Theme.of(context).colorScheme.primary)
-                                      .withOpacity(0.8) ??
-                                  kListTileColorInInfo,
-                              end: currentPalette?.dominantColor?.bodyTextColor
-                                      .harmonizeWith(
-                                          Theme.of(context).colorScheme.primary)
-                                      .withOpacity(0.8) ??
-                                  kListTileColorInInfo)
-                          .transform(_animationController.value)),
-                  bottomAppBarTheme: BottomAppBarTheme(
-                    color: ColorTween(
-                            begin: previousPallete?.dominantColor?.color
-                                    .harmonizeWith(
-                                        Theme.of(context).colorScheme.primary)
-                                    .withOpacity(0.5) ??
-                                Colors.black.withOpacity(0.5),
-                            end: currentPalette?.dominantColor?.color
-                                    .harmonizeWith(
-                                        Theme.of(context).colorScheme.primary)
-                                    .withOpacity(0.5) ??
-                                Colors.black.withOpacity(0.5))
-                        .transform(_animationController.value),
-                  )),
-              child: Builder(
-                builder: f,
-              ),
-            ),
-          ));
+          child: CallbackShortcuts(
+              bindings: {
+                ...bindings,
+                ...keybindDescription(
+                    context,
+                    describeKeys(bindings),
+                    AppLocalizations.of(context)!.imageViewPageName,
+                    widget.focusMain)
+              },
+              child: Focus(
+                autofocus: true,
+                focusNode: mainFocus,
+                child: Theme(
+                  data: Theme.of(context).copyWith(
+                      listTileTheme: ListTileThemeData(
+                          textColor: ColorTween(
+                                  begin: previousPallete?.dominantColor?.bodyTextColor.harmonizeWith(Theme.of(context).colorScheme.primary).withOpacity(0.8) ??
+                                      kListTileColorInInfo,
+                                  end: currentPalette?.dominantColor?.bodyTextColor.harmonizeWith(Theme.of(context).colorScheme.primary).withOpacity(0.8) ??
+                                      kListTileColorInInfo)
+                              .transform(_animationController.value)),
+                      iconTheme: IconThemeData(
+                          color: ColorTween(
+                                  begin: previousPallete?.dominantColor?.bodyTextColor.harmonizeWith(Theme.of(context).colorScheme.primary).withOpacity(0.8) ??
+                                      kListTileColorInInfo,
+                                  end: currentPalette?.dominantColor?.bodyTextColor
+                                          .harmonizeWith(
+                                              Theme.of(context).colorScheme.primary)
+                                          .withOpacity(0.8) ??
+                                      kListTileColorInInfo)
+                              .transform(_animationController.value)),
+                      bottomAppBarTheme: BottomAppBarTheme(
+                        color: ColorTween(
+                                begin: previousPallete?.dominantColor?.color
+                                        .harmonizeWith(Theme.of(context)
+                                            .colorScheme
+                                            .primary)
+                                        .withOpacity(0.5) ??
+                                    Colors.black.withOpacity(0.5),
+                                end: currentPalette?.dominantColor?.color
+                                        .harmonizeWith(Theme.of(context)
+                                            .colorScheme
+                                            .primary)
+                                        .withOpacity(0.5) ??
+                                    Colors.black.withOpacity(0.5))
+                            .transform(_animationController.value),
+                      )),
+                  child: Builder(
+                    builder: f,
+                  ),
+                ),
+              )));
     });
   }
 
@@ -860,66 +955,275 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
         bottomNavigationBar: _makeBottomBar(context),
         endDrawer: _makeEndDrawer(context),
         appBar: _makeAppBar(context),
-        body: gestureDeadZones(
-          context,
-          child: GestureDetector(
-            onLongPress: widget.download == null
-                ? null
-                : () {
-                    HapticFeedback.vibrate();
-                    widget.download!(currentPage);
+        body: Stack(children: [
+          gestureDeadZones(
+            context,
+            child: GestureDetector(
+              onLongPress: widget.download == null
+                  ? null
+                  : () {
+                      HapticFeedback.vibrate();
+                      widget.download!(currentPage);
+                    },
+              onTap: _onTap,
+              child: PhotoViewGallery.builder(
+                  loadingBuilder: _loadingBuilder,
+                  enableRotation: true,
+                  backgroundDecoration: _photoBackgroundDecoration(),
+                  onPageChanged: (index) async {
+                    extendNotes = false;
+                    currentPage = index;
+                    widget.pageChange?.call(this);
+                    _loadNext(index);
+                    widget.updateTagScrollPos(null, index);
+
+                    widget.scrollUntill(index);
+
+                    final c = widget.getCell(index);
+
+                    fullscreenPlug.setTitle(c.alias(true));
+
+                    setState(() {
+                      notes = widget.noteInterface?.load(c);
+                      currentCell = c;
+                      _extractPalette(context);
+                    });
                   },
-            onTap: _onTap,
-            child: PhotoViewGallery.builder(
-                loadingBuilder: _loadingBuilder,
-                enableRotation: true,
-                backgroundDecoration: _photoBackgroundDecoration(),
-                onPageChanged: (index) async {
-                  currentPage = index;
-                  widget.pageChange?.call(this);
-                  _loadNext(index);
-                  widget.updateTagScrollPos(null, index);
+                  pageController: controller,
+                  itemCount: cellCount,
+                  builder: (context, indx) {
+                    final fileContent = widget.predefinedIndexes != null
+                        ? widget
+                            .getCell(widget.predefinedIndexes![indx])
+                            .fileDisplay()
+                        : widget.getCell(indx).fileDisplay();
 
-                  widget.scrollUntill(index);
-
-                  final c = widget.getCell(index);
-
-                  fullscreenPlug.setTitle(c.alias(true));
-
-                  setState(() {
-                    currentCell = c;
-                    _extractPalette(context);
-                  });
-                },
-                pageController: controller,
-                itemCount: cellCount,
-                builder: (context, indx) {
-                  final fileContent = widget.predefinedIndexes != null
-                      ? widget
-                          .getCell(widget.predefinedIndexes![indx])
-                          .fileDisplay()
-                      : widget.getCell(indx).fileDisplay();
-
-                  return switch (fileContent) {
-                    AndroidImage() => _makeAndroidImage(
-                        fileContent.size, fileContent.uri, false),
-                    AndroidGif() => _makeAndroidImage(
-                        fileContent.size, fileContent.uri, true),
-                    NetGif() => _makeNetImage(fileContent.provider),
-                    NetImage() => _makeNetImage(fileContent.provider),
-                    AndroidVideo() => _makeVideo(fileContent.uri, true),
-                    NetVideo() => _makeVideo(fileContent.uri, false),
-                    EmptyContent() => PhotoViewGalleryPageOptions.customChild(
-                          child: const Center(
-                        child: Icon(Icons.error_outline),
-                      ))
-                  };
-                }),
+                    return switch (fileContent) {
+                      AndroidImage() => _makeAndroidImage(
+                          fileContent.size, fileContent.uri, false),
+                      AndroidGif() => _makeAndroidImage(
+                          fileContent.size, fileContent.uri, true),
+                      NetGif() => _makeNetImage(fileContent.provider),
+                      NetImage() => _makeNetImage(fileContent.provider),
+                      AndroidVideo() => _makeVideo(fileContent.uri, true),
+                      NetVideo() => _makeVideo(fileContent.uri, false),
+                      EmptyContent() => PhotoViewGalleryPageOptions.customChild(
+                            child: const Center(
+                          child: Icon(Icons.error_outline),
+                        ))
+                    };
+                  }),
+            ),
+            left: true,
+            right: true,
           ),
-          left: true,
-          right: true,
-        ),
+          if (notes != null && isAppbarShown)
+            Padding(
+                padding: EdgeInsets.only(
+                    top: kToolbarHeight +
+                        MediaQuery.of(context).viewPadding.top +
+                        4,
+                    right: 4,
+                    left: 4),
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: AnimatedContainer(
+                    curve: Curves.easeInOutCirc,
+                    duration: 180.ms,
+                    height: extendNotes
+                        ? MediaQuery.of(context).size.height -
+                            MediaQuery.viewPaddingOf(context).bottom -
+                            MediaQuery.viewPaddingOf(context).top -
+                            (kToolbarHeight + 80 + 8)
+                        : 120,
+                    width:
+                        extendNotes ? MediaQuery.of(context).size.width : 100,
+                    decoration: BoxDecoration(
+                        borderRadius:
+                            const BorderRadius.all(Radius.elliptical(10, 10)),
+                        color: ColorTween(
+                                begin: previousPallete?.dominantColor?.color
+                                        .harmonizeWith(Theme.of(context)
+                                            .colorScheme
+                                            .primary)
+                                        .withOpacity(
+                                            extendNotes ? 0.95 : 0.5) ??
+                                    Colors.black
+                                        .withOpacity(extendNotes ? 0.95 : 0.5),
+                                end: currentPalette?.dominantColor?.color
+                                        .harmonizeWith(Theme.of(context)
+                                            .colorScheme
+                                            .primary)
+                                        .withOpacity(extendNotes ? 0.95 : 0.5) ??
+                                    Colors.black.withOpacity(extendNotes ? 0.95 : 0.5))
+                            .transform(_animationController.value)),
+                    child: ClipPath(
+                        child: SingleChildScrollView(
+                      primary: false,
+                      child: Column(
+                        crossAxisAlignment: extendNotes
+                            ? CrossAxisAlignment.start
+                            : CrossAxisAlignment.center,
+                        children: [
+                          IconButton(
+                              onPressed: () {
+                                extendNotes = !extendNotes;
+                                setState(() {});
+                              },
+                              icon: Icon(extendNotes
+                                  ? Icons.arrow_back
+                                  : Icons.sticky_note_2_outlined)),
+                          ...notes!.text.indexed.map((e) => Dismissible(
+                              key: ValueKey(e),
+                              background: Container(
+                                  color: Colors.red.harmonizeWith(
+                                      Theme.of(context).colorScheme.primary)),
+                              onDismissed: (direction) {
+                                final d = notes!.text[e.$1];
+                                final c = currentCell;
+                                widget.noteInterface!.delete(currentCell, e.$1);
+                                notes = widget.noteInterface!.load(currentCell);
+                                setState(() {});
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(SnackBar(
+                                  content: Text("Note deleted"),
+                                  action: SnackBarAction(
+                                      label: "Undo",
+                                      onPressed: () {
+                                        widget.noteInterface!.addNote(d, c);
+
+                                        notes = widget.noteInterface!
+                                            .load(currentCell);
+                                        try {
+                                          setState(() {});
+                                        } catch (_) {}
+                                      }),
+                                ));
+                              },
+                              child: ListTile(
+                                onTap: extendNotes
+                                    ? null
+                                    : () {
+                                        textController.text = e.$2;
+
+                                        Navigator.push(
+                                            context,
+                                            DialogRoute(
+                                              context: context,
+                                              builder: (context) {
+                                                return AlertDialog(
+                                                  title: Text("Note"),
+                                                  content: TextFormField(
+                                                    controller: textController,
+                                                    maxLines: null,
+                                                    decoration:
+                                                        const InputDecoration(
+                                                            border: InputBorder
+                                                                .none),
+                                                  ),
+                                                  actions: [
+                                                    TextButton(
+                                                        onPressed: () {
+                                                          widget.noteInterface!
+                                                              .replace(
+                                                                  currentCell,
+                                                                  e.$1,
+                                                                  textController
+                                                                      .text);
+                                                          notes = widget
+                                                              .noteInterface!
+                                                              .load(
+                                                                  currentCell);
+                                                          setState(() {});
+                                                          Navigator.pop(
+                                                              context);
+                                                        },
+                                                        child: Text("Save"))
+                                                  ],
+                                                );
+                                              },
+                                            ));
+                                      },
+                                title: extendNotes
+                                    ? _FormFieldSaveable(e.$2, random: random,
+                                        save: (s) {
+                                        if (s.isEmpty) {
+                                          return;
+                                        }
+
+                                        widget.noteInterface!
+                                            .replace(currentCell, e.$1, s);
+                                        notes = widget.noteInterface!
+                                            .load(currentCell);
+                                        WidgetsBinding.instance
+                                            .scheduleFrameCallback((timeStamp) {
+                                          setState(() {});
+                                        });
+                                      })
+                                    : Text(
+                                        e.$2,
+                                        maxLines: extendNotes ? null : 1,
+                                        style: TextStyle(
+                                            overflow: extendNotes
+                                                ? null
+                                                : TextOverflow.ellipsis),
+                                      ),
+                              )))
+                        ],
+                      ),
+                    )),
+                  ),
+                ))
+        ]),
       );
     });
+  }
+}
+
+class _FormFieldSaveable extends StatefulWidget {
+  final String text;
+  final void Function(String s) save;
+  final math.Random random;
+
+  const _FormFieldSaveable(this.text,
+      {super.key, required this.save, required this.random});
+
+  @override
+  State<_FormFieldSaveable> createState() => __FormFieldSaveableState();
+}
+
+class __FormFieldSaveableState extends State<_FormFieldSaveable> {
+  late final controller = TextEditingController(text: widget.text);
+
+  @override
+  void dispose() {
+    if (widget.text != controller.text) {
+      widget.save(controller.text);
+    }
+    controller.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      maxLines: null,
+      decoration: InputDecoration(
+          border: InputBorder.none,
+          prefix: Padding(
+              padding: EdgeInsets.only(right: 8),
+              child: Transform.rotate(
+                  angle: widget.random.nextInt(80).toDouble(),
+                  child: Text(
+                    "✦",
+                    style: TextStyle(
+                      color: Theme.of(context).iconTheme.color,
+                      fontSize: 16,
+                    ),
+                  )))),
+      style: TextStyle(color: Theme.of(context).listTileTheme.textColor),
+    );
   }
 }

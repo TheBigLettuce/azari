@@ -8,6 +8,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/schemas/note.dart';
 import 'package:gallery/src/widgets/grid/actions/favorites.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/interfaces/booru.dart';
@@ -317,6 +318,7 @@ class _FavoritesPageState extends State<FavoritesPage>
           ],
           download: _download,
           immutable: false,
+          noteInterface: NoteBooru.interface<FavoriteBooru>(setState),
           addFabPadding:
               Scaffold.of(context).widget.bottomNavigationBar == null,
           segments: segmented

@@ -13,6 +13,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/db/schemas/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/grid_state_booru.dart';
+import 'package:gallery/src/db/schemas/note.dart';
 import 'package:gallery/src/db/schemas/tags.dart';
 import 'package:gallery/src/pages/booru/random.dart';
 import 'package:isar/isar.dart';
@@ -369,6 +370,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
                     hasReachedEnd: () => reachedEnd,
                     mainFocus: state.mainFocus,
                     scaffoldKey: state.scaffoldKey,
+                    noteInterface: NoteBooru.interface(setState),
                     onError: (error) {
                       return OutlinedButton(
                         onPressed: () {

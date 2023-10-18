@@ -11,6 +11,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/post_tags.dart';
+import 'package:gallery/src/db/schemas/note.dart';
 import 'package:gallery/src/interfaces/cell.dart';
 import 'package:gallery/src/widgets/grid/cell_data.dart';
 import 'package:gallery/src/db/state_restoration.dart';
@@ -286,6 +287,8 @@ class PostBase implements Cell {
             backgroundColor: Colors.redAccent.shade100
                 .harmonizeWith(Theme.of(context).colorScheme.primary),
             right: true),
+      if (NoteBooru.hasNotes(id, Booru.fromPrefix(prefix)!))
+        const Sticker(Icons.sticky_note_2_outlined, right: true),
       ..._stickers(content, context).map((e) => Sticker(e.$1))
     ]);
   }

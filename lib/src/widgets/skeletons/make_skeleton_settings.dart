@@ -16,7 +16,8 @@ import '../keybinds/single_activator_description.dart';
 import 'skeleton_state.dart';
 
 Widget makeSkeletonSettings(BuildContext context, String pageDescription,
-    SkeletonState state, Widget child) {
+    SkeletonState state, Widget child,
+    {AppBar? appBar}) {
   Map<SingleActivatorDescription, Null Function()> bindings = {
     SingleActivatorDescription(AppLocalizations.of(context)!.back,
         const SingleActivator(LogicalKeyboardKey.escape)): () {
@@ -41,26 +42,31 @@ Widget makeSkeletonSettings(BuildContext context, String pageDescription,
           drawerEnableOpenDragGesture:
               MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,
           key: state.scaffoldKey,
+          appBar: appBar,
           body: gestureDeadZones(context,
-              child: CustomScrollView(
-                slivers: [
-                  SliverAppBar.large(
-                    expandedHeight: 160,
-                    flexibleSpace: FlexibleSpaceBar(
-                      title: Text(
-                        pageDescription,
-                        style: TextStyle(
-                            color:
-                                Theme.of(context).textTheme.bodyLarge?.color),
-                      ),
-                    ),
-                  ),
-                  SliverPadding(
-                    padding: EdgeInsets.only(bottom: insets.bottom),
-                    sliver: child,
-                  )
-                ],
-              )),
+              child: appBar == null
+                  ? CustomScrollView(
+                      slivers: [
+                        SliverAppBar.large(
+                          expandedHeight: 160,
+                          flexibleSpace: FlexibleSpaceBar(
+                            title: Text(
+                              pageDescription,
+                              style: TextStyle(
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge
+                                      ?.color),
+                            ),
+                          ),
+                        ),
+                        SliverPadding(
+                          padding: EdgeInsets.only(bottom: insets.bottom),
+                          sliver: child,
+                        )
+                      ],
+                    )
+                  : child),
         ),
       ));
 }

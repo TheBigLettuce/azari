@@ -13,6 +13,7 @@ import 'package:gallery/src/db/schemas/download_file.dart';
 import 'package:gallery/src/db/schemas/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/local_tag_dictionary.dart';
 import 'package:gallery/src/db/schemas/local_tags.dart';
+import 'package:gallery/src/db/schemas/note.dart';
 import 'package:gallery/src/db/schemas/pinned_directories.dart';
 import 'package:gallery/src/db/schemas/thumbnail.dart';
 import 'package:isar/isar.dart';
@@ -72,7 +73,8 @@ Future initalizeDb(bool temporary) async {
   final blacklistedDirIsar = Isar.openSync([
     BlacklistedDirectorySchema,
     PinnedDirectoriesSchema,
-    FavoriteMediaSchema
+    FavoriteMediaSchema,
+    NoteBooruSchema
   ], directory: directoryPath, inspector: false, name: "androidBlacklistedDir");
 
   Isar? thumbnailIsar;
