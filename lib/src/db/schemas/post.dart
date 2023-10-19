@@ -21,6 +21,7 @@ import 'package:html_unescape/html_unescape_small.dart';
 import 'package:isar/isar.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path_util;
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -88,6 +89,31 @@ class PostBase implements Cell {
   String filename() =>
       "${prefix.isNotEmpty ? '${prefix}_' : ''}$id - $md5${ext != '.zip' ? ext : path_util.extension(sampleUrl)}";
 
+  void _showQr(BuildContext context) {
+    Navigator.push(
+        context,
+        DialogRoute(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              content: Container(
+                decoration: const BoxDecoration(
+                    borderRadius: BorderRadius.all(Radius.circular(10))),
+                width: 320,
+                height: 320,
+                clipBehavior: Clip.antiAlias,
+                child: QrImageView(
+                  data: "${prefix}_$id",
+                  backgroundColor: Theme.of(context).colorScheme.onSurface,
+                  version: QrVersions.auto,
+                  size: 320,
+                ),
+              ),
+            );
+          },
+        ));
+  }
+
   @override
   List<Widget>? addButtons(BuildContext context) {
     return [
@@ -102,11 +128,22 @@ class PostBase implements Cell {
         },
       ),
       if (Platform.isAndroid)
+        GestureDetector(
+          onLongPress: () {
+            _showQr(context);
+          },
+          child: IconButton(
+              onPressed: () {
+                PlatformFunctions.shareMedia(fileUrl, url: true);
+              },
+              icon: const Icon(Icons.share)),
+        )
+      else
         IconButton(
             onPressed: () {
-              PlatformFunctions.shareMedia(fileUrl, url: true);
+              _showQr(context);
             },
-            icon: const Icon(Icons.share))
+            icon: const Icon(Icons.qr_code_rounded))
     ];
   }
 

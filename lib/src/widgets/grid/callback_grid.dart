@@ -591,8 +591,10 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         count: _state.cellCount,
         isLabelVisible: widget.showCount,
         child: Text(
-          "阿",
-          style: TextStyle(color: Theme.of(context).colorScheme.primary),
+          "探",
+          style: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
+              fontFamily: "ZenKurenaido"),
         ),
       );
     }

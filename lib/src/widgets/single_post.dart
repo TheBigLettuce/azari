@@ -17,7 +17,10 @@ import 'package:gallery/src/widgets/notifiers/booru_api.dart';
 import 'package:gallery/src/widgets/notifiers/tag_manager.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 
+import '../db/schemas/post.dart';
 import 'grid/actions/booru_grid.dart';
 import '../interfaces/booru.dart';
 import '../db/initalize_db.dart';
@@ -36,7 +39,7 @@ class SinglePost extends StatefulWidget {
 }
 
 class _SinglePostState extends State<SinglePost> {
-  final booru = BooruAPI.fromSettings();
+  final defaultBooru = BooruAPI.fromSettings();
   final controller = TextEditingController();
   final menuController = MenuController();
 
@@ -49,9 +52,111 @@ class _SinglePostState extends State<SinglePost> {
   void dispose() {
     arrowSpinningController = null;
     controller.dispose();
-    booru.close();
+    defaultBooru.close();
 
     super.dispose();
+  }
+
+  void _launch([Booru? replaceBooru, int? replaceId]) async {
+    if (inProcessLoading) {
+      return;
+    }
+
+    inProcessLoading = true;
+
+    BooruAPI booru;
+    if (replaceBooru != null) {
+      booru = BooruAPI.fromEnum(replaceBooru, page: null);
+    } else {
+      booru = defaultBooru;
+    }
+
+    try {
+      arrowSpinningController?.repeat();
+
+      final Post value;
+
+      if (replaceId != null) {
+        value = await booru.singlePost(replaceId);
+      } else {
+        final n = int.tryParse(controller.text);
+        if (n == null) {
+          throw AppLocalizations.of(context)!.notANumber(controller.text);
+        }
+
+        value = await booru.singlePost(n);
+      }
+
+      Color overlayColor =
+          Theme.of(context).colorScheme.background.withOpacity(0.5);
+
+      final key = GlobalKey<ImageViewState>();
+
+      final favoritesWatcher = Dbs.g.main.favoriteBoorus
+          .watchLazy(fireImmediately: false)
+          .listen((event) {
+        key.currentState?.setState(() {});
+      });
+
+      // ignore: use_build_context_synchronously
+      Navigator.push(context, MaterialPageRoute(
+        builder: (context) {
+          return ImageView(
+            key: key,
+            registerNotifiers: [
+              (child) => TagManagerNotifier(
+                  tagManager: widget.tagManager, child: child),
+              (child) => BooruAPINotifier(api: booru, child: child),
+            ],
+            updateTagScrollPos: (_, __) {},
+            download: (_) {
+              Downloader.g.add(
+                  DownloadFile.d(
+                      url: value.fileDownloadUrl(),
+                      site: booru.booru.url,
+                      name: value.filename(),
+                      thumbUrl: value.previewUrl),
+                  Settings.fromDb());
+            },
+            cellCount: 1,
+            addIcons: (p) => [
+              BooruGridActions.favorites(context, p),
+              BooruGridActions.download(context, booru)
+            ],
+            scrollUntill: (_) {},
+            onExit: () {},
+            focusMain: () {},
+            startingCell: 0,
+            getCell: (_) => value,
+            onNearEnd: () {
+              return Future.value(1);
+            },
+            systemOverlayRestoreColor: overlayColor,
+          );
+        },
+      )).then((_) {
+        favoritesWatcher.cancel();
+      });
+    } catch (e, trace) {
+      try {
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      } catch (_) {}
+
+      log("going to a post in single post",
+          level: Level.SEVERE.value, error: e, stackTrace: trace);
+    }
+
+    if (arrowSpinningController != null) {
+      arrowSpinningController!.stop();
+      arrowSpinningController!.reverse();
+    }
+
+    if (replaceBooru != null) {
+      booru.close();
+    }
+    inProcessLoading = false;
   }
 
   @override
@@ -71,6 +176,58 @@ class _SinglePostState extends State<SinglePost> {
               controller.text = "";
             },
           ),
+          IconButton(
+              onPressed: () {
+                Permission.camera.request().then((value) {
+                  if (!value.isGranted) {
+                    Navigator.push(
+                        context,
+                        DialogRoute(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: Text("Error"),
+                              content: Text(
+                                  "Camera permission should be granted for reading the QR codes."),
+                            );
+                          },
+                        ));
+                  } else {
+                    Navigator.push(
+                        context,
+                        DialogRoute(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              content: SizedBox(
+                                width: 320,
+                                height: 320,
+                                child: MobileScanner(onDetect: (capture) {
+                                  if (capture.barcodes.isNotEmpty) {
+                                    final value =
+                                        capture.barcodes.first.rawValue;
+                                    if (value != null) {
+                                      if (RegExp(r"^[0-9]").hasMatch(value)) {
+                                        controller.text = value;
+                                      } else {
+                                        try {
+                                          final f = value.split("_");
+                                          _launch(Booru.fromPrefix(f[0])!,
+                                              int.parse(f[1]));
+                                        } catch (_) {}
+                                      }
+                                    }
+                                  }
+                                  Navigator.pop(context);
+                                }),
+                              ),
+                            );
+                          },
+                        ));
+                  }
+                });
+              },
+              icon: const Icon(Icons.qr_code_scanner_rounded)),
           IconButton(
             icon: const Icon(Icons.content_paste),
             onPressed: () async {
@@ -119,92 +276,7 @@ class _SinglePostState extends State<SinglePost> {
                 onInit: (controller) => arrowSpinningController = controller,
                 effects: const [RotateEffect()],
                 autoPlay: false),
-            onPressed: () async {
-              if (inProcessLoading) {
-                return;
-              }
-
-              inProcessLoading = true;
-
-              try {
-                arrowSpinningController?.repeat();
-
-                final n = int.tryParse(controller.text);
-                if (n == null) {
-                  throw AppLocalizations.of(context)!
-                      .notANumber(controller.text);
-                }
-
-                Color overlayColor =
-                    Theme.of(context).colorScheme.background.withOpacity(0.5);
-
-                final value = await booru.singlePost(n);
-
-                final key = GlobalKey<ImageViewState>();
-
-                final favoritesWatcher = Dbs.g.main.favoriteBoorus
-                    .watchLazy(fireImmediately: false)
-                    .listen((event) {
-                  key.currentState?.setState(() {});
-                });
-
-                // ignore: use_build_context_synchronously
-                Navigator.push(context, MaterialPageRoute(
-                  builder: (context) {
-                    return ImageView(
-                      key: key,
-                      registerNotifiers: [
-                        (child) => TagManagerNotifier(
-                            tagManager: widget.tagManager, child: child),
-                        (child) => BooruAPINotifier(api: booru, child: child),
-                      ],
-                      updateTagScrollPos: (_, __) {},
-                      download: (_) {
-                        Downloader.g.add(
-                            DownloadFile.d(
-                                url: value.fileDownloadUrl(),
-                                site: booru.booru.url,
-                                name: value.filename(),
-                                thumbUrl: value.previewUrl),
-                            Settings.fromDb());
-                      },
-                      cellCount: 1,
-                      addIcons: (p) => [
-                        BooruGridActions.favorites(context, p),
-                        BooruGridActions.download(context, booru)
-                      ],
-                      scrollUntill: (_) {},
-                      onExit: () {},
-                      focusMain: () {},
-                      startingCell: 0,
-                      getCell: (_) => value,
-                      onNearEnd: () {
-                        return Future.value(1);
-                      },
-                      systemOverlayRestoreColor: overlayColor,
-                    );
-                  },
-                )).then((_) {
-                  favoritesWatcher.cancel();
-                });
-              } catch (e, trace) {
-                try {
-                  // ignore: use_build_context_synchronously
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(SnackBar(content: Text(e.toString())));
-                } catch (_) {}
-
-                log("going to a post in single post",
-                    level: Level.SEVERE.value, error: e, stackTrace: trace);
-              }
-
-              if (arrowSpinningController != null) {
-                arrowSpinningController!.stop();
-                arrowSpinningController!.reverse();
-              }
-
-              inProcessLoading = false;
-            },
+            onPressed: () => _launch(),
           )
         ],
       ),

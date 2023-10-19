@@ -66,6 +66,8 @@ class SystemGalleryDirectoryFile implements Cell {
   @ignore
   final List<Sticker> injectedStickers = [];
 
+  final String notesFlat;
+
   SystemGalleryDirectoryFile({
     required this.id,
     required this.bucketId,
@@ -74,6 +76,7 @@ class SystemGalleryDirectoryFile implements Cell {
     required this.isGif,
     required this.size,
     required this.height,
+    required this.notesFlat,
     required this.width,
     required this.isOriginal,
     required this.lastModified,
@@ -333,12 +336,10 @@ class SystemGalleryDirectoryFile implements Cell {
     }
 
     if (isGif) {
-      return AndroidGif(
-          uri: originalUri, size: Size(width.toDouble(), height.toDouble()));
+      return AndroidGif(uri: originalUri, size: size);
     }
 
-    return AndroidImage(
-        uri: originalUri, size: Size(width.toDouble(), height.toDouble()));
+    return AndroidImage(uri: originalUri, size: size);
   }
 
   @override
@@ -356,6 +357,8 @@ class SystemGalleryDirectoryFile implements Cell {
                 .harmonizeWith(Theme.of(context).colorScheme.primary),
             backgroundColor: Colors.yellowAccent.shade100
                 .harmonizeWith(Theme.of(context).colorScheme.primary)),
+      if (notesFlat.isNotEmpty)
+        const Sticker(Icons.sticky_note_2_outlined, right: true)
     ];
 
     return CellData(

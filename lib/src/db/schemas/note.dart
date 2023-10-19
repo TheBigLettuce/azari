@@ -26,6 +26,9 @@ part 'note.g.dart';
 
 @collection
 class NoteBooru extends NoteBase implements Cell {
+  @override
+  Id? isarId;
+
   @Index(unique: true, replace: true, composite: [CompositeIndex("booru")])
   final int postId;
   @enumerated
@@ -134,7 +137,9 @@ class NoteBooru extends NoteBase implements Cell {
           sampleUrl: cell.sampleUrl,
           previewUrl: cell.previewUrl,
         );
-        setState(() {});
+        try {
+          setState(() {});
+        } catch (_) {}
       },
       replace: (cell, indx, newText) {
         NoteBooru.replace(
@@ -142,7 +147,9 @@ class NoteBooru extends NoteBase implements Cell {
       },
       delete: (cell, indx) {
         NoteBooru.remove(cell.id, Booru.fromPrefix(cell.prefix)!, indx);
-        setState(() {});
+        try {
+          setState(() {});
+        } catch (_) {}
       },
       load: (cell) {
         return Dbs.g.blacklisted.noteBoorus
@@ -157,9 +164,6 @@ class NoteBooru extends NoteBase implements Cell {
       required this.fileUrl,
       required this.sampleUrl,
       required this.previewUrl});
-
-  @override
-  int? isarId;
 
   @override
   List<Widget>? addButtons(BuildContext context) {
@@ -230,12 +234,10 @@ class NoteBooru extends NoteBase implements Cell {
 }
 
 class NoteBase {
-  Id? id;
-
   @Index(caseSensitive: false, type: IndexType.hash)
   final List<String> text;
   @Index()
   final DateTime time;
 
-  NoteBase(this.text, this.time);
+  const NoteBase(this.text, this.time);
 }

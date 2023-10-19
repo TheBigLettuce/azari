@@ -32,15 +32,14 @@ class _WrappedGridPageState<T extends Cell> extends State<WrappedGridPage<T>>
     return Scaffold(
       key: widget.scaffoldKey,
       extendBody: true,
-      bottomNavigationBar: Animate(
-          target: glueState.actions == null ? 0 : 1,
-          effects: const [
-            MoveEffect(
-                curve: Curves.easeOutQuint,
-                end: Offset.zero,
-                begin: Offset(0, kBottomNavigationBarHeight)),
-          ],
-          child: glueState.widget(context) ?? const SizedBox.shrink()),
+      bottomNavigationBar: glueState.actions == null
+          ? null
+          : Animate(effects: const [
+              MoveEffect(
+                  curve: Curves.easeOutQuint,
+                  end: Offset.zero,
+                  begin: Offset(0, kBottomNavigationBarHeight)),
+            ], child: glueState.widget(context) ?? const SizedBox.shrink()),
       body: widget.f(glueState.glue<T>(context, setState)),
     );
   }

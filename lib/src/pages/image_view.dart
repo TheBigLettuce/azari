@@ -137,8 +137,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   bool isAppbarShown = true;
   bool extendNotes = false;
 
-  final random = math.Random();
-
   late PlatformFullscreensPlug fullscreenPlug =
       choosePlatformFullscreenPlug(widget.systemOverlayRestoreColor);
 
@@ -196,6 +194,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
       controller.previousPage(duration: 200.ms, curve: Curves.linearToEaseOut);
 
       currentCell = widget.getCell(0);
+      hardRefresh();
     } else if (currentPage > cellCount - 1) {
       controller.previousPage(duration: 200.ms, curve: Curves.linearToEaseOut);
     } else if (widget
@@ -213,6 +212,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     } else {
       currentCell = widget.getCell(currentPage);
     }
+
+    notes = widget.noteInterface?.load(currentCell);
 
     setState(() {});
   }
@@ -648,6 +649,13 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                     onPressed: () {
                       textController.text = "";
 
+                      if (extendNotes) {
+                        widget.noteInterface!.addNote("New note", currentCell);
+                        notes = widget.noteInterface!.load(currentCell);
+                        setState(() {});
+                        return;
+                      }
+
                       Navigator.push(
                           context,
                           DialogRoute(
@@ -943,6 +951,112 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     );
   }
 
+  Widget _notes(BuildContext context) {
+    final random = math.Random(96879873);
+
+    return Column(
+      crossAxisAlignment:
+          extendNotes ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+      children: [
+        IconButton(
+            onPressed: () {
+              extendNotes = !extendNotes;
+              setState(() {});
+            },
+            icon: Icon(
+                extendNotes ? Icons.arrow_back : Icons.sticky_note_2_outlined)),
+        ...notes!.text.indexed.map((e) {
+          return Dismissible(
+              key: ValueKey(UniqueKey()),
+              background: Container(
+                  color: Colors.red
+                      .harmonizeWith(Theme.of(context).colorScheme.primary)),
+              onDismissed: (direction) {
+                final d = notes!.text[e.$1];
+                final c = currentCell;
+                widget.noteInterface!.delete(currentCell, e.$1);
+                notes = widget.noteInterface!.load(currentCell);
+                setState(() {});
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text("Note deleted"),
+                  action: SnackBarAction(
+                      label: "Undo",
+                      onPressed: () {
+                        widget.noteInterface!.addNote(d, c);
+
+                        notes = widget.noteInterface!.load(currentCell);
+                        try {
+                          setState(() {});
+                        } catch (_) {}
+                      }),
+                ));
+              },
+              child: ListTile(
+                titleTextStyle: const TextStyle(fontFamily: "ZenKurenaido"),
+                onTap: extendNotes
+                    ? null
+                    : () {
+                        textController.text = e.$2;
+
+                        Navigator.push(
+                            context,
+                            DialogRoute(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: Text("Note"),
+                                  content: TextFormField(
+                                    controller: textController,
+                                    maxLines: null,
+                                    decoration: const InputDecoration(
+                                        border: InputBorder.none),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () {
+                                          widget.noteInterface!.replace(
+                                              currentCell,
+                                              e.$1,
+                                              textController.text);
+                                          notes = widget.noteInterface!
+                                              .load(currentCell);
+                                          setState(() {});
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text("Save"))
+                                  ],
+                                );
+                              },
+                            ));
+                      },
+                title: extendNotes
+                    ? _FormFieldSaveable(e.$2, random: random, save: (s) {
+                        if (s.isEmpty) {
+                          return;
+                        }
+
+                        widget.noteInterface!.replace(currentCell, e.$1, s);
+                        notes = widget.noteInterface!.load(currentCell);
+                        WidgetsBinding.instance
+                            .scheduleFrameCallback((timeStamp) {
+                          try {
+                            setState(() {});
+                          } catch (_) {}
+                        });
+                      })
+                    : Text(
+                        e.$2,
+                        maxLines: extendNotes ? null : 1,
+                        style: TextStyle(
+                            overflow:
+                                extendNotes ? null : TextOverflow.ellipsis),
+                      ),
+              ));
+        })
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return _wrapSkeleton(context, (context) {
@@ -1060,117 +1174,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                     child: ClipPath(
                         child: SingleChildScrollView(
                       primary: false,
-                      child: Column(
-                        crossAxisAlignment: extendNotes
-                            ? CrossAxisAlignment.start
-                            : CrossAxisAlignment.center,
-                        children: [
-                          IconButton(
-                              onPressed: () {
-                                extendNotes = !extendNotes;
-                                setState(() {});
-                              },
-                              icon: Icon(extendNotes
-                                  ? Icons.arrow_back
-                                  : Icons.sticky_note_2_outlined)),
-                          ...notes!.text.indexed.map((e) => Dismissible(
-                              key: ValueKey(e),
-                              background: Container(
-                                  color: Colors.red.harmonizeWith(
-                                      Theme.of(context).colorScheme.primary)),
-                              onDismissed: (direction) {
-                                final d = notes!.text[e.$1];
-                                final c = currentCell;
-                                widget.noteInterface!.delete(currentCell, e.$1);
-                                notes = widget.noteInterface!.load(currentCell);
-                                setState(() {});
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(SnackBar(
-                                  content: Text("Note deleted"),
-                                  action: SnackBarAction(
-                                      label: "Undo",
-                                      onPressed: () {
-                                        widget.noteInterface!.addNote(d, c);
-
-                                        notes = widget.noteInterface!
-                                            .load(currentCell);
-                                        try {
-                                          setState(() {});
-                                        } catch (_) {}
-                                      }),
-                                ));
-                              },
-                              child: ListTile(
-                                onTap: extendNotes
-                                    ? null
-                                    : () {
-                                        textController.text = e.$2;
-
-                                        Navigator.push(
-                                            context,
-                                            DialogRoute(
-                                              context: context,
-                                              builder: (context) {
-                                                return AlertDialog(
-                                                  title: Text("Note"),
-                                                  content: TextFormField(
-                                                    controller: textController,
-                                                    maxLines: null,
-                                                    decoration:
-                                                        const InputDecoration(
-                                                            border: InputBorder
-                                                                .none),
-                                                  ),
-                                                  actions: [
-                                                    TextButton(
-                                                        onPressed: () {
-                                                          widget.noteInterface!
-                                                              .replace(
-                                                                  currentCell,
-                                                                  e.$1,
-                                                                  textController
-                                                                      .text);
-                                                          notes = widget
-                                                              .noteInterface!
-                                                              .load(
-                                                                  currentCell);
-                                                          setState(() {});
-                                                          Navigator.pop(
-                                                              context);
-                                                        },
-                                                        child: Text("Save"))
-                                                  ],
-                                                );
-                                              },
-                                            ));
-                                      },
-                                title: extendNotes
-                                    ? _FormFieldSaveable(e.$2, random: random,
-                                        save: (s) {
-                                        if (s.isEmpty) {
-                                          return;
-                                        }
-
-                                        widget.noteInterface!
-                                            .replace(currentCell, e.$1, s);
-                                        notes = widget.noteInterface!
-                                            .load(currentCell);
-                                        WidgetsBinding.instance
-                                            .scheduleFrameCallback((timeStamp) {
-                                          setState(() {});
-                                        });
-                                      })
-                                    : Text(
-                                        e.$2,
-                                        maxLines: extendNotes ? null : 1,
-                                        style: TextStyle(
-                                            overflow: extendNotes
-                                                ? null
-                                                : TextOverflow.ellipsis),
-                                      ),
-                              )))
-                        ],
-                      ),
+                      child: _notes(context),
                     )),
                   ),
                 ))
@@ -1213,17 +1217,17 @@ class __FormFieldSaveableState extends State<_FormFieldSaveable> {
       decoration: InputDecoration(
           border: InputBorder.none,
           prefix: Padding(
-              padding: EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(right: 8),
               child: Transform.rotate(
                   angle: widget.random.nextInt(80).toDouble(),
                   child: Text(
                     "✦",
                     style: TextStyle(
-                      color: Theme.of(context).iconTheme.color,
-                      fontSize: 16,
-                    ),
+                        color: Theme.of(context).iconTheme.color, fontSize: 16),
                   )))),
-      style: TextStyle(color: Theme.of(context).listTileTheme.textColor),
-    );
+      style: TextStyle(
+          color: Theme.of(context).listTileTheme.textColor,
+          fontFamily: "ZenKurenaido"),
+    ).animate().fadeIn();
   }
 }

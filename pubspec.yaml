@@ -70,6 +70,8 @@ dependencies:
   package_info_plus: ^4.1.0
   xml: ^6.3.0
   dynamic_color: ^1.6.7
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^3.4.1
 
 dev_dependencies:
   flutter_test:
@@ -114,9 +116,9 @@ flutter:
   # https://flutter.dev/assets-and-images/#from-packages
 
   fonts:
-    - family: OpenSans
+    - family: ZenKurenaido
       fonts:
-        - asset: fonts/OpenSans-VariableFont_wdth,wght.ttf
+        - asset: fonts/ZenKurenaido-Regular.ttf
 
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a

@@ -8,6 +8,6 @@
 import 'package:flutter/material.dart';
 
 Widget azariIcon(BuildContext context, {Color? color}) => Icon(
-      const IconData(0x963F),
+      const IconData(0x963F, fontFamily: "ZenKurenaido"),
       color: color,
     ); // 阿

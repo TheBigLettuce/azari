@@ -12,6 +12,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/post_tags.dart';
 import 'package:gallery/src/db/initalize_db.dart';
+import 'package:gallery/src/db/schemas/note_gallery.dart';
 import 'package:gallery/src/plugs/platform_channel.dart';
 import 'package:gallery/src/pages/gallery/directories.dart';
 import 'package:gallery/src/interfaces/gallery.dart';
@@ -107,6 +108,12 @@ class _GalleryFilesState extends State<GalleryFiles>
         FilteringMode.favorite => Filters.favorite(cells),
         FilteringMode.untagged => Filters.untagged(cells),
         FilteringMode.tag => Filters.tag(cells, searchTextController.text),
+        FilteringMode.notes => (
+            cells.where((element) => element.notesFlat.isNotEmpty).where(
+                (element) => element.notesFlat
+                    .contains(searchTextController.text.toLowerCase())),
+            null
+          ),
         FilteringMode.tagReversed =>
           Filters.tagReversed(cells, searchTextController.text),
         FilteringMode.video => Filters.video(cells),
@@ -138,7 +145,8 @@ class _GalleryFilesState extends State<GalleryFiles>
     },
     hook: (selected) {
       if (selected == FilteringMode.tag ||
-          selected == FilteringMode.tagReversed) {
+          selected == FilteringMode.tagReversed ||
+          selected == FilteringMode.notes) {
         markSearchVirtual();
       }
 
@@ -156,6 +164,7 @@ class _GalleryFilesState extends State<GalleryFiles>
       FilteringMode.duplicate,
       FilteringMode.same,
       FilteringMode.tag,
+      FilteringMode.notes,
       FilteringMode.tagReversed,
       FilteringMode.untagged,
       FilteringMode.gif,
@@ -592,6 +601,15 @@ class _GalleryFilesState extends State<GalleryFiles>
                             .save()),
                   ],
                   inlineMenuButtonItems: true,
+                  noteInterface: NoteGallery.interface(() {
+                    if (state.gridKey.currentState?.mutationInterface
+                            ?.isRefreshing ==
+                        true) {
+                      return;
+                    }
+
+                    _refresh();
+                  }),
                   onBack: () {
                     final filterMode = currentFilteringMode();
                     if (filterMode != FilteringMode.noFilter) {

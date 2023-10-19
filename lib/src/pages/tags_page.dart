@@ -115,7 +115,9 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
         centerTitle: true,
         title: Text(
           "阿",
-          style: TextStyle(color: Theme.of(context).colorScheme.primary),
+          style: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
+              fontFamily: "ZenKurenaido"),
         ),
         bottom: TabBar(
           tabs: [

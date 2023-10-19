@@ -66,7 +66,9 @@ Widget makeSkeletonSettings(BuildContext context, String pageDescription,
                         )
                       ],
                     )
-                  : child),
+                  : child,
+              left: true,
+              right: true),
         ),
       ));
 }

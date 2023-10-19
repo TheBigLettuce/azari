@@ -9,6 +9,7 @@ import 'dart:developer';
 
 import 'package:gallery/src/db/post_tags.dart';
 import 'package:gallery/src/db/initalize_db.dart';
+import 'package:gallery/src/db/schemas/note_gallery.dart';
 import 'package:gallery/src/db/schemas/system_gallery_directory.dart';
 import 'package:gallery/src/db/schemas/system_gallery_directory_file.dart';
 import 'package:gallery/src/db/schemas/blacklisted_directory.dart';

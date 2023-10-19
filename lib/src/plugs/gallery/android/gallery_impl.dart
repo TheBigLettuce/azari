@@ -53,6 +53,12 @@ class _GalleryImpl implements GalleryApi {
           .map((e) => SystemGalleryDirectoryFile(
               id: e.id,
               bucketId: e.bucketId,
+              notesFlat: Dbs.g.main.noteGallerys
+                      .getByIdSync(e.id)
+                      ?.text
+                      .join()
+                      .toLowerCase() ??
+                  "",
               name: e.name,
               size: e.size,
               lastModified: e.lastModified,
