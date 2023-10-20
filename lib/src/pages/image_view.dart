@@ -111,6 +111,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   final mainFocus = FocusNode();
 
   NoteBase? notes;
+  List<DateTime>? noteKeys;
 
   ImageProvider? fakeProvider;
 
@@ -123,6 +124,41 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
       controller.dispose();
     } catch (_) {}
   });
+
+  void loadNotes({int? replaceIndx, bool addNote = false, int? removeNote}) {
+    notes = widget.noteInterface?.load(currentCell);
+    if (notes == null || notes!.text.isEmpty) {
+      return;
+    }
+
+    if (replaceIndx != null) {
+      noteKeys![replaceIndx] = DateTime.now();
+      return;
+    } else if (addNote) {
+      noteKeys!.add(DateTime.now());
+      return;
+    } else if (removeNote != null) {
+      noteKeys!.removeAt(removeNote);
+      return;
+    }
+
+    DateTime? previousTime;
+    noteKeys = notes!.text.map((_) {
+      if (previousTime == null) {
+        previousTime = DateTime.now();
+        return previousTime!;
+      } else {
+        var now = DateTime.now();
+        while (now.microsecondsSinceEpoch ==
+            previousTime!.microsecondsSinceEpoch) {
+          now = DateTime.now();
+        }
+
+        previousTime = now;
+        return now;
+      }
+    }).toList();
+  }
 
   PaletteGenerator? currentPalette;
   PaletteGenerator? previousPallete;
@@ -191,9 +227,13 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     cellCount = count;
 
     if (cellCount == 1) {
+      final newCell = widget.getCell(0);
+      if (newCell.isarId == currentCell.isarId) {
+        return;
+      }
       controller.previousPage(duration: 200.ms, curve: Curves.linearToEaseOut);
 
-      currentCell = widget.getCell(0);
+      currentCell = newCell;
       hardRefresh();
     } else if (currentPage > cellCount - 1) {
       controller.previousPage(duration: 200.ms, curve: Curves.linearToEaseOut);
@@ -212,8 +252,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     } else {
       currentCell = widget.getCell(currentPage);
     }
-
-    notes = widget.noteInterface?.load(currentCell);
 
     setState(() {});
   }
@@ -244,7 +282,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     widget.updateTagScrollPos(null, widget.startingCell);
 
-    notes = widget.noteInterface?.load(currentCell);
+    loadNotes();
 
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
       _extractPalette(context);
@@ -651,7 +689,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
                       if (extendNotes) {
                         widget.noteInterface!.addNote("New note", currentCell);
-                        notes = widget.noteInterface!.load(currentCell);
+                        loadNotes(addNote: true);
                         setState(() {});
                         return;
                       }
@@ -682,8 +720,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                                       onPressed: () {
                                         widget.noteInterface!.addNote(
                                             textController.text, currentCell);
-                                        notes = widget.noteInterface!
-                                            .load(currentCell);
+                                        loadNotes();
                                         setState(() {});
                                         Navigator.pop(context);
                                       },
@@ -967,7 +1004,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                 extendNotes ? Icons.arrow_back : Icons.sticky_note_2_outlined)),
         ...notes!.text.indexed.map((e) {
           return Dismissible(
-              key: ValueKey(UniqueKey()),
+              key: ValueKey(noteKeys![e.$1].microsecondsSinceEpoch),
               background: Container(
                   color: Colors.red
                       .harmonizeWith(Theme.of(context).colorScheme.primary)),
@@ -975,7 +1012,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                 final d = notes!.text[e.$1];
                 final c = currentCell;
                 widget.noteInterface!.delete(currentCell, e.$1);
-                notes = widget.noteInterface!.load(currentCell);
+                loadNotes(removeNote: e.$1);
                 setState(() {});
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   content: Text("Note deleted"),
@@ -984,7 +1021,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                       onPressed: () {
                         widget.noteInterface!.addNote(d, c);
 
-                        notes = widget.noteInterface!.load(currentCell);
+                        loadNotes(addNote: true);
                         try {
                           setState(() {});
                         } catch (_) {}
@@ -1018,8 +1055,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                                               currentCell,
                                               e.$1,
                                               textController.text);
-                                          notes = widget.noteInterface!
-                                              .load(currentCell);
+                                          loadNotes(replaceIndx: e.$1);
+
                                           setState(() {});
                                           Navigator.pop(context);
                                         },
@@ -1035,10 +1072,10 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                           return;
                         }
 
-                        widget.noteInterface!.replace(currentCell, e.$1, s);
-                        notes = widget.noteInterface!.load(currentCell);
                         WidgetsBinding.instance
                             .scheduleFrameCallback((timeStamp) {
+                          widget.noteInterface!.replace(currentCell, e.$1, s);
+                          loadNotes(replaceIndx: e.$1);
                           try {
                             setState(() {});
                           } catch (_) {}
@@ -1098,8 +1135,9 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                     fullscreenPlug.setTitle(c.alias(true));
 
                     setState(() {
-                      notes = widget.noteInterface?.load(c);
                       currentCell = c;
+                      loadNotes();
+
                       _extractPalette(context);
                     });
                   },

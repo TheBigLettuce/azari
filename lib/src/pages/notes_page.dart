@@ -5,15 +5,19 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/note.dart';
 import 'package:gallery/src/db/schemas/note_gallery.dart';
+import 'package:gallery/src/db/schemas/system_gallery_directory_file.dart';
+import 'package:gallery/src/pages/gallery/directories.dart';
 import 'package:gallery/src/pages/image_view.dart';
+import 'package:gallery/src/widgets/copy_move_preview.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
+import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/skeletons/make_skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 
-import '../interfaces/cell.dart';
-
 class NotesPage extends StatefulWidget {
-  const NotesPage({super.key});
+  final CallbackDescriptionNested? callback;
+
+  const NotesPage({super.key, this.callback});
 
   @override
   State<NotesPage> createState() => _NotesPageState();
@@ -81,6 +85,31 @@ class _NotesPageState extends State<NotesPage>
             scrollUntill: (_) {},
             startingCell: index,
             noteInterface: i,
+            addIcons: widget.callback != null
+                ? (n) => [
+                      GridBottomSheetAction(Icons.check, (selected) {
+                        final note = selected.first;
+
+                        widget.callback!(SystemGalleryDirectoryFile(
+                            id: note.id,
+                            bucketId: "",
+                            name: "",
+                            isVideo: note.isVideo,
+                            isGif: note.isGif,
+                            size: 0,
+                            height: note.height,
+                            notesFlat: "",
+                            width: note.width,
+                            isOriginal: false,
+                            lastModified: 0,
+                            originalUri: note.originalUri));
+                      },
+                          false,
+                          GridBottomSheetActionExplanation(
+                              label: "Return",
+                              body: "Return the file URI to the application."))
+                    ]
+                : null,
             onExit: () {},
             getCell: (idx) => notesGallery[idx],
             onNearEnd: null,
@@ -243,9 +272,11 @@ class _NotesPageState extends State<NotesPage>
 
   Iterable<Widget> _filter(BuildContext context, SearchController controller,
       Widget Function(void Function() onPress, ImageProvider provider) f) {
-    return tabController.index == 0
-        ? _notesBooru(context, controller, f)
-        : _notesGallery(context, controller, f);
+    return widget.callback != null
+        ? _notesGallery(context, controller, f)
+        : tabController.index == 0
+            ? _notesBooru(context, controller, f)
+            : _notesGallery(context, controller, f);
   }
 
   @override
@@ -254,24 +285,30 @@ class _NotesPageState extends State<NotesPage>
         context,
         "Notes",
         state,
-        TabBarView(controller: tabController, children: [
-          notesBooru.isEmpty
-              ? const Center(child: EmptyWidget())
-              : _make(
-                  context,
-                  notesBooru,
-                  (n) => CachedNetworkImageProvider(
-                        n.previewUrl,
-                      ), (i) {
-                  _launchBooru(i, NoteBooru.interfaceSelf(setState));
-                }),
-          notesGallery.isEmpty
-              ? const Center(child: EmptyWidget())
-              : _make(context, notesGallery,
-                  (n) => n.getCellData(false, context: context).thumb!, (i) {
-                  _launchGallery(i, NoteGallery.interfaceSelf(setState));
-                })
-        ]),
+        widget.callback != null
+            ? _make(context, notesGallery,
+                (e) => e.getCellData(false, context: context).thumb!, (i) {
+                _launchGallery(i, NoteGallery.interfaceSelf(setState));
+              })
+            : TabBarView(controller: tabController, children: [
+                notesBooru.isEmpty
+                    ? const Center(child: EmptyWidget())
+                    : _make(
+                        context,
+                        notesBooru,
+                        (n) => CachedNetworkImageProvider(
+                              n.previewUrl,
+                            ), (i) {
+                        _launchBooru(i, NoteBooru.interfaceSelf(setState));
+                      }),
+                notesGallery.isEmpty
+                    ? const Center(child: EmptyWidget())
+                    : _make(context, notesGallery,
+                        (n) => n.getCellData(false, context: context).thumb!,
+                        (i) {
+                        _launchGallery(i, NoteGallery.interfaceSelf(setState));
+                      })
+              ]),
         appBar: AppBar(
           actions: [
             SearchAnchor(
@@ -308,14 +345,17 @@ class _NotesPageState extends State<NotesPage>
             )
           ],
           title: Text("Notes"),
-          bottom: TabBar(controller: tabController, tabs: [
-            Tab(
-              text: "Booru",
-            ),
-            Tab(
-              text: "Gallery",
-            )
-          ]),
+          bottom: widget.callback != null
+              ? CopyMovePreview.hintWidget(
+                  context, widget.callback!.description)
+              : TabBar(controller: tabController, tabs: [
+                  Tab(
+                    text: "Booru",
+                  ),
+                  Tab(
+                    text: "Gallery",
+                  )
+                ]),
         ));
   }
 }

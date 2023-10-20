@@ -601,13 +601,18 @@ class _GalleryFilesState extends State<GalleryFiles>
                             .save()),
                   ],
                   inlineMenuButtonItems: true,
-                  noteInterface: NoteGallery.interface(() {
+                  noteInterface: NoteGallery.interface((
+                      {int? replaceIndx,
+                      bool addNote = false,
+                      int? removeNote}) {
                     if (state.gridKey.currentState?.mutationInterface
                             ?.isRefreshing ==
                         true) {
                       return;
                     }
 
+                    // state.gridKey.currentState?.imageViewKey.currentState
+                    //     ?.loadNotes();
                     _refresh();
                   }),
                   onBack: () {

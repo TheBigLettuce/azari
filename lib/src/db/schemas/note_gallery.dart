@@ -127,7 +127,8 @@ class NoteGallery extends NoteBase implements Cell {
   }
 
   static NoteInterface<SystemGalleryDirectoryFile> interface(
-      void Function() refresh) {
+      void Function({int? replaceIndx, bool addNote, int? removeNote})
+          refresh) {
     return NoteInterface(
       addNote: (text, cell) {
         NoteGallery.add(cell.id,
@@ -138,18 +139,18 @@ class NoteGallery extends NoteBase implements Cell {
             isGif: cell.isGif,
             originalUri: cell.originalUri);
 
-        refresh();
+        refresh(addNote: true);
       },
       delete: (cell, indx) {
         NoteGallery.remove(cell.id, indx);
-        refresh();
+        refresh(removeNote: indx);
       },
       load: (cell) {
         return Dbs.g.main.noteGallerys.getByIdSync(cell.id);
       },
       replace: (cell, indx, newText) {
         NoteGallery.replace(cell.id, indx, newText);
-        refresh();
+        refresh(removeNote: indx);
       },
     );
   }

@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/pages/notes_page.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -27,7 +28,9 @@ import 'settings/settings_widget.dart';
 import 'tags_page.dart';
 
 class Home extends StatefulWidget {
-  const Home({super.key});
+  final CallbackDescriptionNested? callback;
+
+  const Home({super.key, this.callback});
 
   @override
   State<Home> createState() => _HomeState();
@@ -102,34 +105,48 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     }
   }
 
-  Widget _currentPage(BuildContext context) => switch (currentRoute) {
-        0 => MainBooruGrid(
-            mainGrid: mainGrid,
-            glue: glueState.glue(context, setState),
-            procPop: _procPop,
-          ),
-        1 => GalleryDirectories(
-            glue: glueState.glue(context, setState),
-            procPop: _procPop,
-            bottomPadding: 80,
-          ),
-        2 => FavoritesPage(
-            glue: glueState.glue(context, setState),
-            procPop: _procPop,
-          ),
-        3 => WillPopScope(
-            onWillPop: _procPop,
-            child: TagsPage(
-              tagManager:
-                  TagManager.fromEnum(Settings.fromDb().selectedBooru, true),
-              booru: BooruAPI.fromEnum(Settings.fromDb().selectedBooru,
-                  page: null),
-              mainFocus: state.mainFocus,
-            )),
-        4 =>
-          WillPopScope(onWillPop: _procPop, child: const MorePage().animate()),
-        int() => throw "unimpl",
-      };
+  Widget _currentPage(BuildContext context) {
+    if (widget.callback != null) {
+      if (currentRoute == 0) {
+        return GalleryDirectories(
+          glue: glueState.glue(context, setState),
+          nestedCallback: widget.callback,
+          procPop: _procPop,
+          bottomPadding: 80,
+        );
+      } else {
+        return NotesPage(callback: widget.callback);
+      }
+    }
+
+    return switch (currentRoute) {
+      0 => MainBooruGrid(
+          mainGrid: mainGrid,
+          glue: glueState.glue(context, setState),
+          procPop: _procPop,
+        ),
+      1 => GalleryDirectories(
+          glue: glueState.glue(context, setState),
+          procPop: _procPop,
+          bottomPadding: 80,
+        ),
+      2 => FavoritesPage(
+          glue: glueState.glue(context, setState),
+          procPop: _procPop,
+        ),
+      3 => WillPopScope(
+          onWillPop: _procPop,
+          child: TagsPage(
+            tagManager:
+                TagManager.fromEnum(Settings.fromDb().selectedBooru, true),
+            booru:
+                BooruAPI.fromEnum(Settings.fromDb().selectedBooru, page: null),
+            mainFocus: state.mainFocus,
+          )),
+      4 => WillPopScope(onWillPop: _procPop, child: const MorePage().animate()),
+      int() => throw "unimpl",
+    };
+  }
 
   void _switchPage(int to) {
     if (to == currentRoute) {
@@ -184,46 +201,57 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
             onDestinationSelected: (route) {
               _switchPage(route);
             },
-            destinations: [
-              NavigationDestination(
-                icon: MenuAnchor(
-                  anchorTapClosesMenu: true,
-                  alignmentOffset: const Offset(8, 8),
-                  controller: menuController,
-                  menuChildren: Booru.values
-                      .map((e) => ListTile(
-                            title: Text(e.string),
-                            onTap: () {
-                              selectBooru(context, Settings.fromDb(), e);
-                            },
-                          ))
-                      .toList(),
-                  child: GestureDetector(
-                    onLongPress: () {
-                      menuController.open();
-                    },
-                    child: const Icon(Icons.image),
-                  ),
-                ),
-                label: Settings.fromDb().selectedBooru.string,
-              ),
-              NavigationDestination(
-                icon: const Icon(Icons.photo_album),
-                label: AppLocalizations.of(context)!.galleryLabel,
-              ),
-              NavigationDestination(
-                icon: const Icon(Icons.favorite),
-                label: AppLocalizations.of(context)!.favoritesLabel,
-              ),
-              NavigationDestination(
-                icon: const Icon(Icons.tag),
-                label: AppLocalizations.of(context)!.tagsLabel,
-              ),
-              const NavigationDestination(
-                icon: Icon(Icons.more_horiz),
-                label: "More", // TODO: change
-              )
-            ],
+            destinations: widget.callback != null
+                ? [
+                    NavigationDestination(
+                      icon: const Icon(Icons.photo_album),
+                      label: AppLocalizations.of(context)!.galleryLabel,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.sticky_note_2),
+                      label: "Notes",
+                    ),
+                  ]
+                : [
+                    NavigationDestination(
+                      icon: MenuAnchor(
+                        anchorTapClosesMenu: true,
+                        alignmentOffset: const Offset(8, 8),
+                        controller: menuController,
+                        menuChildren: Booru.values
+                            .map((e) => ListTile(
+                                  title: Text(e.string),
+                                  onTap: () {
+                                    selectBooru(context, Settings.fromDb(), e);
+                                  },
+                                ))
+                            .toList(),
+                        child: GestureDetector(
+                          onLongPress: () {
+                            menuController.open();
+                          },
+                          child: const Icon(Icons.image),
+                        ),
+                      ),
+                      label: Settings.fromDb().selectedBooru.string,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.photo_album),
+                      label: AppLocalizations.of(context)!.galleryLabel,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.favorite),
+                      label: AppLocalizations.of(context)!.favoritesLabel,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.tag),
+                      label: AppLocalizations.of(context)!.tagsLabel,
+                    ),
+                    const NavigationDestination(
+                      icon: Icon(Icons.more_horiz),
+                      label: "More", // TODO: change
+                    )
+                  ],
           )),
       selectedRoute: currentRoute,
     );

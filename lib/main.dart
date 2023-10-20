@@ -11,7 +11,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/net/downloader.dart';
-import 'package:gallery/src/db/post_tags.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/plugs/platform_channel.dart';
 import 'package:gallery/src/pages/gallery/directories.dart';
@@ -23,9 +22,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import 'src/db/schemas/system_gallery_directory.dart';
 import 'src/pages/home.dart';
-import 'src/widgets/grid/wrap_grid_page.dart';
 
 late final String azariVersion;
 
@@ -109,23 +106,10 @@ void mainPickfile() async {
     theme: _buildTheme(Brightness.light, accentColor),
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
-    home: Builder(
-      builder: (context) {
-        changeSystemUiOverlay(context);
-        initPostTags(context);
-
-        return WrappedGridPage<SystemGalleryDirectory>(
-            scaffoldKey: GlobalKey(),
-            f: (glue) => GalleryDirectories(
-                  noDrawer: true,
-                  procPop: () => Future.value(true),
-                  glue: glue,
-                  nestedCallback:
-                      CallbackDescriptionNested("Choose file", (chosen) {
-                    PlatformFunctions.returnUri(chosen.originalUri);
-                  }),
-                ));
-      },
+    home: Home(
+      callback: CallbackDescriptionNested("Choose file", (chosen) {
+        PlatformFunctions.returnUri(chosen.originalUri);
+      }),
     ),
   ));
 }

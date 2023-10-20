@@ -8,6 +8,9 @@
 part of 'settings_widget.dart';
 
 void selectBooru(BuildContext context, Settings settings, Booru value) {
+  if (settings.selectedBooru == value) {
+    return;
+  }
   _isRestart = true;
 
   settings.copy(selectedBooru: value).save();
