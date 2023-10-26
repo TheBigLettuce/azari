@@ -17,6 +17,7 @@ import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../db/schemas/note.dart';
 import 'main.dart';
 
 import '../../widgets/grid/actions/booru_grid.dart';
@@ -106,7 +107,7 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
 
     if (addedToBookmarks) {
       widget.instance.close(deleteFromDisk: false);
-      widget.restore.moveToBookmarks(widget.api.booru);
+      widget.restore.moveToBookmarks(widget.api.booru, widget.api.currentPage);
     } else {
       if (!isRestart) {
         widget.instance.close(deleteFromDisk: true);
@@ -178,6 +179,9 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
         final oldCount = widget.instance.posts.countSync();
         widget.instance.writeTxnSync(
             () => widget.instance.posts.putAllByFileUrlSync(list.$1));
+        widget.restore.updateScrollPosition(
+            widget.restore.current.scrollPositionGrid,
+            page: widget.api.currentPage);
         if (widget.instance.posts.countSync() - oldCount < 3) {
           return await _addLast();
         }
@@ -191,7 +195,6 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
   }
 
   void _restore(BuildContext context) {
-    Navigator.pop(context);
     if (widget.noRestoreOnBack) {
       return;
     }
@@ -203,7 +206,7 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
           return SecondaryBooruGrid(
             restore: next,
             noRestoreOnBack: false,
-            api: BooruAPI.fromEnum(widget.api.booru, page: null),
+            api: BooruAPI.fromEnum(widget.api.booru, page: next.copy.page),
             tagManager: widget.tagManager,
             instance: DbsOpen.secondaryGridName(next.copy.name),
           );
@@ -277,6 +280,7 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                               );
                             },
                             aspectRatio: state.settings.booru.aspectRatio.value,
+                            noteInterface: NoteBooru.interface(setState),
                             backButtonBadge: widget.restore.secondaryCount(),
                             getCell: (i) =>
                                 widget.instance.posts.getSync(i + 1)!,
@@ -288,8 +292,12 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                             },
                             hideAlias: true,
                             download: _download,
-                            updateScrollPosition:
-                                widget.restore.updateScrollPosition,
+                            updateScrollPosition: (pos,
+                                    {infoPos, selectedCell}) =>
+                                widget.restore.updateScrollPosition(pos,
+                                    infoPos: infoPos,
+                                    selectedCell: selectedCell,
+                                    page: widget.api.currentPage),
                             initalScrollPosition:
                                 widget.restore.copy.scrollPositionGrid,
                             searchWidget: SearchAndFocus(
@@ -310,14 +318,23 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                             initalCell: widget.restore.copy.selectedPost,
                           ),
                           overrideBooru: widget.api.booru,
-                          overrideOnPop: () {
+                          canPop: !glue.isOpen() &&
+                              state.gridKey.currentState?.showSearchBar != true,
+                          overrideOnPop: (pop, hideAppBar) {
                             if (glue.isOpen()) {
                               state.gridKey.currentState?.selection.reset();
-                              return Future.value(false);
+                              return;
                             }
 
-                            _restore(context);
-                            return Future.value(false);
+                            if (hideAppBar()) {
+                              setState(() {});
+                              return;
+                            }
+
+                            WidgetsBinding.instance
+                                .scheduleFrameCallback((timeStamp) {
+                              _restore(context);
+                            });
                           },
                         );
                       },

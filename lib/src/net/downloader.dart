@@ -153,7 +153,7 @@ class Downloader with _CancelTokens {
     final inProgress =
         Dbs.g.main.downloadFiles.filter().inProgressEqualTo(true).findAllSync();
     for (final element in inProgress) {
-      if (_tokens[element.isarId!] == null) {
+      if (_tokens[element.url] == null) {
         toUpdate.add(element.failed());
       }
     }
@@ -194,7 +194,7 @@ class Downloader with _CancelTokens {
         d.name, d.isarId!, d.site, "Downloader");
 
     dio.download(d.url, filePath,
-        cancelToken: _tokens[d.isarId],
+        cancelToken: _tokens[d.url],
         deleteOnError: true, onReceiveProgress: ((count, total) {
       if (count == total || !_hasCancelKey(d.url)) {
         progress.done();

@@ -27,21 +27,23 @@ part 'tag_manager.dart';
 class StateRestoration {
   final Isar _mainGrid;
   final GridState copy;
-  final int? Function()? getPage;
 
-  void updateScrollPosition(double pos, {double? infoPos, int? selectedCell}) {
+  GridState get current => _mainGrid.gridStates.getByNameSync(copy.name)!;
+
+  void updateScrollPosition(double pos,
+      {double? infoPos, int? selectedCell, int? page}) {
     final prev = _mainGrid.gridStates.getByNameSync(copy.name)!;
 
     _mainGrid.writeTxnSync(() => _mainGrid.gridStates.putSync(prev.copy(false,
         scrollPositionGrid: pos,
         scrollPositionTags: infoPos,
-        page: getPage?.call(),
+        page: page,
         selectedPost: selectedCell)));
   }
 
   int secondaryCount() => _mainGrid.gridStates.countSync() - 1;
 
-  void moveToBookmarks(Booru booru) {
+  void moveToBookmarks(Booru booru, int? page) {
     final prev = _mainGrid.gridStates.getByNameSync(copy.name)!;
 
     _mainGrid.writeTxnSync(() => _mainGrid.gridStates.deleteSync(prev.id!));
@@ -56,7 +58,7 @@ class StateRestoration {
             scrollPositionGrid: prev.scrollPositionGrid,
             name: prev.name,
             time: prev.time,
-            page: prev.page)));
+            page: page)));
   }
 
   void updateTime() {
@@ -115,7 +117,7 @@ class StateRestoration {
     return StateRestoration._next(_mainGrid, res);
   }
 
-  StateRestoration(Isar mainGrid, String name, this.getPage)
+  StateRestoration(Isar mainGrid, String name)
       : _mainGrid = mainGrid,
         copy = mainGrid.gridStates.getByNameSync(name) ??
             GridState.empty(name, "") {
@@ -125,9 +127,8 @@ class StateRestoration {
     }
   }
 
-  StateRestoration._next(this._mainGrid, this.copy) : getPage = null;
+  StateRestoration._next(this._mainGrid, this.copy);
 
   StateRestoration._new(this._mainGrid, String name, String tags)
-      : copy = _mainGrid.gridStates.getByNameSync(name)!,
-        getPage = null;
+      : copy = _mainGrid.gridStates.getByNameSync(name)!;
 }

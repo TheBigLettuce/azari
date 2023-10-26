@@ -21,6 +21,7 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../db/schemas/note.dart';
 import '../../widgets/grid/actions/booru_grid.dart';
 import '../../net/downloader.dart';
 import '../../interfaces/booru.dart';
@@ -187,6 +188,15 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
         final oldCount = instance.posts.countSync();
         instance
             .writeTxnSync(() => instance.posts.putAllByFileUrlSync(list.$1));
+
+        if (widget.state != null) {
+          final prev =
+              Dbs.g.main.gridStateBoorus.getByNameSync(widget.state!.name)!;
+
+          Dbs.g.main.writeTxnSync(() => Dbs.g.main.gridStateBoorus
+              .putByNameSync(prev.copy(false, page: widget.api.currentPage)));
+        }
+
         if (instance.posts.countSync() - oldCount < 3) {
           return await _addLast();
         }
@@ -266,6 +276,7 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                             getCell: (i) => instance.posts.getSync(i + 1)!,
                             loadNext: _addLast,
                             refresh: _clearAndRefresh,
+                            noteInterface: NoteBooru.interface(setState),
                             onBack: () => Navigator.pop(context),
                             hideAlias: true,
                             download: _download,
@@ -309,13 +320,17 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                             }),
                           ),
                           overrideBooru: widget.api.booru,
-                          overrideOnPop: () {
+                          canPop: !glue.isOpen() &&
+                              state.gridKey.currentState?.showSearchBar != true,
+                          overrideOnPop: (pop, hideAppBar) {
                             if (glue.isOpen()) {
                               state.gridKey.currentState?.selection.reset();
-                              return Future.value(false);
                             }
 
-                            return Future.value(true);
+                            if (hideAppBar()) {
+                              setState(() {});
+                              return;
+                            }
                           },
                         );
                       },

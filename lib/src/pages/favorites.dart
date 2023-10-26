@@ -33,7 +33,7 @@ import '../widgets/skeletons/grid_skeleton_state_filter.dart';
 import '../widgets/skeletons/make_grid_skeleton.dart';
 
 class FavoritesPage extends StatefulWidget {
-  final Future<bool> Function() procPop;
+  final void Function(bool) procPop;
   final SelectionGlue<FavoriteBooru> glue;
 
   const FavoritesPage({super.key, required this.procPop, required this.glue});
@@ -292,7 +292,8 @@ class _FavoritesPageState extends State<FavoritesPage>
           ],
           systemNavigationInsets: EdgeInsets.only(
               bottom: MediaQuery.systemGestureInsetsOf(context).bottom +
-                  (Scaffold.of(context).widget.bottomNavigationBar != null
+                  (Scaffold.of(context).widget.bottomNavigationBar != null &&
+                          !widget.glue.keyboardVisible()
                       ? 80
                       : 0)),
           hasReachedEnd: () => true,
@@ -343,17 +344,23 @@ class _FavoritesPageState extends State<FavoritesPage>
           ], state.settings.favorites.columns,
               keybindsDescription: AppLocalizations.of(context)!.favoritesLabel,
               listView: state.settings.favorites.listView),
-        ), overrideOnPop: () {
+        ),
+        canPop: false, overrideOnPop: (pop, hideAppBar) {
       if (searchTextController.text.isNotEmpty) {
         resetSearch();
-        return Future.value(false);
+        return;
       }
       if (widget.glue.isOpen()) {
         state.gridKey.currentState?.selection.reset();
-        return Future.value(false);
+        return;
       }
 
-      return widget.procPop();
+      if (hideAppBar()) {
+        setState(() {});
+        return;
+      }
+
+      widget.procPop(pop);
     });
   }
 }

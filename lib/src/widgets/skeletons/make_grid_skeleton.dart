@@ -17,25 +17,28 @@ Widget makeGridSkeleton<T extends Cell>(
     BuildContext context, GridSkeletonState<T> state, CallbackGrid<T> grid,
     {bool noDrawer = false,
     Booru? overrideBooru,
-    Future<bool> Function()? overrideOnPop}) {
-  return WillPopScope(
-    onWillPop: () {
-      Future<bool> pop() =>
-          overrideOnPop != null ? overrideOnPop() : Future.value(true);
+    required bool canPop,
+    void Function(bool, bool Function())? overrideOnPop}) {
+  return PopScope(
+    canPop: canPop,
+    onPopInvoked: overrideOnPop == null
+        ? null
+        : (pop) {
+            overrideOnPop(pop, () {
+              final s = state.gridKey.currentState;
+              if (s != null) {
+                if (s.showSearchBar) {
+                  s.showSearchBar = false;
+                  // ignore: invalid_use_of_protected_member
+                  s.setState(() {});
 
-      final s = state.gridKey.currentState;
-      if (s == null) {
-        return pop();
-      }
+                  return true;
+                }
+              }
 
-      if (s.showSearchBar) {
-        s.showSearchBar = false;
-        // ignore: invalid_use_of_protected_member
-        s.setState(() {});
-        return Future.value(false);
-      }
-      return pop();
-    },
+              return false;
+            });
+          },
     child: gestureDeadZones(context, child: grid, left: true, right: true),
   );
 }

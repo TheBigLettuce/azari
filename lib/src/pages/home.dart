@@ -84,17 +84,12 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                     TextButton(
                         onPressed: () {
                           Navigator.pop(context);
-                          Navigator.pushReplacementNamed(context, "/booru");
                         },
                         child: Text(AppLocalizations.of(context)!.later)),
                     TextButton(
                         onPressed: () {
-                          Settings.chooseDirectory((e) {}).then((success) {
-                            if (success) {
-                              Navigator.pop(context);
-                              Navigator.pushReplacementNamed(context, "/booru");
-                            }
-                          });
+                          Settings.chooseDirectory((e) {});
+                          Navigator.pop(context);
                         },
                         child: Text(AppLocalizations.of(context)!.choose))
                   ],
@@ -105,14 +100,16 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     }
   }
 
+  bool keyboardVisible() => MediaQuery.viewInsetsOf(context).bottom != 0;
+
   Widget _currentPage(BuildContext context) {
     if (widget.callback != null) {
       if (currentRoute == 0) {
         return GalleryDirectories(
-          glue: glueState.glue(context, setState),
+          glue: glueState.glue(keyboardVisible, setState),
           nestedCallback: widget.callback,
           procPop: _procPop,
-          bottomPadding: 80,
+          bottomPadding: keyboardVisible() ? 0 : 80,
         );
       } else {
         return NotesPage(callback: widget.callback);
@@ -122,20 +119,21 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     return switch (currentRoute) {
       0 => MainBooruGrid(
           mainGrid: mainGrid,
-          glue: glueState.glue(context, setState),
+          glue: glueState.glue(keyboardVisible, setState),
           procPop: _procPop,
         ),
       1 => GalleryDirectories(
-          glue: glueState.glue(context, setState),
+          glue: glueState.glue(keyboardVisible, setState),
           procPop: _procPop,
-          bottomPadding: 80,
+          bottomPadding: keyboardVisible() ? 0 : 80,
         ),
       2 => FavoritesPage(
-          glue: glueState.glue(context, setState),
+          glue: glueState.glue(keyboardVisible, setState),
           procPop: _procPop,
         ),
-      3 => WillPopScope(
-          onWillPop: _procPop,
+      3 => PopScope(
+          canPop: currentRoute == 0,
+          onPopInvoked: _procPop,
           child: TagsPage(
             tagManager:
                 TagManager.fromEnum(Settings.fromDb().selectedBooru, true),
@@ -143,7 +141,10 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                 BooruAPI.fromEnum(Settings.fromDb().selectedBooru, page: null),
             mainFocus: state.mainFocus,
           )),
-      4 => WillPopScope(onWillPop: _procPop, child: const MorePage().animate()),
+      4 => PopScope(
+          canPop: currentRoute == 0,
+          onPopInvoked: _procPop,
+          child: const MorePage().animate()),
       int() => throw "unimpl",
     };
   }
@@ -159,13 +160,10 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     });
   }
 
-  Future<bool> _procPop() {
-    if (currentRoute != 0) {
+  void _procPop(bool pop) {
+    if (!pop) {
       _switchPage(0);
-      return Future.value(false);
     }
-
-    return Future.value(true);
   }
 
   @override

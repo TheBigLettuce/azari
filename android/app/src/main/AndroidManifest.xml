@@ -27,6 +27,7 @@
 
     <application
         android:name=".App"
+        android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"
         android:label="Ācārya">
         <activity

@@ -37,7 +37,7 @@ class GridCell<T extends CellData> extends StatefulWidget {
   final bool ignoreStickers;
 
   const GridCell(
-      {Key? key,
+      {super.key,
       required T cell,
       required this.indx,
       required this.onPressed,
@@ -49,8 +49,7 @@ class GridCell<T extends CellData> extends StatefulWidget {
       this.ignoreStickers = false,
       this.onLongPress})
       : _data = cell,
-        hideAlias = hidealias ?? false,
-        super(key: key);
+        hideAlias = hidealias ?? false;
 
   @override
   State<GridCell> createState() => _GridCellState();

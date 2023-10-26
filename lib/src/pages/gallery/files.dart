@@ -210,9 +210,7 @@ class _GalleryFilesState extends State<GalleryFiles>
             f: (glue) => GalleryDirectories(
                   showBackButton: true,
                   glue: glue,
-                  procPop: () {
-                    return Future.value(true);
-                  },
+                  procPop: (_) {},
                   callback: CallbackDescription(
                       move
                           ? AppLocalizations.of(context)!.chooseMoveDestination
@@ -611,8 +609,6 @@ class _GalleryFilesState extends State<GalleryFiles>
                       return;
                     }
 
-                    // state.gridKey.currentState?.imageViewKey.currentState
-                    //     ?.loadNotes();
                     _refresh();
                   }),
                   onBack: () {
@@ -647,20 +643,28 @@ class _GalleryFilesState extends State<GalleryFiles>
                           : null,
                       keybindsDescription: widget.dirName)),
               noDrawer: widget.callback != null,
-              overrideOnPop: () {
+              canPop: currentFilteringMode() == FilteringMode.noFilter &&
+                  searchTextController.text.isEmpty &&
+                  !glue.isOpen() &&
+                  state.gridKey.currentState?.showSearchBar == false,
+              overrideOnPop: (pop, hideAppBar) {
                 final filterMode = currentFilteringMode();
                 if (filterMode != FilteringMode.noFilter ||
                     searchTextController.text.isNotEmpty) {
                   resetSearch();
-                  return Future.value(false);
+                  setState(() {});
+                  return;
                 }
 
                 if (glue.isOpen()) {
                   state.gridKey.currentState?.selection.reset();
-                  return Future.value(false);
+                  return;
                 }
 
-                return Future.value(true);
+                if (hideAppBar()) {
+                  setState(() {});
+                  return;
+                }
               },
             ));
   }

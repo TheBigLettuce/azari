@@ -159,13 +159,17 @@ class _DownloadsState extends State<Downloads>
                       keybindsDescription:
                           AppLocalizations.of(context)!.downloadsPageName,
                       listView: true)),
-              overrideOnPop: () {
+              canPop: !glue.isOpen(),
+              overrideOnPop: (pop, hideAppBar) {
                 if (glue.isOpen()) {
                   state.gridKey.currentState?.selection.reset();
-                  return Future.value(false);
+                  return;
                 }
 
-                return Future.value(true);
+                if (hideAppBar()) {
+                  setState(() {});
+                  return;
+                }
               },
             ));
   }

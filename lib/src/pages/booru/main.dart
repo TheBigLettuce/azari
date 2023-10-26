@@ -128,7 +128,7 @@ PopupMenuItem _listView(bool listView, void Function(bool) select) {
 
 class MainBooruGrid extends StatefulWidget {
   final Isar mainGrid;
-  final Future<bool> Function() procPop;
+  final void Function(bool) procPop;
   final SelectionGlue<Post> glue;
 
   const MainBooruGrid(
@@ -191,8 +191,8 @@ class _MainBooruGridState extends State<MainBooruGrid>
   void initState() {
     super.initState();
 
-    restore = StateRestoration(widget.mainGrid,
-        state.settings.selectedBooru.string, () => api.currentPage);
+    restore =
+        StateRestoration(widget.mainGrid, state.settings.selectedBooru.string);
     api = BooruAPI.fromSettings(page: restore.copy.page);
 
     tagManager = TagManager(restore, (fire, f) {
@@ -249,7 +249,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
       restore.updateTime();
 
       final list = await api.page(0, "", tagManager.excluded);
-      restore.updateScrollPosition(0);
+      restore.updateScrollPosition(0, page: api.currentPage);
       currentSkipped = list.$2;
       widget.mainGrid.writeTxnSync(() {
         widget.mainGrid.posts.clearSync();
@@ -334,7 +334,8 @@ class _MainBooruGridState extends State<MainBooruGrid>
                                 .systemGestureInsets
                                 .bottom +
                             (Scaffold.of(context).widget.bottomNavigationBar !=
-                                    null
+                                        null &&
+                                    !widget.glue.keyboardVisible()
                                 ? 80
                                 : 0)),
                     selectionGlue: widget.glue,
@@ -387,7 +388,11 @@ class _MainBooruGridState extends State<MainBooruGrid>
                     refresh: _clearAndRefresh,
                     hideAlias: true,
                     download: _download,
-                    updateScrollPosition: restore.updateScrollPosition,
+                    updateScrollPosition: (pos, {infoPos, selectedCell}) =>
+                        restore.updateScrollPosition(pos,
+                            infoPos: infoPos,
+                            selectedCell: selectedCell,
+                            page: api.currentPage),
                     initalScrollPosition: restore.copy.scrollPositionGrid,
                     initalCellCount: widget.mainGrid.posts.countSync(),
                     beforeImageViewRestore: () {
@@ -400,7 +405,8 @@ class _MainBooruGridState extends State<MainBooruGrid>
                               return SecondaryBooruGrid(
                                 restore: last,
                                 noRestoreOnBack: false,
-                                api: BooruAPI.fromEnum(api.booru, page: null),
+                                api: BooruAPI.fromEnum(api.booru,
+                                    page: last.copy.page),
                                 tagManager: tagManager,
                                 instance:
                                     DbsOpen.secondaryGridName(last.copy.name),
@@ -426,13 +432,20 @@ class _MainBooruGridState extends State<MainBooruGrid>
                     initalCell: restore.copy.selectedPost,
                   ),
                   overrideBooru: api.booru,
-                  overrideOnPop: () {
+                  canPop: !widget.glue.isOpen() &&
+                      state.gridKey.currentState?.showSearchBar == false,
+                  overrideOnPop: (pop, hideAppBar) {
                     if (widget.glue.isOpen()) {
                       state.gridKey.currentState?.selection.reset();
-                      return Future.value(false);
+                      return;
                     }
 
-                    return widget.procPop();
+                    if (hideAppBar()) {
+                      setState(() {});
+                      return;
+                    }
+
+                    widget.procPop(pop);
                   },
                 );
               },

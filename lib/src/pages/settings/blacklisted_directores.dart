@@ -128,13 +128,18 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
                       keybindsDescription: AppLocalizations.of(context)!
                           .blacklistedDirectoriesPageName,
                       listView: true)),
-              overrideOnPop: () {
+              canPop: !glue.isOpen() &&
+                  state.gridKey.currentState?.showSearchBar == false,
+              overrideOnPop: (pop, hideAppBar) {
                 if (glue.isOpen()) {
                   state.gridKey.currentState?.selection.reset();
-                  return Future.value(false);
+                  return;
                 }
 
-                return Future.value(true);
+                if (hideAppBar()) {
+                  setState(() {});
+                  return;
+                }
               },
             ));
   }

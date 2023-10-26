@@ -110,6 +110,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   bool refreshing = false;
   final mainFocus = FocusNode();
 
+  final notesController = ScrollController();
+
   NoteBase? notes;
   List<DateTime>? noteKeys;
 
@@ -303,6 +305,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     textController.dispose();
     currentPageController?.dispose();
+    scrollController.dispose();
+    notesController.dispose();
 
     super.dispose();
   }
@@ -689,8 +693,13 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
                       if (extendNotes) {
                         widget.noteInterface!.addNote("New note", currentCell);
+
                         loadNotes(addNote: true);
                         setState(() {});
+                        notesController.animateTo(
+                            notesController.position.maxScrollExtent,
+                            duration: 200.ms,
+                            curve: Curves.linear);
                         return;
                       }
 
@@ -730,7 +739,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                             },
                           ));
                     },
-                    child: Icon(Icons.edit_square),
+                    child: const Icon(Icons.edit_square),
                   ))
           ]),
         ));
@@ -848,16 +857,14 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     return CallbackGridState.wrapNotifiers(context, widget.registerNotifiers,
         (context) {
-      return WillPopScope(
-          onWillPop: () {
+      return PopScope(
+          canPop: !extendNotes,
+          onPopInvoked: (pop) {
             if (extendNotes) {
               setState(() {
                 extendNotes = false;
               });
-              return Future.value(false);
             }
-
-            return Future.value(true);
           },
           child: CallbackShortcuts(
               bindings: {
@@ -1121,7 +1128,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                   loadingBuilder: _loadingBuilder,
                   enableRotation: true,
                   backgroundDecoration: _photoBackgroundDecoration(),
-                  onPageChanged: (index) async {
+                  onPageChanged: (index) {
                     extendNotes = false;
                     currentPage = index;
                     widget.pageChange?.call(this);
@@ -1169,7 +1176,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
             left: true,
             right: true,
           ),
-          if (notes != null && isAppbarShown)
+          if (notes != null)
             Padding(
                 padding: EdgeInsets.only(
                     top: kToolbarHeight +
@@ -1182,14 +1189,19 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                   child: AnimatedContainer(
                     curve: Curves.easeInOutCirc,
                     duration: 180.ms,
-                    height: extendNotes
-                        ? MediaQuery.of(context).size.height -
-                            MediaQuery.viewPaddingOf(context).bottom -
-                            MediaQuery.viewPaddingOf(context).top -
-                            (kToolbarHeight + 80 + 8)
-                        : 120,
-                    width:
-                        extendNotes ? MediaQuery.of(context).size.width : 100,
+                    height: !isAppbarShown
+                        ? 0
+                        : extendNotes
+                            ? MediaQuery.of(context).size.height -
+                                MediaQuery.viewPaddingOf(context).bottom -
+                                MediaQuery.viewPaddingOf(context).top -
+                                (kToolbarHeight + 80 + 8)
+                            : 120,
+                    width: !isAppbarShown
+                        ? 0
+                        : extendNotes
+                            ? MediaQuery.of(context).size.width
+                            : 100,
                     decoration: BoxDecoration(
                         borderRadius:
                             const BorderRadius.all(Radius.elliptical(10, 10)),
@@ -1211,6 +1223,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                             .transform(_animationController.value)),
                     child: ClipPath(
                         child: SingleChildScrollView(
+                      controller: notesController,
                       primary: false,
                       child: _notes(context),
                     )),

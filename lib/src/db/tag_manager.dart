@@ -62,7 +62,7 @@ class TagManager {
     final mainGrid = DbsOpen.primaryGrid(booru);
 
     return TagManager(
-      StateRestoration(mainGrid, mainGrid.name, () => null),
+      StateRestoration(mainGrid, mainGrid.name),
       (fire, f) =>
           mainGrid.tags.watchLazy(fireImmediately: fire).listen((event) {
         f();

@@ -67,7 +67,7 @@ class GalleryDirectories extends StatefulWidget {
   final CallbackDescriptionNested? nestedCallback;
   final bool? noDrawer;
   final bool showBackButton;
-  final Future<bool> Function() procPop;
+  final void Function(bool) procPop;
   final SelectionGlue<SystemGalleryDirectory> glue;
   final double bottomPadding;
 
@@ -198,7 +198,9 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
             onBack: widget.showBackButton ? () => Navigator.pop(context) : null,
             systemNavigationInsets: EdgeInsets.only(
                 bottom: MediaQuery.of(context).systemGestureInsets.bottom +
-                    (widget.glue.isOpen() ? 80 : widget.bottomPadding)),
+                    (widget.glue.isOpen() && !widget.glue.keyboardVisible()
+                        ? 80
+                        : widget.bottomPadding)),
             hasReachedEnd: () => true,
             showCount: true,
             selectionGlue: widget.glue,
@@ -433,20 +435,31 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                         : null,
                 keybindsDescription:
                     AppLocalizations.of(context)!.androidGKeybindsDescription)),
-        noDrawer: widget.noDrawer ?? false, overrideOnPop: () {
+        noDrawer: widget.noDrawer ?? false,
+        canPop: widget.callback != null || widget.nestedCallback != null
+            ? currentFilteringMode() == FilteringMode.noFilter &&
+                searchTextController.text.isEmpty &&
+                !widget.glue.isOpen() &&
+                state.gridKey.currentState?.showSearchBar == false
+            : false, overrideOnPop: (pop, hideAppBar) {
       final filterMode = currentFilteringMode();
       if (filterMode != FilteringMode.noFilter ||
           searchTextController.text.isNotEmpty) {
         resetSearch();
-        return Future.value(false);
+        return;
       }
 
       if (widget.glue.isOpen()) {
         state.gridKey.currentState?.selection.reset();
-        return Future.value(false);
+        return;
       }
 
-      return widget.procPop();
+      if (hideAppBar()) {
+        setState(() {});
+        return;
+      }
+
+      widget.procPop(pop);
     });
   }
 }

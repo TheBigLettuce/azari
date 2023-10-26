@@ -40,7 +40,8 @@ class _WrappedGridPageState<T extends Cell> extends State<WrappedGridPage<T>>
                   end: Offset.zero,
                   begin: Offset(0, kBottomNavigationBarHeight)),
             ], child: glueState.widget(context) ?? const SizedBox.shrink()),
-      body: widget.f(glueState.glue<T>(context, setState)),
+      body: widget.f(glueState.glue<T>(
+          () => MediaQuery.viewInsetsOf(context).bottom != 0, setState)),
     );
   }
 }

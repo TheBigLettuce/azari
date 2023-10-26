@@ -14,60 +14,64 @@ class SelectionGlueState {
   List<Widget>? actions;
   final Future Function(bool backward)? _playAnimation;
 
-  SelectionGlue<T> glue<T extends Cell>(
-          BuildContext context, void Function(Function()) setState) =>
-      SelectionGlue<T>(close: () {
-        if (actions == null) {
-          return;
-        }
+  SelectionGlue<T> glue<T extends Cell>(bool Function() keyboardVisible,
+          void Function(Function()) setState) =>
+      SelectionGlue<T>(
+          close: () {
+            if (actions == null) {
+              return;
+            }
 
-        if (_playAnimation != null) {
-          _playAnimation!(true).then((value) {
-            actions = null;
-            setState(() {});
-          });
-        } else {}
-        try {
-          actions = null;
+            if (_playAnimation != null) {
+              _playAnimation!(true).then((value) {
+                actions = null;
+                setState(() {});
+              });
+            } else {}
+            try {
+              actions = null;
 
-          setState(() {});
-        } catch (_) {}
-      }, open: (addActions, selection) {
-        if (actions != null || addActions.isEmpty) {
-          return;
-        }
-        actions = addActions
-            .map((e) => WrapSheetButton(
-                e.icon,
-                e.showOnlyWhenSingle && selection.selected.length != 1
-                    ? null
-                    : () {
-                        e.onPress(selection.selected.values.toList());
+              setState(() {});
+            } catch (_) {}
+          },
+          open: (addActions, selection) {
+            if (actions != null || addActions.isEmpty) {
+              return;
+            }
+            actions = addActions
+                .map((e) => WrapSheetButton(
+                    e.icon,
+                    e.showOnlyWhenSingle && selection.selected.length != 1
+                        ? null
+                        : () {
+                            e.onPress(selection.selected.values.toList());
 
-                        if (e.closeOnPress) {
-                          selection.selected.clear();
-                          actions = null;
+                            if (e.closeOnPress) {
+                              selection.selected.clear();
+                              actions = null;
 
-                          setState(() {});
-                        }
-                      },
-                false,
-                selection.selected.length.toString(),
-                e.explanation,
-                animate: e.animate,
-                color: e.color,
-                play: e.play,
-                backgroundColor: e.backgroundColor))
-            .toList();
+                              setState(() {});
+                            }
+                          },
+                    false,
+                    selection.selected.length.toString(),
+                    e.explanation,
+                    animate: e.animate,
+                    color: e.color,
+                    play: e.play,
+                    backgroundColor: e.backgroundColor))
+                .toList();
 
-        if (_playAnimation != null) {
-          _playAnimation!(false).then((value) => setState(() {}));
-        } else {
-          setState(() {});
-        }
-      }, isOpen: () {
-        return actions != null;
-      });
+            if (_playAnimation != null) {
+              _playAnimation!(false).then((value) => setState(() {}));
+            } else {
+              setState(() {});
+            }
+          },
+          isOpen: () {
+            return actions != null;
+          },
+          keyboardVisible: keyboardVisible);
 
   Widget? widget(BuildContext context) => actions?.isNotEmpty ?? false
       ? Stack(

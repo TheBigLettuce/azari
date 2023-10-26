@@ -13,6 +13,7 @@ import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/skeletons/make_skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
+import 'package:octo_image/octo_image.dart';
 
 class NotesPage extends StatefulWidget {
   final CallbackDescriptionNested? callback;
@@ -147,7 +148,7 @@ class _NotesPageState extends State<NotesPage>
       padding: const EdgeInsets.all(8),
       child: GridView.builder(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3, childAspectRatio: 0.7, crossAxisSpacing: 8),
+            crossAxisCount: 3, childAspectRatio: 0.7, crossAxisSpacing: 2),
         itemBuilder: (context, index) {
           final note = notes[index];
           return InkWell(
@@ -171,13 +172,34 @@ class _NotesPageState extends State<NotesPage>
                                   child: Container(
                                     width: constraints.minHeight * 0.2,
                                     height: constraints.maxHeight * 0.2,
-                                    decoration: BoxDecoration(
-                                        borderRadius: const BorderRadius.all(
-                                            Radius.circular(10)),
-                                        image: DecorationImage(
-                                            fit: BoxFit.cover,
-                                            filterQuality: FilterQuality.high,
-                                            image: provider(note))),
+                                    decoration: const BoxDecoration(
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(10))),
+                                    clipBehavior: Clip.antiAlias,
+                                    child: OctoImage(
+                                        fit: BoxFit.cover,
+                                        filterQuality: FilterQuality.high,
+                                        progressIndicatorBuilder:
+                                            (context, loadingProgress) {
+                                          if (loadingProgress == null) {
+                                            return Container();
+                                          }
+
+                                          return Center(
+                                            child: CircularProgressIndicator(
+                                              value: loadingProgress
+                                                      .cumulativeBytesLoaded
+                                                      .toDouble() /
+                                                  (loadingProgress
+                                                              .expectedTotalBytes !=
+                                                          null
+                                                      ? loadingProgress
+                                                          .expectedTotalBytes!
+                                                      : 1),
+                                            ),
+                                          );
+                                        },
+                                        image: provider(note)),
                                   )),
                               Align(
                                 alignment: Alignment.bottomRight,

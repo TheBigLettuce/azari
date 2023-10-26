@@ -8,7 +8,6 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart' as material show AspectRatio;
 import 'package:flutter/services.dart';
@@ -57,9 +56,13 @@ class SelectionGlue<T extends Cell> {
       SelectionInterface<T> selection) open;
   final void Function() close;
   final bool Function() isOpen;
+  final bool Function() keyboardVisible;
 
   const SelectionGlue(
-      {required this.close, required this.open, required this.isOpen});
+      {required this.close,
+      required this.open,
+      required this.isOpen,
+      required this.keyboardVisible});
 }
 
 /// The grid of images.
@@ -273,15 +276,15 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
   List<int>? segTranslation;
 
-  bool showFab = false;
+  final _fabKey = GlobalKey<__FabState>();
 
   void updateFab({required bool fab, required bool foreground}) {
-    if (fab != showFab) {
-      showFab = fab;
+    if (fab != _fabKey.currentState?.showFab) {
+      _fabKey.currentState?.showFab = fab;
       if (!foreground) {
         try {
           // widget.hideShowNavBar(!showFab);
-          setState(() {});
+          _fabKey.currentState?.setState(() {});
         } catch (_) {}
       }
     }
@@ -532,12 +535,14 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         if (widget.additionalKeybinds != null) ...widget.additionalKeybinds!,
       };
 
-  Widget _withPadding(Widget child) {
+  Widget _withPadding(BuildContext context, Widget child) {
     return SliverPadding(
       padding: EdgeInsets.only(
           bottom: widget.systemNavigationInsets.bottom +
-              MediaQuery.viewPaddingOf(context).bottom +
-              (widget.selectionGlue.isOpen() ? 84 : 0) +
+              (widget.selectionGlue.isOpen() &&
+                      !widget.selectionGlue.keyboardVisible()
+                  ? 84
+                  : 0) +
               (widget.footer != null
                   ? widget.footer!.preferredSize.height
                   : 0)),
@@ -780,53 +785,55 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                     ),
                   ),
                 )
-              : _withPadding(widget.segments != null
-                  ? () {
-                      if (widget.segments!.prebuiltSegments != null) {
-                        return GridLayout.segmentsPrebuilt(
-                          context,
-                          widget.segments!,
-                          _state,
-                          selection,
-                          widget.description.listView,
-                          widget.description.columns.number,
-                          _makeGridCell,
-                          systemNavigationInsets:
-                              widget.systemNavigationInsets.bottom,
-                          aspectRatio: widget.aspectRatio,
-                        );
-                      }
-                      final (s, t) = GridLayout.segmentsFnc<T>(
-                        context,
-                        widget.segments!,
-                        _state,
-                        selection,
-                        widget.description.listView,
-                        widget.description.columns.number,
-                        _makeGridCell,
-                        systemNavigationInsets:
-                            widget.systemNavigationInsets.bottom,
-                        aspectRatio: widget.aspectRatio,
-                      );
-                      segTranslation = t;
+              : _withPadding(
+                  context,
+                  widget.segments != null
+                      ? () {
+                          if (widget.segments!.prebuiltSegments != null) {
+                            return GridLayout.segmentsPrebuilt(
+                              context,
+                              widget.segments!,
+                              _state,
+                              selection,
+                              widget.description.listView,
+                              widget.description.columns.number,
+                              _makeGridCell,
+                              systemNavigationInsets:
+                                  widget.systemNavigationInsets.bottom,
+                              aspectRatio: widget.aspectRatio,
+                            );
+                          }
+                          final (s, t) = GridLayout.segmentsFnc<T>(
+                            context,
+                            widget.segments!,
+                            _state,
+                            selection,
+                            widget.description.listView,
+                            widget.description.columns.number,
+                            _makeGridCell,
+                            systemNavigationInsets:
+                                widget.systemNavigationInsets.bottom,
+                            aspectRatio: widget.aspectRatio,
+                          );
+                          segTranslation = t;
 
-                      return s;
-                    }()
-                  : widget.description.listView
-                      ? GridLayout.list<T>(context, _state, selection,
-                          widget.systemNavigationInsets.bottom,
-                          onPressed: widget.unpressable ? null : _onPressed)
-                      : GridLayout.grid<T>(
-                          context,
-                          _state,
-                          selection,
-                          widget.description.columns.number,
-                          widget.description.listView,
-                          _makeGridCell,
-                          systemNavigationInsets:
+                          return s;
+                        }()
+                      : widget.description.listView
+                          ? GridLayout.list<T>(context, _state, selection,
                               widget.systemNavigationInsets.bottom,
-                          aspectRatio: widget.aspectRatio,
-                        )),
+                              onPressed: widget.unpressable ? null : _onPressed)
+                          : GridLayout.grid<T>(
+                              context,
+                              _state,
+                              selection,
+                              widget.description.columns.number,
+                              widget.description.listView,
+                              _makeGridCell,
+                              systemNavigationInsets:
+                                  widget.systemNavigationInsets.bottom,
+                              aspectRatio: widget.aspectRatio,
+                            )),
         ],
       );
 
@@ -869,45 +876,79 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                     ),
                   ),
                 Align(
-                  alignment: Alignment.bottomRight,
-                  child: !showFab
-                      ? null
-                      : GestureDetector(
-                          onLongPress: () {
-                            final scroll = controller.position.maxScrollExtent;
-                            if (scroll.isInfinite || scroll == 0) {
-                              return;
-                            }
-
-                            controller.animateTo(scroll,
-                                duration: 200.ms, curve: Curves.linear);
-                          },
-                          child: Padding(
-                            padding: EdgeInsets.only(
-                                right: 4,
-                                bottom: widget.systemNavigationInsets.bottom +
-                                    (!widget.addFabPadding
-                                        ? 0
-                                        : (widget.selectionGlue.isOpen()
-                                                ? 84
-                                                : 0) +
-                                            (widget.footer != null
-                                                ? widget.footer!.preferredSize
-                                                    .height
-                                                : 0))),
-                            child: FloatingActionButton(
-                              onPressed: () {
-                                controller.animateTo(0,
-                                    duration: 200.ms, curve: Curves.linear);
-                              },
-                              child: const Icon(Icons.arrow_upward),
-                            ),
-                          ),
-                        ).animate().fadeIn(curve: Curves.easeInOutCirc),
-                ),
+                    alignment: Alignment.bottomRight,
+                    child: _Fab(
+                      key: _fabKey,
+                      controller: controller,
+                      selectionGlue: widget.selectionGlue,
+                      systemNavigationInsets: widget.systemNavigationInsets,
+                      addFabPadding: widget.addFabPadding,
+                      footer: widget.footer,
+                    )),
               ],
             ),
           ));
     });
+  }
+}
+
+class _Fab extends StatefulWidget {
+  final ScrollController controller;
+  final SelectionGlue selectionGlue;
+  final EdgeInsets systemNavigationInsets;
+  final bool addFabPadding;
+  final PreferredSizeWidget? footer;
+
+  const _Fab(
+      {super.key,
+      required this.controller,
+      required this.selectionGlue,
+      required this.systemNavigationInsets,
+      required this.addFabPadding,
+      required this.footer});
+
+  @override
+  State<_Fab> createState() => __FabState();
+}
+
+class __FabState extends State<_Fab> {
+  bool showFab = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return !showFab
+        ? const SizedBox.shrink()
+        : GestureDetector(
+            onLongPress: () {
+              final scroll = widget.controller.position.maxScrollExtent;
+              if (scroll.isInfinite || scroll == 0) {
+                return;
+              }
+
+              widget.controller
+                  .animateTo(scroll, duration: 200.ms, curve: Curves.linear);
+            },
+            child: Padding(
+              padding: EdgeInsets.only(
+                  right: 4,
+                  bottom: widget.systemNavigationInsets.bottom +
+                      (!widget.addFabPadding
+                          ? 0
+                          : (widget.selectionGlue.isOpen() &&
+                                      !widget.selectionGlue.keyboardVisible()
+                                  ? 84
+                                  : 0) +
+                              (widget.footer != null
+                                  ? widget.footer!.preferredSize.height
+                                  : 0))),
+              child: FloatingActionButton(
+                onPressed: () {
+                  widget.controller
+                      .animateTo(0, duration: 200.ms, curve: Curves.linear);
+                },
+                child: const Icon(Icons.arrow_upward),
+              ),
+            ),
+          ).animate().fadeIn(curve: Curves.easeInOutCirc);
   }
 }

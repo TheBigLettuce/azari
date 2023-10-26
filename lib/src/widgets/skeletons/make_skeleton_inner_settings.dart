@@ -51,9 +51,7 @@ Widget makeSkeletonInnerSettings(BuildContext context, String pageDescription,
                           ),
                         )),
                         if (appBarActions != null)
-                          ...appBarActions
-                              .map((e) => wrapAppBarAction(e))
-                              .toList()
+                          ...appBarActions.map((e) => wrapAppBarAction(e))
                       ],
                     ),
                   ),
