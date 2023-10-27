@@ -32,14 +32,20 @@ class DownloadFile implements Cell {
 
   final String site;
 
+  @Index()
   final bool isFailed;
 
+  @Index()
   final bool inProgress;
 
   bool isOnHold() => isFailed == false && inProgress == false;
 
   void save() {
     Dbs.g.main.writeTxnSync(() => Dbs.g.main.downloadFiles.putSync(this));
+  }
+
+  static void saveAll(List<DownloadFile> l) {
+    Dbs.g.main.writeTxnSync(() => Dbs.g.main.downloadFiles.putAllSync(l));
   }
 
   DownloadFile inprogress() => DownloadFile(true, false,

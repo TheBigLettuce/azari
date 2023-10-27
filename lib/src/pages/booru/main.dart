@@ -304,6 +304,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
         final oldCount = widget.mainGrid.posts.countSync();
         widget.mainGrid.writeTxnSync(
             () => widget.mainGrid.posts.putAllByFileUrlSync(list.$1));
+        restore.updateTime();
         if (widget.mainGrid.posts.countSync() - oldCount < 3) {
           return await _addLast();
         }
@@ -433,7 +434,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
                   ),
                   overrideBooru: api.booru,
                   canPop: !widget.glue.isOpen() &&
-                      state.gridKey.currentState?.showSearchBar == false,
+                      state.gridKey.currentState?.showSearchBar != true,
                   overrideOnPop: (pop, hideAppBar) {
                     if (widget.glue.isOpen()) {
                       state.gridKey.currentState?.selection.reset();
@@ -490,14 +491,20 @@ class _BookmarkButtonState extends State<BookmarkButton> {
 
               list.add(PopupMenuItem(
                 enabled: false,
+                padding: const EdgeInsets.all(0),
                 child: timeLabel(time, titleStyle, timeNow),
               ));
             }
 
             list.add(PopupMenuItem(
                 enabled: false,
+                padding: const EdgeInsets.only(left: 16),
                 child: ListTile(
-                  title: Text(e.tags),
+                  shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(5))),
+                  title: Text(e.tags,
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary)),
                   subtitle: Text(e.booru.string),
                   onLongPress: () {
                     Navigator.push(

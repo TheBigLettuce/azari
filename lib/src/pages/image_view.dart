@@ -110,6 +110,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   bool refreshing = false;
   final mainFocus = FocusNode();
 
+  double? loadingProgress = 1.0;
+
   final notesController = ScrollController();
 
   NoteBase? notes;
@@ -530,9 +532,10 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   PreferredSizeWidget _makeAppBar(BuildContext context) {
     final s = currentCell.addStickers(context);
     final b = currentCell.addButtons(context);
+    final appBarSize = AppBar().preferredSize;
     final size = s == null
-        ? AppBar().preferredSize
-        : Size.fromHeight(AppBar().preferredSize.height + 36);
+        ? Size.fromHeight(appBarSize.height + 4)
+        : Size.fromHeight(appBarSize.height + 36 + 4);
 
     return PreferredSize(
       preferredSize: size,
@@ -540,7 +543,20 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
         ignoring: !isAppbarShown,
         child: Column(
           children: [
-            AppBar(
+            Expanded(
+                child: AppBar(
+              bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(4),
+                  child: loadingProgress == 1.0
+                      ? const SizedBox.shrink()
+                      : LinearProgressIndicator(
+                          minHeight: 4,
+                          value: loadingProgress,
+                          color: currentPalette?.dominantColor?.bodyTextColor
+                              .harmonizeWith(
+                                  Theme.of(context).colorScheme.primary)
+                              .withOpacity(0.8),
+                        )),
               scrolledUnderElevation: 0,
               automaticallyImplyLeading: false,
               foregroundColor: ColorTween(
@@ -576,13 +592,14 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
               ),
               actions: [
                 if (b != null) ...b,
-                IconButton(
-                    onPressed: () {
-                      key.currentState?.openEndDrawer();
-                    },
-                    icon: const Icon(Icons.info_outline))
+                if (key.currentState?.hasEndDrawer == true)
+                  IconButton(
+                      onPressed: () {
+                        key.currentState?.openEndDrawer();
+                      },
+                      icon: const Icon(Icons.info_outline))
               ],
-            ),
+            )),
             if (s != null)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
@@ -638,10 +655,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   }
 
   Widget? _makeBottomBar(BuildContext context) {
-    if (!isAppbarShown) {
-      return null;
-    }
-
     final items = widget.addIcons?.call(currentCell);
 
     return Theme(
@@ -742,6 +755,10 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                     child: const Icon(Icons.edit_square),
                   ))
           ]),
+        ).animate(
+          effects: [FadeEffect(begin: 1, end: 0, duration: 500.milliseconds)],
+          autoPlay: false,
+          target: isAppbarShown ? 0 : 1,
         ));
   }
 
@@ -767,8 +784,27 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
             )));
   }
 
-  Widget _makeEndDrawer(BuildContext context) {
+  Widget? _makeEndDrawer(BuildContext context) {
     final insets = MediaQuery.viewInsetsOf(context);
+    final addInfo = currentCell.addInfo(context, () {
+      widget.updateTagScrollPos(scrollController.offset, currentPage);
+    },
+        AddInfoColorData(
+          borderColor: Theme.of(context).colorScheme.outlineVariant,
+          foregroundColor: ColorTween(
+                  begin: previousPallete?.mutedColor?.bodyTextColor
+                          .harmonizeWith(
+                              Theme.of(context).colorScheme.primary) ??
+                      kListTileColorInInfo,
+                  end: currentPalette?.mutedColor?.bodyTextColor.harmonizeWith(
+                          Theme.of(context).colorScheme.primary) ??
+                      kListTileColorInInfo)
+              .transform(_animationController.value)!,
+          systemOverlayColor: widget.systemOverlayRestoreColor,
+        ));
+    if (addInfo == null || addInfo.isEmpty) {
+      return null;
+    }
 
     return Drawer(
       backgroundColor: ColorTween(
@@ -806,24 +842,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                       end: currentPalette?.dominantColor?.color.harmonizeWith(Theme.of(context).colorScheme.primary).withOpacity(0.5) ?? Theme.of(context).colorScheme.surface.withOpacity(0.5))
                   .transform(_animationController.value)),
           _wrapNotifiers((context) {
-            final addInfo = currentCell.addInfo(context, () {
-              widget.updateTagScrollPos(scrollController.offset, currentPage);
-            },
-                AddInfoColorData(
-                  borderColor: Theme.of(context).colorScheme.outlineVariant,
-                  foregroundColor: ColorTween(
-                          begin: previousPallete?.mutedColor?.bodyTextColor
-                                  .harmonizeWith(
-                                      Theme.of(context).colorScheme.primary) ??
-                              kListTileColorInInfo,
-                          end: currentPalette?.mutedColor?.bodyTextColor
-                                  .harmonizeWith(
-                                      Theme.of(context).colorScheme.primary) ??
-                              kListTileColorInInfo)
-                      .transform(_animationController.value)!,
-                  systemOverlayColor: widget.systemOverlayRestoreColor,
-                ));
-
             return Theme(
               data: Theme.of(context).copyWith(
                   hintColor: ColorTween(
@@ -840,8 +858,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                 padding: EdgeInsets.only(
                     bottom: insets.bottom +
                         MediaQuery.of(context).viewPadding.bottom),
-                sliver: SliverList.list(
-                    children: [if (addInfo != null) ...addInfo]),
+                sliver: SliverList.list(children: addInfo),
               ),
             );
           })
@@ -921,12 +938,36 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     });
   }
 
-  Widget _loadingBuilder(BuildContext context, ImageChunkEvent? event) {
+  Widget _loadingBuilder(
+      BuildContext context, ImageChunkEvent? event, int idx) {
     final expectedBytes = event?.expectedTotalBytes;
     final loadedBytes = event?.cumulativeBytesLoaded;
     final value = loadedBytes != null && expectedBytes != null
         ? loadedBytes / expectedBytes
         : null;
+
+    if (idx == currentPage) {
+      if (event == null) {
+        if (loadingProgress != null) {
+          WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+            setState(() {
+              loadingProgress = null;
+            });
+          });
+        }
+      } else if (value != loadingProgress) {
+        WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+          setState(() {
+            loadingProgress = value;
+          });
+        });
+      }
+    }
+
+    final t = widget.getCell(idx).getCellData(false, context: context).thumb;
+    if (t == null) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -958,27 +999,17 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                   .withOpacity(0.3),
             ).lerp(value ?? 0)!,
           ])),
-      child: Center(
-        child: SizedBox(
-            width: 20.0,
-            height: 20.0,
-            child: CircularProgressIndicator(
-                backgroundColor: ColorTween(
-                  begin: previousPallete?.mutedColor?.color
-                      .harmonizeWith(Theme.of(context).colorScheme.primary)
-                      .withOpacity(0.7),
-                  end: currentPalette?.mutedColor?.color
-                      .harmonizeWith(Theme.of(context).colorScheme.primary)
-                      .withOpacity(0.7),
-                ).transform(_animationController.value),
-                color: ColorTween(
-                  begin: previousPallete?.dominantColor?.color
-                      .harmonizeWith(Theme.of(context).colorScheme.primary),
-                  end: currentPalette?.dominantColor?.color
-                      .harmonizeWith(Theme.of(context).colorScheme.primary),
-                ).transform(_animationController.value),
-                value: value)),
-      ),
+      child: _Image(
+          t: t,
+          reset: () {
+            WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+              try {
+                setState(() {
+                  loadingProgress = 1.0;
+                });
+              } catch (_) {}
+            });
+          }),
     );
   }
 
@@ -1181,6 +1212,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                 padding: EdgeInsets.only(
                     top: kToolbarHeight +
                         MediaQuery.of(context).viewPadding.top +
+                        4 +
                         4,
                     right: 4,
                     left: 4),
@@ -1195,7 +1227,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                             ? MediaQuery.of(context).size.height -
                                 MediaQuery.viewPaddingOf(context).bottom -
                                 MediaQuery.viewPaddingOf(context).top -
-                                (kToolbarHeight + 80 + 8)
+                                (kToolbarHeight + 80 + 8 + 4)
                             : 120,
                     width: !isAppbarShown
                         ? 0
@@ -1280,5 +1312,33 @@ class __FormFieldSaveableState extends State<_FormFieldSaveable> {
           color: Theme.of(context).listTileTheme.textColor,
           fontFamily: "ZenKurenaido"),
     ).animate().fadeIn();
+  }
+}
+
+class _Image extends StatefulWidget {
+  final ImageProvider t;
+  final void Function() reset;
+
+  const _Image({super.key, required this.t, required this.reset});
+
+  @override
+  State<_Image> createState() => __ImageState();
+}
+
+class __ImageState extends State<_Image> {
+  @override
+  void dispose() {
+    widget.reset();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Image(
+      image: widget.t,
+      filterQuality: FilterQuality.high,
+      fit: BoxFit.contain,
+    );
   }
 }

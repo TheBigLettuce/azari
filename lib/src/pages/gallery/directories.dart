@@ -54,12 +54,14 @@ class CallbackDescription {
 class CallbackDescriptionNested {
   final void Function(SystemGalleryDirectoryFile chosen) c;
   final String description;
+  final bool returnBack;
 
   void call(SystemGalleryDirectoryFile chosen) {
     c(chosen);
   }
 
-  const CallbackDescriptionNested(this.description, this.c);
+  const CallbackDescriptionNested(this.description, this.c,
+      {this.returnBack = false});
 }
 
 class GalleryDirectories extends StatefulWidget {

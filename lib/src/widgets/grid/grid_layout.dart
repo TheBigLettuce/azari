@@ -241,12 +241,29 @@ class GridLayout {
           segments.onLabelPressed == null
               ? null
               : () {
+                  if (segments.limitLabelChildren != null &&
+                      segments.limitLabelChildren != 0 &&
+                      !segments.limitLabelChildren!.isNegative) {
+                    segments.onLabelPressed!(
+                        e.key,
+                        List.generate(
+                                e.value > segments.limitLabelChildren!
+                                    ? segments.limitLabelChildren!
+                                    : e.value,
+                                (index) => index + prevCount)
+                            .map((e) => state.getCell(e))
+                            .toList());
+
+                    return;
+                  }
+
                   final cells = <T>[];
 
                   for (final i
                       in List.generate(e.value, (index) => index + prevCount)) {
                     cells.add(state.getCell(i - 1));
                   }
+
                   segments.onLabelPressed!(e.key, cells);
                 }));
 
@@ -388,16 +405,31 @@ class GridLayout {
       makeRows(segments.injectedSegments);
     }
 
+    void onLabelPressed(String key, List<int> value) {
+      if (segments.limitLabelChildren != null &&
+          segments.limitLabelChildren != 0 &&
+          !segments.limitLabelChildren!.isNegative) {
+        segments.onLabelPressed!(
+            key,
+            value
+                .take(segments.limitLabelChildren!)
+                .map((e) => state.getCell(e))
+                .toList());
+
+        return;
+      }
+
+      segments.onLabelPressed!(
+          key, value.map((e) => state.getCell(e)).toList());
+    }
+
     stickySegs.forEach((key, value) {
       segRows.add(_SegSticky(
           key,
           true,
           segments.onLabelPressed == null
               ? null
-              : () {
-                  segments.onLabelPressed!(
-                      key, value.map((e) => state.getCell(e)).toList());
-                }));
+              : () => onLabelPressed(key, value)));
 
       makeRows(value);
     });
@@ -409,10 +441,7 @@ class GridLayout {
             false,
             segments.onLabelPressed == null
                 ? null
-                : () {
-                    segments.onLabelPressed!(
-                        key, value.map((e) => state.getCell(e)).toList());
-                  }));
+                : () => onLabelPressed(key, value)));
 
         makeRows(value);
       },
@@ -424,10 +453,7 @@ class GridLayout {
           false,
           segments.onLabelPressed == null
               ? null
-              : () {
-                  segments.onLabelPressed!(segments.unsegmentedLabel,
-                      unsegmented.map((e) => state.getCell(e)).toList());
-                }));
+              : () => onLabelPressed(segments.unsegmentedLabel, unsegmented)));
 
       makeRows(unsegmented);
     }

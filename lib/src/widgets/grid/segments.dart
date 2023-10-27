@@ -27,6 +27,7 @@ class Segments<T> {
   final (String? segment, bool sticky) Function(T cell)? segment;
 
   final Map<String, int>? prebuiltSegments;
+  final int? limitLabelChildren;
 
   /// If [addToSticky] is not null. then it will be possible to make
   /// segments sticky on the grid.
@@ -41,6 +42,7 @@ class Segments<T> {
   const Segments(this.unsegmentedLabel,
       {this.addToSticky,
       this.segment,
+      this.limitLabelChildren,
       this.prebuiltSegments,
       this.onLabelPressed,
       this.hidePinnedIcon = false,

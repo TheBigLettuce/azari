@@ -89,7 +89,7 @@ class PostBase implements Cell {
   String filename() =>
       "${prefix.isNotEmpty ? '${prefix}_' : ''}$id - $md5${ext != '.zip' ? ext : path_util.extension(sampleUrl)}";
 
-  void _showQr(BuildContext context) {
+  static void showQr(BuildContext context, String prefix, int id) {
     Navigator.push(
         context,
         DialogRoute(
@@ -130,7 +130,7 @@ class PostBase implements Cell {
       if (Platform.isAndroid)
         GestureDetector(
           onLongPress: () {
-            _showQr(context);
+            showQr(context, prefix, id);
           },
           child: IconButton(
               onPressed: () {
@@ -141,7 +141,7 @@ class PostBase implements Cell {
       else
         IconButton(
             onPressed: () {
-              _showQr(context);
+              showQr(context, prefix, id);
             },
             icon: const Icon(Icons.qr_code_rounded))
     ];

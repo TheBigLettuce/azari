@@ -11,9 +11,12 @@ import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/widgets/copy_move_preview.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/skeletons/make_skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:octo_image/octo_image.dart';
+
+import '../db/schemas/system_gallery_directory.dart';
 
 class NotesPage extends StatefulWidget {
   final CallbackDescriptionNested? callback;
@@ -110,7 +113,37 @@ class _NotesPageState extends State<NotesPage>
                               label: "Return",
                               body: "Return the file URI to the application."))
                     ]
-                : null,
+                : (n) => [
+                      GridBottomSheetAction(Icons.forward, (selected) {
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) {
+                          return WrappedGridPage<SystemGalleryDirectory>(
+                              scaffoldKey: GlobalKey(),
+                              f: (glue) => GalleryDirectories(
+                                    glue: glue,
+                                    procPop: (p) {},
+                                    nestedCallback: CallbackDescriptionNested(
+                                        "Choose file", (chosen) {
+                                      final s = selected.first;
+                                      // final n = i.load(s)!;
+                                      NoteGallery.add(chosen.id,
+                                          text: s.text,
+                                          height: chosen.height,
+                                          width: chosen.width,
+                                          isVideo: chosen.isVideo,
+                                          isGif: chosen.isGif,
+                                          originalUri: chosen.originalUri);
+                                      NoteGallery.removeAll(s.id);
+                                      imageViewKey.currentState?.loadNotes();
+                                    }, returnBack: true),
+                                  ));
+                        }));
+                      },
+                          false,
+                          GridBottomSheetActionExplanation(
+                              label: "Move notes",
+                              body: "Move notes to other picture."))
+                    ],
             onExit: () {},
             getCell: (idx) => notesGallery[idx],
             onNearEnd: null,

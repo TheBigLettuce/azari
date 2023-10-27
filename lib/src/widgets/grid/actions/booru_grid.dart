@@ -26,16 +26,14 @@ class BooruGridActions {
     return GridBottomSheetAction(Icons.download, (selected) {
       final settings = Settings.fromDb();
 
-      for (final element in selected) {
-        PostTags.g.addTagsPost(element.filename(), element.tags, true);
-        Downloader.g.add(
-            DownloadFile.d(
-                url: element.fileUrl,
-                site: api.booru.url,
-                name: element.filename(),
-                thumbUrl: element.previewUrl),
-            settings);
-      }
+      PostTags.g.addTagsPostAll(selected.map((e) => (e.filename(), e.tags)));
+      Downloader.g.addAll(
+          selected.map((e) => DownloadFile.d(
+              url: e.fileUrl,
+              site: api.booru.url,
+              name: e.filename(),
+              thumbUrl: e.previewUrl)),
+          settings);
     },
         true,
         GridBottomSheetActionExplanation(

@@ -776,7 +776,10 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         EmptyWidget(
-                          error: _state.refreshingError,
+                          error: _state.refreshingError == null
+                              ? null
+                              : EmptyWidget.unwrapDioError(
+                                  _state.refreshingError),
                         ),
                         if (widget.onError != null &&
                             _state.refreshingError != null)

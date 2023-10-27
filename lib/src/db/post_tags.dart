@@ -164,6 +164,17 @@ class PostTags {
     });
   }
 
+  /// Doesn't dissassemble.
+  void addTagsPostAll(Iterable<(String, List<String>)> tags) {
+    tagsDb.writeTxnSync(() {
+      tagsDb.localTags.putAllSync(tags.map((e) {
+        _putTagsAndIncreaseFreq(e.$2);
+
+        return LocalTags(e.$1, e.$2);
+      }).toList());
+    });
+  }
+
   /// Rebuilds the tag suggestions dictionary.
   /// [rebuildTagDictionary] shouldn't be frequently run, as it might take minutes to complete.
   void rebuildTagDictionary() {

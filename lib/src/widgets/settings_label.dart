@@ -7,10 +7,18 @@
 
 import 'package:flutter/material.dart';
 
-Widget settingsLabel(String string, TextStyle style) => Padding(
-      padding: const EdgeInsets.only(bottom: 12, top: 18, right: 12, left: 16),
-      child: Text(
-        string,
-        style: style,
-      ),
-    );
+Widget settingsLabel(String string, TextStyle style,
+        {bool removePadding = false}) =>
+    removePadding
+        ? Text(
+            string,
+            style: style,
+          )
+        : Padding(
+            padding:
+                const EdgeInsets.only(bottom: 12, top: 18, right: 12, left: 16),
+            child: Text(
+              string,
+              style: style,
+            ),
+          );

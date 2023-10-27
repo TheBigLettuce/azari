@@ -6,8 +6,10 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 // import 'package:gallery/src/db/schemas/tags.dart';
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path_util;
 import 'package:gallery/src/db/initalize_db.dart';
@@ -17,9 +19,11 @@ import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/widgets/grid/cell_data.dart';
 import 'package:isar/isar.dart';
 import 'package:transparent_image/transparent_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../interfaces/booru.dart';
 import '../../interfaces/cell.dart';
+import '../../plugs/platform_channel.dart';
 import 'settings.dart';
 
 part 'note.g.dart';
@@ -167,7 +171,34 @@ class NoteBooru extends NoteBase implements Cell {
 
   @override
   List<Widget>? addButtons(BuildContext context) {
-    return null;
+    return [
+      IconButton(
+        icon: const Icon(Icons.public),
+        onPressed: () {
+          final api = BooruAPI.fromEnum(booru, page: null);
+          launchUrl(api.browserLink(postId),
+              mode: LaunchMode.externalApplication);
+          api.close();
+        },
+      ),
+      if (Platform.isAndroid)
+        GestureDetector(
+          onLongPress: () {
+            PostBase.showQr(context, booru.prefix, postId);
+          },
+          child: IconButton(
+              onPressed: () {
+                PlatformFunctions.shareMedia(fileUrl, url: true);
+              },
+              icon: const Icon(Icons.share)),
+        )
+      else
+        IconButton(
+            onPressed: () {
+              PostBase.showQr(context, booru.prefix, postId);
+            },
+            icon: const Icon(Icons.qr_code_rounded))
+    ];
   }
 
   @override

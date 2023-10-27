@@ -9,11 +9,13 @@ import 'package:flutter/material.dart';
 
 import 'settings_label.dart';
 
-Widget timeLabel((int, int, int) time, TextStyle titleStyle, DateTime now) {
+Widget timeLabel((int, int, int) time, TextStyle titleStyle, DateTime now,
+    {bool removePadding = false}) {
   if (time == (now.day, now.month, now.year)) {
-    return settingsLabel("Today", titleStyle);
+    return settingsLabel("Today", titleStyle, removePadding: removePadding);
   } else {
     return settingsLabel(
-        "${time.$1}/${time.$2}/${time.$3.toString().substring(2)}", titleStyle);
+        "${time.$1}/${time.$2}/${time.$3.toString().substring(2)}", titleStyle,
+        removePadding: removePadding);
   }
 }

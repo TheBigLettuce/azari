@@ -12,18 +12,23 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'choose_kaomoji.dart';
 
 class EmptyWidget extends StatelessWidget {
-  final Object? error;
+  final String? error;
+
   const EmptyWidget({super.key, this.error});
 
-  String _unwrapError() {
+  static String unwrapDioError(Object? error) {
     if (error == null) {
       return "";
     }
 
     if (error is DioException) {
-      final response = (error as DioException).response;
+      if (error.type == DioExceptionType.unknown) {
+        return error.error.toString();
+      }
+
+      final response = error.response;
       if (response == null) {
-        return (error as DioException).message ?? error.toString();
+        return error.message ?? error.toString();
       }
 
       return "${response.statusCode}${response.statusMessage != null ? ' ${response.statusMessage}' : ''}";
@@ -46,12 +51,12 @@ class EmptyWidget extends StatelessWidget {
           TextSpan(
               text: error == null
                   ? "${AppLocalizations.of(context)!.emptyValue}..."
-                  : "${AppLocalizations.of(context)!.errorHalf} ${_unwrapError()}",
+                  : "${AppLocalizations.of(context)!.errorHalf} $error",
               style: TextStyle(
                   fontStyle: FontStyle.italic,
                   fontSize: error != null ? 14 * 2 : null)),
         ]),
-        maxLines: 2,
+        maxLines: error != null ? 4 : 2,
         textAlign: TextAlign.center,
         style: TextStyle(
             color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),

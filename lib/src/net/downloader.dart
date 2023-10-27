@@ -100,27 +100,7 @@ class Downloader with _CancelTokens {
     }
   }
 
-  void restart(Settings settings) async {
-    final f = Dbs.g.main.downloadFiles
-        .filter()
-        .isFailedEqualTo(true)
-        .sortByDateDesc()
-        .findAllSync();
-
-    if (f.length < 6) {
-      f.addAll(Dbs.g.main.downloadFiles
-          .where()
-          .sortByDateDesc()
-          .limit(6 - f.length)
-          .findAllSync());
-    }
-
-    for (final element in f) {
-      add(element, settings);
-    }
-  }
-
-  void add(DownloadFile download, Settings settings) async {
+  void add(DownloadFile download, Settings settings) {
     if (settings.path == "") {
       download.failed().save();
 
@@ -141,13 +121,69 @@ class Downloader with _CancelTokens {
     }
   }
 
+  void addAll(Iterable<DownloadFile> downloads, Settings settings) {
+    if (settings.path == "") {
+      return;
+    }
+
+    final toDownload = downloads
+        .where(
+            (element) => element.isarId == null || !_hasCancelKey(element.url))
+        .map((e) => e.onHold())
+        .toList();
+
+    if (downloads.isEmpty) {
+      return;
+    }
+
+    DownloadFile.saveAll(toDownload);
+
+    List<DownloadFile> toSave = [];
+
+    for (final e in toDownload) {
+      _inWork++;
+      final d = e.inprogress();
+      toSave.add(e);
+
+      _addToken(d.url, CancelToken());
+      _download(d);
+      if (_inWork == maximum) {
+        break;
+      }
+    }
+
+    DownloadFile.saveAll(toSave);
+  }
+
   void removeAll() {
     Dbs.g.main.writeTxnSync(() {
       Dbs.g.main.downloadFiles.clearSync();
     });
+
+    for (final element in _tokens.values) {
+      element.cancel();
+    }
+    _tokens.clear();
   }
 
-  void markStale() {
+  void markStale({List<DownloadFile>? override}) {
+    if (override != null) {
+      for (final element in override) {
+        final t = _tokens[element.url];
+        if (t != null) {
+          t.cancel();
+          _tokens.remove(element.url);
+        }
+      }
+
+      Dbs.g.main.writeTxnSync(() {
+        Dbs.g.main.downloadFiles
+            .putAllSync(override.map((e) => e.failed()).toList());
+      });
+
+      return;
+    }
+
     final toUpdate = <DownloadFile>[];
 
     final inProgress =

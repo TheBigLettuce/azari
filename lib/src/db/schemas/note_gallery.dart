@@ -5,13 +5,14 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:isar/isar.dart';
 
 import '../../interfaces/cell.dart';
 import '../../interfaces/contentable.dart';
 import '../../pages/image_view.dart';
+import '../../plugs/platform_channel.dart';
 import '../../widgets/grid/cell_data.dart';
 import 'note.dart';
 import 'system_gallery_directory_file.dart';
@@ -34,7 +35,7 @@ class NoteGallery extends NoteBase implements Cell {
   final bool isGif;
 
   static bool add(int id,
-      {required String text,
+      {required List<String> text,
       required int height,
       required int width,
       required bool isVideo,
@@ -43,7 +44,7 @@ class NoteGallery extends NoteBase implements Cell {
     final n = Dbs.g.main.noteGallerys.getByIdSync(id);
 
     Dbs.g.main.writeTxnSync(() => Dbs.g.main.noteGallerys.putByIdSync(
-        NoteGallery([...n?.text ?? [], text], DateTime.now(),
+        NoteGallery([...n?.text ?? [], ...text], DateTime.now(),
             id: id,
             originalUri: originalUri,
             height: height,
@@ -56,6 +57,11 @@ class NoteGallery extends NoteBase implements Cell {
 
   static bool hasNotes(int id) {
     return Dbs.g.main.noteGallerys.getByIdSync(id) != null;
+  }
+
+  static bool removeAll(int id) {
+    return Dbs.g.main
+        .writeTxnSync(() => Dbs.g.main.noteGallerys.deleteByIdSync(id));
   }
 
   static bool remove(int id, int indx) {
@@ -107,7 +113,7 @@ class NoteGallery extends NoteBase implements Cell {
     return NoteInterface(
       addNote: (text, cell) {
         NoteGallery.add(cell.id,
-            text: text,
+            text: [text],
             height: cell.height,
             width: cell.width,
             isVideo: cell.isVideo,
@@ -132,7 +138,7 @@ class NoteGallery extends NoteBase implements Cell {
     return NoteInterface(
       addNote: (text, cell) {
         NoteGallery.add(cell.id,
-            text: text,
+            text: [text],
             height: cell.height,
             width: cell.width,
             isVideo: cell.isVideo,
@@ -169,7 +175,13 @@ class NoteGallery extends NoteBase implements Cell {
 
   @override
   List<Widget>? addButtons(BuildContext context) {
-    return null;
+    return [
+      IconButton(
+          onPressed: () {
+            PlatformFunctions.shareMedia(originalUri);
+          },
+          icon: const Icon(Icons.share))
+    ];
   }
 
   @override

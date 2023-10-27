@@ -486,6 +486,11 @@ class _GalleryFilesState extends State<GalleryFiles>
   GridBottomSheetAction<SystemGalleryDirectoryFile> _chooseAction() {
     return GridBottomSheetAction(Icons.check, (selected) {
       widget.callback!(selected.first);
+      if (widget.callback!.returnBack) {
+        Navigator.pop(context);
+        Navigator.pop(context);
+        Navigator.pop(context);
+      }
     },
         false,
         GridBottomSheetActionExplanation(
@@ -573,6 +578,11 @@ class _GalleryFilesState extends State<GalleryFiles>
                               log("getting random number",
                                   level: Level.WARNING.value, error: e);
                               return;
+                            }
+
+                            if (widget.callback!.returnBack) {
+                              Navigator.pop(context);
+                              Navigator.pop(context);
                             }
                           },
                           icon: const Icon(Icons.casino_outlined)),

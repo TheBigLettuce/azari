@@ -116,13 +116,6 @@ class _DownloadsState extends State<Downloads>
                                 deleteController = controller,
                             effects: const [FlipEffect(begin: 1, end: 0)],
                             autoPlay: false)),
-                    IconButton(
-                        onPressed: _refresh,
-                        icon: const Icon(Icons.refresh).animate(
-                            onInit: (controller) =>
-                                refreshController = controller,
-                            effects: const [RotateEffect()],
-                            autoPlay: false)),
                   ],
                   inlineMenuButtonItems: true,
                   immutable: false,
@@ -130,6 +123,7 @@ class _DownloadsState extends State<Downloads>
                   segments: Segments(
                     "Unknown", // TODO: change
                     hidePinnedIcon: true,
+                    limitLabelChildren: 6,
                     segment: (cell) {
                       return (Downloader.g.downloadDescription(cell), true);
                     },
@@ -138,9 +132,27 @@ class _DownloadsState extends State<Downloads>
                         return;
                       }
 
-                      if (label == kDownloadFailed) {
-                        for (final d in children) {
-                          Downloader.g.add(d, state.settings);
+                      if (label == kDownloadInProgress) {
+                        Downloader.g.markStale(override: children);
+                      } else if (label == kDownloadOnHold) {
+                        Downloader.g.addAll(children, state.settings);
+                      } else if (label == kDownloadFailed) {
+                        final n = (6 - children.length);
+
+                        if (!n.isNegative && n != 0) {
+                          Downloader.g.addAll([
+                            ...children,
+                            ...Dbs.g.main.downloadFiles
+                                .where()
+                                .inProgressEqualTo(false)
+                                .filter()
+                                .isFailedEqualTo(false)
+                                .sortByDateDesc()
+                                .limit(6 - children.length)
+                                .findAllSync()
+                          ], state.settings);
+                        } else {
+                          Downloader.g.addAll(children, state.settings);
                         }
                       }
                     },
