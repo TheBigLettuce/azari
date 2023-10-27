@@ -73,13 +73,16 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
+            manifestPlaceholders = [applicationLabel: "Ācārya"]
         }
         debug {
             minifyEnabled true
             applicationIdSuffix '.debug'
+            manifestPlaceholders = [applicationLabel: "Ācārya Debug"]
         }
         profile {
             applicationIdSuffix '.profile'
+            manifestPlaceholders = [applicationLabel: "Ācārya Profile"]
         }
     }
 }

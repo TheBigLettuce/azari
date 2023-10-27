@@ -76,13 +76,13 @@ class _DownloadsState extends State<Downloads>
     super.dispose();
   }
 
-  void _refresh() {
-    if (refreshController != null) {
-      refreshController!.forward(from: 0);
-    }
+  // void _refresh() {
+  //   if (refreshController != null) {
+  //     refreshController!.forward(from: 0);
+  //   }
 
-    Downloader.g.markStale();
-  }
+  //   Downloader.g.markStale();
+  // }
 
   @override
   Widget build(BuildContext context) {
