@@ -30,7 +30,7 @@ part 'selection_interface.dart';
 part 'wrapped_selection.dart';
 part 'mutation.dart';
 part 'segments.dart';
-part 'grid_bottom_sheet_action.dart';
+part 'grid_action.dart';
 part 'grid_description.dart';
 part 'search_and_focus.dart';
 part 'grid_layout.dart';

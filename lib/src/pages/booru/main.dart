@@ -92,13 +92,13 @@ PopupMenuItem _hideName(
 PopupMenuItem _ratio(BuildContext context, schema.AspectRatio aspectRatio,
     void Function(schema.AspectRatio?) select) {
   return PopupMenuItem(
-    child: const Text("Ratio"), // TODO: change
+    child: Text(AppLocalizations.of(context)!.aspectRatio),
     onTap: () => radioDialog(
       context,
       schema.AspectRatio.values.map((e) => (e, e.value.toString())).toList(),
       aspectRatio,
       select,
-      title: AppLocalizations.of(context)!.cellAspectRadio,
+      title: AppLocalizations.of(context)!.aspectRatio,
     ),
   );
 }

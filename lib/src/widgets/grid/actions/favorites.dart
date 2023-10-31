@@ -8,7 +8,7 @@
 import 'package:flutter/material.dart';
 
 import '../callback_grid.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class FavoritesActions {
   static GridAction<T> addToGroup<T>(
@@ -28,7 +28,9 @@ class FavoritesActions {
               context: context,
               builder: (context) {
                 return AlertDialog(
-                  title: Text(AppLocalizations.of(context)!.groupActionLabel),
+                  title: const Text(
+                    "Group", // TODO: change
+                  ),
                   content: TextFormField(
                     autofocus: true,
                     initialValue: initalValue(selected),

@@ -1,16 +1,4 @@
 {
-    "pickDirectory": "Pick download directory",
-    "@pickDirectory": {
-        "description": "Where the downloaded images from *booru will be stored in"
-    },
-    "pick": "pick",
-    "@pick": {
-        "description": "Button which invokes the pick directory system dialog"
-    },
-    "next": "next",
-    "@next": {
-        "description": "Button which shows next introduction screen"
-    },
     "ok": "ok",
     "@ok": {
         "description": "Button in the modal dialog with info which dismisses it"
@@ -110,19 +98,6 @@
     "@downloadsPageName": {
         "description": "Keybinding key info, downloads page name"
     },
-    "downloadsCount": "Downloads ({text})",
-    "@downloadsCount": {
-        "description": "Downloads info in the app bar",
-        "placeholders": {
-            "text": {
-                "type": "String"
-            }
-        }
-    },
-    "downloadsCountEmpty": "Downloads (empty)",
-    "@downloadsCountEmpty": {
-        "description": "Downloads info in the app bar, empty"
-    },
     "yes": "yes",
     "@yes": {
         "description": "Dialog button, to proceed with an operation"
@@ -199,10 +174,6 @@
     "@focusExcludedSearch": {
         "description": "Keybinding key info, focus excluded tags search text field"
     },
-    "tagsPageName": "Tags page",
-    "@tagsPageName": {
-        "description": "Tags page name"
-    },
     "tagsPageAppbarTitle": "Search",
     "@tagsPageAppbarTitle": {
         "description": "Tags page app bar title"
@@ -250,18 +221,6 @@
     "imageDisplayQualityInfo": "Download quality is always Original.",
     "@imageDisplayQualityInfo": {
         "description": "Settings, image display quality's additional information"
-    },
-    "listViewSetting": "List view",
-    "@listViewSetting": {
-        "description": "Settings, changes between list view and grid view"
-    },
-    "listViewInfo": "Number of elements is always 20 in the list view.",
-    "@listViewInfo": {
-        "description": "Settings, list view additional info"
-    },
-    "listViewSubtitle": "If enabled shows elements as a list instead of a grid.",
-    "@listViewSubtitle": {
-        "description": "Settings, list view subtitle"
     },
     "nPerElementsSetting": "Number of elements per row",
     "@nPerElementsSetting": {
@@ -321,21 +280,9 @@
             }
         }
     },
-    "uploadPageName": "Uploads",
-    "@uploadPageName": {
-        "description": "Keybinding key info, uploads page"
-    },
-    "goUploads": "Go to uploads",
-    "@goUploads": {
-        "description": "Keybinding key info, go to uploads page"
-    },
     "galleryInnerPageName": "Inner directory grid",
     "@galleryInnerPageName": {
         "description": "Inside folder page name"
-    },
-    "uploadStarted": "Upload started",
-    "@uploadStarted": {
-        "description": "The upload has started"
     },
     "addFiles": "Add files",
     "@addFiles": {
@@ -349,131 +296,21 @@
     "@deleteImageConfirm": {
         "description": "Delete image conformation, title in dialog, the file is showed separately"
     },
-    "setAsThumbnail": "Set as folder thumbnail",
-    "@setAsThumbnail": {
-        "description": "Set the choosen image as the folder thumbnail"
-    },
-    "serverSettingsPageName": "Server settings",
-    "@serverSettingsPageName": {
-        "description": "Server settings page name"
-    },
-    "notAValidUrl": "Not a valid url: {text}",
-    "@notAValidUrl": {
-        "description": "Error message shown when server url is invalid",
-        "placeholders": {
-            "text": {
-                "type": "String"
-            }
-        }
-    },
-    "schemeIsRequired": "Scheme is required",
-    "@schemeIsRequired": {
-        "description": "Error message shown when server url has no scheme"
-    },
-    "changeServerUrl": "new",
-    "@changeServerUrl": {
-        "description": "Change server url button label"
-    },
-    "serverAddress": "Address",
-    "@serverAddress": {
-        "description": "Server address list tile title"
-    },
     "emptyValue": "empty",
     "@emptyValue": {
         "description": "Placeholder for empty value"
-    },
-    "enterKey": "Enter key",
-    "@enterKey": {
-        "description": "Enter key for the device ID"
-    },
-    "changeDeviceId": "change",
-    "@changeDeviceId": {
-        "description": "Change device ID button label"
-    },
-    "deviceId": "Device ID",
-    "@deviceId": {
-        "description": "Device ID list tile title"
-    },
-    "chooseDirectoryName": "Choose name",
-    "@chooseDirectoryName": {
-        "description": "Choose directory name to create in server"
-    },
-    "newDirectory": "New directory",
-    "@newDirectory": {
-        "description": "Create new directory in server"
-    },
-    "galleryPageName": "Gallery",
-    "@galleryPageName": {
-        "description": "Gallery page name"
-    },
-    "modifyDirectoryPageName": "Modify directory",
-    "@modifyDirectoryPageName": {
-        "description": "Modify directory info page name"
-    },
-    "doYouWantToDelete": "Do you want to delete: {directory}",
-    "@doYouWantToDelete": {
-        "description": "Dialog title displayed when deleting a directory",
-        "placeholders": {
-            "directory": {
-                "type": "String"
-            }
-        }
-    },
-    "directoryAlias": "Alias",
-    "@directoryAlias": {
-        "description": "Directory alias list tile title"
-    },
-    "newAlias": "New alias",
-    "@newAlias": {
-        "description": "Dialog title when inputing the name of new directory alias"
-    },
-    "changeAlias": "change",
-    "@changeAlias": {
-        "description": "Change alias button label"
-    },
-    "directoryCount": "Count",
-    "@directoryCount": {
-        "description": "Count of files inside the directory"
     },
     "dateModified": "Date modified",
     "@dateModified": {
         "description": "Time of last time the directory was modified"
     },
-    "directoryPath": "Path",
-    "@directoryPath": {
-        "description": "Real path of the directory"
-    },
     "savedTagsCount": "Saved tags",
     "@savedTagsCount": {
         "description": "Number of the saved tags"
     },
-    "directoryTitle": "Directory",
-    "@directoryTitle": {
-        "description": "Image info, directory name"
-    },
-    "thumbnailHashTitle": "Thumbnail hash",
-    "@thumbnailHashTitle": {
-        "description": "Image info, thumbnail hash of the image"
-    },
-    "originalHashTitle": "Original hash",
-    "@originalHashTitle": {
-        "description": "Image info, hash of the image"
-    },
-    "typeTitle": "Type",
-    "@typeTitle": {
-        "description": "Image info, type of the image"
-    },
-    "timeTitle": "Time",
-    "@timeTitle": {
-        "description": "Image info, added time of the image"
-    },
     "nameTitle": "Name",
     "@nameTitle": {
         "description": "Image info, name of the image"
-    },
-    "uploadLabel": "Uploads",
-    "@uploadLabel": {
-        "description": "Uploader drawer label"
     },
     "addTagToExcluded": "Add tag to exclueded?",
     "@addTagToExcluded": {
@@ -491,9 +328,9 @@
     "@copiedClipboard": {
         "description": "Showed when post number gets copied to clipboard"
     },
-    "cellAspectRadio": "Cell aspect ratio",
-    "@cellAspectRadio": {
-        "description": "Settings, booru cell aspect ratio"
+    "aspectRatio": "Aspect ratio",
+    "@aspectRatio": {
+        "description": "Settings, grid cell aspect ratio"
     },
     "autoRefresh": "Auto refresh",
     "@autoRefresh": {
@@ -507,33 +344,13 @@
     "@timeInHours": {
         "description": "Settings, time in hours for auto refresh"
     },
-    "dirHideNames": "Hide directory names",
-    "@dirHideNames": {
-        "description": "Settings, hide directory names on grid"
+    "hideNames": "Hide names",
+    "@hideNames": {
+        "description": "Settings, hide cell names on grid"
     },
-    "dirAspectRatio": "Directory cell aspect ratio",
-    "@dirAspectRatio": {
-        "description": "Settings, directory cell aspect ratio"
-    },
-    "dirGridColumns": "Directory grid columns",
-    "@dirGridColumns": {
-        "description": "Settings, directory grid columns on grid"
-    },
-    "filesLabel": "Files",
-    "@filesLabel": {
-        "description": "Settings, files settings group label"
-    },
-    "dirLabel": "Directory",
-    "@dirLabel": {
-        "description": "Settings, directory settings group label"
-    },
-    "filesAspectRatio": "Files cell aspect ratio",
-    "@filesAspectRatio": {
-        "description": "Settings, files cell aspect ratio on grid"
-    },
-    "filesGridColumns": "Files grid columns",
-    "@filesGridColumns": {
-        "description": "Settings, files grid columns on grid"
+    "gridColumns": "Grid columns",
+    "@gridColumns": {
+        "description": "Settings, columns on grid"
     },
     "metricsLabel": "Metrics",
     "@metricsLabel": {
@@ -558,10 +375,6 @@
     "autoRefreshHoursSubtitle": "After this time the grid becomes stale.",
     "@autoRefreshHoursSubtitle": {
         "description": "Settings, auto refresh hours info"
-    },
-    "filesHideNames": "Hide file names",
-    "@filesHideNames": {
-        "description": "Settings, files gallery hide names"
     },
     "booruLabel": "Booru",
     "@booruLabel": {
@@ -717,14 +530,6 @@
     "@openInBrowser": {
         "description": "Button which opens the current booru landing page"
     },
-    "filesListView": "Files list view",
-    "@filesListView": {
-        "description": "Settings, if files should be displayed as a list instead of a grid"
-    },
-    "saveTagsOnlyOnDownload": "Save tags only on download",
-    "@saveTagsOnlyOnDownload": {
-        "description": "Settings, if post tags shouldn't be automatically saved on booru post loading"
-    },
     "enterNewNameTitle": "Enter new name",
     "@enterNewNameTitle": {
         "description": "Dialog title when renaming a file"
@@ -750,61 +555,9 @@
     "@errorHalf": {
         "description": "First half of the error message on booru refresh"
     },
-    "restoreActionLabel": "Restore",
-    "@restoreActionLabel": {
-        "description": "Grid actions, restore"
-    },
-    "restoreActionBody": "Restores selected files from the trash.",
-    "@restoreActionBody": {
-        "description": "Grid actions, restore"
-    },
-    "bulkRenameActionBody": "Renames the selected files.\nCurrently used only to add the booru prefix.",
-    "@bulkRenameActionBody": {
-        "description": "Grid actions, bulk rename"
-    },
-    "saveTagsActionBody": "Tries to load tags from the booru.\nThe filename should be in the format.",
-    "@saveTagsActionBody": {
-        "description": "Grid actions, saving tags"
-    },
     "favoritesLabel": "Favorites",
     "@favoritesLabel": {
         "description": "Grid actions, favorites"
-    },
-    "favoritesActionBody": "Adds selected files to the favorites.",
-    "@favoritesActionBody": {
-        "description": "Grid actions, favorites"
-    },
-    "deleteFilesActionLabel": "Delete files",
-    "@deleteFilesActionLabel": {
-        "description": "Grid actions, delete files"
-    },
-    "deleteFilesActionBody": "Moves to trash selected files.",
-    "@deleteFilesActionBody": {
-        "description": "Grid actions, delete files"
-    },
-    "copyActionLabel": "Copy",
-    "@copyActionLabel": {
-        "description": "Grid actions, copy"
-    },
-    "copyActionBody": "Copies selected files to a destination.",
-    "@copyActionBody": {
-        "description": "Grid actions, copy"
-    },
-    "moveActionLabel": "Move",
-    "@moveActionLabel": {
-        "description": "Grid actions, move"
-    },
-    "moveActionBody": "Moves selected files to a destination.",
-    "@moveActionBody": {
-        "description": "Grid actions, move"
-    },
-    "chooseActionLabel": "Choose",
-    "@chooseActionLabel": {
-        "description": "Grid actions, choose"
-    },
-    "chooseActionBody": "Choose the file.",
-    "@chooseActionBody": {
-        "description": "Grid actions, choose"
     },
     "disassembleNoPrefix": "No prefix",
     "@disassembleNoPrefix": {
@@ -842,57 +595,9 @@
     "@disassembleExtensionInvalid": {
         "description": "Filename disassemble errors"
     },
-    "directoryTagActionLabel": "Directory tag",
-    "@directoryTagActionLabel": {
-        "description": "Grid actions, directory tag"
-    },
-    "directoryTagActionBody": "Lets you to assign a tag to the selected directory.\nDirectory tag is used for categorizing the directories on the grid.",
-    "@directoryTagActionBody": {
-        "description": "Grid actions, directory tag"
-    },
-    "blacklistActionLabel": "Blacklist",
-    "@blacklistActionLabel": {
-        "description": "Grid actions, blacklist"
-    },
-    "blacklistActionBody": "Add selected directories to the blacklist.\nYou can unblacklist the directories in the settings.",
-    "@blacklistActionBody": {
-        "description": "Grid actions, blacklist"
-    },
-    "joinActionLabel": "Join",
-    "@joinActionLabel": {
-        "description": "Grid actions, join"
-    },
-    "joinActionBody": "Join selected directories into one for viewing.",
-    "@joinActionBody": {
-        "description": "Grid actions, join"
-    },
     "directoriesPlural": "directories",
     "@directoriesPlural": {
         "description": "Displayed in the filter hint when joining directories"
-    },
-    "downloadActionLabel": "Download",
-    "@downloadActionLabel": {
-        "description": "Grid actions, download"
-    },
-    "downloadActionBody": "Downloads images/videos from the booru to the download folder.",
-    "@downloadActionBody": {
-        "description": "Grid actions, download"
-    },
-    "excludeActionLabel": "Exclude",
-    "@excludeActionLabel": {
-        "description": "Grid actions, exclude"
-    },
-    "excludeActionBody": "Exclude the file from the selected.",
-    "@excludeActionBody": {
-        "description": "Grid actions, exclude"
-    },
-    "clearSelectionActionLabel": "Clear selection",
-    "@clearSelectionActionLabel": {
-        "description": "Grid actions, clear selection"
-    },
-    "clearSelectionActionBody": "Unselects every item.",
-    "@clearSelectionActionBody": {
-        "description": "Grid actions, clear selection"
     },
     "choose": "Choose",
     "@choose": {
@@ -921,13 +626,5 @@
     "ungrouped": "Ungrouped",
     "@ungrouped": {
         "description": "Grid segment ungrouped"
-    },
-    "groupActionLabel": "Group",
-    "@groupActionLabel": {
-        "description": "Grid actions, group"
-    },
-    "groupActionBody": "Add selected items to the group.",
-    "@groupActionBody": {
-        "description": "Grid actions, group"
     }
 }
