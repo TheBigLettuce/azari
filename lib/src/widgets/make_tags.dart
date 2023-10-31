@@ -99,7 +99,7 @@ Iterable<Widget> makeTags(
                   ? null
                   : () {
                       launchGrid(e);
-                      plug.unFullscreen();
+                      plug.unfullscreen();
                       extra();
                     },
             )))

@@ -57,7 +57,8 @@ class _SinglePostState extends State<SinglePost> {
     super.dispose();
   }
 
-  void _launch([Booru? replaceBooru, int? replaceId]) async {
+  void _launch(Color overlayColor,
+      [Booru? replaceBooru, int? replaceId]) async {
     if (inProcessLoading) {
       return;
     }
@@ -86,9 +87,6 @@ class _SinglePostState extends State<SinglePost> {
 
         value = await booru.singlePost(n);
       }
-
-      Color overlayColor =
-          Theme.of(context).colorScheme.background.withOpacity(0.5);
 
       final key = GlobalKey<ImageViewState>();
 
@@ -188,7 +186,7 @@ class _SinglePostState extends State<SinglePost> {
                             return AlertDialog(
                               title: Text("Error"),
                               content: Text(
-                                  "Camera permission should be granted for reading the QR codes."),
+                                  "Camera permission must be granted for reading the QR codes."),
                             );
                           },
                         ));
@@ -212,7 +210,12 @@ class _SinglePostState extends State<SinglePost> {
                                       } else {
                                         try {
                                           final f = value.split("_");
-                                          _launch(Booru.fromPrefix(f[0])!,
+                                          _launch(
+                                              Theme.of(context)
+                                                  .colorScheme
+                                                  .background
+                                                  .withOpacity(0.5),
+                                              Booru.fromPrefix(f[0])!,
                                               int.parse(f[1]));
                                         } catch (_) {}
                                       }
@@ -276,7 +279,8 @@ class _SinglePostState extends State<SinglePost> {
                 onInit: (controller) => arrowSpinningController = controller,
                 effects: const [RotateEffect()],
                 autoPlay: false),
-            onPressed: () => _launch(),
+            onPressed: () => _launch(
+                Theme.of(context).colorScheme.background.withOpacity(0.5)),
           )
         ],
       ),

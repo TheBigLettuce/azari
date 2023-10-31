@@ -12,7 +12,7 @@ class DummyPlatformFullscreen implements PlatformFullscreensPlug {
   void fullscreen() {}
 
   @override
-  void unFullscreen() {}
+  void unfullscreen() {}
 
   @override
   void setTitle(_) {}

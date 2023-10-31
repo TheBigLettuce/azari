@@ -17,7 +17,7 @@ class LinuxFullscreen implements PlatformFullscreensPlug {
   }
 
   @override
-  void unFullscreen() {
+  void unfullscreen() {
     channel.invokeMethod("default_title");
     channel.invokeMethod("fullscreen_untoggle");
   }

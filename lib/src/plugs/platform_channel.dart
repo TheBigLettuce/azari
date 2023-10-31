@@ -112,6 +112,10 @@ class PlatformFunctions {
     _channel.invokeMethod("refreshGallery");
   }
 
+  static void emptyTrash() {
+    _channel.invokeMethod("emptyTrash");
+  }
+
   static void move(MoveOp op) {
     _channel.invokeMethod("move",
         {"source": op.source, "rootUri": op.rootDir, "dir": op.targetDir});

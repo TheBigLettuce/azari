@@ -56,6 +56,7 @@ internal class Mover(
 
     private val isLockedDirMux = Mutex()
     private val isLockedFilesMux = Mutex()
+    val trashDeleteMux = Mutex()
 
     init {
         scope.launch {
@@ -212,7 +213,15 @@ internal class Mover(
                 return@launch
             }
 
-            refreshDirectoryFiles("favorites", context, time, inRefreshAtEnd = true, showOnly = ids)
+            loadMedia(
+                "favorites",
+                context,
+                time,
+                inRefreshAtEnd = true,
+                showOnly = ids
+            ) { content, empty, inRefresh ->
+                sendMedia("favorites", time, content, empty, inRefresh)
+            }
 
             isLockedFilesMux.unlock()
         }
@@ -224,13 +233,15 @@ internal class Mover(
         scope.launch {
             isLockedFilesMux.lock()
 
-            refreshDirectoryFiles(
+            loadMedia(
                 dirId,
                 context,
                 time,
                 inRefreshAtEnd = inRefreshAtEnd,
                 isTrashed = isTrashed
-            )
+            ) { content, empty, inRefresh ->
+                sendMedia(dirId, time, content, empty, inRefresh)
+            }
 
             isLockedFilesMux.unlock()
         }
@@ -241,9 +252,34 @@ internal class Mover(
 
         isLockedFilesMux.lock()
         for ((i, d) in dirs.withIndex()) {
-            refreshDirectoryFiles(d, context, time, inRefreshAtEnd = i == dirs.size - 1)
+            loadMedia(
+                d,
+                context,
+                time,
+                inRefreshAtEnd = i == dirs.size - 1
+            ) { content, empty, inRefresh ->
+                sendMedia(d, time, content, empty, inRefresh)
+            }
         }
         isLockedFilesMux.unlock()
+    }
+
+    private suspend fun sendMedia(
+        dir: String,
+        time: Long,
+        content: List<DirectoryFile>,
+        empty: Boolean,
+        inRefresh: Boolean
+    ) {
+        CoroutineScope(coContext).launch {
+            galleryApi.updatePictures(
+                content,
+                dir,
+                time,
+                inRefreshArg = inRefresh,
+                emptyArg = empty
+            ) {}
+        }.join()
     }
 
     fun refreshGallery() {
@@ -262,17 +298,24 @@ internal class Mover(
         }
     }
 
-    fun trashThumbId(context: Context): Long? {
-        val projection = arrayOf(
+    fun trashThumbIds(
+        context: Context,
+        lastOnly: Boolean,
+        separate: Boolean = false
+    ): Pair<List<Long>, List<Long>> {
+        val projection = if (separate) arrayOf(
             MediaStore.Files.FileColumns._ID,
-        )
+            MediaStore.Files.FileColumns.MEDIA_TYPE,
+        ) else arrayOf(MediaStore.Files.FileColumns._ID)
 
         val bundle = Bundle().apply {
             putString(
                 ContentResolver.QUERY_ARG_SQL_SELECTION,
                 "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) AND  ${MediaStore.Files.FileColumns.MIME_TYPE} != ?"
             )
-            putInt(ContentResolver.QUERY_ARG_LIMIT, 1)
+            if (lastOnly) {
+                putInt(ContentResolver.QUERY_ARG_LIMIT, 1)
+            }
             putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, arrayOf("image/vnd.djvu"))
             putString(
                 ContentResolver.QUERY_ARG_SQL_SORT_ORDER,
@@ -281,7 +324,7 @@ internal class Mover(
             putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_ONLY)
         }
 
-        var result: Long? = null;
+        var result: Pair<List<Long>, List<Long>>? = null
 
         context.contentResolver.query(
             MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
@@ -293,19 +336,45 @@ internal class Mover(
                 return@use
             }
 
-            result = it.getLong(0)
+            if (separate) {
+                val videos = mutableListOf<Long>()
+                val images = mutableListOf<Long>()
+
+                do {
+                    val id = it.getLong(0)
+                    val typ = it.getInt(1)
+
+                    if (typ == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO) {
+                        videos.add(id)
+                    } else {
+                        images.add(id)
+                    }
+                } while (
+                    it.moveToNext()
+                )
+
+                result = Pair(images, videos)
+            } else {
+                val r = List<Long>(it.count) { idx ->
+                    it.moveToPosition(idx)
+                    it.getLong(0)
+                }
+
+                result = Pair(r, listOf())
+            }
         }
 
-        return result
+        return if (result == null) Pair(listOf(), listOf()) else result!!
     }
 
-    private suspend fun refreshDirectoryFiles(
+    private suspend fun loadMedia(
         dir: String,
         context: Context,
         time: Long,
         inRefreshAtEnd: Boolean,
         isTrashed: Boolean = false,
-        showOnly: List<Long>? = null
+        showOnly: List<Long>? = null,
+        closure: suspend (content: List<DirectoryFile>, empty: Boolean, inRefresh: Boolean) -> Unit
     ) {
         val projection = arrayOf(
             MediaStore.Files.FileColumns.BUCKET_ID,
@@ -324,15 +393,7 @@ internal class Mover(
 
         if (showOnly != null) {
             if (showOnly.isEmpty()) {
-                CoroutineScope(coContext).launch {
-                    galleryApi.updatePictures(
-                        listOf(),
-                        dir,
-                        time,
-                        inRefreshArg = false,
-                        emptyArg = true
-                    ) {}
-                }.join()
+                closure(listOf(), true, false)
                 return
             }
 
@@ -386,15 +447,7 @@ internal class Mover(
             val media_mime = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
 
             if (!cursor.moveToFirst()) {
-                CoroutineScope(coContext).launch {
-                    galleryApi.updatePictures(
-                        listOf(),
-                        dir,
-                        time,
-                        inRefreshArg = false,
-                        emptyArg = true
-                    ) {}
-                }.join()
+                closure(listOf(), true, false)
                 return@use
             }
 
@@ -431,33 +484,15 @@ internal class Mover(
                     )
 
                     if (list.count() == 40) {
-                        val copy = list.toList()
+                        closure(list.toList(), false, if (inRefreshAtEnd) !cursor.isLast else true)
                         list.clear()
-
-                        CoroutineScope(coContext).launch {
-                            galleryApi.updatePictures(
-                                copy,
-                                dir,
-                                time,
-                                inRefreshArg = if (inRefreshAtEnd) !cursor.isLast else true,
-                                emptyArg = false
-                            ) {}
-                        }.join()
                     }
                 } while (
                     cursor.moveToNext()
                 )
 
                 if (list.isNotEmpty()) {
-                    CoroutineScope(coContext).launch {
-                        galleryApi.updatePictures(
-                            list,
-                            dir,
-                            time,
-                            inRefreshArg = !inRefreshAtEnd,
-                            emptyArg = false
-                        ) {}
-                    }.join()
+                    closure(list, false, !inRefreshAtEnd)
                 }
             } catch (e: java.lang.Exception) {
                 Log.e("refreshDirectoryFiles", "cursor block fail", e)

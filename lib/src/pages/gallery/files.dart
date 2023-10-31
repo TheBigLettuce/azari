@@ -9,6 +9,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'dart:math' as math;
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/post_tags.dart';
 import 'package:gallery/src/db/initalize_db.dart';
@@ -541,6 +542,46 @@ class _GalleryFilesState extends State<GalleryFiles>
                           return null;
                         },
                   menuButtonItems: [
+                    if (widget.callback == null && extra.isTrash)
+                      IconButton(
+                          onPressed: () {
+                            Navigator.push(
+                                context,
+                                DialogRoute(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        title: Text(
+                                            "Are you sure you want to empty the trash?"),
+                                        content: Text(
+                                          "This is permanent", // TODO: change
+                                          style: TextStyle(
+                                              color: Colors.red.harmonizeWith(
+                                                  Theme.of(context)
+                                                      .colorScheme
+                                                      .primary)),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                              onPressed: () {
+                                                PlatformFunctions.emptyTrash();
+                                                Navigator.pop(context);
+                                              },
+                                              child: Text(
+                                                  AppLocalizations.of(context)!
+                                                      .yes)),
+                                          TextButton(
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                              },
+                                              child: Text(
+                                                  AppLocalizations.of(context)!
+                                                      .no))
+                                        ],
+                                      );
+                                    }));
+                          },
+                          icon: const Icon(Icons.delete_sweep_outlined)),
                     if (widget.callback != null)
                       IconButton(
                           onPressed: () {

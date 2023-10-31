@@ -15,6 +15,7 @@ import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/skeletons/make_skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:octo_image/octo_image.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../db/schemas/system_gallery_directory.dart';
 
@@ -404,12 +405,8 @@ class _NotesPageState extends State<NotesPage>
               ? CopyMovePreview.hintWidget(
                   context, widget.callback!.description)
               : TabBar(controller: tabController, tabs: [
-                  Tab(
-                    text: "Booru",
-                  ),
-                  Tab(
-                    text: "Gallery",
-                  )
+                  Tab(text: AppLocalizations.of(context)!.booruLabel),
+                  Tab(text: AppLocalizations.of(context)!.galleryLabel)
                 ]),
         ));
   }

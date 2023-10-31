@@ -14,7 +14,7 @@ import 'package:gallery/src/plugs/platform_fullscreens/linux.dart';
 
 abstract class PlatformFullscreensPlug {
   void fullscreen();
-  void unFullscreen();
+  void unfullscreen();
   void setTitle(String windowTitle);
 }
 

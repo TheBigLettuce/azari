@@ -300,7 +300,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
   @override
   void dispose() {
-    fullscreenPlug.unFullscreen();
+    fullscreenPlug.unfullscreen();
 
     WakelockPlus.disable();
     widget.updateTagScrollPos(null, null);
@@ -1276,7 +1276,7 @@ class _FormFieldSaveable extends StatefulWidget {
   final math.Random random;
 
   const _FormFieldSaveable(this.text,
-      {super.key, required this.save, required this.random});
+      {required this.save, required this.random});
 
   @override
   State<_FormFieldSaveable> createState() => __FormFieldSaveableState();
@@ -1322,7 +1322,7 @@ class _Image extends StatefulWidget {
   final ImageProvider t;
   final void Function() reset;
 
-  const _Image({super.key, required this.t, required this.reset});
+  const _Image({required this.t, required this.reset});
 
   @override
   State<_Image> createState() => __ImageState();

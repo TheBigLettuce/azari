@@ -322,6 +322,43 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                     mover.getThumbnailNetwork(call.arguments as String, result)
                 }
 
+                "emptyTrash" -> {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        mover.trashDeleteMux.lock()
+                        val (images, videos) = mover.trashThumbIds(context, false)
+                        if (images.isNotEmpty() || videos.isNotEmpty()) {
+                            val intent = MediaStore.createDeleteRequest(
+                                context.contentResolver,
+                                images.map {
+                                    ContentUris.withAppendedId(
+                                        MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                                        it
+                                    )
+                                } + videos.map {
+                                    ContentUris.withAppendedId(
+                                        MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                                        it
+                                    )
+                                })
+
+                            try {
+                                context.startIntentSenderForResult(
+                                    intent.intentSender,
+                                    13,
+                                    null,
+                                    0,
+                                    0,
+                                    0
+                                )
+                            } catch (e: Exception) {
+                                Log.e("emptyTrash", e.toString())
+                            }
+                        }
+
+                        mover.trashDeleteMux.unlock()
+                    }
+                }
+
                 "getThumbDirectly" -> {
                     val id: Long = when (call.arguments) {
                         is Long -> {
@@ -473,7 +510,9 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
 
                 "trashThumbId" -> {
                     CoroutineScope(Dispatchers.IO).launch {
-                        result.success(mover.trashThumbId(context))
+                        val res = mover.trashThumbIds(context, true)
+
+                        result.success(res.first.firstOrNull())
                     }
                 }
 

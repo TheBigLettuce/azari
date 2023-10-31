@@ -205,9 +205,9 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                       icon: const Icon(Icons.collections),
                       label: AppLocalizations.of(context)!.galleryLabel,
                     ),
-                    NavigationDestination(
-                      icon: const Icon(Icons.sticky_note_2),
-                      label: "Notes",
+                    const NavigationDestination(
+                      icon: Icon(Icons.sticky_note_2),
+                      label: "Notes", // TODO: change
                     ),
                   ]
                 : [
