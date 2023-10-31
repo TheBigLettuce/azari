@@ -349,6 +349,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     }
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      // listKey.currentState?.
       controller.position.isScrollingNotifier.addListener(() {
         if (!_state.isRefreshing) {
           widget.updateScrollPosition?.call(controller.offset);

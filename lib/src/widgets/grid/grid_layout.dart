@@ -72,7 +72,7 @@ class GridLayout {
           overflow: TextOverflow.ellipsis,
         ),
       ),
-    ).animate().fadeIn();
+    ).animate(key: cell.uniqueKey()).fadeIn();
   }
 
   static Widget grid<T extends Cell>(

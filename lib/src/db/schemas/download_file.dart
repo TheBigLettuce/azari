@@ -21,6 +21,9 @@ class DownloadFile implements Cell {
   @override
   Id? isarId;
 
+  @override
+  Key uniqueKey() => ValueKey(url);
+
   @Index(unique: true, replace: true)
   final String url;
   @Index(unique: true, replace: true)

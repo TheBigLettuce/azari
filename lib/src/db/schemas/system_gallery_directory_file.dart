@@ -43,6 +43,9 @@ class SystemGalleryDirectoryFile implements Cell {
   @override
   Id? isarId;
 
+  @override
+  Key uniqueKey() => ValueKey(id);
+
   @Index(unique: true)
   final int id;
   final String bucketId;

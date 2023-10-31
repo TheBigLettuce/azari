@@ -73,6 +73,9 @@ class PostBase implements Cell {
   final int width;
   final int height;
 
+  @override
+  Key uniqueKey() => ValueKey(fileUrl);
+
   @Index(unique: true, replace: true)
   final String fileUrl;
   final String previewUrl;

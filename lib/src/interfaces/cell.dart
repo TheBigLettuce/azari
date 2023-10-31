@@ -68,6 +68,8 @@ abstract class Cell {
   /// instead of a cell on a grid.
   CellData getCellData(bool isList, {required BuildContext context});
 
+  Key uniqueKey();
+
   /// Const constructor to allow implementations to have const constructors.
   const Cell();
 }

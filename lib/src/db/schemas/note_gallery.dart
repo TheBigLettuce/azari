@@ -24,6 +24,9 @@ class NoteGallery extends NoteBase implements Cell {
   @override
   Id? isarId;
 
+  @override
+  Key uniqueKey() => ValueKey(id);
+
   @Index(unique: true, replace: true)
   final int id;
   final String originalUri;

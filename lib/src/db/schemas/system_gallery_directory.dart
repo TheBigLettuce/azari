@@ -24,6 +24,9 @@ class SystemGalleryDirectory implements Cell {
   @Index(unique: true)
   final String bucketId;
 
+  @override
+  Key uniqueKey() => ValueKey(bucketId);
+
   @Index()
   final String name;
 

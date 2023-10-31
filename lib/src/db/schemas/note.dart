@@ -33,6 +33,9 @@ class NoteBooru extends NoteBase implements Cell {
   @override
   Id? isarId;
 
+  @override
+  Key uniqueKey() => ValueKey((postId, booru));
+
   @Index(unique: true, replace: true, composite: [CompositeIndex("booru")])
   final int postId;
   @enumerated

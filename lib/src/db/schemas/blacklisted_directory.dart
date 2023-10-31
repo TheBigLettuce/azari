@@ -18,6 +18,9 @@ class BlacklistedDirectory implements Cell {
   @override
   Id? isarId;
 
+  @override
+  Key uniqueKey() => ValueKey(bucketId);
+
   @Index(unique: true, replace: true)
   String bucketId;
   @Index()
