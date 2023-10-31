@@ -52,8 +52,8 @@ class _SegSticky {
 }
 
 class SelectionGlue<T extends Cell> {
-  final void Function(List<GridBottomSheetAction<T>> actions,
-      SelectionInterface<T> selection) open;
+  final void Function(
+      List<GridAction<T>> actions, SelectionInterface<T> selection) open;
   final void Function() close;
   final bool Function() isOpen;
   final bool Function() keyboardVisible;
@@ -169,7 +169,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   final FocusNode? belowMainFocus;
 
   /// Supplied to [ImageView.addIcons].
-  final List<GridBottomSheetAction<T>> Function(T)? addIconsImage;
+  final List<GridAction<T>> Function(T)? addIconsImage;
 
   /// Supplied to [ImageView.pageChange].
   final void Function(ImageViewState<T> state)? pageChangeImage;

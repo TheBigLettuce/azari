@@ -15,9 +15,8 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../../net/downloader.dart';
 
 class DownloadsActions {
-  static GridBottomSheetAction<DownloadFile> retryOrDelete(
-      BuildContext context) {
-    return GridBottomSheetAction(Icons.more_horiz, (selected) {
+  static GridAction<DownloadFile> retryOrDelete(BuildContext context) {
+    return GridAction(Icons.more_horiz, (selected) {
       if (selected.isEmpty) {
         return;
       }

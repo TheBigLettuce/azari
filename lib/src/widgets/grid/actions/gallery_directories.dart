@@ -16,9 +16,9 @@ import '../../../pages/gallery/files.dart';
 import '../../../db/schemas/blacklisted_directory.dart';
 
 class SystemGalleryDirectoriesActions {
-  static GridBottomSheetAction<SystemGalleryDirectory> blacklist(
+  static GridAction<SystemGalleryDirectory> blacklist(
       BuildContext context, GalleryDirectoriesExtra extra) {
-    return GridBottomSheetAction(
+    return GridAction(
       Icons.hide_image_outlined,
       (selected) {
         extra.addBlacklisted(selected
@@ -29,11 +29,11 @@ class SystemGalleryDirectoriesActions {
     );
   }
 
-  static GridBottomSheetAction<SystemGalleryDirectory> joinedDirectories(
+  static GridAction<SystemGalleryDirectory> joinedDirectories(
       BuildContext context,
       GalleryDirectoriesExtra extra,
       CallbackDescriptionNested? callback) {
-    return GridBottomSheetAction(
+    return GridAction(
       Icons.merge_rounded,
       (selected) {
         joinedDirectoriesFnc(

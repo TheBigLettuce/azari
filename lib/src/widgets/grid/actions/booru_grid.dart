@@ -20,9 +20,9 @@ import '../../../db/schemas/tags.dart';
 import '../callback_grid.dart';
 
 class BooruGridActions {
-  static GridBottomSheetAction<T> download<T extends PostBase>(
+  static GridAction<T> download<T extends PostBase>(
       BuildContext context, BooruAPI api) {
-    return GridBottomSheetAction(
+    return GridAction(
       Icons.download,
       (selected) {
         final settings = Settings.fromDb();
@@ -40,11 +40,10 @@ class BooruGridActions {
     );
   }
 
-  static GridBottomSheetAction<T> favorites<T extends PostBase>(
-      BuildContext context, T? p,
+  static GridAction<T> favorites<T extends PostBase>(BuildContext context, T? p,
       {bool showDeleteSnackbar = false}) {
     final isFavorite = p != null && Settings.isFavorite(p.fileUrl);
-    return GridBottomSheetAction(
+    return GridAction(
         isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
         (selected) {
       Settings.addRemoveFavorites(context, selected, showDeleteSnackbar);

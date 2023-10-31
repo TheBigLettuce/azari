@@ -62,7 +62,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final void Function(int post) scrollUntill;
   final void Function(double? pos, int? selectedCell) updateTagScrollPos;
   final Future<int> Function()? onNearEnd;
-  final List<GridBottomSheetAction<T>> Function(T)? addIcons;
+  final List<GridAction<T>> Function(T)? addIcons;
   final void Function(int i)? download;
   final double? infoScrollOffset;
   final Color systemOverlayRestoreColor;

@@ -8,7 +8,7 @@
 part of 'callback_grid.dart';
 
 /// Action which can be taken upon a selected group of cells.
-class GridBottomSheetAction<T> {
+class GridAction<T> {
   /// Icon of the button.
   final IconData icon;
 
@@ -30,7 +30,7 @@ class GridBottomSheetAction<T> {
   final bool animate;
   final bool play;
 
-  const GridBottomSheetAction(this.icon, this.onPress, this.closeOnPress,
+  const GridAction(this.icon, this.onPress, this.closeOnPress,
       {this.showOnlyWhenSingle = false,
       this.backgroundColor,
       this.color,

@@ -91,7 +91,7 @@ class _NotesPageState extends State<NotesPage>
             noteInterface: i,
             addIcons: widget.callback != null
                 ? (n) => [
-                      GridBottomSheetAction(
+                      GridAction(
                         Icons.check,
                         (selected) {
                           final note = selected.first;
@@ -114,7 +114,7 @@ class _NotesPageState extends State<NotesPage>
                       )
                     ]
                 : (n) => [
-                      GridBottomSheetAction(
+                      GridAction(
                         Icons.forward,
                         (selected) {
                           Navigator.push(context,

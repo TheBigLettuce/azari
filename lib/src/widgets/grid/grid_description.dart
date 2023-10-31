@@ -18,7 +18,7 @@ class GridDescription<T> {
   final String? pageName;
 
   /// Actions of the grid on selected cells.
-  final List<GridBottomSheetAction<T>> actions;
+  final List<GridAction<T>> actions;
 
   final GridColumn columns;
 

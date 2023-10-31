@@ -397,8 +397,8 @@ class _GalleryFilesState extends State<GalleryFiles>
         ));
   }
 
-  GridBottomSheetAction<SystemGalleryDirectoryFile> _restoreFromTrash() {
-    return GridBottomSheetAction(
+  GridAction<SystemGalleryDirectoryFile> _restoreFromTrash() {
+    return GridAction(
       Icons.restore_from_trash,
       (selected) {
         PlatformFunctions.removeFromTrash(
@@ -408,8 +408,8 @@ class _GalleryFilesState extends State<GalleryFiles>
     );
   }
 
-  GridBottomSheetAction<SystemGalleryDirectoryFile> _bulkRename() {
-    return GridBottomSheetAction(
+  GridAction<SystemGalleryDirectoryFile> _bulkRename() {
+    return GridAction(
       Icons.edit,
       (selected) {
         _changeName(context, selected);
@@ -418,8 +418,8 @@ class _GalleryFilesState extends State<GalleryFiles>
     );
   }
 
-  GridBottomSheetAction<SystemGalleryDirectoryFile> _saveTagsAction() {
-    return GridBottomSheetAction(
+  GridAction<SystemGalleryDirectoryFile> _saveTagsAction() {
+    return GridAction(
       Icons.tag_rounded,
       (selected) {
         _saveTags(context, selected);
@@ -428,11 +428,11 @@ class _GalleryFilesState extends State<GalleryFiles>
     );
   }
 
-  GridBottomSheetAction<SystemGalleryDirectoryFile> _addToFavoritesAction(
+  GridAction<SystemGalleryDirectoryFile> _addToFavoritesAction(
       SystemGalleryDirectoryFile? f) {
     final isFavorites = f != null && f.isFavorite();
 
-    return GridBottomSheetAction(
+    return GridAction(
         isFavorites ? Icons.star_rounded : Icons.star_border_rounded,
         (selected) {
       _favoriteOrUnfavorite(context, selected);
@@ -442,8 +442,8 @@ class _GalleryFilesState extends State<GalleryFiles>
         play: !isFavorites);
   }
 
-  GridBottomSheetAction<SystemGalleryDirectoryFile> _deleteAction() {
-    return GridBottomSheetAction(
+  GridAction<SystemGalleryDirectoryFile> _deleteAction() {
+    return GridAction(
       Icons.delete,
       (selected) {
         _deleteDialog(context, selected);
@@ -452,8 +452,8 @@ class _GalleryFilesState extends State<GalleryFiles>
     );
   }
 
-  GridBottomSheetAction<SystemGalleryDirectoryFile> _copyAction() {
-    return GridBottomSheetAction(
+  GridAction<SystemGalleryDirectoryFile> _copyAction() {
+    return GridAction(
       Icons.copy,
       (selected) {
         _moveOrCopy(context, selected, false);
@@ -462,8 +462,8 @@ class _GalleryFilesState extends State<GalleryFiles>
     );
   }
 
-  GridBottomSheetAction<SystemGalleryDirectoryFile> _moveAction() {
-    return GridBottomSheetAction(
+  GridAction<SystemGalleryDirectoryFile> _moveAction() {
+    return GridAction(
       Icons.forward,
       (selected) {
         _moveOrCopy(context, selected, true);
@@ -472,8 +472,8 @@ class _GalleryFilesState extends State<GalleryFiles>
     );
   }
 
-  GridBottomSheetAction<SystemGalleryDirectoryFile> _chooseAction() {
-    return GridBottomSheetAction(
+  GridAction<SystemGalleryDirectoryFile> _chooseAction() {
+    return GridAction(
       Icons.check,
       (selected) {
         widget.callback!(selected.first);

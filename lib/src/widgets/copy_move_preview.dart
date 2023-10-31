@@ -67,7 +67,7 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
                   onExit: () {},
                   addIcons: (_) {
                     return [
-                      GridBottomSheetAction(
+                      GridAction(
                         Icons.close_rounded,
                         (_) {
                           widget.files.removeAt(key.currentState!.currentPage);

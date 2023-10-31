@@ -9,7 +9,7 @@ part of 'callback_grid.dart';
 
 class SelectionInterface<T extends Cell> {
   final selected = <int, T>{};
-  final List<GridBottomSheetAction<T>> addActions;
+  final List<GridAction<T>> addActions;
   int? lastSelected;
 
   final void Function(Function()) _setState;

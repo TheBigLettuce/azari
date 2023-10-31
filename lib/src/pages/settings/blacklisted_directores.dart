@@ -111,7 +111,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
                   ],
                   refresh: () => Future.value(loader.count()),
                   description: GridDescription([
-                    GridBottomSheetAction(
+                    GridAction(
                       Icons.restore_page,
                       (selected) {
                         Dbs.g.blacklisted.writeTxnSync(() {

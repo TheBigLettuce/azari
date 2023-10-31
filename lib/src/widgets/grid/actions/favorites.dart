@@ -11,11 +11,11 @@ import '../callback_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class FavoritesActions {
-  static GridBottomSheetAction<T> addToGroup<T>(
+  static GridAction<T> addToGroup<T>(
       BuildContext context,
       String? Function(List<T>) initalValue,
       void Function(List<T>, String) onSubmitted) {
-    return GridBottomSheetAction(
+    return GridAction(
       Icons.group_work_outlined,
       (selected) {
         if (selected.isEmpty) {

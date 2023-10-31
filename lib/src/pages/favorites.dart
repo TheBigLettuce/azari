@@ -241,7 +241,7 @@ class _FavoritesPageState extends State<FavoritesPage>
     });
   }
 
-  GridBottomSheetAction<FavoriteBooru> _groupButton(BuildContext context) {
+  GridAction<FavoriteBooru> _groupButton(BuildContext context) {
     return FavoritesActions.addToGroup(context, (selected) {
       final g = selected.first.group;
       for (final e in selected.skip(1)) {
