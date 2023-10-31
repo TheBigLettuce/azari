@@ -18,37 +18,35 @@ import '../../../db/schemas/blacklisted_directory.dart';
 class SystemGalleryDirectoriesActions {
   static GridBottomSheetAction<SystemGalleryDirectory> blacklist(
       BuildContext context, GalleryDirectoriesExtra extra) {
-    return GridBottomSheetAction(Icons.hide_image_outlined, (selected) {
-      extra.addBlacklisted(selected
-          .map((e) => BlacklistedDirectory(e.bucketId, e.name))
-          .toList());
-    },
-        true,
-        GridBottomSheetActionExplanation(
-          label: AppLocalizations.of(context)!.blacklistActionLabel,
-          body: AppLocalizations.of(context)!.blacklistActionBody,
-        ));
+    return GridBottomSheetAction(
+      Icons.hide_image_outlined,
+      (selected) {
+        extra.addBlacklisted(selected
+            .map((e) => BlacklistedDirectory(e.bucketId, e.name))
+            .toList());
+      },
+      true,
+    );
   }
 
   static GridBottomSheetAction<SystemGalleryDirectory> joinedDirectories(
       BuildContext context,
       GalleryDirectoriesExtra extra,
       CallbackDescriptionNested? callback) {
-    return GridBottomSheetAction(Icons.merge_rounded, (selected) {
-      joinedDirectoriesFnc(
-          context,
-          selected.length == 1
-              ? selected.first.name
-              : "${selected.length} ${AppLocalizations.of(context)!.directoriesPlural}",
-          selected,
-          extra,
-          callback);
-    },
-        true,
-        GridBottomSheetActionExplanation(
-          label: AppLocalizations.of(context)!.joinActionLabel,
-          body: AppLocalizations.of(context)!.joinActionBody,
-        ));
+    return GridBottomSheetAction(
+      Icons.merge_rounded,
+      (selected) {
+        joinedDirectoriesFnc(
+            context,
+            selected.length == 1
+                ? selected.first.name
+                : "${selected.length} ${AppLocalizations.of(context)!.directoriesPlural}",
+            selected,
+            extra,
+            callback);
+      },
+      true,
+    );
   }
 
   static void joinedDirectoriesFnc(

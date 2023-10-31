@@ -18,28 +18,26 @@ import '../../../db/schemas/post.dart';
 import '../../../db/schemas/settings.dart';
 import '../../../db/schemas/tags.dart';
 import '../callback_grid.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BooruGridActions {
   static GridBottomSheetAction<T> download<T extends PostBase>(
       BuildContext context, BooruAPI api) {
-    return GridBottomSheetAction(Icons.download, (selected) {
-      final settings = Settings.fromDb();
+    return GridBottomSheetAction(
+      Icons.download,
+      (selected) {
+        final settings = Settings.fromDb();
 
-      PostTags.g.addTagsPostAll(selected.map((e) => (e.filename(), e.tags)));
-      Downloader.g.addAll(
-          selected.map((e) => DownloadFile.d(
-              url: e.fileUrl,
-              site: api.booru.url,
-              name: e.filename(),
-              thumbUrl: e.previewUrl)),
-          settings);
-    },
-        true,
-        GridBottomSheetActionExplanation(
-          label: AppLocalizations.of(context)!.downloadActionLabel,
-          body: AppLocalizations.of(context)!.downloadActionBody,
-        ));
+        PostTags.g.addTagsPostAll(selected.map((e) => (e.filename(), e.tags)));
+        Downloader.g.addAll(
+            selected.map((e) => DownloadFile.d(
+                url: e.fileUrl,
+                site: api.booru.url,
+                name: e.filename(),
+                thumbUrl: e.previewUrl)),
+            settings);
+      },
+      true,
+    );
   }
 
   static GridBottomSheetAction<T> favorites<T extends PostBase>(
@@ -65,12 +63,7 @@ class BooruGridActions {
           }
         },
       );
-    },
-        true,
-        const GridBottomSheetActionExplanation(
-          label: "Favorite", // TODO: change
-          body: "Add selected posts to the favorites.", // TODO: change
-        ),
+    }, true,
         color: isFavorite ? Colors.red.shade900 : null,
         animate: p != null,
         play: !isFavorite);

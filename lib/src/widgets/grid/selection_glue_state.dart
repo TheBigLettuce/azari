@@ -55,7 +55,6 @@ class SelectionGlueState {
                           },
                     false,
                     selection.selected.length.toString(),
-                    e.explanation,
                     animate: e.animate,
                     color: e.color,
                     play: e.play,

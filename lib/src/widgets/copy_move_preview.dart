@@ -7,7 +7,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../interfaces/cell.dart';
 import '../pages/image_view.dart';
@@ -68,24 +67,22 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
                   onExit: () {},
                   addIcons: (_) {
                     return [
-                      GridBottomSheetAction(Icons.close_rounded, (_) {
-                        widget.files.removeAt(key.currentState!.currentPage);
+                      GridBottomSheetAction(
+                        Icons.close_rounded,
+                        (_) {
+                          widget.files.removeAt(key.currentState!.currentPage);
 
-                        key.currentState!.update(context, widget.files.length);
+                          key.currentState!
+                              .update(context, widget.files.length);
 
-                        if (widget.files.isEmpty) {
-                          Navigator.pop(context);
-                        }
+                          if (widget.files.isEmpty) {
+                            Navigator.pop(context);
+                          }
 
-                        setState(() {});
-                      },
-                          false,
-                          GridBottomSheetActionExplanation(
-                            label: AppLocalizations.of(context)!
-                                .excludeActionLabel,
-                            body:
-                                AppLocalizations.of(context)!.excludeActionBody,
-                          ))
+                          setState(() {});
+                        },
+                        false,
+                      )
                     ];
                   },
                   focusMain: () {},

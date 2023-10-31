@@ -202,7 +202,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
             destinations: widget.callback != null
                 ? [
                     NavigationDestination(
-                      icon: const Icon(Icons.photo_album),
+                      icon: const Icon(Icons.collections),
                       label: AppLocalizations.of(context)!.galleryLabel,
                     ),
                     NavigationDestination(
@@ -234,7 +234,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                       label: Settings.fromDb().selectedBooru.string,
                     ),
                     NavigationDestination(
-                      icon: const Icon(Icons.photo_album),
+                      icon: const Icon(Icons.collections),
                       label: AppLocalizations.of(context)!.galleryLabel,
                     ),
                     NavigationDestination(

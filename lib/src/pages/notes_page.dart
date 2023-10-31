@@ -91,58 +91,58 @@ class _NotesPageState extends State<NotesPage>
             noteInterface: i,
             addIcons: widget.callback != null
                 ? (n) => [
-                      GridBottomSheetAction(Icons.check, (selected) {
-                        final note = selected.first;
+                      GridBottomSheetAction(
+                        Icons.check,
+                        (selected) {
+                          final note = selected.first;
 
-                        widget.callback!(SystemGalleryDirectoryFile(
-                            id: note.id,
-                            bucketId: "",
-                            name: "",
-                            isVideo: note.isVideo,
-                            isGif: note.isGif,
-                            size: 0,
-                            height: note.height,
-                            notesFlat: "",
-                            width: note.width,
-                            isOriginal: false,
-                            lastModified: 0,
-                            originalUri: note.originalUri));
-                      },
-                          false,
-                          GridBottomSheetActionExplanation(
-                              label: "Return",
-                              body: "Return the file URI to the application."))
+                          widget.callback!(SystemGalleryDirectoryFile(
+                              id: note.id,
+                              bucketId: "",
+                              name: "",
+                              isVideo: note.isVideo,
+                              isGif: note.isGif,
+                              size: 0,
+                              height: note.height,
+                              notesFlat: "",
+                              width: note.width,
+                              isOriginal: false,
+                              lastModified: 0,
+                              originalUri: note.originalUri));
+                        },
+                        false,
+                      )
                     ]
                 : (n) => [
-                      GridBottomSheetAction(Icons.forward, (selected) {
-                        Navigator.push(context,
-                            MaterialPageRoute(builder: (context) {
-                          return WrappedGridPage<SystemGalleryDirectory>(
-                              scaffoldKey: GlobalKey(),
-                              f: (glue) => GalleryDirectories(
-                                    glue: glue,
-                                    procPop: (p) {},
-                                    nestedCallback: CallbackDescriptionNested(
-                                        "Choose file", (chosen) {
-                                      final s = selected.first;
-                                      // final n = i.load(s)!;
-                                      NoteGallery.add(chosen.id,
-                                          text: s.text,
-                                          height: chosen.height,
-                                          width: chosen.width,
-                                          isVideo: chosen.isVideo,
-                                          isGif: chosen.isGif,
-                                          originalUri: chosen.originalUri);
-                                      NoteGallery.removeAll(s.id);
-                                      imageViewKey.currentState?.loadNotes();
-                                    }, returnBack: true),
-                                  ));
-                        }));
-                      },
-                          false,
-                          GridBottomSheetActionExplanation(
-                              label: "Move notes",
-                              body: "Move notes to other picture."))
+                      GridBottomSheetAction(
+                        Icons.forward,
+                        (selected) {
+                          Navigator.push(context,
+                              MaterialPageRoute(builder: (context) {
+                            return WrappedGridPage<SystemGalleryDirectory>(
+                                scaffoldKey: GlobalKey(),
+                                f: (glue) => GalleryDirectories(
+                                      glue: glue,
+                                      procPop: (p) {},
+                                      nestedCallback: CallbackDescriptionNested(
+                                          "Choose file", (chosen) {
+                                        final s = selected.first;
+                                        // final n = i.load(s)!;
+                                        NoteGallery.add(chosen.id,
+                                            text: s.text,
+                                            height: chosen.height,
+                                            width: chosen.width,
+                                            isVideo: chosen.isVideo,
+                                            isGif: chosen.isGif,
+                                            originalUri: chosen.originalUri);
+                                        NoteGallery.removeAll(s.id);
+                                        imageViewKey.currentState?.loadNotes();
+                                      }, returnBack: true),
+                                    ));
+                          }));
+                        },
+                        false,
+                      )
                     ],
             onExit: () {},
             getCell: (idx) => notesGallery[idx],

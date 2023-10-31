@@ -398,37 +398,34 @@ class _GalleryFilesState extends State<GalleryFiles>
   }
 
   GridBottomSheetAction<SystemGalleryDirectoryFile> _restoreFromTrash() {
-    return GridBottomSheetAction(Icons.restore_from_trash, (selected) {
-      PlatformFunctions.removeFromTrash(
-          selected.map((e) => e.originalUri).toList());
-    },
-        false,
-        GridBottomSheetActionExplanation(
-          label: AppLocalizations.of(context)!.restoreActionLabel,
-          body: AppLocalizations.of(context)!.restoreActionBody,
-        ));
+    return GridBottomSheetAction(
+      Icons.restore_from_trash,
+      (selected) {
+        PlatformFunctions.removeFromTrash(
+            selected.map((e) => e.originalUri).toList());
+      },
+      false,
+    );
   }
 
   GridBottomSheetAction<SystemGalleryDirectoryFile> _bulkRename() {
-    return GridBottomSheetAction(Icons.edit, (selected) {
-      _changeName(context, selected);
-    },
-        false,
-        GridBottomSheetActionExplanation(
-          label: AppLocalizations.of(context)!.bulkRenameTitle,
-          body: AppLocalizations.of(context)!.bulkRenameActionBody,
-        ));
+    return GridBottomSheetAction(
+      Icons.edit,
+      (selected) {
+        _changeName(context, selected);
+      },
+      false,
+    );
   }
 
   GridBottomSheetAction<SystemGalleryDirectoryFile> _saveTagsAction() {
-    return GridBottomSheetAction(Icons.tag_rounded, (selected) {
-      _saveTags(context, selected);
-    },
-        true,
-        GridBottomSheetActionExplanation(
-          label: AppLocalizations.of(context)!.savingTags,
-          body: AppLocalizations.of(context)!.saveTagsActionBody,
-        ));
+    return GridBottomSheetAction(
+      Icons.tag_rounded,
+      (selected) {
+        _saveTags(context, selected);
+      },
+      true,
+    );
   }
 
   GridBottomSheetAction<SystemGalleryDirectoryFile> _addToFavoritesAction(
@@ -439,64 +436,55 @@ class _GalleryFilesState extends State<GalleryFiles>
         isFavorites ? Icons.star_rounded : Icons.star_border_rounded,
         (selected) {
       _favoriteOrUnfavorite(context, selected);
-    },
-        false,
-        GridBottomSheetActionExplanation(
-          label: AppLocalizations.of(context)!.favoritesLabel,
-          body: AppLocalizations.of(context)!.favoritesActionBody,
-        ),
+    }, false,
         color: isFavorites ? Colors.yellow.shade900 : null,
         animate: f != null,
         play: !isFavorites);
   }
 
   GridBottomSheetAction<SystemGalleryDirectoryFile> _deleteAction() {
-    return GridBottomSheetAction(Icons.delete, (selected) {
-      _deleteDialog(context, selected);
-    },
-        false,
-        GridBottomSheetActionExplanation(
-          label: AppLocalizations.of(context)!.deleteFilesActionLabel,
-          body: AppLocalizations.of(context)!.deleteFilesActionBody,
-        ));
+    return GridBottomSheetAction(
+      Icons.delete,
+      (selected) {
+        _deleteDialog(context, selected);
+      },
+      false,
+    );
   }
 
   GridBottomSheetAction<SystemGalleryDirectoryFile> _copyAction() {
-    return GridBottomSheetAction(Icons.copy, (selected) {
-      _moveOrCopy(context, selected, false);
-    },
-        false,
-        GridBottomSheetActionExplanation(
-          label: AppLocalizations.of(context)!.copyActionLabel,
-          body: AppLocalizations.of(context)!.copyActionBody,
-        ));
+    return GridBottomSheetAction(
+      Icons.copy,
+      (selected) {
+        _moveOrCopy(context, selected, false);
+      },
+      false,
+    );
   }
 
   GridBottomSheetAction<SystemGalleryDirectoryFile> _moveAction() {
-    return GridBottomSheetAction(Icons.forward, (selected) {
-      _moveOrCopy(context, selected, true);
-    },
-        false,
-        GridBottomSheetActionExplanation(
-          label: AppLocalizations.of(context)!.moveActionLabel,
-          body: AppLocalizations.of(context)!.moveActionBody,
-        ));
+    return GridBottomSheetAction(
+      Icons.forward,
+      (selected) {
+        _moveOrCopy(context, selected, true);
+      },
+      false,
+    );
   }
 
   GridBottomSheetAction<SystemGalleryDirectoryFile> _chooseAction() {
-    return GridBottomSheetAction(Icons.check, (selected) {
-      widget.callback!(selected.first);
-      if (widget.callback!.returnBack) {
-        Navigator.pop(context);
-        Navigator.pop(context);
-        Navigator.pop(context);
-      }
-    },
-        false,
-        GridBottomSheetActionExplanation(
-          label: AppLocalizations.of(context)!.chooseActionLabel,
-          body: AppLocalizations.of(context)!.chooseActionBody,
-        ));
+    return GridBottomSheetAction(
+      Icons.check,
+      (selected) {
+        widget.callback!(selected.first);
+        if (widget.callback!.returnBack) {
+          Navigator.pop(context);
+          Navigator.pop(context);
+          Navigator.pop(context);
+        }
+      },
+      false,
+    );
   }
 
   @override

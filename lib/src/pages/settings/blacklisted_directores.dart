@@ -111,19 +111,17 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
                   ],
                   refresh: () => Future.value(loader.count()),
                   description: GridDescription([
-                    GridBottomSheetAction(Icons.restore_page, (selected) {
-                      Dbs.g.blacklisted.writeTxnSync(() {
-                        return Dbs.g.blacklisted.blacklistedDirectorys
-                            .deleteAllByBucketIdSync(
-                                selected.map((e) => e.bucketId).toList());
-                      });
-                    },
-                        true,
-                        const GridBottomSheetActionExplanation(
-                          label: "Unblacklist", // TODO: change
-                          body:
-                              "Unblacklist selected directories.", // TODO: change
-                        ))
+                    GridBottomSheetAction(
+                      Icons.restore_page,
+                      (selected) {
+                        Dbs.g.blacklisted.writeTxnSync(() {
+                          return Dbs.g.blacklisted.blacklistedDirectorys
+                              .deleteAllByBucketIdSync(
+                                  selected.map((e) => e.bucketId).toList());
+                        });
+                      },
+                      true,
+                    )
                   ], GridColumn.two,
                       keybindsDescription: AppLocalizations.of(context)!
                           .blacklistedDirectoriesPageName,

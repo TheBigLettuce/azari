@@ -132,6 +132,11 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   void loadNotes({int? replaceIndx, bool addNote = false, int? removeNote}) {
     notes = widget.noteInterface?.load(currentCell);
     if (notes == null || notes!.text.isEmpty) {
+      try {
+        setState(() {
+          extendNotes = false;
+        });
+      } catch (_) {}
       return;
     }
 
@@ -686,7 +691,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                     .map(
                       (e) => WrapSheetButton(e.icon, () {
                         e.onPress([currentCell]);
-                      }, false, "", e.explanation,
+                      }, false, "",
                           followColorTheme: true,
                           color: e.color,
                           play: e.play,
@@ -841,27 +846,25 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                           Theme.of(context).colorScheme.surface.withOpacity(0.5),
                       end: currentPalette?.dominantColor?.color.harmonizeWith(Theme.of(context).colorScheme.primary).withOpacity(0.5) ?? Theme.of(context).colorScheme.surface.withOpacity(0.5))
                   .transform(_animationController.value)),
-          _wrapNotifiers((context) {
-            return Theme(
-              data: Theme.of(context).copyWith(
-                  hintColor: ColorTween(
-                          begin: previousPallete?.mutedColor?.bodyTextColor
-                                  .harmonizeWith(
-                                      Theme.of(context).colorScheme.primary) ??
-                              kListTileColorInInfo,
-                          end: currentPalette?.mutedColor?.bodyTextColor
-                                  .harmonizeWith(
-                                      Theme.of(context).colorScheme.primary) ??
-                              kListTileColorInInfo)
-                      .transform(_animationController.value)),
-              child: SliverPadding(
-                padding: EdgeInsets.only(
-                    bottom: insets.bottom +
-                        MediaQuery.of(context).viewPadding.bottom),
-                sliver: SliverList.list(children: addInfo),
-              ),
-            );
-          })
+          Theme(
+            data: Theme.of(context).copyWith(
+                hintColor: ColorTween(
+                        begin: previousPallete?.mutedColor?.bodyTextColor
+                                .harmonizeWith(
+                                    Theme.of(context).colorScheme.primary) ??
+                            kListTileColorInInfo,
+                        end: currentPalette?.mutedColor?.bodyTextColor
+                                .harmonizeWith(
+                                    Theme.of(context).colorScheme.primary) ??
+                            kListTileColorInInfo)
+                    .transform(_animationController.value)),
+            child: SliverPadding(
+              padding: EdgeInsets.only(
+                  bottom: insets.bottom +
+                      MediaQuery.of(context).viewPadding.bottom),
+              sliver: SliverList.list(children: addInfo),
+            ),
+          )
         ],
       ),
     );
@@ -874,7 +877,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     return CallbackGridState.wrapNotifiers(context, widget.registerNotifiers,
         (context) {
-      return PopScope(
+      return _wrapNotifiers((context) => PopScope(
           canPop: !extendNotes,
           onPopInvoked: (pop) {
             if (extendNotes) {
@@ -934,7 +937,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                     builder: f,
                   ),
                 ),
-              )));
+              ))));
     });
   }
 

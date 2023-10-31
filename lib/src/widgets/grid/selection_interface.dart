@@ -112,15 +112,13 @@ class WrapSheetButton extends StatefulWidget {
   final void Function()? onPressed;
   final bool addBadge;
   final String label;
-  final GridBottomSheetActionExplanation explanation;
   final bool? followColorTheme;
   final Color? backgroundColor;
   final Color? color;
   final bool animate;
   final bool play;
 
-  const WrapSheetButton(
-      this.icon, this.onPressed, this.addBadge, this.label, this.explanation,
+  const WrapSheetButton(this.icon, this.onPressed, this.addBadge, this.label,
       {super.key,
       this.followColorTheme,
       this.backgroundColor,
@@ -146,63 +144,48 @@ class _WrapSheetButtonState extends State<WrapSheetButton> {
     Widget iconBtn(BuildContext context) {
       return Padding(
         padding: const EdgeInsets.only(top: 4, bottom: 4),
-        child: GestureDetector(
-          onLongPress: () {
-            Navigator.push(
-                context,
-                DialogRoute(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      title: Text(widget.explanation.label),
-                      content: Text(widget.explanation.body),
-                    );
+        child: IconButton(
+          style: ButtonStyle(
+              shape: const MaterialStatePropertyAll(RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.elliptical(10, 10)))),
+              backgroundColor: widget.backgroundColor != null
+                  ? MaterialStatePropertyAll(widget.backgroundColor)
+                  : widget.followColorTheme == true
+                      ? null
+                      : MaterialStatePropertyAll(widget.onPressed == null
+                          ? Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.5)
+                          : Theme.of(context).colorScheme.primary)),
+          onPressed: widget.onPressed == null
+              ? null
+              : () {
+                  if (widget.animate && widget.play) {
+                    _controller?.reset();
+                    _controller
+                        ?.animateTo(1)
+                        .then((value) => _controller?.animateBack(0));
+                  }
+                  HapticFeedback.selectionClick();
+                  widget.onPressed!();
+                },
+          icon: widget.animate
+              ? Animate(
+                  effects: [
+                    ScaleEffect(
+                        duration: 150.ms,
+                        begin: const Offset(1, 1),
+                        end: const Offset(2, 2),
+                        curve: Curves.easeInOutBack),
+                  ],
+                  onInit: (controller) {
+                    _controller = controller;
                   },
-                ));
-          },
-          child: IconButton(
-            style: ButtonStyle(
-                shape: const MaterialStatePropertyAll(RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.elliptical(10, 10)))),
-                backgroundColor: widget.backgroundColor != null
-                    ? MaterialStatePropertyAll(widget.backgroundColor)
-                    : widget.followColorTheme == true
-                        ? null
-                        : MaterialStatePropertyAll(widget.onPressed == null
-                            ? Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withOpacity(0.5)
-                            : Theme.of(context).colorScheme.primary)),
-            onPressed: widget.onPressed == null
-                ? null
-                : () {
-                    if (widget.animate && widget.play) {
-                      _controller?.reset();
-                      _controller
-                          ?.animateTo(1)
-                          .then((value) => _controller?.animateBack(0));
-                    }
-                    HapticFeedback.selectionClick();
-                    widget.onPressed!();
-                  },
-            icon: widget.animate
-                ? Animate(
-                    effects: [
-                      ScaleEffect(
-                          duration: 150.ms,
-                          begin: const Offset(1, 1),
-                          end: const Offset(2, 2),
-                          curve: Curves.easeInOutBack),
-                    ],
-                    onInit: (controller) {
-                      _controller = controller;
-                    },
-                    autoPlay: false,
-                    child: icn,
-                  )
-                : icn,
-          ),
+                  autoPlay: false,
+                  child: icn,
+                )
+              : icn,
         ),
       );
     }

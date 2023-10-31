@@ -45,12 +45,6 @@ class DownloadsActions {
                   content: Text(file.name),
                 );
               }));
-    },
-        true,
-        const GridBottomSheetActionExplanation(
-          label: "Retry or delete", // TODO: change
-          body: "Retry or delete the downloads entry.", // TODO: change
-        ),
-        showOnlyWhenSingle: true);
+    }, true, showOnlyWhenSingle: true);
   }
 }

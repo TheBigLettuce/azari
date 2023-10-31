@@ -66,7 +66,7 @@ PopupMenuButton gridSettingsButton(GridSettings gridSettings,
 
 PopupMenuItem _safeMode(BuildContext context, SafeMode safeMode) {
   return PopupMenuItem(
-    child: const Text("Safe mode"), // TODO: change
+    child: Text(AppLocalizations.of(context)!.safeModeSetting),
     onTap: () => radioDialog(
       context,
       SafeMode.values.map((e) => (e, e.string)),
@@ -74,7 +74,7 @@ PopupMenuItem _safeMode(BuildContext context, SafeMode safeMode) {
       (value) {
         Settings.fromDb().copy(safeMode: value).save();
       },
-      title: "Safe mode", // TODO: change
+      title: AppLocalizations.of(context)!.safeModeSetting,
     ),
   );
 }

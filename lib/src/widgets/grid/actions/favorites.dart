@@ -15,31 +15,30 @@ class FavoritesActions {
       BuildContext context,
       String? Function(List<T>) initalValue,
       void Function(List<T>, String) onSubmitted) {
-    return GridBottomSheetAction(Icons.group_work_outlined, (selected) {
-      if (selected.isEmpty) {
-        return;
-      }
+    return GridBottomSheetAction(
+      Icons.group_work_outlined,
+      (selected) {
+        if (selected.isEmpty) {
+          return;
+        }
 
-      Navigator.push(
-          context,
-          DialogRoute(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: Text(AppLocalizations.of(context)!.groupActionLabel),
-                content: TextFormField(
-                  autofocus: true,
-                  initialValue: initalValue(selected),
-                  onFieldSubmitted: (value) => onSubmitted(selected, value),
-                ),
-              );
-            },
-          ));
-    },
-        false,
-        GridBottomSheetActionExplanation(
-          label: AppLocalizations.of(context)!.groupActionLabel,
-          body: AppLocalizations.of(context)!.groupActionBody,
-        ));
+        Navigator.push(
+            context,
+            DialogRoute(
+              context: context,
+              builder: (context) {
+                return AlertDialog(
+                  title: Text(AppLocalizations.of(context)!.groupActionLabel),
+                  content: TextFormField(
+                    autofocus: true,
+                    initialValue: initalValue(selected),
+                    onFieldSubmitted: (value) => onSubmitted(selected, value),
+                  ),
+                );
+              },
+            ));
+      },
+      false,
+    );
   }
 }
