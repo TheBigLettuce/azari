@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/note.dart';
 import 'package:gallery/src/db/schemas/note_gallery.dart';
@@ -213,25 +214,17 @@ class _NotesPageState extends State<NotesPage>
                                     child: OctoImage(
                                         fit: BoxFit.cover,
                                         filterQuality: FilterQuality.high,
-                                        progressIndicatorBuilder:
-                                            (context, loadingProgress) {
-                                          if (loadingProgress == null) {
-                                            return Container();
-                                          }
-
-                                          return Center(
-                                            child: CircularProgressIndicator(
-                                              value: loadingProgress
-                                                      .cumulativeBytesLoaded
-                                                      .toDouble() /
-                                                  (loadingProgress
-                                                              .expectedTotalBytes !=
-                                                          null
-                                                      ? loadingProgress
-                                                          .expectedTotalBytes!
-                                                      : 1),
-                                            ),
-                                          );
+                                        progressIndicatorBuilder: (context, _) {
+                                          return Container(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .secondaryContainer)
+                                              .animate(
+                                                  onComplete: (controller) {
+                                            controller.repeat();
+                                          }).shimmer(
+                                                  delay: 2.seconds,
+                                                  duration: 500.ms);
                                         },
                                         image: provider(note)),
                                   )),
