@@ -49,11 +49,13 @@ PopupMenuButton gridSettingsButton(GridSettings gridSettings,
     required void Function(bool)? selectHideName,
     required void Function(bool)? selectListView,
     required void Function(GridColumn?) selectGridColumn,
-    SafeMode? safeMode}) {
+    SafeMode? safeMode,
+    void Function(SafeMode?)? selectSafeMode}) {
   return PopupMenuButton(
     icon: const Icon(Icons.more_horiz_outlined),
     itemBuilder: (context) => [
-      if (safeMode != null) _safeMode(context, safeMode),
+      if (safeMode != null)
+        _safeMode(context, safeMode, selectSafeMode: selectSafeMode),
       if (selectListView != null)
         _listView(gridSettings.listView, selectListView),
       if (selectHideName != null)
@@ -64,16 +66,18 @@ PopupMenuButton gridSettingsButton(GridSettings gridSettings,
   );
 }
 
-PopupMenuItem _safeMode(BuildContext context, SafeMode safeMode) {
+PopupMenuItem _safeMode(BuildContext context, SafeMode safeMode,
+    {void Function(SafeMode?)? selectSafeMode}) {
   return PopupMenuItem(
     child: Text(AppLocalizations.of(context)!.safeModeSetting),
-    onTap: () => radioDialog(
+    onTap: () => radioDialog<SafeMode>(
       context,
       SafeMode.values.map((e) => (e, e.string)),
       safeMode,
-      (value) {
-        Settings.fromDb().copy(safeMode: value).save();
-      },
+      selectSafeMode ??
+          (value) {
+            Settings.fromDb().copy(safeMode: value).save();
+          },
       title: AppLocalizations.of(context)!.safeModeSetting,
     ),
   );
@@ -154,11 +158,13 @@ class MainBooruGrid extends StatefulWidget {
         icon: const Icon(Icons.bookmark_add));
   }
 
-  static PopupMenuButton gridButton(Settings settings) {
+  static PopupMenuButton gridButton(Settings settings,
+      {void Function(SafeMode?)? selectSafeMode, SafeMode? currentSafeMode}) {
     return gridSettingsButton(
       settings.booru,
+      selectSafeMode: selectSafeMode,
       selectHideName: null,
-      safeMode: settings.safeMode,
+      safeMode: currentSafeMode ?? settings.safeMode,
       selectGridColumn: (columns) =>
           settings.copy(booru: settings.booru.copy(columns: columns)).save(),
       selectListView: (listView) =>
@@ -191,8 +197,9 @@ class _MainBooruGridState extends State<MainBooruGrid>
   void initState() {
     super.initState();
 
-    restore =
-        StateRestoration(widget.mainGrid, state.settings.selectedBooru.string);
+    // main grid safe mode only from Settings
+    restore = StateRestoration(widget.mainGrid,
+        state.settings.selectedBooru.string, state.settings.safeMode);
     api = BooruAPI.fromSettings(page: restore.copy.page);
 
     tagManager = TagManager(restore, (fire, f) {

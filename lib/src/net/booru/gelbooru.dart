@@ -94,14 +94,16 @@ class Gelbooru implements BooruAPI {
   }
 
   @override
-  Future<(List<Post>, int?)> page(
-      int p, String tags, BooruTagging excludedTags) {
+  Future<(List<Post>, int?)> page(int p, String tags, BooruTagging excludedTags,
+      {SafeMode? overrideSafeMode}) {
     _page = p + 1;
-    return _commonPosts(tags, p, excludedTags);
+    return _commonPosts(tags, p, excludedTags,
+        overrideSafeMode: overrideSafeMode);
   }
 
   Future<(List<Post>, int?)> _commonPosts(
-      String tags, int p, BooruTagging excludedTags) async {
+      String tags, int p, BooruTagging excludedTags,
+      {required SafeMode? overrideSafeMode}) async {
     late final String excludedTagsString;
 
     final excluded = excludedTags.get().map((e) => "-${e.tag} ").toList();
@@ -111,7 +113,8 @@ class Gelbooru implements BooruAPI {
       excludedTagsString = "";
     }
 
-    String safeModeS() => switch (Settings.fromDb().safeMode) {
+    String safeModeS() =>
+        switch (overrideSafeMode ?? Settings.fromDb().safeMode) {
           SafeMode.none => "",
           SafeMode.normal => 'rating:general',
           SafeMode.relaxed => '-rating:explicit -rating:questionable',
@@ -185,8 +188,11 @@ class Gelbooru implements BooruAPI {
 
   @override
   Future<(List<Post>, int?)> fromPost(
-          int _, String tags, BooruTagging excludedTags) =>
-      _commonPosts(tags, _page, excludedTags).then((value) {
+          int _, String tags, BooruTagging excludedTags,
+          {SafeMode? overrideSafeMode}) =>
+      _commonPosts(tags, _page, excludedTags,
+              overrideSafeMode: overrideSafeMode)
+          .then((value) {
         if (value.$1.isNotEmpty) {
           _page++;
         }

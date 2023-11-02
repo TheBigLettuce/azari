@@ -7,6 +7,8 @@
 
 import 'package:isar/isar.dart';
 
+import 'settings.dart';
+
 part 'grid_state.g.dart';
 
 @collection
@@ -17,13 +19,15 @@ class GridState extends GridStateBase {
       required super.selectedPost,
       required super.scrollPositionGrid,
       required super.name,
+      required super.safeMode,
       required super.time,
       required super.page});
 
-  GridState.empty(String name, String tags)
+  GridState.empty(String name, String tags, SafeMode safeMode)
       : super(
             tags: tags,
             name: name,
+            safeMode: safeMode,
             scrollPositionGrid: 0,
             selectedPost: null,
             scrollPositionTags: null,
@@ -35,11 +39,13 @@ class GridState extends GridStateBase {
           String? tags,
           double? scrollPositionGrid,
           int? selectedPost,
+          SafeMode? safeMode,
           double? scrollPositionTags,
           DateTime? time,
           int? page}) =>
       GridState(
           tags: tags ?? this.tags,
+          safeMode: safeMode ?? this.safeMode,
           scrollPositionTags: replaceScrollTagsSelectedPost
               ? scrollPositionTags
               : scrollPositionTags ?? this.scrollPositionTags,
@@ -68,10 +74,14 @@ class GridStateBase {
   final double? scrollPositionTags;
   final int? page;
 
+  @enumerated
+  final SafeMode safeMode;
+
   GridStateBase(
       {required this.tags,
       required this.scrollPositionTags,
       required this.selectedPost,
+      required this.safeMode,
       required this.scrollPositionGrid,
       required this.name,
       required this.page,

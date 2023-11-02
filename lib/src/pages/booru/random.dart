@@ -117,6 +117,7 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
       Dbs.g.main.writeTxnSync(() => Dbs.g.main.gridStateBoorus.putSync(
           GridStateBooru(widget.api.booru,
               tags: widget.tags,
+              safeMode: state.settings.safeMode,
               page: widget.api.currentPage,
               scrollPositionTags: _currentScroll!.$2,
               selectedPost: _currentScroll!.$3,
@@ -130,10 +131,21 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
     super.dispose();
   }
 
+  SafeMode _safeMode() {
+    if (widget.state != null) {
+      final prev =
+          Dbs.g.main.gridStateBoorus.getByNameSync(widget.state!.name)!;
+      return prev.safeMode;
+    }
+
+    return state.settings.safeMode;
+  }
+
   Future<int> _clearAndRefresh() async {
     try {
-      final list =
-          await widget.api.page(0, widget.tags, widget.tagManager.excluded);
+      final list = await widget.api.page(
+          0, widget.tags, widget.tagManager.excluded,
+          overrideSafeMode: _safeMode());
       currentSkipped = list.$2;
       await instance.writeTxn(() {
         instance.posts.clear();
@@ -180,7 +192,8 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
               ? currentSkipped!
               : p.id,
           widget.tags,
-          widget.tagManager.excluded);
+          widget.tagManager.excluded,
+          overrideSafeMode: _safeMode());
       if (list.$1.isEmpty && currentSkipped == null) {
         reachedEnd = true;
       } else {
@@ -241,7 +254,27 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                                     context, state, glue, () {
                                   addedToBookmarks = true;
                                 }),
-                              MainBooruGrid.gridButton(state.settings)
+                              MainBooruGrid.gridButton(state.settings,
+                                  currentSafeMode: _safeMode(),
+                                  selectSafeMode: widget.state != null
+                                      ? (safeMode) {
+                                          if (safeMode == null) {
+                                            return;
+                                          }
+
+                                          final prev = Dbs
+                                              .g.main.gridStateBoorus
+                                              .getByNameSync(
+                                                  widget.state!.name)!;
+
+                                          Dbs.g.main.writeTxnSync(() => Dbs
+                                              .g.main.gridStateBoorus
+                                              .putByNameSync(prev.copy(false,
+                                                  safeMode: safeMode)));
+
+                                          setState(() {});
+                                        }
+                                      : null)
                             ],
                             addIconsImage: (post) => [
                               BooruGridActions.favorites(context, post),

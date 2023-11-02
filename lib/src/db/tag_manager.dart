@@ -35,7 +35,10 @@ class TagManager {
           tagManager: this,
           noRestoreOnBack: true,
           api: BooruAPI.fromEnum(booru, page: null),
-          restore: _parent.insert(tags: t.tag, name: instance.name),
+          restore: _parent.insert(
+              tags: t.tag,
+              name: instance.name,
+              safeMode: Settings.fromDb().safeMode),
           instance: instance,
         );
       }));
@@ -62,7 +65,7 @@ class TagManager {
     final mainGrid = DbsOpen.primaryGrid(booru);
 
     return TagManager(
-      StateRestoration(mainGrid, mainGrid.name),
+      StateRestoration(mainGrid, mainGrid.name, Settings.fromDb().safeMode),
       (fire, f) =>
           mainGrid.tags.watchLazy(fireImmediately: fire).listen((event) {
         f();

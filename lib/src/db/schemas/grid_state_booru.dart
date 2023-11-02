@@ -9,6 +9,7 @@ import 'package:isar/isar.dart';
 
 import '../../interfaces/booru.dart';
 import 'grid_state.dart';
+import 'settings.dart';
 
 part 'grid_state_booru.g.dart';
 
@@ -21,15 +22,17 @@ class GridStateBooru extends GridStateBase {
       {required super.tags,
       required super.scrollPositionTags,
       required super.selectedPost,
+      required super.safeMode,
       required super.scrollPositionGrid,
       required super.name,
       required super.time,
       required super.page});
 
-  GridStateBooru.empty(this.booru, String name, String tags)
+  GridStateBooru.empty(this.booru, String name, String tags, SafeMode safeMode)
       : super(
             tags: tags,
             name: name,
+            safeMode: safeMode,
             scrollPositionGrid: 0,
             selectedPost: null,
             scrollPositionTags: null,
@@ -42,11 +45,13 @@ class GridStateBooru extends GridStateBase {
           String? tags,
           double? scrollPositionGrid,
           int? selectedPost,
+          SafeMode? safeMode,
           double? scrollPositionTags,
           DateTime? time,
           int? page}) =>
       GridStateBooru(booru ?? this.booru,
           tags: tags ?? this.tags,
+          safeMode: safeMode ?? this.safeMode,
           scrollPositionTags: replaceScrollTagsSelectedPost
               ? scrollPositionTags
               : scrollPositionTags ?? this.scrollPositionTags,

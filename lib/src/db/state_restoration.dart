@@ -18,6 +18,7 @@ import 'package:flutter/material.dart';
 import '../interfaces/booru.dart';
 import '../pages/booru/random.dart';
 import '../pages/booru/secondary.dart';
+import 'schemas/settings.dart';
 import 'schemas/tags.dart';
 import 'booru_tagging.dart';
 import 'initalize_db.dart';
@@ -55,10 +56,18 @@ class StateRestoration {
             tags: prev.tags,
             scrollPositionTags: prev.scrollPositionTags,
             selectedPost: prev.selectedPost,
+            safeMode: prev.safeMode,
             scrollPositionGrid: prev.scrollPositionGrid,
             name: prev.name,
             time: prev.time,
             page: page)));
+  }
+
+  void setSafeMode(SafeMode safeMode) {
+    final prev = _mainGrid.gridStates.getByNameSync(copy.name)!;
+
+    _mainGrid.writeTxnSync(() =>
+        _mainGrid.gridStates.putSync(prev.copy(false, safeMode: safeMode)));
   }
 
   void updateTime() {
@@ -87,9 +96,12 @@ class StateRestoration {
         .writeTxnSync(() => _mainGrid.gridStates.deleteByNameSync(copy.name));
   }
 
-  StateRestoration insert({required String tags, required String name}) {
-    _mainGrid.writeTxnSync(
-        () => _mainGrid.gridStates.putByNameSync(GridState.empty(name, tags)));
+  StateRestoration insert(
+      {required String tags,
+      required String name,
+      required SafeMode safeMode}) {
+    _mainGrid.writeTxnSync(() => _mainGrid.gridStates
+        .putByNameSync(GridState.empty(name, tags, safeMode)));
     return StateRestoration._new(_mainGrid, name, tags);
   }
 
@@ -117,13 +129,13 @@ class StateRestoration {
     return StateRestoration._next(_mainGrid, res);
   }
 
-  StateRestoration(Isar mainGrid, String name)
+  StateRestoration(Isar mainGrid, String name, SafeMode safeMode)
       : _mainGrid = mainGrid,
         copy = mainGrid.gridStates.getByNameSync(name) ??
-            GridState.empty(name, "") {
+            GridState.empty(name, "", safeMode) {
     if (mainGrid.gridStates.getByNameSync(name) == null) {
-      mainGrid.writeTxnSync(
-          () => mainGrid.gridStates.putByNameSync(GridState.empty(name, "")));
+      mainGrid.writeTxnSync(() => mainGrid.gridStates
+          .putByNameSync(GridState.empty(name, "", safeMode)));
     }
   }
 

@@ -122,8 +122,9 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
 
   Future<int> _clearAndRefresh() async {
     try {
-      final list = await widget.api
-          .page(0, widget.restore.copy.tags, widget.tagManager.excluded);
+      final list = await widget.api.page(
+          0, widget.restore.copy.tags, widget.tagManager.excluded,
+          overrideSafeMode: widget.restore.current.safeMode);
       widget.restore.updateScrollPosition(0);
       currentSkipped = list.$2;
       await widget.instance.writeTxn(() {
@@ -171,7 +172,8 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
               ? currentSkipped!
               : p.id,
           widget.restore.copy.tags,
-          widget.tagManager.excluded);
+          widget.tagManager.excluded,
+          overrideSafeMode: widget.restore.current.safeMode);
       if (list.$1.isEmpty && currentSkipped == null) {
         reachedEnd = true;
       } else {
@@ -246,7 +248,16 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                                   () {
                                 addedToBookmarks = true;
                               }),
-                              MainBooruGrid.gridButton(state.settings)
+                              MainBooruGrid.gridButton(state.settings,
+                                  currentSafeMode: widget.restore.current
+                                      .safeMode, selectSafeMode: (safeMode) {
+                                if (safeMode == null) {
+                                  return;
+                                }
+
+                                widget.restore.setSafeMode(safeMode);
+                                setState(() {});
+                              })
                             ],
                             addIconsImage: (post) => [
                               BooruGridActions.favorites(context, post),
@@ -288,6 +299,7 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                             refresh: _clearAndRefresh,
                             initalCellCount: widget.instance.posts.countSync(),
                             onBack: () {
+                              Navigator.pop(context);
                               _restore(context);
                             },
                             hideAlias: true,
