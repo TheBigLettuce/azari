@@ -45,10 +45,42 @@ class NoteBooru extends NoteBase implements Cell {
   final String previewUrl;
   final String sampleUrl;
 
+  static void reorder(
+      {required int postId,
+      required Booru booru,
+      required int from,
+      required int to}) {
+    final n = Dbs.g.blacklisted.noteBoorus.getByPostIdBooruSync(postId, booru);
+    if (n == null || from == to) {
+      return;
+    }
+
+    final newText = n.text.toList();
+    final e1 = newText[from];
+    newText.removeAt(from);
+    if (to == 0) {
+      newText.insert(0, e1);
+    } else {
+      newText.insert(to - 1, e1);
+    }
+
+    Dbs.g.blacklisted.writeTxnSync(() => Dbs.g.blacklisted.noteBoorus
+        .putByPostIdBooruSync(NoteBooru(newText, n.time,
+            postId: postId,
+            booru: booru,
+            backgroundColor: n.backgroundColor,
+            textColor: n.textColor,
+            fileUrl: n.fileUrl,
+            sampleUrl: n.sampleUrl,
+            previewUrl: n.previewUrl)));
+  }
+
   static void add(int pid, Booru booru,
       {required String text,
       required String fileUrl,
       required String sampleUrl,
+      required Color? backgroundColor,
+      required Color? textColor,
       required previewUrl}) {
     final n = Dbs.g.blacklisted.noteBoorus.getByPostIdBooruSync(pid, booru);
 
@@ -57,6 +89,8 @@ class NoteBooru extends NoteBase implements Cell {
             [...n?.text ?? [], text], DateTime.now(),
             postId: pid,
             booru: booru,
+            backgroundColor: backgroundColor?.value,
+            textColor: textColor?.value,
             fileUrl: fileUrl,
             sampleUrl: sampleUrl,
             previewUrl: previewUrl)));
@@ -74,6 +108,8 @@ class NoteBooru extends NoteBase implements Cell {
         .putByPostIdBooruSync(NoteBooru(t, n.time,
             postId: n.postId,
             booru: n.booru,
+            backgroundColor: n.backgroundColor,
+            textColor: n.textColor,
             fileUrl: n.fileUrl,
             sampleUrl: n.sampleUrl,
             previewUrl: n.previewUrl)));
@@ -93,6 +129,8 @@ class NoteBooru extends NoteBase implements Cell {
             t, DateTime.now(),
             postId: pid,
             booru: booru,
+            backgroundColor: n.backgroundColor,
+            textColor: n.textColor,
             fileUrl: n.fileUrl,
             sampleUrl: n.sampleUrl,
             previewUrl: n.previewUrl));
@@ -112,9 +150,14 @@ class NoteBooru extends NoteBase implements Cell {
   static NoteInterface<NoteBooru> interfaceSelf(
       void Function(void Function()) setState) {
     return NoteInterface(
-      addNote: (text, cell) {
+      reorder: (cell, from, to) {
+        reorder(booru: cell.booru, postId: cell.postId, from: from, to: to);
+      },
+      addNote: (text, cell, backgroundColor, textColor) {
         NoteBooru.add(cell.postId, cell.booru,
             text: text,
+            backgroundColor: backgroundColor,
+            textColor: textColor,
             fileUrl: cell.fileUrl,
             sampleUrl: cell.sampleUrl,
             previewUrl: cell.previewUrl);
@@ -135,11 +178,20 @@ class NoteBooru extends NoteBase implements Cell {
   static NoteInterface<T> interface<T extends PostBase>(
       void Function(void Function()) setState) {
     return NoteInterface(
-      addNote: (text, cell) {
+      reorder: (cell, from, to) {
+        reorder(
+            booru: Booru.fromPrefix(cell.prefix)!,
+            postId: cell.id,
+            from: from,
+            to: to);
+      },
+      addNote: (text, cell, backgroundColor, textColor) {
         NoteBooru.add(
           cell.id,
           Booru.fromPrefix(cell.prefix)!,
           text: text,
+          backgroundColor: backgroundColor,
+          textColor: textColor,
           fileUrl: cell.fileUrl,
           sampleUrl: cell.sampleUrl,
           previewUrl: cell.previewUrl,
@@ -168,6 +220,8 @@ class NoteBooru extends NoteBase implements Cell {
   NoteBooru(super.text, super.time,
       {required this.postId,
       required this.booru,
+      required super.backgroundColor,
+      required super.textColor,
       required this.fileUrl,
       required this.sampleUrl,
       required this.previewUrl});
@@ -273,5 +327,9 @@ class NoteBase {
   @Index()
   final DateTime time;
 
-  const NoteBase(this.text, this.time);
+  final int? backgroundColor;
+  final int? textColor;
+
+  const NoteBase(this.text, this.time,
+      {required this.backgroundColor, required this.textColor});
 }

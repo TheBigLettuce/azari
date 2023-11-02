@@ -43,16 +43,19 @@ import '../widgets/video/photo_gallery_page_video.dart';
 final Color kListTileColorInInfo = Colors.white60.withOpacity(0.8);
 
 class NoteInterface<T extends Cell> {
-  final void Function(String text, T cell) addNote;
+  final void Function(
+      String text, T cell, Color? backgroundColor, Color? textColor) addNote;
   final NoteBase? Function(T cell) load;
   final void Function(T cell, int indx, String newCell) replace;
   final void Function(T cell, int indx) delete;
+  final void Function(T cell, int from, int to) reorder;
 
   const NoteInterface(
       {required this.addNote,
       required this.delete,
       required this.load,
-      required this.replace});
+      required this.replace,
+      required this.reorder});
 }
 
 class ImageView<T extends Cell> extends StatefulWidget {
@@ -129,7 +132,11 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     } catch (_) {}
   });
 
-  void loadNotes({int? replaceIndx, bool addNote = false, int? removeNote}) {
+  void loadNotes(
+      {int? replaceIndx,
+      bool addNote = false,
+      int? removeNote,
+      (int from, int to)? reorder}) {
     notes = widget.noteInterface?.load(currentCell);
     if (notes == null || notes!.text.isEmpty) {
       try {
@@ -148,6 +155,21 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
       return;
     } else if (removeNote != null) {
       noteKeys!.removeAt(removeNote);
+      return;
+    } else if (reorder != null) {
+      final (from, to) = reorder;
+      if (from == to) {
+        return;
+      }
+
+      final e1 = noteKeys![from];
+      noteKeys!.removeAt(from);
+      if (to == 0) {
+        noteKeys!.insert(0, e1);
+      } else {
+        noteKeys!.insert(to - 1, e1);
+      }
+
       return;
     }
 
@@ -710,7 +732,9 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                       textController.text = "";
 
                       if (extendNotes) {
-                        widget.noteInterface!.addNote("New note", currentCell);
+                        final c = currentPalette?.dominantColor;
+                        widget.noteInterface!.addNote("New note", currentCell,
+                            c?.color, c?.bodyTextColor);
 
                         loadNotes(addNote: true);
                         setState(() {});
@@ -720,6 +744,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                             curve: Curves.linear);
                         return;
                       }
+
+                      textController.text = "New note";
 
                       Navigator.push(
                           context,
@@ -745,8 +771,13 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                                 actions: [
                                   TextButton(
                                       onPressed: () {
+                                        final c = currentPalette?.dominantColor;
+
                                         widget.noteInterface!.addNote(
-                                            textController.text, currentCell);
+                                            textController.text,
+                                            currentCell,
+                                            c?.color,
+                                            c?.bodyTextColor);
                                         loadNotes();
                                         setState(() {});
                                         Navigator.pop(context);
@@ -1032,17 +1063,23 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   Widget _notes(BuildContext context) {
     final random = math.Random(96879873);
 
-    return Column(
-      crossAxisAlignment:
-          extendNotes ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+    return ReorderableListView(
+      clipBehavior: Clip.antiAlias,
+      buildDefaultDragHandles: false,
+      scrollController: notesController,
+      onReorder: (from, to) {
+        widget.noteInterface!.reorder(currentCell, from, to);
+        loadNotes(reorder: (from, to));
+        setState(() {});
+      },
+      proxyDecorator: (child, idx, animation) {
+        return Material(
+          type: MaterialType.transparency,
+          color: Colors.white,
+          child: child,
+        );
+      },
       children: [
-        IconButton(
-            onPressed: () {
-              extendNotes = !extendNotes;
-              setState(() {});
-            },
-            icon: Icon(
-                extendNotes ? Icons.arrow_back : Icons.sticky_note_2_outlined)),
         ...notes!.text.indexed.map((e) {
           return Dismissible(
               key: ValueKey(noteKeys![e.$1].microsecondsSinceEpoch),
@@ -1060,7 +1097,11 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                   action: SnackBarAction(
                       label: "Undo",
                       onPressed: () {
-                        widget.noteInterface!.addNote(d, c);
+                        widget.noteInterface!.addNote(
+                            d,
+                            c,
+                            currentPalette?.dominantColor?.color,
+                            currentPalette?.dominantColor?.bodyTextColor);
 
                         loadNotes(addNote: true);
                         try {
@@ -1070,6 +1111,15 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                 ));
               },
               child: ListTile(
+                trailing: extendNotes
+                    ? ReorderableDragStartListener(
+                        index: e.$1,
+                        child: Icon(
+                          Icons.drag_handle_rounded,
+                          color: Theme.of(context).iconTheme.color,
+                        ),
+                      )
+                    : null,
                 titleTextStyle: const TextStyle(fontFamily: "ZenKurenaido"),
                 onTap: extendNotes
                     ? null
@@ -1257,10 +1307,21 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                                     Colors.black.withOpacity(extendNotes ? 0.95 : 0.5))
                             .transform(_animationController.value)),
                     child: ClipPath(
-                        child: SingleChildScrollView(
-                      controller: notesController,
-                      primary: false,
-                      child: _notes(context),
+                        child: Column(
+                      crossAxisAlignment: extendNotes
+                          ? CrossAxisAlignment.start
+                          : CrossAxisAlignment.center,
+                      children: [
+                        IconButton(
+                            onPressed: () {
+                              extendNotes = !extendNotes;
+                              setState(() {});
+                            },
+                            icon: Icon(extendNotes
+                                ? Icons.arrow_back
+                                : Icons.sticky_note_2_outlined)),
+                        Expanded(child: _notes(context))
+                      ],
                     )),
                   ),
                 ))

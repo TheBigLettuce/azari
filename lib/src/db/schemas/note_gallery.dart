@@ -37,18 +37,24 @@ class NoteGallery extends NoteBase implements Cell {
   final bool isVideo;
   final bool isGif;
 
+  static void reorder({required int id, required int from, required int to}) {}
+
   static bool add(int id,
       {required List<String> text,
       required int height,
       required int width,
       required bool isVideo,
       required bool isGif,
+      required Color? backgroundColor,
+      required Color? textColor,
       required String originalUri}) {
     final n = Dbs.g.main.noteGallerys.getByIdSync(id);
 
     Dbs.g.main.writeTxnSync(() => Dbs.g.main.noteGallerys.putByIdSync(
         NoteGallery([...n?.text ?? [], ...text], DateTime.now(),
             id: id,
+            backgroundColor: backgroundColor?.value,
+            textColor: textColor?.value,
             originalUri: originalUri,
             height: height,
             width: width,
@@ -82,6 +88,8 @@ class NoteGallery extends NoteBase implements Cell {
       } else {
         Dbs.g.main.noteGallerys.putByIdSync(NoteGallery(newText, n.time,
             id: id,
+            backgroundColor: n.backgroundColor,
+            textColor: n.textColor,
             originalUri: n.originalUri,
             height: n.height,
             width: n.width,
@@ -104,6 +112,8 @@ class NoteGallery extends NoteBase implements Cell {
     Dbs.g.main.writeTxnSync(() => Dbs.g.main.noteGallerys.putByIdSync(
         NoteGallery(t, n.time,
             id: n.id,
+            backgroundColor: n.backgroundColor,
+            textColor: n.textColor,
             originalUri: n.originalUri,
             height: n.height,
             width: n.width,
@@ -114,11 +124,16 @@ class NoteGallery extends NoteBase implements Cell {
   static NoteInterface<NoteGallery> interfaceSelf(
       void Function(void Function()) setState) {
     return NoteInterface(
-      addNote: (text, cell) {
+      reorder: (cell, from, to) {
+        reorder(id: cell.id, from: from, to: to);
+      },
+      addNote: (text, cell, backgroundColor, textColor) {
         NoteGallery.add(cell.id,
             text: [text],
             height: cell.height,
             width: cell.width,
+            backgroundColor: backgroundColor,
+            textColor: textColor,
             isVideo: cell.isVideo,
             isGif: cell.isGif,
             originalUri: cell.originalUri);
@@ -139,9 +154,14 @@ class NoteGallery extends NoteBase implements Cell {
       void Function({int? replaceIndx, bool addNote, int? removeNote})
           refresh) {
     return NoteInterface(
-      addNote: (text, cell) {
+      reorder: (cell, from, to) {
+        reorder(id: cell.id, from: from, to: to);
+      },
+      addNote: (text, cell, backgroundColor, textColor) {
         NoteGallery.add(cell.id,
             text: [text],
+            backgroundColor: backgroundColor,
+            textColor: textColor,
             height: cell.height,
             width: cell.width,
             isVideo: cell.isVideo,
@@ -173,6 +193,8 @@ class NoteGallery extends NoteBase implements Cell {
       required this.originalUri,
       required this.height,
       required this.width,
+      required super.backgroundColor,
+      required super.textColor,
       required this.isGif,
       required this.isVideo});
 
@@ -199,7 +221,7 @@ class NoteGallery extends NoteBase implements Cell {
 
   @override
   String alias(bool isList) {
-    return id.toString();
+    return "";
   }
 
   @override

@@ -11,14 +11,22 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../db/post_tags.dart';
 import 'notifiers/tag_refresh.dart';
 
-class LoadTags extends StatelessWidget {
+class LoadTags extends StatefulWidget {
   final DisassembleResult? res;
   final String filename;
+
   const LoadTags({super.key, required this.res, required this.filename});
 
   @override
+  State<LoadTags> createState() => _LoadTagsState();
+}
+
+class _LoadTagsState extends State<LoadTags> {
+  bool isLoading = false;
+
+  @override
   Widget build(BuildContext context) {
-    return res == null
+    return widget.res == null
         ? Container()
         : Padding(
             padding: const EdgeInsets.all(4),
@@ -30,23 +38,38 @@ class LoadTags extends StatelessWidget {
                 child: Text(AppLocalizations.of(context)!.loadTags),
               ),
               FilledButton(
-                  onPressed: () {
-                    try {
-                      final notifier = TagRefreshNotifier.maybeOf(context);
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          try {
+                            setState(() {
+                              isLoading = true;
+                            });
+                            final notifier =
+                                TagRefreshNotifier.maybeOf(context);
 
-                      PostTags.g
-                          .loadFromDissassemble(filename, res!)
-                          .then((value) {
-                        PostTags.g.addTagsPost(filename, value, true);
-                        notifier?.call();
-                      });
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(AppLocalizations.of(context)!
-                              .notValidFilename(e.toString()))));
-                    }
-                  },
-                  child: Text("From ${res!.booru.string}"))
+                            PostTags.g
+                                .loadFromDissassemble(
+                                    widget.filename, widget.res!)
+                                .then((value) {
+                              PostTags.g
+                                  .addTagsPost(widget.filename, value, true);
+                              notifier?.call();
+                            });
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(AppLocalizations.of(context)!
+                                    .notValidFilename(e.toString()))));
+                          }
+                        },
+                  child: isLoading
+                      ? SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(
+                              color: Theme.of(context).colorScheme.onPrimary),
+                        )
+                      : Text("From ${widget.res!.booru.string}"))
             ]),
           );
   }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/initalize_db.dart';
@@ -17,6 +18,7 @@ import 'package:gallery/src/widgets/skeletons/make_skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:octo_image/octo_image.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:palette_generator/palette_generator.dart';
 
 import '../db/schemas/system_gallery_directory.dart';
 
@@ -127,13 +129,21 @@ class _NotesPageState extends State<NotesPage>
                                       glue: glue,
                                       procPop: (p) {},
                                       nestedCallback: CallbackDescriptionNested(
-                                          "Choose file", (chosen) {
+                                          "Choose file", (chosen) async {
                                         final s = selected.first;
+                                        final data = chosen.getCellData(false,
+                                            context: context);
+                                        final colors = await PaletteGenerator
+                                            .fromImageProvider(data.thumb!);
                                         // final n = i.load(s)!;
                                         NoteGallery.add(chosen.id,
                                             text: s.text,
                                             height: chosen.height,
                                             width: chosen.width,
+                                            backgroundColor:
+                                                colors.dominantColor?.color,
+                                            textColor: colors
+                                                .dominantColor?.bodyTextColor,
                                             isVideo: chosen.isVideo,
                                             isGif: chosen.isGif,
                                             originalUri: chosen.originalUri);
@@ -186,6 +196,7 @@ class _NotesPageState extends State<NotesPage>
             crossAxisCount: 3, childAspectRatio: 0.7, crossAxisSpacing: 2),
         itemBuilder: (context, index) {
           final note = notes[index];
+
           return InkWell(
               borderRadius: const BorderRadius.all(Radius.circular(10)),
               onTap: () => launch(index),
@@ -193,7 +204,10 @@ class _NotesPageState extends State<NotesPage>
                 padding: const EdgeInsets.all(2),
                 child: Container(
                   decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.secondaryContainer,
+                      color: note.backgroundColor != null
+                          ? Color(note.backgroundColor!).harmonizeWith(
+                              Theme.of(context).colorScheme.primary)
+                          : Theme.of(context).colorScheme.secondaryContainer,
                       borderRadius:
                           const BorderRadius.all(Radius.circular(10))),
                   child: Padding(
@@ -249,8 +263,17 @@ class _NotesPageState extends State<NotesPage>
                                                   child: Text(
                                                     e,
                                                     softWrap: true,
-                                                    style: const TextStyle(
+                                                    style: TextStyle(
                                                         wordSpacing: 2.6,
+                                                        color: note.textColor !=
+                                                                null
+                                                            ? Color(note
+                                                                    .textColor!)
+                                                                .harmonizeWith(Theme.of(
+                                                                        context)
+                                                                    .colorScheme
+                                                                    .primary)
+                                                            : null,
                                                         letterSpacing: 1.3,
                                                         fontFamily:
                                                             "ZenKurenaido"),
@@ -277,7 +300,7 @@ class _NotesPageState extends State<NotesPage>
       SearchController controller,
       Widget Function(void Function() onPress, ImageProvider provider) f) {
     return notesBooru
-        .where((element) => element.text
+        .takeWhile((element) => element.text
             .firstWhere((e) => e.toLowerCase().contains(controller.text),
                 orElse: () => "")
             .isNotEmpty)
@@ -294,7 +317,8 @@ class _NotesPageState extends State<NotesPage>
             },
                 CachedNetworkImageProvider(
                   e1.previewUrl,
-                )));
+                )))
+        .take(15);
   }
 
   Iterable<Widget> _notesGallery(
@@ -302,7 +326,7 @@ class _NotesPageState extends State<NotesPage>
       SearchController controller,
       Widget Function(void Function() onPress, ImageProvider provider) f) {
     return notesGallery
-        .where((element) => element.text
+        .takeWhile((element) => element.text
             .firstWhere((e) => e.toLowerCase().contains(controller.text),
                 orElse: () => "")
             .isNotEmpty)
@@ -316,7 +340,8 @@ class _NotesPageState extends State<NotesPage>
               }
 
               _launchGallery(i, NoteGallery.interfaceSelf(setState));
-            }, e1.getCellData(false, context: context).thumb!));
+            }, e1.getCellData(false, context: context).thumb!))
+        .take(15);
   }
 
   Iterable<Widget> _filter(BuildContext context, SearchController controller,
@@ -327,6 +352,22 @@ class _NotesPageState extends State<NotesPage>
             ? _notesBooru(context, controller, f)
             : _notesGallery(context, controller, f);
   }
+
+  Tab _makeTab(String title, int length) => Tab(
+          child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(title),
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Badge.count(
+              backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+              textColor: Theme.of(context).colorScheme.onSurfaceVariant,
+              count: length,
+            ),
+          )
+        ],
+      ));
 
   @override
   Widget build(BuildContext context) {
@@ -369,6 +410,29 @@ class _NotesPageState extends State<NotesPage>
                     },
                     icon: const Icon(Icons.search_rounded));
               },
+              viewBuilder: (widgets) {
+                final w = widgets.toList();
+
+                if (w.isEmpty) {
+                  return const EmptyWidget();
+                }
+
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12, bottom: 12),
+                      child: Text(
+                        "Showing ${w.length} results", // TODO: change
+                        style: TextStyle(
+                            fontStyle: FontStyle.italic,
+                            color: Theme.of(context).colorScheme.primary),
+                      ),
+                    ),
+                    Expanded(child: ListView(children: w))
+                  ],
+                );
+              },
+              viewHintText: "Search", // TOOD: change
               suggestionsBuilder: (context, controller) {
                 if (controller.text.isEmpty) {
                   return [];
@@ -381,15 +445,17 @@ class _NotesPageState extends State<NotesPage>
                           onTap: onPressed,
                           title: Container(
                             height: 100,
-                            decoration: BoxDecoration(
-                                borderRadius:
-                                    const BorderRadius.all(Radius.circular(10)),
-                                image: DecorationImage(
-                                    fit: BoxFit.cover,
-                                    filterQuality: FilterQuality.high,
-                                    image: provider)),
+                            clipBehavior: Clip.antiAlias,
+                            decoration: const BoxDecoration(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(10)),
+                            ),
+                            child: OctoImage(
+                                fit: BoxFit.cover,
+                                filterQuality: FilterQuality.high,
+                                image: provider),
                           ),
-                        ));
+                        ).animate().fadeIn());
               },
             )
           ],
@@ -398,8 +464,10 @@ class _NotesPageState extends State<NotesPage>
               ? CopyMovePreview.hintWidget(
                   context, widget.callback!.description)
               : TabBar(controller: tabController, tabs: [
-                  Tab(text: AppLocalizations.of(context)!.booruLabel),
-                  Tab(text: AppLocalizations.of(context)!.galleryLabel)
+                  _makeTab(AppLocalizations.of(context)!.booruLabel,
+                      notesBooru.length),
+                  _makeTab(AppLocalizations.of(context)!.galleryLabel,
+                      notesGallery.length)
                 ]),
         ));
   }
