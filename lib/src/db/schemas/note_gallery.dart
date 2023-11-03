@@ -121,14 +121,13 @@ class NoteGallery extends NoteBase implements Cell {
             isVideo: n.isVideo)));
   }
 
-  static NoteInterface<NoteGallery> interfaceSelf(
-      void Function(void Function()) setState) {
+  static NoteInterface<NoteGallery> interfaceSelf(void Function() onDelete) {
     return NoteInterface(
       reorder: (cell, from, to) {
         reorder(id: cell.id, from: from, to: to);
       },
       addNote: (text, cell, backgroundColor, textColor) {
-        NoteGallery.add(cell.id,
+        if (NoteGallery.add(cell.id,
             text: [text],
             height: cell.height,
             width: cell.width,
@@ -136,10 +135,14 @@ class NoteGallery extends NoteBase implements Cell {
             textColor: textColor,
             isVideo: cell.isVideo,
             isGif: cell.isGif,
-            originalUri: cell.originalUri);
+            originalUri: cell.originalUri)) {
+          onDelete();
+        }
       },
       delete: (cell, indx) {
-        NoteGallery.remove(cell.id, indx);
+        if (NoteGallery.remove(cell.id, indx)) {
+          onDelete();
+        }
       },
       load: (cell) {
         return Dbs.g.main.noteGallerys.getByIdSync(cell.id);
@@ -186,6 +189,14 @@ class NoteGallery extends NoteBase implements Cell {
 
   static List<NoteGallery> load() {
     return Dbs.g.main.noteGallerys.where().findAllSync();
+  }
+
+  List<String> currentText() {
+    if (isarId == null) {
+      return const [];
+    }
+
+    return Dbs.g.main.noteGallerys.getByIdSync(id)!.text;
   }
 
   NoteGallery(super.text, super.time,

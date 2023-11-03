@@ -5,6 +5,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/initalize_db.dart';
@@ -29,12 +31,15 @@ import '../db/schemas/system_gallery_directory_file.dart';
 import '../interfaces/cell.dart';
 import '../widgets/grid/wrap_grid_page.dart';
 
+const kNoteLoadCount = 30;
+
 class _NotePageContainer<T extends Cell> {
   final state = GridSkeletonState<T>();
   final PagingIsarLoader<T> notes;
   final List<T> Function(String text) filterFnc;
   final NoteInterface<T> noteInterface;
   final List<GridAction<T>> addActions;
+  final List<String> Function(T cell) getText;
 
   Iterable<Widget> filter(BuildContext context, SearchController controller) {
     return filterFnc(controller.text).map((e1) => ListTile(
@@ -50,6 +55,12 @@ class _NotePageContainer<T extends Cell> {
                     scrollUntill: (_) {},
                     startingCell: 0,
                     onExit: () {},
+                    onEmptyNotes: () {
+                      WidgetsBinding.instance
+                          .scheduleFrameCallback((timeStamp) {
+                        Navigator.pop(context);
+                      });
+                    },
                     noteInterface: noteInterface,
                     getCell: (idx) => e1,
                     onNearEnd: null,
@@ -96,7 +107,7 @@ class _NotePageContainer<T extends Cell> {
         description: GridDescription<T>([],
             keybindsDescription: "Notes page",
             showAppBar: false,
-            layout: NoteLayout<T>(GridColumn.three)),
+            layout: NoteLayout<T>(GridColumn.three, getText)),
       ),
       canPop: true);
 
@@ -108,7 +119,8 @@ class _NotePageContainer<T extends Cell> {
   _NotePageContainer(List<CollectionSchema> schemas, this.noteInterface,
       {required Iterable<T> Function(int) loadNext,
       required this.filterFnc,
-      this.addActions = const []})
+      this.addActions = const [],
+      required this.getText})
       : notes = PagingIsarLoader<T>(schemas, loadNext);
 }
 
@@ -126,27 +138,41 @@ class _NotesPageState extends State<NotesPage>
   final searchController = SearchController();
   late final tabController = TabController(length: 2, vsync: this);
 
-  late final booruContainer = _NotePageContainer(
-      [NoteBooruSchema], NoteBooru.interfaceSelf(setState),
-      loadNext: (count) => Dbs.g.blacklisted.noteBoorus
-          .where()
-          .offset(count)
-          .limit(30)
-          .findAllSync(),
-      filterFnc: (text) {
-        return Dbs.g.blacklisted.noteBoorus
-            .filter()
-            .textElementContains(text, caseSensitive: false)
-            .limit(15)
-            .findAllSync();
-      });
+  late final StreamSubscription<void> booruNotesWatcher;
+  late final StreamSubscription<void> galleryNotesWatcher;
+
+  late final _NotePageContainer<NoteBooru> booruContainer =
+      _NotePageContainer<NoteBooru>(
+          [NoteBooruSchema],
+          NoteBooru.interfaceSelf(() {
+            booruContainer.state.gridKey.currentState?.refresh(() =>
+                booruContainer.notes.loadUntil(booruContainer.notes.count()));
+          }),
+          loadNext: (count) => Dbs.g.blacklisted.noteBoorus
+              .where()
+              .offset(count)
+              .limit(kNoteLoadCount)
+              .findAllSync(),
+          filterFnc: (text) {
+            return Dbs.g.blacklisted.noteBoorus
+                .filter()
+                .textElementContains(text, caseSensitive: false)
+                .limit(15)
+                .findAllSync();
+          },
+          getText: (cell) => cell.currentText());
   late final _NotePageContainer<NoteGallery> galleryContainer =
       _NotePageContainer<NoteGallery>(
-          [NoteGallerySchema], NoteGallery.interfaceSelf(setState),
+          [NoteGallerySchema],
+          NoteGallery.interfaceSelf(() {
+            galleryContainer.state.gridKey.currentState?.refresh(() =>
+                galleryContainer.notes
+                    .loadUntil(galleryContainer.notes.count()));
+          }),
           loadNext: (count) => Dbs.g.main.noteGallerys
               .where()
               .offset(count)
-              .limit(30)
+              .limit(kNoteLoadCount)
               .findAllSync(),
           filterFnc: (text) {
             return Dbs.g.main.noteGallerys
@@ -219,7 +245,20 @@ class _NotesPageState extends State<NotesPage>
                     },
                     false,
                   )
-                ]);
+                ],
+          getText: (cell) => cell.currentText());
+
+  @override
+  void initState() {
+    booruNotesWatcher = Dbs.g.blacklisted.noteBoorus.watchLazy().listen((_) {
+      setState(() {});
+    });
+    galleryNotesWatcher = Dbs.g.main.noteGallerys.watchLazy().listen((_) {
+      setState(() {});
+    });
+
+    super.initState();
+  }
 
   @override
   void dispose() {
@@ -228,6 +267,9 @@ class _NotesPageState extends State<NotesPage>
 
     searchController.dispose();
     tabController.dispose();
+
+    booruNotesWatcher.cancel();
+    galleryNotesWatcher.cancel();
 
     super.dispose();
   }

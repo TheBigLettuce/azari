@@ -12,7 +12,6 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
   final void Function() unselectall;
   final void Function() updateImageView;
   final void Function(void Function()? f) update;
-
   final CallbackGrid<T> Function() widget;
 
   T Function(int i)? _filterGetCell;
@@ -43,7 +42,11 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
 
   @override
   void tick(int i) {
-    _cellCountFilter = i;
+    if (_filterGetCell != null) {
+      _cellCountFilter = i;
+    } else {
+      _cellCount = i;
+    }
 
     update(null);
   }
@@ -168,12 +171,13 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
     });
   }
 
-  Future _refresh() async {
+  Future _refresh([Future<int> Function()? overrideRefresh]) async {
     if (_locked) {
       return Future.value(_cellCount);
     }
 
-    final valueFuture = widget().refresh();
+    final valueFuture =
+        overrideRefresh != null ? overrideRefresh() : widget().refresh();
 
     if (valueFuture == null) {
       return Future.value();

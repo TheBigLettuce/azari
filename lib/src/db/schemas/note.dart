@@ -75,7 +75,7 @@ class NoteBooru extends NoteBase implements Cell {
             previewUrl: n.previewUrl)));
   }
 
-  static void add(int pid, Booru booru,
+  static bool add(int pid, Booru booru,
       {required String text,
       required String fileUrl,
       required String sampleUrl,
@@ -94,6 +94,8 @@ class NoteBooru extends NoteBase implements Cell {
             fileUrl: fileUrl,
             sampleUrl: sampleUrl,
             previewUrl: previewUrl)));
+
+    return n == null;
   }
 
   static void replace(int pid, Booru booru, int idx, String newText) {
@@ -115,15 +117,15 @@ class NoteBooru extends NoteBase implements Cell {
             previewUrl: n.previewUrl)));
   }
 
-  static void remove(int pid, Booru booru, int indx) {
+  static bool remove(int pid, Booru booru, int indx) {
     final n = Dbs.g.blacklisted.noteBoorus.getByPostIdBooruSync(pid, booru);
     if (n == null) {
-      return;
+      return false;
     }
     final t = n.text.toList()..removeAt(indx);
-    Dbs.g.blacklisted.writeTxnSync(() {
+    return Dbs.g.blacklisted.writeTxnSync(() {
       if (t.isEmpty) {
-        Dbs.g.blacklisted.noteBoorus.deleteByPostIdBooruSync(pid, booru);
+        return Dbs.g.blacklisted.noteBoorus.deleteByPostIdBooruSync(pid, booru);
       } else {
         Dbs.g.blacklisted.noteBoorus.putByPostIdBooruSync(NoteBooru(
             t, DateTime.now(),
@@ -134,6 +136,8 @@ class NoteBooru extends NoteBase implements Cell {
             fileUrl: n.fileUrl,
             sampleUrl: n.sampleUrl,
             previewUrl: n.previewUrl));
+
+        return false;
       }
     });
   }
@@ -147,23 +151,36 @@ class NoteBooru extends NoteBase implements Cell {
     return Dbs.g.blacklisted.noteBoorus.where().findAllSync();
   }
 
-  static NoteInterface<NoteBooru> interfaceSelf(
-      void Function(void Function()) setState) {
+  List<String> currentText() {
+    if (isarId == null) {
+      return const [];
+    }
+
+    return Dbs.g.blacklisted.noteBoorus
+        .getByPostIdBooruSync(postId, booru)!
+        .text;
+  }
+
+  static NoteInterface<NoteBooru> interfaceSelf(void Function() onDelete) {
     return NoteInterface(
       reorder: (cell, from, to) {
         reorder(booru: cell.booru, postId: cell.postId, from: from, to: to);
       },
       addNote: (text, cell, backgroundColor, textColor) {
-        NoteBooru.add(cell.postId, cell.booru,
+        if (NoteBooru.add(cell.postId, cell.booru,
             text: text,
             backgroundColor: backgroundColor,
             textColor: textColor,
             fileUrl: cell.fileUrl,
             sampleUrl: cell.sampleUrl,
-            previewUrl: cell.previewUrl);
+            previewUrl: cell.previewUrl)) {
+          onDelete();
+        }
       },
       delete: (cell, indx) {
-        NoteBooru.remove(cell.postId, cell.booru, indx);
+        if (NoteBooru.remove(cell.postId, cell.booru, indx)) {
+          onDelete();
+        }
       },
       load: (cell) {
         return Dbs.g.blacklisted.noteBoorus

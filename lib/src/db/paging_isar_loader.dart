@@ -38,6 +38,34 @@ class PagingIsarLoader<T extends Cell> {
     return next();
   }
 
+  Future<int> loadUntil(int count) async {
+    _instance.writeTxnSync(() => _instance.clearSync());
+    _reachedEnd = false;
+
+    int stepCount = 0;
+
+    while (true) {
+      final elems = loadNext(stepCount).map((e) {
+        e.isarId = null;
+
+        return e;
+      }).toList();
+
+      _instance.writeTxnSync(() => _instance.collection<T>().putAllSync(elems),
+          silent: elems.isEmpty || elems.length >= count);
+
+      if (elems.isEmpty) {
+        _reachedEnd = true;
+        break;
+      } else if (elems.length >= count) {
+        break;
+      }
+      stepCount += elems.length;
+    }
+
+    return this.count();
+  }
+
   T get(int indx) {
     return _instance.collection<T>().getSync(indx + 1)!;
   }

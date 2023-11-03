@@ -78,6 +78,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final List<InheritedWidget Function(Widget)>? registerNotifiers;
 
   final NoteInterface<T>? noteInterface;
+  final void Function()? onEmptyNotes;
 
   const ImageView(
       {super.key,
@@ -93,6 +94,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
       this.noteInterface,
       required this.systemOverlayRestoreColor,
       this.pageChange,
+      this.onEmptyNotes,
       this.infoScrollOffset,
       this.download,
       this.registerNotifiers,
@@ -139,11 +141,16 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
       (int from, int to)? reorder}) {
     notes = widget.noteInterface?.load(currentCell);
     if (notes == null || notes!.text.isEmpty) {
-      try {
-        setState(() {
-          extendNotes = false;
-        });
-      } catch (_) {}
+      if (widget.onEmptyNotes != null) {
+        widget.onEmptyNotes!();
+      } else {
+        try {
+          setState(() {
+            extendNotes = false;
+          });
+        } catch (_) {}
+      }
+
       return;
     }
 
@@ -998,53 +1005,63 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
       }
     }
 
-    final t = widget.getCell(idx).getCellData(false, context: context).thumb;
-    if (t == null) {
+    try {
+      final t = widget.getCell(idx).getCellData(false, context: context).thumb;
+      if (t == null) {
+        return const SizedBox.shrink();
+      }
+
+      return Container(
+        decoration: BoxDecoration(
+            gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [
+              ColorTween(
+                begin: Theme.of(context).colorScheme.background,
+                end: currentPalette?.mutedColor?.color
+                    .harmonizeWith(Theme.of(context).colorScheme.primary),
+              ).lerp(value ?? 0)!,
+              ColorTween(
+                begin:
+                    Theme.of(context).colorScheme.background.withOpacity(0.7),
+                end: currentPalette?.mutedColor?.color
+                    .harmonizeWith(Theme.of(context).colorScheme.primary)
+                    .withOpacity(0.7),
+              ).lerp(value ?? 0)!,
+              ColorTween(
+                begin:
+                    Theme.of(context).colorScheme.background.withOpacity(0.5),
+                end: currentPalette?.mutedColor?.color
+                    .harmonizeWith(Theme.of(context).colorScheme.primary)
+                    .withOpacity(0.5),
+              ).lerp(value ?? 0)!,
+              ColorTween(
+                begin:
+                    Theme.of(context).colorScheme.background.withOpacity(0.3),
+                end: currentPalette?.mutedColor?.color
+                    .harmonizeWith(Theme.of(context).colorScheme.primary)
+                    .withOpacity(0.3),
+              ).lerp(value ?? 0)!,
+            ])),
+        child: _Image(
+            t: t,
+            reset: () {
+              WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+                try {
+                  setState(() {
+                    loadingProgress = 1.0;
+                  });
+                } catch (_) {}
+              });
+            }),
+      );
+    } catch (e, stackTrace) {
+      log("_loadingBuilder",
+          error: e, stackTrace: stackTrace, level: Level.WARNING.value);
+
       return const SizedBox.shrink();
     }
-
-    return Container(
-      decoration: BoxDecoration(
-          gradient: LinearGradient(
-              begin: Alignment.bottomCenter,
-              end: Alignment.topCenter,
-              colors: [
-            ColorTween(
-              begin: Theme.of(context).colorScheme.background,
-              end: currentPalette?.mutedColor?.color
-                  .harmonizeWith(Theme.of(context).colorScheme.primary),
-            ).lerp(value ?? 0)!,
-            ColorTween(
-              begin: Theme.of(context).colorScheme.background.withOpacity(0.7),
-              end: currentPalette?.mutedColor?.color
-                  .harmonizeWith(Theme.of(context).colorScheme.primary)
-                  .withOpacity(0.7),
-            ).lerp(value ?? 0)!,
-            ColorTween(
-              begin: Theme.of(context).colorScheme.background.withOpacity(0.5),
-              end: currentPalette?.mutedColor?.color
-                  .harmonizeWith(Theme.of(context).colorScheme.primary)
-                  .withOpacity(0.5),
-            ).lerp(value ?? 0)!,
-            ColorTween(
-              begin: Theme.of(context).colorScheme.background.withOpacity(0.3),
-              end: currentPalette?.mutedColor?.color
-                  .harmonizeWith(Theme.of(context).colorScheme.primary)
-                  .withOpacity(0.3),
-            ).lerp(value ?? 0)!,
-          ])),
-      child: _Image(
-          t: t,
-          reset: () {
-            WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-              try {
-                setState(() {
-                  loadingProgress = 1.0;
-                });
-              } catch (_) {}
-            });
-          }),
-    );
   }
 
   BoxDecoration _photoBackgroundDecoration() {
@@ -1090,6 +1107,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                 final d = notes!.text[e.$1];
                 final c = currentCell;
                 widget.noteInterface!.delete(currentCell, e.$1);
+                final pallete = currentPalette;
+
                 loadNotes(removeNote: e.$1);
                 setState(() {});
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -1100,8 +1119,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                         widget.noteInterface!.addNote(
                             d,
                             c,
-                            currentPalette?.dominantColor?.color,
-                            currentPalette?.dominantColor?.bodyTextColor);
+                            pallete?.dominantColor?.color,
+                            pallete?.dominantColor?.bodyTextColor);
 
                         loadNotes(addNote: true);
                         try {

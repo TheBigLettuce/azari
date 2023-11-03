@@ -399,12 +399,14 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     super.dispose();
   }
 
-  Future refresh() {
+  Future refresh([Future<int> Function()? overrideRefresh]) {
     selection.selected.clear();
     selection.glue.close();
     updateFab(fab: false, foreground: inImageView);
 
-    return _state._refresh();
+    _state._cellCount = 0;
+
+    return _state._refresh(overrideRefresh);
   }
 
   void _scrollUntill(int p) {

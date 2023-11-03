@@ -11,6 +11,8 @@ class NoteLayout<T extends Cell> implements GridLayouter<T> {
   @override
   final GridColumn columns;
 
+  final List<String> Function(T cell) getText;
+
   @override
   Widget call(BuildContext context, CallbackGridState<T> state) {
     return SliverPadding(
@@ -88,53 +90,29 @@ class NoteLayout<T extends Cell> implements GridLayouter<T> {
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
-                                        children: note is NoteBase
-                                            ? (note as NoteBase)
-                                                .text
-                                                .map((e) => Padding(
-                                                      padding:
-                                                          const EdgeInsets.only(
-                                                              bottom: 8.3),
-                                                      child: Text(
-                                                        e,
-                                                        softWrap: true,
-                                                        style: TextStyle(
-                                                            wordSpacing: 2.6,
-                                                            color: textColor !=
-                                                                    null
-                                                                ? Color(textColor)
-                                                                    .harmonizeWith(Theme.of(
-                                                                            context)
-                                                                        .colorScheme
-                                                                        .primary)
-                                                                : null,
-                                                            letterSpacing: 1.3,
-                                                            fontFamily:
-                                                                "ZenKurenaido"),
-                                                      ),
-                                                    ))
-                                                .toList()
-                                            : [
-                                                if (state.widget.hideAlias ==
-                                                        null ||
-                                                    state.widget.hideAlias ==
-                                                        false)
-                                                  Text(note.alias(false),
-                                                      softWrap: true,
-                                                      style: TextStyle(
-                                                          wordSpacing: 2.6,
-                                                          color: textColor !=
-                                                                  null
-                                                              ? Color(textColor)
-                                                                  .harmonizeWith(Theme.of(
-                                                                          context)
-                                                                      .colorScheme
-                                                                      .primary)
-                                                              : null,
-                                                          letterSpacing: 1.3,
-                                                          fontFamily:
-                                                              "ZenKurenaido"))
-                                              ],
+                                        children: getText(note)
+                                            .map((e) => Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          bottom: 8.3),
+                                                  child: Text(
+                                                    e,
+                                                    softWrap: true,
+                                                    style: TextStyle(
+                                                        wordSpacing: 2.6,
+                                                        color: textColor != null
+                                                            ? Color(textColor)
+                                                                .harmonizeWith(Theme.of(
+                                                                        context)
+                                                                    .colorScheme
+                                                                    .primary)
+                                                            : null,
+                                                        letterSpacing: 1.3,
+                                                        fontFamily:
+                                                            "ZenKurenaido"),
+                                                  ),
+                                                ))
+                                            .toList(),
                                       ),
                                     )),
                               )
@@ -153,7 +131,7 @@ class NoteLayout<T extends Cell> implements GridLayouter<T> {
   @override
   bool get isList => false;
 
-  const NoteLayout(this.columns);
+  const NoteLayout(this.columns, this.getText);
 }
 
 class SegmentListLayout<T extends Cell> implements GridLayouter<T> {
