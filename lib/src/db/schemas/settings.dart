@@ -73,7 +73,7 @@ class Settings {
     FilteringMode? favoritesPageMode,
     bool? expensiveHash,
     SafeMode? safeMode,
-    AspectRatio? ratio,
+    GridAspectRatio? ratio,
     GridSettings? galleryDirectories,
     GridSettings? galleryFiles,
     GridSettings? favorites,
@@ -224,14 +224,14 @@ class Settings {
 class GridSettings {
   final bool hideName;
   @enumerated
-  final AspectRatio aspectRatio;
+  final GridAspectRatio aspectRatio;
   @enumerated
   final GridColumn columns;
   final bool listView;
 
   GridSettings copy(
       {bool? hideName,
-      AspectRatio? aspectRatio,
+      GridAspectRatio? aspectRatio,
       GridColumn? columns,
       bool? listView}) {
     return GridSettings(
@@ -242,7 +242,7 @@ class GridSettings {
   }
 
   const GridSettings(
-      {this.aspectRatio = AspectRatio.one,
+      {this.aspectRatio = GridAspectRatio.one,
       this.columns = GridColumn.three,
       this.listView = false,
       this.hideName = false});
@@ -279,7 +279,7 @@ enum GridColumn {
   const GridColumn(this.number);
 }
 
-enum AspectRatio {
+enum GridAspectRatio {
   one(1.0),
   zeroFive(0.5),
   zeroSeven(0.7),
@@ -287,5 +287,5 @@ enum AspectRatio {
   oneFive(1.5);
 
   final double value;
-  const AspectRatio(this.value);
+  const GridAspectRatio(this.value);
 }

@@ -42,10 +42,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../widgets/time_label.dart';
 import 'secondary.dart';
-import '../../db/schemas/settings.dart' as schema show AspectRatio;
+import '../../db/schemas/settings.dart' as schema show GridAspectRatio;
 
 PopupMenuButton gridSettingsButton(GridSettings gridSettings,
-    {required void Function(schema.AspectRatio?) selectRatio,
+    {required void Function(schema.GridAspectRatio?) selectRatio,
     required void Function(bool)? selectHideName,
     required void Function(bool)? selectListView,
     required void Function(GridColumn?) selectGridColumn,
@@ -93,13 +93,15 @@ PopupMenuItem _hideName(
   );
 }
 
-PopupMenuItem _ratio(BuildContext context, schema.AspectRatio aspectRatio,
-    void Function(schema.AspectRatio?) select) {
+PopupMenuItem _ratio(BuildContext context, schema.GridAspectRatio aspectRatio,
+    void Function(schema.GridAspectRatio?) select) {
   return PopupMenuItem(
     child: Text(AppLocalizations.of(context)!.aspectRatio),
     onTap: () => radioDialog(
       context,
-      schema.AspectRatio.values.map((e) => (e, e.value.toString())).toList(),
+      schema.GridAspectRatio.values
+          .map((e) => (e, e.value.toString()))
+          .toList(),
       aspectRatio,
       select,
       title: AppLocalizations.of(context)!.aspectRatio,

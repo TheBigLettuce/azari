@@ -13,17 +13,27 @@ import 'initalize_db.dart';
 class PagingIsarLoader<T extends Cell> {
   final Isar _instance;
   final Iterable<T> Function(int count) loadNext;
+  bool _reachedEnd = false;
 
   Future<int> next() {
-    _instance.writeTxnSync(() => _instance
-        .collection<T>()
-        .putAllSync(loadNext(_instance.collection<T>().countSync()).toList()));
+    final elems = loadNext(_instance.collection<T>().countSync()).map((e) {
+      e.isarId = null;
+
+      return e;
+    }).toList();
+
+    if (elems.isEmpty) {
+      _reachedEnd = true;
+    } else {
+      _instance.writeTxnSync(() => _instance.collection<T>().putAllSync(elems));
+    }
 
     return _instance.collection<T>().count();
   }
 
   Future<int> refresh() {
     _instance.writeTxnSync(() => _instance.clearSync());
+    _reachedEnd = false;
 
     return next();
   }
@@ -31,6 +41,10 @@ class PagingIsarLoader<T extends Cell> {
   T get(int indx) {
     return _instance.collection<T>().getSync(indx + 1)!;
   }
+
+  int count() => _instance.collection<T>().countSync();
+
+  bool reachedEnd() => _reachedEnd;
 
   Future<bool> dispose({bool force = false}) {
     return _instance.close(deleteFromDisk: force);

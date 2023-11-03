@@ -7,6 +7,155 @@
 
 part of 'callback_grid.dart';
 
+class NoteLayout<T extends Cell> implements GridLayouter<T> {
+  @override
+  final GridColumn columns;
+
+  @override
+  Widget call(BuildContext context, CallbackGridState<T> state) {
+    return SliverPadding(
+      padding: const EdgeInsets.all(8),
+      sliver: SliverGrid.builder(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3, childAspectRatio: 0.7, crossAxisSpacing: 2),
+        itemBuilder: (context, index) {
+          final note = state.widget.getCell(index);
+          final provider = note.getCellData(false, context: context).thumb;
+
+          final backgroundColor =
+              note is NoteBase ? (note as NoteBase).backgroundColor : null;
+          final textColor =
+              note is NoteBase ? (note as NoteBase).textColor : null;
+
+          return InkWell(
+              borderRadius: const BorderRadius.all(Radius.circular(10)),
+              onTap: () => state.onPressed(context, note, index),
+              child: Padding(
+                padding: const EdgeInsets.all(2),
+                child: Container(
+                  decoration: BoxDecoration(
+                      color: backgroundColor != null
+                          ? Color(backgroundColor).harmonizeWith(
+                              Theme.of(context).colorScheme.primary)
+                          : Theme.of(context).colorScheme.secondaryContainer,
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(10))),
+                  child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return Stack(
+                            children: [
+                              Align(
+                                  alignment: Alignment.topLeft,
+                                  child: Container(
+                                    width: constraints.minHeight * 0.2,
+                                    height: constraints.maxHeight * 0.2,
+                                    decoration: const BoxDecoration(
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(10))),
+                                    clipBehavior: Clip.antiAlias,
+                                    child: provider != null
+                                        ? OctoImage(
+                                            fit: BoxFit.cover,
+                                            filterQuality: FilterQuality.high,
+                                            progressIndicatorBuilder:
+                                                (context, _) {
+                                              return Container(
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .secondaryContainer)
+                                                  .animate(
+                                                      onComplete: (controller) {
+                                                controller.repeat();
+                                              }).shimmer(
+                                                      delay: 2.seconds,
+                                                      duration: 500.ms);
+                                            },
+                                            image: provider)
+                                        : null,
+                                  )),
+                              Align(
+                                alignment: Alignment.bottomRight,
+                                child: Container(
+                                    clipBehavior: Clip.antiAlias,
+                                    decoration: const BoxDecoration(
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(8))),
+                                    width: (constraints.maxHeight * 0.8),
+                                    height: (constraints.maxHeight * 0.78),
+                                    child: SingleChildScrollView(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: note is NoteBase
+                                            ? (note as NoteBase)
+                                                .text
+                                                .map((e) => Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                              bottom: 8.3),
+                                                      child: Text(
+                                                        e,
+                                                        softWrap: true,
+                                                        style: TextStyle(
+                                                            wordSpacing: 2.6,
+                                                            color: textColor !=
+                                                                    null
+                                                                ? Color(textColor)
+                                                                    .harmonizeWith(Theme.of(
+                                                                            context)
+                                                                        .colorScheme
+                                                                        .primary)
+                                                                : null,
+                                                            letterSpacing: 1.3,
+                                                            fontFamily:
+                                                                "ZenKurenaido"),
+                                                      ),
+                                                    ))
+                                                .toList()
+                                            : [
+                                                if (state.widget.hideAlias ==
+                                                        null ||
+                                                    state.widget.hideAlias ==
+                                                        false)
+                                                  Text(note.alias(false),
+                                                      softWrap: true,
+                                                      style: TextStyle(
+                                                          wordSpacing: 2.6,
+                                                          color: textColor !=
+                                                                  null
+                                                              ? Color(textColor)
+                                                                  .harmonizeWith(Theme.of(
+                                                                          context)
+                                                                      .colorScheme
+                                                                      .primary)
+                                                              : null,
+                                                          letterSpacing: 1.3,
+                                                          fontFamily:
+                                                              "ZenKurenaido"))
+                                              ],
+                                      ),
+                                    )),
+                              )
+                            ],
+                          );
+                        },
+                      )),
+                ),
+              ));
+        },
+        itemCount: state.mutationInterface!.cellCount,
+      ),
+    );
+  }
+
+  @override
+  bool get isList => false;
+
+  const NoteLayout(this.columns);
+}
+
 class SegmentListLayout<T extends Cell> implements GridLayouter<T> {
   final Segments<T> segments;
 
@@ -53,7 +202,7 @@ class SegmentListLayout<T extends Cell> implements GridLayouter<T> {
 
 class SegmentLayout<T extends Cell> implements GridLayouter<T> {
   final Segments<T> segments;
-  final settings.AspectRatio aspectRatio;
+  final settings.GridAspectRatio aspectRatio;
 
   @override
   final GridColumn columns;
@@ -115,7 +264,7 @@ class GridListLayout<T extends Cell> implements GridLayouter<T> {
 }
 
 class GridLayout<T extends Cell> implements GridLayouter<T> {
-  final settings.AspectRatio aspectRatio;
+  final settings.GridAspectRatio aspectRatio;
 
   @override
   final GridColumn columns;
@@ -139,7 +288,7 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
   Widget call(BuildContext context, CallbackGridState<T> state) {
     return _GridLayouts.list<T>(context, state._state, state.selection,
         state.widget.systemNavigationInsets.bottom,
-        onPressed: state.widget.unpressable ? null : state._onPressed);
+        onPressed: state.widget.unpressable ? null : state.onPressed);
   }
 
   @override

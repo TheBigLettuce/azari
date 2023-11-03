@@ -25,8 +25,11 @@ class GridDescription<T extends Cell> {
   /// Displayed in the app bar bottom widget.
   final PreferredSizeWidget? bottomWidget;
 
+  final bool showAppBar;
+
   const GridDescription(
     this.actions, {
+    this.showAppBar = true,
     required this.keybindsDescription,
     this.bottomWidget,
     this.pageName,

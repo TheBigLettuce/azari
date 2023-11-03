@@ -8,16 +8,19 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart' as material show AspectRatio;
 import 'package:gallery/src/db/schemas/settings.dart' as settings
-    show AspectRatio;
+    show GridAspectRatio;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/db/schemas/settings.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:logging/logging.dart';
+import 'package:octo_image/octo_image.dart';
+import '../../db/schemas/note.dart';
 import '../../interfaces/cell.dart';
 import '../../interfaces/grid_mutation_interface.dart';
 import '../keybinds/describe_keys.dart';
@@ -52,6 +55,13 @@ class SelectionGlue<T extends Cell> {
   final void Function() close;
   final bool Function() isOpen;
   final bool Function() keyboardVisible;
+
+  static SelectionGlue<T> empty<T extends Cell>(BuildContext context) =>
+      SelectionGlue(
+          close: () {},
+          open: (_, __) {},
+          isOpen: () => false,
+          keyboardVisible: () => MediaQuery.viewInsetsOf(context).bottom != 0);
 
   const SelectionGlue(
       {required this.close,
@@ -316,7 +326,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
         widget.beforeImageViewRestore?.call();
 
-        _onPressed(
+        onPressed(
             context, _state.getCell(widget.initalCell!), widget.initalCell!,
             offset: widget.pageViewScrollingOffset);
       });
@@ -324,7 +334,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
         widget.beforeImageViewRestore?.call();
 
-        _onPressed(
+        onPressed(
           context,
           _state.getCell(widget.initalCell!),
           widget.initalCell!,
@@ -335,7 +345,6 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     }
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      // listKey.currentState?.
       controller.position.isScrollingNotifier.addListener(() {
         if (!_state.isRefreshing) {
           widget.updateScrollPosition?.call(controller.offset);
@@ -432,7 +441,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     controller.jumpTo(target);
   }
 
-  void _onPressed(BuildContext context, T cell, int startingCell,
+  void onPressed(BuildContext context, T cell, int startingCell,
       {double? offset}) {
     if (widget.overrideOnPress != null) {
       widget.mainFocus.requestFocus();
@@ -547,7 +556,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         tight: widget.tightMode,
         onPressed: widget.unpressable
             ? null
-            : (context) => _onPressed(context, cell, indx),
+            : (context) => onPressed(context, cell, indx),
         onLongPress: indx.isNegative
             ? null
             : () {
@@ -585,10 +594,12 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         count: _state.cellCount,
         isLabelVisible: widget.showCount,
         child: Text(
-          "探",
-          style: TextStyle(
-              color: Theme.of(context).colorScheme.primary,
-              fontFamily: "ZenKurenaido"),
+          widget.description.pageName ?? "探",
+          style: widget.description.pageName != null
+              ? null
+              : TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontFamily: "ZenKurenaido"),
         ),
       );
     }
@@ -723,41 +734,43 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         controller: controller,
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
-          FocusNotifier(
-              notifier: widget.searchWidget?.focus,
-              focusMain: () {
-                widget.mainFocus.requestFocus();
-              },
-              child: Builder(
-                builder: (context) {
-                  return SliverAppBar(
-                    backgroundColor: Theme.of(context)
-                        .colorScheme
-                        .background
-                        .withOpacity(0.95),
-                    automaticallyImplyLeading: false,
-                    actions: _makeActions(context),
-                    centerTitle: true,
-                    title: _makeTitle(context),
-                    leading: _makeLeading(context),
-                    pinned: true,
-                    stretch: true,
-                    snap: !showSearchBar && selection.selected.isEmpty,
-                    floating: !showSearchBar && selection.selected.isEmpty,
-                    bottom: widget.description.bottomWidget != null
-                        ? widget.description.bottomWidget!
-                        : PreferredSize(
-                            preferredSize: const Size.fromHeight(4),
-                            child: !_state.isRefreshing
-                                ? const Padding(
-                                    padding: EdgeInsets.only(top: 4),
-                                    child: SizedBox(),
-                                  )
-                                : const LinearProgressIndicator(),
-                          ),
-                  );
+          if (widget.description.showAppBar)
+            FocusNotifier(
+                notifier: widget.searchWidget?.focus,
+                focusMain: () {
+                  widget.mainFocus.requestFocus();
                 },
-              )),
+                child: Builder(
+                  builder: (context) {
+                    return SliverAppBar(
+                      backgroundColor: Theme.of(context)
+                          .colorScheme
+                          .background
+                          .withOpacity(0.95),
+                      automaticallyImplyLeading: false,
+                      actions: _makeActions(context),
+                      centerTitle:
+                          widget.description.pageName == null ? true : false,
+                      title: _makeTitle(context),
+                      leading: _makeLeading(context),
+                      pinned: true,
+                      stretch: true,
+                      snap: !showSearchBar && selection.selected.isEmpty,
+                      floating: !showSearchBar && selection.selected.isEmpty,
+                      bottom: widget.description.bottomWidget != null
+                          ? widget.description.bottomWidget!
+                          : PreferredSize(
+                              preferredSize: const Size.fromHeight(4),
+                              child: !_state.isRefreshing
+                                  ? const Padding(
+                                      padding: EdgeInsets.only(top: 4),
+                                      child: SizedBox(),
+                                    )
+                                  : const LinearProgressIndicator(),
+                            ),
+                    );
+                  },
+                )),
           !_state.isRefreshing && _state.cellCount == 0
               ? SliverFillRemaining(
                   child: Center(
