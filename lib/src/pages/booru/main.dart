@@ -365,17 +365,17 @@ class _MainBooruGridState extends State<MainBooruGrid>
                     ],
                     onExitImageView: () =>
                         restore.removeScrollTagsSelectedPost(),
-                    description: GridDescription(
-                      [
-                        BooruGridActions.download(context, api),
-                        BooruGridActions.favorites(context, null,
-                            showDeleteSnackbar: true)
-                      ],
-                      state.settings.booru.columns,
-                      listView: state.settings.booru.listView,
-                      keybindsDescription:
-                          AppLocalizations.of(context)!.booruGridPageName,
-                    ),
+                    description: GridDescription([
+                      BooruGridActions.download(context, api),
+                      BooruGridActions.favorites(context, null,
+                          showDeleteSnackbar: true)
+                    ],
+                        keybindsDescription:
+                            AppLocalizations.of(context)!.booruGridPageName,
+                        layout: state.settings.booru.listView
+                            ? const ListLayout()
+                            : GridLayout(state.settings.booru.columns,
+                                state.settings.booru.aspectRatio)),
                     hasReachedEnd: () => reachedEnd,
                     mainFocus: state.mainFocus,
                     scaffoldKey: state.scaffoldKey,
@@ -390,7 +390,6 @@ class _MainBooruGridState extends State<MainBooruGrid>
                             Text(AppLocalizations.of(context)!.openInBrowser),
                       );
                     },
-                    aspectRatio: state.settings.booru.aspectRatio.value,
                     getCell: (i) => widget.mainGrid.posts.getSync(i + 1)!,
                     loadNext: _addLast,
                     refresh: _clearAndRefresh,

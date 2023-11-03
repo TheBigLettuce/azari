@@ -280,17 +280,18 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                               BooruGridActions.favorites(context, post),
                               BooruGridActions.download(context, widget.api)
                             ],
-                            description: GridDescription(
-                              [
-                                BooruGridActions.download(context, widget.api),
-                                BooruGridActions.favorites(context, null,
-                                    showDeleteSnackbar: true)
-                              ],
-                              state.settings.booru.columns,
-                              listView: state.settings.booru.listView,
-                              keybindsDescription: AppLocalizations.of(context)!
-                                  .booruGridPageName,
-                            ),
+                            description: GridDescription([
+                              BooruGridActions.download(context, widget.api),
+                              BooruGridActions.favorites(context, null,
+                                  showDeleteSnackbar: true)
+                            ],
+                                keybindsDescription:
+                                    AppLocalizations.of(context)!
+                                        .booruGridPageName,
+                                layout: state.settings.booru.listView
+                                    ? const ListLayout()
+                                    : GridLayout(state.settings.booru.columns,
+                                        state.settings.booru.aspectRatio)),
                             hasReachedEnd: () => reachedEnd,
                             mainFocus: state.mainFocus,
                             inlineMenuButtonItems: true,
@@ -305,7 +306,6 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                                     .openInBrowser),
                               );
                             },
-                            aspectRatio: state.settings.booru.aspectRatio.value,
                             getCell: (i) => instance.posts.getSync(i + 1)!,
                             loadNext: _addLast,
                             refresh: _clearAndRefresh,

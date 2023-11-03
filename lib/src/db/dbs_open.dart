@@ -7,7 +7,7 @@
 
 part of 'initalize_db.dart';
 
-class DbsOpen {
+abstract class DbsOpen {
   static Isar primaryGrid(Booru booru) {
     final instance = Isar.getInstance(booru.string);
     if (instance != null) {

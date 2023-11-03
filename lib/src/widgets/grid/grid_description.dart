@@ -8,7 +8,7 @@
 part of 'callback_grid.dart';
 
 /// Metadata about the grid.
-class GridDescription<T> {
+class GridDescription<T extends Cell> {
   /// Displayed in the keybinds info page name.
   final String keybindsDescription;
 
@@ -20,21 +20,24 @@ class GridDescription<T> {
   /// Actions of the grid on selected cells.
   final List<GridAction<T>> actions;
 
-  final GridColumn columns;
-
-  /// If [listView] is true, then grid becomes a list.
-  /// [CallbackGrid.segments] gets ignored if [listView] is true.
-  final bool listView;
+  final GridLayouter<T> layout;
 
   /// Displayed in the app bar bottom widget.
   final PreferredSizeWidget? bottomWidget;
 
   const GridDescription(
-    this.actions,
-    this.columns, {
+    this.actions, {
     required this.keybindsDescription,
     this.bottomWidget,
     this.pageName,
-    required this.listView,
+    required this.layout,
   });
+}
+
+abstract class GridLayouter<T extends Cell> {
+  Widget call(BuildContext context, CallbackGridState<T> state);
+  GridColumn? get columns;
+  bool get isList;
+
+  const GridLayouter();
 }

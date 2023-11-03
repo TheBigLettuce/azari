@@ -10,9 +10,10 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart' as material show AspectRatio;
+import 'package:gallery/src/db/schemas/settings.dart' as settings
+    show AspectRatio;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/interfaces/booru.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/db/schemas/settings.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
@@ -34,12 +35,6 @@ part 'grid_action.dart';
 part 'grid_description.dart';
 part 'search_and_focus.dart';
 part 'grid_layout.dart';
-
-class CloudflareBlockInterface {
-  final BooruAPI api;
-
-  const CloudflareBlockInterface(this.api);
-}
 
 class _SegSticky {
   final String seg;
@@ -125,9 +120,6 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   /// If [initalScrollPosition] is not 0, then it is set as the starting scrolling position.
   final double initalScrollPosition;
 
-  /// Aspect ratio of the cells.
-  final double aspectRatio;
-
   /// [pageViewScrollingOffset] is needed for the state restoration.
   /// If not null, [pageViewScrollingOffset] gets supplied to the [ImageView.infoScrollOffset].
   final double? pageViewScrollingOffset;
@@ -174,13 +166,10 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   /// Supplied to [ImageView.pageChange].
   final void Function(ImageViewState<T> state)? pageChangeImage;
 
-  /// Currently useless.
-  final CloudflareBlockInterface Function()? cloudflareHook;
-
   /// Segments of the grid.
   /// If [segments] is not null, then the grid will try to group the cells together
   /// by a common category name.
-  final Segments<T>? segments;
+  // final Segments<T>? segments;
 
   /// Makes [menuButtonItems] appear as app bar items.
   final bool inlineMenuButtonItems;
@@ -213,8 +202,6 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       required this.scaffoldKey,
       required this.systemNavigationInsets,
       required this.hasReachedEnd,
-      required this.aspectRatio,
-      this.cloudflareHook,
       this.pageChangeImage,
       this.onError,
       required this.selectionGlue,
@@ -225,7 +212,6 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       this.beforeImageViewRestore,
       required this.mainFocus,
       this.addIconsImage,
-      this.segments,
       this.onExitImageView,
       this.footer,
       this.registerNotifiers,
@@ -413,20 +399,21 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   }
 
   void _scrollUntill(int p) {
-    if (widget.segments != null) {
+    if (controller.position.maxScrollExtent.isInfinite) {
       return;
     }
-    final picPerRow = widget.description.columns;
+
+    final picPerRow = widget.description.layout.columns;
     // Get the full content height.
     final contentSize = controller.position.viewportDimension +
         controller.position.maxScrollExtent;
     // Estimate the target scroll position.
     double target;
-    if (widget.description.listView) {
+    if (widget.description.layout.isList) {
       target = contentSize * p / _state.cellCount;
     } else {
       target = contentSize *
-          (p / picPerRow.number - 1) /
+          (p / picPerRow!.number - 1) /
           (_state.cellCount / picPerRow.number);
     }
 
@@ -551,8 +538,9 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     );
   }
 
-  GridCell _makeGridCell(BuildContext context, T cell, int indx) => GridCell(
-        cell: cell.getCellData(widget.description.listView, context: context),
+  GridCell makeGridCell(BuildContext context, T cell, int indx) => GridCell(
+        cell: cell.getCellData(widget.description.layout.isList,
+            context: context),
         hidealias: widget.hideAlias,
         indx: indx,
         download: widget.download,
@@ -789,55 +777,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                     ),
                   ),
                 )
-              : _withPadding(
-                  context,
-                  widget.segments != null
-                      ? () {
-                          if (widget.segments!.prebuiltSegments != null) {
-                            return GridLayout.segmentsPrebuilt(
-                              context,
-                              widget.segments!,
-                              _state,
-                              selection,
-                              widget.description.listView,
-                              widget.description.columns.number,
-                              _makeGridCell,
-                              systemNavigationInsets:
-                                  widget.systemNavigationInsets.bottom,
-                              aspectRatio: widget.aspectRatio,
-                            );
-                          }
-                          final (s, t) = GridLayout.segmentsFnc<T>(
-                            context,
-                            widget.segments!,
-                            _state,
-                            selection,
-                            widget.description.listView,
-                            widget.description.columns.number,
-                            _makeGridCell,
-                            systemNavigationInsets:
-                                widget.systemNavigationInsets.bottom,
-                            aspectRatio: widget.aspectRatio,
-                          );
-                          segTranslation = t;
-
-                          return s;
-                        }()
-                      : widget.description.listView
-                          ? GridLayout.list<T>(context, _state, selection,
-                              widget.systemNavigationInsets.bottom,
-                              onPressed: widget.unpressable ? null : _onPressed)
-                          : GridLayout.grid<T>(
-                              context,
-                              _state,
-                              selection,
-                              widget.description.columns.number,
-                              widget.description.listView,
-                              _makeGridCell,
-                              systemNavigationInsets:
-                                  widget.systemNavigationInsets.bottom,
-                              aspectRatio: widget.aspectRatio,
-                            )),
+              : _withPadding(context, widget.description.layout(context, this)),
         ],
       );
 

@@ -271,10 +271,12 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                                 BooruGridActions.favorites(context, null,
                                     showDeleteSnackbar: true)
                               ],
-                              state.settings.booru.columns,
-                              listView: state.settings.booru.listView,
                               keybindsDescription: AppLocalizations.of(context)!
                                   .booruGridPageName,
+                              layout: state.settings.booru.listView
+                                  ? const ListLayout()
+                                  : GridLayout(state.settings.booru.columns,
+                                      state.settings.booru.aspectRatio),
                             ),
                             inlineMenuButtonItems: true,
                             hasReachedEnd: () => reachedEnd,
@@ -290,7 +292,6 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                                     .openInBrowser),
                               );
                             },
-                            aspectRatio: state.settings.booru.aspectRatio.value,
                             noteInterface: NoteBooru.interface(setState),
                             backButtonBadge: widget.restore.secondaryCount(),
                             getCell: (i) =>

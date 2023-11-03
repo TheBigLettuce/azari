@@ -523,7 +523,6 @@ class _GalleryFilesState extends State<GalleryFiles>
                                 _moveAction()
                               ];
                   },
-                  aspectRatio: state.settings.galleryFiles.aspectRatio.value,
                   hideAlias: state.settings.galleryFiles.hideName,
                   showCount: true,
                   searchWidget: SearchAndFocus(
@@ -674,18 +673,20 @@ class _GalleryFilesState extends State<GalleryFiles>
                                   _copyAction(),
                                   _moveAction(),
                                 ],
-                      state.settings.galleryFiles.columns,
-                      listView: state.settings.galleryFiles.listView,
                       bottomWidget: widget.callback != null
                           ? CopyMovePreview.hintWidget(context,
                               AppLocalizations.of(context)!.chooseFileNotice)
                           : null,
-                      keybindsDescription: widget.dirName)),
+                      keybindsDescription: widget.dirName,
+                      layout: state.settings.galleryFiles.listView
+                          ? const ListLayout()
+                          : GridLayout(state.settings.galleryFiles.columns,
+                              state.settings.galleryFiles.aspectRatio))),
               noDrawer: widget.callback != null,
               canPop: currentFilteringMode() == FilteringMode.noFilter &&
                   searchTextController.text.isEmpty &&
                   !glue.isOpen() &&
-                  state.gridKey.currentState?.showSearchBar == false,
+                  state.gridKey.currentState?.showSearchBar != true,
               overrideOnPop: (pop, hideAppBar) {
                 final filterMode = currentFilteringMode();
                 if (filterMode != FilteringMode.noFilter ||

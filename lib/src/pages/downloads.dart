@@ -76,13 +76,43 @@ class _DownloadsState extends State<Downloads>
     super.dispose();
   }
 
-  // void _refresh() {
-  //   if (refreshController != null) {
-  //     refreshController!.forward(from: 0);
-  //   }
+  Segments<DownloadFile> _makeSegments(BuildContext context) => Segments(
+        "Unknown", // TODO: change
+        hidePinnedIcon: true,
+        limitLabelChildren: 6,
+        segment: (cell) {
+          return (Downloader.g.downloadDescription(cell), true);
+        },
+        onLabelPressed: (label, children) {
+          if (children.isEmpty) {
+            return;
+          }
 
-  //   Downloader.g.markStale();
-  // }
+          if (label == kDownloadInProgress) {
+            Downloader.g.markStale(override: children);
+          } else if (label == kDownloadOnHold) {
+            Downloader.g.addAll(children, state.settings);
+          } else if (label == kDownloadFailed) {
+            final n = (6 - children.length);
+
+            if (!n.isNegative && n != 0) {
+              Downloader.g.addAll([
+                ...children,
+                ...Dbs.g.main.downloadFiles
+                    .where()
+                    .inProgressEqualTo(false)
+                    .filter()
+                    .isFailedEqualTo(false)
+                    .sortByDateDesc()
+                    .limit(6 - children.length)
+                    .findAllSync()
+              ], state.settings);
+            } else {
+              Downloader.g.addAll(children, state.settings);
+            }
+          }
+        },
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +129,6 @@ class _DownloadsState extends State<Downloads>
                   systemNavigationInsets:
                       MediaQuery.systemGestureInsetsOf(context),
                   hasReachedEnd: () => true,
-                  aspectRatio: 1,
                   selectionGlue: glue,
                   showCount: true,
                   onBack: () => Navigator.pop(context),
@@ -120,43 +149,6 @@ class _DownloadsState extends State<Downloads>
                   inlineMenuButtonItems: true,
                   immutable: false,
                   unpressable: true,
-                  segments: Segments(
-                    "Unknown", // TODO: change
-                    hidePinnedIcon: true,
-                    limitLabelChildren: 6,
-                    segment: (cell) {
-                      return (Downloader.g.downloadDescription(cell), true);
-                    },
-                    onLabelPressed: (label, children) {
-                      if (children.isEmpty) {
-                        return;
-                      }
-
-                      if (label == kDownloadInProgress) {
-                        Downloader.g.markStale(override: children);
-                      } else if (label == kDownloadOnHold) {
-                        Downloader.g.addAll(children, state.settings);
-                      } else if (label == kDownloadFailed) {
-                        final n = (6 - children.length);
-
-                        if (!n.isNegative && n != 0) {
-                          Downloader.g.addAll([
-                            ...children,
-                            ...Dbs.g.main.downloadFiles
-                                .where()
-                                .inProgressEqualTo(false)
-                                .filter()
-                                .isFailedEqualTo(false)
-                                .sortByDateDesc()
-                                .limit(6 - children.length)
-                                .findAllSync()
-                          ], state.settings);
-                        } else {
-                          Downloader.g.addAll(children, state.settings);
-                        }
-                      }
-                    },
-                  ),
                   searchWidget: SearchAndFocus(
                       searchWidget(context,
                           hint: AppLocalizations.of(context)!
@@ -167,10 +159,11 @@ class _DownloadsState extends State<Downloads>
                   refresh: () => Future.value(loader.count()),
                   description: GridDescription([
                     DownloadsActions.retryOrDelete(context),
-                  ], GridColumn.two,
+                  ],
                       keybindsDescription:
                           AppLocalizations.of(context)!.downloadsPageName,
-                      listView: true)),
+                      layout: SegmentListLayout(
+                          _makeSegments(context), GridColumn.two))),
               canPop: !glue.isOpen(),
               overrideOnPop: (pop, hideAppBar) {
                 if (glue.isOpen()) {

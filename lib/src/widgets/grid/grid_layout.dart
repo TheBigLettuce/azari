@@ -7,9 +7,153 @@
 
 part of 'callback_grid.dart';
 
+class SegmentListLayout<T extends Cell> implements GridLayouter<T> {
+  final Segments<T> segments;
+
+  @override
+  final GridColumn columns;
+
+  @override
+  Widget call(BuildContext context, CallbackGridState<T> state) {
+    if (segments.prebuiltSegments != null) {
+      return _GridLayouts.segmentsPrebuilt(
+        context,
+        segments,
+        state._state,
+        state.selection,
+        true,
+        columns.number,
+        state.makeGridCell,
+        systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
+        aspectRatio: 1,
+      );
+    }
+    final (s, t) = _GridLayouts.segmentsFnc<T>(
+      context,
+      segments,
+      state._state,
+      state.selection,
+      true,
+      columns.number,
+      state.makeGridCell,
+      systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
+      aspectRatio: 1,
+    );
+
+    state.segTranslation = t;
+
+    return s;
+  }
+
+  @override
+  bool get isList => true;
+
+  const SegmentListLayout(this.segments, this.columns);
+}
+
+class SegmentLayout<T extends Cell> implements GridLayouter<T> {
+  final Segments<T> segments;
+  final settings.AspectRatio aspectRatio;
+
+  @override
+  final GridColumn columns;
+
+  @override
+  Widget call(BuildContext context, CallbackGridState<T> state) {
+    if (segments.prebuiltSegments != null) {
+      return _GridLayouts.segmentsPrebuilt(
+        context,
+        segments,
+        state._state,
+        state.selection,
+        false,
+        columns.number,
+        state.makeGridCell,
+        systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
+        aspectRatio: aspectRatio.value,
+      );
+    }
+    final (s, t) = _GridLayouts.segmentsFnc<T>(
+      context,
+      segments,
+      state._state,
+      state.selection,
+      false,
+      columns.number,
+      state.makeGridCell,
+      systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
+      aspectRatio: aspectRatio.value,
+    );
+
+    state.segTranslation = t;
+
+    return s;
+  }
+
+  @override
+  bool get isList => false;
+
+  const SegmentLayout(this.segments, this.columns, this.aspectRatio);
+}
+
+class GridListLayout<T extends Cell> implements GridLayouter<T> {
+  @override
+  final GridColumn columns;
+
+  @override
+  Widget call(BuildContext context, CallbackGridState<T> state) {
+    return _GridLayouts.grid<T>(context, state._state, state.selection,
+        columns.number, true, state.makeGridCell,
+        systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
+        aspectRatio: 1);
+  }
+
+  @override
+  bool get isList => true;
+
+  const GridListLayout(this.columns);
+}
+
+class GridLayout<T extends Cell> implements GridLayouter<T> {
+  final settings.AspectRatio aspectRatio;
+
+  @override
+  final GridColumn columns;
+
+  @override
+  Widget call(BuildContext context, CallbackGridState<T> state) {
+    return _GridLayouts.grid<T>(context, state._state, state.selection,
+        columns.number, false, state.makeGridCell,
+        systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
+        aspectRatio: aspectRatio.value);
+  }
+
+  @override
+  bool get isList => false;
+
+  const GridLayout(this.columns, this.aspectRatio);
+}
+
+class ListLayout<T extends Cell> implements GridLayouter<T> {
+  @override
+  Widget call(BuildContext context, CallbackGridState<T> state) {
+    return _GridLayouts.list<T>(context, state._state, state.selection,
+        state.widget.systemNavigationInsets.bottom,
+        onPressed: state.widget.unpressable ? null : state._onPressed);
+  }
+
+  @override
+  GridColumn? get columns => null;
+
+  @override
+  bool get isList => true;
+
+  const ListLayout();
+}
+
 /// [CallbackGrid] supports multiple layout modes.
 /// [GridLayout] actually implements them all.
-class GridLayout {
+abstract class _GridLayouts {
   static Widget list<T extends Cell>(
     BuildContext context,
     GridMutationInterface<T> state,

@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/db/schemas/blacklisted_directory.dart';
-import 'package:gallery/src/db/schemas/settings.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:isar/isar.dart';
@@ -83,7 +82,6 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
                   systemNavigationInsets:
                       MediaQuery.systemGestureInsetsOf(context),
                   hasReachedEnd: () => true,
-                  aspectRatio: 1,
                   onBack: () => Navigator.pop(context),
                   immutable: false,
                   addFabPadding: true,
@@ -122,12 +120,12 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
                       },
                       true,
                     )
-                  ], GridColumn.two,
+                  ],
                       keybindsDescription: AppLocalizations.of(context)!
                           .blacklistedDirectoriesPageName,
-                      listView: true)),
+                      layout: const ListLayout())),
               canPop: !glue.isOpen() &&
-                  state.gridKey.currentState?.showSearchBar == false,
+                  state.gridKey.currentState?.showSearchBar != true,
               overrideOnPop: (pop, hideAppBar) {
                 if (glue.isOpen()) {
                   state.gridKey.currentState?.selection.reset();

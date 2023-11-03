@@ -306,11 +306,7 @@ class _FavoritesPageState extends State<FavoritesPage>
                         favorites:
                             state.settings.favorites.copy(aspectRatio: ratio))
                     .save(),
-                selectListView: (listView) => state.settings
-                    .copy(
-                        favorites:
-                            state.settings.favorites.copy(listView: listView))
-                    .save(),
+                selectListView: null,
                 selectGridColumn: (columns) => state.settings
                     .copy(
                         favorites:
@@ -322,14 +318,6 @@ class _FavoritesPageState extends State<FavoritesPage>
           noteInterface: NoteBooru.interface<FavoriteBooru>(setState),
           addFabPadding:
               Scaffold.of(context).widget.bottomNavigationBar == null,
-          segments: segmented
-              ? Segments(
-                  "Ungrouped", // TODO: change
-                  hidePinnedIcon: true,
-                  prebuiltSegments: segments,
-                )
-              : null,
-          aspectRatio: state.settings.favorites.aspectRatio.value,
           mainFocus: state.mainFocus,
           searchWidget: SearchAndFocus(
               searchWidget(context,
@@ -341,9 +329,19 @@ class _FavoritesPageState extends State<FavoritesPage>
           description: GridDescription([
             BooruGridActions.download(context, booru),
             _groupButton(context)
-          ], state.settings.favorites.columns,
+          ],
               keybindsDescription: AppLocalizations.of(context)!.favoritesLabel,
-              listView: state.settings.favorites.listView),
+              layout: segmented
+                  ? SegmentLayout(
+                      Segments(
+                        "Ungrouped", // TODO: change
+                        hidePinnedIcon: true,
+                        prebuiltSegments: segments,
+                      ),
+                      state.settings.favorites.columns,
+                      state.settings.favorites.aspectRatio)
+                  : GridLayout(state.settings.favorites.columns,
+                      state.settings.favorites.aspectRatio)),
         ),
         canPop: false, overrideOnPop: (pop, hideAppBar) {
       if (searchTextController.text.isNotEmpty) {

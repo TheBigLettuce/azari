@@ -14,6 +14,7 @@ import 'package:gallery/src/widgets/copy_move_preview.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
+import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
 import 'package:gallery/src/widgets/skeletons/make_skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:octo_image/octo_image.dart';
@@ -472,3 +473,24 @@ class _NotesPageState extends State<NotesPage>
         ));
   }
 }
+
+
+
+// class NotesPage2 extends StatefulWidget {
+//   final CallbackDescriptionNested? callback;
+
+
+//   const NotesPage2({super.key, this.callback});
+
+//   @override
+//   State<NotesPage2> createState() => _NotesPage2State();
+// }
+
+// class _NotesPage2State extends State<NotesPage2> {
+//   final state = GridSkeletonState();
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return WrappedGridPage(scaffoldKey: scaffoldKey, f: f)
+//   }
+// }

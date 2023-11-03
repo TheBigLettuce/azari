@@ -187,6 +187,81 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
     api.refresh();
   }
 
+  Segments<SystemGalleryDirectory> _makeSegments(BuildContext context) =>
+      Segments(
+        "Uncategorized",
+        segment: (cell) {
+          for (final booru in Booru.values) {
+            if (booru.url == cell.name) {
+              return ("Booru", true);
+            }
+          }
+
+          final dirTag = PostTags.g.directoryTag(cell.bucketId);
+          if (dirTag != null) {
+            return (
+              dirTag,
+              Dbs.g.blacklisted.pinnedDirectories.getSync(fastHash(dirTag)) !=
+                  null
+            );
+          }
+
+          final name = cell.name.split(" ");
+          return (
+            name.first.toLowerCase(),
+            Dbs.g.blacklisted.pinnedDirectories
+                    .getSync(fastHash(name.first.toLowerCase())) !=
+                null
+          );
+        },
+        addToSticky: (seg, {unsticky}) {
+          if (seg == "Booru" || seg == "Special") {
+            return false;
+          }
+          if (unsticky == true) {
+            Dbs.g.blacklisted.writeTxnSync(() {
+              Dbs.g.blacklisted.pinnedDirectories.deleteSync(fastHash(seg));
+            });
+          } else {
+            Dbs.g.blacklisted.writeTxnSync(() {
+              Dbs.g.blacklisted.pinnedDirectories
+                  .putSync(PinnedDirectories(seg, DateTime.now()));
+            });
+          }
+
+          return true;
+        },
+        injectedSegments: [
+          if (Dbs.g.blacklisted.favoriteMedias.countSync() != 0)
+            SystemGalleryDirectory(
+                bucketId: "favorites",
+                name: "Favorites", // change
+                tag: "",
+                volumeName: "",
+                relativeLoc: "",
+                lastModified: 0,
+                thumbFileId: Dbs.g.blacklisted.favoriteMedias
+                    .where()
+                    .sortByTimeDesc()
+                    .findFirstSync()!
+                    .id),
+          if (trashThumbId != null)
+            SystemGalleryDirectory(
+                bucketId: "trash",
+                name: "Trash", // change
+                tag: "",
+                volumeName: "",
+                relativeLoc: "",
+                lastModified: 0,
+                thumbFileId: trashThumbId!),
+        ],
+        onLabelPressed: widget.callback != null && !widget.callback!.joinable
+            ? null
+            : (label, children) =>
+                SystemGalleryDirectoriesActions.joinedDirectoriesFnc(
+                    context, label, children, extra, widget.nestedCallback),
+      );
+
   @override
   Widget build(BuildContext context) {
     return makeGridSkeleton<SystemGalleryDirectory>(
@@ -247,89 +322,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                               .copy(columns: columns))
                       .save()),
             ],
-            aspectRatio: state.settings.galleryDirectories.aspectRatio.value,
             hideAlias: state.settings.galleryDirectories.hideName,
             immutable: false,
-            segments: Segments(
-              "Uncategorized",
-              segment: (cell) {
-                for (final booru in Booru.values) {
-                  if (booru.url == cell.name) {
-                    return ("Booru", true);
-                  }
-                }
-
-                final dirTag = PostTags.g.directoryTag(cell.bucketId);
-                if (dirTag != null) {
-                  return (
-                    dirTag,
-                    Dbs.g.blacklisted.pinnedDirectories
-                            .getSync(fastHash(dirTag)) !=
-                        null
-                  );
-                }
-
-                final name = cell.name.split(" ");
-                return (
-                  name.first.toLowerCase(),
-                  Dbs.g.blacklisted.pinnedDirectories
-                          .getSync(fastHash(name.first.toLowerCase())) !=
-                      null
-                );
-              },
-              addToSticky: (seg, {unsticky}) {
-                if (seg == "Booru" || seg == "Special") {
-                  return false;
-                }
-                if (unsticky == true) {
-                  Dbs.g.blacklisted.writeTxnSync(() {
-                    Dbs.g.blacklisted.pinnedDirectories
-                        .deleteSync(fastHash(seg));
-                  });
-                } else {
-                  Dbs.g.blacklisted.writeTxnSync(() {
-                    Dbs.g.blacklisted.pinnedDirectories
-                        .putSync(PinnedDirectories(seg, DateTime.now()));
-                  });
-                }
-
-                return true;
-              },
-              injectedSegments: [
-                if (Dbs.g.blacklisted.favoriteMedias.countSync() != 0)
-                  SystemGalleryDirectory(
-                      bucketId: "favorites",
-                      name: "Favorites", // change
-                      tag: "",
-                      volumeName: "",
-                      relativeLoc: "",
-                      lastModified: 0,
-                      thumbFileId: Dbs.g.blacklisted.favoriteMedias
-                          .where()
-                          .sortByTimeDesc()
-                          .findFirstSync()!
-                          .id),
-                if (trashThumbId != null)
-                  SystemGalleryDirectory(
-                      bucketId: "trash",
-                      name: "Trash", // change
-                      tag: "",
-                      volumeName: "",
-                      relativeLoc: "",
-                      lastModified: 0,
-                      thumbFileId: trashThumbId!),
-              ],
-              onLabelPressed:
-                  widget.callback != null && !widget.callback!.joinable
-                      ? null
-                      : (label, children) =>
-                          SystemGalleryDirectoriesActions.joinedDirectoriesFnc(
-                              context,
-                              label,
-                              children,
-                              extra,
-                              widget.nestedCallback),
-            ),
             mainFocus: state.mainFocus,
             footer: widget.callback?.preview,
             initalCellCount: widget.callback != null
@@ -425,8 +419,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                         SystemGalleryDirectoriesActions.joinedDirectories(
                             context, extra, widget.nestedCallback)
                       ],
-                state.settings.galleryDirectories.columns,
-                listView: false,
                 bottomWidget:
                     widget.callback != null || widget.nestedCallback != null
                         ? CopyMovePreview.hintWidget(
@@ -436,13 +428,17 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                                 : widget.nestedCallback!.description)
                         : null,
                 keybindsDescription:
-                    AppLocalizations.of(context)!.androidGKeybindsDescription)),
+                    AppLocalizations.of(context)!.androidGKeybindsDescription,
+                layout: SegmentLayout(
+                    _makeSegments(context),
+                    state.settings.galleryDirectories.columns,
+                    state.settings.galleryDirectories.aspectRatio))),
         noDrawer: widget.noDrawer ?? false,
         canPop: widget.callback != null || widget.nestedCallback != null
             ? currentFilteringMode() == FilteringMode.noFilter &&
                 searchTextController.text.isEmpty &&
                 !widget.glue.isOpen() &&
-                state.gridKey.currentState?.showSearchBar == false
+                state.gridKey.currentState?.showSearchBar != true
             : false, overrideOnPop: (pop, hideAppBar) {
       final filterMode = currentFilteringMode();
       if (filterMode != FilteringMode.noFilter ||
