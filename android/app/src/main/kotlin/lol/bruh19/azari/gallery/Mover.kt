@@ -65,7 +65,7 @@ internal class Mover(
                 try {
                     val newScope = CoroutineScope(Dispatchers.IO)
 
-                    if (inProgress.size == cap) {
+                    if (inProgress.count() == cap) {
                         inProgress.first().join()
                         inProgress.removeFirst()
                     }
@@ -248,19 +248,50 @@ internal class Mover(
     }
 
     suspend fun refreshFilesMultiple(dirs: List<String>) {
+        if (dirs.count() == 1) {
+            refreshFiles(dirs.first(), inRefreshAtEnd = true)
+
+            return
+        }
         val time = Calendar.getInstance().time.time
 
         isLockedFilesMux.lock()
-        for ((i, d) in dirs.withIndex()) {
-            loadMedia(
-                d,
-                context,
-                time,
-                inRefreshAtEnd = i == dirs.size - 1
-            ) { content, empty, inRefresh ->
-                sendMedia(d, time, content, empty, inRefresh)
+
+        val jobs = mutableListOf<Job>()
+
+        for ((i, d) in dirs.subList(0, dirs.count() - 1).withIndex()) {
+            if (jobs.count() == cap) {
+                jobs.first().join()
+                jobs.removeFirst()
             }
+
+            jobs.add(CoroutineScope(Dispatchers.IO).launch {
+                loadMedia(
+                    d,
+                    context,
+                    time,
+                    inRefreshAtEnd = false
+                ) { content, empty, inRefresh ->
+                    sendMedia(d, time, content, empty, inRefresh)
+                }
+            })
         }
+
+        for (job in jobs) {
+            job.join()
+        }
+
+        val last = dirs.last()
+
+        loadMedia(
+            last,
+            context,
+            time,
+            inRefreshAtEnd = true
+        ) { content, empty, inRefresh ->
+            sendMedia(last, time, content, empty, inRefresh)
+        }
+
         isLockedFilesMux.unlock()
     }
 
@@ -398,7 +429,7 @@ internal class Mover(
             }
 
             selection = "($selection) AND ${MediaStore.Files.FileColumns._ID} = ${showOnly.first()}"
-            if (showOnly.size > 1) {
+            if (showOnly.count() > 1) {
                 val builder = StringBuilder();
                 builder.append(selection)
                 for (id in showOnly) {
@@ -510,7 +541,7 @@ internal class Mover(
 
         var idx = 0
         for (l in grayscale) {
-            for (i in 0 until l.size - 1) {
+            for (i in 0 until l.count() - 1) {
                 if (l[i] < l[i + 1]) {
                     hash = hash or 1 shl (64 - idx - 1)
                 }
@@ -643,9 +674,9 @@ internal class Mover(
 
 private fun medianOfPixelsFast64(grayscale: List<Double>): Double {
     val tmp = grayscale.toMutableList()
-    val pos = tmp.size / 2
+    val pos = tmp.count() / 2
 
-    return quickSelectMedian(tmp, 0, tmp.size - 1, pos)
+    return quickSelectMedian(tmp, 0, tmp.count() - 1, pos)
 }
 
 private fun quickSelectMedian(sequence: MutableList<Double>, low1: Int, hi1: Int, k: Int): Double {
@@ -686,7 +717,7 @@ private fun quickSelectMedian(sequence: MutableList<Double>, low1: Int, hi1: Int
         }
     }
 
-    if (sequence.size % 2 == 0) {
+    if (sequence.count() % 2 == 0) {
         return sequence[k - 1] / 2 + sequence[k] / 2
     }
 
@@ -748,7 +779,7 @@ private fun forwardDCT64(input: MutableList<Double>) {
     }
 
     forwardDCT32(temp.subList(0, 32))
-    forwardDCT32(temp.subList(32, temp.size))
+    forwardDCT32(temp.subList(32, temp.count()))
 
     for (i in 0 until 32 - 1) {
         input[i * 2 + 0] = temp[i]
@@ -768,7 +799,7 @@ private fun forwardDCT32(input: MutableList<Double>) {
     }
 
     forwardDCT16(temp.subList(0, 16))
-    forwardDCT16(temp.subList(16, temp.size))
+    forwardDCT16(temp.subList(16, temp.count()))
 
     for (i in 0 until 16 - 1) {
         input[i * 2 + 0] = temp[i]
@@ -788,7 +819,7 @@ private fun forwardDCT16(input: MutableList<Double>) {
     }
 
     forwardDCT8(temp.subList(0, 8))
-    forwardDCT8(temp.subList(8, temp.size))
+    forwardDCT8(temp.subList(8, temp.count()))
 
     for (i in 0 until 8 - 1) {
         input[i * 2 + 0] = temp[i]
