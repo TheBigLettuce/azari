@@ -88,6 +88,8 @@ Future initalizeDb(bool temporary) async {
       thumbnailIsar!.thumbnails
           .where()
           .differenceHashEqualTo(0)
+          .or()
+          .pathEqualTo("")
           .deleteAllSync();
     });
   }

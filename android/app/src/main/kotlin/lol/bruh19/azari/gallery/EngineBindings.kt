@@ -318,8 +318,16 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                     }
                 }
 
-                "getThumbNetwork" -> {
-                    mover.getThumbnailNetwork(call.arguments as String, result)
+                "deleteCachedThumbs" -> {
+                    mover.deleteCachedThumbs(call.arguments as List<Long>)
+                }
+
+                "clearCachedThumbs" -> {
+                    mover.clearCachedThumbs()
+                }
+
+                "thumbCacheSize" -> {
+                    mover.thumbCacheSize(result)
                 }
 
                 "emptyTrash" -> {
@@ -359,7 +367,7 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                     }
                 }
 
-                "getThumbDirectly" -> {
+                "getCachedThumb" -> {
                     val id: Long = when (call.arguments) {
                         is Long -> {
                             call.arguments as Long
@@ -374,7 +382,7 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                         }
                     }
 
-                    mover.getThumbnailCallback(id, result)
+                    mover.getCachedThumbnail(id, result)
                 }
 
                 "copyMoveFiles" -> {

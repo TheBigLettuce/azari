@@ -12,10 +12,11 @@ part 'thumbnail.g.dart';
 @collection
 class Thumbnail {
   final Id id;
-  final List<byte> data;
+  @Index()
+  final String path;
   @Index()
   final int differenceHash;
   final DateTime updatedAt;
 
-  const Thumbnail(this.id, this.updatedAt, this.data, this.differenceHash);
+  const Thumbnail(this.id, this.updatedAt, this.path, this.differenceHash);
 }

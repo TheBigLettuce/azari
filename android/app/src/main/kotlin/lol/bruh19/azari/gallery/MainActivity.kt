@@ -37,9 +37,9 @@ data class FilesDest(
 )
 
 data class MoveOp(val source: String, val rootUri: Uri, val dir: String)
-data class ThumbOp<T>(
-    val thumb: T,
-    val callback: ((ByteArray, Long) -> Unit)
+data class ThumbOp(
+    val thumb: Long,
+    val callback: ((String, Long) -> Unit)
 )
 
 class MainActivity : FlutterActivity() {
@@ -379,6 +379,6 @@ class MainActivity : FlutterActivity() {
     override fun onDestroy() {
         super.onDestroy()
         engineBindings.detach()
-        
+
     }
 }

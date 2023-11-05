@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/plugs/platform_channel.dart';
 
 import '../../db/initalize_db.dart';
 import '../../db/post_tags.dart';
@@ -39,6 +40,9 @@ class _SettingsListState extends State<SettingsList> {
   late final StreamSubscription<Settings?> _watcher;
 
   Settings? _settings = Settings.fromDb();
+
+  Future<int>? thumbnailCount =
+      Platform.isAndroid ? PlatformFunctions.thumbCacheSize() : null;
 
   @override
   void initState() {
@@ -213,55 +217,72 @@ class _SettingsListState extends State<SettingsList> {
           subtitle: Text(PostTags.g.savedTagsCount().toString()),
         ),
         if (Platform.isAndroid)
-          ListTile(
-            title: Text(AppLocalizations.of(context)!.thumbnailsCSize),
-            subtitle: Text(_calculateMBSize(Dbs.g.thumbnail!.getSizeSync())),
-            trailing: PopupMenuButton(
-              itemBuilder: (context) {
-                return [
-                  PopupMenuItem(
-                      child: TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                                context,
-                                DialogRoute(
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      title: Text(AppLocalizations.of(context)!
-                                          .areYouSure),
-                                      actions: [
-                                        TextButton(
-                                            onPressed: () {
-                                              Navigator.pop(context);
-                                            },
-                                            child: Text(
+          FutureBuilder(
+              future: thumbnailCount,
+              builder: (context, data) {
+                return ListTile(
+                  title: Text(AppLocalizations.of(context)!.thumbnailsCSize),
+                  subtitle: data.hasData
+                      ? Text(_calculateMBSize(data.data!))
+                      : Text("Loading..."),
+                  trailing: PopupMenuButton(
+                    itemBuilder: (context) {
+                      return [
+                        PopupMenuItem(
+                            child: TextButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                      context,
+                                      DialogRoute(
+                                        context: context,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            title: Text(
                                                 AppLocalizations.of(context)!
-                                                    .no)),
-                                        TextButton(
-                                            onPressed: () {
-                                              Dbs.g.thumbnail!.writeTxnSync(
-                                                  () => Dbs.g.thumbnail!
-                                                      .clearSync());
+                                                    .areYouSure),
+                                            actions: [
+                                              TextButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  child: Text(
+                                                      AppLocalizations.of(
+                                                              context)!
+                                                          .no)),
+                                              TextButton(
+                                                  onPressed: () {
+                                                    Dbs.g.thumbnail!
+                                                        .writeTxnSync(() => Dbs
+                                                            .g.thumbnail!
+                                                            .clearSync());
 
-                                              setState(() {});
-                                              Navigator.pop(context);
-                                            },
-                                            child: Text(
-                                                AppLocalizations.of(context)!
-                                                    .yes)),
-                                      ],
-                                    );
-                                  },
-                                ));
-                          },
-                          child: Text(
-                              AppLocalizations.of(context)!.purgeThumbnails)))
-                ];
-              },
-              icon: const Icon(Icons.more_horiz_rounded),
-            ),
-          ),
+                                                    PlatformFunctions
+                                                        .clearCachedThumbs();
+
+                                                    thumbnailCount =
+                                                        PlatformFunctions
+                                                            .thumbCacheSize();
+
+                                                    setState(() {});
+                                                    Navigator.pop(context);
+                                                  },
+                                                  child: Text(
+                                                      AppLocalizations.of(
+                                                              context)!
+                                                          .yes)),
+                                            ],
+                                          );
+                                        },
+                                      ));
+                                },
+                                child: Text(AppLocalizations.of(context)!
+                                    .purgeThumbnails)))
+                      ];
+                    },
+                    icon: const Icon(Icons.more_horiz_rounded),
+                  ),
+                );
+              }),
       ];
 
   String _calculateMBSize(int i) {

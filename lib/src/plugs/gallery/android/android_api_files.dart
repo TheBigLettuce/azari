@@ -51,7 +51,7 @@ class _GalleryFilesExtra implements GalleryFilesExtra {
         if (file.getThumbnail() == null) {
           count++;
 
-          thumbnails.add(PlatformFunctions.getThumbDirectly(file.id));
+          thumbnails.add(PlatformFunctions.getCachedThumb(file.id));
 
           if (thumbnails.length > 8) {
             ThumbId.addThumbnailsToDb(await thumbnails.wait);

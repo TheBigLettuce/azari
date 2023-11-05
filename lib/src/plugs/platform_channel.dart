@@ -10,9 +10,9 @@ import 'dart:io';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gallery/src/db/schemas/thumbnail.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
 import 'package:gallery/src/db/schemas/system_gallery_directory_file.dart';
-import 'package:gallery/src/db/schemas/thumbnail.dart';
 import 'package:isar/isar.dart';
 
 import '../db/initalize_db.dart';
@@ -151,14 +151,21 @@ class PlatformFunctions {
     }).then((value) => value ?? false);
   }
 
-  static Future<ThumbId> getThumbDirectly(int id) {
-    return _channel.invokeMethod("getThumbDirectly", id).then((value) =>
-        ThumbId(id: id, thumb: value["data"], differenceHash: value["hash"]));
+  static Future<int> thumbCacheSize() {
+    return _channel.invokeMethod("thumbCacheSize").then((value) => value);
   }
 
-  static Future<ThumbId> getThumbNetwork(String url, int id) {
-    return _channel.invokeMethod("getThumbNetwork", url).then((value) =>
-        ThumbId(id: id, thumb: value["data"], differenceHash: value["hash"]));
+  static Future<ThumbId> getCachedThumb(int id) {
+    return _channel.invokeMethod("getCachedThumb", id).then((value) =>
+        ThumbId(id: id, path: value["path"], differenceHash: value["hash"]));
+  }
+
+  static void clearCachedThumbs() {
+    _channel.invokeMethod("clearCachedThumbs");
+  }
+
+  static void deleteCachedThumbs(List<int> id) {
+    _channel.invokeMethod("deleteCachedThumbs", id);
   }
 
   const PlatformFunctions();
@@ -166,27 +173,38 @@ class PlatformFunctions {
 
 class ThumbId {
   final int id;
-  final Uint8List thumb;
+  final String path;
   final int differenceHash;
 
   const ThumbId(
-      {required this.id, required this.thumb, required this.differenceHash});
+      {required this.id, required this.path, required this.differenceHash});
 
   static void addThumbnailsToDb(List<ThumbId> l) {
     if (Dbs.g.thumbnail!.thumbnails.countSync() >= 3000) {
-      Dbs.g.thumbnail!.writeTxnSync(() {
-        Dbs.g.thumbnail!.thumbnails
+      final List<int> toDelete = Dbs.g.thumbnail!.writeTxnSync(() {
+        final toDelete = Dbs.g.thumbnail!.thumbnails
             .where()
             .sortByUpdatedAt()
             .limit(l.length)
-            .deleteAllSync();
+            .findAllSync()
+            .map((e) => e.id)
+            .toList();
+
+        if (toDelete.isEmpty) {
+          return [];
+        }
+
+        Dbs.g.thumbnail!.thumbnails.deleteAllSync(toDelete);
+
+        return toDelete;
       });
+
+      PlatformFunctions.deleteCachedThumbs(toDelete);
     }
 
     Dbs.g.thumbnail!.writeTxnSync(() {
       Dbs.g.thumbnail!.thumbnails.putAllSync(l
-          .map(
-              (e) => Thumbnail(e.id, DateTime.now(), e.thumb, e.differenceHash))
+          .map((e) => Thumbnail(e.id, DateTime.now(), e.path, e.differenceHash))
           .toList());
     });
   }

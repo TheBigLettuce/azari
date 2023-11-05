@@ -6,10 +6,11 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:developer';
-import 'dart:typed_data';
+import 'dart:io';
 
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/schemas/thumbnail.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/interfaces/booru.dart';
 import 'package:gallery/src/db/post_tags.dart';
@@ -22,7 +23,6 @@ import 'package:gallery/src/db/schemas/download_file.dart';
 import 'package:gallery/src/db/schemas/favorite_media.dart';
 import 'package:gallery/src/db/schemas/post.dart';
 import 'package:gallery/src/db/schemas/tags.dart';
-import 'package:gallery/src/db/schemas/thumbnail.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:transparent_image/transparent_image.dart';
@@ -365,9 +365,7 @@ class SystemGalleryDirectoryFile implements Cell {
     ];
 
     return CellData(
-        thumb: ThumbnailProvider(id, isVideo ? name : null),
-        name: name,
-        stickers: stickers);
+        thumb: ThumbnailProvider(id), name: name, stickers: stickers);
   }
 
   Thumbnail? getThumbnail() {
@@ -375,62 +373,34 @@ class SystemGalleryDirectoryFile implements Cell {
   }
 }
 
-(Uint8List, bool) androidThumbnail(int id) {
-  final thumb = Dbs.g.thumbnail!.thumbnails.getSync(id);
-  return thumb == null
-      ? (kTransparentImage, false)
-      : (thumb.data as Uint8List, true);
-}
-
-class ThumbnailProvider extends ImageProvider<MemoryImage> {
+class ThumbnailProvider extends ImageProvider {
   final int id;
-  final String? fileName;
 
   @override
-  Future<MemoryImage> obtainKey(ImageConfiguration configuration) async {
-    final (thumb, loaded) = androidThumbnail(id);
-    if (loaded) {
-      return MemoryImage(thumb);
-    }
-
-    final directThumb = await PlatformFunctions.getThumbDirectly(id);
-    if (directThumb.differenceHash == 0 && fileName != null) {
-      try {
-        final res = PostTags.g.dissassembleFilename(fileName!);
-        final api = BooruAPI.fromEnum(res.booru, page: null);
-        MemoryImage? image;
-
-        try {
-          final post = await api.singlePost(res.id);
-
-          final t =
-              await PlatformFunctions.getThumbNetwork(post.previewUrl, id);
-
-          ThumbId.addThumbnailsToDb([t]);
-
-          image = MemoryImage(t.thumb);
-        } catch (e) {
-          log("video thumb 2", level: Level.WARNING.value, error: e);
-        }
-
-        api.close();
-
-        return image ?? MemoryImage(kTransparentImage);
-      } catch (_) {
-        ThumbId.addThumbnailsToDb([directThumb]);
-
-        return MemoryImage(directThumb.thumb);
+  Future<Object> obtainKey(ImageConfiguration configuration) async {
+    final thumb = Dbs.g.thumbnail!.thumbnails.getSync(id);
+    if (thumb != null) {
+      if (thumb.path.isEmpty || thumb.differenceHash == 0) {
+        return MemoryImage(kTransparentImage);
       }
-    } else {
-      ThumbId.addThumbnailsToDb([directThumb]);
-
-      return MemoryImage(directThumb.thumb);
+      return FileImage(File(thumb.path));
     }
+
+    final cachedThumb = await PlatformFunctions.getCachedThumb(id);
+    ThumbId.addThumbnailsToDb([cachedThumb]);
+
+    return FileImage(File(cachedThumb.path));
   }
 
   @override
-  ImageStreamCompleter loadImage(MemoryImage key, ImageDecoderCallback decode) {
-    return key.loadImage(key, decode);
+  ImageStreamCompleter loadImage(Object key, ImageDecoderCallback decode) {
+    if (key is MemoryImage) {
+      return key.loadImage(key, decode);
+    } else if (key is FileImage) {
+      return key.loadImage(key, decode);
+    }
+
+    throw "invalid key: $key";
   }
 
   @override
@@ -442,7 +412,7 @@ class ThumbnailProvider extends ImageProvider<MemoryImage> {
     return other is ThumbnailProvider && other.id == id;
   }
 
-  const ThumbnailProvider(this.id, this.fileName);
+  const ThumbnailProvider(this.id);
 
   @override
   int get hashCode => id.hashCode;

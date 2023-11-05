@@ -33,12 +33,79 @@ import okio.buffer
 import okio.sink
 import okio.use
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.FileOutputStream
 import java.util.Calendar
 import kotlin.coroutines.CoroutineContext
 import kotlin.io.path.Path
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.extension
+
+internal class CacheLocker(private val context: Context) {
+    private val mux = Mutex()
+
+    suspend fun put(image: ByteArrayOutputStream, id: Long): String? {
+        mux.lock()
+
+        var ret: String? = null
+
+        val dir = directoryFile()
+        val file = dir.resolve(id.toString())
+        try {
+            if (!file.exists()) {
+                file.writeBytes(image.toByteArray())
+            }
+            ret = file.absolutePath
+        } catch (e: Exception) {
+            Log.e("CacheLocker.put", e.toString())
+        }
+
+        mux.unlock()
+
+        return ret
+    }
+
+    suspend fun removeAll(ids: List<Long>) {
+        mux.lock()
+
+        try {
+            val dir = directoryFile()
+
+            for (id in ids) {
+                dir.resolve(id.toString()).delete()
+            }
+        } catch (e: Exception) {
+            Log.e("CacheLocker.remove", e.toString())
+        }
+
+        mux.unlock()
+    }
+
+    suspend fun clear() {
+        mux.lock()
+
+        directoryFile().deleteRecursively()
+
+        mux.unlock()
+    }
+
+    private fun directoryFile(): File {
+        val dir = context.filesDir.resolve(DIRECTORY)
+        dir.mkdir()
+
+        return dir
+    }
+
+    fun count(): Long {
+        return directoryFile().walk().sumOf { file ->
+            return@sumOf file.length()
+        }
+    }
+
+    companion object {
+        private val DIRECTORY = "thumbnailsCache"
+    }
+}
 
 internal class Mover(
     private val coContext: CoroutineContext,
@@ -51,12 +118,13 @@ internal class Mover(
     } else {
         Runtime.getRuntime().availableProcessors() - 1
     }
-    private val thumbnailsChannel = Channel<ThumbOp<Any>>(capacity = cap)
+    private val thumbnailsChannel = Channel<ThumbOp>(capacity = cap)
     private val scope = CoroutineScope(coContext + Dispatchers.IO)
 
     private val isLockedDirMux = Mutex()
     private val isLockedFilesMux = Mutex()
     val trashDeleteMux = Mutex()
+    private val locker = CacheLocker(context)
 
     init {
         scope.launch {
@@ -71,23 +139,16 @@ internal class Mover(
                     }
 
                     inProgress.add(newScope.launch {
-
-                        var res: Pair<ByteArray, Long>
+                        var res: Pair<String, Long>
                         try {
-                            res = if (uris.thumb is String) {
-                                getThumb(Uri.parse(uris.thumb), true)
-                            } else if (uris.thumb is Long) {
-                                val uri = ContentUris.withAppendedId(
-                                    MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
-                                    uris.thumb
-                                )
+                            val uri = ContentUris.withAppendedId(
+                                MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                                uris.thumb
+                            )
 
-                                getThumb(uri, false)
-                            } else {
-                                throw Exception("invalid .thumb type")
-                            }
+                            res = getThumb(uris.thumb, uri, false)
                         } catch (e: Exception) {
-                            res = Pair(transparentImage, 0)
+                            res = Pair("", 0)
                             Log.e("thumbnail coro", e.toString())
                         }
 
@@ -161,18 +222,20 @@ internal class Mover(
         }
     }
 
-    fun getThumbnailNetwork(url: String, result: MethodChannel.Result) {
+    fun deleteCachedThumbs(thumbs: List<Long>) {
         scope.launch {
-            thumbnailsChannel.send(ThumbOp(url) { byt, hash ->
-                result.success(mapOf<String, Any>(Pair("data", byt), Pair("hash", hash)))
-            })
+            locker.removeAll(thumbs)
         }
     }
 
-    fun getThumbnailCallback(thumb: Long, result: MethodChannel.Result) {
+    fun clearCachedThumbs() {
+        scope.launch { locker.clear() }
+    }
+
+    fun getCachedThumbnail(thumb: Long, result: MethodChannel.Result) {
         scope.launch {
-            thumbnailsChannel.send(ThumbOp(thumb) { byt, hash ->
-                result.success(mapOf<String, Any>(Pair("data", byt), Pair("hash", hash)))
+            thumbnailsChannel.send(ThumbOp(thumb) { path, hash ->
+                result.success(mapOf<String, Any>(Pair("path", path), Pair("hash", hash)))
             })
         }
     }
@@ -311,6 +374,12 @@ internal class Mover(
                 emptyArg = empty
             ) {}
         }.join()
+    }
+
+    fun thumbCacheSize(res: MethodChannel.Result) {
+        CoroutineScope(Dispatchers.IO).launch {
+            res.success(locker.count())
+        }
     }
 
     fun refreshGallery() {
@@ -552,7 +621,7 @@ internal class Mover(
         return hash
     }
 
-    private fun getThumb(uri: Uri, network: Boolean): Pair<ByteArray, Long> {
+    private suspend fun getThumb(id: Long, uri: Uri, network: Boolean): Pair<String, Long> {
         val thumb = if (network) Glide.with(context).asBitmap().load(uri).submit()
             .get() else context.contentResolver.loadThumbnail(uri, Size(320, 320), null)
         val stream = ByteArrayOutputStream()
@@ -563,12 +632,16 @@ internal class Mover(
 
         thumb.compress(Bitmap.CompressFormat.JPEG, 80, stream)
 
-        val bytes = stream.toByteArray()
+        val path = locker.put(stream, id)
 
         stream.reset()
         thumb.recycle()
 
-        return Pair(bytes, hash)
+        if (path == null) {
+            return Pair("", 0)
+        }
+
+        return Pair(path, hash)
     }
 
     private suspend fun refreshMediastore(context: Context, galleryApi: GalleryApi) {
