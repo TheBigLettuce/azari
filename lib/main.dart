@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -165,7 +166,7 @@ void main() async {
 
 void changeExceptionErrorColors() {
   RenderErrorBox.backgroundColor = Colors.blue.shade800;
-  // RenderErrorBox.textStyle = ui.TextStyle(color: Colors.white70);
+  RenderErrorBox.textStyle = ui.TextStyle(color: Colors.white70);
 }
 
 void changeSystemUiOverlay(BuildContext context) {

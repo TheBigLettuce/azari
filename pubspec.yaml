@@ -77,6 +77,8 @@ dependencies:
   dynamic_color: ^1.6.7
   qr_flutter: ^4.1.0
   mobile_scanner: ^3.5.1
+  stream_transform: ^2.1.0
+  stream_channel: ^2.1.2
 
 dev_dependencies:
   flutter_test:

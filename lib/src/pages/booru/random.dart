@@ -63,6 +63,8 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
 
   (double, double?, int?)? _currentScroll;
 
+  SafeMode? safeMode;
+
   int? currentSkipped;
 
   bool reachedEnd = false;
@@ -117,7 +119,7 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
       Dbs.g.main.writeTxnSync(() => Dbs.g.main.gridStateBoorus.putSync(
           GridStateBooru(widget.api.booru,
               tags: widget.tags,
-              safeMode: state.settings.safeMode,
+              safeMode: safeMode ?? state.settings.safeMode,
               page: widget.api.currentPage,
               scrollPositionTags: _currentScroll!.$2,
               selectedPost: _currentScroll!.$3,
@@ -135,10 +137,11 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
     if (widget.state != null) {
       final prev =
           Dbs.g.main.gridStateBoorus.getByNameSync(widget.state!.name)!;
+
       return prev.safeMode;
     }
 
-    return state.settings.safeMode;
+    return safeMode ?? state.settings.safeMode;
   }
 
   Future<int> _clearAndRefresh() async {
@@ -274,7 +277,11 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
 
                                           setState(() {});
                                         }
-                                      : null)
+                                      : (s) {
+                                          setState(() {
+                                            safeMode = s;
+                                          });
+                                        })
                             ],
                             addIconsImage: (post) => [
                               BooruGridActions.favorites(context, post),
