@@ -7,49 +7,59 @@
 
 import 'package:flutter/material.dart';
 
-Widget gestureDeadZones(BuildContext context,
-    {required Widget child, bool left = false, bool right = false}) {
-  final systemInsets = MediaQuery.systemGestureInsetsOf(context);
-  if (systemInsets == EdgeInsets.zero) {
-    return child;
-  }
+class GestureDeadZones extends StatelessWidget {
+  final bool left;
+  final bool right;
 
-  return Stack(
-    children: [
-      child,
-      if (left)
-        Align(
-          alignment: Alignment.bottomLeft,
-          child: Padding(
-            padding: EdgeInsets.only(
-                top: kToolbarHeight +
-                    MediaQuery.systemGestureInsetsOf(context).top),
-            child: AbsorbPointer(
-              child: SizedBox(width: systemInsets.left, child: Container()),
+  final Widget child;
+
+  const GestureDeadZones(
+      {super.key, required this.child, this.left = false, this.right = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final systemInsets = MediaQuery.systemGestureInsetsOf(context);
+    if (systemInsets == EdgeInsets.zero) {
+      return child;
+    }
+
+    return Stack(
+      children: [
+        child,
+        if (left)
+          Align(
+            alignment: Alignment.bottomLeft,
+            child: Padding(
+              padding: EdgeInsets.only(
+                  top: kToolbarHeight +
+                      MediaQuery.systemGestureInsetsOf(context).top),
+              child: AbsorbPointer(
+                child: SizedBox(width: systemInsets.left, child: Container()),
+              ),
             ),
           ),
-        ),
-      if (right)
-        Align(
-          alignment: Alignment.bottomRight,
-          child: Padding(
-            padding: EdgeInsets.only(
-                top: kToolbarHeight +
-                    MediaQuery.systemGestureInsetsOf(context).top),
-            child: AbsorbPointer(
-              child: SizedBox(width: systemInsets.left, child: Container()),
+        if (right)
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: EdgeInsets.only(
+                  top: kToolbarHeight +
+                      MediaQuery.systemGestureInsetsOf(context).top),
+              child: AbsorbPointer(
+                child: SizedBox(width: systemInsets.left, child: Container()),
+              ),
             ),
           ),
-        ),
-      Align(
-        alignment: Alignment.bottomCenter,
-        child: AbsorbPointer(
-          child: SizedBox(
-            height: systemInsets.bottom,
-            child: Container(),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: AbsorbPointer(
+            child: SizedBox(
+              height: systemInsets.bottom,
+              child: Container(),
+            ),
           ),
-        ),
-      )
-    ],
-  );
+        )
+      ],
+    );
+  }
 }

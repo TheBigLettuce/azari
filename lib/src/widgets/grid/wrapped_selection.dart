@@ -29,77 +29,15 @@ class _WrappedSelection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget make() => Stack(
-          children: [
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                  padding: const EdgeInsets.all(0.5),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : null,
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: GestureDetector(
-                      onTap: thisIndx.isNegative
-                          ? null
-                          : () {
-                              selectUnselect();
-                            },
-                      onLongPress: thisIndx.isNegative
-                          ? null
-                          : () {
-                              selectUntil(thisIndx);
-                              HapticFeedback.vibrate();
-                            },
-                      child: AbsorbPointer(
-                        absorbing: selectionEnabled,
-                        child: child,
-                      ),
-                    ),
-                  )),
-            ),
-            if (isSelected) ...[
-              GestureDetector(
-                onTap: thisIndx.isNegative
-                    ? null
-                    : () {
-                        selectUnselect();
-                      },
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Align(
-                    alignment: Alignment.topRight,
-                    child: SizedBox(
-                      width: Theme.of(context).iconTheme.size,
-                      height: Theme.of(context).iconTheme.size,
-                      child: Container(
-                        decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.5),
-                            shape: BoxShape.circle),
-                        child: Icon(
-                          Icons.check_outlined,
-                          color: Theme.of(context).brightness !=
-                                  Brightness.light
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.primaryContainer,
-                          shadows: const [
-                            Shadow(blurRadius: 0, color: Colors.black)
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              )
-            ],
-          ],
-        );
-
     return thisIndx.isNegative
-        ? make()
+        ? _WrappedSelectionCore(
+            isSelected: isSelected,
+            selectUnselect: selectUnselect,
+            thisIndx: thisIndx,
+            selectionEnabled: selectionEnabled,
+            selectUntil: selectUntil,
+            child: child,
+          )
         : DragTarget(
             onAccept: (data) {
               selectUnselect();
@@ -134,9 +72,104 @@ class _WrappedSelection extends StatelessWidget {
                 data: 1,
                 affinity: Axis.horizontal,
                 feedback: const SizedBox(),
-                child: make(),
+                child: _WrappedSelectionCore(
+                  isSelected: isSelected,
+                  selectUnselect: selectUnselect,
+                  thisIndx: thisIndx,
+                  selectionEnabled: selectionEnabled,
+                  selectUntil: selectUntil,
+                  child: child,
+                ),
               );
             },
           );
+  }
+}
+
+class _WrappedSelectionCore extends StatelessWidget {
+  final int thisIndx;
+  final bool isSelected;
+  final void Function() selectUnselect;
+  final void Function(int indx) selectUntil;
+  final bool selectionEnabled;
+  final Widget child;
+
+  const _WrappedSelectionCore({
+    required this.isSelected,
+    required this.selectUnselect,
+    required this.thisIndx,
+    required this.selectionEnabled,
+    required this.selectUntil,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+              padding: const EdgeInsets.all(0.5),
+              child: Container(
+                decoration: BoxDecoration(
+                  color:
+                      isSelected ? Theme.of(context).colorScheme.primary : null,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: GestureDetector(
+                  onTap: thisIndx.isNegative
+                      ? null
+                      : () {
+                          selectUnselect();
+                        },
+                  onLongPress: thisIndx.isNegative
+                      ? null
+                      : () {
+                          selectUntil(thisIndx);
+                          HapticFeedback.vibrate();
+                        },
+                  child: AbsorbPointer(
+                    absorbing: selectionEnabled,
+                    child: child,
+                  ),
+                ),
+              )),
+        ),
+        if (isSelected) ...[
+          GestureDetector(
+            onTap: thisIndx.isNegative
+                ? null
+                : () {
+                    selectUnselect();
+                  },
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Align(
+                alignment: Alignment.topRight,
+                child: SizedBox(
+                  width: Theme.of(context).iconTheme.size,
+                  height: Theme.of(context).iconTheme.size,
+                  child: Container(
+                    decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        shape: BoxShape.circle),
+                    child: Icon(
+                      Icons.check_outlined,
+                      color: Theme.of(context).brightness != Brightness.light
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.primaryContainer,
+                      shadows: const [
+                        Shadow(blurRadius: 0, color: Colors.black)
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          )
+        ],
+      ],
+    );
   }
 }

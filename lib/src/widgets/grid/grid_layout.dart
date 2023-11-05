@@ -551,7 +551,7 @@ abstract class _GridLayouts {
           }
           final val = segRows[indx];
           if (val is _SegSticky) {
-            return Segments.label(context, val.seg,
+            return SegmentLabel(val.seg,
                 sticky: val.sticky,
                 hidePinnedIcon: segments.hidePinnedIcon,
                 onLongPress: !val.unstickable
@@ -749,7 +749,7 @@ abstract class _GridLayouts {
           }
           final val = segRows[indx];
           if (val is _SegSticky) {
-            return Segments.label(context, val.seg,
+            return SegmentLabel(val.seg,
                 sticky: val.sticky,
                 hidePinnedIcon: segments.hidePinnedIcon,
                 onLongPress: !val.unstickable

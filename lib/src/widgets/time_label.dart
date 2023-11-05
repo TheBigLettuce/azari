@@ -9,13 +9,24 @@ import 'package:flutter/material.dart';
 
 import 'settings_label.dart';
 
-Widget timeLabel((int, int, int) time, TextStyle titleStyle, DateTime now,
-    {bool removePadding = false}) {
-  if (time == (now.day, now.month, now.year)) {
-    return settingsLabel("Today", titleStyle, removePadding: removePadding);
-  } else {
-    return settingsLabel(
-        "${time.$1}/${time.$2}/${time.$3.toString().substring(2)}", titleStyle,
-        removePadding: removePadding);
+class TimeLabel extends StatelessWidget {
+  final (int, int, int) time;
+  final TextStyle titleStyle;
+  final DateTime now;
+  final bool removePadding;
+
+  const TimeLabel(this.time, this.titleStyle, this.now,
+      {super.key, this.removePadding = false});
+
+  @override
+  Widget build(BuildContext context) {
+    if (time == (now.day, now.month, now.year)) {
+      return SettingsLabel("Today", titleStyle, removePadding: removePadding);
+    } else {
+      return SettingsLabel(
+          "${time.$1}/${time.$2}/${time.$3.toString().substring(2)}",
+          titleStyle,
+          removePadding: removePadding);
+    }
   }
 }

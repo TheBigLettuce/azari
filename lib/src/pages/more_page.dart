@@ -21,7 +21,7 @@ class MorePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: azariIcon(context, color: Theme.of(context).colorScheme.primary),
+        title: AzariIcon(color: Theme.of(context).colorScheme.primary),
         centerTitle: true,
       ),
       body: ListView(

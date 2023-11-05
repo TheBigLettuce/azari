@@ -5,26 +5,26 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../../pages/settings/settings_list.dart';
 import 'end_drawer_heading.dart';
 
-Widget? makeEndDrawerSettings(
-    BuildContext context, GlobalKey<ScaffoldState> key) {
-  if (Platform.isAndroid || Platform.isIOS) {
-    return null;
-  }
+class EndDrawerSettings extends StatelessWidget {
+  final GlobalKey<ScaffoldState> scaffoldKey;
 
-  return Drawer(
-      child: CustomScrollView(
-    slivers: [
-      endDrawerHeading(
-          context, AppLocalizations.of(context)!.settingsPageName, key),
-      SettingsList(sliver: true, scaffoldKey: key)
-    ],
-  ));
+  const EndDrawerSettings(this.scaffoldKey, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+        child: CustomScrollView(
+      slivers: [
+        EndDrawerHeading(
+            AppLocalizations.of(context)!.settingsPageName, scaffoldKey),
+        SettingsList(sliver: true, scaffoldKey: scaffoldKey)
+      ],
+    ));
+  }
 }

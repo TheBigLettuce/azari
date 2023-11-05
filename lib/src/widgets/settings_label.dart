@@ -7,9 +7,17 @@
 
 import 'package:flutter/material.dart';
 
-Widget settingsLabel(String string, TextStyle style,
-        {bool removePadding = false}) =>
-    removePadding
+class SettingsLabel extends StatelessWidget {
+  final String string;
+  final TextStyle style;
+  final bool removePadding;
+
+  const SettingsLabel(this.string, this.style,
+      {super.key, this.removePadding = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return removePadding
         ? Text(
             string,
             style: style,
@@ -22,3 +30,5 @@ Widget settingsLabel(String string, TextStyle style,
               style: style,
             ),
           );
+  }
+}

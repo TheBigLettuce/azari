@@ -19,7 +19,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../db/linear_isar_loader.dart';
 import '../../widgets/grid/wrap_grid_page.dart';
 import '../../widgets/skeletons/grid_skeleton_state_filter.dart';
-import '../../widgets/skeletons/make_grid_skeleton.dart';
+import '../../widgets/skeletons/grid_skeleton.dart';
 
 class BlacklistedDirectories extends StatefulWidget {
   const BlacklistedDirectories({super.key});
@@ -71,10 +71,9 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
   Widget build(BuildContext context) {
     return WrappedGridPage<BlacklistedDirectory>(
         scaffoldKey: state.scaffoldKey,
-        f: (glue) => makeGridSkeleton(
-              context,
+        f: (glue) => GridSkeleton(
               state,
-              CallbackGrid<BlacklistedDirectory>(
+              (context) => CallbackGrid<BlacklistedDirectory>(
                   key: state.gridKey,
                   getCell: loader.getCell,
                   initalScrollPosition: 0,

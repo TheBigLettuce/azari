@@ -52,7 +52,7 @@ mixin SearchLaunchGrid<T extends Cell>
 
   @override
   Widget searchWidget(BuildContext context, {String? hint, int? count}) =>
-      autocompleteWidget(searchTextController, (s) {
+      AutocompleteWidget(searchTextController, (s) {
         currentlyHighlightedTag = s;
       },
           (s) => TagManagerNotifier.of(context).onTagPressed(context, s,

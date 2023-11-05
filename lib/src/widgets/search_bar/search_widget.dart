@@ -53,7 +53,7 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
   String _makeHint(BuildContext context) =>
       "${AppLocalizations.of(context)!.filterHint}${widget.hint != null ? ' ${widget.hint}' : ''}";
 
-  Widget _autocompleteWidget() => autocompleteWidget(
+  Widget _autocompleteWidget() => AutocompleteWidget(
         widget.instance.searchTextController,
         (p0) {},
         (p0) {},

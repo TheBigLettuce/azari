@@ -54,7 +54,7 @@ Iterable<Widget> makeTags(
   }
 
   return [
-    settingsLabel(
+    SettingsLabel(
         AppLocalizations.of(context)!.tagsInfoPage,
         Theme.of(context)
             .textTheme

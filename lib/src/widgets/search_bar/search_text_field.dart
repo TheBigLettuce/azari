@@ -13,32 +13,41 @@ import 'autocomplete/autocomplete_bar_decoration.dart';
 import '../notifiers/filter.dart';
 import '../notifiers/tag_refresh.dart';
 
-Widget searchTextField(BuildContext context, FilterNotifierData data,
-    String filename, bool showDeleteButton) {
-  return TextField(
-    decoration: autocompleteBarDecoration(context, () {
-      data.searchController.clear();
-      data.focusMain();
-    },
-        showDeleteButton
-            ? [
-                IconButton(
-                    onPressed: () {
-                      final notifier = TagRefreshNotifier.maybeOf(context);
-                      PostTags.g.deletePostTags(filename);
-                      notifier?.call();
-                    },
-                    icon: const Icon(Icons.delete))
-              ]
-            : null,
-        showSearch: true,
-        ignoreFocusNotifier: false,
-        roundBorders: false,
-        hint: AppLocalizations.of(context)!.filterHint),
-    focusNode: data.searchFocus,
-    controller: data.searchController,
-    onSubmitted: (value) {
-      data.focusMain();
-    },
-  );
+class SearchTextField extends StatelessWidget {
+  final FilterNotifierData data;
+  final String filename;
+  final bool showDeleteButton;
+
+  const SearchTextField(this.data, this.filename, this.showDeleteButton,
+      {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      decoration: autocompleteBarDecoration(context, () {
+        data.searchController.clear();
+        data.focusMain();
+      },
+          showDeleteButton
+              ? [
+                  IconButton(
+                      onPressed: () {
+                        final notifier = TagRefreshNotifier.maybeOf(context);
+                        PostTags.g.deletePostTags(filename);
+                        notifier?.call();
+                      },
+                      icon: const Icon(Icons.delete))
+                ]
+              : null,
+          showSearch: true,
+          ignoreFocusNotifier: false,
+          roundBorders: false,
+          hint: AppLocalizations.of(context)!.filterHint),
+      focusNode: data.searchFocus,
+      controller: data.searchController,
+      onSubmitted: (value) {
+        data.focusMain();
+      },
+    );
+  }
 }

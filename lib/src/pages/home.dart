@@ -18,7 +18,7 @@ import '../db/schemas/settings.dart';
 import '../db/state_restoration.dart';
 import '../interfaces/booru.dart';
 import '../widgets/grid/selection_glue_state.dart';
-import '../widgets/skeletons/make_home_skeleton.dart';
+import '../widgets/skeletons/home_skeleton.dart';
 import '../widgets/skeletons/skeleton_state.dart';
 import 'booru/main.dart';
 import 'favorites.dart';
@@ -168,8 +168,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return makeHomeSkeleton(
-      context,
+    return HomeSkeleton(
       "Home",
       state,
       (context) {
@@ -188,7 +187,9 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                 end: Offset(0, kBottomNavigationBarHeight)),
             SwapEffect(
               builder: (context, _) {
-                return glueState.widget(context) ?? const SizedBox();
+                return glueState.actions != null
+                    ? GlueBottomAppBar(glueState.actions!)
+                    : const SizedBox();
               },
             )
           ],

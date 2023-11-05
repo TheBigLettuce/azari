@@ -49,36 +49,48 @@ class Segments<T> {
       this.injectedSegments = const [],
       this.injectedLabel = "Special"})
       : assert(prebuiltSegments == null || segment == null);
+}
 
-  static Widget label(BuildContext context, String text,
-          {void Function()? onLongPress,
-          required void Function()? onPress,
-          required bool sticky,
-          required bool hidePinnedIcon}) =>
-      Padding(
-          padding: const EdgeInsets.only(bottom: 8, top: 16, left: 8, right: 8),
-          child: GestureDetector(
-            onLongPress: onLongPress,
-            onTap: onPress,
-            child: SizedBox.fromSize(
-              size: Size.fromHeight(
-                  (Theme.of(context).textTheme.headlineLarge?.fontSize ?? 24) +
-                      8),
-              child: Stack(
-                children: [
-                  Text(
-                    text,
-                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        letterSpacing: 2,
-                        color: Theme.of(context).colorScheme.secondary),
+class SegmentLabel extends StatelessWidget {
+  final String text;
+  final void Function()? onLongPress;
+  final void Function()? onPress;
+  final bool sticky;
+  final bool hidePinnedIcon;
+  const SegmentLabel(this.text,
+      {super.key,
+      required this.hidePinnedIcon,
+      this.onLongPress,
+      required this.onPress,
+      required this.sticky});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+        padding: const EdgeInsets.only(bottom: 8, top: 16, left: 8, right: 8),
+        child: GestureDetector(
+          onLongPress: onLongPress,
+          onTap: onPress,
+          child: SizedBox.fromSize(
+            size: Size.fromHeight(
+                (Theme.of(context).textTheme.headlineLarge?.fontSize ?? 24) +
+                    8),
+            child: Stack(
+              children: [
+                Text(
+                  text,
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      letterSpacing: 2,
+                      color: Theme.of(context).colorScheme.secondary),
+                ),
+                if (sticky && !hidePinnedIcon)
+                  const Align(
+                    alignment: Alignment.centerRight,
+                    child: Icon(Icons.push_pin_outlined),
                   ),
-                  if (sticky && !hidePinnedIcon)
-                    const Align(
-                      alignment: Alignment.centerRight,
-                      child: Icon(Icons.push_pin_outlined),
-                    ),
-                ],
-              ),
+              ],
             ),
-          ));
+          ),
+        ));
+  }
 }

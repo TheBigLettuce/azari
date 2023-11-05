@@ -22,7 +22,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../db/linear_isar_loader.dart';
 import '../widgets/grid/wrap_grid_page.dart';
 import '../widgets/skeletons/grid_skeleton_state_filter.dart';
-import '../widgets/skeletons/make_grid_skeleton.dart';
+import '../widgets/skeletons/grid_skeleton.dart';
 
 class Downloads extends StatefulWidget {
   const Downloads({super.key});
@@ -118,10 +118,9 @@ class _DownloadsState extends State<Downloads>
   Widget build(BuildContext context) {
     return WrappedGridPage<DownloadFile>(
         scaffoldKey: state.scaffoldKey,
-        f: (glue) => makeGridSkeleton(
-              context,
+        f: (glue) => GridSkeleton(
               state,
-              CallbackGrid<DownloadFile>(
+              (context) => CallbackGrid<DownloadFile>(
                   key: state.gridKey,
                   getCell: loader.getCell,
                   initalScrollPosition: 0,

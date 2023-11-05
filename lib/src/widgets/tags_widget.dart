@@ -28,7 +28,8 @@ class TagsWidget extends StatelessWidget {
       required this.deleteTag,
       required this.onPress});
 
-  Widget _make(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     final listWraps = <Widget>[
       Padding(
         padding:
@@ -59,7 +60,7 @@ class TagsWidget extends StatelessWidget {
       if (time == null) {
         time = (e.time.day, e.time.month, e.time.year);
       } else if (time != (e.time.day, e.time.month, e.time.year)) {
-        listWraps.add(timeLabel(time, titleStyle, timeNow));
+        listWraps.add(TimeLabel(time, titleStyle, timeNow));
         listWraps.add(Padding(
           padding: const EdgeInsets.only(left: 16),
           child: Wrap(
@@ -111,7 +112,7 @@ class TagsWidget extends StatelessWidget {
 
     if (list.isNotEmpty) {
       final t = tags.last.time;
-      listWraps.add(timeLabel((t.day, t.month, t.year), titleStyle, timeNow));
+      listWraps.add(TimeLabel((t.day, t.month, t.year), titleStyle, timeNow));
       listWraps.add(Padding(
         padding: const EdgeInsets.only(left: 16),
         child: Wrap(
@@ -121,10 +122,5 @@ class TagsWidget extends StatelessWidget {
     }
 
     return ListView(children: listWraps);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return _make(context);
   }
 }

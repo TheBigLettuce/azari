@@ -199,7 +199,7 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
         TagsWidget(
                 redBackground: true,
                 tags: _excludedTags,
-                searchBar: autocompleteWidget(
+                searchBar: AutocompleteWidget(
                   excludedTagsTextController,
                   (s) {
                     excludedHighlight = s;

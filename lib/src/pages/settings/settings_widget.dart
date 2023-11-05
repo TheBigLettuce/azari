@@ -11,7 +11,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../interfaces/booru.dart';
 import '../../db/schemas/settings.dart';
 import '../../widgets/restart_widget.dart';
-import '../../widgets/skeletons/make_skeleton_settings.dart';
+import '../../widgets/skeletons/skeleton_settings.dart';
 import '../../widgets/skeletons/skeleton_state.dart';
 import 'settings_list.dart';
 
@@ -37,13 +37,13 @@ class _SettingsWidgetState extends State<SettingsWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return makeSkeletonSettings(
-        context,
-        AppLocalizations.of(context)!.settingsPageName,
-        skeletonState,
-        SettingsList(
-          sliver: true,
-          scaffoldKey: skeletonState.scaffoldKey,
-        ));
+    return SkeletonSettings(
+      AppLocalizations.of(context)!.settingsPageName,
+      skeletonState,
+      child: SettingsList(
+        sliver: true,
+        scaffoldKey: skeletonState.scaffoldKey,
+      ),
+    );
   }
 }

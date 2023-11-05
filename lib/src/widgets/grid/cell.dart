@@ -132,7 +132,7 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
                               direction: Axis.vertical,
                               children: widget._data.stickers
                                   .where((element) => element.right)
-                                  .map((e) => Sticker.widget(context, e))
+                                  .map((e) => StickerWidget(e))
                                   .toList(),
                             )),
                       ),
@@ -142,7 +142,7 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
                             direction: Axis.vertical,
                             children: widget._data.stickers
                                 .where((element) => !element.right)
-                                .map((e) => Sticker.widget(context, e))
+                                .map((e) => StickerWidget(e))
                                 .toList(),
                           ))
                     ],

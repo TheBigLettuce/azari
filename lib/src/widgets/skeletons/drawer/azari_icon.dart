@@ -7,7 +7,16 @@
 
 import 'package:flutter/material.dart';
 
-Widget azariIcon(BuildContext context, {Color? color}) => Icon(
+class AzariIcon extends StatelessWidget {
+  final Color? color;
+
+  const AzariIcon({super.key, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(
       const IconData(0x963F, fontFamily: "ZenKurenaido"),
       color: color,
-    ); // 阿
+    );
+  }
+}

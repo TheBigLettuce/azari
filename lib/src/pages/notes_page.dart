@@ -20,7 +20,7 @@ import 'package:gallery/src/widgets/copy_move_preview.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
-import 'package:gallery/src/widgets/skeletons/make_grid_skeleton.dart';
+import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
 import 'package:isar/isar.dart';
 import 'package:octo_image/octo_image.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -83,32 +83,31 @@ class _NotePageContainer<T extends Cell> {
         ).animate().fadeIn());
   }
 
-  Widget widget(BuildContext context) => makeGridSkeleton<T>(
-      context,
+  Widget widget(BuildContext context) => GridSkeleton<T>(
       state,
-      CallbackGrid<T>(
-        key: state.gridKey,
-        getCell: notes.get,
-        initalScrollPosition: 0,
-        scaffoldKey: state.scaffoldKey,
-        immutable: false,
-        onBack: () {
-          Navigator.pop(context);
-        },
-        systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context),
-        hasReachedEnd: notes.reachedEnd,
-        selectionGlue: SelectionGlue.empty(context),
-        mainFocus: state.mainFocus,
-        refresh: notes.refresh,
-        noteInterface: noteInterface,
-        addIconsImage: (_) => addActions,
-        initalCellCount: notes.count(),
-        loadNext: notes.next,
-        description: GridDescription<T>([],
-            keybindsDescription: "Notes page",
-            showAppBar: false,
-            layout: NoteLayout<T>(GridColumn.three, getText)),
-      ),
+      (context) => CallbackGrid<T>(
+            key: state.gridKey,
+            getCell: notes.get,
+            initalScrollPosition: 0,
+            scaffoldKey: state.scaffoldKey,
+            immutable: false,
+            onBack: () {
+              Navigator.pop(context);
+            },
+            systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context),
+            hasReachedEnd: notes.reachedEnd,
+            selectionGlue: SelectionGlue.empty(context),
+            mainFocus: state.mainFocus,
+            refresh: notes.refresh,
+            noteInterface: noteInterface,
+            addIconsImage: (_) => addActions,
+            initalCellCount: notes.count(),
+            loadNext: notes.next,
+            description: GridDescription<T>([],
+                keybindsDescription: "Notes page",
+                showAppBar: false,
+                layout: NoteLayout<T>(GridColumn.three, getText)),
+          ),
       canPop: true);
 
   void dispose() {

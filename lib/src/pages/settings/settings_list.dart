@@ -78,7 +78,7 @@ class _SettingsListState extends State<SettingsList> {
   }
 
   List<Widget> makeList(BuildContext context, TextStyle titleStyle) => [
-        settingsLabel(AppLocalizations.of(context)!.booruLabel, titleStyle),
+        SettingsLabel(AppLocalizations.of(context)!.booruLabel, titleStyle),
         ListTile(
           title: Text(AppLocalizations.of(context)!.downloadDirectorySetting),
           subtitle: Text(_settings!.path),
@@ -160,7 +160,7 @@ class _SettingsListState extends State<SettingsList> {
                 ));
           },
         ),
-        settingsLabel(AppLocalizations.of(context)!.licenseSetting, titleStyle),
+        SettingsLabel(AppLocalizations.of(context)!.licenseSetting, titleStyle),
         ListTile(
           onTap: () {
             Navigator.push(context, MaterialPageRoute(
@@ -171,7 +171,7 @@ class _SettingsListState extends State<SettingsList> {
           },
           title: const Text("GPL-2.0-only"),
         ),
-        settingsLabel(AppLocalizations.of(context)!.metricsLabel, titleStyle),
+        SettingsLabel(AppLocalizations.of(context)!.metricsLabel, titleStyle),
         ListTile(
           title: Text(AppLocalizations.of(context)!.savedTagsCount),
           trailing: PopupMenuButton(

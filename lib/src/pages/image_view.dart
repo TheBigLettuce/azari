@@ -640,8 +640,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                 child: Wrap(
                   spacing: 4,
                   children: s
-                      .map((e) => Sticker.widget(
-                            context,
+                      .map((e) => StickerWidget(
                             Sticker(e.$1,
                                 color: ColorTween(
                                   begin: previousPallete
@@ -863,14 +862,14 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
       child: CustomScrollView(
         controller: scrollController,
         slivers: [
-          endDrawerHeading(
-              context, AppLocalizations.of(context)!.infoHeadline, key,
+          EndDrawerHeading(AppLocalizations.of(context)!.infoHeadline, key,
               titleColor: ColorTween(
-                      begin: previousPallete?.dominantColor?.titleTextColor.harmonizeWith(Theme.of(context).colorScheme.primary) ??
-                          Theme.of(context)
-                              .colorScheme
-                              .surface
-                              .withOpacity(0.5),
+                      begin:
+                          previousPallete?.dominantColor?.titleTextColor.harmonizeWith(Theme.of(context).colorScheme.primary) ??
+                              Theme.of(context)
+                                  .colorScheme
+                                  .surface
+                                  .withOpacity(0.5),
                       end: currentPalette?.dominantColor?.titleTextColor.harmonizeWith(Theme.of(context).colorScheme.primary) ??
                           Theme.of(context)
                               .colorScheme
@@ -1217,8 +1216,9 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
         endDrawer: _makeEndDrawer(context),
         appBar: _makeAppBar(context),
         body: Stack(children: [
-          gestureDeadZones(
-            context,
+          GestureDeadZones(
+            left: true,
+            right: true,
             child: GestureDetector(
               onLongPress: widget.download == null
                   ? null
@@ -1276,8 +1276,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                     };
                   }),
             ),
-            left: true,
-            right: true,
           ),
           if (notes != null)
             Padding(

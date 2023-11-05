@@ -34,12 +34,16 @@ class _WrappedGridPageState<T extends Cell> extends State<WrappedGridPage<T>>
       extendBody: true,
       bottomNavigationBar: glueState.actions == null
           ? null
-          : Animate(effects: const [
-              MoveEffect(
-                  curve: Curves.easeOutQuint,
-                  end: Offset.zero,
-                  begin: Offset(0, kBottomNavigationBarHeight)),
-            ], child: glueState.widget(context) ?? const SizedBox.shrink()),
+          : Animate(
+              effects: const [
+                  MoveEffect(
+                      curve: Curves.easeOutQuint,
+                      end: Offset.zero,
+                      begin: Offset(0, kBottomNavigationBarHeight)),
+                ],
+              child: glueState.actions?.isNotEmpty ?? false
+                  ? GlueBottomAppBar(glueState.actions!)
+                  : const SizedBox.shrink()),
       body: widget.f(glueState.glue<T>(
           () => MediaQuery.viewInsetsOf(context).bottom != 0, setState)),
     );

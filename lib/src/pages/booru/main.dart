@@ -35,7 +35,7 @@ import '../../widgets/notifiers/tag_manager.dart';
 import '../../widgets/radio_dialog.dart';
 import '../../widgets/search_bar/search_launch_grid.dart';
 
-import '../../widgets/skeletons/make_grid_skeleton.dart';
+import '../../widgets/skeletons/grid_skeleton.dart';
 
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -332,131 +332,120 @@ class _MainBooruGridState extends State<MainBooruGrid>
         api: api,
         child: TagManagerNotifier(
             tagManager: tagManager,
-            child: Builder(
-              builder: (context) {
-                return makeGridSkeleton(
-                  context,
-                  state,
-                  CallbackGrid<Post>(
-                    key: state.gridKey,
-                    systemNavigationInsets: EdgeInsets.only(
-                        bottom: MediaQuery.of(context)
-                                .systemGestureInsets
-                                .bottom +
-                            (Scaffold.of(context).widget.bottomNavigationBar !=
-                                        null &&
-                                    !widget.glue.keyboardVisible()
-                                ? 80
-                                : 0)),
-                    selectionGlue: widget.glue,
-                    registerNotifiers: [
-                      (child) => TagManagerNotifier(
-                          tagManager: tagManager, child: child),
-                      (child) => BooruAPINotifier(api: api, child: child),
-                    ],
-                    inlineMenuButtonItems: true,
-                    addFabPadding:
-                        Scaffold.of(context).widget.bottomNavigationBar == null,
-                    menuButtonItems: [
-                      const BookmarkButton(),
-                      MainBooruGrid.gridButton(state.settings)
-                    ],
-                    addIconsImage: (post) => [
-                      BooruGridActions.favorites(context, post),
-                      BooruGridActions.download(context, api)
-                    ],
-                    onExitImageView: () =>
-                        restore.removeScrollTagsSelectedPost(),
-                    description: GridDescription([
-                      BooruGridActions.download(context, api),
-                      BooruGridActions.favorites(context, null,
-                          showDeleteSnackbar: true)
-                    ],
-                        keybindsDescription:
-                            AppLocalizations.of(context)!.booruGridPageName,
-                        layout: state.settings.booru.listView
-                            ? const ListLayout()
-                            : GridLayout(state.settings.booru.columns,
-                                state.settings.booru.aspectRatio)),
-                    hasReachedEnd: () => reachedEnd,
-                    mainFocus: state.mainFocus,
-                    scaffoldKey: state.scaffoldKey,
-                    noteInterface: NoteBooru.interface(setState),
-                    onError: (error) {
-                      return OutlinedButton(
-                        onPressed: () {
-                          launchUrl(Uri.https(api.booru.url),
-                              mode: LaunchMode.externalApplication);
+            child: GridSkeleton(
+              state,
+              (context) => CallbackGrid<Post>(
+                key: state.gridKey,
+                systemNavigationInsets: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).systemGestureInsets.bottom +
+                        (Scaffold.of(context).widget.bottomNavigationBar !=
+                                    null &&
+                                !widget.glue.keyboardVisible()
+                            ? 80
+                            : 0)),
+                selectionGlue: widget.glue,
+                registerNotifiers: [
+                  (child) =>
+                      TagManagerNotifier(tagManager: tagManager, child: child),
+                  (child) => BooruAPINotifier(api: api, child: child),
+                ],
+                inlineMenuButtonItems: true,
+                addFabPadding:
+                    Scaffold.of(context).widget.bottomNavigationBar == null,
+                menuButtonItems: [
+                  const BookmarkButton(),
+                  MainBooruGrid.gridButton(state.settings)
+                ],
+                addIconsImage: (post) => [
+                  BooruGridActions.favorites(context, post),
+                  BooruGridActions.download(context, api)
+                ],
+                onExitImageView: () => restore.removeScrollTagsSelectedPost(),
+                description: GridDescription([
+                  BooruGridActions.download(context, api),
+                  BooruGridActions.favorites(context, null,
+                      showDeleteSnackbar: true)
+                ],
+                    keybindsDescription:
+                        AppLocalizations.of(context)!.booruGridPageName,
+                    layout: state.settings.booru.listView
+                        ? const ListLayout()
+                        : GridLayout(state.settings.booru.columns,
+                            state.settings.booru.aspectRatio)),
+                hasReachedEnd: () => reachedEnd,
+                mainFocus: state.mainFocus,
+                scaffoldKey: state.scaffoldKey,
+                noteInterface: NoteBooru.interface(setState),
+                onError: (error) {
+                  return OutlinedButton(
+                    onPressed: () {
+                      launchUrl(Uri.https(api.booru.url),
+                          mode: LaunchMode.externalApplication);
+                    },
+                    child: Text(AppLocalizations.of(context)!.openInBrowser),
+                  );
+                },
+                getCell: (i) => widget.mainGrid.posts.getSync(i + 1)!,
+                loadNext: _addLast,
+                refresh: _clearAndRefresh,
+                hideAlias: true,
+                download: _download,
+                updateScrollPosition: (pos, {infoPos, selectedCell}) =>
+                    restore.updateScrollPosition(pos,
+                        infoPos: infoPos,
+                        selectedCell: selectedCell,
+                        page: api.currentPage),
+                initalScrollPosition: restore.copy.scrollPositionGrid,
+                initalCellCount: widget.mainGrid.posts.countSync(),
+                beforeImageViewRestore: () {
+                  final last = restore.last();
+                  if (last != null) {
+                    WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+                      Navigator.push(context, MaterialPageRoute(
+                        builder: (context) {
+                          return SecondaryBooruGrid(
+                            restore: last,
+                            noRestoreOnBack: false,
+                            api: BooruAPI.fromEnum(api.booru,
+                                page: last.copy.page),
+                            tagManager: tagManager,
+                            instance: DbsOpen.secondaryGridName(last.copy.name),
+                          );
                         },
-                        child:
-                            Text(AppLocalizations.of(context)!.openInBrowser),
-                      );
-                    },
-                    getCell: (i) => widget.mainGrid.posts.getSync(i + 1)!,
-                    loadNext: _addLast,
-                    refresh: _clearAndRefresh,
-                    hideAlias: true,
-                    download: _download,
-                    updateScrollPosition: (pos, {infoPos, selectedCell}) =>
-                        restore.updateScrollPosition(pos,
-                            infoPos: infoPos,
-                            selectedCell: selectedCell,
-                            page: api.currentPage),
-                    initalScrollPosition: restore.copy.scrollPositionGrid,
-                    initalCellCount: widget.mainGrid.posts.countSync(),
-                    beforeImageViewRestore: () {
-                      final last = restore.last();
-                      if (last != null) {
-                        WidgetsBinding.instance
-                            .scheduleFrameCallback((timeStamp) {
-                          Navigator.push(context, MaterialPageRoute(
-                            builder: (context) {
-                              return SecondaryBooruGrid(
-                                restore: last,
-                                noRestoreOnBack: false,
-                                api: BooruAPI.fromEnum(api.booru,
-                                    page: last.copy.page),
-                                tagManager: tagManager,
-                                instance:
-                                    DbsOpen.secondaryGridName(last.copy.name),
-                              );
-                            },
-                          ));
-                        });
-                      }
-                    },
-                    searchWidget: SearchAndFocus(
-                        searchWidget(context, hint: api.booru.name),
-                        searchFocus, onPressed: () {
-                      if (currentlyHighlightedTag != "") {
-                        state.mainFocus.unfocus();
-                        tagManager.onTagPressed(
-                            context,
-                            Tag.string(tag: currentlyHighlightedTag),
-                            api.booru,
-                            true);
-                      }
-                    }),
-                    pageViewScrollingOffset: restore.copy.scrollPositionTags,
-                    initalCell: restore.copy.selectedPost,
-                  ),
-                  overrideBooru: api.booru,
-                  canPop: !widget.glue.isOpen() &&
-                      state.gridKey.currentState?.showSearchBar != true,
-                  overrideOnPop: (pop, hideAppBar) {
-                    if (widget.glue.isOpen()) {
-                      state.gridKey.currentState?.selection.reset();
-                      return;
-                    }
+                      ));
+                    });
+                  }
+                },
+                searchWidget: SearchAndFocus(
+                    searchWidget(context, hint: api.booru.name), searchFocus,
+                    onPressed: () {
+                  if (currentlyHighlightedTag != "") {
+                    state.mainFocus.unfocus();
+                    tagManager.onTagPressed(
+                        context,
+                        Tag.string(tag: currentlyHighlightedTag),
+                        api.booru,
+                        true);
+                  }
+                }),
+                pageViewScrollingOffset: restore.copy.scrollPositionTags,
+                initalCell: restore.copy.selectedPost,
+              ),
+              overrideBooru: api.booru,
+              canPop: !widget.glue.isOpen() &&
+                  state.gridKey.currentState?.showSearchBar != true,
+              overrideOnPop: (pop, hideAppBar) {
+                if (widget.glue.isOpen()) {
+                  state.gridKey.currentState?.selection.reset();
+                  return;
+                }
 
-                    if (hideAppBar()) {
-                      setState(() {});
-                      return;
-                    }
+                if (hideAppBar()) {
+                  setState(() {});
+                  return;
+                }
 
-                    widget.procPop(pop);
-                  },
-                );
+                widget.procPop(pop);
               },
             )));
   }
@@ -500,7 +489,7 @@ class _BookmarkButtonState extends State<BookmarkButton> {
               list.add(PopupMenuItem(
                 enabled: false,
                 padding: const EdgeInsets.all(0),
-                child: timeLabel(time, titleStyle, timeNow),
+                child: TimeLabel(time, titleStyle, timeNow),
               ));
             }
 

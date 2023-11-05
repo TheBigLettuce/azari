@@ -30,7 +30,7 @@ import '../db/post_tags.dart';
 import '../db/schemas/download_file.dart';
 import '../db/schemas/settings.dart';
 import '../widgets/skeletons/grid_skeleton_state_filter.dart';
-import '../widgets/skeletons/make_grid_skeleton.dart';
+import '../widgets/skeletons/grid_skeleton.dart';
 
 class FavoritesPage extends StatefulWidget {
   final void Function(bool) procPop;
@@ -275,74 +275,76 @@ class _FavoritesPageState extends State<FavoritesPage>
 
   @override
   Widget build(BuildContext context) {
-    return makeGridSkeleton<FavoriteBooru>(
-        context,
+    return GridSkeleton<FavoriteBooru>(
         state,
-        CallbackGrid(
-          key: state.gridKey,
-          getCell: loader.getCell,
-          initalScrollPosition: 0,
-          showCount: true,
-          selectionGlue: widget.glue,
-          scaffoldKey: state.scaffoldKey,
-          addIconsImage: (p) => [
-            BooruGridActions.favorites(context, p, showDeleteSnackbar: true),
-            BooruGridActions.download(context, booru),
-            _groupButton(context)
-          ],
-          systemNavigationInsets: EdgeInsets.only(
-              bottom: MediaQuery.systemGestureInsetsOf(context).bottom +
-                  (Scaffold.of(context).widget.bottomNavigationBar != null &&
-                          !widget.glue.keyboardVisible()
-                      ? 80
-                      : 0)),
-          hasReachedEnd: () => true,
-          hideAlias: true,
-          menuButtonItems: [
-            gridSettingsButton(state.settings.favorites,
-                selectHideName: null,
-                selectRatio: (ratio) => state.settings
-                    .copy(
-                        favorites:
-                            state.settings.favorites.copy(aspectRatio: ratio))
-                    .save(),
-                selectListView: null,
-                selectGridColumn: (columns) => state.settings
-                    .copy(
-                        favorites:
-                            state.settings.favorites.copy(columns: columns))
-                    .save())
-          ],
-          download: _download,
-          immutable: false,
-          noteInterface: NoteBooru.interface<FavoriteBooru>(setState),
-          addFabPadding:
-              Scaffold.of(context).widget.bottomNavigationBar == null,
-          mainFocus: state.mainFocus,
-          searchWidget: SearchAndFocus(
-              searchWidget(context,
-                  hint: AppLocalizations.of(context)!
-                      .favoritesLabel
-                      .toLowerCase()),
-              searchFocus),
-          refresh: () => Future.value(loader.count()),
-          description: GridDescription([
-            BooruGridActions.download(context, booru),
-            _groupButton(context)
-          ],
-              keybindsDescription: AppLocalizations.of(context)!.favoritesLabel,
-              layout: segmented
-                  ? SegmentLayout(
-                      Segments(
-                        "Ungrouped", // TODO: change
-                        hidePinnedIcon: true,
-                        prebuiltSegments: segments,
-                      ),
-                      state.settings.favorites.columns,
-                      state.settings.favorites.aspectRatio)
-                  : GridLayout(state.settings.favorites.columns,
-                      state.settings.favorites.aspectRatio)),
-        ),
+        (context) => CallbackGrid(
+              key: state.gridKey,
+              getCell: loader.getCell,
+              initalScrollPosition: 0,
+              showCount: true,
+              selectionGlue: widget.glue,
+              scaffoldKey: state.scaffoldKey,
+              addIconsImage: (p) => [
+                BooruGridActions.favorites(context, p,
+                    showDeleteSnackbar: true),
+                BooruGridActions.download(context, booru),
+                _groupButton(context)
+              ],
+              systemNavigationInsets: EdgeInsets.only(
+                  bottom: MediaQuery.systemGestureInsetsOf(context).bottom +
+                      (Scaffold.of(context).widget.bottomNavigationBar !=
+                                  null &&
+                              !widget.glue.keyboardVisible()
+                          ? 80
+                          : 0)),
+              hasReachedEnd: () => true,
+              hideAlias: true,
+              menuButtonItems: [
+                gridSettingsButton(state.settings.favorites,
+                    selectHideName: null,
+                    selectRatio: (ratio) => state.settings
+                        .copy(
+                            favorites: state.settings.favorites
+                                .copy(aspectRatio: ratio))
+                        .save(),
+                    selectListView: null,
+                    selectGridColumn: (columns) => state.settings
+                        .copy(
+                            favorites:
+                                state.settings.favorites.copy(columns: columns))
+                        .save())
+              ],
+              download: _download,
+              immutable: false,
+              noteInterface: NoteBooru.interface<FavoriteBooru>(setState),
+              addFabPadding:
+                  Scaffold.of(context).widget.bottomNavigationBar == null,
+              mainFocus: state.mainFocus,
+              searchWidget: SearchAndFocus(
+                  searchWidget(context,
+                      hint: AppLocalizations.of(context)!
+                          .favoritesLabel
+                          .toLowerCase()),
+                  searchFocus),
+              refresh: () => Future.value(loader.count()),
+              description: GridDescription([
+                BooruGridActions.download(context, booru),
+                _groupButton(context)
+              ],
+                  keybindsDescription:
+                      AppLocalizations.of(context)!.favoritesLabel,
+                  layout: segmented
+                      ? SegmentLayout(
+                          Segments(
+                            "Ungrouped", // TODO: change
+                            hidePinnedIcon: true,
+                            prebuiltSegments: segments,
+                          ),
+                          state.settings.favorites.columns,
+                          state.settings.favorites.aspectRatio)
+                      : GridLayout(state.settings.favorites.columns,
+                          state.settings.favorites.aspectRatio)),
+            ),
         canPop: false, overrideOnPop: (pop, hideAppBar) {
       if (searchTextController.text.isNotEmpty) {
         resetSearch();

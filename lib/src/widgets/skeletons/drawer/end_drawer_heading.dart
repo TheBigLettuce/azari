@@ -7,10 +7,18 @@
 
 import 'package:flutter/material.dart';
 
-Widget endDrawerHeading(
-        BuildContext context, String headline, GlobalKey<ScaffoldState> k,
-        {Color? titleColor, Color? backroundColor}) =>
-    SliverAppBar(
+class EndDrawerHeading extends StatelessWidget {
+  final String headline;
+  final GlobalKey<ScaffoldState> scaffoldKey;
+  final Color? titleColor;
+  final Color? backroundColor;
+
+  const EndDrawerHeading(this.headline, this.scaffoldKey,
+      {super.key, this.titleColor, this.backroundColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverAppBar(
       expandedHeight: 152,
       collapsedHeight: kToolbarHeight,
       automaticallyImplyLeading: false,
@@ -19,7 +27,7 @@ Widget endDrawerHeading(
       pinned: true,
       leading: BackButton(
         onPressed: () {
-          k.currentState?.closeEndDrawer();
+          scaffoldKey.currentState?.closeEndDrawer();
         },
       ),
       flexibleSpace: FlexibleSpaceBar(
@@ -28,3 +36,5 @@ Widget endDrawerHeading(
         style: TextStyle(color: titleColor),
       )),
     );
+  }
+}

@@ -35,7 +35,7 @@ import '../../widgets/grid/wrap_grid_page.dart';
 import '../../widgets/search_bar/search_filter_grid.dart';
 import '../../plugs/gallery/android/filters.dart';
 import '../../widgets/skeletons/grid_skeleton_state_filter.dart';
-import '../../widgets/skeletons/make_grid_skeleton.dart';
+import '../../widgets/skeletons/grid_skeleton.dart';
 
 bool _isSavingTags = false;
 
@@ -492,10 +492,9 @@ class _GalleryFilesState extends State<GalleryFiles>
   Widget build(BuildContext context) {
     return WrappedGridPage<SystemGalleryDirectoryFile>(
         scaffoldKey: state.scaffoldKey,
-        f: (glue) => makeGridSkeleton<SystemGalleryDirectoryFile>(
-              context,
+        f: (glue) => GridSkeleton<SystemGalleryDirectoryFile>(
               state,
-              CallbackGrid(
+              (context) => CallbackGrid(
                   key: state.gridKey,
                   getCell: (i) => widget.api.directCell(i),
                   initalScrollPosition: 0,

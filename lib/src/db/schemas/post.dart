@@ -360,7 +360,7 @@ class PostBase implements Cell {
               children: lists,
             ),
       if (postTags.isNotEmpty && data != null)
-        searchTextField(context, data, filename, showDeleteButton),
+        SearchTextField(data, filename, showDeleteButton),
       ...makeTags(context, extra, colors, postTags, temporary ? "" : filename,
           launchGrid: launchGrid, addExcluded: addExcluded)
     ];

@@ -33,7 +33,7 @@ import '../../interfaces/booru.dart';
 import '../../db/schemas/settings.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
 import '../../widgets/skeletons/grid_skeleton_state_filter.dart';
-import '../../widgets/skeletons/make_grid_skeleton.dart';
+import '../../widgets/skeletons/grid_skeleton.dart';
 
 class CallbackDescription {
   final Future<void> Function(SystemGalleryDirectory? chosen, String? newDir) c;
@@ -264,10 +264,9 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
 
   @override
   Widget build(BuildContext context) {
-    return makeGridSkeleton<SystemGalleryDirectory>(
-        context,
+    return GridSkeleton<SystemGalleryDirectory>(
         state,
-        CallbackGrid(
+        (context) => CallbackGrid(
             key: state.gridKey,
             getCell: (i) => api.directCell(i),
             initalScrollPosition: 0,

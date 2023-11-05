@@ -10,10 +10,19 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 
-Widget wrapAppBarAction(Widget child) => SafeArea(
+class WrapAppBarAction extends StatelessWidget {
+  final Widget child;
+
+  const WrapAppBarAction(this.child, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
         child: Padding(
       padding: Platform.isAndroid
           ? const EdgeInsets.only(top: 4, bottom: 4)
           : const EdgeInsets.only(top: 8, bottom: 8),
       child: child,
     ));
+  }
+}

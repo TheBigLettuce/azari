@@ -13,34 +13,34 @@ class Sticker {
   final Color? backgroundColor;
   final bool right;
 
-  static Widget widget(BuildContext context, Sticker e,
-      {void Function()? onPressed}) {
-    Widget make() => Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Container(
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-                color: e.backgroundColor != null
-                    ? e.backgroundColor!.withOpacity(0.6)
-                    : Theme.of(context)
-                        .colorScheme
-                        .inversePrimary
-                        .withOpacity(0.6),
-                borderRadius: BorderRadius.circular(5)),
-            child: Icon(
-              e.icon,
-              color: e.color != null
-                  ? e.color!.withOpacity(0.8)
-                  : Theme.of(context).colorScheme.secondary.withOpacity(0.8),
-            ),
-          ),
-        );
-
-    return onPressed != null
-        ? GestureDetector(onTap: onPressed, child: make())
-        : make();
-  }
-
   const Sticker(this.icon,
       {this.color, this.backgroundColor, this.right = false});
+}
+
+class StickerWidget extends StatelessWidget {
+  final Sticker e;
+  final void Function()? onPressed;
+
+  const StickerWidget(this.e, {super.key, this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Container(
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+            color: e.backgroundColor != null
+                ? e.backgroundColor!.withOpacity(0.6)
+                : Theme.of(context).colorScheme.inversePrimary.withOpacity(0.6),
+            borderRadius: BorderRadius.circular(5)),
+        child: Icon(
+          e.icon,
+          color: e.color != null
+              ? e.color!.withOpacity(0.8)
+              : Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+        ),
+      ),
+    );
+  }
 }

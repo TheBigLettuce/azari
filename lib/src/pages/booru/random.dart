@@ -33,7 +33,7 @@ import '../../db/schemas/post.dart';
 import '../../db/schemas/settings.dart';
 import '../../widgets/search_bar/search_launch_grid_data.dart';
 import '../../widgets/skeletons/grid_skeleton_state.dart';
-import '../../widgets/skeletons/make_grid_skeleton.dart';
+import '../../widgets/skeletons/grid_skeleton.dart';
 import '../../widgets/notifiers/booru_api.dart';
 import '../../widgets/notifiers/tag_manager.dart';
 import '../../widgets/search_bar/search_launch_grid.dart';
@@ -235,144 +235,134 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                 api: widget.api,
                 child: TagManagerNotifier(
                     tagManager: widget.tagManager,
-                    child: Builder(
-                      builder: (context) {
-                        return makeGridSkeleton(
-                          context,
-                          state,
-                          CallbackGrid<Post>(
-                            key: state.gridKey,
-                            selectionGlue: glue,
-                            systemNavigationInsets:
-                                MediaQuery.of(context).systemGestureInsets,
-                            registerNotifiers: [
-                              (child) => TagManagerNotifier(
-                                  tagManager: widget.tagManager, child: child),
-                              (child) => BooruAPINotifier(
-                                  api: widget.api, child: child),
-                            ],
-                            menuButtonItems: [
-                              if (widget.state == null)
-                                MainBooruGrid.bookmarkButton(
-                                    context, state, glue, () {
-                                  addedToBookmarks = true;
-                                }),
-                              MainBooruGrid.gridButton(state.settings,
-                                  currentSafeMode: _safeMode(),
-                                  selectSafeMode: widget.state != null
-                                      ? (safeMode) {
-                                          if (safeMode == null) {
-                                            return;
-                                          }
-
-                                          final prev = Dbs
-                                              .g.main.gridStateBoorus
-                                              .getByNameSync(
-                                                  widget.state!.name)!;
-
-                                          Dbs.g.main.writeTxnSync(() => Dbs
-                                              .g.main.gridStateBoorus
-                                              .putByNameSync(prev.copy(false,
-                                                  safeMode: safeMode)));
-
-                                          setState(() {});
-                                        }
-                                      : (s) {
-                                          setState(() {
-                                            safeMode = s;
-                                          });
-                                        })
-                            ],
-                            addIconsImage: (post) => [
-                              BooruGridActions.favorites(context, post),
-                              BooruGridActions.download(context, widget.api)
-                            ],
-                            description: GridDescription([
-                              BooruGridActions.download(context, widget.api),
-                              BooruGridActions.favorites(context, null,
-                                  showDeleteSnackbar: true)
-                            ],
-                                keybindsDescription:
-                                    AppLocalizations.of(context)!
-                                        .booruGridPageName,
-                                layout: state.settings.booru.listView
-                                    ? const ListLayout()
-                                    : GridLayout(state.settings.booru.columns,
-                                        state.settings.booru.aspectRatio)),
-                            hasReachedEnd: () => reachedEnd,
-                            mainFocus: state.mainFocus,
-                            inlineMenuButtonItems: true,
-                            scaffoldKey: state.scaffoldKey,
-                            onError: (error) {
-                              return OutlinedButton(
-                                onPressed: () {
-                                  launchUrl(Uri.https(widget.api.booru.url),
-                                      mode: LaunchMode.externalApplication);
-                                },
-                                child: Text(AppLocalizations.of(context)!
-                                    .openInBrowser),
-                              );
-                            },
-                            getCell: (i) => instance.posts.getSync(i + 1)!,
-                            loadNext: _addLast,
-                            refresh: _clearAndRefresh,
-                            noteInterface: NoteBooru.interface(setState),
-                            onBack: () => Navigator.pop(context),
-                            hideAlias: true,
-                            download: _download,
-                            initalCell: widget.state?.selectedPost,
-                            initalCellCount: widget.state != null
-                                ? instance.posts.countSync()
-                                : 0,
-                            updateScrollPosition: widget.state != null
-                                ? (pos, {infoPos, selectedCell}) {
-                                    final prev = Dbs.g.main.gridStateBoorus
-                                        .getByNameSync(widget.state!.name)!;
-
-                                    Dbs.g.main.writeTxnSync(() => Dbs
-                                        .g.main.gridStateBoorus
-                                        .putByNameSync(prev.copy(true,
-                                            scrollPositionGrid: pos,
-                                            scrollPositionTags: infoPos,
-                                            page: widget.api.currentPage,
-                                            selectedPost: selectedCell)));
-                                  }
-                                : (pos, {infoPos, selectedCell}) {
-                                    _currentScroll =
-                                        (pos, infoPos, selectedCell);
-                                  },
-                            pageViewScrollingOffset:
-                                widget.state?.scrollPositionTags,
-                            initalScrollPosition:
-                                widget.state?.scrollPositionGrid ?? 0,
-                            searchWidget: SearchAndFocus(
-                                searchWidget(context,
-                                    hint: widget.api.booru.name),
-                                searchFocus, onPressed: () {
-                              if (currentlyHighlightedTag != "") {
-                                state.mainFocus.unfocus();
-                                widget.tagManager.onTagPressed(
-                                    context,
-                                    Tag.string(tag: currentlyHighlightedTag),
-                                    widget.api.booru,
-                                    true);
-                              }
+                    child: GridSkeleton(
+                      state,
+                      (context) => CallbackGrid<Post>(
+                        key: state.gridKey,
+                        selectionGlue: glue,
+                        systemNavigationInsets:
+                            MediaQuery.of(context).systemGestureInsets,
+                        registerNotifiers: [
+                          (child) => TagManagerNotifier(
+                              tagManager: widget.tagManager, child: child),
+                          (child) =>
+                              BooruAPINotifier(api: widget.api, child: child),
+                        ],
+                        menuButtonItems: [
+                          if (widget.state == null)
+                            MainBooruGrid.bookmarkButton(context, state, glue,
+                                () {
+                              addedToBookmarks = true;
                             }),
-                          ),
-                          overrideBooru: widget.api.booru,
-                          canPop: !glue.isOpen() &&
-                              state.gridKey.currentState?.showSearchBar != true,
-                          overrideOnPop: (pop, hideAppBar) {
-                            if (glue.isOpen()) {
-                              state.gridKey.currentState?.selection.reset();
-                            }
+                          MainBooruGrid.gridButton(state.settings,
+                              currentSafeMode: _safeMode(),
+                              selectSafeMode: widget.state != null
+                                  ? (safeMode) {
+                                      if (safeMode == null) {
+                                        return;
+                                      }
 
-                            if (hideAppBar()) {
-                              setState(() {});
-                              return;
-                            }
-                          },
-                        );
+                                      final prev = Dbs.g.main.gridStateBoorus
+                                          .getByNameSync(widget.state!.name)!;
+
+                                      Dbs.g.main.writeTxnSync(() => Dbs
+                                          .g.main.gridStateBoorus
+                                          .putByNameSync(prev.copy(false,
+                                              safeMode: safeMode)));
+
+                                      setState(() {});
+                                    }
+                                  : (s) {
+                                      setState(() {
+                                        safeMode = s;
+                                      });
+                                    })
+                        ],
+                        addIconsImage: (post) => [
+                          BooruGridActions.favorites(context, post),
+                          BooruGridActions.download(context, widget.api)
+                        ],
+                        description: GridDescription([
+                          BooruGridActions.download(context, widget.api),
+                          BooruGridActions.favorites(context, null,
+                              showDeleteSnackbar: true)
+                        ],
+                            keybindsDescription:
+                                AppLocalizations.of(context)!.booruGridPageName,
+                            layout: state.settings.booru.listView
+                                ? const ListLayout()
+                                : GridLayout(state.settings.booru.columns,
+                                    state.settings.booru.aspectRatio)),
+                        hasReachedEnd: () => reachedEnd,
+                        mainFocus: state.mainFocus,
+                        inlineMenuButtonItems: true,
+                        scaffoldKey: state.scaffoldKey,
+                        onError: (error) {
+                          return OutlinedButton(
+                            onPressed: () {
+                              launchUrl(Uri.https(widget.api.booru.url),
+                                  mode: LaunchMode.externalApplication);
+                            },
+                            child: Text(
+                                AppLocalizations.of(context)!.openInBrowser),
+                          );
+                        },
+                        getCell: (i) => instance.posts.getSync(i + 1)!,
+                        loadNext: _addLast,
+                        refresh: _clearAndRefresh,
+                        noteInterface: NoteBooru.interface(setState),
+                        onBack: () => Navigator.pop(context),
+                        hideAlias: true,
+                        download: _download,
+                        initalCell: widget.state?.selectedPost,
+                        initalCellCount: widget.state != null
+                            ? instance.posts.countSync()
+                            : 0,
+                        updateScrollPosition: widget.state != null
+                            ? (pos, {infoPos, selectedCell}) {
+                                final prev = Dbs.g.main.gridStateBoorus
+                                    .getByNameSync(widget.state!.name)!;
+
+                                Dbs.g.main.writeTxnSync(() => Dbs
+                                    .g.main.gridStateBoorus
+                                    .putByNameSync(prev.copy(true,
+                                        scrollPositionGrid: pos,
+                                        scrollPositionTags: infoPos,
+                                        page: widget.api.currentPage,
+                                        selectedPost: selectedCell)));
+                              }
+                            : (pos, {infoPos, selectedCell}) {
+                                _currentScroll = (pos, infoPos, selectedCell);
+                              },
+                        pageViewScrollingOffset:
+                            widget.state?.scrollPositionTags,
+                        initalScrollPosition:
+                            widget.state?.scrollPositionGrid ?? 0,
+                        searchWidget: SearchAndFocus(
+                            searchWidget(context, hint: widget.api.booru.name),
+                            searchFocus, onPressed: () {
+                          if (currentlyHighlightedTag != "") {
+                            state.mainFocus.unfocus();
+                            widget.tagManager.onTagPressed(
+                                context,
+                                Tag.string(tag: currentlyHighlightedTag),
+                                widget.api.booru,
+                                true);
+                          }
+                        }),
+                      ),
+                      overrideBooru: widget.api.booru,
+                      canPop: !glue.isOpen() &&
+                          state.gridKey.currentState?.showSearchBar != true,
+                      overrideOnPop: (pop, hideAppBar) {
+                        if (glue.isOpen()) {
+                          state.gridKey.currentState?.selection.reset();
+                        }
+
+                        if (hideAppBar()) {
+                          setState(() {});
+                          return;
+                        }
                       },
                     ))),
           );
