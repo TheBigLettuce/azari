@@ -200,7 +200,10 @@ class _NotesPageState extends State<NotesPage>
                           width: note.width,
                           isOriginal: false,
                           lastModified: 0,
-                          originalUri: note.originalUri));
+                          originalUri: note.originalUri,
+                          isDuplicate: false,
+                          isFavorite: false,
+                          tagsFlat: ''));
                     },
                     false,
                   )

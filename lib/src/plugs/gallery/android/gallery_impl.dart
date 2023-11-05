@@ -48,7 +48,7 @@ class _GalleryImpl implements GalleryApi {
     }
 
     try {
-      db.writeTxnSync(() => db.systemGalleryDirectoryFiles.putAllSync(f
+      final out = f
           .cast<DirectoryFile>()
           .map((e) => SystemGalleryDirectoryFile(
               id: e.id,
@@ -61,14 +61,21 @@ class _GalleryImpl implements GalleryApi {
                   "",
               name: e.name,
               size: e.size,
+              isDuplicate:
+                  RegExp(r'[(][0-9].*[)][.][a-zA-Z0-9].*').hasMatch(e.name),
+              isFavorite:
+                  Dbs.g.blacklisted.favoriteMedias.getSync(e.id) != null,
               lastModified: e.lastModified,
               height: e.height,
               width: e.width,
               isGif: e.isGif,
               isOriginal: PostTags.g.isOriginal(e.name),
               originalUri: e.originalUri,
-              isVideo: e.isVideo))
-          .toList()));
+              isVideo: e.isVideo,
+              tagsFlat: PostTags.g.getTagsPost(e.name).join(" ")))
+          .toList();
+
+      db.writeTxnSync(() => db.systemGalleryDirectoryFiles.putAllSync(out));
     } catch (e) {
       log("updatePictures", level: Level.WARNING.value, error: e);
     }
@@ -96,18 +103,20 @@ class _GalleryImpl implements GalleryApi {
     d = List.from(d);
     d.removeWhere((element) => map.containsKey(element!.bucketId));
 
+    final out = d
+        .cast<Directory>()
+        .map((e) => SystemGalleryDirectory(
+            bucketId: e.bucketId,
+            name: e.name,
+            tag: PostTags.g.directoryTag(e.bucketId) ?? "",
+            volumeName: e.volumeName,
+            relativeLoc: e.relativeLoc,
+            thumbFileId: e.thumbFileId,
+            lastModified: e.lastModified))
+        .toList();
+
     db.writeTxnSync(() {
-      db.systemGalleryDirectorys.putAllSync(d
-          .cast<Directory>()
-          .map((e) => SystemGalleryDirectory(
-              bucketId: e.bucketId,
-              name: e.name,
-              tag: PostTags.g.directoryTag(e.bucketId) ?? "",
-              volumeName: e.volumeName,
-              relativeLoc: e.relativeLoc,
-              thumbFileId: e.thumbFileId,
-              lastModified: e.lastModified))
-          .toList());
+      db.systemGalleryDirectorys.putAllSync(out);
     });
 
     _currentApi?.callback

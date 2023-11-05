@@ -267,7 +267,7 @@ class _GalleryFilesState extends State<GalleryFiles>
   void _favoriteOrUnfavorite(
       BuildContext context, List<SystemGalleryDirectoryFile> selected) {
     for (final fav in selected) {
-      if (fav.isFavorite()) {
+      if (fav.isFavorite) {
         Dbs.g.blacklisted.writeTxnSync(
             () => Dbs.g.blacklisted.favoriteMedias.deleteSync(fav.id));
       } else {
@@ -431,7 +431,7 @@ class _GalleryFilesState extends State<GalleryFiles>
 
   GridAction<SystemGalleryDirectoryFile> _addToFavoritesAction(
       SystemGalleryDirectoryFile? f) {
-    final isFavorites = f != null && f.isFavorite();
+    final isFavorites = f != null && f.isFavorite;
 
     return GridAction(
         isFavorites ? Icons.star_rounded : Icons.star_border_rounded,

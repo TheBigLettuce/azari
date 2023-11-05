@@ -52,7 +52,7 @@ class Filters {
 
   static (Iterable<SystemGalleryDirectoryFile>, dynamic) favorite(
       Iterable<SystemGalleryDirectoryFile> cells) {
-    return (cells.where((element) => element.isFavorite()), null);
+    return (cells.where((element) => element.isFavorite), null);
   }
 
   static (Iterable<SystemGalleryDirectoryFile>, dynamic) untagged(
@@ -75,7 +75,7 @@ class Filters {
 
   static (Iterable<SystemGalleryDirectoryFile>, dynamic) duplicate(
       Iterable<SystemGalleryDirectoryFile> cells) {
-    return (cells.where((element) => element.isDuplicate()), null);
+    return (cells.where((element) => element.isDuplicate), null);
   }
 
   static (Iterable<SystemGalleryDirectoryFile>, dynamic) original(

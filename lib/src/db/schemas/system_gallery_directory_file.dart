@@ -20,7 +20,6 @@ import 'package:gallery/src/widgets/grid/cell_data.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/plugs/platform_channel.dart';
 import 'package:gallery/src/db/schemas/download_file.dart';
-import 'package:gallery/src/db/schemas/favorite_media.dart';
 import 'package:gallery/src/db/schemas/post.dart';
 import 'package:gallery/src/db/schemas/tags.dart';
 import 'package:isar/isar.dart';
@@ -70,6 +69,9 @@ class SystemGalleryDirectoryFile implements Cell {
   final List<Sticker> injectedStickers = [];
 
   final String notesFlat;
+  final String tagsFlat;
+  final bool isDuplicate;
+  final bool isFavorite;
 
   SystemGalleryDirectoryFile({
     required this.id,
@@ -80,7 +82,10 @@ class SystemGalleryDirectoryFile implements Cell {
     required this.size,
     required this.height,
     required this.notesFlat,
+    required this.isDuplicate,
+    required this.isFavorite,
     required this.width,
+    required this.tagsFlat,
     required this.isOriginal,
     required this.lastModified,
     required this.originalUri,
@@ -89,21 +94,13 @@ class SystemGalleryDirectoryFile implements Cell {
   @override
   String alias(bool isList) => name;
 
-  bool isDuplicate() {
-    return RegExp(r'[(][0-9].*[)][.][a-zA-Z0-9].*').hasMatch(name);
-  }
-
-  bool isFavorite() {
-    return Dbs.g.blacklisted.favoriteMedias.getSync(id) != null;
-  }
-
   List<(IconData, void Function()?)> _stickers(BuildContext? context) {
     return [
       if (isVideo) (FilteringMode.video.icon, null),
       if (isGif) (FilteringMode.gif.icon, null),
       if (isOriginal) (FilteringMode.original.icon, null),
-      if (isDuplicate()) (FilteringMode.duplicate.icon, null),
-      if (PostTags.g.containsTag(name, "translated"))
+      if (isDuplicate) (FilteringMode.duplicate.icon, null),
+      if (tagsFlat.contains("translated"))
         (
           Icons.translate_outlined,
           context == null
@@ -303,7 +300,7 @@ class SystemGalleryDirectoryFile implements Cell {
             title: AppLocalizations.of(context)!.heightInfoPage,
             subtitle: "${height}px"),
         addInfoTile(colors: colors, title: "Size", subtitle: kbMbSize(size)),
-        if (res != null && PostTags.g.containsTag(name, "translated"))
+        if (res != null && tagsFlat.contains("translated"))
           TranslationNotes.tile(context, colors.foregroundColor, res.id,
               () => BooruAPI.fromEnum(res!.booru, page: null)),
       ],
@@ -353,7 +350,7 @@ class SystemGalleryDirectoryFile implements Cell {
     final stickers = <Sticker>[
       ...injectedStickers,
       ..._stickers(context).map((e) => Sticker(e.$1)),
-      if (isFavorite())
+      if (isFavorite)
         Sticker(Icons.star_rounded,
             right: true,
             color: Colors.yellow.shade900
