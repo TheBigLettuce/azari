@@ -10,8 +10,8 @@ import 'package:flutter/material.dart';
 class WrapImageViewSkeleton extends StatelessWidget {
   final Map<ShortcutActivator, void Function()> bindings;
   final Widget child;
-  final bool canPop;
-  final void Function(bool) onPopInvoked;
+  // final bool canPop;
+  // final void Function(bool) onPopInvoked;
   final FocusNode mainFocus;
   final Widget bottomAppBar;
   final Widget? endDrawer;
@@ -21,10 +21,10 @@ class WrapImageViewSkeleton extends StatelessWidget {
   const WrapImageViewSkeleton(
       {super.key,
       required this.bindings,
-      required this.canPop,
+      // required this.canPop,
       required this.mainFocus,
       required this.scaffoldKey,
-      required this.onPopInvoked,
+      // required this.onPopInvoked,
       required this.appBar,
       required this.bottomAppBar,
       required this.endDrawer,
@@ -32,25 +32,22 @@ class WrapImageViewSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-        canPop: canPop,
-        onPopInvoked: onPopInvoked,
-        child: CallbackShortcuts(
-            bindings: bindings,
-            child: Focus(
-              autofocus: true,
-              focusNode: mainFocus,
-              child: Scaffold(
-                key: scaffoldKey,
-                extendBodyBehindAppBar: true,
-                extendBody: true,
-                endDrawerEnableOpenDragGesture: false,
-                resizeToAvoidBottomInset: false,
-                bottomNavigationBar: bottomAppBar,
-                endDrawer: endDrawer,
-                appBar: appBar,
-                body: child,
-              ),
-            )));
+    return CallbackShortcuts(
+        bindings: bindings,
+        child: Focus(
+          autofocus: true,
+          focusNode: mainFocus,
+          child: Scaffold(
+            key: scaffoldKey,
+            extendBodyBehindAppBar: true,
+            extendBody: true,
+            endDrawerEnableOpenDragGesture: false,
+            resizeToAvoidBottomInset: false,
+            bottomNavigationBar: bottomAppBar,
+            endDrawer: endDrawer,
+            appBar: appBar,
+            body: child,
+          ),
+        ));
   }
 }

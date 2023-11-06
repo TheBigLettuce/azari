@@ -17,7 +17,7 @@ import 'package:gallery/src/widgets/image_view/loading_builder.dart';
 import 'package:gallery/src/widgets/image_view/make_image_view_bindings.dart';
 import 'package:gallery/src/widgets/image_view/wrap_image_view_notifiers.dart';
 import 'package:gallery/src/widgets/image_view/wrap_image_view_skeleton.dart';
-import 'package:gallery/src/widgets/image_view/wrap_theme.dart';
+import 'package:gallery/src/widgets/image_view/wrap_image_view_theme.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:logging/logging.dart';
@@ -26,7 +26,6 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../widgets/keybinds/keybind_description.dart';
-import '../widgets/notifiers/filter.dart';
 import '../interfaces/cell.dart';
 import '../interfaces/contentable.dart';
 import '../widgets/keybinds/describe_keys.dart';
@@ -34,11 +33,9 @@ import '../widgets/image_view/app_bar.dart';
 import '../widgets/image_view/body.dart';
 import '../widgets/image_view/bottom_bar.dart';
 import '../widgets/image_view/end_drawer.dart';
-import '../widgets/image_view/notes_mixin.dart';
 import '../widgets/image_view/page_type_mixin.dart';
 import '../widgets/image_view/palette_mixin.dart';
 import '../widgets/image_view/note_list.dart';
-import '../widgets/image_view/notes_container.dart';
 
 final Color kListTileColorInInfo = Colors.white60.withOpacity(0.8);
 
@@ -106,26 +103,20 @@ class ImageView<T extends Cell> extends StatefulWidget {
 
 class ImageViewState<T extends Cell> extends State<ImageView<T>>
     with
-        SingleTickerProviderStateMixin,
         ImageViewPageTypeMixin<T>,
-        ImageViewNotesMixin<T>,
         ImageViewPaletteMixin<T>,
         ImageViewLoadingBuilderMixin<T> {
   final mainFocus = FocusNode();
   final GlobalKey<ScaffoldState> key = GlobalKey();
+  final GlobalKey<WrapImageViewNotifiersState> wrapNotifiersKey = GlobalKey();
+  final GlobalKey<WrapImageViewThemeState> wrapThemeKey = GlobalKey();
+  final GlobalKey<NoteListState> noteListKey = GlobalKey();
 
   late final ScrollController scrollController =
       ScrollController(initialScrollOffset: widget.infoScrollOffset ?? 0);
 
   late final PageController controller =
       PageController(initialPage: widget.startingCell);
-
-  late final AnimationController _animationController =
-      AnimationController(vsync: this, duration: 200.ms);
-
-  late final searchData = FilterNotifierData(() {
-    mainFocus.requestFocus();
-  }, TextEditingController(), FocusNode());
 
   late final PlatformFullscreensPlug fullscreenPlug =
       choosePlatformFullscreenPlug(widget.systemOverlayRestoreColor);
@@ -134,17 +125,15 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   late int currentPage = widget.startingCell;
   late int cellCount = widget.cellCount;
 
+  final noteTextController = TextEditingController();
+
   bool refreshing = false;
-  bool isAppbarShown = true;
 
   Map<ShortcutActivator, void Function()>? bindings;
 
   @override
   void initState() {
     super.initState();
-    _animationController.addListener(() {
-      setState(() {});
-    });
 
     WakelockPlus.enable();
 
@@ -161,8 +150,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     widget.updateTagScrollPos(null, widget.startingCell);
 
-    loadNotes(currentCell);
-
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
       final b = makeImageViewBindings(context, key, controller,
           download: widget.download == null
@@ -175,10 +162,12 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
             AppLocalizations.of(context)!.imageViewPageName, widget.focusMain)
       };
 
+      noteListKey.currentState?.loadNotes(currentCell);
+
       setState(() {});
 
       extractPalette(context, currentCell, key, scrollController, currentPage,
-          _animationController);
+          _resetAnimation);
     });
   }
 
@@ -189,16 +178,16 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     WakelockPlus.disable();
     widget.updateTagScrollPos(null, null);
     controller.dispose();
-    _animationController.dispose();
-    searchData.dispose();
 
     widget.onExit();
 
     scrollController.dispose();
 
-    disposeNotes();
-
     super.dispose();
+  }
+
+  void _resetAnimation() {
+    wrapThemeKey.currentState?.resetAnimation();
   }
 
   void hardRefresh() {
@@ -283,7 +272,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
   void _onTap() {
     fullscreenPlug.fullscreen();
-    setState(() => isAppbarShown = !isAppbarShown);
+    wrapNotifiersKey.currentState?.toggle();
   }
 
   void _onTagRefresh() {
@@ -292,16 +281,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     } catch (_) {}
   }
 
-  void _onPop(bool pop) {
-    if (extendNotes) {
-      setState(() {
-        extendNotes = false;
-      });
-    }
-  }
-
   void _onPageChanged(int index) {
-    extendNotes = false;
+    noteListKey.currentState?.unextendNotes();
     currentPage = index;
     widget.pageChange?.call(this);
     _loadNext(index);
@@ -315,10 +296,10 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     setState(() {
       currentCell = c;
-      loadNotes(currentCell);
+      noteListKey.currentState?.loadNotes(currentCell);
 
       extractPalette(context, currentCell, key, scrollController, currentPage,
-          _animationController);
+          _resetAnimation);
     });
   }
 
@@ -334,17 +315,14 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   @override
   Widget build(BuildContext context) {
     return WrapImageViewNotifiers<T>(
-      filterData: searchData,
+      key: wrapNotifiersKey,
       onTagRefresh: _onTagRefresh,
-      appBarShown: isAppbarShown,
-      progress: loadingProgress ?? 1.0,
       currentCell: currentCell,
-      notesExtended: extendNotes,
       registerNotifiers: widget.registerNotifiers,
-      child: WrapTheme(
+      child: WrapImageViewTheme(
+        key: wrapThemeKey,
         currentPalette: currentPalette,
         previousPallete: previousPallete,
-        animationValue: _animationController.value,
         child: WrapImageViewSkeleton(
             scaffoldKey: key,
             bindings: bindings ?? {},
@@ -352,8 +330,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                 preferredSize: currentStickers == null
                     ? const Size.fromHeight(kToolbarHeight + 4)
                     : const Size.fromHeight(kToolbarHeight + 36 + 4),
-                child: ImageViewAppBar(
-                  title: currentCell.alias(false),
+                child: ImageViewAppBar<T>(
                   stickers: currentStickers ?? const [],
                   actions: addButtons ?? const [],
                 )),
@@ -365,7 +342,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                   ),
             bottomAppBar: ImageViewBottomAppBar(
                 textController: noteTextController,
-                addNote: () => addNote(currentCell, currentPalette),
+                addNote: () => noteListKey.currentState
+                    ?.addNote(currentCell, currentPalette),
                 showAddNoteButton: widget.noteInterface != null,
                 children: widget.addIcons
                         ?.call(currentCell)
@@ -381,48 +359,31 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                         )
                         .toList() ??
                     const []),
-            canPop: !extendNotes,
             mainFocus: mainFocus,
-            onPopInvoked: _onPop,
             child: ImageViewBody(
               onPageChanged: _onPageChanged,
               onLongPress: _onLongPress,
               pageController: controller,
-              notes: widget.noteInterface == null ||
-                      noteKeys == null ||
-                      notes == null
+              notes: widget.noteInterface == null
                   ? null
-                  : NotesContainer(
-                      expandNotes: onExpandNotes,
+                  : NoteList<T>(
+                      key: noteListKey,
+                      noteInterface: widget.noteInterface!,
+                      onEmptyNotes: widget.onEmptyNotes,
                       backgroundColor: currentPalette?.dominantColor?.color
                               .harmonizeWith(
-                                  Theme.of(context).colorScheme.primary)
-                              .withOpacity(extendNotes ? 0.95 : 0.5) ??
-                          Colors.black.withOpacity(extendNotes ? 0.95 : 0.5),
-                      child: NoteList<NoteBase>(
-                        controller: notesScrollController,
-                        noteKeys: noteKeys!,
-                        notes: notes!,
-                        onDismissed: onNoteDismissed,
-                        onReorder: onNoteReorder,
-                        onReplace: onNoteReplace,
-                        onSave: onNoteSave,
-                        textController: noteTextController,
-                      )),
-              loadingBuilder: (context, event, idx) => loadingBuilder(
-                  context, event, idx, currentPage, currentPalette),
+                                  Theme.of(context).colorScheme.primary) ??
+                          Colors.black,
+                    ),
+              loadingBuilder: (context, event, idx) => loadingBuilder(context,
+                  event, idx, currentPage, wrapNotifiersKey, currentPalette),
               itemCount: cellCount,
               onTap: _onTap,
               builder: galleryBuilder,
               decoration: BoxDecoration(
-                color: ColorTween(
-                  begin: previousPallete?.mutedColor?.color
-                      .harmonizeWith(Theme.of(context).colorScheme.primary)
-                      .withOpacity(0.7),
-                  end: currentPalette?.mutedColor?.color
-                      .harmonizeWith(Theme.of(context).colorScheme.primary)
-                      .withOpacity(0.7),
-                ).transform(_animationController.value),
+                color: currentPalette?.mutedColor?.color
+                    .harmonizeWith(Theme.of(context).colorScheme.primary)
+                    .withOpacity(0.7),
               ),
             )),
       ),

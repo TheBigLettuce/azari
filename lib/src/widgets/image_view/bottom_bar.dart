@@ -31,26 +31,29 @@ class ImageViewBottomAppBar extends StatelessWidget {
         ],
         autoPlay: false,
         target: AppBarVisibilityNotifier.of(context) ? 0 : 1,
-        child: BottomAppBar(
-          child: !showAddNoteButton
-              ? Wrap(
-                  spacing: 4,
-                  children: children,
-                )
-              : Stack(children: [
-                  Wrap(
+        child: IgnorePointer(
+          ignoring: !AppBarVisibilityNotifier.of(context),
+          child: BottomAppBar(
+            child: !showAddNoteButton
+                ? Wrap(
                     spacing: 4,
                     children: children,
-                  ),
-                  Align(
-                      alignment: Alignment.centerRight,
-                      child: FloatingActionButton(
-                        elevation: 0,
-                        heroTag: null,
-                        onPressed: addNote,
-                        child: const Icon(Icons.edit_square),
-                      ))
-                ]),
+                  )
+                : Stack(children: [
+                    Wrap(
+                      spacing: 4,
+                      children: children,
+                    ),
+                    Align(
+                        alignment: Alignment.centerRight,
+                        child: FloatingActionButton(
+                          elevation: 0,
+                          heroTag: null,
+                          onPressed: addNote,
+                          child: const Icon(Icons.edit_square),
+                        ))
+                  ]),
+          ),
         ));
   }
 }

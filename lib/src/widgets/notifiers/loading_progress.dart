@@ -8,12 +8,12 @@
 import 'package:flutter/material.dart';
 
 class LoadingProgressNotifier extends InheritedWidget {
-  final double progress;
+  final double? progress;
 
   const LoadingProgressNotifier(
       {super.key, required this.progress, required super.child});
 
-  static double of(BuildContext context) {
+  static double? of(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<LoadingProgressNotifier>();
 

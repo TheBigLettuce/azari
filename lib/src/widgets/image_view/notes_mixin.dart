@@ -5,19 +5,13 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/widgets/notifiers/current_cell.dart';
-import 'package:palette_generator/palette_generator.dart';
+part of 'note_list.dart';
 
-import '../../db/schemas/note.dart';
-import '../../interfaces/cell.dart';
-import '../../pages/image_view.dart';
-
-mixin ImageViewNotesMixin<T extends Cell> on State<ImageView<T>> {
+mixin _ImageViewNotesMixin<T extends Cell> on State<NoteList<T>> {
   NoteBase? notes;
   List<DateTime>? noteKeys;
 
-  bool extendNotes = false;
+  bool _extendNotes = false;
 
   final noteTextController = TextEditingController();
   final notesScrollController = ScrollController();
@@ -27,12 +21,26 @@ mixin ImageViewNotesMixin<T extends Cell> on State<ImageView<T>> {
     notesScrollController.dispose();
   }
 
+  void toggle() {
+    setState(() {
+      _extendNotes = !_extendNotes;
+    });
+  }
+
+  void unextendNotes() {
+    if (_extendNotes) {
+      setState(() {
+        _extendNotes = false;
+      });
+    }
+  }
+
   void addNote(T currentCell, PaletteGenerator? currentPalette) {
     noteTextController.text = "";
 
-    if (extendNotes) {
+    if (_extendNotes) {
       final c = currentPalette?.dominantColor;
-      widget.noteInterface!
+      widget.noteInterface
           .addNote("New note", currentCell, c?.color, c?.bodyTextColor);
 
       loadNotes(currentCell, addNote: true);
@@ -72,7 +80,7 @@ mixin ImageViewNotesMixin<T extends Cell> on State<ImageView<T>> {
                     onPressed: () {
                       final c = currentPalette?.dominantColor;
 
-                      widget.noteInterface!.addNote(noteTextController.text,
+                      widget.noteInterface.addNote(noteTextController.text,
                           currentCell, c?.color, c?.bodyTextColor);
                       loadNotes(currentCell);
                       setState(() {});
@@ -90,14 +98,15 @@ mixin ImageViewNotesMixin<T extends Cell> on State<ImageView<T>> {
       bool addNote = false,
       int? removeNote,
       (int from, int to)? reorder}) {
-    notes = widget.noteInterface?.load(currentCell);
+    notes = widget.noteInterface.load(currentCell);
+
     if (notes == null || notes!.text.isEmpty) {
       if (widget.onEmptyNotes != null) {
         widget.onEmptyNotes!();
       } else {
         try {
           setState(() {
-            extendNotes = false;
+            _extendNotes = false;
           });
         } catch (_) {}
       }
@@ -150,7 +159,7 @@ mixin ImageViewNotesMixin<T extends Cell> on State<ImageView<T>> {
   }
 
   void onExpandNotes() {
-    extendNotes = !extendNotes;
+    _extendNotes = !_extendNotes;
     setState(() {});
   }
 
@@ -159,7 +168,7 @@ mixin ImageViewNotesMixin<T extends Cell> on State<ImageView<T>> {
 
     final d = notes.text[idx];
     final c = currentCell;
-    widget.noteInterface!.delete(currentCell, idx);
+    widget.noteInterface.delete(currentCell, idx);
 
     loadNotes(currentCell, removeNote: idx);
     setState(() {});
@@ -168,7 +177,7 @@ mixin ImageViewNotesMixin<T extends Cell> on State<ImageView<T>> {
       action: SnackBarAction(
           label: "Undo",
           onPressed: () {
-            widget.noteInterface!.addNote(
+            widget.noteInterface.addNote(
                 d,
                 c,
                 notes.backgroundColor == null
@@ -187,7 +196,7 @@ mixin ImageViewNotesMixin<T extends Cell> on State<ImageView<T>> {
   void onNoteReorder(BuildContext context, int from, int to) {
     final currentCell = CurrentCellNotifier.of<T>(context);
 
-    widget.noteInterface!.reorder(currentCell, from, to);
+    widget.noteInterface.reorder(currentCell, from, to);
     loadNotes(currentCell, reorder: (from, to));
     setState(() {});
   }
@@ -196,7 +205,7 @@ mixin ImageViewNotesMixin<T extends Cell> on State<ImageView<T>> {
       BuildContext context, NoteBase notes, int idx, String newText) {
     final currentCell = CurrentCellNotifier.of<T>(context);
 
-    widget.noteInterface!.replace(currentCell, idx, newText);
+    widget.noteInterface.replace(currentCell, idx, newText);
     loadNotes(currentCell, replaceIndx: idx);
 
     setState(() {});
@@ -212,7 +221,7 @@ mixin ImageViewNotesMixin<T extends Cell> on State<ImageView<T>> {
     final currentCell = CurrentCellNotifier.of<T>(context);
 
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      widget.noteInterface!.replace(currentCell, idx, currentText);
+      widget.noteInterface.replace(currentCell, idx, currentText);
       loadNotes(currentCell, replaceIndx: idx);
       try {
         setState(() {});

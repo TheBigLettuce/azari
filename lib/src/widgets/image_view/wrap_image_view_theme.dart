@@ -11,112 +11,141 @@ import 'package:palette_generator/palette_generator.dart';
 
 import '../../pages/image_view.dart';
 
-class WrapTheme extends StatelessWidget {
+class WrapImageViewTheme extends StatefulWidget {
   final PaletteGenerator? currentPalette;
   final PaletteGenerator? previousPallete;
   final Widget child;
-  final double animationValue;
 
-  const WrapTheme(
+  const WrapImageViewTheme(
       {super.key,
       required this.currentPalette,
       required this.previousPallete,
-      required this.animationValue,
       required this.child});
+
+  @override
+  State<WrapImageViewTheme> createState() => WrapImageViewThemeState();
+}
+
+class WrapImageViewThemeState extends State<WrapImageViewTheme>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _animationController = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 200));
+
+  void resetAnimation() {
+    _animationController.reset();
+    _animationController.forward(from: 0);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _animationController.addListener(() {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Theme(
       data: Theme.of(context).copyWith(
           hintColor: ColorTween(
-            begin: previousPallete?.mutedColor?.bodyTextColor
+            begin: widget.previousPallete?.mutedColor?.bodyTextColor
                     .harmonizeWith(Theme.of(context).colorScheme.primary) ??
                 kListTileColorInInfo,
-            end: currentPalette?.mutedColor?.bodyTextColor
+            end: widget.currentPalette?.mutedColor?.bodyTextColor
                     .harmonizeWith(Theme.of(context).colorScheme.primary) ??
                 kListTileColorInInfo,
-          ).transform(animationValue),
+          ).transform(_animationController.value),
           drawerTheme: DrawerThemeData(
             backgroundColor: ColorTween(
-                    begin: previousPallete?.mutedColor?.color
+                    begin: widget.previousPallete?.mutedColor?.color
                             .harmonizeWith(
                                 Theme.of(context).colorScheme.primary)
                             .withOpacity(0.85) ??
                         Theme.of(context).colorScheme.surface.withOpacity(0.5),
-                    end: currentPalette?.mutedColor?.color
+                    end: widget.currentPalette?.mutedColor?.color
                             .harmonizeWith(
                                 Theme.of(context).colorScheme.primary)
                             .withOpacity(0.85) ??
                         Theme.of(context).colorScheme.surface.withOpacity(0.5))
-                .transform(animationValue),
+                .transform(_animationController.value),
           ),
           progressIndicatorTheme: ProgressIndicatorThemeData(
-              color: currentPalette?.dominantColor?.bodyTextColor
+              color: widget.currentPalette?.dominantColor?.bodyTextColor
                   .harmonizeWith(Theme.of(context).colorScheme.primary)
                   .withOpacity(0.8)),
           appBarTheme: AppBarTheme(
               foregroundColor: ColorTween(
-                begin: previousPallete?.dominantColor?.bodyTextColor
+                begin: widget.previousPallete?.dominantColor?.bodyTextColor
                         .harmonizeWith(Theme.of(context).colorScheme.primary)
                         .withOpacity(0.8) ??
                     kListTileColorInInfo,
-                end: currentPalette?.dominantColor?.bodyTextColor
+                end: widget.currentPalette?.dominantColor?.bodyTextColor
                         .harmonizeWith(Theme.of(context).colorScheme.primary)
                         .withOpacity(0.8) ??
                     kListTileColorInInfo,
-              ).transform(animationValue),
+              ).transform(_animationController.value),
               backgroundColor: ColorTween(
-                begin: previousPallete?.dominantColor?.color
+                begin: widget.previousPallete?.dominantColor?.color
                         .harmonizeWith(Theme.of(context).colorScheme.primary)
                         .withOpacity(0.5) ??
                     Colors.black.withOpacity(0.5),
-                end: currentPalette?.dominantColor?.color
+                end: widget.currentPalette?.dominantColor?.color
                         .harmonizeWith(Theme.of(context).colorScheme.primary)
                         .withOpacity(0.5) ??
                     Colors.black.withOpacity(0.5),
-              ).transform(animationValue)),
+              ).transform(_animationController.value)),
           listTileTheme: ListTileThemeData(
             textColor: ColorTween(
-                    begin: previousPallete?.dominantColor?.bodyTextColor
+                    begin: widget.previousPallete?.dominantColor?.bodyTextColor
                             .harmonizeWith(
                                 Theme.of(context).colorScheme.primary)
                             .withOpacity(0.8) ??
                         kListTileColorInInfo,
-                    end: currentPalette?.dominantColor?.bodyTextColor
+                    end: widget.currentPalette?.dominantColor?.bodyTextColor
                             .harmonizeWith(
                                 Theme.of(context).colorScheme.primary)
                             .withOpacity(0.8) ??
                         kListTileColorInInfo)
-                .transform(animationValue),
+                .transform(_animationController.value),
           ),
           iconTheme: IconThemeData(
               color: ColorTween(
-                      begin: previousPallete?.dominantColor?.bodyTextColor
+                      begin: widget
+                              .previousPallete?.dominantColor?.bodyTextColor
                               .harmonizeWith(
                                   Theme.of(context).colorScheme.primary)
                               .withOpacity(0.8) ??
                           kListTileColorInInfo,
-                      end: currentPalette?.dominantColor?.bodyTextColor
+                      end: widget.currentPalette?.dominantColor?.bodyTextColor
                               .harmonizeWith(
                                   Theme.of(context).colorScheme.primary)
                               .withOpacity(0.8) ??
                           kListTileColorInInfo)
-                  .transform(animationValue)),
+                  .transform(_animationController.value)),
           bottomAppBarTheme: BottomAppBarTheme(
             color: ColorTween(
-                    begin: previousPallete?.dominantColor?.color
+                    begin: widget.previousPallete?.dominantColor?.color
                             .harmonizeWith(
                                 Theme.of(context).colorScheme.primary)
                             .withOpacity(0.5) ??
                         Colors.black.withOpacity(0.5),
-                    end: currentPalette?.dominantColor?.color
+                    end: widget.currentPalette?.dominantColor?.color
                             .harmonizeWith(
                                 Theme.of(context).colorScheme.primary)
                             .withOpacity(0.5) ??
                         Colors.black.withOpacity(0.5))
-                .transform(animationValue),
+                .transform(_animationController.value),
           )),
-      child: child,
+      child: widget.child,
     );
   }
 }

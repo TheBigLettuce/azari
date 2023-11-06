@@ -10,19 +10,20 @@ import 'dart:developer';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/pages/image_view.dart';
+import 'package:gallery/src/widgets/image_view/wrap_image_view_notifiers.dart';
+import 'package:gallery/src/widgets/notifiers/loading_progress.dart';
 import 'package:logging/logging.dart';
 import 'package:palette_generator/palette_generator.dart';
 
 import '../../interfaces/cell.dart';
 
 mixin ImageViewLoadingBuilderMixin<T extends Cell> on State<ImageView<T>> {
-  double? loadingProgress = 1.0;
-
   Widget loadingBuilder(
     BuildContext context,
     ImageChunkEvent? event,
     int idx,
     int currentPage,
+    GlobalKey<WrapImageViewNotifiersState> key,
     PaletteGenerator? currentPalette,
   ) {
     final expectedBytes = event?.expectedTotalBytes;
@@ -31,21 +32,15 @@ mixin ImageViewLoadingBuilderMixin<T extends Cell> on State<ImageView<T>> {
         ? loadedBytes / expectedBytes
         : null;
 
+    final loadingProgress = LoadingProgressNotifier.of(context);
+
     if (idx == currentPage) {
       if (event == null) {
         if (loadingProgress != null) {
-          WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-            setState(() {
-              loadingProgress = null;
-            });
-          });
+          key.currentState?.setLoadingProgress(null);
         }
       } else if (value != loadingProgress) {
-        WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-          setState(() {
-            loadingProgress = value;
-          });
-        });
+        key.currentState?.setLoadingProgress(value);
       }
     }
 
@@ -91,13 +86,7 @@ mixin ImageViewLoadingBuilderMixin<T extends Cell> on State<ImageView<T>> {
         child: _Image(
             t: t,
             reset: () {
-              WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-                try {
-                  setState(() {
-                    loadingProgress = 1.0;
-                  });
-                } catch (_) {}
-              });
+              key.currentState?.setLoadingProgress(1.0);
             }),
       );
     } catch (e, stackTrace) {

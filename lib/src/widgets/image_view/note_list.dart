@@ -10,115 +10,150 @@ import 'dart:math' as math;
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/widgets/notifiers/notes_visibility.dart';
+import 'package:gallery/src/pages/image_view.dart';
 
 import '../../db/schemas/note.dart';
+import '../../interfaces/cell.dart';
+import 'notes_container.dart';
 
-class NoteList<T extends NoteBase> extends StatelessWidget {
-  final ScrollController controller;
-  final T notes;
-  final List<DateTime> noteKeys;
-  final TextEditingController textController;
-  final void Function(BuildContext context, int from, int to) onReorder;
-  final void Function(BuildContext context, T notes, int idx, String newText)
-      onReplace;
-  final void Function(BuildContext context, T notes, int idx) onDismissed;
-  final void Function(
-      BuildContext context, T notes, int idx, String currentText) onSave;
+import 'package:gallery/src/widgets/notifiers/current_cell.dart';
+import 'package:palette_generator/palette_generator.dart';
+
+part 'notes_mixin.dart';
+
+class NoteList<T extends Cell> extends StatefulWidget {
+  final NoteInterface<T> noteInterface;
+  final void Function()? onEmptyNotes;
+  final Color backgroundColor;
 
   const NoteList(
       {super.key,
-      required this.controller,
-      required this.noteKeys,
-      required this.notes,
-      required this.onDismissed,
-      required this.onReorder,
-      required this.onReplace,
-      required this.onSave,
-      required this.textController});
+      required this.noteInterface,
+      required this.onEmptyNotes,
+      required this.backgroundColor});
+
+  @override
+  State<NoteList<T>> createState() => NoteListState<T>();
+}
+
+class NoteListState<T extends Cell> extends State<NoteList<T>>
+    with _ImageViewNotesMixin<T> {
+  @override
+  void dispose() {
+    disposeNotes();
+
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final random = math.Random(96879873);
-    final extend = NotesVisibilityNotifier.of(context);
 
-    return ReorderableListView(
-      clipBehavior: Clip.antiAlias,
-      buildDefaultDragHandles: false,
-      scrollController: controller,
-      onReorder: (from, to) => onReorder(context, from, to),
-      proxyDecorator: (child, idx, animation) {
-        return Material(
-          type: MaterialType.transparency,
-          color: Colors.white,
-          child: child,
-        );
-      },
-      children: [
-        ...notes.text.indexed.map((e) {
-          return Dismissible(
-              key: ValueKey(noteKeys[e.$1].microsecondsSinceEpoch),
-              background: Container(
-                  color: Colors.red
-                      .harmonizeWith(Theme.of(context).colorScheme.primary)),
-              onDismissed: (direction) {
-                onDismissed(context, notes, e.$1);
-              },
-              child: ListTile(
-                trailing: extend
-                    ? ReorderableDragStartListener(
-                        index: e.$1,
-                        child: Icon(
-                          Icons.drag_handle_rounded,
-                          color: Theme.of(context).iconTheme.color,
-                        ),
-                      )
-                    : null,
-                titleTextStyle: const TextStyle(fontFamily: "ZenKurenaido"),
-                onTap: extend
-                    ? null
-                    : () {
-                        textController.text = e.$2;
+    return PopScope(
+        canPop: !_extendNotes,
+        onPopInvoked: (_) => unextendNotes(),
+        child: notes == null || noteKeys == null
+            ? const SizedBox.shrink()
+            : NotesContainer(
+                expandNotes: onExpandNotes,
+                extendedNotes: _extendNotes,
+                backgroundColor: widget.backgroundColor
+                    .withOpacity(_extendNotes ? 0.95 : 0.5),
+                child: ReorderableListView(
+                  clipBehavior: Clip.antiAlias,
+                  buildDefaultDragHandles: false,
+                  scrollController: notesScrollController,
+                  onReorder: (from, to) => onNoteReorder(context, from, to),
+                  proxyDecorator: (child, idx, animation) {
+                    return Material(
+                      type: MaterialType.transparency,
+                      color: Colors.white,
+                      child: child,
+                    );
+                  },
+                  children: notes == null
+                      ? const []
+                      : [
+                          ...notes!.text.indexed.map((e) {
+                            return Dismissible(
+                                key: ValueKey(
+                                    noteKeys![e.$1].microsecondsSinceEpoch),
+                                background: Container(
+                                    color: Colors.red.harmonizeWith(
+                                        Theme.of(context).colorScheme.primary)),
+                                onDismissed: (direction) {
+                                  onNoteDismissed(context, notes!, e.$1);
+                                },
+                                child: ListTile(
+                                  trailing: _extendNotes
+                                      ? ReorderableDragStartListener(
+                                          index: e.$1,
+                                          child: Icon(
+                                            Icons.drag_handle_rounded,
+                                            color: Theme.of(context)
+                                                .iconTheme
+                                                .color,
+                                          ),
+                                        )
+                                      : null,
+                                  titleTextStyle: const TextStyle(
+                                      fontFamily: "ZenKurenaido"),
+                                  onTap: _extendNotes
+                                      ? null
+                                      : () {
+                                          noteTextController.text = e.$2;
 
-                        Navigator.push(
-                            context,
-                            DialogRoute(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: Text("Note"),
-                                  content: TextFormField(
-                                    controller: textController,
-                                    maxLines: null,
-                                    decoration: const InputDecoration(
-                                        border: InputBorder.none),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                        onPressed: () {
-                                          onReplace(context, notes, e.$1,
-                                              textController.text);
+                                          Navigator.push(
+                                              context,
+                                              DialogRoute(
+                                                context: context,
+                                                builder: (context) {
+                                                  return AlertDialog(
+                                                    title: Text("Note"),
+                                                    content: TextFormField(
+                                                      controller:
+                                                          noteTextController,
+                                                      maxLines: null,
+                                                      decoration:
+                                                          const InputDecoration(
+                                                              border:
+                                                                  InputBorder
+                                                                      .none),
+                                                    ),
+                                                    actions: [
+                                                      TextButton(
+                                                          onPressed: () {
+                                                            onNoteReplace(
+                                                                context,
+                                                                notes!,
+                                                                e.$1,
+                                                                noteTextController
+                                                                    .text);
+                                                          },
+                                                          child: Text("Save"))
+                                                    ],
+                                                  );
+                                                },
+                                              ));
                                         },
-                                        child: Text("Save"))
-                                  ],
-                                );
-                              },
-                            ));
-                      },
-                title: extend
-                    ? _FormFieldSaveable(e.$2, random: random, save: (str) {
-                        onSave(context, notes, e.$1, str);
-                      })
-                    : Text(
-                        e.$2,
-                        maxLines: extend ? null : 1,
-                        style: TextStyle(
-                            overflow: extend ? null : TextOverflow.ellipsis),
-                      ),
-              ));
-        })
-      ],
-    );
+                                  title: _extendNotes
+                                      ? _FormFieldSaveable(e.$2, random: random,
+                                          save: (str) {
+                                          onNoteSave(
+                                              context, notes!, e.$1, str);
+                                        })
+                                      : Text(
+                                          e.$2,
+                                          maxLines: _extendNotes ? null : 1,
+                                          style: TextStyle(
+                                              overflow: _extendNotes
+                                                  ? null
+                                                  : TextOverflow.ellipsis),
+                                        ),
+                                ));
+                          })
+                        ],
+                )));
   }
 }
 

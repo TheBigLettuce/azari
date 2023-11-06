@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/widgets/notifiers/app_bar_visibility.dart';
 import 'package:gallery/src/widgets/notifiers/current_cell.dart';
 import 'package:gallery/src/widgets/notifiers/loading_progress.dart';
-import 'package:gallery/src/widgets/notifiers/notes_visibility.dart';
 
 import '../../interfaces/cell.dart';
 import '../notifiers/filter.dart';
@@ -17,49 +16,72 @@ import '../notifiers/filter_value.dart';
 import '../notifiers/focus.dart';
 import '../notifiers/tag_refresh.dart';
 
-class WrapImageViewNotifiers<T extends Cell> extends StatelessWidget {
+class WrapImageViewNotifiers<T extends Cell> extends StatefulWidget {
   final void Function() onTagRefresh;
-  final FilterNotifierData filterData;
   final T currentCell;
   final InheritedWidget Function(Widget child)? registerNotifiers;
   final Widget child;
-  final bool appBarShown;
-  final bool notesExtended;
-  final double progress;
 
   const WrapImageViewNotifiers(
       {super.key,
-      required this.filterData,
       required this.registerNotifiers,
       required this.onTagRefresh,
-      required this.notesExtended,
-      required this.progress,
-      required this.appBarShown,
       required this.currentCell,
       required this.child});
 
   @override
+  State<WrapImageViewNotifiers<T>> createState() =>
+      WrapImageViewNotifiersState<T>();
+}
+
+class WrapImageViewNotifiersState<T extends Cell>
+    extends State<WrapImageViewNotifiers<T>> {
+  bool _isAppbarShown = true;
+  double? _loadingProgress = 1.0;
+
+  late final _searchData = FilterNotifierData(() {
+    // mainFocus.requestFocus();
+  }, TextEditingController(), FocusNode());
+
+  @override
+  void dispose() {
+    _searchData.dispose();
+
+    super.dispose();
+  }
+
+  void toggle() {
+    setState(() => _isAppbarShown = !_isAppbarShown);
+  }
+
+  void setLoadingProgress(double? progress) {
+    WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+      try {
+        setState(() => _loadingProgress = progress);
+      } catch (_) {}
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return TagRefreshNotifier(
-        notify: onTagRefresh,
+        notify: widget.onTagRefresh,
         child: FilterValueNotifier(
-          notifier: filterData.searchController,
+          notifier: _searchData.searchController,
           child: FilterNotifier(
-              data: filterData,
+              data: _searchData,
               child: FocusNotifier(
-                notifier: filterData.searchFocus,
-                focusMain: filterData.focusMain,
-                child: NotesVisibilityNotifier(
-                    isExtended: notesExtended,
-                    child: CurrentCellNotifier(
-                      cell: currentCell,
-                      child: LoadingProgressNotifier(
-                          progress: progress,
-                          child: AppBarVisibilityNotifier(
-                              isShown: appBarShown,
-                              child: registerNotifiers == null
-                                  ? child
-                                  : registerNotifiers!(child))),
+                notifier: _searchData.searchFocus,
+                focusMain: _searchData.focusMain,
+                child: CurrentCellNotifier(
+                    cell: widget.currentCell,
+                    child: LoadingProgressNotifier(
+                      progress: _loadingProgress,
+                      child: AppBarVisibilityNotifier(
+                          isShown: _isAppbarShown,
+                          child: widget.registerNotifiers == null
+                              ? widget.child
+                              : widget.registerNotifiers!(widget.child)),
                     )),
               )),
         ));

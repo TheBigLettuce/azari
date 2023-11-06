@@ -30,75 +30,61 @@ mixin ImageViewPaletteMixin<T extends Cell> on State<ImageView<T>> {
       GlobalKey<ScaffoldState> scaffoldKey,
       ScrollController scrollController,
       int currentPage,
-      AnimationController animationController) {
+      void Function() resetAnimation) {
     final t = currentCell.getCellData(false, context: context).thumb;
     if (t == null) {
       return;
     }
 
     PaletteGenerator.fromImageProvider(t).then((value) {
-      setState(() {
-        previousPallete = currentPalette;
-        currentPalette = value;
-        addInfo = currentCell.addInfo(context, () {
-          widget.updateTagScrollPos(scrollController.offset, currentPage);
-        },
-            AddInfoColorData(
-              borderColor: Theme.of(context).colorScheme.outlineVariant,
-              foregroundColor: value.mutedColor?.bodyTextColor
-                      .harmonizeWith(Theme.of(context).colorScheme.primary) ??
-                  kListTileColorInInfo,
-              systemOverlayColor: widget.systemOverlayRestoreColor,
-            ));
+      previousPallete = currentPalette;
+      currentPalette = value;
+      addInfo = currentCell.addInfo(context, () {
+        widget.updateTagScrollPos(scrollController.offset, currentPage);
+      },
+          AddInfoColorData(
+            borderColor: Theme.of(context).colorScheme.outlineVariant,
+            foregroundColor: value.mutedColor?.bodyTextColor
+                    .harmonizeWith(Theme.of(context).colorScheme.primary) ??
+                kListTileColorInInfo,
+            systemOverlayColor: widget.systemOverlayRestoreColor,
+          ));
 
-        final b = currentCell.addButtons(context);
+      final b = currentCell.addButtons(context);
 
-        addButtons = addInfo == null && b == null
-            ? null
-            : [
-                if (b != null) ...b,
-                if (addInfo != null)
-                  IconButton(
-                      onPressed: () {
-                        scaffoldKey.currentState?.openEndDrawer();
-                      },
-                      icon: const Icon(Icons.info_outline)),
-              ];
+      addButtons = addInfo == null && b == null
+          ? null
+          : [
+              if (b != null) ...b,
+              if (addInfo != null)
+                IconButton(
+                    onPressed: () {
+                      scaffoldKey.currentState?.openEndDrawer();
+                    },
+                    icon: const Icon(Icons.info_outline)),
+            ];
 
-        currentStickers = currentCell
-            .addStickers(context)
-            ?.map((e) => StickerWidget(
-                  Sticker(e.$1,
-                      color: ColorTween(
-                        begin: previousPallete?.dominantColor?.bodyTextColor
-                                .harmonizeWith(
-                                    Theme.of(context).colorScheme.primary)
-                                .withOpacity(0.8) ??
-                            kListTileColorInInfo,
-                        end: currentPalette?.dominantColor?.bodyTextColor
-                                .harmonizeWith(
-                                    Theme.of(context).colorScheme.primary)
-                                .withOpacity(0.8) ??
-                            kListTileColorInInfo,
-                      ).transform(animationController.value),
-                      backgroundColor: ColorTween(
-                        begin: previousPallete?.dominantColor?.color
-                                .harmonizeWith(
-                                    Theme.of(context).colorScheme.primary)
-                                .withOpacity(0.5) ??
-                            Colors.black.withOpacity(0.5),
-                        end: currentPalette?.dominantColor?.color
-                                .harmonizeWith(
-                                    Theme.of(context).colorScheme.primary)
-                                .withOpacity(0.5) ??
-                            Colors.black.withOpacity(0.5),
-                      ).transform(animationController.value)),
-                  onPressed: e.$2,
-                ))
-            .toList();
-        animationController.reset();
-        animationController.forward(from: 0);
-      });
+      currentStickers = currentCell
+          .addStickers(context)
+          ?.map((e) => StickerWidget(
+                Sticker(e.$1,
+                    color: currentPalette?.dominantColor?.bodyTextColor
+                            .harmonizeWith(
+                                Theme.of(context).colorScheme.primary)
+                            .withOpacity(0.8) ??
+                        kListTileColorInInfo,
+                    backgroundColor: currentPalette?.dominantColor?.color
+                            .harmonizeWith(
+                                Theme.of(context).colorScheme.primary)
+                            .withOpacity(0.5) ??
+                        Colors.black.withOpacity(0.5)),
+                onPressed: e.$2,
+              ))
+          .toList();
+
+      resetAnimation();
+
+      setState(() {});
     }).onError((error, stackTrace) {
       log("making palette for image_view",
           level: Level.SEVERE.value, error: error, stackTrace: stackTrace);
