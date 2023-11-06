@@ -234,12 +234,10 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                         selectionGlue: glue,
                         systemNavigationInsets:
                             MediaQuery.of(context).systemGestureInsets,
-                        registerNotifiers: [
-                          (child) => TagManagerNotifier(
-                              tagManager: widget.tagManager, child: child),
-                          (child) =>
-                              BooruAPINotifier(api: widget.api, child: child),
-                        ],
+                        registerNotifiers: (child) => TagManagerNotifier(
+                            tagManager: widget.tagManager,
+                            child: BooruAPINotifier(
+                                api: widget.api, child: child)),
                         menuButtonItems: [
                           MainBooruGrid.bookmarkButton(context, state, glue,
                               () {

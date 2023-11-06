@@ -7,29 +7,20 @@
 
 import 'package:flutter/material.dart';
 
-class EndDrawerHeading extends StatelessWidget {
-  final String headline;
+class LoadingProgressNotifier extends InheritedWidget {
+  final double progress;
 
-  const EndDrawerHeading(this.headline, {super.key});
+  const LoadingProgressNotifier(
+      {super.key, required this.progress, required super.child});
+
+  static double of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<LoadingProgressNotifier>();
+
+    return widget!.progress;
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return SliverAppBar(
-      expandedHeight: 152,
-      collapsedHeight: kToolbarHeight,
-      automaticallyImplyLeading: false,
-      actions: [Container()],
-      pinned: true,
-      leading: BackButton(
-        onPressed: () {
-          Scaffold.of(context).closeEndDrawer();
-        },
-      ),
-      flexibleSpace: FlexibleSpaceBar(
-          title: Text(
-        headline,
-        style: TextStyle(color: Theme.of(context).appBarTheme.foregroundColor),
-      )),
-    );
-  }
+  bool updateShouldNotify(LoadingProgressNotifier oldWidget) =>
+      progress != oldWidget.progress;
 }

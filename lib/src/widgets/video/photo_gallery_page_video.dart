@@ -10,14 +10,10 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
 class PhotoGalleryPageVideo extends StatefulWidget {
-  final Color backgroundColor;
-  final Color loadingColor;
   final String url;
   final bool localVideo;
   const PhotoGalleryPageVideo({
     super.key,
-    required this.backgroundColor,
-    required this.loadingColor,
     required this.url,
     required this.localVideo,
   });
@@ -52,8 +48,8 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
       if (!disposed) {
         setState(() {
           chewieController = ChewieController(
-              materialProgressColors:
-                  ChewieProgressColors(backgroundColor: widget.backgroundColor),
+              // materialProgressColors:
+              //     ChewieProgressColors(backgroundColor: widget.backgroundColor),
               videoPlayerController: controller,
               aspectRatio: controller.value.aspectRatio,
               autoInitialize: false,
@@ -99,11 +95,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
     return error != null
         ? const Icon(Icons.error)
         : chewieController == null
-            ? Center(
-                child: CircularProgressIndicator(
-                color: widget.loadingColor,
-                backgroundColor: widget.backgroundColor,
-              ))
+            ? const Center(child: CircularProgressIndicator())
             : GestureDetector(
                 // onTap: widget.onTap,
                 onDoubleTap: () {

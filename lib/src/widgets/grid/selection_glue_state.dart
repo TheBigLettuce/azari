@@ -39,7 +39,7 @@ class SelectionGlueState {
               return;
             }
             actions = addActions
-                .map((e) => WrapSheetButton(
+                .map((e) => WrapGridActionButton(
                     e.icon,
                     e.showOnlyWhenSingle && selection.selected.length != 1
                         ? null

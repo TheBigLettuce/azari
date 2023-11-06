@@ -242,12 +242,10 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                         selectionGlue: glue,
                         systemNavigationInsets:
                             MediaQuery.of(context).systemGestureInsets,
-                        registerNotifiers: [
-                          (child) => TagManagerNotifier(
-                              tagManager: widget.tagManager, child: child),
-                          (child) =>
-                              BooruAPINotifier(api: widget.api, child: child),
-                        ],
+                        registerNotifiers: (child) => TagManagerNotifier(
+                            tagManager: widget.tagManager,
+                            child: BooruAPINotifier(
+                                api: widget.api, child: child)),
                         menuButtonItems: [
                           if (widget.state == null)
                             MainBooruGrid.bookmarkButton(context, state, glue,

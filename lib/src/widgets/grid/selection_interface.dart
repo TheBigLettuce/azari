@@ -107,7 +107,7 @@ class SelectionInterface<T extends Cell> {
       this._setState, this.addActions, this.glue, this.controller);
 }
 
-class WrapSheetButton extends StatefulWidget {
+class WrapGridActionButton extends StatefulWidget {
   final IconData icon;
   final void Function()? onPressed;
   final bool addBadge;
@@ -118,7 +118,8 @@ class WrapSheetButton extends StatefulWidget {
   final bool animate;
   final bool play;
 
-  const WrapSheetButton(this.icon, this.onPressed, this.addBadge, this.label,
+  const WrapGridActionButton(
+      this.icon, this.onPressed, this.addBadge, this.label,
       {super.key,
       this.followColorTheme,
       this.backgroundColor,
@@ -127,10 +128,10 @@ class WrapSheetButton extends StatefulWidget {
       required this.animate});
 
   @override
-  State<WrapSheetButton> createState() => _WrapSheetButtonState();
+  State<WrapGridActionButton> createState() => _WrapGridActionButtonState();
 }
 
-class _WrapSheetButtonState extends State<WrapSheetButton> {
+class _WrapGridActionButtonState extends State<WrapGridActionButton> {
   AnimationController? _controller;
 
   @override

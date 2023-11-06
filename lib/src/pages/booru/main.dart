@@ -344,11 +344,9 @@ class _MainBooruGridState extends State<MainBooruGrid>
                             ? 80
                             : 0)),
                 selectionGlue: widget.glue,
-                registerNotifiers: [
-                  (child) =>
-                      TagManagerNotifier(tagManager: tagManager, child: child),
-                  (child) => BooruAPINotifier(api: api, child: child),
-                ],
+                registerNotifiers: (child) => TagManagerNotifier(
+                    tagManager: tagManager,
+                    child: BooruAPINotifier(api: api, child: child)),
                 inlineMenuButtonItems: true,
                 addFabPadding:
                     Scaffold.of(context).widget.bottomNavigationBar == null,

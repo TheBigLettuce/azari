@@ -101,11 +101,9 @@ class _SinglePostState extends State<SinglePost> {
         builder: (context) {
           return ImageView(
             key: key,
-            registerNotifiers: [
-              (child) => TagManagerNotifier(
-                  tagManager: widget.tagManager, child: child),
-              (child) => BooruAPINotifier(api: booru, child: child),
-            ],
+            registerNotifiers: (child) => TagManagerNotifier(
+                tagManager: widget.tagManager,
+                child: BooruAPINotifier(api: booru, child: child)),
             updateTagScrollPos: (_, __) {},
             download: (_) {
               Downloader.g.add(

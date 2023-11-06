@@ -176,11 +176,6 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   /// Supplied to [ImageView.pageChange].
   final void Function(ImageViewState<T> state)? pageChangeImage;
 
-  /// Segments of the grid.
-  /// If [segments] is not null, then the grid will try to group the cells together
-  /// by a common category name.
-  // final Segments<T>? segments;
-
   /// Makes [menuButtonItems] appear as app bar items.
   final bool inlineMenuButtonItems;
 
@@ -188,7 +183,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
 
   final Widget Function(Object error)? onError;
 
-  final List<InheritedWidget Function(Widget child)>? registerNotifiers;
+  final InheritedWidget Function(Widget child)? registerNotifiers;
 
   final void Function()? onExitImageView;
 
@@ -567,29 +562,6 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
               }, //extend: maxExtend,
       );
 
-  static Widget wrapNotifiers(
-      BuildContext context,
-      List<InheritedWidget Function(Widget child)>? notifiers,
-      Widget Function(BuildContext context) child) {
-    if (notifiers == null || notifiers.isEmpty) {
-      return child(context);
-    }
-
-    Widget registerRecursion(int idx, Widget currentChild) {
-      if (idx <= -1) {
-        return currentChild;
-      }
-      final f = notifiers[idx];
-      return registerRecursion(idx - 1, f(currentChild));
-    }
-
-    return registerRecursion(notifiers.length - 1, Builder(
-      builder: (context) {
-        return child(context);
-      },
-    ));
-  }
-
   Widget? _makeTitle(BuildContext context) {
     Widget make() {
       return Badge.count(
@@ -796,13 +768,9 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         ],
       );
 
-  @override
-  Widget build(BuildContext context) {
-    final bindings = _makeBindings(context);
-    segTranslation = null;
-
-    return wrapNotifiers(context, widget.registerNotifiers, (context) {
-      return CallbackShortcuts(
+  Widget _makeBody(BuildContext context,
+          Map<SingleActivatorDescription, void Function()> bindings) =>
+      CallbackShortcuts(
           bindings: {
             ...bindings,
             ...keybindDescription(context, describeKeys(bindings),
@@ -847,7 +815,15 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
               ],
             ),
           ));
-    });
+
+  @override
+  Widget build(BuildContext context) {
+    final bindings = _makeBindings(context);
+    segTranslation = null;
+
+    return widget.registerNotifiers == null
+        ? _makeBody(context, bindings)
+        : widget.registerNotifiers!(_makeBody(context, bindings));
   }
 }
 

@@ -7,29 +7,20 @@
 
 import 'package:flutter/material.dart';
 
-class EndDrawerHeading extends StatelessWidget {
-  final String headline;
+class NotesVisibilityNotifier extends InheritedWidget {
+  final bool isExtended;
 
-  const EndDrawerHeading(this.headline, {super.key});
+  const NotesVisibilityNotifier(
+      {super.key, required this.isExtended, required super.child});
+
+  static bool of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<NotesVisibilityNotifier>();
+
+    return widget!.isExtended;
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return SliverAppBar(
-      expandedHeight: 152,
-      collapsedHeight: kToolbarHeight,
-      automaticallyImplyLeading: false,
-      actions: [Container()],
-      pinned: true,
-      leading: BackButton(
-        onPressed: () {
-          Scaffold.of(context).closeEndDrawer();
-        },
-      ),
-      flexibleSpace: FlexibleSpaceBar(
-          title: Text(
-        headline,
-        style: TextStyle(color: Theme.of(context).appBarTheme.foregroundColor),
-      )),
-    );
-  }
+  bool updateShouldNotify(NotesVisibilityNotifier oldWidget) =>
+      isExtended != oldWidget.isExtended;
 }

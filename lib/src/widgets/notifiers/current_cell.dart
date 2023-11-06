@@ -7,29 +7,22 @@
 
 import 'package:flutter/material.dart';
 
-class EndDrawerHeading extends StatelessWidget {
-  final String headline;
+import '../../interfaces/cell.dart';
 
-  const EndDrawerHeading(this.headline, {super.key});
+class CurrentCellNotifier<T extends Cell> extends InheritedWidget {
+  final T cell;
+
+  const CurrentCellNotifier(
+      {super.key, required this.cell, required super.child});
+
+  static T of<T extends Cell>(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<CurrentCellNotifier<T>>();
+
+    return widget!.cell;
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return SliverAppBar(
-      expandedHeight: 152,
-      collapsedHeight: kToolbarHeight,
-      automaticallyImplyLeading: false,
-      actions: [Container()],
-      pinned: true,
-      leading: BackButton(
-        onPressed: () {
-          Scaffold.of(context).closeEndDrawer();
-        },
-      ),
-      flexibleSpace: FlexibleSpaceBar(
-          title: Text(
-        headline,
-        style: TextStyle(color: Theme.of(context).appBarTheme.foregroundColor),
-      )),
-    );
-  }
+  bool updateShouldNotify(CurrentCellNotifier<T> oldWidget) =>
+      cell.isarId != oldWidget.cell.isarId;
 }
