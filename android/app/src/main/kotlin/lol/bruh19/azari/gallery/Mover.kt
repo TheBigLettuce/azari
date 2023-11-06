@@ -81,6 +81,10 @@ internal class CacheLocker(private val context: Context) {
         mux.unlock()
     }
 
+    fun exist(id: Long): Boolean {
+        return directoryFile().resolve(id.toString()).exists()
+    }
+
     suspend fun clear() {
         mux.lock()
 
@@ -234,9 +238,13 @@ internal class Mover(
 
     fun getCachedThumbnail(thumb: Long, result: MethodChannel.Result) {
         scope.launch {
-            thumbnailsChannel.send(ThumbOp(thumb) { path, hash ->
-                result.success(mapOf<String, Any>(Pair("path", path), Pair("hash", hash)))
-            })
+            if (locker.exist(thumb)) {
+                result.success(mapOf<String, Any>(Pair("path", ""), Pair("hash", 0)))
+            } else {
+                thumbnailsChannel.send(ThumbOp(thumb) { path, hash ->
+                    result.success(mapOf<String, Any>(Pair("path", path), Pair("hash", hash)))
+                })
+            }
         }
     }
 
@@ -622,6 +630,10 @@ internal class Mover(
     }
 
     private suspend fun getThumb(id: Long, uri: Uri, network: Boolean): Pair<String, Long> {
+        if (locker.exist(id)) {
+            return Pair("", 0)
+        }
+
         val thumb = if (network) Glide.with(context).asBitmap().load(uri).submit()
             .get() else context.contentResolver.loadThumbnail(uri, Size(320, 320), null)
         val stream = ByteArrayOutputStream()

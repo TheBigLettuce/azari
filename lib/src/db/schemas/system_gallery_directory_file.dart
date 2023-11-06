@@ -409,10 +409,10 @@ class ThumbnailProvider extends ImageProvider {
     return other is ThumbnailProvider && other.id == id;
   }
 
-  const ThumbnailProvider(this.id);
-
   @override
   int get hashCode => id.hashCode;
+
+  const ThumbnailProvider(this.id);
 }
 
 ListTile addInfoTile(

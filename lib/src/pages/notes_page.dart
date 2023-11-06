@@ -22,7 +22,6 @@ import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
 import 'package:isar/isar.dart';
-import 'package:octo_image/octo_image.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:palette_generator/palette_generator.dart';
 
@@ -75,7 +74,7 @@ class _NotePageContainer<T extends Cell> {
             decoration: const BoxDecoration(
               borderRadius: BorderRadius.all(Radius.circular(10)),
             ),
-            child: OctoImage(
+            child: Image(
                 fit: BoxFit.cover,
                 filterQuality: FilterQuality.high,
                 image: e1.getCellData(false, context: context).thumb!),

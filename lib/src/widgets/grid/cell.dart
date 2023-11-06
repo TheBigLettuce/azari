@@ -7,8 +7,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:octo_image/octo_image.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:transparent_image/transparent_image.dart';
+import '../loading_error_widget.dart';
 import 'cell_data.dart';
 import 'callback_grid.dart';
 import 'sticker.dart';
@@ -73,107 +74,120 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
               widget.download!(widget.indx);
             }
           : null,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return Card(
-              margin: widget.tight ? const EdgeInsets.all(0.5) : null,
-              elevation: 0,
-              color: Theme.of(context).cardColor.withOpacity(0),
-              child: ClipPath(
-                clipper: ShapeBorderClipper(
-                    shape: widget.circle
-                        ? const CircleBorder()
-                        : RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15.0))),
-                child: Stack(
-                  children: [
-                    if (widget.hideAlias && !widget.shadowOnTop)
-                      Container(
-                        decoration: const BoxDecoration(color: Colors.black45),
-                      ),
-                    Center(
-                        child: OctoImage(
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Icon(Icons.error_outline),
-                      progressIndicatorBuilder: (context, loadingProgress) {
-                        if (loadingProgress == null) {
-                          return Container();
-                        }
+      child: Card(
+          margin: widget.tight ? const EdgeInsets.all(0.5) : null,
+          elevation: 0,
+          color: Theme.of(context).cardColor.withOpacity(0),
+          child: ClipPath(
+            clipper: ShapeBorderClipper(
+                shape: widget.circle
+                    ? const CircleBorder()
+                    : RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15.0))),
+            child: Stack(
+              children: [
+                Center(child: LayoutBuilder(builder: (context, constraints) {
+                  return Image(
+                    errorBuilder: (context, error, stackTrace) =>
+                        LoadingErrorWidget(
+                      error: error,
+                    ),
+                    frameBuilder: (
+                      context,
+                      child,
+                      frame,
+                      wasSynchronouslyLoaded,
+                    ) {
+                      if (wasSynchronouslyLoaded) {
+                        return child;
+                      }
 
-                        return Center(
-                          child: CircularProgressIndicator(
-                            value: loadingProgress.cumulativeBytesLoaded
-                                    .toDouble() /
-                                (loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.expectedTotalBytes!
-                                    : 1),
-                          ),
-                        );
-                      },
-                      image:
-                          widget._data.thumb ?? MemoryImage(kTransparentImage),
-                      alignment: Alignment.center,
-                      color: widget.shadowOnTop
-                          ? Colors.black.withOpacity(0.5)
-                          : null,
-                      colorBlendMode: BlendMode.darken,
-                      fit: BoxFit.cover,
-                      filterQuality: FilterQuality.high,
-                      width: constraints.maxWidth,
-                      height: constraints.maxHeight,
-                    )),
-                    if (widget._data.stickers.isNotEmpty &&
-                        !widget.ignoreStickers) ...[
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Wrap(
-                              direction: Axis.vertical,
-                              children: widget._data.stickers
-                                  .where((element) => element.right)
-                                  .map((e) => StickerWidget(e))
-                                  .toList(),
-                            )),
-                      ),
-                      Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Wrap(
-                            direction: Axis.vertical,
-                            children: widget._data.stickers
-                                .where((element) => !element.right)
-                                .map((e) => StickerWidget(e))
-                                .toList(),
-                          ))
-                    ],
-                    if (!widget.hideAlias && !widget.shadowOnTop)
-                      Container(
-                        alignment: Alignment.bottomCenter,
-                        decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                              Colors.black.withAlpha(50),
-                              Colors.black12,
-                              Colors.black45
-                            ])),
-                        child: Padding(
-                            padding: const EdgeInsets.all(6),
-                            child: Text(
-                              widget._data.name,
-                              softWrap: false,
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                              style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7)),
-                            )),
-                      ),
-                  ],
-                ),
-              ));
-        },
-      ),
+                      return frame == null
+                          ? const ShimmerLoadingIndicator()
+                          : child.animate().fadeIn();
+                    },
+                    image: widget._data.thumb ?? MemoryImage(kTransparentImage),
+                    alignment: Alignment.center,
+                    color: widget.shadowOnTop
+                        ? Colors.black.withOpacity(0.5)
+                        : null,
+                    colorBlendMode: BlendMode.darken,
+                    fit: BoxFit.cover,
+                    filterQuality: FilterQuality.low,
+                    width: constraints.maxWidth,
+                    height: constraints.maxHeight,
+                  );
+                })),
+                if (widget._data.stickers.isNotEmpty &&
+                    !widget.ignoreStickers) ...[
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Wrap(
+                          direction: Axis.vertical,
+                          children: widget._data.stickers
+                              .where((element) => element.right)
+                              .map((e) => StickerWidget(e))
+                              .toList(),
+                        )),
+                  ),
+                  Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Wrap(
+                        direction: Axis.vertical,
+                        children: widget._data.stickers
+                            .where((element) => !element.right)
+                            .map((e) => StickerWidget(e))
+                            .toList(),
+                      ))
+                ],
+                if (!widget.hideAlias && !widget.shadowOnTop)
+                  Container(
+                    alignment: Alignment.bottomCenter,
+                    decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                          Colors.black.withAlpha(50),
+                          Colors.black12,
+                          Colors.black45
+                        ])),
+                    child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Text(
+                          widget._data.name,
+                          softWrap: false,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style:
+                              TextStyle(color: Colors.white.withOpacity(0.7)),
+                        )),
+                  ),
+              ],
+            ),
+          )),
+    );
+  }
+}
+
+class ShimmerLoadingIndicator extends StatelessWidget {
+  const ShimmerLoadingIndicator({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Animate(
+      onComplete: (controller) => controller.repeat(),
+      effects: [
+        ShimmerEffect(
+            color:
+                Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+            delay: const Duration(seconds: 2),
+            duration: const Duration(milliseconds: 500))
+      ],
+      child: Container(
+          color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5)),
     );
   }
 }
