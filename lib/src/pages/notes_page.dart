@@ -275,22 +275,6 @@ class _NotesPageState extends State<NotesPage>
     super.dispose();
   }
 
-  Tab _makeTab(String title, int length) => Tab(
-          child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(title),
-          Padding(
-            padding: const EdgeInsets.only(left: 4),
-            child: Badge.count(
-              backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-              textColor: Theme.of(context).colorScheme.onSurfaceVariant,
-              count: length,
-            ),
-          )
-        ],
-      ));
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -343,9 +327,9 @@ class _NotesPageState extends State<NotesPage>
         bottom: widget.callback != null
             ? CopyMovePreview.hintWidget(context, widget.callback!.description)
             : TabBar(controller: tabController, tabs: [
-                _makeTab(AppLocalizations.of(context)!.booruLabel,
+                TabWithCount(AppLocalizations.of(context)!.booruLabel,
                     Dbs.g.blacklisted.noteBoorus.countSync()),
-                _makeTab(AppLocalizations.of(context)!.galleryLabel,
+                TabWithCount(AppLocalizations.of(context)!.galleryLabel,
                     Dbs.g.main.noteGallerys.countSync())
               ]),
       ),
@@ -356,5 +340,31 @@ class _NotesPageState extends State<NotesPage>
               galleryContainer.widget(context)
             ]),
     );
+  }
+}
+
+class TabWithCount extends StatelessWidget {
+  final String title;
+  final int count;
+
+  const TabWithCount(this.title, this.count, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Tab(
+        child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(title),
+        Padding(
+          padding: const EdgeInsets.only(left: 4),
+          child: Badge.count(
+            backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+            textColor: Theme.of(context).colorScheme.onSurfaceVariant,
+            count: count,
+          ),
+        )
+      ],
+    ));
   }
 }

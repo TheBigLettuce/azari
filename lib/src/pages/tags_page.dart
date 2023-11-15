@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/tags.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/pages/notes_page.dart';
 
 import '../interfaces/booru.dart';
 import '../db/state_restoration.dart';
@@ -111,67 +112,65 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text(
-          "阿",
-          style: TextStyle(
-              color: Theme.of(context).colorScheme.primary,
-              fontFamily: "ZenKurenaido"),
-        ),
-        bottom: TabBar(
-          tabs: [
-            Tab(
-                text: "Recent",
-                icon: Badge.count(
-                  count: _lastTags.length,
-                  child: const Icon(Icons.label),
-                )),
-            Tab(
-                text: "Excluded",
-                icon: Badge.count(
-                  count: _excludedTags.length,
-                  child: const Icon(Icons.label_off_rounded),
-                ))
+        body: NestedScrollView(
+      headerSliverBuilder: (context, scrolled) => [
+        SliverAppBar(
+          pinned: true,
+          floating: true,
+          snap: true,
+          centerTitle: true,
+          title: Text(
+            "阿",
+            style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontFamily: "ZenKurenaido"),
+          ),
+          bottom: TabBar(
+            tabs: [
+              TabWithCount("Recent", _lastTags.length),
+              TabWithCount("Excluded", _excludedTags.length),
+            ],
+            controller: tabController,
+          ),
+          actions: [
+            IconButton(
+                onPressed: () {
+                  Navigator.push(
+                      context,
+                      DialogRoute(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: Text(AppLocalizations.of(context)!
+                                .tagsDeletionDialogTitle),
+                            actions: [
+                              TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child:
+                                      Text(AppLocalizations.of(context)!.no)),
+                              TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    deleteAllController
+                                        .forward(from: 0)
+                                        .then((value) {
+                                      widget.tagManager.latest.clear();
+                                      deleteAllController.reverse(from: 1);
+                                    });
+                                  },
+                                  child:
+                                      Text(AppLocalizations.of(context)!.yes))
+                            ],
+                          );
+                        },
+                      ));
+                },
+                icon: const Icon(Icons.delete))
           ],
-          controller: tabController,
-        ),
-        actions: [
-          IconButton(
-              onPressed: () {
-                Navigator.push(
-                    context,
-                    DialogRoute(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: Text(AppLocalizations.of(context)!
-                              .tagsDeletionDialogTitle),
-                          actions: [
-                            TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: Text(AppLocalizations.of(context)!.no)),
-                            TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  deleteAllController
-                                      .forward(from: 0)
-                                      .then((value) {
-                                    widget.tagManager.latest.clear();
-                                    deleteAllController.reverse(from: 1);
-                                  });
-                                },
-                                child: Text(AppLocalizations.of(context)!.yes))
-                          ],
-                        );
-                      },
-                    ));
-              },
-              icon: const Icon(Icons.delete))
-        ],
-      ),
+        )
+      ],
       body: TabBarView(controller: tabController, children: [
         TagsWidget(
             tags: _lastTags,
@@ -210,6 +209,7 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
                   excludedFocus,
                   submitOnPress: true,
                   roundBorders: true,
+                  plainSearchBar: true,
                   showSearch: true,
                 ),
                 deleteTag: (t) {
@@ -227,6 +227,6 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
           )
         ], controller: deleteAllExcludedController, autoPlay: false),
       ]),
-    );
+    ));
   }
 }

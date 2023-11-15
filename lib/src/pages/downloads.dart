@@ -150,9 +150,8 @@ class _DownloadsState extends State<Downloads>
                   unpressable: true,
                   searchWidget: SearchAndFocus(
                       searchWidget(context,
-                          hint: AppLocalizations.of(context)!
-                              .downloadsPageName
-                              .toLowerCase()),
+                          hint:
+                              AppLocalizations.of(context)!.downloadsPageName),
                       searchFocus),
                   mainFocus: state.mainFocus,
                   refresh: () => Future.value(loader.count()),

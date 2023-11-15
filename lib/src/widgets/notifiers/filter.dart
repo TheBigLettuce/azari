@@ -25,13 +25,12 @@ class FilterNotifier extends InheritedWidget {
 class FilterNotifierData {
   final TextEditingController searchController;
   final FocusNode searchFocus;
-  final void Function() focusMain;
+  // final void Function() focusMain;
 
   void dispose() {
     searchController.dispose();
     searchFocus.dispose();
   }
 
-  const FilterNotifierData(
-      this.focusMain, this.searchController, this.searchFocus);
+  const FilterNotifierData(this.searchController, this.searchFocus);
 }

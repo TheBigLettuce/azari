@@ -59,7 +59,7 @@ Iterable<Widget> makeTags(
         Theme.of(context)
             .textTheme
             .titleSmall!
-            .copyWith(color: Theme.of(context).colorScheme.secondary)),
+            .copyWith(color: colors.foregroundColor)),
     ...ListTile.divideTiles(
         color: colors.borderColor,
         tiles: filteredTags.map((e) => ListTile(

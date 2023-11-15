@@ -298,7 +298,12 @@ internal class Mover(
         }
     }
 
-    fun refreshFiles(dirId: String, inRefreshAtEnd: Boolean, isTrashed: Boolean = false) {
+    fun refreshFiles(
+        dirId: String,
+        inRefreshAtEnd: Boolean,
+        isTrashed: Boolean = false,
+        isFavorites: Boolean = false
+    ) {
         val time = Calendar.getInstance().time.time
 
         scope.launch {
@@ -309,7 +314,8 @@ internal class Mover(
                 context,
                 time,
                 inRefreshAtEnd = inRefreshAtEnd,
-                isTrashed = isTrashed
+                isTrashed = isTrashed,
+                isFavorites = isFavorites
             ) { content, empty, inRefresh ->
                 sendMedia(dirId, time, content, empty, inRefresh)
             }
@@ -409,7 +415,8 @@ internal class Mover(
     fun trashThumbIds(
         context: Context,
         lastOnly: Boolean,
-        separate: Boolean = false
+        separate: Boolean = false,
+        isFavorites: Boolean = false
     ): Pair<List<Long>, List<Long>> {
         val projection = if (separate) arrayOf(
             MediaStore.Files.FileColumns._ID,
@@ -429,7 +436,11 @@ internal class Mover(
                 ContentResolver.QUERY_ARG_SQL_SORT_ORDER,
                 "${MediaStore.Files.FileColumns.DATE_MODIFIED} DESC"
             )
-            putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_ONLY)
+            if (isFavorites) {
+                putInt(MediaStore.QUERY_ARG_MATCH_FAVORITE, MediaStore.MATCH_ONLY)
+            } else {
+                putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_ONLY)
+            }
         }
 
         var result: Pair<List<Long>, List<Long>>? = null
@@ -481,6 +492,7 @@ internal class Mover(
         time: Long,
         inRefreshAtEnd: Boolean,
         isTrashed: Boolean = false,
+        isFavorites: Boolean = false,
         showOnly: List<Long>? = null,
         closure: suspend (content: List<DirectoryFile>, empty: Boolean, inRefresh: Boolean) -> Unit
     ) {
@@ -497,7 +509,7 @@ internal class Mover(
         )
 
         var selection =
-            "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) ${if (isTrashed || showOnly != null) "" else "AND ${MediaStore.Files.FileColumns.BUCKET_ID} = ? "}AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ?"
+            "(${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} OR ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO}) ${if (isTrashed || isFavorites || showOnly != null) "" else "AND ${MediaStore.Files.FileColumns.BUCKET_ID} = ? "}AND ${MediaStore.Files.FileColumns.MIME_TYPE} != ?"
 
         if (showOnly != null) {
             if (showOnly.isEmpty()) {
@@ -521,7 +533,7 @@ internal class Mover(
             putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
             putStringArray(
                 ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS,
-                if (isTrashed || showOnly != null) arrayOf("image/vnd.djvu") else arrayOf(
+                if (isTrashed || isFavorites || showOnly != null) arrayOf("image/vnd.djvu") else arrayOf(
                     dir,
                     "image/vnd.djvu"
                 )
@@ -532,6 +544,8 @@ internal class Mover(
             )
             if (isTrashed) {
                 putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_ONLY)
+            } else if (isFavorites) {
+                putInt(MediaStore.QUERY_ARG_MATCH_FAVORITE, MediaStore.MATCH_ONLY)
             }
         }
 

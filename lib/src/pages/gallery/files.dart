@@ -151,6 +151,8 @@ class _GalleryFilesState extends State<GalleryFiles>
         markSearchVirtual();
       }
 
+      setState(() {});
+
       if (selected == FilteringMode.size) {
         return SortingMode.size;
       }
@@ -684,8 +686,7 @@ class _GalleryFilesState extends State<GalleryFiles>
               noDrawer: widget.callback != null,
               canPop: currentFilteringMode() == FilteringMode.noFilter &&
                   searchTextController.text.isEmpty &&
-                  !glue.isOpen() &&
-                  state.gridKey.currentState?.showSearchBar != true,
+                  !glue.isOpen(),
               overrideOnPop: (pop, hideAppBar) {
                 final filterMode = currentFilteringMode();
                 if (filterMode != FilteringMode.noFilter ||

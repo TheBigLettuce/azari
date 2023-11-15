@@ -430,8 +430,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
                 initalCell: restore.copy.selectedPost,
               ),
               overrideBooru: api.booru,
-              canPop: !widget.glue.isOpen() &&
-                  state.gridKey.currentState?.showSearchBar != true,
+              canPop: !widget.glue.isOpen(),
               overrideOnPop: (pop, hideAppBar) {
                 if (widget.glue.isOpen()) {
                   state.gridKey.currentState?.selection.reset();

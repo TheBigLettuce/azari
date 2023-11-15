@@ -86,12 +86,9 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
                   addFabPadding: true,
                   selectionGlue: glue,
                   searchWidget: SearchAndFocus(
-                      searchWidget(
-                        context,
-                        hint: AppLocalizations.of(context)!
-                            .blacklistedDirectoriesPageName
-                            .toLowerCase(),
-                      ),
+                      searchWidget(context,
+                          hint: AppLocalizations.of(context)!
+                              .blacklistedDirectoriesPageName),
                       searchFocus),
                   mainFocus: state.mainFocus,
                   unpressable: true,
@@ -123,8 +120,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
                       keybindsDescription: AppLocalizations.of(context)!
                           .blacklistedDirectoriesPageName,
                       layout: const ListLayout())),
-              canPop: !glue.isOpen() &&
-                  state.gridKey.currentState?.showSearchBar != true,
+              canPop: !glue.isOpen(),
               overrideOnPop: (pop, hideAppBar) {
                 if (glue.isOpen()) {
                   state.gridKey.currentState?.selection.reset();

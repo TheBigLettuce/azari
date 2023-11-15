@@ -52,7 +52,7 @@ class _SettingsListState extends State<SettingsList> {
       setState(() {
         _settings = s;
       });
-    }, fire: true);
+    }, fire: false);
   }
 
   @override

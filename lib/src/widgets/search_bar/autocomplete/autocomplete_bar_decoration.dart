@@ -14,10 +14,10 @@ InputDecoration autocompleteBarDecoration(
     {required bool showSearch,
     int? searchCount,
     required bool roundBorders,
-    required bool ignoreFocusNotifier,
+    // required bool ignoreFocusNotifier,
     required String hint}) {
   return InputDecoration(
-      prefixIcon: !ignoreFocusNotifier && FocusNotifier.of(context).hasFocus
+      prefixIcon: FocusNotifier.of(context).hasFocus
           ? IconButton(
               onPressed: FocusNotifier.of(context).unfocus,
               icon: Badge.count(
@@ -33,7 +33,7 @@ InputDecoration autocompleteBarDecoration(
                   icon: Badge.count(
                     count: searchCount ?? 0,
                     isLabelVisible: searchCount != null,
-                    child: const Icon(Icons.search_rounded),
+                    // child: const Icon(Icons.search_rounded),
                   ),
                   padding: EdgeInsets.zero,
                 )
@@ -48,6 +48,7 @@ InputDecoration autocompleteBarDecoration(
         icon: const Icon(Icons.close),
       ),
       hintText: hint,
+      // fillColor: Colors.black,
       border: roundBorders
           ? const OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(50)))

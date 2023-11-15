@@ -30,18 +30,22 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
   List<Widget> _addItems() => [
         if (widget.instance._state.filteringModes.isNotEmpty)
           PopupMenuButton<FilteringMode>(
+            // position: PopupMenuPosition.under,
+            // offset: const Offset(0, 14),
             itemBuilder: (context) {
               return widget.instance._state.filteringModes
-                  .map((e) => PopupMenuItem(value: e, child: Text(e.string)))
+                  .map((e) => PopupMenuItem(
+                      value: e,
+                      onTap: () {
+                        widget.instance._searchVirtual = false;
+                        widget.instance._currentFilterMode = e;
+                        widget.instance._onChanged(
+                            widget.instance.searchTextController.text, true);
+                      },
+                      child: Text(e.string)))
                   .toList();
             },
             initialValue: widget.instance._currentFilterMode,
-            onSelected: (value) {
-              widget.instance._searchVirtual = false;
-              widget.instance._currentFilterMode = value;
-              widget.instance
-                  ._onChanged(widget.instance.searchTextController.text, true);
-            },
             icon: Icon(
               widget.instance._currentFilterMode.icon,
             ),
@@ -49,9 +53,6 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
           ),
         if (widget.instance.addItems != null) ...widget.instance.addItems!
       ];
-
-  String _makeHint(BuildContext context) =>
-      "${AppLocalizations.of(context)!.filterHint}${widget.hint != null ? ' ${widget.hint}' : ''}";
 
   Widget _autocompleteWidget() => AutocompleteWidget(
         widget.instance.searchTextController,
@@ -62,9 +63,9 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
         },
         widget.instance._localTagCompleteFunc,
         widget.instance.searchFocus,
-        showSearch: !Platform.isAndroid,
+        // showSearch: !Platform.isAndroid,
         roundBorders: false,
-        ignoreFocusNotifier: Platform.isAndroid,
+        // ignoreFocusNotifier: Platform.isAndroid,
         searchCount: widget
             .instance._state.gridKey.currentState?.mutationInterface?.cellCount,
         addItems: _addItems(),
@@ -72,7 +73,8 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
           widget.instance
               ._onChanged(widget.instance.searchTextController.text, true);
         },
-        customHint: _makeHint(context),
+        customHint: widget.hint,
+        searchTextOverride: AppLocalizations.of(context)!.filterHint,
         noUnfocus: true,
         scrollHack: _ScrollHack(),
       );
@@ -81,22 +83,21 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
   Widget build(BuildContext context) {
     return switch (widget.instance._currentFilterMode) {
       FilteringMode.tag || FilteringMode.tagReversed => _autocompleteWidget(),
-      FilteringMode() => TextField(
+      FilteringMode() => makeSearchBar(
+          context,
           focusNode: widget.instance.searchFocus,
-          controller: widget.instance.searchTextController,
-          decoration: autocompleteBarDecoration(
-              context,
-              () => widget.instance
-                  ._reset(widget.instance._state.unsetFilteringModeOnReset),
-              _addItems(),
-              searchCount: widget.instance._state.gridKey.currentState
-                  ?.mutationInterface?.cellCount,
-              roundBorders: false,
-              ignoreFocusNotifier: Platform.isAndroid,
-              showSearch: !Platform.isAndroid,
-              hint: _makeHint(context)),
-          onChanged: (s) => widget.instance._onChanged(s, false),
+          addItems: _addItems(),
+          count: widget.instance._state.gridKey.currentState?.mutationInterface
+              ?.cellCount,
+          textController: widget.instance.searchTextController,
+          onChanged: () => widget.instance
+              ._onChanged(widget.instance.searchTextController.text, false),
+          searchTextOverride: AppLocalizations.of(context)!.filterHint,
+          customHint: widget.hint,
+          onSubmit: (_) {},
         ),
     };
   }
 }
+
+// AppLocalizations.of(context)!.filterHint

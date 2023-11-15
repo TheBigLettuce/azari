@@ -38,7 +38,7 @@ class SelectionGlueState {
             if (actions != null || addActions.isEmpty) {
               return;
             }
-            actions = addActions
+            final a = addActions
                 .map((e) => WrapGridActionButton(
                     e.icon,
                     e.showOnlyWhenSingle && selection.selected.length != 1
@@ -62,9 +62,13 @@ class SelectionGlueState {
                 .toList();
 
             if (_playAnimation != null) {
-              _playAnimation!(false).then((value) => setState(() {}));
+              _playAnimation!(false).then((value) => setState(() {
+                    actions = a;
+                  }));
             } else {
-              setState(() {});
+              setState(() {
+                actions = a;
+              });
             }
           },
           isOpen: () {

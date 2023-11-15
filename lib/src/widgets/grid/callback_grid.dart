@@ -19,7 +19,6 @@ import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/db/schemas/settings.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:logging/logging.dart';
-import 'package:octo_image/octo_image.dart';
 import '../../db/schemas/note.dart';
 import '../../interfaces/cell.dart';
 import '../../interfaces/grid_mutation_interface.dart';
@@ -262,8 +261,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       widget.immutable ? null : _state;
 
   bool inImageView = false;
-  late bool showSearchBar =
-      widget.searchWidget == null ? false : widget.showSearchBarFirst;
+  // late bool showSearchBar =
+  // widget.searchWidget == null ? false : widget.showSearchBarFirst;
 
   List<int>? segTranslation;
 
@@ -562,61 +561,147 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
               }, //extend: maxExtend,
       );
 
-  Widget? _makeTitle(BuildContext context) {
-    Widget make() {
-      return Badge.count(
-        count: _state.cellCount,
-        isLabelVisible: widget.showCount,
-        child: Text(
-          widget.description.pageName ?? "探",
-          style: widget.description.pageName != null
-              ? null
-              : TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontFamily: "ZenKurenaido"),
-        ),
-      );
-    }
+  Widget? _makeTitle1(BuildContext context) {
+    // Widget make() {
+    //   // Outline
+    //   return Padding(
+    //     padding: EdgeInsets.all(4),
+    //     child: Container(
+    //       height: 38,
+    //       // width: 400,
+    //       decoration: ShapeDecoration(
+    //         color: Theme.of(context).colorScheme.inverseSurface,
+    //         shape: RoundedRectangleBorder(
+    //             borderRadius: BorderRadius.all(Radius.circular(5))),
+    //       ),
+    //       child: Align(
+    //         alignment: Alignment.centerLeft,
+    //         child: Padding(
+    //           padding: EdgeInsets.only(left: 2, right: 2),
+    //           child: Row(children: [
+    //             Icon(
+    //               Icons.search,
+    //               color: Theme.of(context).colorScheme.onInverseSurface,
+    //               size: 18,
+    //             ),
+    //             Text(
+    //               "Search",
+    //               style: TextStyle(
+    //                   fontSize: 18,
+    //                   color: Theme.of(context)
+    //                       .colorScheme
+    //                       .onInverseSurface
+    //                       .withOpacity(0.5)),
+    //             )
+    //           ]),
+    //         ),
+    //       ),
+    //     ),
+    //   );
+    // }
 
-    if (widget.searchWidget == null) {
-      return make();
-    }
-
-    return Animate(
-      effects: [
-        const FadeEffect(begin: 1, end: 0),
-        SwapEffect(builder: (context, _) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: widget.searchWidget!.search,
-          );
-        })
-      ],
-      target: showSearchBar ? 1 : 0,
-      child: GestureDetector(
-        onTap: () {
-          if (!showSearchBar) {
-            widget.searchWidget?.focus.requestFocus();
-          }
-          setState(() {
-            showSearchBar = !showSearchBar;
-          });
-        },
-        child: AbsorbPointer(
-          child: SizedBox(
-            width: 64,
-            height: 64,
-            child: Center(child: make()),
+    // if (widget.searchWidget == null) {
+    return widget.searchWidget?.search ??
+        Badge.count(
+          count: _state.cellCount,
+          isLabelVisible: widget.showCount,
+          child: Text(
+            widget.description.pageName ?? "探",
+            style: widget.description.pageName != null
+                ? null
+                : TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontFamily: "ZenKurenaido"),
           ),
-        ),
-      ),
-    );
+        );
+    // }
+
+    // return Animate(
+    //   effects: [
+    //     const FadeEffect(begin: 1, end: 0),
+    //     SwapEffect(builder: (context, _) {
+    //       return Padding(
+    //         padding: const EdgeInsets.only(bottom: 4),
+    //         child: widget.searchWidget!.search,
+    //       );
+    //     })
+    //   ],
+    //   target: showSearchBar ? 1 : 0,
+    //   child: GestureDetector(
+    //     onTap: () {
+    //       if (!showSearchBar) {
+    //         widget.searchWidget?.focus.requestFocus();
+    //       }
+    //       setState(() {
+    //         showSearchBar = !showSearchBar;
+    //       });
+    //     },
+    //     child: AbsorbPointer(
+    //       child: SizedBox(
+    //         width: 36 * 4,
+    //         height: 64,
+    //         child: Center(child: make()),
+    //       ),
+    //     ),
+    //   ),
+    // );
   }
 
+  // Widget? _makeTitle(BuildContext context) {
+  //   Widget make() {
+  //     return Badge.count(
+  //       count: _state.cellCount,
+  //       isLabelVisible: widget.showCount,
+  //       child: Text(
+  //         widget.description.pageName ?? "探",
+  //         style: widget.description.pageName != null
+  //             ? null
+  //             : TextStyle(
+  //                 color: Theme.of(context).colorScheme.primary,
+  //                 fontFamily: "ZenKurenaido"),
+  //       ),
+  //     );
+  //   }
+
+  //   if (widget.searchWidget == null) {
+  //     return make();
+  //   }
+
+  //   return Animate(
+  //     effects: [
+  //       const FadeEffect(begin: 1, end: 0),
+  //       SwapEffect(builder: (context, _) {
+  //         return Padding(
+  //           padding: const EdgeInsets.only(bottom: 4),
+  //           child: widget.searchWidget!.search,
+  //         );
+  //       })
+  //     ],
+  //     target: showSearchBar ? 1 : 0,
+  //     child: GestureDetector(
+  //       onTap: () {
+  //         if (!showSearchBar) {
+  //           widget.searchWidget?.focus.requestFocus();
+  //         }
+  //         setState(() {
+  //           showSearchBar = !showSearchBar;
+  //         });
+  //       },
+  //       child: AbsorbPointer(
+  //         child: SizedBox(
+  //           width: 64,
+  //           height: 64,
+  //           child: Center(child: make()),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
+
   List<Widget> _makeActions(BuildContext context) {
-    if (widget.menuButtonItems == null || showSearchBar) {
-      return [Container()];
-    }
+    // if (widget.menuButtonItems == null || showSearchBar) {
+    //   return [Container()];
+    // }
 
     return (!widget.inlineMenuButtonItems && widget.menuButtonItems!.length > 1)
         ? [
@@ -653,19 +738,19 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
               )));
     }
 
-    if (showSearchBar) {
-      return IconButton(
-          onPressed: () {
-            if (widget.searchWidget?.focus.hasFocus ?? false) {
-              widget.mainFocus.requestFocus();
-            } else {
-              setState(() {
-                showSearchBar = !showSearchBar;
-              });
-            }
-          },
-          icon: const Icon(Icons.arrow_back));
-    }
+    // if (showSearchBar) {
+    //   return IconButton(
+    //       onPressed: () {
+    //         if (widget.searchWidget?.focus.hasFocus ?? false) {
+    //           widget.mainFocus.requestFocus();
+    //         } else {
+    //           setState(() {
+    //             showSearchBar = !showSearchBar;
+    //           });
+    //         }
+    //       },
+    //       icon: const Icon(Icons.arrow_back));
+    // }
 
     if (widget.onBack != null) {
       return IconButton(
@@ -723,14 +808,15 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                           .withOpacity(0.95),
                       automaticallyImplyLeading: false,
                       actions: _makeActions(context),
-                      centerTitle:
-                          widget.description.pageName == null ? true : false,
-                      title: _makeTitle(context),
+                      centerTitle: true,
+
+                      // widget.description.pageName == null ? true : false,
+                      title: _makeTitle1(context),
                       leading: _makeLeading(context),
                       pinned: true,
                       stretch: true,
-                      snap: !showSearchBar && selection.selected.isEmpty,
-                      floating: !showSearchBar && selection.selected.isEmpty,
+                      snap: selection.selected.isEmpty,
+                      floating: selection.selected.isEmpty,
                       bottom: widget.description.bottomWidget != null
                           ? widget.description.bottomWidget!
                           : PreferredSize(

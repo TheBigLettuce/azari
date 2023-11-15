@@ -58,21 +58,22 @@ class NoteLayout<T extends Cell> implements GridLayouter<T> {
                                             Radius.circular(10))),
                                     clipBehavior: Clip.antiAlias,
                                     child: provider != null
-                                        ? OctoImage(
+                                        ? Image(
                                             fit: BoxFit.cover,
                                             filterQuality: FilterQuality.high,
-                                            progressIndicatorBuilder:
-                                                (context, _) {
-                                              return Container(
-                                                      color: Theme.of(context)
-                                                          .colorScheme
-                                                          .secondaryContainer)
-                                                  .animate(
-                                                      onComplete: (controller) {
-                                                controller.repeat();
-                                              }).shimmer(
-                                                      delay: 2.seconds,
-                                                      duration: 500.ms);
+                                            frameBuilder: (
+                                              context,
+                                              child,
+                                              frame,
+                                              wasSynchronouslyLoaded,
+                                            ) {
+                                              if (wasSynchronouslyLoaded) {
+                                                return child;
+                                              }
+
+                                              return frame == null
+                                                  ? const ShimmerLoadingIndicator()
+                                                  : child.animate().fadeIn();
                                             },
                                             image: provider)
                                         : null,

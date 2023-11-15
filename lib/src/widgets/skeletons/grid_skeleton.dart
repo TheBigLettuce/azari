@@ -38,13 +38,13 @@ class GridSkeleton<T extends Cell> extends StatelessWidget {
               overrideOnPop!(pop, () {
                 final s = state.gridKey.currentState;
                 if (s != null) {
-                  if (s.showSearchBar) {
-                    s.showSearchBar = false;
-                    // ignore: invalid_use_of_protected_member
-                    s.setState(() {});
+                  // if (s.showSearchBar) {
+                  //   s.showSearchBar = false;
+                  //   // ignore: invalid_use_of_protected_member
+                  //   s.setState(() {});
 
-                    return true;
-                  }
+                  //   return true;
+                  // }
                 }
 
                 return false;

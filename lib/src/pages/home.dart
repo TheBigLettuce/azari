@@ -36,13 +36,14 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
+class _HomeState extends State<Home> with TickerProviderStateMixin {
+  late final controllerNavBar = AnimationController(vsync: this);
   final state = SkeletonState();
   int currentRoute = 0;
   late final controller = AnimationController(vsync: this);
   final menuController = MenuController();
 
-  final glueState = SelectionGlueState();
+  late final SelectionGlueState glueState;
 
   late final Isar mainGrid;
 
@@ -59,6 +60,18 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+
+    glueState = SelectionGlueState(
+        //   playAnimation: (backward) {
+        //   if (backward) {
+        //     return controllerNavBar.animateBack(0);
+        //   }
+        //   // return controller.animateTo(1);
+
+        //   return controllerNavBar.animateTo(1);
+        // }
+        );
+
     final settings = Settings.fromDb();
 
     mainGrid = DbsOpen.primaryGrid(settings.selectedBooru);
@@ -179,12 +192,14 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
             child: _currentPage(context));
       },
       navBar: Animate(
-          target: glueState.actions == null ? 0 : 1,
+          controller: controllerNavBar,
+          target: glueState.actions != null ? 1 : 0,
           effects: [
-            const MoveEffect(
-                curve: Curves.easeOutQuint,
-                begin: Offset.zero,
-                end: Offset(0, kBottomNavigationBarHeight)),
+            MoveEffect(
+              curve: Curves.fastOutSlowIn,
+              begin: Offset.zero,
+              end: Offset(0, 100 + MediaQuery.viewInsetsOf(context).bottom),
+            ),
             SwapEffect(
               builder: (context, _) {
                 return glueState.actions != null

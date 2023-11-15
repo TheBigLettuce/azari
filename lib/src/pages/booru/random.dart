@@ -350,8 +350,7 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                         }),
                       ),
                       overrideBooru: widget.api.booru,
-                      canPop: !glue.isOpen() &&
-                          state.gridKey.currentState?.showSearchBar != true,
+                      canPop: !glue.isOpen(),
                       overrideOnPop: (pop, hideAppBar) {
                         if (glue.isOpen()) {
                           state.gridKey.currentState?.selection.reset();

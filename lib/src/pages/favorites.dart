@@ -321,10 +321,12 @@ class _FavoritesPageState extends State<FavoritesPage>
                   Scaffold.of(context).widget.bottomNavigationBar == null,
               mainFocus: state.mainFocus,
               searchWidget: SearchAndFocus(
-                  searchWidget(context,
-                      hint: AppLocalizations.of(context)!
-                          .favoritesLabel
-                          .toLowerCase()),
+                  searchWidget(
+                    context,
+                    // hint: AppLocalizations.of(context)!
+                    //     .favoritesLabel
+                    //     .toLowerCase()
+                  ),
                   searchFocus),
               refresh: () => Future.value(loader.count()),
               description: GridDescription([

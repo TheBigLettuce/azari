@@ -436,8 +436,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
         canPop: widget.callback != null || widget.nestedCallback != null
             ? currentFilteringMode() == FilteringMode.noFilter &&
                 searchTextController.text.isEmpty &&
-                !widget.glue.isOpen() &&
-                state.gridKey.currentState?.showSearchBar != true
+                !widget.glue.isOpen()
             : false, overrideOnPop: (pop, hideAppBar) {
       final filterMode = currentFilteringMode();
       if (filterMode != FilteringMode.noFilter ||

@@ -19,6 +19,7 @@ import '../notifiers/tag_refresh.dart';
 class WrapImageViewNotifiers<T extends Cell> extends StatefulWidget {
   final void Function() onTagRefresh;
   final T currentCell;
+  final FocusNode mainFocus;
   final InheritedWidget Function(Widget child)? registerNotifiers;
   final Widget child;
 
@@ -27,6 +28,7 @@ class WrapImageViewNotifiers<T extends Cell> extends StatefulWidget {
       required this.registerNotifiers,
       required this.onTagRefresh,
       required this.currentCell,
+      required this.mainFocus,
       required this.child});
 
   @override
@@ -39,9 +41,8 @@ class WrapImageViewNotifiersState<T extends Cell>
   bool _isAppbarShown = true;
   double? _loadingProgress = 1.0;
 
-  late final _searchData = FilterNotifierData(() {
-    // mainFocus.requestFocus();
-  }, TextEditingController(), FocusNode());
+  late final _searchData =
+      FilterNotifierData(TextEditingController(), FocusNode());
 
   @override
   void dispose() {
@@ -72,7 +73,7 @@ class WrapImageViewNotifiersState<T extends Cell>
               data: _searchData,
               child: FocusNotifier(
                 notifier: _searchData.searchFocus,
-                focusMain: _searchData.focusMain,
+                focusMain: widget.mainFocus.requestFocus,
                 child: CurrentCellNotifier(
                     cell: widget.currentCell,
                     child: LoadingProgressNotifier(

@@ -8,11 +8,11 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/widgets/notifiers/focus.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../../db/schemas/tags.dart';
-import 'autocomplete_bar_decoration.dart';
 import 'autocomplete_tag.dart';
 
 class AutocompleteWidget extends StatelessWidget {
@@ -28,11 +28,12 @@ class AutocompleteWidget extends StatelessWidget {
   final bool roundBorders;
   final String? customHint;
   final bool showSearch;
-  final bool ignoreFocusNotifier;
   final int? searchCount;
   final bool noUnfocus;
   final void Function()? onChanged;
   final List<Widget>? addItems;
+  final String? searchTextOverride;
+  final bool plainSearchBar;
 
   const AutocompleteWidget(this.controller, this.highlightChanged,
       this.onSubmit, this.focusMain, this.complF, this.focus,
@@ -41,9 +42,10 @@ class AutocompleteWidget extends StatelessWidget {
       this.noSticky = false,
       this.submitOnPress = false,
       this.roundBorders = false,
+      this.searchTextOverride,
       this.customHint,
       this.showSearch = false,
-      this.ignoreFocusNotifier = false,
+      this.plainSearchBar = false,
       this.searchCount,
       this.noUnfocus = false,
       this.onChanged,
@@ -123,49 +125,24 @@ class AutocompleteWidget extends StatelessWidget {
       },
       fieldViewBuilder:
           (context, textEditingController, focusNode, onFieldSubmitted) {
-        return roundBorders
+        return plainSearchBar
             ? SearchBar(
-                leading: showSearch ? const Icon(Icons.search) : null,
-                hintText:
-                    customHint ?? AppLocalizations.of(context)!.searchHint,
                 controller: textEditingController,
                 focusNode: focusNode,
-                onChanged: (value) {
-                  onChanged?.call();
-                },
-                onSubmitted: (value) {
-                  onSubmit(Tag.string(tag: value));
-                },
+                hintText: AppLocalizations.of(context)!.searchHint,
+                leading: const Icon(Icons.search),
+                onChanged: (_) => onChanged,
+                // onSubmitted: onFieldSubmitted,
               )
-            : TextField(
-                scrollController: scrollHack,
-                cursorOpacityAnimates: true,
-                decoration: autocompleteBarDecoration(
-                  context,
-                  () {
-                    textEditingController.clear();
-                    if (!noUnfocus) {
-                      focusMain();
-                    }
-
-                    onChanged?.call();
-                  },
-                  addItems,
-                  ignoreFocusNotifier: ignoreFocusNotifier,
-                  searchCount: searchCount,
-                  showSearch: showSearch,
-                  roundBorders: roundBorders,
-                  hint: customHint ?? AppLocalizations.of(context)!.searchHint,
-                ),
-                controller: textEditingController,
+            : makeSearchBar(context,
                 focusNode: focusNode,
-                onChanged: (value) {
-                  onChanged?.call();
-                },
-                onSubmitted: (value) {
-                  onSubmit(Tag.string(tag: value));
-                },
-              );
+                addItems: addItems,
+                textController: textEditingController,
+                onChanged: onChanged,
+                onSubmit: onSubmit,
+                count: searchCount,
+                searchTextOverride: searchTextOverride,
+                customHint: customHint);
       },
       optionsBuilder: (textEditingValue) async {
         try {
@@ -179,4 +156,107 @@ class AutocompleteWidget extends StatelessWidget {
       },
     );
   }
+}
+
+Widget makeSearchBar(
+  BuildContext context, {
+  String? searchTextOverride,
+  String? customHint,
+  int? count,
+  required FocusNode focusNode,
+  required List<Widget>? addItems,
+  required TextEditingController textController,
+  required void Function()? onChanged,
+  required void Function(Tag) onSubmit,
+}) {
+  final notifier = FocusNotifier.of(context);
+
+  return DefaultSelectionStyle(
+    cursorColor:
+        Theme.of(context).colorScheme.onInverseSurface.withOpacity(0.8),
+    child: Theme(
+      data: Theme.of(context).copyWith(
+          searchBarTheme: SearchBarThemeData(
+            overlayColor: MaterialStatePropertyAll(Theme.of(context)
+                .colorScheme
+                .onInverseSurface
+                .withOpacity(0.05)),
+            textStyle: MaterialStatePropertyAll(
+              TextStyle(color: Theme.of(context).colorScheme.onInverseSurface),
+            ),
+            elevation: const MaterialStatePropertyAll(0),
+            backgroundColor: MaterialStatePropertyAll(
+                Theme.of(context).colorScheme.inverseSurface.withOpacity(0.8)),
+            hintStyle: MaterialStatePropertyAll(
+              TextStyle(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onInverseSurface
+                    .withOpacity(0.5),
+              ),
+            ),
+          ),
+          badgeTheme: BadgeThemeData(
+            backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+            textColor: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            iconColor: Theme.of(context).colorScheme.onInverseSurface,
+            prefixIconColor: Theme.of(context).colorScheme.onInverseSurface,
+            suffixIconColor: Theme.of(context).colorScheme.onInverseSurface,
+          ),
+          iconTheme: IconThemeData(
+              size: 18, color: Theme.of(context).colorScheme.onInverseSurface),
+          iconButtonTheme: IconButtonThemeData(
+              style: ButtonStyle(
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                  padding: const MaterialStatePropertyAll(EdgeInsets.all(0)),
+                  iconColor: MaterialStatePropertyAll(
+                      Theme.of(context).colorScheme.onInverseSurface))),
+          hintColor:
+              Theme.of(context).colorScheme.onInverseSurface.withOpacity(0.5)),
+      child: SearchBar(
+        side: const MaterialStatePropertyAll(BorderSide.none),
+        leading: !notifier.hasFocus
+            ? addItems != null && addItems.length == 1
+                ? addItems.first
+                : const Icon(Icons.search_rounded)
+            : BackButton(
+                onPressed: () {
+                  notifier.unfocus();
+                },
+              ),
+        constraints: BoxConstraints.expand(
+            height: 38,
+            width: !notifier.hasFocus ? 114 + (count != null ? 38 : 0) : null),
+        hintText: notifier.hasFocus
+            ? "${searchTextOverride ?? AppLocalizations.of(context)!.searchHint} ${customHint ?? ''}"
+            : customHint ??
+                searchTextOverride ??
+                AppLocalizations.of(context)!.searchHint,
+        controller: textController,
+        focusNode: focusNode,
+        trailing: notifier.hasFocus
+            ? [
+                if (addItems != null) ...addItems,
+                IconButton(
+                    onPressed: () {
+                      textController.clear();
+                      onChanged?.call();
+                    },
+                    icon: const Icon(Icons.close))
+              ]
+            : count != null
+                ? [Badge(label: Text(count.toString()))]
+                : null,
+        onChanged: (value) {
+          onChanged?.call();
+        },
+        onSubmitted: (value) {
+          onSubmit(Tag.string(tag: value));
+        },
+      ),
+    ),
+  );
 }

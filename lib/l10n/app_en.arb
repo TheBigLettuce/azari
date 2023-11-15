@@ -316,7 +316,7 @@
     "@addTagToExcluded": {
         "description": "Dialog title when adding tag to excluded from image view tags"
     },
-    "directoriesHint": "directories",
+    "directoriesHint": "Directories",
     "@directoriesHint": {
         "description": "Android gallery, filter bar hint"
     },
@@ -454,7 +454,7 @@
     "@backup": {
         "description": "Backup button"
     },
-    "blacklistedDirectoriesPageName": "Blacklisted directories",
+    "blacklistedDirectoriesPageName": "Blacklisted Directories",
     "@blacklistedDirectoriesPageName": {
         "description": "Blacklisted directories page"
     },

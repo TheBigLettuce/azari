@@ -248,9 +248,27 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
 
                 "refreshFavorites" -> {
                     context.runOnUiThread {
-                        mover.refreshFavorites(call.arguments as List<Long>)
+                        mover.refreshFiles("favorites", inRefreshAtEnd = true, isFavorites = true)
                     }
+
                     result.success(null)
+                }
+
+                "addToFavorites" -> {
+                    MediaStore.createFavoriteRequest(
+                        context.contentResolver,
+                        (call.arguments as List<String>).map { Uri.parse(it) },
+                        true
+                    ).send()
+                }
+
+                "removeFromFavorites" -> {
+
+                    MediaStore.createFavoriteRequest(
+                        context.contentResolver,
+                        (call.arguments as List<String>).map { Uri.parse(it) },
+                        false
+                    ).send()
                 }
 
                 "refreshTrashed" -> {
@@ -260,6 +278,7 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
 
                     result.success(null)
                 }
+
 
                 "addToTrash" -> {
                     val uris = (call.arguments as List<String>).map { Uri.parse(it) }
@@ -384,6 +403,7 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
 
                     mover.getCachedThumbnail(id, result)
                 }
+
 
                 "copyMoveFiles" -> {
                     CoroutineScope(Dispatchers.IO).launch {
@@ -519,6 +539,14 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                 "trashThumbId" -> {
                     CoroutineScope(Dispatchers.IO).launch {
                         val res = mover.trashThumbIds(context, true)
+
+                        result.success(res.first.firstOrNull())
+                    }
+                }
+
+                "favoritesThumbId" -> {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val res = mover.trashThumbIds(context, true, isFavorites = true)
 
                         result.success(res.first.firstOrNull())
                     }

@@ -54,7 +54,16 @@ class ImageViewAppBar<T extends Cell> extends StatelessWidget {
                   },
                   child: Text(currentCell.alias(false)),
                 ),
-                actions: actions,
+                actions: Scaffold.of(context).hasEndDrawer
+                    ? [
+                        ...actions,
+                        IconButton(
+                            onPressed: () {
+                              Scaffold.of(context).openEndDrawer();
+                            },
+                            icon: const Icon(Icons.info_outline)),
+                      ]
+                    : actions,
               )),
               if (stickers.isNotEmpty)
                 Padding(

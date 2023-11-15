@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/note.dart';
+import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/image_view/loading_builder.dart';
 import 'package:gallery/src/widgets/image_view/make_image_view_bindings.dart';
 import 'package:gallery/src/widgets/image_view/wrap_image_view_notifiers.dart';
@@ -20,6 +21,7 @@ import 'package:gallery/src/widgets/image_view/wrap_image_view_skeleton.dart';
 import 'package:gallery/src/widgets/image_view/wrap_image_view_theme.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/notifiers/focus.dart';
 import 'package:logging/logging.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -29,7 +31,6 @@ import '../widgets/keybinds/keybind_description.dart';
 import '../interfaces/cell.dart';
 import '../interfaces/contentable.dart';
 import '../widgets/keybinds/describe_keys.dart';
-import '../widgets/image_view/app_bar.dart';
 import '../widgets/image_view/body.dart';
 import '../widgets/image_view/bottom_bar.dart';
 import '../widgets/image_view/end_drawer.dart';
@@ -182,6 +183,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     widget.onExit();
 
     scrollController.dispose();
+    mainFocus.dispose();
 
     super.dispose();
   }
@@ -315,6 +317,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   @override
   Widget build(BuildContext context) {
     return WrapImageViewNotifiers<T>(
+      mainFocus: mainFocus,
       key: wrapNotifiersKey,
       onTagRefresh: _onTagRefresh,
       currentCell: currentCell,
@@ -323,23 +326,32 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
         key: wrapThemeKey,
         currentPalette: currentPalette,
         previousPallete: previousPallete,
-        child: WrapImageViewSkeleton(
+        child: WrapImageViewSkeleton<T>(
             scaffoldKey: key,
             bindings: bindings ?? {},
-            appBar: PreferredSize(
-                preferredSize: currentStickers == null
-                    ? const Size.fromHeight(kToolbarHeight + 4)
-                    : const Size.fromHeight(kToolbarHeight + 36 + 4),
-                child: ImageViewAppBar<T>(
-                  stickers: currentStickers ?? const [],
-                  actions: addButtons ?? const [],
-                )),
-            endDrawer: addInfo == null || addInfo!.isEmpty
-                ? null
-                : ImageViewEndDrawer(
-                    scrollController: scrollController,
-                    children: addInfo!,
-                  ),
+            currentPalette: currentPalette,
+            endDrawer: Builder(builder: (context) {
+              FocusNotifier.of(context);
+
+              final addInfo = currentCell.addInfo(context, () {
+                widget.updateTagScrollPos(scrollController.offset, currentPage);
+              },
+                  AddInfoColorData(
+                    borderColor: Theme.of(context).colorScheme.outlineVariant,
+                    foregroundColor: currentPalette?.mutedColor?.bodyTextColor
+                            .harmonizeWith(
+                                Theme.of(context).colorScheme.primary) ??
+                        kListTileColorInInfo,
+                    systemOverlayColor: widget.systemOverlayRestoreColor,
+                  ));
+
+              return addInfo == null || addInfo.isEmpty
+                  ? const Drawer(child: EmptyWidget())
+                  : ImageViewEndDrawer(
+                      scrollController: scrollController,
+                      children: addInfo,
+                    );
+            }),
             bottomAppBar: ImageViewBottomAppBar(
                 textController: noteTextController,
                 addNote: () => noteListKey.currentState
