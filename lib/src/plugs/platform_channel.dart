@@ -30,8 +30,8 @@ class PlatformFunctions {
     _channel.invokeMethod("refreshFilesMultiple", ids);
   }
 
-  static void refreshFavorites(List<int> ids) {
-    _channel.invokeMethod("refreshFavorites", ids);
+  static Future<void> refreshFavorites(List<int> ids) {
+    return _channel.invokeMethod("refreshFavorites", ids);
   }
 
   static Future<String> pickFileAndCopy(String outputDir) {

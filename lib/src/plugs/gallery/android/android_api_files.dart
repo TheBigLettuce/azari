@@ -112,18 +112,31 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
   }
 
   @override
-  Future<int> refresh() {
+  Future<int> refresh() async {
     try {
       db.writeTxnSync(() => db.systemGalleryDirectoryFiles.clearSync());
 
       if (isTrash) {
         PlatformFunctions.refreshTrashed();
       } else if (isFavorites) {
-        PlatformFunctions.refreshFavorites(Dbs.g.blacklisted.favoriteMedias
-            .where()
-            .findAllSync()
-            .map((e) => e.id)
-            .toList());
+        int offset = 0;
+
+        while (true) {
+          final f = Dbs.g.blacklisted.favoriteMedias
+              .where()
+              .offset(offset)
+              .limit(200)
+              .findAllSync()
+              .map((e) => e.id)
+              .toList();
+          offset += f.length;
+
+          if (f.isEmpty) {
+            break;
+          }
+
+          await PlatformFunctions.refreshFavorites(f);
+        }
       } else {
         PlatformFunctions.refreshFilesMultiple(directories);
       }
@@ -141,42 +154,7 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
             isTrash: false,
             isFavorites: false,
             target: "joinedDir",
-            getElems: (offset, limit, s, sort, mode) {
-              if (sort == SortingMode.size) {
-                return db.systemGalleryDirectoryFiles
-                    .filter()
-                    .nameContains(s, caseSensitive: false)
-                    .sortBySizeDesc()
-                    .offset(offset)
-                    .limit(limit)
-                    .findAllSync();
-              }
-
-              // if (mode == FilteringMode.same) {
-              //   return db.systemGalleryDirectoryFiles
-              //       .where()
-              //       .offset(offset)
-              //       .limit(limit)
-              //       .findAllSync();
-              // }
-
-              if (s.isEmpty) {
-                return db.systemGalleryDirectoryFiles
-                    .where()
-                    .sortByLastModifiedDesc()
-                    .offset(offset)
-                    .limit(limit)
-                    .findAllSync();
-              }
-
-              return db.systemGalleryDirectoryFiles
-                  .filter()
-                  .nameContains(s, caseSensitive: false)
-                  .sortByLastModifiedDesc()
-                  .offset(offset)
-                  .limit(limit)
-                  .findAllSync();
-            });
+            getElems: lastMofifiedGetElemsFiles(db));
 }
 
 class _AndroidGalleryFiles implements GalleryAPIFiles {
@@ -216,18 +194,31 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
   }
 
   @override
-  Future<int> refresh() {
+  Future<int> refresh() async {
     try {
       db.writeTxnSync(() => db.systemGalleryDirectoryFiles.clearSync());
 
       if (isTrash) {
         PlatformFunctions.refreshTrashed();
       } else if (isFavorites) {
-        PlatformFunctions.refreshFavorites(Dbs.g.blacklisted.favoriteMedias
-            .where()
-            .findAllSync()
-            .map((e) => e.id)
-            .toList());
+        int offset = 0;
+
+        while (true) {
+          final f = Dbs.g.blacklisted.favoriteMedias
+              .where()
+              .offset(offset)
+              .limit(200)
+              .findAllSync()
+              .map((e) => e.id)
+              .toList();
+          offset += f.length;
+
+          if (f.isEmpty) {
+            break;
+          }
+
+          await PlatformFunctions.refreshFavorites(f);
+        }
       } else {
         PlatformFunctions.refreshFiles(_bucketId);
       }
@@ -252,7 +243,50 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
   })  : startTime = DateTime.now().millisecondsSinceEpoch,
         _bucketId = bucketId,
         filter = IsarFilter<SystemGalleryDirectoryFile>(
-            db, DbsOpen.androidGalleryFiles(), getElems);
+            db,
+            DbsOpen.androidGalleryFiles(),
+            isFavorites ? lastMofifiedGetElemsFiles(db) : getElems);
+}
+
+Iterable<SystemGalleryDirectoryFile> Function(
+        int, int, String, SortingMode, FilteringMode)
+    lastMofifiedGetElemsFiles(Isar db) {
+  return (offset, limit, s, sort, mode) {
+    if (sort == SortingMode.size) {
+      return db.systemGalleryDirectoryFiles
+          .filter()
+          .nameContains(s, caseSensitive: false)
+          .sortBySizeDesc()
+          .offset(offset)
+          .limit(limit)
+          .findAllSync();
+    }
+
+    // if (mode == FilteringMode.same) {
+    //   return db.systemGalleryDirectoryFiles
+    //       .where()
+    //       .offset(offset)
+    //       .limit(limit)
+    //       .findAllSync();
+    // }
+
+    if (s.isEmpty) {
+      return db.systemGalleryDirectoryFiles
+          .where()
+          .sortByLastModifiedDesc()
+          .offset(offset)
+          .limit(limit)
+          .findAllSync();
+    }
+
+    return db.systemGalleryDirectoryFiles
+        .filter()
+        .nameContains(s, caseSensitive: false)
+        .sortByLastModifiedDesc()
+        .offset(offset)
+        .limit(limit)
+        .findAllSync();
+  };
 }
 
 Iterable<SystemGalleryDirectoryFile> Function(

@@ -272,17 +272,21 @@ internal class Mover(
         }
     }
 
-    fun refreshFavorites(ids: List<Long>) {
-        if (isLockedFilesMux.isLocked) {
-            return
-        }
+    fun refreshFavorites(ids: List<Long>, closure: () -> Unit) {
+//        if ( isLockedFilesMux.isLocked) {
+//            return
+//        }
 
         val time = Calendar.getInstance().time.time
 
         scope.launch {
-            if (!isLockedFilesMux.tryLock()) {
-                return@launch
-            }
+//            if (wait) {
+            isLockedFilesMux.lock()
+//            } else {
+//                if (!isLockedFilesMux.tryLock()) {
+//                    return@launch
+//                }
+//            }
 
             loadMedia(
                 "favorites",
@@ -293,6 +297,8 @@ internal class Mover(
             ) { content, empty, inRefresh ->
                 sendMedia("favorites", time, content, empty, inRefresh)
             }
+
+            closure()
 
             isLockedFilesMux.unlock()
         }

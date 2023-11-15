@@ -268,8 +268,12 @@ class _GalleryFilesState extends State<GalleryFiles>
 
   void _favoriteOrUnfavorite(
       BuildContext context, List<SystemGalleryDirectoryFile> selected) {
+    final deleted = <int>[];
+
     for (final fav in selected) {
       if (fav.isFavorite) {
+        deleted.add(fav.id);
+
         Dbs.g.blacklisted.writeTxnSync(
             () => Dbs.g.blacklisted.favoriteMedias.deleteSync(fav.id));
       } else {
@@ -279,6 +283,21 @@ class _GalleryFilesState extends State<GalleryFiles>
     }
 
     plug.notify(null);
+
+    if (deleted.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Deleted from favorites"),
+        action: SnackBarAction(
+            label: "Undo",
+            onPressed: () {
+              Dbs.g.blacklisted.writeTxnSync(() => Dbs
+                  .g.blacklisted.favoriteMedias
+                  .putAllSync(deleted.map((e) => FavoriteMedia(e)).toList()));
+
+              plug.notify(null);
+            }),
+      ));
+    }
   }
 
   void _saveTags(
