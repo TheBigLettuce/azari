@@ -1,3 +1,6 @@
+1.5.2:
+— Change app bar.
+
 1.5.1:
 — Add notes.
 
