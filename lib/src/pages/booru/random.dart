@@ -10,6 +10,7 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/pages/booru/main.dart';
 import 'package:gallery/src/db/schemas/favorite_booru.dart';
@@ -22,6 +23,8 @@ import 'package:path/path.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../db/schemas/note.dart';
+import '../../db/schemas/statistics_booru.dart';
+import '../../db/schemas/statistics_general.dart';
 import '../../widgets/grid/actions/booru_grid.dart';
 import '../../net/downloader.dart';
 import '../../interfaces/booru.dart';
@@ -38,6 +41,7 @@ import '../../widgets/notifiers/booru_api.dart';
 import '../../widgets/notifiers/tag_manager.dart';
 import '../../widgets/search_bar/search_launch_grid.dart';
 import '../../widgets/grid/callback_grid.dart';
+import '../image_view.dart';
 
 class RandomBooruGrid extends StatefulWidget {
   final BooruAPI api;
@@ -60,6 +64,11 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
     with SearchLaunchGrid<Post> {
   late final StreamSubscription<Settings?> settingsWatcher;
   late final StreamSubscription favoritesWatcher;
+  late final StreamSubscription timeUpdater;
+
+  bool inForeground = true;
+
+  late final AppLifecycleListener lifecycleListener;
 
   (double, double?, int?)? _currentScroll;
 
@@ -79,6 +88,16 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
   @override
   void initState() {
     super.initState();
+
+    lifecycleListener = AppLifecycleListener(onHide: () {
+      inForeground = false;
+    }, onShow: () {
+      inForeground = true;
+    });
+
+    timeUpdater = Stream.periodic(5.seconds).listen((event) {
+      StatisticsGeneral.addTimeSpent(5.seconds.inMilliseconds);
+    });
 
     searchHook(SearchLaunchGridData(
         mainFocus: state.mainFocus,
@@ -111,6 +130,8 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
 
     state.dispose();
 
+    timeUpdater.cancel();
+
     if (addedToBookmarks && widget.state == null) {
       instance.close(deleteFromDisk: false);
       final f = File.fromUri(
@@ -130,6 +151,8 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
       instance.close(deleteFromDisk: widget.state != null ? false : true);
     }
 
+    lifecycleListener.dispose();
+
     super.dispose();
   }
 
@@ -146,6 +169,8 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
 
   Future<int> _clearAndRefresh() async {
     try {
+      StatisticsGeneral.addRefreshes();
+
       final list = await widget.api.page(
           0, widget.tags, widget.tagManager.excluded,
           overrideSafeMode: _safeMode());
@@ -293,6 +318,9 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                                     state.settings.booru.aspectRatio)),
                         hasReachedEnd: () => reachedEnd,
                         mainFocus: state.mainFocus,
+                        statistics: const ImageViewStatistics(
+                            swiped: StatisticsBooru.addSwiped,
+                            viewed: StatisticsBooru.addViewed),
                         inlineMenuButtonItems: true,
                         scaffoldKey: state.scaffoldKey,
                         onError: (error) {

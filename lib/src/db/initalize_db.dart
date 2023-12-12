@@ -11,11 +11,15 @@ import 'dart:io' as io;
 import 'package:gallery/src/db/schemas/blacklisted_directory.dart';
 import 'package:gallery/src/db/schemas/download_file.dart';
 import 'package:gallery/src/db/schemas/favorite_booru.dart';
+import 'package:gallery/src/db/schemas/hidden_booru_post.dart';
 import 'package:gallery/src/db/schemas/local_tag_dictionary.dart';
 import 'package:gallery/src/db/schemas/local_tags.dart';
 import 'package:gallery/src/db/schemas/note.dart';
 import 'package:gallery/src/db/schemas/note_gallery.dart';
 import 'package:gallery/src/db/schemas/pinned_directories.dart';
+import 'package:gallery/src/db/schemas/statistics_booru.dart';
+import 'package:gallery/src/db/schemas/statistics_gallery.dart';
+import 'package:gallery/src/db/schemas/statistics_general.dart';
 import 'package:gallery/src/db/schemas/thumbnail.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
@@ -69,7 +73,11 @@ Future initalizeDb(bool temporary) async {
     LocalTagDictionarySchema,
     GridStateBooruSchema,
     DownloadFileSchema,
-    NoteGallerySchema
+    NoteGallerySchema,
+    HiddenBooruPostSchema,
+    StatisticsGallerySchema,
+    StatisticsGeneralSchema,
+    StatisticsBooruSchema,
   ], directory: directoryPath, inspector: false);
 
   final blacklistedDirIsar = Isar.openSync([

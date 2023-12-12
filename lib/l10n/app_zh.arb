@@ -1,12 +1,6 @@
 {
-    "ok": "ok",
-    "@ok": {
-        "description": "Button in the modal dialog with info which dismisses it"
-    },
-    "refresh": "Refresh",
-    "@refresh": {
-        "description": "Keybinding key info, refreshes content"
-    },
+    "ok": "好",
+    "refresh": "刷新",
     "selectSuggestion": "Select highlighted suggestion",
     "@selectSuggestion": {
         "description": "Keybinding key info, selects highlighted autocomplete suggestion"
@@ -15,10 +9,7 @@
     "@focusSearch": {
         "description": "Keybinding key info, focuses tag search field"
     },
-    "back": "Back",
-    "@back": {
-        "description": "Keybinding key info, goes back a page"
-    },
+    "back": "却",
     "goBooruGrid": "Go to the booru grid",
     "@goBooruGrid": {
         "description": "Keybinding key info, goes to the *booru grid"
@@ -35,7 +26,7 @@
     "@goDownloads": {
         "description": "Keybinding key info, goes to the downloads page"
     },
-    "goSettings": "Open settings page",
+    "goSettings": "开设置",
     "@goSettings": {
         "description": "Keybinding key info, opens settings page"
     },
@@ -49,11 +40,11 @@
             }
         }
     },
-    "keybindsDialog": "This menu",
+    "keybindsDialog": "这个选单",
     "@keybindsDialog": {
         "description": "Keybinding key info, shows the dialog about the keybinds"
     },
-    "searchHint": "Search",
+    "searchHint": "搜索",
     "@searchHint": {
         "description": "Text field hint, on tag search text field"
     },
@@ -61,7 +52,7 @@
     "@goPostHint": {
         "description": "Text field hint, on go to a single post search field"
     },
-    "notANumber": "'{text}' is not a number.",
+    "notANumber": "'{text}' 是不数额。",
     "@notANumber": {
         "description": "Error message if text is not a number",
         "placeholders": {
@@ -70,19 +61,19 @@
             }
         }
     },
-    "galleryLabel": "Gallery",
+    "galleryLabel": "图库",
     "@galleryLabel": {
         "description": "Drawer destination, gallery page"
     },
-    "tagsLabel": "Tags",
+    "tagsLabel": "标签",
     "@tagsLabel": {
         "description": "Drawer destination, tags page"
     },
-    "downloadsLabel": "Downloads",
+    "downloadsLabel": "下载",
     "@downloadsLabel": {
         "description": "Drawer destination, downloads page"
     },
-    "settingsLabel": "Settings",
+    "settingsLabel": "设置",
     "@settingsLabel": {
         "description": "Drawer destination, settings page"
     },
@@ -94,15 +85,15 @@
     "@refreshStaleDownloads": {
         "description": "Keybinding key info, sorts out stale downloads"
     },
-    "downloadsPageName": "Downloads",
+    "downloadsPageName": "下载",
     "@downloadsPageName": {
         "description": "Keybinding key info, downloads page name"
     },
-    "yes": "yes",
+    "yes": "是",
     "@yes": {
         "description": "Dialog button, to proceed with an operation"
     },
-    "no": "no",
+    "no": "否",
     "@no": {
         "description": "Dialog button, to dismiss the dialog"
     },
@@ -146,7 +137,7 @@
     "@showImageInfo": {
         "description": "Keybinding key info, toggles the currently viewing image's info"
     },
-    "downloadImage": "Download file",
+    "downloadImage": "下载这个文件",
     "@downloadImage": {
         "description": "Keybinding key info, download the currently viewing image"
     },
@@ -154,11 +145,11 @@
     "@hideAppBar": {
         "description": "Keybinding key info, hide the app bar in the image view"
     },
-    "previousImage": "Previous image",
+    "previousImage": "过去图",
     "@previousImage": {
         "description": "Keybinding key info, shows previous image in the image view"
     },
-    "nextImage": "Next image",
+    "nextImage": "下一个图",
     "@nextImage": {
         "description": "Keybinding key info, shows next image in the image view"
     },
@@ -174,15 +165,15 @@
     "@focusExcludedSearch": {
         "description": "Keybinding key info, focus excluded tags search text field"
     },
-    "tagsPageAppbarTitle": "Search",
+    "tagsPageAppbarTitle": "搜索",
     "@tagsPageAppbarTitle": {
         "description": "Tags page app bar title"
     },
-    "singlePostTitle": "Single post",
+    "singlePostTitle": "只帖子",
     "@singlePostTitle": {
         "description": "Tags page, displayed above the single post text field"
     },
-    "recentTagsTitle": "Recent Tags",
+    "recentTagsTitle": "近期标签",
     "@recentTagsTitle": {
         "description": "Tags page, displayed above recent tags list"
     },
@@ -190,7 +181,7 @@
     "@tagsDeletionDialogTitle": {
         "description": "Tags page, delete all the recent tags"
     },
-    "excludedTagsTitle": "Excluded Tags",
+    "excludedTagsTitle": "除外标签",
     "@excludedTagsTitle": {
         "description": "Tags page, displayed above excluded tags list"
     },
@@ -198,19 +189,19 @@
     "@tagDeleteDialogTitle": {
         "description": "Tags page, tag deletion dialog. Can be either recent tag or excluded"
     },
-    "settingsPageName": "Settings",
+    "settingsPageName": "设置",
     "@settingsPageName": {
         "description": "Settings page name"
     },
-    "downloadDirectorySetting": "Download directory",
+    "downloadDirectorySetting": "下载目录",
     "@downloadDirectorySetting": {
         "description": "Settings, download directory"
     },
-    "pickNewDownloadDirectory": "pick new",
+    "pickNewDownloadDirectory": "选择新的",
     "@pickNewDownloadDirectory": {
         "description": "Settings, button to choose new directory"
     },
-    "selectedBooruSetting": "Selected booru",
+    "selectedBooruSetting": "所选中的ボール",
     "@selectedBooruSetting": {
         "description": "Settigns, selected booru"
     },
@@ -230,43 +221,43 @@
     "@nPerElementsInfo": {
         "description": "Settings, number of elements info "
     },
-    "safeModeSetting": "Safe mode",
+    "safeModeSetting": "安全方式",
     "@safeModeSetting": {
         "description": "Settings, safe mode"
     },
-    "licenseSetting": "License:",
+    "licenseSetting": "执照：",
     "@licenseSetting": {
         "description": "Settings, license"
     },
-    "tagsInfoPage": "Tags",
+    "tagsInfoPage": "标签",
     "@tagsInfoPage": {
         "description": "Image view, displayed in info above the image's tag list"
     },
-    "pathInfoPage": "Path",
+    "pathInfoPage": "地址",
     "@pathInfoPage": {
         "description": "Image view, title of an URL or a path to a file in info"
     },
-    "widthInfoPage": "Width",
+    "widthInfoPage": "幅度",
     "@widthInfoPage": {
         "description": "Image info, width of the image"
     },
-    "heightInfoPage": "Height",
+    "heightInfoPage": "高度",
     "@heightInfoPage": {
         "description": "Image info, height of the image"
     },
-    "sourceFileInfoPage": "Source",
+    "sourceFileInfoPage": "来源",
     "@sourceFileInfoPage": {
         "description": "Image info, source URL of the image"
     },
-    "ratingInfoPage": "Rating",
+    "ratingInfoPage": "分级",
     "@ratingInfoPage": {
         "description": "Image info, rating of the image"
     },
-    "scoreInfoPage": "Score",
+    "scoreInfoPage": "得分",
     "@scoreInfoPage": {
         "description": "Image info, score of the image"
     },
-    "createdAtInfoPage": "Created at",
+    "createdAtInfoPage": "创造以",
     "@createdAtInfoPage": {
         "description": "Image info, created at time of the image"
     },
@@ -284,11 +275,7 @@
     "@galleryInnerPageName": {
         "description": "Inside folder page name"
     },
-    "addFiles": "Add files",
-    "@addFiles": {
-        "description": "Choose files for upload"
-    },
-    "deleteImageOption": "Delete",
+    "deleteImageOption": "消除",
     "@deleteImageOption": {
         "description": "Delete image button label"
     },
@@ -296,7 +283,7 @@
     "@deleteImageConfirm": {
         "description": "Delete image conformation, title in dialog, the file is showed separately"
     },
-    "emptyValue": "empty",
+    "emptyValue": "空的",
     "@emptyValue": {
         "description": "Placeholder for empty value"
     },
@@ -316,7 +303,7 @@
     "@addTagToExcluded": {
         "description": "Dialog title when adding tag to excluded from image view tags"
     },
-    "directoriesHint": "Directories",
+    "directoriesHint": "目录",
     "@directoriesHint": {
         "description": "Android gallery, filter bar hint"
     },
@@ -324,7 +311,7 @@
     "@androidGKeybindsDescription": {
         "description": "Android gallery keybinds description"
     },
-    "copiedClipboard": "Copied!",
+    "copiedClipboard": "复制了！",
     "@copiedClipboard": {
         "description": "Showed when post number gets copied to clipboard"
     },
@@ -376,7 +363,7 @@
     "@autoRefreshHoursSubtitle": {
         "description": "Settings, auto refresh hours info"
     },
-    "booruLabel": "Booru",
+    "booruLabel": "ボール",
     "@booruLabel": {
         "description": "Settings, booru settings group label"
     },
@@ -388,15 +375,15 @@
     "@solveCaptcha": {
         "description": "Button which should open open a web view to solve the Cloudflare challenge"
     },
-    "filterHint": "Filter",
+    "filterHint": "筛选",
     "@filterHint": {
         "description": "Filter hint in the filter bar"
     },
-    "itemSingular": "item",
+    "itemSingular": "个件",
     "@itemSingular": {
         "description": "Delete item singular"
     },
-    "itemPlural": "items",
+    "itemPlural": "个件",
     "@itemPlural": {
         "description": "Delete item plural"
     },
@@ -458,11 +445,11 @@
     "@blacklistedDirectoriesPageName": {
         "description": "Blacklisted directories page"
     },
-    "currentTagTitle": "Current tag",
+    "currentTagTitle": "在标签",
     "@currentTagTitle": {
         "description": "Dialog title when editing a directory tag"
     },
-    "enterNewTagTitle": "Enter new tag",
+    "enterNewTagTitle": "输入新的标签",
     "@enterNewTagTitle": {
         "description": "Dialog title when changing a directory tag"
     },
@@ -470,7 +457,7 @@
     "@valueIsEmpty": {
         "description": "Displayed when directory tag field contains no text"
     },
-    "directoryTagNone": "none",
+    "directoryTagNone": "空的",
     "@directoryTagNone": {
         "description": "Displayed as a placeholder when directory tag is not set"
     },
@@ -486,11 +473,11 @@
     "@savingTags": {
         "description": "Saving tags channel name"
     },
-    "tagSingular": "tag",
+    "tagSingular": "标签",
     "@tagSingular": {
         "description": "Singular form of tag"
     },
-    "tagPlural": "tags",
+    "tagPlural": "标签",
     "@tagPlural": {
         "description": "Plural form of tags"
     },
@@ -547,15 +534,15 @@
             }
         }
     },
-    "infoHeadline": "Info",
+    "infoHeadline": "信息",
     "@infoHeadline": {
         "description": "Title of the info end drawer in the image view"
     },
-    "errorHalf": "Error:",
+    "errorHalf": "错误：",
     "@errorHalf": {
         "description": "First half of the error message on booru refresh"
     },
-    "favoritesLabel": "Favorites",
+    "favoritesLabel": "书签",
     "@favoritesLabel": {
         "description": "Grid actions, favorites"
     },
@@ -627,7 +614,7 @@
     "@ungrouped": {
         "description": "Grid segment ungrouped"
     },
-    "more": "More",
+    "more": "更多",
     "@more": {
         "description": "Nav bar destination"
     }

@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/cell.dart';
 import 'package:gallery/src/widgets/notifiers/focus.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../db/post_tags.dart';
 import '../notifiers/filter.dart';
@@ -48,7 +49,7 @@ class SearchTextField extends StatelessWidget {
                       icon: const Icon(Icons.delete))
                 ]
               : null,
-          hintText: "Filter",
+          hintText: AppLocalizations.of(context)!.filterHint,
           textStyle: MaterialStatePropertyAll(
               TextStyle(color: colors.foregroundColor)),
           backgroundColor: MaterialStatePropertyAll(

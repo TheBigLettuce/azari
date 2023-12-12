@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/widgets/notifiers/app_bar_visibility.dart';
 import 'package:gallery/src/widgets/notifiers/current_cell.dart';
 import 'package:gallery/src/widgets/notifiers/loading_progress.dart';
+import 'package:gallery/src/widgets/notifiers/pause_video.dart';
 
 import '../../interfaces/cell.dart';
 import '../notifiers/filter.dart';
@@ -39,6 +40,7 @@ class WrapImageViewNotifiers<T extends Cell> extends StatefulWidget {
 class WrapImageViewNotifiersState<T extends Cell>
     extends State<WrapImageViewNotifiers<T>> {
   bool _isAppbarShown = true;
+  bool _isPaused = false;
   double? _loadingProgress = 1.0;
 
   late final _searchData =
@@ -55,6 +57,18 @@ class WrapImageViewNotifiersState<T extends Cell>
     setState(() => _isAppbarShown = !_isAppbarShown);
   }
 
+  void pauseVideo() {
+    _isPaused = true;
+
+    setState(() {});
+  }
+
+  void unpauseVideo() {
+    _isPaused = false;
+
+    setState(() {});
+  }
+
   void setLoadingProgress(double? progress) {
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
       try {
@@ -65,26 +79,29 @@ class WrapImageViewNotifiersState<T extends Cell>
 
   @override
   Widget build(BuildContext context) {
-    return TagRefreshNotifier(
-        notify: widget.onTagRefresh,
-        child: FilterValueNotifier(
-          notifier: _searchData.searchController,
-          child: FilterNotifier(
-              data: _searchData,
-              child: FocusNotifier(
-                notifier: _searchData.searchFocus,
-                focusMain: widget.mainFocus.requestFocus,
-                child: CurrentCellNotifier(
-                    cell: widget.currentCell,
-                    child: LoadingProgressNotifier(
-                      progress: _loadingProgress,
-                      child: AppBarVisibilityNotifier(
-                          isShown: _isAppbarShown,
-                          child: widget.registerNotifiers == null
-                              ? widget.child
-                              : widget.registerNotifiers!(widget.child)),
-                    )),
-              )),
-        ));
+    return PauseVideoNotifier(
+      pause: _isPaused,
+      child: TagRefreshNotifier(
+          notify: widget.onTagRefresh,
+          child: FilterValueNotifier(
+            notifier: _searchData.searchController,
+            child: FilterNotifier(
+                data: _searchData,
+                child: FocusNotifier(
+                  notifier: _searchData.searchFocus,
+                  focusMain: widget.mainFocus.requestFocus,
+                  child: CurrentCellNotifier(
+                      cell: widget.currentCell,
+                      child: LoadingProgressNotifier(
+                        progress: _loadingProgress,
+                        child: AppBarVisibilityNotifier(
+                            isShown: _isAppbarShown,
+                            child: widget.registerNotifiers == null
+                                ? widget.child
+                                : widget.registerNotifiers!(widget.child)),
+                      )),
+                )),
+          )),
+    );
   }
 }

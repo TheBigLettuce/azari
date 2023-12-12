@@ -5,17 +5,22 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of 'settings_widget.dart';
+import 'package:flutter/material.dart';
 
-void selectBooru(BuildContext context, Settings settings, Booru value) {
-  if (settings.selectedBooru == value) {
-    return;
+class PauseVideoNotifier extends InheritedWidget {
+  final bool pause;
+
+  const PauseVideoNotifier(
+      {super.key, required this.pause, required super.child});
+
+  static bool of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<PauseVideoNotifier>();
+
+    return widget!.pause;
   }
-  _isRestart = true;
 
-  settings.copy(selectedBooru: value).save();
-
-  StatisticsBooru.addBooruSwitches();
-
-  RestartWidget.restartApp(context);
+  @override
+  bool updateShouldNotify(PauseVideoNotifier oldWidget) =>
+      pause != oldWidget.pause;
 }

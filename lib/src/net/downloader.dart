@@ -5,9 +5,13 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/db/schemas/statistics_booru.dart';
+import 'package:gallery/src/db/schemas/statistics_general.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
 import 'package:gallery/src/plugs/notifications.dart';
 import 'package:gallery/src/db/schemas/download_file.dart';
@@ -23,6 +27,21 @@ Downloader? _global;
 const kDownloadOnHold = "On hold"; // TODO: change
 const kDownloadFailed = "Failed"; // TODO: change
 const kDownloadInProgress = "In progress"; // TODO: change
+
+mixin _StatisticsTimer {
+  StreamSubscription? _refresher;
+
+  void _start() {
+    _refresher ??= Stream.periodic(1.seconds).listen((event) {
+      StatisticsGeneral.addTimeDownload(1.seconds.inMilliseconds);
+    });
+  }
+
+  void _turnOff() {
+    _refresher?.cancel();
+    _refresher = null;
+  }
+}
 
 mixin _CancelTokens {
   final Map<String, CancelToken> _tokens = {};
@@ -42,7 +61,7 @@ mixin _CancelTokens {
   }
 }
 
-class Downloader with _CancelTokens {
+class Downloader with _CancelTokens, _StatisticsTimer {
   int _inWork = 0;
   final dio = Dio();
   final int maximum;
@@ -98,6 +117,10 @@ class Downloader with _CancelTokens {
     } else {
       _inWork--;
     }
+
+    if (_inWork == 0) {
+      _turnOff();
+    }
   }
 
   void add(DownloadFile download, Settings settings) {
@@ -141,15 +164,16 @@ class Downloader with _CancelTokens {
     List<DownloadFile> toSave = [];
 
     for (final e in toDownload) {
-      _inWork++;
+      if (_inWork >= maximum) {
+        break;
+      }
+
+      _inWork += 1;
       final d = e.inprogress();
       toSave.add(e);
 
       _addToken(d.url, CancelToken());
       _download(d);
-      if (_inWork == maximum) {
-        break;
-      }
     }
 
     DownloadFile.saveAll(toSave);
@@ -229,6 +253,8 @@ class Downloader with _CancelTokens {
     final progress = await notificationPlug.newProgress(
         d.name, d.isarId!, d.site, "Downloader");
 
+    _start();
+
     dio.download(d.url, filePath,
         cancelToken: _tokens[d.url],
         deleteOnError: true, onReceiveProgress: ((count, total) {
@@ -252,6 +278,8 @@ class Downloader with _CancelTokens {
             Dbs.g.main.downloadFiles.deleteSync(d.isarId!);
           },
         );
+
+        StatisticsBooru.addDownloaded();
       } catch (e, trace) {
         log("writting downloaded file ${d.name} to uri",
             level: Level.SEVERE.value, error: e, stackTrace: trace);

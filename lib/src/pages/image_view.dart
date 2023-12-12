@@ -40,6 +40,13 @@ import '../widgets/image_view/note_list.dart';
 
 final Color kListTileColorInInfo = Colors.white60.withOpacity(0.8);
 
+class ImageViewStatistics {
+  final void Function() swiped;
+  final void Function() viewed;
+
+  const ImageViewStatistics({required this.swiped, required this.viewed});
+}
+
 class NoteInterface<T extends Cell> {
   final void Function(
       String text, T cell, Color? backgroundColor, Color? textColor) addNote;
@@ -78,6 +85,8 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final NoteInterface<T>? noteInterface;
   final void Function()? onEmptyNotes;
 
+  final ImageViewStatistics? statistics;
+
   const ImageView(
       {super.key,
       required this.updateTagScrollPos,
@@ -86,6 +95,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
       required this.startingCell,
       required this.onExit,
       this.predefinedIndexes,
+      this.statistics,
       required this.getCell,
       required this.onNearEnd,
       required this.focusMain,
@@ -135,6 +145,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   @override
   void initState() {
     super.initState();
+
+    widget.statistics?.viewed();
 
     WakelockPlus.enable();
 
@@ -284,6 +296,9 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   }
 
   void _onPageChanged(int index) {
+    widget.statistics?.viewed();
+    widget.statistics?.swiped();
+
     noteListKey.currentState?.unextendNotes();
     currentPage = index;
     widget.pageChange?.call(this);

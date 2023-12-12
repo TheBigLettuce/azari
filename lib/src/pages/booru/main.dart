@@ -13,9 +13,13 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/db/schemas/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/grid_state_booru.dart';
+import 'package:gallery/src/db/schemas/hidden_booru_post.dart';
 import 'package:gallery/src/db/schemas/note.dart';
+import 'package:gallery/src/db/schemas/statistics_booru.dart';
+import 'package:gallery/src/db/schemas/statistics_general.dart';
 import 'package:gallery/src/db/schemas/tags.dart';
 import 'package:gallery/src/pages/booru/random.dart';
+import 'package:gallery/src/pages/image_view.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 
@@ -184,6 +188,11 @@ class _MainBooruGridState extends State<MainBooruGrid>
     with SearchLaunchGrid<Post> {
   late final StreamSubscription<Settings?> settingsWatcher;
   late final StreamSubscription favoritesWatcher;
+  late final StreamSubscription timeUpdater;
+  // late final StreamSubscription ;
+  bool inForeground = true;
+
+  late final AppLifecycleListener lifecycleListener;
 
   late final BooruAPI api;
   late final StateRestoration restore;
@@ -198,6 +207,18 @@ class _MainBooruGridState extends State<MainBooruGrid>
   @override
   void initState() {
     super.initState();
+
+    lifecycleListener = AppLifecycleListener(onHide: () {
+      inForeground = false;
+    }, onShow: () {
+      inForeground = true;
+    });
+
+    timeUpdater = Stream.periodic(5.seconds).listen((event) {
+      if (inForeground) {
+        StatisticsGeneral.addTimeSpent(5.seconds.inMilliseconds);
+      }
+    });
 
     // main grid safe mode only from Settings
     restore = StateRestoration(widget.mainGrid,
@@ -250,11 +271,17 @@ class _MainBooruGridState extends State<MainBooruGrid>
 
     state.dispose();
 
+    timeUpdater.cancel();
+
+    lifecycleListener.dispose();
+
     super.dispose();
   }
 
   Future<int> _clearAndRefresh() async {
     try {
+      StatisticsGeneral.addRefreshes();
+
       restore.updateTime();
 
       final list = await api.page(0, "", tagManager.excluded);
@@ -262,7 +289,10 @@ class _MainBooruGridState extends State<MainBooruGrid>
       currentSkipped = list.$2;
       widget.mainGrid.writeTxnSync(() {
         widget.mainGrid.posts.clearSync();
-        return widget.mainGrid.posts.putAllByFileUrlSync(list.$1);
+        return widget.mainGrid.posts.putAllByFileUrlSync(list.$1
+            .where(
+                (element) => !HiddenBooruPost.isHidden(element.id, api.booru))
+            .toList());
       });
 
       reachedEnd = false;
@@ -311,8 +341,11 @@ class _MainBooruGridState extends State<MainBooruGrid>
       } else {
         currentSkipped = list.$2;
         final oldCount = widget.mainGrid.posts.countSync();
-        widget.mainGrid.writeTxnSync(
-            () => widget.mainGrid.posts.putAllByFileUrlSync(list.$1));
+        widget.mainGrid.writeTxnSync(() => widget.mainGrid.posts
+            .putAllByFileUrlSync(list.$1
+                .where((element) =>
+                    !HiddenBooruPost.isHidden(element.id, api.booru))
+                .toList()));
         restore.updateTime();
         if (widget.mainGrid.posts.countSync() - oldCount < 3) {
           return await _addLast();
@@ -356,13 +389,23 @@ class _MainBooruGridState extends State<MainBooruGrid>
                 ],
                 addIconsImage: (post) => [
                   BooruGridActions.favorites(context, post),
-                  BooruGridActions.download(context, api)
+                  BooruGridActions.download(context, api),
+                  BooruGridActions.hide(context, () {
+                    setState(() {});
+
+                    state.gridKey.currentState?.imageViewKey.currentState
+                        ?.setState(() {});
+                  }, post: post),
                 ],
+                statistics: const ImageViewStatistics(
+                    swiped: StatisticsBooru.addSwiped,
+                    viewed: StatisticsBooru.addViewed),
                 onExitImageView: () => restore.removeScrollTagsSelectedPost(),
                 description: GridDescription([
                   BooruGridActions.download(context, api),
                   BooruGridActions.favorites(context, null,
-                      showDeleteSnackbar: true)
+                      showDeleteSnackbar: true),
+                  BooruGridActions.hide(context, () => setState(() {})),
                 ],
                     keybindsDescription:
                         AppLocalizations.of(context)!.booruGridPageName,

@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/schemas/hidden_booru_post.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 
 import '../../../net/downloader.dart';
@@ -20,6 +21,39 @@ import '../../../db/schemas/tags.dart';
 import '../callback_grid.dart';
 
 class BooruGridActions {
+  static GridAction<T> hide<T extends PostBase>(
+      BuildContext context, void Function() setState,
+      {PostBase? post}) {
+    return GridAction(Icons.hide_image_rounded, (selected) {
+      if (selected.isEmpty) {
+        return;
+      }
+
+      final toDelete = <(int, Booru)>[];
+      final toAdd = <HiddenBooruPost>[];
+
+      final booru = Booru.fromPrefix(selected.first.prefix)!;
+
+      for (final cell in selected) {
+        if (HiddenBooruPost.isHidden(cell.id, booru)) {
+          toDelete.add((cell.id, booru));
+        } else {
+          toAdd.add(HiddenBooruPost(booru, cell.id, cell.previewUrl));
+        }
+      }
+
+      HiddenBooruPost.addAll(toAdd);
+      HiddenBooruPost.removeAll(toDelete);
+
+      setState();
+    }, true,
+        color: post != null &&
+                HiddenBooruPost.isHidden(
+                    post.id, Booru.fromPrefix(post.prefix)!)
+            ? Theme.of(context).colorScheme.primary
+            : null);
+  }
+
   static GridAction<T> download<T extends PostBase>(
       BuildContext context, BooruAPI api) {
     return GridAction(

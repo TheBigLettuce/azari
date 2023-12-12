@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/db/schemas/statistics_booru.dart';
 
 import '../../interfaces/booru.dart';
 import '../../db/schemas/settings.dart';

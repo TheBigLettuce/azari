@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/schemas/statistics_gallery.dart';
 import 'package:gallery/src/pages/gallery/directories.dart';
 import 'package:gallery/src/db/schemas/system_gallery_directory.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
@@ -55,6 +56,8 @@ class SystemGalleryDirectoriesActions {
       List<SystemGalleryDirectory> dirs,
       GalleryDirectoriesExtra extra,
       CallbackDescriptionNested? callback) {
+    StatisticsGallery.addJoined();
+
     Navigator.push(context, MaterialPageRoute(
       builder: (context) {
         return GalleryFiles(

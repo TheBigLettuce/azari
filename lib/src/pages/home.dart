@@ -261,9 +261,9 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                       icon: const Icon(Icons.tag),
                       label: AppLocalizations.of(context)!.tagsLabel,
                     ),
-                    const NavigationDestination(
-                      icon: Icon(Icons.more_horiz),
-                      label: "More", // TODO: change
+                    NavigationDestination(
+                      icon: const Icon(Icons.more_horiz),
+                      label: AppLocalizations.of(context)!.more, // TODO: change
                     )
                   ],
           )),

@@ -14,6 +14,8 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/post_tags.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/note_gallery.dart';
+import 'package:gallery/src/db/schemas/statistics_gallery.dart';
+import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/plugs/platform_channel.dart';
 import 'package:gallery/src/pages/gallery/directories.dart';
 import 'package:gallery/src/interfaces/gallery.dart';
@@ -145,6 +147,10 @@ class _GalleryFilesState extends State<GalleryFiles>
       return cell;
     },
     hook: (selected) {
+      if (selected == FilteringMode.same) {
+        StatisticsGallery.addSameFiltered();
+      }
+
       if (selected == FilteringMode.tag ||
           selected == FilteringMode.tagReversed ||
           selected == FilteringMode.notes) {
@@ -206,6 +212,9 @@ class _GalleryFilesState extends State<GalleryFiles>
 
   void _moveOrCopy(BuildContext context,
       List<SystemGalleryDirectoryFile> selected, bool move) {
+    state.gridKey.currentState?.imageViewKey.currentState?.wrapNotifiersKey
+        .currentState
+        ?.pauseVideo();
     Navigator.push(context, MaterialPageRoute(
       builder: (context) {
         return WrappedGridPage<SystemGalleryDirectory>(
@@ -249,6 +258,12 @@ class _GalleryFilesState extends State<GalleryFiles>
                       PlatformFunctions.copyMoveFiles(
                           chosen?.relativeLoc, chosen?.volumeName, selected,
                           move: move, newDir: newDir);
+
+                      if (move) {
+                        StatisticsGallery.addMoved(selected.length);
+                      } else {
+                        StatisticsGallery.addCopied(selected.length);
+                      }
                     }
 
                     return Future.value();
@@ -263,7 +278,9 @@ class _GalleryFilesState extends State<GalleryFiles>
                       joinable: false),
                 ));
       },
-    ));
+    )).then((value) => state.gridKey.currentState?.imageViewKey.currentState
+        ?.wrapNotifiersKey.currentState
+        ?.unpauseVideo());
   }
 
   void _favoriteOrUnfavorite(
@@ -405,6 +422,7 @@ class _GalleryFilesState extends State<GalleryFiles>
                     onPressed: () {
                       PlatformFunctions.addToTrash(
                           selected.map((e) => e.originalUri).toList());
+                      StatisticsGallery.addDeleted(selected.length);
                       Navigator.pop(context);
                     },
                     child: Text(AppLocalizations.of(context)!.yes)),
@@ -527,6 +545,9 @@ class _GalleryFilesState extends State<GalleryFiles>
                   addFabPadding: true,
                   selectionGlue: glue,
                   tightMode: true,
+                  statistics: const ImageViewStatistics(
+                      swiped: StatisticsGallery.addFilesSwiped,
+                      viewed: StatisticsGallery.addViewedFiles),
                   addIconsImage: (cell) {
                     return widget.callback != null
                         ? [

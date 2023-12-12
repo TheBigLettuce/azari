@@ -9,6 +9,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/db/schemas/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/tags.dart';
@@ -18,6 +19,9 @@ import 'package:logging/logging.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../db/schemas/note.dart';
+import '../../db/schemas/statistics_booru.dart';
+import '../../db/schemas/statistics_general.dart';
+import '../image_view.dart';
 import 'main.dart';
 
 import '../../widgets/grid/actions/booru_grid.dart';
@@ -62,6 +66,11 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
     with SearchLaunchGrid<Post> {
   late final StreamSubscription<Settings?> settingsWatcher;
   late final StreamSubscription favoritesWatcher;
+  late final StreamSubscription timeUpdater;
+
+  bool inForeground = true;
+
+  late final AppLifecycleListener lifecycleListener;
 
   int? currentSkipped;
 
@@ -73,6 +82,16 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
   @override
   void initState() {
     super.initState();
+
+    lifecycleListener = AppLifecycleListener(onHide: () {
+      inForeground = false;
+    }, onShow: () {
+      inForeground = true;
+    });
+
+    timeUpdater = Stream.periodic(5.seconds).listen((event) {
+      StatisticsGeneral.addTimeSpent(5.seconds.inMilliseconds);
+    });
 
     searchHook(SearchLaunchGridData(
         mainFocus: state.mainFocus,
@@ -105,6 +124,10 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
 
     state.dispose();
 
+    lifecycleListener.dispose();
+
+    timeUpdater.cancel();
+
     if (addedToBookmarks) {
       widget.instance.close(deleteFromDisk: false);
       widget.restore.moveToBookmarks(widget.api.booru, widget.api.currentPage);
@@ -122,6 +145,8 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
 
   Future<int> _clearAndRefresh() async {
     try {
+      StatisticsGeneral.addRefreshes();
+
       final list = await widget.api.page(
           0, widget.restore.copy.tags, widget.tagManager.excluded,
           overrideSafeMode: widget.restore.current.safeMode);
@@ -274,6 +299,9 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                                   state.settings.booru.aspectRatio),
                         ),
                         inlineMenuButtonItems: true,
+                        statistics: const ImageViewStatistics(
+                            swiped: StatisticsBooru.addSwiped,
+                            viewed: StatisticsBooru.addViewed),
                         hasReachedEnd: () => reachedEnd,
                         mainFocus: state.mainFocus,
                         scaffoldKey: state.scaffoldKey,

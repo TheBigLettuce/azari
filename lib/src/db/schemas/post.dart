@@ -11,6 +11,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/post_tags.dart';
+import 'package:gallery/src/db/schemas/hidden_booru_post.dart';
 import 'package:gallery/src/db/schemas/note.dart';
 import 'package:gallery/src/interfaces/cell.dart';
 import 'package:gallery/src/widgets/grid/cell_data.dart';
@@ -309,17 +310,24 @@ class PostBase implements Cell {
   @override
   CellData getCellData(bool isList, {required BuildContext context}) {
     ImageProvider provider;
-    try {
-      provider = CachedNetworkImageProvider(
-        previewUrl,
-      );
-    } catch (_) {
+    final isHidden = HiddenBooruPost.isHidden(id, Booru.fromPrefix(prefix)!);
+
+    if (isHidden) {
       provider = MemoryImage(kTransparentImage);
+    } else {
+      try {
+        provider = CachedNetworkImageProvider(
+          previewUrl,
+        );
+      } catch (_) {
+        provider = MemoryImage(kTransparentImage);
+      }
     }
 
     final content = fileDisplay();
 
     return CellData(thumb: provider, name: alias(isList), stickers: [
+      if (isHidden) const Sticker(Icons.hide_image_rounded, right: true),
       if (Settings.isFavorite(fileUrl))
         Sticker(Icons.favorite_rounded,
             color: Colors.red.shade900

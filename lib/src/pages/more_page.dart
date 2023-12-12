@@ -7,9 +7,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/pages/blacklisted_posts.dart';
 import 'package:gallery/src/pages/notes_page.dart';
 
 import '../widgets/skeletons/drawer/azari_icon.dart';
+import 'dashboard.dart';
 import 'downloads.dart';
 import 'settings/blacklisted_directores.dart';
 import 'settings/settings_widget.dart';
@@ -26,6 +28,21 @@ class MorePage extends StatelessWidget {
       ),
       body: ListView(
         children: [
+          ListTile(
+            style: ListTileStyle.drawer,
+            leading: Icon(
+              Icons.dashboard_outlined,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            title: Text("Dashboard"),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) {
+                  return const Dashboard();
+                },
+              ));
+            },
+          ),
           ListTile(
             style: ListTileStyle.drawer,
             leading: Icon(
@@ -71,6 +88,21 @@ class MorePage extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const BlacklistedDirectories(),
+                  ));
+            },
+          ),
+          ListTile(
+            style: ListTileStyle.drawer,
+            leading: Icon(
+              Icons.hide_image_rounded,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            title: Text("Blacklisted Posts"),
+            onTap: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BlacklistedPostsPage(),
                   ));
             },
           ),

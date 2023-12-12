@@ -9,6 +9,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/schemas/statistics_gallery.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/widgets/copy_move_preview.dart';
 import 'package:gallery/src/widgets/grid/actions/favorites.dart';
@@ -356,6 +357,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                   Navigator.pop(context);
                 });
               } else {
+                StatisticsGallery.addViewedDirectories();
                 final d = cell;
 
                 Navigator.push(

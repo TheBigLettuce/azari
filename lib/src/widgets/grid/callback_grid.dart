@@ -15,6 +15,7 @@ import 'package:gallery/src/db/schemas/settings.dart' as settings
     show GridAspectRatio;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/db/schemas/statistics_general.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/db/schemas/settings.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
@@ -198,6 +199,8 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
 
   final NoteInterface<T>? noteInterface;
 
+  final ImageViewStatistics? statistics;
+
   const CallbackGrid(
       {required super.key,
       this.additionalKeybinds,
@@ -208,6 +211,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       required this.hasReachedEnd,
       this.pageChangeImage,
       this.onError,
+      this.statistics,
       required this.selectionGlue,
       this.showCount = false,
       this.overrideBackButton,
@@ -455,6 +459,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return ImageView<T>(
           key: imageViewKey,
+          statistics: widget.statistics,
           registerNotifiers: widget.registerNotifiers,
           systemOverlayRestoreColor: overlayColor,
           updateTagScrollPos: (pos, selectedCell) => widget.updateScrollPosition
@@ -699,9 +704,9 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   // }
 
   List<Widget> _makeActions(BuildContext context) {
-    // if (widget.menuButtonItems == null || showSearchBar) {
-    //   return [Container()];
-    // }
+    if (widget.menuButtonItems == null) {
+      return [];
+    }
 
     return (!widget.inlineMenuButtonItems && widget.menuButtonItems!.length > 1)
         ? [
@@ -966,6 +971,7 @@ class __FabState extends State<_Fab> {
                 onPressed: () {
                   widget.controller
                       .animateTo(0, duration: 200.ms, curve: Curves.linear);
+                  StatisticsGeneral.addScrolledUp();
                 },
                 child: const Icon(Icons.arrow_upward),
               ),
