@@ -21,7 +21,7 @@ import '../../../db/isar_filter.dart';
 import '../../../interfaces/filtering/filtering_interface.dart';
 import '../../../interfaces/filtering/filtering_mode.dart';
 import '../../../interfaces/filtering/sorting_mode.dart';
-import '../../platform_channel.dart';
+import '../../platform_functions.dart';
 import '../../gallery.dart';
 import '../../../interfaces/gallery.dart';
 

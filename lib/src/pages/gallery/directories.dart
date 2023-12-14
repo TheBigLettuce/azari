@@ -16,7 +16,7 @@ import 'package:gallery/src/widgets/grid/actions/favorites.dart';
 import 'package:gallery/src/widgets/grid/actions/gallery_directories.dart';
 import 'package:gallery/src/db/post_tags.dart';
 import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/plugs/platform_channel.dart';
+import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/pages/gallery/files.dart';
 import 'package:gallery/src/pages/booru/main.dart';
 import 'package:gallery/src/db/schemas/system_gallery_directory.dart';

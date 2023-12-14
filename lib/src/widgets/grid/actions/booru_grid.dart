@@ -56,22 +56,18 @@ class BooruGridActions {
 
   static GridAction<T> download<T extends PostBase>(
       BuildContext context, BooruAPI api) {
-    return GridAction(
-      Icons.download,
-      (selected) {
-        final settings = Settings.fromDb();
+    return GridAction(Icons.download, (selected) {
+      final settings = Settings.fromDb();
 
-        PostTags.g.addTagsPostAll(selected.map((e) => (e.filename(), e.tags)));
-        Downloader.g.addAll(
-            selected.map((e) => DownloadFile.d(
-                url: e.fileUrl,
-                site: api.booru.url,
-                name: e.filename(),
-                thumbUrl: e.previewUrl)),
-            settings);
-      },
-      true,
-    );
+      PostTags.g.addTagsPostAll(selected.map((e) => (e.filename(), e.tags)));
+      Downloader.g.addAll(
+          selected.map((e) => DownloadFile.d(
+              url: e.fileUrl,
+              site: api.booru.url,
+              name: e.filename(),
+              thumbUrl: e.previewUrl)),
+          settings);
+    }, true, animate: true);
   }
 
   static GridAction<T> favorites<T extends PostBase>(BuildContext context, T? p,

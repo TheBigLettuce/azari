@@ -11,7 +11,7 @@ import 'dart:io' as io;
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/booru.dart';
 import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/plugs/platform_channel.dart';
+import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
 import 'package:gallery/src/db/schemas/directory_tags.dart';
 import 'package:gallery/src/db/schemas/local_tag_dictionary.dart';

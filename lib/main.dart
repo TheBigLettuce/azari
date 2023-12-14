@@ -13,7 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/plugs/gallery.dart';
-import 'package:gallery/src/plugs/platform_channel.dart';
+import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/pages/gallery/directories.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/widgets/restart_widget.dart';

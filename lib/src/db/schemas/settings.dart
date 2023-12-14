@@ -17,7 +17,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../interfaces/booru.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
-import '../../plugs/platform_channel.dart';
+import '../../plugs/platform_functions.dart';
 import '../initalize_db.dart';
 import 'favorite_booru.dart';
 import 'post.dart';

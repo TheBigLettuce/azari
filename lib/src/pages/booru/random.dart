@@ -10,7 +10,6 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/pages/booru/main.dart';
 import 'package:gallery/src/db/schemas/favorite_booru.dart';
@@ -64,11 +63,6 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
     with SearchLaunchGrid<Post> {
   late final StreamSubscription<Settings?> settingsWatcher;
   late final StreamSubscription favoritesWatcher;
-  late final StreamSubscription timeUpdater;
-
-  bool inForeground = true;
-
-  late final AppLifecycleListener lifecycleListener;
 
   (double, double?, int?)? _currentScroll;
 
@@ -88,16 +82,6 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
   @override
   void initState() {
     super.initState();
-
-    lifecycleListener = AppLifecycleListener(onHide: () {
-      inForeground = false;
-    }, onShow: () {
-      inForeground = true;
-    });
-
-    timeUpdater = Stream.periodic(5.seconds).listen((event) {
-      StatisticsGeneral.addTimeSpent(5.seconds.inMilliseconds);
-    });
 
     searchHook(SearchLaunchGridData(
         mainFocus: state.mainFocus,
@@ -130,8 +114,6 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
 
     state.dispose();
 
-    timeUpdater.cancel();
-
     if (addedToBookmarks && widget.state == null) {
       instance.close(deleteFromDisk: false);
       final f = File.fromUri(
@@ -150,8 +132,6 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
     } else {
       instance.close(deleteFromDisk: widget.state != null ? false : true);
     }
-
-    lifecycleListener.dispose();
 
     super.dispose();
   }

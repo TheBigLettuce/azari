@@ -156,7 +156,7 @@ class _DownloadsState extends State<Downloads>
                   mainFocus: state.mainFocus,
                   refresh: () => Future.value(loader.count()),
                   description: GridDescription([
-                    DownloadsActions.retryOrDelete(context),
+                    DownloadsActions.delete(context),
                   ],
                       keybindsDescription:
                           AppLocalizations.of(context)!.downloadsPageName,

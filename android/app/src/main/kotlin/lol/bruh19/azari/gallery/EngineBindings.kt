@@ -334,21 +334,30 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                 "emptyTrash" -> {
                     CoroutineScope(Dispatchers.IO).launch {
                         mover.trashDeleteMux.lock()
-                        val (images, videos) = mover.trashThumbIds(context, false)
+                        val (images, videos) = mover.trashThumbIds(
+                            context,
+                            lastOnly = false,
+                            separate = true
+                        )
                         if (images.isNotEmpty() || videos.isNotEmpty()) {
+                            val images = images.map {
+                                ContentUris.withAppendedId(
+                                    MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                                    it
+                                )
+                            }
+
+                            val videos = videos.map {
+                                ContentUris.withAppendedId(
+                                    MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                                    it
+                                )
+                            }
+
+
                             val intent = MediaStore.createDeleteRequest(
-                                context.contentResolver,
-                                images.map {
-                                    ContentUris.withAppendedId(
-                                        MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
-                                        it
-                                    )
-                                } + videos.map {
-                                    ContentUris.withAppendedId(
-                                        MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL),
-                                        it
-                                    )
-                                })
+                                context.contentResolver, images.plus(videos)
+                            )
 
                             try {
                                 context.startIntentSenderForResult(

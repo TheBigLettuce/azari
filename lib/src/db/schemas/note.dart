@@ -23,7 +23,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../interfaces/booru.dart';
 import '../../interfaces/cell.dart';
-import '../../plugs/platform_channel.dart';
+import '../../plugs/platform_functions.dart';
 import 'settings.dart';
 
 part 'note.g.dart';

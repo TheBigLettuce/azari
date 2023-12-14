@@ -16,7 +16,7 @@ import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/note_gallery.dart';
 import 'package:gallery/src/db/schemas/statistics_gallery.dart';
 import 'package:gallery/src/pages/image_view.dart';
-import 'package:gallery/src/plugs/platform_channel.dart';
+import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/pages/gallery/directories.dart';
 import 'package:gallery/src/interfaces/gallery.dart';
 import 'package:gallery/src/pages/booru/main.dart';

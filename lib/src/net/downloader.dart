@@ -104,7 +104,8 @@ class Downloader with _CancelTokens, _StatisticsTimer {
       final f = Dbs.g.main.downloadFiles
           .filter()
           .inProgressEqualTo(false)
-          .isFailedEqualTo(false)
+          .or()
+          .isFailedEqualTo(true)
           .findFirstSync();
       if (f != null) {
         f.inprogress().save();
@@ -123,13 +124,30 @@ class Downloader with _CancelTokens, _StatisticsTimer {
     }
   }
 
+  void remove(List<DownloadFile> l) {
+    if (l.isEmpty) {
+      return;
+    }
+
+    for (final e in l) {
+      if (_hasCancelKey(e.url)) {
+        _tokens[e.url]?.cancel();
+        _removeToken(e.url);
+      }
+    }
+
+    Dbs.g.main.writeTxnSync(() => Dbs.g.main.downloadFiles
+        .deleteAllByUrlSync(l.map((e) => e.url).toList()));
+  }
+
   void add(DownloadFile download, Settings settings) {
     if (settings.path == "") {
       download.failed().save();
 
       return;
     }
-    if (download.isarId != null && _hasCancelKey(download.url)) {
+    if ((download.isarId != null && _hasCancelKey(download.url)) ||
+        Dbs.g.main.downloadFiles.getByUrlSync(download.url) != null) {
       return;
     }
 
@@ -150,8 +168,10 @@ class Downloader with _CancelTokens, _StatisticsTimer {
     }
 
     final toDownload = downloads
-        .where(
-            (element) => element.isarId == null || !_hasCancelKey(element.url))
+        .where((element) =>
+            element.isarId == null ||
+            !_hasCancelKey(element.url) ||
+            Dbs.g.main.downloadFiles.getByUrlSync(element.url) == null)
         .map((e) => e.onHold())
         .toList();
 
@@ -287,8 +307,10 @@ class Downloader with _CancelTokens, _StatisticsTimer {
         d.failed().save();
       }
     }).onError((error, stackTrace) {
-      _removeToken(d.url);
-      d.failed().save();
+      if (_hasCancelKey(d.url)) {
+        _removeToken(d.url);
+        d.failed().save();
+      }
 
       progress.error(error.toString());
     }).whenComplete(() => _done());

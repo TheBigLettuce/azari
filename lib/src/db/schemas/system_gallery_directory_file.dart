@@ -18,7 +18,7 @@ import 'package:gallery/src/interfaces/cell.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/widgets/grid/cell_data.dart';
 import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/plugs/platform_channel.dart';
+import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/db/schemas/download_file.dart';
 import 'package:gallery/src/db/schemas/post.dart';
 import 'package:gallery/src/db/schemas/tags.dart';

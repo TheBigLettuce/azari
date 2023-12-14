@@ -218,13 +218,13 @@ class __VideoTimeState extends State<_VideoTime> {
   }
 
   String _minutesSeconds(Duration duration) {
-    return "${duration.inMinutes}.${duration.inSeconds}";
+    return "${duration.inMinutes}.${duration.inSeconds - (duration.inMinutes * 60)}";
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.all(8),
+      padding: const EdgeInsets.all(8),
       child: Text(
         "${_minutesSeconds(widget.controller.value.position)} /\n${_minutesSeconds(widget.controller.value.duration)}",
         style: TextStyle(
