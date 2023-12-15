@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/db/schemas/misc_settings.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 
 import '../../db/initalize_db.dart';
@@ -38,8 +39,10 @@ class SettingsList extends StatefulWidget {
 
 class _SettingsListState extends State<SettingsList> {
   late final StreamSubscription<Settings?> _watcher;
+  late final StreamSubscription<MiscSettings?> _miscWatcher;
 
   Settings? _settings = Settings.fromDb();
+  MiscSettings? _miscSettings = MiscSettings.current;
 
   Future<int>? thumbnailCount =
       Platform.isAndroid ? PlatformFunctions.thumbCacheSize() : null;
@@ -53,11 +56,18 @@ class _SettingsListState extends State<SettingsList> {
         _settings = s;
       });
     }, fire: false);
+
+    _miscWatcher = MiscSettings.watch((s) {
+      setState(() {
+        _miscSettings = s;
+      });
+    });
   }
 
   @override
   void dispose() {
     _watcher.cancel();
+    _miscWatcher.cancel();
     super.dispose();
   }
 
@@ -109,16 +119,6 @@ class _SettingsListState extends State<SettingsList> {
           ),
           subtitle: Text(_settings!.quality.string),
         ),
-        ListTile(
-          title: Text(AppLocalizations.of(context)!.safeModeSetting),
-          onTap: () => radioDialog(
-              context,
-              SafeMode.values.map((e) => (e, e.string)),
-              _settings!.safeMode,
-              (value) => _settings!.copy(safeMode: value).save(),
-              title: AppLocalizations.of(context)!.safeModeSetting),
-          subtitle: Text(_settings!.safeMode.string),
-        ),
         SwitchListTile(
           value: _settings!.autoRefresh,
           onChanged: (value) => _settings!.copy(autoRefresh: value).save(),
@@ -160,18 +160,7 @@ class _SettingsListState extends State<SettingsList> {
                 ));
           },
         ),
-        SettingsLabel(AppLocalizations.of(context)!.licenseSetting, titleStyle),
-        ListTile(
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(
-              builder: (context) {
-                return const LicensePage();
-              },
-            ));
-          },
-          title: const Text("GPL-2.0-only"),
-        ),
-        SettingsLabel(AppLocalizations.of(context)!.metricsLabel, titleStyle),
+        SettingsLabel("Misc", titleStyle),
         ListTile(
           title: Text(AppLocalizations.of(context)!.savedTagsCount),
           trailing: PopupMenuButton(
@@ -283,12 +272,21 @@ class _SettingsListState extends State<SettingsList> {
                   ),
                 );
               }),
-        SettingsLabel("Misc", titleStyle),
         SwitchListTile(
-          value: _settings!.saveVideoPlayerControlls,
-          onChanged: (value) =>
-              _settings!.copy(saveVideoPlayerControlls: value).save(),
-          title: const Text("Save video player controlls"), // TODO: change
+          value: _miscSettings!.filesExtendedActions,
+          onChanged: (value) => MiscSettings.setFilesExtendedActions(value),
+          title: const Text("Show extended files grid actions"), // TODO: change
+        ),
+        ListTile(
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return const LicensePage();
+              },
+            ));
+          },
+          title: Text(AppLocalizations.of(context)!.licenseSetting),
+          subtitle: const Text("GPL-2.0-only"),
         ),
       ];
 

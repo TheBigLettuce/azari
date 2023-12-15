@@ -13,6 +13,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/post_tags.dart';
 import 'package:gallery/src/db/initalize_db.dart';
+import 'package:gallery/src/db/schemas/misc_settings.dart';
 import 'package:gallery/src/db/schemas/note_gallery.dart';
 import 'package:gallery/src/db/schemas/statistics_gallery.dart';
 import 'package:gallery/src/pages/image_view.dart';
@@ -707,8 +708,11 @@ class _GalleryFilesState extends State<GalleryFiles>
                                   _restoreFromTrash(),
                                 ]
                               : [
-                                  _bulkRename(),
-                                  _saveTagsAction(),
+                                  if (MiscSettings
+                                      .current.filesExtendedActions) ...[
+                                    _bulkRename(),
+                                    _saveTagsAction(),
+                                  ],
                                   _addToFavoritesAction(null),
                                   _deleteAction(),
                                   _copyAction(),

@@ -7,7 +7,6 @@
 
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/settings.dart';
 import 'package:gallery/src/db/schemas/video_settings.dart';
 import 'package:gallery/src/widgets/loading_error_widget.dart';
 import 'package:gallery/src/widgets/notifiers/pause_video.dart';
@@ -51,12 +50,9 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
   void _initController() async {
     controller.initialize().then((value) {
       if (!disposed) {
-        final saveVideoControlls = Settings.fromDb().saveVideoPlayerControlls;
         final videoSettings = VideoSettings.current;
 
-        if (saveVideoControlls) {
-          controller.setVolume(videoSettings.volume);
-        }
+        controller.setVolume(videoSettings.volume);
 
         setState(() {
           chewieController = ChewieController(
@@ -65,7 +61,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
               videoPlayerController: controller,
               aspectRatio: controller.value.aspectRatio,
               autoInitialize: false,
-              looping: saveVideoControlls ? videoSettings.looping : true,
+              looping: videoSettings.looping,
               allowPlaybackSpeedChanging: false,
               showOptions: false,
               showControls: false,
@@ -95,6 +91,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
   @override
   void dispose() {
     disposed = true;
+    controller.pause();
     controller.dispose();
     if (chewieController != null) {
       chewieController!.dispose();

@@ -14,6 +14,7 @@ import 'package:gallery/src/db/schemas/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/hidden_booru_post.dart';
 import 'package:gallery/src/db/schemas/local_tag_dictionary.dart';
 import 'package:gallery/src/db/schemas/local_tags.dart';
+import 'package:gallery/src/db/schemas/misc_settings.dart';
 import 'package:gallery/src/db/schemas/note.dart';
 import 'package:gallery/src/db/schemas/note_gallery.dart';
 import 'package:gallery/src/db/schemas/pinned_directories.dart';
@@ -80,6 +81,7 @@ Future initalizeDb(bool temporary) async {
     StatisticsGeneralSchema,
     StatisticsBooruSchema,
     VideoSettingsSchema,
+    MiscSettingsSchema,
   ], directory: directoryPath, inspector: false);
 
   final blacklistedDirIsar = Isar.openSync([
