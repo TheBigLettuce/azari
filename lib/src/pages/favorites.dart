@@ -18,6 +18,7 @@ import 'package:gallery/src/pages/booru/main.dart';
 import 'package:gallery/src/db/schemas/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/local_tag_dictionary.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -34,9 +35,8 @@ import '../widgets/skeletons/grid_skeleton.dart';
 
 class FavoritesPage extends StatefulWidget {
   final void Function(bool) procPop;
-  final SelectionGlue<FavoriteBooru> glue;
 
-  const FavoritesPage({super.key, required this.procPop, required this.glue});
+  const FavoritesPage({super.key, required this.procPop});
 
   @override
   State<FavoritesPage> createState() => _FavoritesPageState();
@@ -275,6 +275,8 @@ class _FavoritesPageState extends State<FavoritesPage>
 
   @override
   Widget build(BuildContext context) {
+    final glue = GlueProvider.of<FavoriteBooru>(context);
+
     return GridSkeleton<FavoriteBooru>(
         state,
         (context) => CallbackGrid(
@@ -282,7 +284,7 @@ class _FavoritesPageState extends State<FavoritesPage>
               getCell: loader.getCell,
               initalScrollPosition: 0,
               showCount: true,
-              selectionGlue: widget.glue,
+              selectionGlue: glue,
               scaffoldKey: state.scaffoldKey,
               addIconsImage: (p) => [
                 BooruGridActions.favorites(context, p,
@@ -294,7 +296,7 @@ class _FavoritesPageState extends State<FavoritesPage>
                   bottom: MediaQuery.systemGestureInsetsOf(context).bottom +
                       (Scaffold.of(context).widget.bottomNavigationBar !=
                                   null &&
-                              !widget.glue.keyboardVisible()
+                              !glue.keyboardVisible()
                           ? 80
                           : 0)),
               hasReachedEnd: () => true,
@@ -349,11 +351,7 @@ class _FavoritesPageState extends State<FavoritesPage>
             ),
         canPop: false, overrideOnPop: (pop, hideAppBar) {
       if (searchTextController.text.isNotEmpty) {
-        resetSearch();
-        return;
-      }
-      if (widget.glue.isOpen()) {
-        state.gridKey.currentState?.selection.reset();
+        resetSearch(false);
         return;
       }
 

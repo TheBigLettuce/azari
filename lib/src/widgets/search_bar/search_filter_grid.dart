@@ -111,8 +111,8 @@ mixin SearchFilterGrid<T extends Cell>
     _searchVirtual = true;
   }
 
-  void resetSearch() {
-    _reset(true);
+  void resetSearch([bool resetFilterMode = true]) {
+    _reset(resetFilterMode);
   }
 
   @override

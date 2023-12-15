@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/db/schemas/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/system_gallery_directory.dart';
 import 'package:gallery/src/pages/notes_page.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
@@ -186,9 +187,9 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
             bottomPadding: keyboardVisible() ? 0 : 80,
           ),
         ),
-      2 => FavoritesPage(
+      2 => GlueProvider<FavoriteBooru>(
           glue: glueState.glue(keyboardVisible, setState),
-          procPop: _procPop,
+          child: FavoritesPage(procPop: _procPop),
         ),
       3 => PopScope(
           canPop: currentRoute == 0,

@@ -472,18 +472,12 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
         noDrawer: widget.noDrawer ?? false,
         canPop: widget.callback != null || widget.nestedCallback != null
             ? currentFilteringMode() == FilteringMode.noFilter &&
-                searchTextController.text.isEmpty &&
-                !glue.isOpen()
+                searchTextController.text.isEmpty
             : false, overrideOnPop: (pop, hideAppBar) {
       final filterMode = currentFilteringMode();
       if (filterMode != FilteringMode.noFilter ||
           searchTextController.text.isNotEmpty) {
         resetSearch();
-        return;
-      }
-
-      if (glue.isOpen()) {
-        state.gridKey.currentState?.selection.reset();
         return;
       }
 
