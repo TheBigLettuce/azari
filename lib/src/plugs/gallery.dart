@@ -16,6 +16,7 @@ abstract class GalleryPlug {
       {bool? temporaryDb, bool setCurrentApi = true});
   void notify(String? target);
   bool get temporary;
+  Future<int> get version;
 }
 
 GalleryPlug chooseGalleryPlug() {

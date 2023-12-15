@@ -284,6 +284,10 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                     result.success(null)
                 }
 
+                "currentMediastoreVersion" -> {
+                    result.success(MediaStore.getGeneration(context, MediaStore.VOLUME_EXTERNAL))
+                }
+
                 "moveInternal" -> {
                     val dir = call.argument<String>("dir") ?: throw Exception("dir is empty")
                     val uris =

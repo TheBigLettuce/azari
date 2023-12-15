@@ -9,6 +9,9 @@ part of 'android_api_directories.dart';
 
 class AndroidGallery implements GalleryPlug {
   @override
+  Future<int> get version => PlatformFunctions.currentMediastoreVersion();
+
+  @override
   bool get temporary => _global!.temporary;
 
   @override

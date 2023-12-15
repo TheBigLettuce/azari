@@ -91,7 +91,11 @@ class GalleryDirectories extends StatefulWidget {
 
 class _GalleryDirectoriesState extends State<GalleryDirectories>
     with SearchFilterGrid<SystemGalleryDirectory> {
-  late StreamSubscription<Settings?> settingsWatcher;
+  late final StreamSubscription<Settings?> settingsWatcher;
+  late final AppLifecycleListener lifecycleListener;
+
+  int galleryVersion = 0;
+
   bool proceed = true;
   late final extra = api.getExtra()
     ..setRefreshGridCallback(() {
@@ -111,7 +115,10 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
     transform: (cell, _) => cell,
     filter: extra.filter,
   );
-  late final api = chooseGalleryPlug().galleryApi(
+
+  late final galleryPlug = chooseGalleryPlug();
+
+  late final api = galleryPlug.galleryApi(
       temporaryDb: widget.callback != null || widget.nestedCallback != null,
       setCurrentApi: widget.callback == null);
   final stream = StreamController<int>(sync: true);
@@ -123,6 +130,20 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
   @override
   void initState() {
     super.initState();
+
+    galleryPlug.version.then((value) => galleryVersion = value);
+
+    lifecycleListener = AppLifecycleListener(
+      onShow: () {
+        galleryPlug.version.then((value) {
+          if (value != galleryVersion) {
+            galleryVersion = value;
+            _refresh();
+          }
+        });
+      },
+    );
+
     if (widget.callback != null) {
       extra.setTemporarySet((i, end) {
         stream.add(i);
@@ -171,11 +192,13 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
     disposeSearch();
     state.dispose();
     Dbs.g.clearTemporaryImages();
+    lifecycleListener.dispose();
 
     super.dispose();
   }
 
   void _refresh() {
+    galleryPlug.version.then((value) => galleryVersion = value);
     PlatformFunctions.trashThumbId().then((value) {
       try {
         setState(() {

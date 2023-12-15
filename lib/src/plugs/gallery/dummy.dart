@@ -18,6 +18,9 @@ import 'package:isar/isar.dart';
 
 class DummyGallery implements GalleryPlug {
   @override
+  Future<int> get version => Future.value(0);
+
+  @override
   bool get temporary => true;
 
   @override

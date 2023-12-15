@@ -168,6 +168,12 @@ class PlatformFunctions {
     _channel.invokeMethod("deleteCachedThumbs", id);
   }
 
+  static Future<int> currentMediastoreVersion() {
+    return _channel
+        .invokeMethod("currentMediastoreVersion")
+        .then((value) => value);
+  }
+
   const PlatformFunctions();
 }
 
