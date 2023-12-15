@@ -20,6 +20,7 @@ import 'package:gallery/src/db/schemas/statistics_general.dart';
 import 'package:gallery/src/db/schemas/tags.dart';
 import 'package:gallery/src/pages/booru/random.dart';
 import 'package:gallery/src/pages/image_view.dart';
+import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 
@@ -139,13 +140,11 @@ PopupMenuItem _listView(bool listView, void Function(bool) select) {
 class MainBooruGrid extends StatefulWidget {
   final Isar mainGrid;
   final void Function(bool) procPop;
-  final SelectionGlue<Post> glue;
   final RefreshingStatusInterface refreshingInterface;
 
   const MainBooruGrid(
       {super.key,
       required this.mainGrid,
-      required this.glue,
       required this.refreshingInterface,
       required this.procPop});
 
@@ -365,6 +364,8 @@ class _MainBooruGridState extends State<MainBooruGrid>
 
   @override
   Widget build(BuildContext context) {
+    final glue = GlueProvider.of<Post>(context);
+
     return BooruAPINotifier(
         api: api,
         child: TagManagerNotifier(
@@ -377,10 +378,10 @@ class _MainBooruGridState extends State<MainBooruGrid>
                     bottom: MediaQuery.of(context).systemGestureInsets.bottom +
                         (Scaffold.of(context).widget.bottomNavigationBar !=
                                     null &&
-                                !widget.glue.keyboardVisible()
+                                !glue.keyboardVisible()
                             ? 80
                             : 0)),
-                selectionGlue: widget.glue,
+                selectionGlue: glue,
                 registerNotifiers: (child) => TagManagerNotifier(
                     tagManager: tagManager,
                     child: BooruAPINotifier(api: api, child: child)),
@@ -478,13 +479,8 @@ class _MainBooruGridState extends State<MainBooruGrid>
                 initalCell: restore.copy.selectedPost,
               ),
               overrideBooru: api.booru,
-              canPop: !widget.glue.isOpen(),
+              canPop: true,
               overrideOnPop: (pop, hideAppBar) {
-                if (widget.glue.isOpen()) {
-                  state.gridKey.currentState?.selection.reset();
-                  return;
-                }
-
                 if (hideAppBar()) {
                   setState(() {});
                   return;

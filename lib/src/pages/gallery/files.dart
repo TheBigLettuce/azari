@@ -25,6 +25,7 @@ import 'package:gallery/src/plugs/notifications.dart';
 import 'package:gallery/src/db/schemas/system_gallery_directory_file.dart';
 import 'package:gallery/src/db/schemas/favorite_media.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -220,64 +221,61 @@ class _GalleryFilesState extends State<GalleryFiles>
       builder: (context) {
         return WrappedGridPage<SystemGalleryDirectory>(
             scaffoldKey: GlobalKey(),
-            f: (glue) => GalleryDirectories(
-                  showBackButton: true,
-                  glue: glue,
-                  procPop: (_) {},
-                  callback: CallbackDescription(
-                      move
-                          ? AppLocalizations.of(context)!.chooseMoveDestination
-                          : AppLocalizations.of(context)!.chooseCopyDestination,
-                      (chosen, newDir) {
-                    if (chosen == null && newDir == null) {
-                      throw "both are empty";
-                    }
+            child: GalleryDirectories(
+              showBackButton: true,
+              procPop: (_) {},
+              callback: CallbackDescription(
+                  move
+                      ? AppLocalizations.of(context)!.chooseMoveDestination
+                      : AppLocalizations.of(context)!.chooseCopyDestination,
+                  (chosen, newDir) {
+                if (chosen == null && newDir == null) {
+                  throw "both are empty";
+                }
 
-                    if (chosen != null && chosen.bucketId == widget.bucketId) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(move
-                              ? AppLocalizations.of(context)!.cantMoveSameDest
-                              : AppLocalizations.of(context)!
-                                  .cantCopySameDest)));
-                      return Future.value();
-                    }
+                if (chosen != null && chosen.bucketId == widget.bucketId) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(move
+                          ? AppLocalizations.of(context)!.cantMoveSameDest
+                          : AppLocalizations.of(context)!.cantCopySameDest)));
+                  return Future.value();
+                }
 
-                    if (chosen?.bucketId == "favorites") {
-                      _favoriteOrUnfavorite(context, selected);
-                    } else if (chosen?.bucketId == "trash") {
-                      if (!move) {
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(const SnackBar(
-                                content: Text(
-                          "Can't copy files to the trash. Use move.", // TODO: change
-                        )));
-                        return Future.value();
-                      }
-
-                      return _deleteDialog(context, selected);
-                    } else {
-                      PlatformFunctions.copyMoveFiles(
-                          chosen?.relativeLoc, chosen?.volumeName, selected,
-                          move: move, newDir: newDir);
-
-                      if (move) {
-                        StatisticsGallery.addMoved(selected.length);
-                      } else {
-                        StatisticsGallery.addCopied(selected.length);
-                      }
-                    }
-
+                if (chosen?.bucketId == "favorites") {
+                  _favoriteOrUnfavorite(context, selected);
+                } else if (chosen?.bucketId == "trash") {
+                  if (!move) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text(
+                      "Can't copy files to the trash. Use move.", // TODO: change
+                    )));
                     return Future.value();
-                  },
-                      preview: PreferredSize(
-                        preferredSize: const Size.fromHeight(52),
-                        child: CopyMovePreview(
-                          files: selected,
-                          size: 52,
-                        ),
-                      ),
-                      joinable: false),
-                ));
+                  }
+
+                  return _deleteDialog(context, selected);
+                } else {
+                  PlatformFunctions.copyMoveFiles(
+                      chosen?.relativeLoc, chosen?.volumeName, selected,
+                      move: move, newDir: newDir);
+
+                  if (move) {
+                    StatisticsGallery.addMoved(selected.length);
+                  } else {
+                    StatisticsGallery.addCopied(selected.length);
+                  }
+                }
+
+                return Future.value();
+              },
+                  preview: PreferredSize(
+                    preferredSize: const Size.fromHeight(52),
+                    child: CopyMovePreview(
+                      files: selected,
+                      size: 52,
+                    ),
+                  ),
+                  joinable: false),
+            ));
       },
     )).then((value) => state.gridKey.currentState?.imageViewKey.currentState
         ?.wrapNotifiersKey.currentState
@@ -295,8 +293,8 @@ class _GalleryFilesState extends State<GalleryFiles>
         Dbs.g.blacklisted.writeTxnSync(
             () => Dbs.g.blacklisted.favoriteMedias.deleteSync(fav.id));
       } else {
-        Dbs.g.blacklisted.writeTxnSync(() =>
-            Dbs.g.blacklisted.favoriteMedias.putSync(FavoriteMedia(fav.id)));
+        Dbs.g.blacklisted.writeTxnSync(() => Dbs.g.blacklisted.favoriteMedias
+            .putSync(FavoriteMedia(fav.id, DateTime.now())));
       }
     }
 
@@ -308,9 +306,10 @@ class _GalleryFilesState extends State<GalleryFiles>
         action: SnackBarAction(
             label: "Undo",
             onPressed: () {
-              Dbs.g.blacklisted.writeTxnSync(() => Dbs
-                  .g.blacklisted.favoriteMedias
-                  .putAllSync(deleted.map((e) => FavoriteMedia(e)).toList()));
+              Dbs.g.blacklisted.writeTxnSync(() =>
+                  Dbs.g.blacklisted.favoriteMedias.putAllSync(deleted
+                      .map((e) => FavoriteMedia(e, DateTime.now()))
+                      .toList()));
 
               plug.notify(null);
             }),
@@ -483,6 +482,13 @@ class _GalleryFilesState extends State<GalleryFiles>
         play: !isFavorites);
   }
 
+  GridAction<SystemGalleryDirectoryFile> _setFavoritesThumbnailAction() {
+    return GridAction(Icons.image_outlined, (selected) {
+      MiscSettings.setFavoritesThumbId(selected.first.id);
+      setState(() {});
+    }, true, showOnlyWhenSingle: true);
+  }
+
   GridAction<SystemGalleryDirectoryFile> _deleteAction() {
     return GridAction(
       Icons.delete,
@@ -532,224 +538,217 @@ class _GalleryFilesState extends State<GalleryFiles>
   Widget build(BuildContext context) {
     return WrappedGridPage<SystemGalleryDirectoryFile>(
         scaffoldKey: state.scaffoldKey,
-        f: (glue) => GridSkeleton<SystemGalleryDirectoryFile>(
-              state,
-              (context) => CallbackGrid(
-                  key: state.gridKey,
-                  getCell: (i) => widget.api.directCell(i),
-                  initalScrollPosition: 0,
-                  scaffoldKey: state.scaffoldKey,
-                  systemNavigationInsets:
-                      MediaQuery.of(context).systemGestureInsets,
-                  hasReachedEnd: () => true,
-                  immutable: false,
-                  addFabPadding: true,
-                  selectionGlue: glue,
-                  tightMode: true,
-                  statistics: const ImageViewStatistics(
-                      swiped: StatisticsGallery.addFilesSwiped,
-                      viewed: StatisticsGallery.addViewedFiles),
-                  addIconsImage: (cell) {
-                    return widget.callback != null
+        child: GridSkeleton<SystemGalleryDirectoryFile>(
+          state,
+          (context) => CallbackGrid(
+              key: state.gridKey,
+              getCell: (i) => widget.api.directCell(i),
+              initalScrollPosition: 0,
+              scaffoldKey: state.scaffoldKey,
+              systemNavigationInsets:
+                  MediaQuery.of(context).systemGestureInsets,
+              hasReachedEnd: () => true,
+              immutable: false,
+              addFabPadding: true,
+              selectionGlue: GlueProvider.of(context),
+              tightMode: true,
+              statistics: const ImageViewStatistics(
+                  swiped: StatisticsGallery.addFilesSwiped,
+                  viewed: StatisticsGallery.addViewedFiles),
+              addIconsImage: (cell) {
+                return widget.callback != null
+                    ? [
+                        _chooseAction(),
+                      ]
+                    : extra.isTrash
                         ? [
-                            _chooseAction(),
+                            _restoreFromTrash(),
                           ]
-                        : extra.isTrash
-                            ? [
-                                _restoreFromTrash(),
-                              ]
-                            : [
-                                _addToFavoritesAction(cell),
-                                _deleteAction(),
-                                _copyAction(),
-                                _moveAction()
-                              ];
-                  },
-                  hideAlias: state.settings.galleryFiles.hideName,
-                  showCount: true,
-                  searchWidget: SearchAndFocus(
-                      searchWidget(context, hint: widget.dirName), searchFocus),
-                  mainFocus: state.mainFocus,
-                  refresh: extra.supportsDirectRefresh
-                      ? () async {
-                          final i = await widget.api.refresh();
-
-                          performSearch(searchTextController.text);
-
-                          return i;
-                        }
-                      : () {
-                          _refresh();
-                          return null;
-                        },
-                  menuButtonItems: [
-                    if (widget.callback == null && extra.isTrash)
-                      IconButton(
-                          onPressed: () {
-                            Navigator.push(
-                                context,
-                                DialogRoute(
-                                    context: context,
-                                    builder: (context) {
-                                      return AlertDialog(
-                                        title: Text(
-                                            "Are you sure you want to empty the trash?"),
-                                        content: Text(
-                                          "This is permanent", // TODO: change
-                                          style: TextStyle(
-                                              color: Colors.red.harmonizeWith(
-                                                  Theme.of(context)
-                                                      .colorScheme
-                                                      .primary)),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                              onPressed: () {
-                                                PlatformFunctions.emptyTrash();
-                                                Navigator.pop(context);
-                                              },
-                                              child: Text(
-                                                  AppLocalizations.of(context)!
-                                                      .yes)),
-                                          TextButton(
-                                              onPressed: () {
-                                                Navigator.pop(context);
-                                              },
-                                              child: Text(
-                                                  AppLocalizations.of(context)!
-                                                      .no))
-                                        ],
-                                      );
-                                    }));
-                          },
-                          icon: const Icon(Icons.delete_sweep_outlined)),
-                    if (widget.callback != null)
-                      IconButton(
-                          onPressed: () {
-                            if (state.gridKey.currentState?.mutationInterface
-                                    ?.isRefreshing !=
-                                false) {
-                              return;
-                            }
-
-                            final upTo = state.gridKey.currentState
-                                ?.mutationInterface?.cellCount;
-                            if (upTo == null) {
-                              return;
-                            }
-
-                            try {
-                              final n = math.Random.secure().nextInt(upTo);
-
-                              widget.callback?.call(state
-                                  .gridKey.currentState!.mutationInterface!
-                                  .getCell(n));
-                            } catch (e) {
-                              log("getting random number",
-                                  level: Level.WARNING.value, error: e);
-                              return;
-                            }
-
-                            if (widget.callback!.returnBack) {
-                              Navigator.pop(context);
-                              Navigator.pop(context);
-                            }
-                          },
-                          icon: const Icon(Icons.casino_outlined)),
-                    gridSettingsButton(state.settings.galleryFiles,
-                        selectRatio: (ratio) => state.settings
-                            .copy(
-                                galleryFiles: state.settings.galleryFiles
-                                    .copy(aspectRatio: ratio))
-                            .save(),
-                        selectHideName: (hideNames) => state.settings
-                            .copy(
-                                galleryFiles: state.settings.galleryFiles
-                                    .copy(hideName: hideNames))
-                            .save(),
-                        selectListView: (listView) => state.settings
-                            .copy(
-                                galleryFiles: state.settings.galleryFiles
-                                    .copy(listView: listView))
-                            .save(),
-                        selectGridColumn: (columns) => state.settings
-                            .copy(
-                                galleryFiles: state.settings.galleryFiles
-                                    .copy(columns: columns))
-                            .save()),
-                  ],
-                  inlineMenuButtonItems: true,
-                  noteInterface: NoteGallery.interface((
-                      {int? replaceIndx,
-                      bool addNote = false,
-                      int? removeNote}) {
-                    if (state.gridKey.currentState?.mutationInterface
-                            ?.isRefreshing ==
-                        true) {
-                      return;
-                    }
-
-                    _refresh();
-                  }),
-                  onBack: () {
-                    final filterMode = currentFilteringMode();
-                    if (filterMode != FilteringMode.noFilter) {
-                      resetSearch();
-                      return;
-                    }
-                    Navigator.pop(context);
-                  },
-                  progressTicker: stream.stream,
-                  description: GridDescription(
-                      widget.callback != null
-                          ? []
-                          : extra.isTrash
-                              ? [
-                                  _restoreFromTrash(),
-                                ]
-                              : [
-                                  if (MiscSettings
-                                      .current.filesExtendedActions) ...[
-                                    _bulkRename(),
-                                    _saveTagsAction(),
-                                  ],
-                                  _addToFavoritesAction(null),
-                                  _deleteAction(),
-                                  _copyAction(),
-                                  _moveAction(),
-                                ],
-                      bottomWidget: widget.callback != null
-                          ? CopyMovePreview.hintWidget(context,
-                              AppLocalizations.of(context)!.chooseFileNotice)
-                          : null,
-                      keybindsDescription: widget.dirName,
-                      layout: state.settings.galleryFiles.listView
-                          ? const ListLayout()
-                          : GridLayout(state.settings.galleryFiles.columns,
-                              state.settings.galleryFiles.aspectRatio))),
-              noDrawer: widget.callback != null,
-              canPop: currentFilteringMode() == FilteringMode.noFilter &&
-                  searchTextController.text.isEmpty &&
-                  !glue.isOpen(),
-              overrideOnPop: (pop, hideAppBar) {
-                final filterMode = currentFilteringMode();
-                if (filterMode != FilteringMode.noFilter ||
-                    searchTextController.text.isNotEmpty) {
-                  resetSearch();
-                  setState(() {});
-                  return;
-                }
-
-                if (glue.isOpen()) {
-                  state.gridKey.currentState?.selection.reset();
-                  return;
-                }
-
-                if (hideAppBar()) {
-                  setState(() {});
-                  return;
-                }
+                        : [
+                            _addToFavoritesAction(cell),
+                            _deleteAction(),
+                            _copyAction(),
+                            _moveAction()
+                          ];
               },
-            ));
+              hideAlias: state.settings.galleryFiles.hideName,
+              showCount: true,
+              searchWidget: SearchAndFocus(
+                  searchWidget(context, hint: widget.dirName), searchFocus),
+              mainFocus: state.mainFocus,
+              refresh: extra.supportsDirectRefresh
+                  ? () async {
+                      final i = await widget.api.refresh();
+
+                      performSearch(searchTextController.text);
+
+                      return i;
+                    }
+                  : () {
+                      _refresh();
+                      return null;
+                    },
+              menuButtonItems: [
+                if (widget.callback == null && extra.isTrash)
+                  IconButton(
+                      onPressed: () {
+                        Navigator.push(
+                            context,
+                            DialogRoute(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: Text(
+                                        "Are you sure you want to empty the trash?"),
+                                    content: Text(
+                                      "This is permanent", // TODO: change
+                                      style: TextStyle(
+                                          color: Colors.red.harmonizeWith(
+                                              Theme.of(context)
+                                                  .colorScheme
+                                                  .primary)),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () {
+                                            PlatformFunctions.emptyTrash();
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text(
+                                              AppLocalizations.of(context)!
+                                                  .yes)),
+                                      TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text(
+                                              AppLocalizations.of(context)!.no))
+                                    ],
+                                  );
+                                }));
+                      },
+                      icon: const Icon(Icons.delete_sweep_outlined)),
+                if (widget.callback != null)
+                  IconButton(
+                      onPressed: () {
+                        if (state.gridKey.currentState?.mutationInterface
+                                ?.isRefreshing !=
+                            false) {
+                          return;
+                        }
+
+                        final upTo = state
+                            .gridKey.currentState?.mutationInterface?.cellCount;
+                        if (upTo == null) {
+                          return;
+                        }
+
+                        try {
+                          final n = math.Random.secure().nextInt(upTo);
+
+                          widget.callback?.call(state
+                              .gridKey.currentState!.mutationInterface!
+                              .getCell(n));
+                        } catch (e) {
+                          log("getting random number",
+                              level: Level.WARNING.value, error: e);
+                          return;
+                        }
+
+                        if (widget.callback!.returnBack) {
+                          Navigator.pop(context);
+                          Navigator.pop(context);
+                        }
+                      },
+                      icon: const Icon(Icons.casino_outlined)),
+                gridSettingsButton(state.settings.galleryFiles,
+                    selectRatio: (ratio) => state.settings
+                        .copy(
+                            galleryFiles: state.settings.galleryFiles
+                                .copy(aspectRatio: ratio))
+                        .save(),
+                    selectHideName: (hideNames) => state.settings
+                        .copy(
+                            galleryFiles: state.settings.galleryFiles
+                                .copy(hideName: hideNames))
+                        .save(),
+                    selectListView: (listView) => state.settings
+                        .copy(
+                            galleryFiles: state.settings.galleryFiles
+                                .copy(listView: listView))
+                        .save(),
+                    selectGridColumn: (columns) => state.settings
+                        .copy(
+                            galleryFiles: state.settings.galleryFiles
+                                .copy(columns: columns))
+                        .save()),
+              ],
+              inlineMenuButtonItems: true,
+              noteInterface: NoteGallery.interface((
+                  {int? replaceIndx, bool addNote = false, int? removeNote}) {
+                if (state.gridKey.currentState?.mutationInterface
+                        ?.isRefreshing ==
+                    true) {
+                  return;
+                }
+
+                _refresh();
+              }),
+              onBack: () {
+                final filterMode = currentFilteringMode();
+                if (filterMode != FilteringMode.noFilter) {
+                  resetSearch();
+                  return;
+                }
+                Navigator.pop(context);
+              },
+              progressTicker: stream.stream,
+              description: GridDescription(
+                  widget.callback != null
+                      ? []
+                      : extra.isTrash
+                          ? [
+                              _restoreFromTrash(),
+                            ]
+                          : [
+                              if (extra.isFavorites)
+                                _setFavoritesThumbnailAction(),
+                              if (MiscSettings
+                                  .current.filesExtendedActions) ...[
+                                _bulkRename(),
+                                _saveTagsAction(),
+                              ],
+                              _addToFavoritesAction(null),
+                              _deleteAction(),
+                              _copyAction(),
+                              _moveAction(),
+                            ],
+                  bottomWidget: widget.callback != null
+                      ? CopyMovePreview.hintWidget(context,
+                          AppLocalizations.of(context)!.chooseFileNotice)
+                      : null,
+                  keybindsDescription: widget.dirName,
+                  layout: state.settings.galleryFiles.listView
+                      ? const ListLayout()
+                      : GridLayout(state.settings.galleryFiles.columns,
+                          state.settings.galleryFiles.aspectRatio))),
+          noDrawer: widget.callback != null,
+          canPop: currentFilteringMode() == FilteringMode.noFilter &&
+              searchTextController.text.isEmpty,
+          overrideOnPop: (pop, hideAppBar) {
+            final filterMode = currentFilteringMode();
+            if (filterMode != FilteringMode.noFilter ||
+                searchTextController.text.isNotEmpty) {
+              resetSearch();
+              setState(() {});
+              return;
+            }
+
+            if (hideAppBar()) {
+              setState(() {});
+              return;
+            }
+          },
+        ));
   }
 }

@@ -7,17 +7,20 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
+import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 
 import '../../interfaces/cell.dart';
 import 'callback_grid.dart';
 import 'selection_glue_state.dart';
 
 class WrappedGridPage<T extends Cell> extends StatefulWidget {
-  final Widget Function(SelectionGlue<T> glue) f;
+  // final Widget Function(SelectionGlue<T> glue) f;
   final GlobalKey<ScaffoldState> scaffoldKey;
+  final Widget child;
 
   const WrappedGridPage(
-      {super.key, required this.scaffoldKey, required this.f});
+      {super.key, required this.scaffoldKey, required this.child});
 
   @override
   State<WrappedGridPage<T>> createState() => _WrappedGridPageState();
@@ -26,26 +29,33 @@ class WrappedGridPage<T extends Cell> extends StatefulWidget {
 class _WrappedGridPageState<T extends Cell> extends State<WrappedGridPage<T>>
     with SingleTickerProviderStateMixin {
   final glueState = SelectionGlueState();
+  late final SelectionGlue<T> glue = glueState.glue<T>(
+      () => MediaQuery.viewInsetsOf(context).bottom != 0, setState);
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: widget.scaffoldKey,
-      extendBody: true,
-      bottomNavigationBar: glueState.actions == null
-          ? null
-          : Animate(
-              effects: const [
-                  MoveEffect(
-                      curve: Curves.easeOutQuint,
-                      end: Offset.zero,
-                      begin: Offset(0, kBottomNavigationBarHeight)),
-                ],
-              child: glueState.actions?.isNotEmpty ?? false
-                  ? GlueBottomAppBar(glueState.actions!)
-                  : const SizedBox.shrink()),
-      body: widget.f(glueState.glue<T>(
-          () => MediaQuery.viewInsetsOf(context).bottom != 0, setState)),
+    return SelectionCountNotifier(
+      count: glueState.count ?? 0,
+      child: GlueProvider<T>(
+        glue: glue,
+        child: Scaffold(
+          key: widget.scaffoldKey,
+          extendBody: true,
+          bottomNavigationBar: glueState.actions == null
+              ? null
+              : Animate(
+                  effects: const [
+                      MoveEffect(
+                          curve: Curves.easeOutQuint,
+                          end: Offset.zero,
+                          begin: Offset(0, kBottomNavigationBarHeight)),
+                    ],
+                  child: glueState.actions?.isNotEmpty ?? false
+                      ? GlueBottomAppBar(glueState.actions!)
+                      : const SizedBox.shrink()),
+          body: widget.child,
+        ),
+      ),
     );
   }
 }

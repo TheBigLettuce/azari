@@ -7,14 +7,17 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/db/schemas/system_gallery_directory.dart';
 import 'package:gallery/src/pages/notes_page.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../main.dart';
 import '../db/initalize_db.dart';
 import '../db/post_tags.dart';
+import '../db/schemas/post.dart';
 import '../db/schemas/settings.dart';
 import '../db/state_restoration.dart';
 import '../interfaces/booru.dart';
@@ -152,12 +155,13 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   Widget _currentPage(BuildContext context) {
     if (widget.callback != null) {
       if (currentRoute == 0) {
-        return GalleryDirectories(
-          glue: glueState.glue(keyboardVisible, setState),
-          nestedCallback: widget.callback,
-          procPop: _procPop,
-          bottomPadding: keyboardVisible() ? 0 : 80,
-        );
+        return GlueProvider<SystemGalleryDirectory>(
+            glue: glueState.glue(keyboardVisible, setState),
+            child: GalleryDirectories(
+              nestedCallback: widget.callback,
+              procPop: _procPop,
+              bottomPadding: keyboardVisible() ? 0 : 80,
+            ));
       } else {
         return NotesPage(
           callback: widget.callback,
@@ -167,16 +171,20 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     }
 
     return switch (currentRoute) {
-      0 => MainBooruGrid(
-          mainGrid: mainGrid,
-          refreshingInterface: refreshInterface,
+      0 => GlueProvider<Post>(
           glue: glueState.glue(keyboardVisible, setState),
-          procPop: _procPop,
+          child: MainBooruGrid(
+            mainGrid: mainGrid,
+            refreshingInterface: refreshInterface,
+            procPop: _procPop,
+          ),
         ),
-      1 => GalleryDirectories(
+      1 => GlueProvider<SystemGalleryDirectory>(
           glue: glueState.glue(keyboardVisible, setState),
-          procPop: _procPop,
-          bottomPadding: keyboardVisible() ? 0 : 80,
+          child: GalleryDirectories(
+            procPop: _procPop,
+            bottomPadding: keyboardVisible() ? 0 : 80,
+          ),
         ),
       2 => FavoritesPage(
           glue: glueState.glue(keyboardVisible, setState),

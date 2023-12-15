@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/widgets/gesture_dead_zones.dart';
+import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 
 import '../../interfaces/booru.dart';
 import '../../interfaces/cell.dart';
@@ -31,10 +32,15 @@ class GridSkeleton<T extends Cell> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: canPop,
+      canPop: canPop && !GlueProvider.of<T>(context).isOpen(),
       onPopInvoked: overrideOnPop == null
           ? null
           : (pop) {
+              if (GlueProvider.of<T>(context).isOpen()) {
+                state.gridKey.currentState?.selection.reset();
+                return;
+              }
+
               overrideOnPop!(pop, () {
                 final s = state.gridKey.currentState;
                 if (s != null) {

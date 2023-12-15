@@ -12,6 +12,7 @@ import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/db/schemas/blacklisted_directory.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -71,67 +72,60 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
   Widget build(BuildContext context) {
     return WrappedGridPage<BlacklistedDirectory>(
         scaffoldKey: state.scaffoldKey,
-        f: (glue) => GridSkeleton(
-              state,
-              (context) => CallbackGrid<BlacklistedDirectory>(
-                  key: state.gridKey,
-                  getCell: loader.getCell,
-                  initalScrollPosition: 0,
-                  scaffoldKey: state.scaffoldKey,
-                  systemNavigationInsets:
-                      MediaQuery.systemGestureInsetsOf(context),
-                  hasReachedEnd: () => true,
-                  onBack: () => Navigator.pop(context),
-                  immutable: false,
-                  addFabPadding: true,
-                  selectionGlue: glue,
-                  searchWidget: SearchAndFocus(
-                      searchWidget(context,
-                          hint: AppLocalizations.of(context)!
-                              .blacklistedDirectoriesPageName),
-                      searchFocus),
-                  mainFocus: state.mainFocus,
-                  unpressable: true,
-                  showCount: true,
-                  menuButtonItems: [
-                    IconButton(
-                        onPressed: () {
-                          Dbs.g.blacklisted.writeTxnSync(() => Dbs
-                              .g.blacklisted.blacklistedDirectorys
-                              .clearSync());
-                          chooseGalleryPlug().notify(null);
-                        },
-                        icon: const Icon(Icons.delete))
-                  ],
-                  refresh: () => Future.value(loader.count()),
-                  description: GridDescription([
-                    GridAction(
-                      Icons.restore_page,
-                      (selected) {
-                        Dbs.g.blacklisted.writeTxnSync(() {
-                          return Dbs.g.blacklisted.blacklistedDirectorys
-                              .deleteAllByBucketIdSync(
-                                  selected.map((e) => e.bucketId).toList());
-                        });
-                      },
-                      true,
-                    )
-                  ],
-                      keybindsDescription: AppLocalizations.of(context)!
-                          .blacklistedDirectoriesPageName,
-                      layout: const ListLayout())),
-              canPop: !glue.isOpen(),
-              overrideOnPop: (pop, hideAppBar) {
-                if (glue.isOpen()) {
-                  state.gridKey.currentState?.selection.reset();
-                  return;
-                }
-
-                if (hideAppBar()) {
-                  setState(() {});
-                  return;
-                }
-              },
-            ));
+        child: GridSkeleton(
+          state,
+          (context) => CallbackGrid<BlacklistedDirectory>(
+              key: state.gridKey,
+              getCell: loader.getCell,
+              initalScrollPosition: 0,
+              scaffoldKey: state.scaffoldKey,
+              systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context),
+              hasReachedEnd: () => true,
+              onBack: () => Navigator.pop(context),
+              immutable: false,
+              addFabPadding: true,
+              selectionGlue: GlueProvider.of(context),
+              searchWidget: SearchAndFocus(
+                  searchWidget(context,
+                      hint: AppLocalizations.of(context)!
+                          .blacklistedDirectoriesPageName),
+                  searchFocus),
+              mainFocus: state.mainFocus,
+              unpressable: true,
+              showCount: true,
+              menuButtonItems: [
+                IconButton(
+                    onPressed: () {
+                      Dbs.g.blacklisted.writeTxnSync(() =>
+                          Dbs.g.blacklisted.blacklistedDirectorys.clearSync());
+                      chooseGalleryPlug().notify(null);
+                    },
+                    icon: const Icon(Icons.delete))
+              ],
+              refresh: () => Future.value(loader.count()),
+              description: GridDescription([
+                GridAction(
+                  Icons.restore_page,
+                  (selected) {
+                    Dbs.g.blacklisted.writeTxnSync(() {
+                      return Dbs.g.blacklisted.blacklistedDirectorys
+                          .deleteAllByBucketIdSync(
+                              selected.map((e) => e.bucketId).toList());
+                    });
+                  },
+                  true,
+                )
+              ],
+                  keybindsDescription: AppLocalizations.of(context)!
+                      .blacklistedDirectoriesPageName,
+                  layout: const ListLayout())),
+          canPop: true,
+          overrideOnPop: (pop, hideAppBar) {
+            if (hideAppBar()) {
+              setState(() {});
+              return;
+            }
+          },
+        ));
   }
 }

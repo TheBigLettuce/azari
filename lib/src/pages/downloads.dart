@@ -15,6 +15,7 @@ import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/settings.dart';
 import 'package:gallery/src/db/schemas/download_file.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -118,62 +119,54 @@ class _DownloadsState extends State<Downloads>
   Widget build(BuildContext context) {
     return WrappedGridPage<DownloadFile>(
         scaffoldKey: state.scaffoldKey,
-        f: (glue) => GridSkeleton(
-              state,
-              (context) => CallbackGrid<DownloadFile>(
-                  key: state.gridKey,
-                  getCell: loader.getCell,
-                  initalScrollPosition: 0,
-                  scaffoldKey: state.scaffoldKey,
-                  systemNavigationInsets:
-                      MediaQuery.systemGestureInsetsOf(context),
-                  hasReachedEnd: () => true,
-                  selectionGlue: glue,
-                  showCount: true,
-                  onBack: () => Navigator.pop(context),
-                  menuButtonItems: [
-                    IconButton(
-                        onPressed: () {
-                          if (deleteController != null) {
-                            deleteController!.forward(from: 0);
-                          }
-                          Downloader.g.removeAll();
-                        },
-                        icon: const Icon(Icons.close).animate(
-                            onInit: (controller) =>
-                                deleteController = controller,
-                            effects: const [FlipEffect(begin: 1, end: 0)],
-                            autoPlay: false)),
-                  ],
-                  inlineMenuButtonItems: true,
-                  immutable: false,
-                  unpressable: true,
-                  searchWidget: SearchAndFocus(
-                      searchWidget(context,
-                          hint:
-                              AppLocalizations.of(context)!.downloadsPageName),
-                      searchFocus),
-                  mainFocus: state.mainFocus,
-                  refresh: () => Future.value(loader.count()),
-                  description: GridDescription([
-                    DownloadsActions.delete(context),
-                  ],
-                      keybindsDescription:
-                          AppLocalizations.of(context)!.downloadsPageName,
-                      layout: SegmentListLayout(
-                          _makeSegments(context), GridColumn.two))),
-              canPop: !glue.isOpen(),
-              overrideOnPop: (pop, hideAppBar) {
-                if (glue.isOpen()) {
-                  state.gridKey.currentState?.selection.reset();
-                  return;
-                }
-
-                if (hideAppBar()) {
-                  setState(() {});
-                  return;
-                }
-              },
-            ));
+        child: GridSkeleton(
+          state,
+          (context) => CallbackGrid<DownloadFile>(
+              key: state.gridKey,
+              getCell: loader.getCell,
+              initalScrollPosition: 0,
+              scaffoldKey: state.scaffoldKey,
+              systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context),
+              hasReachedEnd: () => true,
+              selectionGlue: GlueProvider.of(context),
+              showCount: true,
+              onBack: () => Navigator.pop(context),
+              menuButtonItems: [
+                IconButton(
+                    onPressed: () {
+                      if (deleteController != null) {
+                        deleteController!.forward(from: 0);
+                      }
+                      Downloader.g.removeAll();
+                    },
+                    icon: const Icon(Icons.close).animate(
+                        onInit: (controller) => deleteController = controller,
+                        effects: const [FlipEffect(begin: 1, end: 0)],
+                        autoPlay: false)),
+              ],
+              inlineMenuButtonItems: true,
+              immutable: false,
+              unpressable: true,
+              searchWidget: SearchAndFocus(
+                  searchWidget(context,
+                      hint: AppLocalizations.of(context)!.downloadsPageName),
+                  searchFocus),
+              mainFocus: state.mainFocus,
+              refresh: () => Future.value(loader.count()),
+              description: GridDescription([
+                DownloadsActions.delete(context),
+              ],
+                  keybindsDescription:
+                      AppLocalizations.of(context)!.downloadsPageName,
+                  layout: SegmentListLayout(
+                      _makeSegments(context), GridColumn.two))),
+          canPop: true,
+          overrideOnPop: (pop, hideAppBar) {
+            if (hideAppBar()) {
+              setState(() {});
+              return;
+            }
+          },
+        ));
   }
 }

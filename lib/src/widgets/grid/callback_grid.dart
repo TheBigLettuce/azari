@@ -19,6 +19,7 @@ import 'package:gallery/src/db/schemas/statistics_general.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/db/schemas/settings.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
+import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 import 'package:logging/logging.dart';
 import '../../db/schemas/note.dart';
 import '../../interfaces/cell.dart';
@@ -65,6 +66,7 @@ class _SegSticky {
 class SelectionGlue<T extends Cell> {
   final void Function(
       List<GridAction<T>> actions, SelectionInterface<T> selection) open;
+  final void Function(int) updateCount;
   final void Function() close;
   final bool Function() isOpen;
   final bool Function() keyboardVisible;
@@ -72,12 +74,14 @@ class SelectionGlue<T extends Cell> {
   static SelectionGlue<T> empty<T extends Cell>(BuildContext context) =>
       SelectionGlue(
           close: () {},
+          updateCount: (_) {},
           open: (_, __) {},
           isOpen: () => false,
           keyboardVisible: () => MediaQuery.viewInsetsOf(context).bottom != 0);
 
   const SelectionGlue(
       {required this.close,
+      required this.updateCount,
       required this.open,
       required this.isOpen,
       required this.keyboardVisible});

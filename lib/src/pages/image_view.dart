@@ -390,7 +390,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                               color: e.color,
                               play: e.play,
                               backgroundColor: e.backgroundColor,
-                              animate: e.animate),
+                              animate: e.animate,
+                              showOnlyWhenSingle: false),
                         )
                         .toList() ??
                     const []),

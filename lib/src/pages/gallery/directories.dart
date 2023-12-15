@@ -9,6 +9,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/schemas/misc_settings.dart';
 import 'package:gallery/src/db/schemas/statistics_gallery.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/widgets/copy_move_preview.dart';
@@ -25,6 +26,7 @@ import 'package:gallery/src/db/schemas/favorite_media.dart';
 import 'package:gallery/src/db/schemas/pinned_directories.dart';
 import 'package:gallery/src/db/schemas/tags.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:isar/isar.dart';
@@ -71,7 +73,6 @@ class GalleryDirectories extends StatefulWidget {
   final bool? noDrawer;
   final bool showBackButton;
   final void Function(bool) procPop;
-  final SelectionGlue<SystemGalleryDirectory> glue;
   final double bottomPadding;
 
   const GalleryDirectories(
@@ -79,7 +80,6 @@ class GalleryDirectories extends StatefulWidget {
       this.callback,
       this.nestedCallback,
       this.noDrawer,
-      required this.glue,
       required this.procPop,
       this.bottomPadding = 0,
       this.showBackButton = false})
@@ -92,7 +92,10 @@ class GalleryDirectories extends StatefulWidget {
 class _GalleryDirectoriesState extends State<GalleryDirectories>
     with SearchFilterGrid<SystemGalleryDirectory> {
   late final StreamSubscription<Settings?> settingsWatcher;
+  late final StreamSubscription<MiscSettings?> miscSettingsWatcher;
   late final AppLifecycleListener lifecycleListener;
+
+  MiscSettings miscSettings = MiscSettings.current;
 
   int galleryVersion = 0;
 
@@ -156,6 +159,11 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
 
     settingsWatcher = Settings.watch((s) {
       state.settings = s!;
+      setState(() {});
+    });
+
+    miscSettingsWatcher = MiscSettings.watch((s) {
+      miscSettings = s!;
       setState(() {});
     });
 
@@ -264,11 +272,13 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                 volumeName: "",
                 relativeLoc: "",
                 lastModified: 0,
-                thumbFileId: Dbs.g.blacklisted.favoriteMedias
-                    .where()
-                    .sortByTimeDesc()
-                    .findFirstSync()!
-                    .id),
+                thumbFileId: miscSettings.favoritesThumbId != 0
+                    ? miscSettings.favoritesThumbId
+                    : Dbs.g.blacklisted.favoriteMedias
+                        .where()
+                        .sortByTimeDesc()
+                        .findFirstSync()!
+                        .id),
           if (trashThumbId != null)
             SystemGalleryDirectory(
                 bucketId: "trash",
@@ -288,6 +298,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
 
   @override
   Widget build(BuildContext context) {
+    final glue = GlueProvider.of<SystemGalleryDirectory>(context);
+
     return GridSkeleton<SystemGalleryDirectory>(
         state,
         (context) => CallbackGrid(
@@ -298,15 +310,15 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
             onBack: widget.showBackButton ? () => Navigator.pop(context) : null,
             systemNavigationInsets: EdgeInsets.only(
                 bottom: MediaQuery.of(context).systemGestureInsets.bottom +
-                    (widget.glue.isOpen() && !widget.glue.keyboardVisible()
+                    (glue.isOpen() && !glue.keyboardVisible()
                         ? 80
                         : widget.bottomPadding)),
             hasReachedEnd: () => true,
             showCount: true,
-            selectionGlue: widget.glue,
+            selectionGlue: glue,
             addFabPadding: widget.callback != null ||
                 widget.nestedCallback != null ||
-                !widget.glue.isOpen(),
+                !glue.isOpen(),
             inlineMenuButtonItems: true,
             menuButtonItems: [
               if (widget.callback != null)
@@ -461,7 +473,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
         canPop: widget.callback != null || widget.nestedCallback != null
             ? currentFilteringMode() == FilteringMode.noFilter &&
                 searchTextController.text.isEmpty &&
-                !widget.glue.isOpen()
+                !glue.isOpen()
             : false, overrideOnPop: (pop, hideAppBar) {
       final filterMode = currentFilteringMode();
       if (filterMode != FilteringMode.noFilter ||
@@ -470,7 +482,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
         return;
       }
 
-      if (widget.glue.isOpen()) {
+      if (glue.isOpen()) {
         state.gridKey.currentState?.selection.reset();
         return;
       }

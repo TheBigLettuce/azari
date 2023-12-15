@@ -17,19 +17,29 @@ class MiscSettings {
   final Id id = 0;
 
   final bool filesExtendedActions;
+  final int favoritesThumbId;
 
-  const MiscSettings({required this.filesExtendedActions});
+  const MiscSettings(
+      {required this.filesExtendedActions, required this.favoritesThumbId});
 
-  MiscSettings copy({bool? filesExtendedActions}) => MiscSettings(
-      filesExtendedActions: filesExtendedActions ?? this.filesExtendedActions);
+  MiscSettings copy({bool? filesExtendedActions, int? favoritesThumbId}) =>
+      MiscSettings(
+          filesExtendedActions:
+              filesExtendedActions ?? this.filesExtendedActions,
+          favoritesThumbId: favoritesThumbId ?? this.favoritesThumbId);
 
   static MiscSettings get current =>
       Dbs.g.main.miscSettings.getSync(0) ??
-      const MiscSettings(filesExtendedActions: false);
+      const MiscSettings(filesExtendedActions: false, favoritesThumbId: 0);
 
   static void setFilesExtendedActions(bool b) {
     Dbs.g.main.writeTxnSync(() =>
         Dbs.g.main.miscSettings.putSync(current.copy(filesExtendedActions: b)));
+  }
+
+  static void setFavoritesThumbId(int id) {
+    Dbs.g.main.writeTxnSync(() =>
+        Dbs.g.main.miscSettings.putSync(current.copy(favoritesThumbId: id)));
   }
 
   static StreamSubscription<MiscSettings?> watch(void Function(MiscSettings?) f,

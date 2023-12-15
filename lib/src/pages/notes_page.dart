@@ -19,6 +19,7 @@ import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/widgets/copy_move_preview.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
@@ -85,34 +86,38 @@ class _NotePageContainer<T extends Cell> {
         ).animate().fadeIn());
   }
 
-  Widget widget(BuildContext context, double? bottomPadding) => GridSkeleton<T>(
-      state,
-      (context) => CallbackGrid<T>(
-            key: state.gridKey,
-            getCell: notes.get,
-            initalScrollPosition: 0,
-            scaffoldKey: state.scaffoldKey,
-            ignoreImageViewEndDrawer: true,
-            immutable: false,
-            onBack: () {
-              Navigator.pop(context);
-            },
-            systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context) +
-                EdgeInsets.only(bottom: bottomPadding ?? 0),
-            hasReachedEnd: notes.reachedEnd,
-            selectionGlue: SelectionGlue.empty(context),
-            mainFocus: state.mainFocus,
-            refresh: notes.refresh,
-            noteInterface: noteInterface,
-            addIconsImage: (_) => addActions,
-            initalCellCount: notes.count(),
-            loadNext: notes.next,
-            description: GridDescription<T>([],
-                keybindsDescription: "Notes page",
-                showAppBar: false,
-                layout: NoteLayout<T>(GridColumn.three, getText)),
-          ),
-      canPop: true);
+  Widget widget(BuildContext context, double? bottomPadding) => GlueProvider<T>(
+        glue: SelectionGlue.empty(context),
+        child: GridSkeleton<T>(
+            state,
+            (context) => CallbackGrid<T>(
+                  key: state.gridKey,
+                  getCell: notes.get,
+                  initalScrollPosition: 0,
+                  scaffoldKey: state.scaffoldKey,
+                  ignoreImageViewEndDrawer: true,
+                  immutable: false,
+                  onBack: () {
+                    Navigator.pop(context);
+                  },
+                  systemNavigationInsets:
+                      MediaQuery.systemGestureInsetsOf(context) +
+                          EdgeInsets.only(bottom: bottomPadding ?? 0),
+                  hasReachedEnd: notes.reachedEnd,
+                  selectionGlue: SelectionGlue.empty(context),
+                  mainFocus: state.mainFocus,
+                  refresh: notes.refresh,
+                  noteInterface: noteInterface,
+                  addIconsImage: (_) => addActions,
+                  initalCellCount: notes.count(),
+                  loadNext: notes.next,
+                  description: GridDescription<T>([],
+                      keybindsDescription: "Notes page",
+                      showAppBar: false,
+                      layout: NoteLayout<T>(GridColumn.three, getText)),
+                ),
+            canPop: true),
+      );
 
   void dispose() {
     state.dispose();
@@ -222,34 +227,34 @@ class _NotesPageState extends State<NotesPage>
                           MaterialPageRoute(builder: (context) {
                         return WrappedGridPage<SystemGalleryDirectory>(
                             scaffoldKey: GlobalKey(),
-                            f: (glue) => GalleryDirectories(
-                                  glue: glue,
-                                  procPop: (p) {},
-                                  nestedCallback: CallbackDescriptionNested(
-                                      "Choose file", (chosen) async {
-                                    final s = selected.first;
-                                    final data = chosen.getCellData(false,
-                                        context: context);
-                                    final colors = await PaletteGenerator
-                                        .fromImageProvider(data.thumb!);
+                            child: GalleryDirectories(
+                              procPop: (p) {},
+                              nestedCallback: CallbackDescriptionNested(
+                                  "Choose file", (chosen) async {
+                                final s = selected.first;
+                                final data =
+                                    chosen.getCellData(false, context: context);
+                                final colors =
+                                    await PaletteGenerator.fromImageProvider(
+                                        data.thumb!);
 
-                                    NoteGallery.add(chosen.id,
-                                        text: s.text,
-                                        height: chosen.height,
-                                        width: chosen.width,
-                                        backgroundColor:
-                                            colors.dominantColor?.color,
-                                        textColor:
-                                            colors.dominantColor?.bodyTextColor,
-                                        isVideo: chosen.isVideo,
-                                        isGif: chosen.isGif,
-                                        originalUri: chosen.originalUri);
-                                    NoteGallery.removeAll(s.id);
+                                NoteGallery.add(chosen.id,
+                                    text: s.text,
+                                    height: chosen.height,
+                                    width: chosen.width,
+                                    backgroundColor:
+                                        colors.dominantColor?.color,
+                                    textColor:
+                                        colors.dominantColor?.bodyTextColor,
+                                    isVideo: chosen.isVideo,
+                                    isGif: chosen.isGif,
+                                    originalUri: chosen.originalUri);
+                                NoteGallery.removeAll(s.id);
 
-                                    galleryContainer.state.gridKey.currentState
-                                        ?.refresh();
-                                  }, returnBack: true),
-                                ));
+                                galleryContainer.state.gridKey.currentState
+                                    ?.refresh();
+                              }, returnBack: true),
+                            ));
                       }));
                     },
                     false,

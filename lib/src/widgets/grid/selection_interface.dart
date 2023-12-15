@@ -22,6 +22,7 @@ class SelectionInterface<T extends Cell> {
     lastSelected = null;
 
     _setState(() {});
+    glue.updateCount(selected.length);
   }
 
   bool isSelected(int indx) =>
@@ -41,6 +42,8 @@ class SelectionInterface<T extends Cell> {
       selected[id] = selection;
       lastSelected = id;
     });
+
+    glue.updateCount(selected.length);
   }
 
   void remove(int id) {
@@ -51,6 +54,8 @@ class SelectionInterface<T extends Cell> {
         lastSelected = null;
       }
     });
+
+    glue.updateCount(selected.length);
   }
 
   void selectUnselectUntil(int indx, GridMutationInterface<T> state,
@@ -117,6 +122,7 @@ class WrapGridActionButton extends StatefulWidget {
   final Color? color;
   final bool animate;
   final bool play;
+  final bool showOnlyWhenSingle;
 
   const WrapGridActionButton(
       this.icon, this.onPressed, this.addBadge, this.label,
@@ -124,6 +130,7 @@ class WrapGridActionButton extends StatefulWidget {
       this.followColorTheme,
       this.backgroundColor,
       this.color,
+      required this.showOnlyWhenSingle,
       required this.play,
       required this.animate});
 
@@ -153,24 +160,28 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
                   ? MaterialStatePropertyAll(widget.backgroundColor)
                   : widget.followColorTheme == true
                       ? null
-                      : MaterialStatePropertyAll(widget.onPressed == null
+                      : MaterialStatePropertyAll(widget.showOnlyWhenSingle &&
+                              SelectionCountNotifier.countOf(context) != 1
                           ? Theme.of(context)
                               .colorScheme
                               .primary
                               .withOpacity(0.5)
                           : Theme.of(context).colorScheme.primary)),
-          onPressed: widget.onPressed == null
+          onPressed: widget.showOnlyWhenSingle &&
+                  SelectionCountNotifier.countOf(context) != 1
               ? null
-              : () {
-                  if (widget.animate && widget.play) {
-                    _controller?.reset();
-                    _controller
-                        ?.animateTo(1)
-                        .then((value) => _controller?.animateBack(0));
-                  }
-                  HapticFeedback.selectionClick();
-                  widget.onPressed!();
-                },
+              : widget.onPressed == null
+                  ? null
+                  : () {
+                      if (widget.animate && widget.play) {
+                        _controller?.reset();
+                        _controller
+                            ?.animateTo(1)
+                            .then((value) => _controller?.animateBack(0));
+                      }
+                      HapticFeedback.selectionClick();
+                      widget.onPressed!();
+                    },
           icon: widget.animate
               ? Animate(
                   effects: [
