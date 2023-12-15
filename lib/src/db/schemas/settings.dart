@@ -102,7 +102,7 @@ class Settings {
 
   Settings.empty()
       : path = "",
-        saveVideoPlayerControlls = false,
+        saveVideoPlayerControlls = true,
         autoRefresh = false,
         autoRefreshMicroseconds = 1.hours.inMicroseconds,
         selectedBooru = Booru.gelbooru,

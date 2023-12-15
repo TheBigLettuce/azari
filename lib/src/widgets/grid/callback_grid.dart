@@ -340,7 +340,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
     _state.updateImageView();
 
-    widget.updateScrollPosition?.call(0);
+    // widget.updateScrollPosition?.call(0);
 
     setState(() {});
   }

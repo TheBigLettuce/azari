@@ -7,9 +7,9 @@ name: Release Android
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
 
   workflow_dispatch:
 
@@ -19,41 +19,41 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Download Android keystore
         id: android_keystore
         uses: timheuer/base64-to-file@v1.0.3
         with:
           fileName: upload-keystore.jks
           encodedString: ${{ secrets.KEYSTORE_BASE64 }}
-          
+
       - name: Create key.properties
         run: |
           echo "storeFile=${{ steps.android_keystore.outputs.filePath }}" > android/key.properties
           echo "storePassword=${{ secrets.STORE_PASSWORD }}" >> android/key.properties
           echo "keyPassword=${{ secrets.STORE_PASSWORD }}" >> android/key.properties
           echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
-          
+
       - uses: actions/setup-java@v2
         with:
-          distribution: 'zulu'
+          distribution: "zulu"
           java-version: "12.x"
           cache: gradle
-          
+
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.16.0-0.3.pre"
-          channel: 'beta'
+          flutter-version: "3.18.0-0.1.pre"
+          channel: "beta"
           cache: true
       - name: Get dependencies
         run: flutter pub get
-        
+
       - name: Generate
         run: make regenerate
 
       - name: Start release build
         run: flutter build apk --split-per-abi --no-tree-shake-icons
-        
+
       - uses: actions/upload-artifact@v3
         with:
           name: output

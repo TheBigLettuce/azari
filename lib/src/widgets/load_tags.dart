@@ -11,22 +11,19 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../db/post_tags.dart';
 import 'notifiers/tag_refresh.dart';
 
-class LoadTags extends StatefulWidget {
+class LoadTags extends StatelessWidget {
   final DisassembleResult? res;
   final String filename;
 
-  const LoadTags({super.key, required this.res, required this.filename});
-
-  @override
-  State<LoadTags> createState() => _LoadTagsState();
-}
-
-class _LoadTagsState extends State<LoadTags> {
-  bool isLoading = false;
+  const LoadTags({
+    super.key,
+    required this.res,
+    required this.filename,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return widget.res == null
+    return res == null
         ? Container()
         : Padding(
             padding: const EdgeInsets.all(4),
@@ -38,39 +35,101 @@ class _LoadTagsState extends State<LoadTags> {
                 child: Text(AppLocalizations.of(context)!.loadTags),
               ),
               FilledButton(
-                  onPressed: isLoading
+                  onPressed: TagRefreshNotifier.isRefreshingOf(context) ?? false
                       ? null
                       : () {
                           try {
-                            setState(() {
-                              isLoading = true;
-                            });
+                            final setIsRefreshing =
+                                TagRefreshNotifier.setIsRefreshingOf(context);
+                            setIsRefreshing?.call(true);
+
                             final notifier =
                                 TagRefreshNotifier.maybeOf(context);
 
                             PostTags.g
-                                .loadFromDissassemble(
-                                    widget.filename, widget.res!)
+                                .loadFromDissassemble(filename, res!)
                                 .then((value) {
-                              PostTags.g
-                                  .addTagsPost(widget.filename, value, true);
+                              PostTags.g.addTagsPost(filename, value, true);
                               notifier?.call();
-                            });
+                            }).whenComplete(() => setIsRefreshing?.call(false));
                           } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                 content: Text(AppLocalizations.of(context)!
                                     .notValidFilename(e.toString()))));
                           }
                         },
-                  child: isLoading
+                  child: TagRefreshNotifier.isRefreshingOf(context) ?? false
                       ? SizedBox(
                           height: 16,
                           width: 16,
                           child: CircularProgressIndicator(
                               color: Theme.of(context).colorScheme.onPrimary),
                         )
-                      : Text("From ${widget.res!.booru.string}"))
+                      : Text("From ${res!.booru.string}"))
             ]),
           );
   }
 }
+
+// class LoadTags extends StatefulWidget {
+ 
+
+//   const LoadTags({super.key, required this.res, required this.filename});
+
+//   @override
+//   State<LoadTags> createState() => _LoadTagsState();
+// }
+
+// class _LoadTagsState extends State<LoadTags> {
+//   bool isLoading = false;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return widget.res == null
+//         ? Container()
+//         : Padding(
+//             padding: const EdgeInsets.all(4),
+//             child: Column(children: [
+//               Padding(
+//                 padding: const EdgeInsets.only(
+//                   bottom: 8,
+//                 ),
+//                 child: Text(AppLocalizations.of(context)!.loadTags),
+//               ),
+//               FilledButton(
+//                   onPressed: isLoading
+//                       ? null
+//                       : () {
+//                           try {
+//                             setState(() {
+//                               isLoading = true;
+//                             });
+//                             final notifier =
+//                                 TagRefreshNotifier.maybeOf(context);
+
+//                             PostTags.g
+//                                 .loadFromDissassemble(
+//                                     widget.filename, widget.res!)
+//                                 .then((value) {
+//                               PostTags.g
+//                                   .addTagsPost(widget.filename, value, true);
+//                               notifier?.call();
+//                             });
+//                           } catch (e) {
+//                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+//                                 content: Text(AppLocalizations.of(context)!
+//                                     .notValidFilename(e.toString()))));
+//                           }
+//                         },
+//                   child: isLoading
+//                       ? SizedBox(
+//                           height: 16,
+//                           width: 16,
+//                           child: CircularProgressIndicator(
+//                               color: Theme.of(context).colorScheme.onPrimary),
+//                         )
+//                       : Text("From ${widget.res!.booru.string}"))
+//             ]),
+//           );
+//   }
+// }

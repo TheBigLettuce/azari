@@ -43,6 +43,8 @@ class WrapImageViewNotifiersState<T extends Cell>
   bool _isPaused = false;
   double? _loadingProgress = 1.0;
 
+  bool _isTagsRefreshing = false;
+
   late final _searchData =
       FilterNotifierData(TextEditingController(), FocusNode());
 
@@ -82,6 +84,14 @@ class WrapImageViewNotifiersState<T extends Cell>
     return PauseVideoNotifier(
       pause: _isPaused,
       child: TagRefreshNotifier(
+          isRefreshing: _isTagsRefreshing,
+          setIsRefreshing: (b) {
+            _isTagsRefreshing = b;
+
+            try {
+              setState(() {});
+            } catch (_) {}
+          },
           notify: widget.onTagRefresh,
           child: FilterValueNotifier(
             notifier: _searchData.searchController,

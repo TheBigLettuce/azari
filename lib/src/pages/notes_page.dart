@@ -92,6 +92,7 @@ class _NotePageContainer<T extends Cell> {
             getCell: notes.get,
             initalScrollPosition: 0,
             scaffoldKey: state.scaffoldKey,
+            ignoreImageViewEndDrawer: true,
             immutable: false,
             onBack: () {
               Navigator.pop(context);
