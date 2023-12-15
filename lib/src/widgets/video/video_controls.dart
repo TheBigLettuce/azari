@@ -13,11 +13,11 @@ import 'package:video_player/video_player.dart';
 
 import '../notifiers/app_bar_visibility.dart';
 
-class VideoControlls extends StatelessWidget {
+class VideoControls extends StatelessWidget {
   final VideoPlayerController controller;
   final void Function(void Function()) setState;
 
-  const VideoControlls(
+  const VideoControls(
       {super.key, required this.controller, required this.setState});
 
   @override

@@ -11,7 +11,7 @@ import 'package:gallery/src/db/schemas/settings.dart';
 import 'package:gallery/src/db/schemas/video_settings.dart';
 import 'package:gallery/src/widgets/loading_error_widget.dart';
 import 'package:gallery/src/widgets/notifiers/pause_video.dart';
-import 'package:gallery/src/widgets/video/video_controlls.dart';
+import 'package:gallery/src/widgets/video/video_controls.dart';
 import 'package:video_player/video_player.dart';
 
 class PhotoGalleryPageVideo extends StatefulWidget {
@@ -128,7 +128,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
                         Chewie(controller: chewieController!),
                         Padding(
                           padding: const EdgeInsets.only(left: 4),
-                          child: VideoControlls(
+                          child: VideoControls(
                               controller: controller, setState: setState),
                         )
                       ],
