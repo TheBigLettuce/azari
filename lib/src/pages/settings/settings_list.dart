@@ -283,6 +283,13 @@ class _SettingsListState extends State<SettingsList> {
                   ),
                 );
               }),
+        SettingsLabel("Misc", titleStyle),
+        SwitchListTile(
+          value: _settings!.saveVideoPlayerControlls,
+          onChanged: (value) =>
+              _settings!.copy(saveVideoPlayerControlls: value).save(),
+          title: const Text("Save video player controlls"), // TODO: change
+        ),
       ];
 
   String _calculateMBSize(int i) {

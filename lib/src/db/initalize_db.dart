@@ -21,6 +21,7 @@ import 'package:gallery/src/db/schemas/statistics_booru.dart';
 import 'package:gallery/src/db/schemas/statistics_gallery.dart';
 import 'package:gallery/src/db/schemas/statistics_general.dart';
 import 'package:gallery/src/db/schemas/thumbnail.dart';
+import 'package:gallery/src/db/schemas/video_settings.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import '../interfaces/booru.dart';
@@ -78,6 +79,7 @@ Future initalizeDb(bool temporary) async {
     StatisticsGallerySchema,
     StatisticsGeneralSchema,
     StatisticsBooruSchema,
+    VideoSettingsSchema,
   ], directory: directoryPath, inspector: false);
 
   final blacklistedDirIsar = Isar.openSync([

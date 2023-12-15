@@ -16,7 +16,8 @@ class SingleActivatorDescription implements ShortcutActivator {
   String debugDescribeKeys() => a.debugDescribeKeys();
 
   @override
-  bool accepts(RawKeyEvent event, RawKeyboard state) => a.accepts(event, state);
+  bool accepts(KeyEvent event, HardwareKeyboard state) =>
+      a.accepts(event, state);
 
   @override
   Iterable<LogicalKeyboardKey>? get triggers => a.triggers;

@@ -87,6 +87,8 @@ class ImageView<T extends Cell> extends StatefulWidget {
 
   final ImageViewStatistics? statistics;
 
+  final bool ignoreEndDrawer;
+
   const ImageView(
       {super.key,
       required this.updateTagScrollPos,
@@ -105,6 +107,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
       this.onEmptyNotes,
       this.infoScrollOffset,
       this.download,
+      this.ignoreEndDrawer = false,
       this.registerNotifiers,
       this.addIcons});
 
@@ -345,28 +348,33 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
             scaffoldKey: key,
             bindings: bindings ?? {},
             currentPalette: currentPalette,
-            endDrawer: Builder(builder: (context) {
-              FocusNotifier.of(context);
+            endDrawer: widget.ignoreEndDrawer
+                ? null
+                : Builder(builder: (context) {
+                    FocusNotifier.of(context);
 
-              final addInfo = currentCell.addInfo(context, () {
-                widget.updateTagScrollPos(scrollController.offset, currentPage);
-              },
-                  AddInfoColorData(
-                    borderColor: Theme.of(context).colorScheme.outlineVariant,
-                    foregroundColor: currentPalette?.mutedColor?.bodyTextColor
-                            .harmonizeWith(
-                                Theme.of(context).colorScheme.primary) ??
-                        kListTileColorInInfo,
-                    systemOverlayColor: widget.systemOverlayRestoreColor,
-                  ));
+                    final addInfo = currentCell.addInfo(context, () {
+                      widget.updateTagScrollPos(
+                          scrollController.offset, currentPage);
+                    },
+                        AddInfoColorData(
+                          borderColor:
+                              Theme.of(context).colorScheme.outlineVariant,
+                          foregroundColor: currentPalette
+                                  ?.mutedColor?.bodyTextColor
+                                  .harmonizeWith(
+                                      Theme.of(context).colorScheme.primary) ??
+                              kListTileColorInInfo,
+                          systemOverlayColor: widget.systemOverlayRestoreColor,
+                        ));
 
-              return addInfo == null || addInfo.isEmpty
-                  ? const Drawer(child: EmptyWidget())
-                  : ImageViewEndDrawer(
-                      scrollController: scrollController,
-                      children: addInfo,
-                    );
-            }),
+                    return addInfo == null || addInfo.isEmpty
+                        ? const Drawer(child: EmptyWidget())
+                        : ImageViewEndDrawer(
+                            scrollController: scrollController,
+                            children: addInfo,
+                          );
+                  }),
             bottomAppBar: ImageViewBottomAppBar(
                 textController: noteTextController,
                 addNote: () => noteListKey.currentState

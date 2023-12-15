@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/pages/notes_page.dart';
+import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -46,6 +47,39 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   late final SelectionGlueState glueState;
 
   late final Isar mainGrid;
+
+  Future<int>? status;
+
+  final Map<void Function(int?, bool), Null> m = {};
+
+  late final refreshInterface = RefreshingStatusInterface(
+    save: (s) {
+      status?.ignore();
+      status = s;
+
+      status?.then((value) {
+        for (final f in m.keys) {
+          f(value, false);
+        }
+      }).onError((error, stackTrace) {
+        for (final f in m.keys) {
+          f(null, false);
+        }
+      }).whenComplete(() => status = null);
+    },
+    register: (f) {
+      if (status != null) {
+        f(null, true);
+      }
+
+      m[f] = null;
+    },
+    unregister: (f) => m.remove(f),
+    reset: () {
+      status?.ignore();
+      status = null;
+    },
+  );
 
   @override
   void dispose() {
@@ -125,13 +159,17 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           bottomPadding: keyboardVisible() ? 0 : 80,
         );
       } else {
-        return NotesPage(callback: widget.callback);
+        return NotesPage(
+          callback: widget.callback,
+          bottomPadding: 80,
+        );
       }
     }
 
     return switch (currentRoute) {
       0 => MainBooruGrid(
           mainGrid: mainGrid,
+          refreshingInterface: refreshInterface,
           glue: glueState.glue(keyboardVisible, setState),
           procPop: _procPop,
         ),
@@ -229,7 +267,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                 : [
                     NavigationDestination(
                       icon: MenuAnchor(
-                        anchorTapClosesMenu: true,
+                        consumeOutsideTap: true,
                         alignmentOffset: const Offset(8, 8),
                         controller: menuController,
                         menuChildren: Booru.values

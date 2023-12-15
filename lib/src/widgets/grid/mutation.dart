@@ -13,6 +13,7 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
   final void Function() updateImageView;
   final void Function(void Function()? f) update;
   final CallbackGrid<T> Function() widget;
+  final void Function(Future<int>)? saveStatus;
 
   T Function(int i)? _filterGetCell;
 
@@ -95,7 +96,17 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
     }
 
     try {
-      _cellCount = await widget().loadNext!();
+      final f = widget().loadNext!();
+      _refreshing = true;
+
+      update(null);
+
+      if (saveStatus != null) {
+        saveStatus!(f);
+        return _cellCount;
+      }
+
+      _cellCount = await f;
 
       updateImageView();
 
@@ -156,7 +167,14 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
 
     update(null);
 
-    widget().loadNext!().then((value) {
+    final f = widget().loadNext!();
+
+    if (saveStatus != null) {
+      saveStatus!(f);
+      return;
+    }
+
+    f.then((value) {
       _cellCount = value;
       _refreshing = false;
 
@@ -185,6 +203,11 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
 
     _refreshing = true;
     refreshingError = null;
+
+    if (saveStatus != null) {
+      saveStatus!(valueFuture);
+      return;
+    }
 
     try {
       _refreshing = true;
@@ -216,6 +239,7 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
       {required bool immutable,
       required this.widget,
       required this.update,
+      required this.saveStatus,
       required this.updateImageView,
       required this.unselectall,
       required this.scrollUp});

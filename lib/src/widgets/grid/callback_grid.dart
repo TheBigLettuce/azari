@@ -39,6 +39,19 @@ part 'grid_description.dart';
 part 'search_and_focus.dart';
 part 'grid_layout.dart';
 
+class RefreshingStatusInterface {
+  final void Function(Future<int>) save;
+  final void Function(void Function(int?, bool)) register;
+  final void Function() reset;
+  final void Function(void Function(int?, bool)) unregister;
+
+  const RefreshingStatusInterface(
+      {required this.save,
+      required this.register,
+      required this.reset,
+      required this.unregister});
+}
+
 class _SegSticky {
   final String seg;
   final bool sticky;
@@ -201,6 +214,10 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
 
   final ImageViewStatistics? statistics;
 
+  final bool ignoreImageViewEndDrawer;
+
+  final RefreshingStatusInterface? refreshInterface;
+
   const CallbackGrid(
       {required super.key,
       this.additionalKeybinds,
@@ -221,6 +238,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       required this.mainFocus,
       this.addIconsImage,
       this.onExitImageView,
+      this.refreshInterface,
       this.footer,
       this.registerNotifiers,
       this.immutable = true,
@@ -230,6 +248,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       this.inlineMenuButtonItems = false,
       this.progressTicker,
       this.menuButtonItems,
+      this.ignoreImageViewEndDrawer = false,
       this.searchWidget,
       this.initalCell,
       this.pageViewScrollingOffset,
@@ -295,6 +314,11 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       selection.selected.clear();
       selection.glue.close();
     },
+    saveStatus: widget.refreshInterface == null
+        ? null
+        : (status) {
+            widget.refreshInterface?.save(status);
+          },
     immutable: widget.immutable,
     widget: () => widget,
     update: (f) {
@@ -307,6 +331,19 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       } catch (_) {}
     },
   );
+
+  void _refreshCallbackUpdate(int? i, bool refreshing) {
+    _state._refreshing = refreshing;
+    if (i != null) {
+      _state.tick(i);
+    }
+
+    _state.updateImageView();
+
+    widget.updateScrollPosition?.call(0);
+
+    setState(() {});
+  }
 
   @override
   void initState() {
@@ -343,6 +380,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     }
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      widget.refreshInterface?.register(_refreshCallbackUpdate);
+
       controller.position.isScrollingNotifier.addListener(() {
         if (!_state.isRefreshing) {
           widget.updateScrollPosition?.call(controller.offset);
@@ -393,6 +432,14 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     controller.dispose();
     widget.belowMainFocus?.requestFocus();
     fakeController.dispose();
+
+    WidgetsBinding.instance.scheduleFrameCallback((_) {
+      if (!_state.isRefreshing) {
+        widget.refreshInterface?.reset();
+      }
+
+      widget.refreshInterface?.unregister(_refreshCallbackUpdate);
+    });
 
     super.dispose();
   }
@@ -470,6 +517,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
             inImageView = false;
             widget.onExitImageView?.call();
           },
+          ignoreEndDrawer: widget.ignoreImageViewEndDrawer,
           addIcons: widget.addIconsImage,
           focusMain: () {
             widget.mainFocus.requestFocus();
@@ -897,6 +945,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                     alignment: Alignment.bottomRight,
                     child: _Fab(
                       key: _fabKey,
+                      scrollPos: widget.updateScrollPosition,
                       controller: controller,
                       selectionGlue: widget.selectionGlue,
                       systemNavigationInsets: widget.systemNavigationInsets,
@@ -920,6 +969,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
 class _Fab extends StatefulWidget {
   final ScrollController controller;
+  final void Function(double, {double? infoPos, int? selectedCell})? scrollPos;
   final SelectionGlue selectionGlue;
   final EdgeInsets systemNavigationInsets;
   final bool addFabPadding;
@@ -931,6 +981,7 @@ class _Fab extends StatefulWidget {
       required this.selectionGlue,
       required this.systemNavigationInsets,
       required this.addFabPadding,
+      required this.scrollPos,
       required this.footer});
 
   @override
@@ -953,6 +1004,7 @@ class __FabState extends State<_Fab> {
 
               widget.controller
                   .animateTo(scroll, duration: 200.ms, curve: Curves.linear);
+              widget.scrollPos?.call(scroll);
             },
             child: Padding(
               padding: EdgeInsets.only(

@@ -47,6 +47,8 @@ class Settings {
   @enumerated
   final FilteringMode favoritesPageMode;
 
+  final bool saveVideoPlayerControlls;
+
   const Settings({
     required this.path,
     required this.selectedBooru,
@@ -59,6 +61,7 @@ class Settings {
     required this.favorites,
     required this.galleryDirectories,
     required this.galleryFiles,
+    required this.saveVideoPlayerControlls,
   });
 
   Settings copy({
@@ -73,6 +76,7 @@ class Settings {
     FilteringMode? favoritesPageMode,
     bool? expensiveHash,
     SafeMode? safeMode,
+    bool? saveVideoPlayerControlls,
     GridAspectRatio? ratio,
     GridSettings? galleryDirectories,
     GridSettings? galleryFiles,
@@ -80,6 +84,8 @@ class Settings {
     GridSettings? booru,
   }) {
     return Settings(
+        saveVideoPlayerControlls:
+            saveVideoPlayerControlls ?? this.saveVideoPlayerControlls,
         path: path ?? this.path,
         selectedBooru: selectedBooru ?? this.selectedBooru,
         quality: quality ?? this.quality,
@@ -96,6 +102,7 @@ class Settings {
 
   Settings.empty()
       : path = "",
+        saveVideoPlayerControlls = false,
         autoRefresh = false,
         autoRefreshMicroseconds = 1.hours.inMicroseconds,
         selectedBooru = Booru.gelbooru,

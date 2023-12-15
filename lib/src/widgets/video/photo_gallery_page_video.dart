@@ -7,10 +7,11 @@
 
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/db/schemas/settings.dart';
+import 'package:gallery/src/db/schemas/video_settings.dart';
 import 'package:gallery/src/widgets/loading_error_widget.dart';
-import 'package:gallery/src/widgets/notifiers/app_bar_visibility.dart';
 import 'package:gallery/src/widgets/notifiers/pause_video.dart';
+import 'package:gallery/src/widgets/video/video_controlls.dart';
 import 'package:video_player/video_player.dart';
 
 class PhotoGalleryPageVideo extends StatefulWidget {
@@ -50,6 +51,13 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
   void _initController() async {
     controller.initialize().then((value) {
       if (!disposed) {
+        final saveVideoControlls = Settings.fromDb().saveVideoPlayerControlls;
+        final videoSettings = VideoSettings.current;
+
+        if (saveVideoControlls) {
+          controller.setVolume(videoSettings.volume);
+        }
+
         setState(() {
           chewieController = ChewieController(
               // materialProgressColors:
@@ -57,7 +65,7 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
               videoPlayerController: controller,
               aspectRatio: controller.value.aspectRatio,
               autoInitialize: false,
-              looping: true,
+              looping: saveVideoControlls ? videoSettings.looping : true,
               allowPlaybackSpeedChanging: false,
               showOptions: false,
               showControls: false,
@@ -118,119 +126,14 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
                     child: Stack(
                       children: [
                         Chewie(controller: chewieController!),
-                        Animate(
-                          effects: const [
-                            FadeEffect(
-                                begin: 1,
-                                end: 0,
-                                duration: Duration(milliseconds: 500))
-                          ],
-                          autoPlay: false,
-                          target: AppBarVisibilityNotifier.of(context) ? 0 : 1,
-                          child: IgnorePointer(
-                            ignoring: !AppBarVisibilityNotifier.of(context),
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: SizedBox(
-                                width: 60,
-                                child: Card.filled(
-                                  color: Theme.of(context)
-                                      .appBarTheme
-                                      .backgroundColor,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        onPressed: () {
-                                          if (controller.value.isBuffering) {
-                                            return;
-                                          }
-
-                                          if (controller.value.isPlaying) {
-                                            controller.pause();
-                                          } else {
-                                            controller.play();
-                                          }
-
-                                          setState(() {});
-                                        },
-                                        icon: controller.value.isPlaying
-                                            ? const Icon(Icons.stop_circle)
-                                            : const Icon(Icons.play_arrow),
-                                      ),
-                                      IconButton(
-                                        onPressed: () {
-                                          if (controller.value.volume > 0) {
-                                            controller.setVolume(0);
-                                          } else {
-                                            controller.setVolume(1);
-                                          }
-
-                                          setState(() {});
-                                        },
-                                        icon: controller.value.volume == 0
-                                            ? const Icon(
-                                                Icons.volume_off_outlined)
-                                            : const Icon(
-                                                Icons.volume_up_outlined),
-                                      ),
-                                      _VideoTime(controller: controller)
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4),
+                          child: VideoControlls(
+                              controller: controller, setState: setState),
                         )
                       ],
                     ),
                   );
-  }
-}
-
-class _VideoTime extends StatefulWidget {
-  final VideoPlayerController controller;
-  const _VideoTime({super.key, required this.controller});
-
-  @override
-  State<_VideoTime> createState() => __VideoTimeState();
-}
-
-class __VideoTimeState extends State<_VideoTime> {
-  @override
-  void initState() {
-    super.initState();
-
-    widget.controller.addListener(_update);
-  }
-
-  @override
-  void dispose() {
-    widget.controller.removeListener(_update);
-
-    super.dispose();
-  }
-
-  void _update() {
-    try {
-      setState(() {});
-    } catch (_) {}
-  }
-
-  String _minutesSeconds(Duration duration) {
-    return "${duration.inMinutes}.${duration.inSeconds - (duration.inMinutes * 60)}";
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: Text(
-        "${_minutesSeconds(widget.controller.value.position)} /\n${_minutesSeconds(widget.controller.value.duration)}",
-        style: TextStyle(
-            color: Theme.of(context).iconTheme.color?.withOpacity(0.6)),
-      ),
-    );
   }
 }
 

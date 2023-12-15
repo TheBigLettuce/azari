@@ -245,8 +245,20 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                       (context) => CallbackGrid<Post>(
                         key: state.gridKey,
                         selectionGlue: glue,
-                        systemNavigationInsets:
-                            MediaQuery.of(context).systemGestureInsets,
+                        systemNavigationInsets: EdgeInsets.only(
+                            bottom: MediaQuery.of(context)
+                                    .systemGestureInsets
+                                    .bottom +
+                                (Scaffold.of(context)
+                                                .widget
+                                                .bottomNavigationBar !=
+                                            null &&
+                                        glue.keyboardVisible()
+                                    ? 80
+                                    : 0)),
+                        addFabPadding:
+                            Scaffold.of(context).widget.bottomNavigationBar !=
+                                null,
                         registerNotifiers: (child) => TagManagerNotifier(
                             tagManager: widget.tagManager,
                             child: BooruAPINotifier(

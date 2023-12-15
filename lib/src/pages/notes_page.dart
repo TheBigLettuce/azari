@@ -21,6 +21,8 @@ import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
+import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
+import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:palette_generator/palette_generator.dart';
@@ -54,6 +56,7 @@ class _NotePageContainer<T extends Cell> {
                     scrollUntill: (_) {},
                     startingCell: 0,
                     onExit: () {},
+                    ignoreEndDrawer: true,
                     onEmptyNotes: () {
                       WidgetsBinding.instance
                           .scheduleFrameCallback((timeStamp) {
@@ -82,7 +85,7 @@ class _NotePageContainer<T extends Cell> {
         ).animate().fadeIn());
   }
 
-  Widget widget(BuildContext context) => GridSkeleton<T>(
+  Widget widget(BuildContext context, double? bottomPadding) => GridSkeleton<T>(
       state,
       (context) => CallbackGrid<T>(
             key: state.gridKey,
@@ -93,7 +96,8 @@ class _NotePageContainer<T extends Cell> {
             onBack: () {
               Navigator.pop(context);
             },
-            systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context),
+            systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context) +
+                EdgeInsets.only(bottom: bottomPadding ?? 0),
             hasReachedEnd: notes.reachedEnd,
             selectionGlue: SelectionGlue.empty(context),
             mainFocus: state.mainFocus,
@@ -124,8 +128,9 @@ class _NotePageContainer<T extends Cell> {
 
 class NotesPage extends StatefulWidget {
   final CallbackDescriptionNested? callback;
+  final double? bottomPadding;
 
-  const NotesPage({super.key, this.callback});
+  const NotesPage({super.key, this.callback, this.bottomPadding});
 
   @override
   State<NotesPage> createState() => _NotesPageState();
@@ -134,7 +139,9 @@ class NotesPage extends StatefulWidget {
 class _NotesPageState extends State<NotesPage>
     with SingleTickerProviderStateMixin {
   final searchController = SearchController();
-  late final tabController = TabController(length: 2, vsync: this);
+  late final TabController tabController;
+
+  final state = SkeletonState();
 
   late final StreamSubscription<void> booruNotesWatcher;
   late final StreamSubscription<void> galleryNotesWatcher;
@@ -251,6 +258,8 @@ class _NotesPageState extends State<NotesPage>
 
   @override
   void initState() {
+    tabController = TabController(length: 2, vsync: this);
+
     booruNotesWatcher = Dbs.g.blacklisted.noteBoorus.watchLazy().listen((_) {
       setState(() {});
     });
@@ -277,7 +286,9 @@ class _NotesPageState extends State<NotesPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return SkeletonSettings(
+      "Notes",
+      state,
       appBar: AppBar(
         actions: [
           SearchAnchor(
@@ -333,11 +344,11 @@ class _NotesPageState extends State<NotesPage>
                     Dbs.g.main.noteGallerys.countSync())
               ]),
       ),
-      body: widget.callback != null
-          ? galleryContainer.widget(context)
+      child: widget.callback != null
+          ? galleryContainer.widget(context, widget.bottomPadding)
           : TabBarView(controller: tabController, children: [
-              booruContainer.widget(context),
-              galleryContainer.widget(context)
+              booruContainer.widget(context, widget.bottomPadding),
+              galleryContainer.widget(context, widget.bottomPadding)
             ]),
     );
   }

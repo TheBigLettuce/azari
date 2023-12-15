@@ -140,11 +140,13 @@ class MainBooruGrid extends StatefulWidget {
   final Isar mainGrid;
   final void Function(bool) procPop;
   final SelectionGlue<Post> glue;
+  final RefreshingStatusInterface refreshingInterface;
 
   const MainBooruGrid(
       {super.key,
       required this.mainGrid,
       required this.glue,
+      required this.refreshingInterface,
       required this.procPop});
 
   static Widget bookmarkButton(BuildContext context, GridSkeletonState state,
@@ -280,6 +282,8 @@ class _MainBooruGridState extends State<MainBooruGrid>
 
   Future<int> _clearAndRefresh() async {
     try {
+      widget.mainGrid.writeTxnSync(() => widget.mainGrid.posts.clearSync());
+
       StatisticsGeneral.addRefreshes();
 
       restore.updateTime();
@@ -429,6 +433,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
                 getCell: (i) => widget.mainGrid.posts.getSync(i + 1)!,
                 loadNext: _addLast,
                 refresh: _clearAndRefresh,
+                refreshInterface: widget.refreshingInterface,
                 hideAlias: true,
                 download: _download,
                 updateScrollPosition: (pos, {infoPos, selectedCell}) =>

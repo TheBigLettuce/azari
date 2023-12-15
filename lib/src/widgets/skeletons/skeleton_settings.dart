@@ -33,7 +33,7 @@ class SkeletonSettings extends StatelessWidget {
       },
     };
 
-    var insets = MediaQuery.viewPaddingOf(context);
+    final insets = MediaQuery.viewPaddingOf(context);
 
     return CallbackShortcuts(
         bindings: {
