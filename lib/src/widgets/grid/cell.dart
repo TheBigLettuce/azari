@@ -57,6 +57,8 @@ class GridCell<T extends CellData> extends StatefulWidget {
 }
 
 class _GridCellState<T extends CellData> extends State<GridCell<T>> {
+  int _tries = 0;
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
@@ -88,9 +90,15 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>> {
               children: [
                 Center(child: LayoutBuilder(builder: (context, constraints) {
                   return Image(
+                    key: ValueKey((widget._data.thumb.hashCode, _tries)),
                     errorBuilder: (context, error, stackTrace) =>
                         LoadingErrorWidget(
-                      error: error,
+                      error: error.toString(),
+                      refresh: () {
+                        _tries += 1;
+
+                        setState(() {});
+                      },
                     ),
                     frameBuilder: (
                       context,

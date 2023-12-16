@@ -8,12 +8,49 @@
 import 'package:flutter/material.dart';
 
 class LoadingErrorWidget extends StatelessWidget {
-  final Object error;
+  final String error;
+  final bool short;
+  final void Function() refresh;
 
-  const LoadingErrorWidget({super.key, required this.error});
+  const LoadingErrorWidget(
+      {super.key,
+      required this.error,
+      required this.refresh,
+      this.short = true});
 
   @override
   Widget build(BuildContext context) {
-    return const Icon(Icons.error_outline);
+    Widget button() => IconButton(
+        // constraints: short ? const BoxConstraints.expand() : null,
+        onPressed: refresh,
+        icon: Icon(
+          Icons.refresh_outlined,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ));
+
+    return Container(
+      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.2),
+      child: Center(
+        child: short
+            ? button()
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  button(),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 20, right: 20),
+                    child: Text(
+                      error,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context)
+                              .iconTheme
+                              .color
+                              ?.withOpacity(0.6)),
+                    ),
+                  )
+                ],
+              ),
+      ),
+    );
   }
 }

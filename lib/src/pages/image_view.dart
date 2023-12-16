@@ -335,6 +335,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   @override
   Widget build(BuildContext context) {
     return WrapImageViewNotifiers<T>(
+      hardRefresh: hardRefresh,
       mainFocus: mainFocus,
       key: wrapNotifiersKey,
       onTagRefresh: _onTagRefresh,

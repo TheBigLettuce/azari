@@ -106,7 +106,13 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
             controller: controller,
             isPreviouslyPlayed: controller.value.isPlaying)
         : error != null
-            ? const LoadingErrorWidget(error: "")
+            ? LoadingErrorWidget(
+                error: "",
+                refresh: () {
+                  setState(() {
+                    error = null;
+                  });
+                })
             : chewieController == null
                 ? const Center(child: CircularProgressIndicator())
                 : GestureDetector(

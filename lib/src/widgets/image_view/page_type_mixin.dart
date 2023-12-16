@@ -7,10 +7,15 @@
 
 import 'dart:io';
 
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery/src/interfaces/contentable.dart';
+import 'package:gallery/src/widgets/choose_kaomoji.dart';
+import 'package:gallery/src/widgets/empty_widget.dart';
+import 'package:gallery/src/widgets/loading_error_widget.dart';
+import 'package:gallery/src/widgets/notifiers/reload_image.dart';
 import 'package:gallery/src/widgets/video/photo_gallery_page_video.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
@@ -35,10 +40,8 @@ mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
       NetImage() => _makeNetImage(fileContent.provider),
       AndroidVideo() => _makeVideo(context, fileContent.uri, true),
       NetVideo() => _makeVideo(context, fileContent.uri, false),
-      EmptyContent() => PhotoViewGalleryPageOptions.customChild(
-            child: const Center(
-          child: Icon(Icons.error_outline),
-        ))
+      EmptyContent() =>
+        PhotoViewGalleryPageOptions.customChild(child: const SizedBox.shrink())
     };
   }
 
@@ -76,11 +79,21 @@ mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
 
   PhotoViewGalleryPageOptions _makeNetImage(ImageProvider provider) {
     final options = PhotoViewGalleryPageOptions(
-        minScale: PhotoViewComputedScale.contained * 0.8,
-        maxScale: PhotoViewComputedScale.covered * 1.8,
-        initialScale: PhotoViewComputedScale.contained,
-        filterQuality: FilterQuality.high,
-        imageProvider: fakeProvider ?? provider);
+      minScale: PhotoViewComputedScale.contained * 0.8,
+      maxScale: PhotoViewComputedScale.covered * 1.8,
+      initialScale: PhotoViewComputedScale.contained,
+      filterQuality: FilterQuality.high,
+      imageProvider: fakeProvider ?? provider,
+      errorBuilder: (context, error, stackTrace) {
+        return LoadingErrorWidget(
+          error: error.toString(),
+          short: false,
+          refresh: () {
+            ReloadImageNotifier.of(context);
+          },
+        );
+      },
+    );
 
     return options;
   }

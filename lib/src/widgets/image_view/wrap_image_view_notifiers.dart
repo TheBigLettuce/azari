@@ -10,6 +10,7 @@ import 'package:gallery/src/widgets/notifiers/app_bar_visibility.dart';
 import 'package:gallery/src/widgets/notifiers/current_cell.dart';
 import 'package:gallery/src/widgets/notifiers/loading_progress.dart';
 import 'package:gallery/src/widgets/notifiers/pause_video.dart';
+import 'package:gallery/src/widgets/notifiers/reload_image.dart';
 
 import '../../interfaces/cell.dart';
 import '../notifiers/filter.dart';
@@ -22,12 +23,14 @@ class WrapImageViewNotifiers<T extends Cell> extends StatefulWidget {
   final T currentCell;
   final FocusNode mainFocus;
   final InheritedWidget Function(Widget child)? registerNotifiers;
+  final void Function() hardRefresh;
   final Widget child;
 
   const WrapImageViewNotifiers(
       {super.key,
       required this.registerNotifiers,
       required this.onTagRefresh,
+      required this.hardRefresh,
       required this.currentCell,
       required this.mainFocus,
       required this.child});
@@ -81,37 +84,39 @@ class WrapImageViewNotifiersState<T extends Cell>
 
   @override
   Widget build(BuildContext context) {
-    return PauseVideoNotifier(
-      pause: _isPaused,
-      child: TagRefreshNotifier(
-          isRefreshing: _isTagsRefreshing,
-          setIsRefreshing: (b) {
-            _isTagsRefreshing = b;
+    return ReloadImageNotifier(
+        reload: widget.hardRefresh,
+        child: PauseVideoNotifier(
+          pause: _isPaused,
+          child: TagRefreshNotifier(
+              isRefreshing: _isTagsRefreshing,
+              setIsRefreshing: (b) {
+                _isTagsRefreshing = b;
 
-            try {
-              setState(() {});
-            } catch (_) {}
-          },
-          notify: widget.onTagRefresh,
-          child: FilterValueNotifier(
-            notifier: _searchData.searchController,
-            child: FilterNotifier(
-                data: _searchData,
-                child: FocusNotifier(
-                  notifier: _searchData.searchFocus,
-                  focusMain: widget.mainFocus.requestFocus,
-                  child: CurrentCellNotifier(
-                      cell: widget.currentCell,
-                      child: LoadingProgressNotifier(
-                        progress: _loadingProgress,
-                        child: AppBarVisibilityNotifier(
-                            isShown: _isAppbarShown,
-                            child: widget.registerNotifiers == null
-                                ? widget.child
-                                : widget.registerNotifiers!(widget.child)),
-                      )),
-                )),
-          )),
-    );
+                try {
+                  setState(() {});
+                } catch (_) {}
+              },
+              notify: widget.onTagRefresh,
+              child: FilterValueNotifier(
+                notifier: _searchData.searchController,
+                child: FilterNotifier(
+                    data: _searchData,
+                    child: FocusNotifier(
+                      notifier: _searchData.searchFocus,
+                      focusMain: widget.mainFocus.requestFocus,
+                      child: CurrentCellNotifier(
+                          cell: widget.currentCell,
+                          child: LoadingProgressNotifier(
+                            progress: _loadingProgress,
+                            child: AppBarVisibilityNotifier(
+                                isShown: _isAppbarShown,
+                                child: widget.registerNotifiers == null
+                                    ? widget.child
+                                    : widget.registerNotifiers!(widget.child)),
+                          )),
+                    )),
+              )),
+        ));
   }
 }
