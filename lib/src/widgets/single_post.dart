@@ -17,8 +17,8 @@ import 'package:gallery/src/widgets/notifiers/booru_api.dart';
 import 'package:gallery/src/widgets/notifiers/tag_manager.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:qrscan/qrscan.dart';
 
 import '../db/schemas/post.dart';
 import 'grid/actions/booru_grid.dart';
@@ -174,6 +174,9 @@ class _SinglePostState extends State<SinglePost> {
           ),
           IconButton(
               onPressed: () {
+                final color =
+                    Theme.of(context).colorScheme.background.withOpacity(0.5);
+
                 Permission.camera.request().then((value) {
                   if (!value.isGranted) {
                     Navigator.push(
@@ -189,42 +192,22 @@ class _SinglePostState extends State<SinglePost> {
                           },
                         ));
                   } else {
-                    Navigator.push(
-                        context,
-                        DialogRoute(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              content: SizedBox(
-                                width: 320,
-                                height: 320,
-                                child: MobileScanner(onDetect: (capture) {
-                                  if (capture.barcodes.isNotEmpty) {
-                                    final value =
-                                        capture.barcodes.first.rawValue;
-                                    if (value != null) {
-                                      if (RegExp(r"^[0-9]").hasMatch(value)) {
-                                        controller.text = value;
-                                      } else {
-                                        try {
-                                          final f = value.split("_");
-                                          _launch(
-                                              Theme.of(context)
-                                                  .colorScheme
-                                                  .background
-                                                  .withOpacity(0.5),
-                                              Booru.fromPrefix(f[0])!,
-                                              int.parse(f[1]));
-                                        } catch (_) {}
-                                      }
-                                    }
-                                  }
-                                  Navigator.pop(context);
-                                }),
-                              ),
-                            );
-                          },
-                        ));
+                    () async {
+                      final value = await scan();
+                      if (value == null) {
+                        return;
+                      }
+
+                      if (RegExp(r"^[0-9]").hasMatch(value)) {
+                        controller.text = value;
+                      } else {
+                        try {
+                          final f = value.split("_");
+                          _launch(
+                              color, Booru.fromPrefix(f[0])!, int.parse(f[1]));
+                        } catch (_) {}
+                      }
+                    }();
                   }
                 });
               },

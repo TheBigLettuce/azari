@@ -402,10 +402,10 @@ class Manager(
     override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
         val capInternet =
             networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-//        val capValidated =
-//            networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        val capValidated =
+            networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
 
-        if (capInternet) {
+        if (capInternet and capValidated) {
             context.runOnUiThread {
                 galleryApi.notifyNetworkStatus(true) {}
             }

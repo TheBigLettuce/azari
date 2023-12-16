@@ -416,7 +416,7 @@ class EngineBindings(
                         result.success(
                             caps.hasCapability(
                                 NetworkCapabilities.NET_CAPABILITY_INTERNET
-                            )
+                            ) and caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
                         )
                     }
                 }
