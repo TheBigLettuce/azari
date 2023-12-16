@@ -72,6 +72,8 @@ abstract class GalleryApi {
   void updatePictures(List<DirectoryFile?> f, String bucketId, int startTime,
       bool inRefresh, bool empty);
 
+  void notifyNetworkStatus(bool hasInternet);
+
   void notify(String? target);
 }
 

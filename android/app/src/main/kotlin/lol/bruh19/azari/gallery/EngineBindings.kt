@@ -11,6 +11,8 @@ import android.R
 import android.app.Activity
 import android.content.ContentUris
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -34,11 +36,16 @@ data class RenameOp(val uri: Uri, val newName: String, val notify: Boolean)
 
 data class MoveInternalOp(val dest: String, val uris: List<Uri>, val callback: (Boolean) -> Unit)
 
-class EngineBindings(activity: FlutterActivity, entrypoint: String) {
+class EngineBindings(
+    activity: FlutterActivity,
+    entrypoint: String,
+    val connectivityManager: ConnectivityManager
+) {
     private val channel: MethodChannel
     private val context: FlutterActivity
     internal val mover: Mover
     private val galleryApi: GalleryApi
+    val netStatus: Manager
 
     val engine: FlutterEngine
 
@@ -68,6 +75,7 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
             engine.dartExecutor.makeBackgroundTaskQueue()
         )
         galleryApi = GalleryApi(engine.dartExecutor.binaryMessenger)
+        netStatus = Manager(galleryApi, context)
         mover = Mover(context.lifecycleScope.coroutineContext, context, galleryApi)
         engine.platformViewsController.registry.registerViewFactory(
             "imageview",
@@ -397,6 +405,20 @@ class EngineBindings(activity: FlutterActivity, entrypoint: String) {
                     }
 
                     mover.getCachedThumbnail(id, result)
+                }
+
+                "currentNetworkStatus" -> {
+                    val currentNetwork = connectivityManager.activeNetwork
+                    val caps = connectivityManager.getNetworkCapabilities(currentNetwork)
+                    if (caps == null) {
+                        result.success(false)
+                    } else {
+                        result.success(
+                            caps.hasCapability(
+                                NetworkCapabilities.NET_CAPABILITY_INTERNET
+                            )
+                        )
+                    }
                 }
 
                 "copyMoveFiles" -> {

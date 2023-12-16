@@ -12,6 +12,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/net/downloader.dart';
+import 'package:gallery/src/pages/settings/network_status.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/pages/gallery/directories.dart';
@@ -90,6 +91,10 @@ void mainPickfile() async {
   await initalizeDb(true);
   initalizeGalleryPlug(true);
 
+  initalizeNetworkStatus(Platform.isAndroid
+      ? await PlatformFunctions.currentNetworkStatus()
+      : true);
+
   await Permission.photos.request();
   await Permission.videos.request();
   await Permission.storage.request();
@@ -123,6 +128,9 @@ void main() async {
   changeExceptionErrorColors();
 
   initalizeGalleryPlug(false);
+  initalizeNetworkStatus(Platform.isAndroid
+      ? await PlatformFunctions.currentNetworkStatus()
+      : true);
 
   final accentColor = await PlatformFunctions.accentColor();
 

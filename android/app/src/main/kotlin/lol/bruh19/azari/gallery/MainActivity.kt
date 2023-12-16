@@ -11,6 +11,9 @@ import android.app.Activity
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
@@ -44,7 +47,7 @@ data class ThumbOp(
 
 class MainActivity : FlutterActivity() {
     private val engineBindings: EngineBindings by lazy {
-        EngineBindings(activity = this, "main")
+        EngineBindings(activity = this, "main", getSystemService(ConnectivityManager::class.java))
     }
 
     private fun copyFile(
@@ -370,6 +373,7 @@ class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         engineBindings.attach()
+        engineBindings.connectivityManager.registerDefaultNetworkCallback(engineBindings.netStatus)
     }
 
     override fun provideFlutterEngine(context: Context): FlutterEngine? {
@@ -379,6 +383,32 @@ class MainActivity : FlutterActivity() {
     override fun onDestroy() {
         super.onDestroy()
         engineBindings.detach()
+        engineBindings.connectivityManager.unregisterNetworkCallback(engineBindings.netStatus)
+    }
+}
 
+class Manager(
+    private val galleryApi: GalleryApi,
+    private val context: FlutterActivity,
+) : ConnectivityManager.NetworkCallback() {
+    override fun onAvailable(network: Network) {
+//        Log.e("NetConn", "The default network is now: " + network)
+    }
+
+    override fun onLost(network: Network) {
+        context.runOnUiThread { galleryApi.notifyNetworkStatus(false) {} }
+    }
+
+    override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
+        val capInternet =
+            networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+//        val capValidated =
+//            networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+
+        if (capInternet) {
+            context.runOnUiThread {
+                galleryApi.notifyNetworkStatus(true) {}
+            }
+        }
     }
 }

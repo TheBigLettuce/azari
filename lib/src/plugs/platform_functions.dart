@@ -174,6 +174,10 @@ class PlatformFunctions {
         .then((value) => value);
   }
 
+  static Future<bool> currentNetworkStatus() {
+    return _channel.invokeMethod("currentNetworkStatus").then((value) => value);
+  }
+
   const PlatformFunctions();
 }
 

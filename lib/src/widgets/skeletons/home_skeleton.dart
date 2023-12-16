@@ -6,6 +6,8 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/pages/settings/network_status.dart';
 import 'package:gallery/src/widgets/gesture_dead_zones.dart';
 
 import '../keybinds/describe_keys.dart';
@@ -46,7 +48,72 @@ class HomeSkeleton extends StatelessWidget {
               MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,
           key: state.scaffoldKey,
           bottomNavigationBar: navBar,
-          body: GestureDeadZones(child: Builder(builder: f)),
+          body: GestureDeadZones(
+              child: Stack(
+            children: [
+              AnimatedPadding(
+                duration: const Duration(milliseconds: 200),
+                curve: Easing.standard,
+                padding:
+                    EdgeInsets.only(top: NetworkStatus.g.hasInternet ? 0 : 24),
+                child: Builder(builder: f),
+              ),
+              if (!NetworkStatus.g.hasInternet)
+                Animate(
+                  autoPlay: true,
+                  effects: [
+                    MoveEffect(
+                        duration: 200.ms,
+                        curve: Easing.standard,
+                        begin: Offset(
+                            0, -(24 + MediaQuery.viewPaddingOf(context).top)),
+                        end: const Offset(0, 0))
+                  ],
+                  child: AnimatedContainer(
+                    duration: 200.ms,
+                    curve: Easing.standard,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .surfaceVariant
+                        .withOpacity(0.8),
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                          top: MediaQuery.viewPaddingOf(context).top),
+                      child: SizedBox(
+                        height: 24,
+                        width: MediaQuery.sizeOf(context).width,
+                        child: Center(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.signal_wifi_off_outlined,
+                                size: 14,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant
+                                    .withOpacity(0.8),
+                              ),
+                              const Padding(padding: EdgeInsets.only(right: 4)),
+                              Text(
+                                "No Internet",
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant
+                                      .withOpacity(0.8),
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          )),
         ),
       ),
     );

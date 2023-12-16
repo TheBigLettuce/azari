@@ -10,6 +10,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/system_gallery_directory.dart';
 import 'package:gallery/src/pages/notes_page.dart';
+import 'package:gallery/src/pages/settings/network_status.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:isar/isar.dart';
@@ -87,6 +88,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    NetworkStatus.g.notify = null;
     mainGrid.close().then((value) => restartOver());
     state.dispose();
 
@@ -149,6 +151,11 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
             ));
       });
     }
+    NetworkStatus.g.notify = () {
+      try {
+        setState(() {});
+      } catch (_) {}
+    };
   }
 
   bool keyboardVisible() => MediaQuery.viewInsetsOf(context).bottom != 0;
