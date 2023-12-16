@@ -17,6 +17,8 @@ class GridAction<T> {
   /// with [selected] elements zero or one.
   final void Function(List<T> selected) onPress;
 
+  final void Function(List<T> selected)? onLongPress;
+
   /// If [closeOnPress] is true, then the bottom sheet will be closed immediately after this
   /// button has been pressed.
   final bool closeOnPress;
@@ -33,6 +35,7 @@ class GridAction<T> {
   const GridAction(this.icon, this.onPress, this.closeOnPress,
       {this.showOnlyWhenSingle = false,
       this.backgroundColor,
+      this.onLongPress,
       this.color,
       this.animate = false,
       this.play = true});

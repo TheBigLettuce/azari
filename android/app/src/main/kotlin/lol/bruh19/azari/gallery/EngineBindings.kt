@@ -332,15 +332,18 @@ class EngineBindings(
                 }
 
                 "deleteCachedThumbs" -> {
-                    mover.deleteCachedThumbs(call.arguments as List<Long>)
+                    mover.deleteCachedThumbs(
+                        call.argument<List<Long>>("ids")!!,
+                        call.argument<Boolean>("fromPinned")!!
+                    )
                 }
 
                 "clearCachedThumbs" -> {
-                    mover.clearCachedThumbs()
+                    mover.clearCachedThumbs(call.arguments as Boolean)
                 }
 
                 "thumbCacheSize" -> {
-                    mover.thumbCacheSize(result)
+                    mover.thumbCacheSize(result, call.arguments as Boolean)
                 }
 
                 "emptyTrash" -> {
@@ -405,6 +408,19 @@ class EngineBindings(
                     }
 
                     mover.getCachedThumbnail(id, result)
+                }
+
+                "saveThumbNetwork" -> {
+                    val id = (call.arguments as Map<String, Any>)["id"]
+
+                    val url =
+                        call.argument<String>("url") ?: throw Exception("url should be String")
+
+                    mover.saveThumbnailNetwork(
+                        url,
+                        if (id is Int) id.toLong() else if (id is Long) id else throw Exception("id should be Long"),
+                        result
+                    )
                 }
 
                 "currentNetworkStatus" -> {

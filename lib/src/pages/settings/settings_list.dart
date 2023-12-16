@@ -13,6 +13,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/db/schemas/misc_settings.dart';
+import 'package:gallery/src/db/schemas/pinned_thumbnail.dart';
+import 'package:gallery/src/db/schemas/thumbnail.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 
 import '../../db/initalize_db.dart';
@@ -46,6 +48,9 @@ class _SettingsListState extends State<SettingsList> {
 
   Future<int>? thumbnailCount =
       Platform.isAndroid ? PlatformFunctions.thumbCacheSize() : null;
+
+  Future<int>? pinnedThumbnailCount =
+      Platform.isAndroid ? PlatformFunctions.thumbCacheSize(true) : null;
 
   @override
   void initState() {
@@ -242,7 +247,9 @@ class _SettingsListState extends State<SettingsList> {
                                                   onPressed: () {
                                                     Dbs.g.thumbnail!
                                                         .writeTxnSync(() => Dbs
-                                                            .g.thumbnail!
+                                                            .g
+                                                            .thumbnail!
+                                                            .thumbnails
                                                             .clearSync());
 
                                                     PlatformFunctions
@@ -251,6 +258,77 @@ class _SettingsListState extends State<SettingsList> {
                                                     thumbnailCount =
                                                         PlatformFunctions
                                                             .thumbCacheSize();
+
+                                                    setState(() {});
+                                                    Navigator.pop(context);
+                                                  },
+                                                  child: Text(
+                                                      AppLocalizations.of(
+                                                              context)!
+                                                          .yes)),
+                                            ],
+                                          );
+                                        },
+                                      ));
+                                },
+                                child: Text(AppLocalizations.of(context)!
+                                    .purgeThumbnails)))
+                      ];
+                    },
+                    icon: const Icon(Icons.more_horiz_rounded),
+                  ),
+                );
+              }),
+        if (Platform.isAndroid)
+          FutureBuilder(
+              future: pinnedThumbnailCount,
+              builder: (context, data) {
+                return ListTile(
+                  title: Text("Pinned thumbnails size"),
+                  subtitle: data.hasData
+                      ? Text(_calculateMBSize(data.data!))
+                      : Text("Loading..."),
+                  trailing: PopupMenuButton(
+                    itemBuilder: (context) {
+                      return [
+                        PopupMenuItem(
+                            child: TextButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                      context,
+                                      DialogRoute(
+                                        context: context,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            title: Text(
+                                                AppLocalizations.of(context)!
+                                                    .areYouSure),
+                                            actions: [
+                                              TextButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  child: Text(
+                                                      AppLocalizations.of(
+                                                              context)!
+                                                          .no)),
+                                              TextButton(
+                                                  onPressed: () {
+                                                    Dbs.g.thumbnail!
+                                                        .writeTxnSync(() => Dbs
+                                                            .g
+                                                            .thumbnail!
+                                                            .pinnedThumbnails
+                                                            .clearSync());
+
+                                                    PlatformFunctions
+                                                        .clearCachedThumbs(
+                                                            true);
+
+                                                    thumbnailCount =
+                                                        PlatformFunctions
+                                                            .thumbCacheSize(
+                                                                true);
 
                                                     setState(() {});
                                                     Navigator.pop(context);

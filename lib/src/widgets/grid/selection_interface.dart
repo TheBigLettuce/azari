@@ -90,6 +90,8 @@ class SelectionInterface<T extends Cell> {
         }
         _setState(() {});
       }
+
+      glue.updateCount(selected.length);
     }
   }
 
@@ -115,6 +117,7 @@ class SelectionInterface<T extends Cell> {
 class WrapGridActionButton extends StatefulWidget {
   final IconData icon;
   final void Function()? onPressed;
+  final void Function()? onLongPress;
   final bool addBadge;
   final String label;
   final bool? followColorTheme;
@@ -130,6 +133,7 @@ class WrapGridActionButton extends StatefulWidget {
       this.followColorTheme,
       this.backgroundColor,
       this.color,
+      required this.onLongPress,
       required this.showOnlyWhenSingle,
       required this.play,
       required this.animate});
@@ -152,52 +156,60 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
     Widget iconBtn(BuildContext context) {
       return Padding(
         padding: const EdgeInsets.only(top: 4, bottom: 4),
-        child: IconButton(
-          style: ButtonStyle(
-              shape: const MaterialStatePropertyAll(RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.elliptical(10, 10)))),
-              backgroundColor: widget.backgroundColor != null
-                  ? MaterialStatePropertyAll(widget.backgroundColor)
-                  : widget.followColorTheme == true
-                      ? null
-                      : MaterialStatePropertyAll(widget.showOnlyWhenSingle &&
-                              SelectionCountNotifier.countOf(context) != 1
-                          ? Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(0.5)
-                          : Theme.of(context).colorScheme.primary)),
-          onPressed: widget.showOnlyWhenSingle &&
-                  SelectionCountNotifier.countOf(context) != 1
+        child: GestureDetector(
+          onLongPress: widget.onLongPress == null
               ? null
-              : widget.onPressed == null
-                  ? null
-                  : () {
-                      if (widget.animate && widget.play) {
-                        _controller?.reset();
-                        _controller
-                            ?.animateTo(1)
-                            .then((value) => _controller?.animateBack(0));
-                      }
-                      HapticFeedback.selectionClick();
-                      widget.onPressed!();
+              : () {
+                  widget.onLongPress!();
+                  HapticFeedback.lightImpact();
+                },
+          child: IconButton(
+            style: ButtonStyle(
+                shape: const MaterialStatePropertyAll(RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.elliptical(10, 10)))),
+                backgroundColor: widget.backgroundColor != null
+                    ? MaterialStatePropertyAll(widget.backgroundColor)
+                    : widget.followColorTheme == true
+                        ? null
+                        : MaterialStatePropertyAll(widget.showOnlyWhenSingle &&
+                                SelectionCountNotifier.countOf(context) != 1
+                            ? Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.5)
+                            : Theme.of(context).colorScheme.primary)),
+            onPressed: widget.showOnlyWhenSingle &&
+                    SelectionCountNotifier.countOf(context) != 1
+                ? null
+                : widget.onPressed == null
+                    ? null
+                    : () {
+                        if (widget.animate && widget.play) {
+                          _controller?.reset();
+                          _controller
+                              ?.animateTo(1)
+                              .then((value) => _controller?.animateBack(0));
+                        }
+                        HapticFeedback.selectionClick();
+                        widget.onPressed!();
+                      },
+            icon: widget.animate
+                ? Animate(
+                    effects: [
+                      ScaleEffect(
+                          duration: 150.ms,
+                          begin: const Offset(1, 1),
+                          end: const Offset(2, 2),
+                          curve: Curves.easeInOutBack),
+                    ],
+                    onInit: (controller) {
+                      _controller = controller;
                     },
-          icon: widget.animate
-              ? Animate(
-                  effects: [
-                    ScaleEffect(
-                        duration: 150.ms,
-                        begin: const Offset(1, 1),
-                        end: const Offset(2, 2),
-                        curve: Curves.easeInOutBack),
-                  ],
-                  onInit: (controller) {
-                    _controller = controller;
-                  },
-                  autoPlay: false,
-                  child: icn,
-                )
-              : icn,
+                    autoPlay: false,
+                    child: icn,
+                  )
+                : icn,
+          ),
         ),
       );
     }

@@ -203,6 +203,11 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     super.dispose();
   }
 
+  void refreshPalette() {
+    extractPalette(context, currentCell, key, scrollController, currentPage,
+        _resetAnimation);
+  }
+
   void _resetAnimation() {
     wrapThemeKey.currentState?.resetAnimation();
   }
@@ -390,6 +395,9 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                               followColorTheme: true,
                               color: e.color,
                               play: e.play,
+                              onLongPress: e.onLongPress == null
+                                  ? null
+                                  : () => e.onLongPress!([currentCell]),
                               backgroundColor: e.backgroundColor,
                               animate: e.animate,
                               showOnlyWhenSingle: false),

@@ -46,14 +46,14 @@ class AndroidProgress implements NotificationProgress {
 
   @override
   void update(int progress, [String? str]) {
-    if (str == null) {
+    if (str != null) {
+      _showNotification(progress, str);
+    } else {
       if (progress > (_currentSteps == 0 ? _step : _step * _currentSteps)) {
         _currentSteps++;
 
         _showNotification(progress, name);
       }
-    } else {
-      _showNotification(progress, str);
     }
   }
 

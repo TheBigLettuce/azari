@@ -18,6 +18,7 @@ import 'package:gallery/src/db/schemas/misc_settings.dart';
 import 'package:gallery/src/db/schemas/note.dart';
 import 'package:gallery/src/db/schemas/note_gallery.dart';
 import 'package:gallery/src/db/schemas/pinned_directories.dart';
+import 'package:gallery/src/db/schemas/pinned_thumbnail.dart';
 import 'package:gallery/src/db/schemas/statistics_booru.dart';
 import 'package:gallery/src/db/schemas/statistics_gallery.dart';
 import 'package:gallery/src/db/schemas/statistics_general.dart';
@@ -94,7 +95,7 @@ Future initalizeDb(bool temporary) async {
   Isar? thumbnailIsar;
 
   if (io.Platform.isAndroid) {
-    thumbnailIsar = Isar.openSync([ThumbnailSchema],
+    thumbnailIsar = Isar.openSync([ThumbnailSchema, PinnedThumbnailSchema],
         directory: directoryPath, inspector: false, name: "androidThumbnails");
     thumbnailIsar.writeTxnSync(() {
       thumbnailIsar!.thumbnails

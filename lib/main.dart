@@ -20,7 +20,6 @@ import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/widgets/restart_widget.dart';
 // import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -123,14 +122,6 @@ void mainPickfile() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // stackoverflow solution to mlkit firebase logging
-  // if (Platform.isAndroid) {
-  //   final dir = await getApplicationDocumentsDirectory();
-  //   final path = dir.path.substring(0, dir.path.length - 11);
-  //   final file =
-  //       File('$path/databases/com.google.android.datatransport.events');
-  //   await file.writeAsString('Fake');
-  // }
   await initalizeDb(false);
   await initalizeDownloader();
 

@@ -61,6 +61,19 @@ class SelectionGlueState {
                       selection.selected.length.toString(),
                       animate: e.animate,
                       color: e.color,
+                      onLongPress: e.onLongPress == null
+                          ? null
+                          : () {
+                              e.onLongPress!(
+                                  selection.selected.values.toList());
+
+                              if (e.closeOnPress) {
+                                selection.selected.clear();
+                                actions = null;
+
+                                setState(() {});
+                              }
+                            },
                       play: e.play,
                       backgroundColor: e.backgroundColor,
                       showOnlyWhenSingle: e.showOnlyWhenSingle,

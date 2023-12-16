@@ -41,15 +41,17 @@ import kotlin.io.path.Path
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.extension
 
+data class NetworkThumbOp(val url: String, val id: Long)
+
 internal class CacheLocker(private val context: Context) {
     private val mux = Mutex()
 
-    suspend fun put(image: ByteArrayOutputStream, id: Long): String? {
+    suspend fun put(image: ByteArrayOutputStream, id: Long, saveToPinned: Boolean): String? {
         mux.lock()
 
         var ret: String? = null
 
-        val dir = directoryFile()
+        val dir = if (saveToPinned) pinnedDirectoryFile() else directoryFile()
         val file = dir.resolve(id.toString())
         try {
             if (!file.exists()) {
@@ -65,11 +67,11 @@ internal class CacheLocker(private val context: Context) {
         return ret
     }
 
-    suspend fun removeAll(ids: List<Long>) {
+    suspend fun removeAll(ids: List<Long>, fromPinned: Boolean) {
         mux.lock()
 
         try {
-            val dir = directoryFile()
+            val dir = if (fromPinned) pinnedDirectoryFile() else directoryFile()
 
             for (id in ids) {
                 dir.resolve(id.toString()).delete()
@@ -85,10 +87,10 @@ internal class CacheLocker(private val context: Context) {
         return directoryFile().resolve(id.toString()).exists()
     }
 
-    suspend fun clear() {
+    suspend fun clear(fromPinned: Boolean) {
         mux.lock()
 
-        directoryFile().deleteRecursively()
+        (if (fromPinned) pinnedDirectoryFile() else directoryFile()).deleteRecursively()
 
         mux.unlock()
     }
@@ -100,14 +102,22 @@ internal class CacheLocker(private val context: Context) {
         return dir
     }
 
-    fun count(): Long {
-        return directoryFile().walk().sumOf { file ->
+    private fun pinnedDirectoryFile(): File {
+        val dir = context.filesDir.resolve(PINNED_DIRECTORY)
+        dir.mkdir()
+
+        return dir
+    }
+
+    fun count(fromPinned: Boolean): Long {
+        return (if (fromPinned) pinnedDirectoryFile() else directoryFile()).walk().sumOf { file ->
             return@sumOf file.length()
         }
     }
 
     companion object {
-        private val DIRECTORY = "thumbnailsCache"
+        private const val DIRECTORY = "thumbnailsCache"
+        private const val PINNED_DIRECTORY = "pinnedThumbs"
     }
 }
 
@@ -133,7 +143,7 @@ internal class Mover(
     init {
         scope.launch {
             val inProgress = mutableListOf<Job>()
-            for (uris in thumbnailsChannel) {
+            for (op in thumbnailsChannel) {
                 try {
                     val newScope = CoroutineScope(Dispatchers.IO)
 
@@ -145,18 +155,36 @@ internal class Mover(
                     inProgress.add(newScope.launch {
                         var res: Pair<String, Long>
                         try {
-                            val uri = ContentUris.withAppendedId(
-                                MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
-                                uris.thumb
-                            )
+                            res = when (op.thumb) {
+                                is Long -> {
+                                    val uri = ContentUris.withAppendedId(
+                                        MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL),
+                                        op.thumb
+                                    )
 
-                            res = getThumb(uris.thumb, uri, false)
+                                    getThumb(op.thumb, uri, false, saveToPinned = op.saveToPinned)
+                                }
+
+                                is NetworkThumbOp -> {
+                                    getThumb(
+                                        op.thumb.id,
+                                        Uri.parse(op.thumb.url),
+                                        network = true,
+                                        saveToPinned = op.saveToPinned
+                                    )
+                                }
+
+                                else -> {
+                                    Pair("", 0)
+                                }
+                            }
+
                         } catch (e: Exception) {
                             res = Pair("", 0)
                             Log.e("thumbnail coro", e.toString())
                         }
 
-                        uris.callback.invoke(res.first, res.second)
+                        op.callback.invoke(res.first, res.second)
                     })
                 } catch (e: java.lang.Exception) {
                     Log.e("thumbnails", e.toString())
@@ -226,14 +254,14 @@ internal class Mover(
         }
     }
 
-    fun deleteCachedThumbs(thumbs: List<Long>) {
+    fun deleteCachedThumbs(thumbs: List<Long>, fromPinned: Boolean) {
         scope.launch {
-            locker.removeAll(thumbs)
+            locker.removeAll(thumbs, fromPinned)
         }
     }
 
-    fun clearCachedThumbs() {
-        scope.launch { locker.clear() }
+    fun clearCachedThumbs(fromPinned: Boolean) {
+        scope.launch { locker.clear(fromPinned) }
     }
 
     fun getCachedThumbnail(thumb: Long, result: MethodChannel.Result) {
@@ -301,6 +329,18 @@ internal class Mover(
             closure()
 
             isLockedFilesMux.unlock()
+        }
+    }
+
+    fun saveThumbnailNetwork(url: String, id: Long, result: MethodChannel.Result) {
+        scope.launch {
+            thumbnailsChannel.send(
+                ThumbOp(
+                    NetworkThumbOp(url, id),
+                    saveToPinned = true
+                ) { path, hash ->
+                    result.success(mapOf<String, Any>(Pair("path", path), Pair("hash", hash)))
+                })
         }
     }
 
@@ -396,9 +436,9 @@ internal class Mover(
         }.join()
     }
 
-    fun thumbCacheSize(res: MethodChannel.Result) {
+    fun thumbCacheSize(res: MethodChannel.Result, fromPinned: Boolean) {
         CoroutineScope(Dispatchers.IO).launch {
-            res.success(locker.count())
+            res.success(locker.count(fromPinned))
         }
     }
 
@@ -649,7 +689,12 @@ internal class Mover(
         return hash
     }
 
-    private suspend fun getThumb(id: Long, uri: Uri, network: Boolean): Pair<String, Long> {
+    private suspend fun getThumb(
+        id: Long,
+        uri: Uri,
+        network: Boolean,
+        saveToPinned: Boolean
+    ): Pair<String, Long> {
         if (locker.exist(id)) {
             return Pair("", 0)
         }
@@ -664,7 +709,7 @@ internal class Mover(
 
         thumb.compress(Bitmap.CompressFormat.JPEG, 80, stream)
 
-        val path = locker.put(stream, id)
+        val path = locker.put(stream, id, saveToPinned)
 
         stream.reset()
         thumb.recycle()

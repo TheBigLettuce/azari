@@ -15,6 +15,7 @@ import 'package:gallery/src/db/post_tags.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/misc_settings.dart';
 import 'package:gallery/src/db/schemas/note_gallery.dart';
+import 'package:gallery/src/db/schemas/pinned_thumbnail.dart';
 import 'package:gallery/src/db/schemas/statistics_gallery.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
@@ -329,7 +330,7 @@ class _GalleryFilesState extends State<GalleryFiles>
     final notifi = await chooseNotificationPlug().newProgress(
         "${AppLocalizations.of(context)!.savingTagsSaving}"
             " ${selected.length == 1 ? '1 ${AppLocalizations.of(context)!.tagSingular}' : '${selected.length} ${AppLocalizations.of(context)!.tagPlural}'}",
-        -10,
+        savingTagsNotifId,
         "Saving tags",
         AppLocalizations.of(context)!.savingTags);
     notifi.setTotal(selected.length);
@@ -489,6 +490,46 @@ class _GalleryFilesState extends State<GalleryFiles>
     }, true, showOnlyWhenSingle: true);
   }
 
+  GridAction<SystemGalleryDirectoryFile> _loadVideoThumbnailAction() {
+    return GridAction(
+      Icons.broken_image_outlined,
+      (selected) {
+        loadNetworkThumb(selected.first.name, selected.first.id).then((value) {
+          try {
+            setState(() {});
+          } catch (_) {}
+
+          state.gridKey.currentState?.imageViewKey.currentState
+              ?.refreshPalette();
+        });
+      },
+      true,
+      showOnlyWhenSingle: true,
+      onLongPress: (selected) {
+        PlatformFunctions.deleteCachedThumbs([selected.first.id], true);
+
+        final t = selected.first.getCellData(false, context: context).thumb;
+        t?.evict();
+
+        final deleted = Dbs.g.thumbnail!.writeTxnSync(() =>
+            Dbs.g.thumbnail!.pinnedThumbnails.deleteSync(selected.first.id));
+
+        if (t != null) {
+          PaintingBinding.instance.imageCache.evict(t, includeLive: true);
+        }
+
+        if (deleted) {
+          try {
+            setState(() {});
+          } catch (_) {}
+
+          state.gridKey.currentState?.imageViewKey.currentState
+              ?.refreshPalette();
+        }
+      },
+    );
+  }
+
   GridAction<SystemGalleryDirectoryFile> _deleteAction() {
     return GridAction(
       Icons.delete,
@@ -565,6 +606,9 @@ class _GalleryFilesState extends State<GalleryFiles>
                             _restoreFromTrash(),
                           ]
                         : [
+                            if (MiscSettings.current.filesExtendedActions &&
+                                cell.isVideo)
+                              _loadVideoThumbnailAction(),
                             _addToFavoritesAction(cell),
                             _deleteAction(),
                             _copyAction(),

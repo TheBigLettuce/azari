@@ -206,7 +206,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
   }
 
   void _refresh() {
-    galleryPlug.version.then((value) => galleryVersion = value);
     PlatformFunctions.trashThumbId().then((value) {
       try {
         setState(() {
@@ -217,6 +216,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
     stream.add(0);
     state.gridKey.currentState?.mutationInterface?.setIsRefreshing(true);
     api.refresh();
+    galleryPlug.version.then((value) => galleryVersion = value);
   }
 
   Segments<SystemGalleryDirectory> _makeSegments(BuildContext context) =>

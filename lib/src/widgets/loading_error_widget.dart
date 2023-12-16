@@ -21,7 +21,7 @@ class LoadingErrorWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget button() => IconButton(
-        // constraints: short ? const BoxConstraints.expand() : null,
+        constraints: short ? const BoxConstraints.expand() : null,
         onPressed: refresh,
         icon: Icon(
           Icons.refresh_outlined,

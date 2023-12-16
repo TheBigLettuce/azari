@@ -10,12 +10,15 @@ import 'dart:io';
 
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/schemas/pinned_thumbnail.dart';
 import 'package:gallery/src/db/schemas/thumbnail.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/interfaces/booru.dart';
 import 'package:gallery/src/db/post_tags.dart';
 import 'package:gallery/src/interfaces/cell.dart';
+import 'package:gallery/src/pages/settings/global_progress.dart';
 import 'package:gallery/src/plugs/gallery.dart';
+import 'package:gallery/src/plugs/notifications.dart';
 import 'package:gallery/src/widgets/grid/cell_data.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
@@ -260,6 +263,7 @@ class SystemGalleryDirectoryFile implements Cell {
                                 title: Text(AppLocalizations.of(context)!
                                     .enterNewNameTitle),
                                 content: TextFormField(
+                                  autofocus: true,
                                   initialValue: name,
                                   autovalidateMode: AutovalidateMode.always,
                                   decoration:
@@ -362,7 +366,7 @@ class SystemGalleryDirectoryFile implements Cell {
     ];
 
     return CellData(
-        thumb: ThumbnailProvider(id), name: name, stickers: stickers);
+        thumb: ThumbnailProvider(id, isVideo), name: name, stickers: stickers);
   }
 
   Thumbnail? getThumbnail() {
@@ -370,8 +374,53 @@ class SystemGalleryDirectoryFile implements Cell {
   }
 }
 
+Future<void> loadNetworkThumb(String filename, int id,
+    [bool addToPinned = true]) async {
+  if (GlobalProgress.isThumbLoadingLocked()) {
+    return;
+  }
+
+  GlobalProgress.lockThumbLoading();
+
+  if (Dbs.g.thumbnail!.pinnedThumbnails.getSync(id) != null) {
+    GlobalProgress.unlockThumbLoading();
+    return;
+  }
+  final plug = chooseNotificationPlug();
+
+  final notif = await plug.newProgress(
+      "", savingThumbNotifId, "Loading thumbnail", "Thumbnail loader");
+  notif.update(0, filename);
+
+  try {
+    final res = PostTags.g.dissassembleFilename(filename);
+    final api = BooruAPI.fromEnum(res.booru, page: null);
+
+    try {
+      final post = await api.singlePost(res.id);
+
+      final t = await PlatformFunctions.saveThumbNetwork(post.previewUrl, id);
+
+      Dbs.g.thumbnail!
+          .writeTxnSync(() => Dbs.g.thumbnail!.thumbnails.deleteSync(id));
+
+      Dbs.g.thumbnail!.writeTxnSync(() => Dbs.g.thumbnail!.pinnedThumbnails
+          .putSync(PinnedThumbnail(id, t.differenceHash, t.path)));
+    } catch (e) {
+      log("video thumb 2", level: Level.WARNING.value, error: e);
+    }
+
+    api.close();
+  } catch (_) {}
+
+  notif.done();
+
+  GlobalProgress.unlockThumbLoading();
+}
+
 class ThumbnailProvider extends ImageProvider {
   final int id;
+  final bool tryPinned;
 
   @override
   Future<Object> obtainKey(ImageConfiguration configuration) async {
@@ -383,8 +432,19 @@ class ThumbnailProvider extends ImageProvider {
       return FileImage(File(thumb.path));
     }
 
+    if (tryPinned) {
+      final thumb = Dbs.g.thumbnail!.pinnedThumbnails.getSync(id);
+      if (thumb != null && thumb.differenceHash != 0 && thumb.path.isNotEmpty) {
+        return FileImage(File(thumb.path));
+      }
+    }
+
     final cachedThumb = await PlatformFunctions.getCachedThumb(id);
     ThumbId.addThumbnailsToDb([cachedThumb]);
+
+    if (cachedThumb.path.isEmpty || cachedThumb.differenceHash == 0) {
+      return MemoryImage(kTransparentImage);
+    }
 
     return FileImage(File(cachedThumb.path));
   }
@@ -412,7 +472,7 @@ class ThumbnailProvider extends ImageProvider {
   @override
   int get hashCode => id.hashCode;
 
-  const ThumbnailProvider(this.id);
+  const ThumbnailProvider(this.id, this.tryPinned);
 }
 
 ListTile addInfoTile(

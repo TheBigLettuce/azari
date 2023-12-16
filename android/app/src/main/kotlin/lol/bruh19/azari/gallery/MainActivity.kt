@@ -41,7 +41,8 @@ data class FilesDest(
 
 data class MoveOp(val source: String, val rootUri: Uri, val dir: String)
 data class ThumbOp(
-    val thumb: Long,
+    val thumb: Any,
+    val saveToPinned: Boolean = false,
     val callback: ((String, Long) -> Unit)
 )
 

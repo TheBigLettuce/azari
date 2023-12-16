@@ -258,6 +258,8 @@ class NoteGallery extends NoteBase implements Cell {
   @override
   CellData getCellData(bool isList, {required BuildContext context}) {
     return CellData(
-        thumb: ThumbnailProvider(id), name: id.toString(), stickers: const []);
+        thumb: ThumbnailProvider(id, isVideo),
+        name: id.toString(),
+        stickers: const []);
   }
 }

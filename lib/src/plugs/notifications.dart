@@ -32,3 +32,6 @@ NotificationPlug chooseNotificationPlug() {
     return DummyNotifications();
   }
 }
+
+const savingTagsNotifId = -10;
+const savingThumbNotifId = -11;

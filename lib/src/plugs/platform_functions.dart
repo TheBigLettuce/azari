@@ -151,8 +151,10 @@ class PlatformFunctions {
     }).then((value) => value ?? false);
   }
 
-  static Future<int> thumbCacheSize() {
-    return _channel.invokeMethod("thumbCacheSize").then((value) => value);
+  static Future<int> thumbCacheSize([bool fromPinned = false]) {
+    return _channel
+        .invokeMethod("thumbCacheSize", fromPinned)
+        .then((value) => value);
   }
 
   static Future<ThumbId> getCachedThumb(int id) {
@@ -160,12 +162,13 @@ class PlatformFunctions {
         ThumbId(id: id, path: value["path"], differenceHash: value["hash"]));
   }
 
-  static void clearCachedThumbs() {
-    _channel.invokeMethod("clearCachedThumbs");
+  static void clearCachedThumbs([bool fromPinned = false]) {
+    _channel.invokeMethod("clearCachedThumbs", fromPinned);
   }
 
-  static void deleteCachedThumbs(List<int> id) {
-    _channel.invokeMethod("deleteCachedThumbs", id);
+  static void deleteCachedThumbs(List<int> id, [bool fromPinned = false]) {
+    _channel.invokeMethod(
+        "deleteCachedThumbs", {"ids": id, "fromPinned": fromPinned});
   }
 
   static Future<int> currentMediastoreVersion() {
@@ -176,6 +179,14 @@ class PlatformFunctions {
 
   static Future<bool> currentNetworkStatus() {
     return _channel.invokeMethod("currentNetworkStatus").then((value) => value);
+  }
+
+  static Future<ThumbId> saveThumbNetwork(String url, int id) {
+    return _channel.invokeMethod("saveThumbNetwork", {
+      "url": url,
+      "id": id
+    }).then((value) =>
+        ThumbId(id: id, path: value["path"], differenceHash: value["hash"]));
   }
 
   const PlatformFunctions();
