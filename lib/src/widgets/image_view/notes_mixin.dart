@@ -48,7 +48,7 @@ mixin _ImageViewNotesMixin<T extends Cell> on State<NoteList<T>> {
       notesScrollController.animateTo(
           notesScrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 200),
-          curve: Curves.linear);
+          curve: Easing.emphasizedAccelerate);
       return;
     }
 

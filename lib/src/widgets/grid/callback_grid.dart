@@ -1006,8 +1006,8 @@ class __FabState extends State<_Fab> {
                 return;
               }
 
-              widget.controller
-                  .animateTo(scroll, duration: 200.ms, curve: Curves.linear);
+              widget.controller.animateTo(scroll,
+                  duration: 200.ms, curve: Easing.emphasizedAccelerate);
               widget.scrollPos?.call(scroll);
             },
             child: Padding(
@@ -1025,13 +1025,13 @@ class __FabState extends State<_Fab> {
                                   : 0))),
               child: FloatingActionButton(
                 onPressed: () {
-                  widget.controller
-                      .animateTo(0, duration: 200.ms, curve: Curves.linear);
+                  widget.controller.animateTo(0,
+                      duration: 200.ms, curve: Easing.emphasizedAccelerate);
                   StatisticsGeneral.addScrolledUp();
                 },
                 child: const Icon(Icons.arrow_upward),
               ),
             ),
-          ).animate().fadeIn(curve: Curves.easeInOutCirc);
+          ).animate().fadeIn(curve: Easing.standard);
   }
 }

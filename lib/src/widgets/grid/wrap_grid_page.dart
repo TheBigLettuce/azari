@@ -46,7 +46,7 @@ class _WrappedGridPageState<T extends Cell> extends State<WrappedGridPage<T>>
               : Animate(
                   effects: const [
                       MoveEffect(
-                          curve: Curves.easeOutQuint,
+                          curve: Easing.emphasizedAccelerate,
                           end: Offset.zero,
                           begin: Offset(0, kBottomNavigationBarHeight)),
                     ],

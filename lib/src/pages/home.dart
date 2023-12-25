@@ -250,7 +250,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           target: glueState.actions != null ? 1 : 0,
           effects: [
             MoveEffect(
-              curve: Curves.fastOutSlowIn,
+              curve: Easing.emphasizedAccelerate,
               begin: Offset.zero,
               end: Offset(0, 100 + MediaQuery.viewInsetsOf(context).bottom),
             ),

@@ -292,7 +292,7 @@ class PostBase implements Cell {
 
       return typeHalf[1] == "gif" ? NetGif(provider) : NetImage(provider);
     } else if (typeHalf[0] == "video") {
-      return NetVideo(url);
+      return NetVideo(path_util.extension(url) == ".zip" ? sampleUrl : url);
     } else {
       return const EmptyContent();
     }

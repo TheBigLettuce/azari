@@ -248,23 +248,21 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
       if (newCell.isarId == currentCell.isarId) {
         return;
       }
-      controller.previousPage(duration: 200.ms, curve: Curves.linearToEaseOut);
+      controller.previousPage(duration: 200.ms, curve: Easing.standard);
 
       currentCell = newCell;
       hardRefresh();
     } else if (currentPage > cellCount - 1) {
-      controller.previousPage(duration: 200.ms, curve: Curves.linearToEaseOut);
+      controller.previousPage(duration: 200.ms, curve: Easing.standard);
     } else if (widget
             .getCell(currentPage)
             .getCellData(false, context: context)
             .thumb !=
         currentCell.getCellData(false, context: context).thumb) {
       if (currentPage == 0) {
-        controller.nextPage(
-            duration: 200.ms, curve: Curves.fastLinearToSlowEaseIn);
+        controller.nextPage(duration: 200.ms, curve: Easing.standard);
       } else {
-        controller.previousPage(
-            duration: 200.ms, curve: Curves.linearToEaseOut);
+        controller.previousPage(duration: 200.ms, curve: Easing.standard);
       }
     } else {
       currentCell = widget.getCell(currentPage);

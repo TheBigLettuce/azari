@@ -200,7 +200,7 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
                           duration: 150.ms,
                           begin: const Offset(1, 1),
                           end: const Offset(2, 2),
-                          curve: Curves.easeInOutBack),
+                          curve: Easing.emphasizedAccelerate),
                     ],
                     onInit: (controller) {
                       _controller = controller;

@@ -37,6 +37,7 @@ class FadeSidewaysPageTransitionBuilder implements PageTransitionsBuilder {
   );
   static final Animatable<double> _fastOutSlowInTween =
       CurveTween(curve: Curves.fastOutSlowIn);
+
   @override
   Widget buildTransitions<T>(
       PageRoute<T> route,

@@ -39,7 +39,7 @@ class _WrappedSelection extends StatelessWidget {
             child: child,
           )
         : DragTarget(
-            onAccept: (data) {
+            onAcceptWithDetails: (data) {
               selectUnselect();
             },
             onLeave: (data) {
@@ -57,16 +57,16 @@ class _WrappedSelection extends StatelessWidget {
               final height = MediaQuery.of(context).size.height;
               if (details.offset.dy < 120 && scrollController.offset > 100) {
                 scrollController.animateTo(scrollController.offset - 100,
-                    duration: 200.ms, curve: Curves.linear);
+                    duration: 200.ms, curve: Easing.emphasizedAccelerate);
               } else if (details.offset.dy + bottomPadding >
                       (height * 0.9) - (bottomPadding) &&
                   scrollController.offset <
                       scrollController.position.maxScrollExtent * 0.99) {
                 scrollController.animateTo(scrollController.offset + 100,
-                    duration: 200.ms, curve: Curves.linear);
+                    duration: 200.ms, curve: Easing.emphasizedAccelerate);
               }
             },
-            onWillAccept: (data) => true,
+            onWillAcceptWithDetails: (data) => true,
             builder: (context, _, __) {
               return Draggable(
                 data: 1,

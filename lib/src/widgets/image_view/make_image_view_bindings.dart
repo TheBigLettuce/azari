@@ -48,11 +48,13 @@ Map<SingleActivatorDescription, Null Function()> makeImageViewBindings(
       SingleActivatorDescription(AppLocalizations.of(context)!.nextImage,
           const SingleActivator(LogicalKeyboardKey.arrowRight)): () {
         pageController.nextPage(
-            duration: const Duration(milliseconds: 500), curve: Curves.linear);
+            duration: const Duration(milliseconds: 500),
+            curve: Easing.standard);
       },
       SingleActivatorDescription(AppLocalizations.of(context)!.previousImage,
           const SingleActivator(LogicalKeyboardKey.arrowLeft)): () {
         pageController.previousPage(
-            duration: const Duration(milliseconds: 500), curve: Curves.linear);
+            duration: const Duration(milliseconds: 500),
+            curve: Easing.standard);
       }
     };

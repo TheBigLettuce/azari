@@ -41,7 +41,7 @@ class NotesContainer extends StatelessWidget {
             child: Align(
               alignment: Alignment.topRight,
               child: AnimatedContainer(
-                curve: Curves.easeInOutCirc,
+                curve: Easing.standard,
                 duration: const Duration(milliseconds: 180),
                 height: extendedNotes
                     ? MediaQuery.of(context).size.height -
