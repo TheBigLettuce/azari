@@ -30,7 +30,7 @@ import '../db/schemas/settings.dart';
 
 class SinglePost extends StatefulWidget {
   final FocusNode focus;
-  final TagManager tagManager;
+  final TagManager<Unrestorable> tagManager;
 
   const SinglePost({super.key, required this.focus, required this.tagManager});
 
@@ -101,9 +101,8 @@ class _SinglePostState extends State<SinglePost> {
         builder: (context) {
           return ImageView(
             key: key,
-            registerNotifiers: (child) => TagManagerNotifier(
-                tagManager: widget.tagManager,
-                child: BooruAPINotifier(api: booru, child: child)),
+            registerNotifiers: (child) => TagManagerNotifier.unrestorable(
+                widget.tagManager, BooruAPINotifier(api: booru, child: child)),
             updateTagScrollPos: (_, __) {},
             download: (_) {
               Downloader.g.add(

@@ -7,14 +7,26 @@
 
 part of 'state_restoration.dart';
 
-class TagManager {
+typedef InsertGridState = Function(
+    {required String tags, required String name, required SafeMode safeMode});
+
+typedef TagManagerWatch = StreamSubscription<dynamic> Function(
+    bool, void Function());
+
+sealed class TagManagerType {}
+
+class Restorable implements TagManagerType {}
+
+class Unrestorable implements TagManagerType {}
+
+class TagManager<T extends TagManagerType> {
   final IsarBooruTagging _excluded;
   final IsarBooruTagging _latest;
   final bool _temporary;
 
-  final StateRestoration _parent;
+  final InsertGridState _insert;
 
-  final StreamSubscription Function(bool fire, void Function() f) watch;
+  final TagManagerWatch watch;
 
   BooruTagging get excluded => _excluded;
   BooruTagging get latest => _latest;
@@ -32,10 +44,10 @@ class TagManager {
         final instance = DbsOpen.secondaryGrid(temporary: false);
 
         return SecondaryBooruGrid(
-          tagManager: this,
+          tagManager: this as TagManager<Restorable>,
           noRestoreOnBack: true,
           api: BooruAPI.fromEnum(booru, page: null),
-          restore: _parent.insert(
+          restore: _insert(
               tags: t.tag,
               name: instance.name,
               safeMode: Settings.fromDb().safeMode),
@@ -45,7 +57,10 @@ class TagManager {
     } else {
       Navigator.push(context, MaterialPageRoute(builder: (context) {
         return RandomBooruGrid(
-          tagManager: this,
+          tagManager: this is TagManager<Unrestorable>
+              ? this as TagManager<Unrestorable>
+              : TagManager._copy(
+                  _insert, _excluded, _latest, _temporary, watch),
           api: BooruAPI.fromEnum(booru, page: null),
           tags: t.tag,
         );
@@ -53,24 +68,47 @@ class TagManager {
     }
   }
 
-  TagManager(StateRestoration parent, this.watch, {bool temporary = false})
-      : _parent = parent,
-        _temporary = temporary,
+  static TagManager<Restorable> restorable(
+      StateRestoration parent, TagManagerWatch watch) {
+    return TagManager._(parent, watch, false);
+  }
+
+  static TagManager<Unrestorable> unrestorable(
+      StateRestoration parent, TagManagerWatch watch) {
+    return TagManager._(parent, watch, true);
+  }
+
+  TagManager._(StateRestoration parent, this.watch, this._temporary)
+      : _insert = parent.insert,
         _excluded =
             IsarBooruTagging(excludedMode: true, isarCurrent: parent._mainGrid),
         _latest = IsarBooruTagging(
             excludedMode: false, isarCurrent: parent._mainGrid);
 
-  static TagManager fromEnum(Booru booru, bool temporary) {
+  TagManager._copy(
+      this._insert, this._excluded, this._latest, this._temporary, this.watch);
+
+  static TagManager<Unrestorable> fromEnum(Booru booru) {
     final mainGrid = DbsOpen.primaryGrid(booru);
 
-    return TagManager(
-      StateRestoration(mainGrid, mainGrid.name, Settings.fromDb().safeMode),
-      (fire, f) =>
-          mainGrid.tags.watchLazy(fireImmediately: fire).listen((event) {
-        f();
-      }),
-      temporary: temporary,
-    );
+    return TagManager._(
+        StateRestoration(mainGrid, mainGrid.name, Settings.fromDb().safeMode),
+        (fire, f) =>
+            mainGrid.tags.watchLazy(fireImmediately: fire).listen((event) {
+              f();
+            }),
+        true);
+  }
+
+  static TagManager<Restorable> fromEnumRestorable(Booru booru) {
+    final mainGrid = DbsOpen.primaryGrid(booru);
+
+    return TagManager._(
+        StateRestoration(mainGrid, mainGrid.name, Settings.fromDb().safeMode),
+        (fire, f) =>
+            mainGrid.tags.watchLazy(fireImmediately: fire).listen((event) {
+              f();
+            }),
+        false);
   }
 }

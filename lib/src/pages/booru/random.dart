@@ -46,7 +46,7 @@ import '../image_view.dart';
 class RandomBooruGrid extends StatefulWidget {
   final BooruAPI api;
   final String tags;
-  final TagManager tagManager;
+  final TagManager<Unrestorable> tagManager;
   final GridStateBooru? state;
 
   const RandomBooruGrid(
@@ -85,10 +85,13 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
     super.initState();
 
     searchHook(SearchLaunchGridData(
-        mainFocus: state.mainFocus,
-        searchText: widget.tags,
-        addItems: null,
-        restorable: false));
+      mainFocus: state.mainFocus,
+      searchText: widget.tags,
+      addItems: null,
+      onSubmit: (context, tag) => TagManagerNotifier.ofUnrestorable(context)
+          .onTagPressed(
+              context, tag, BooruAPINotifier.of(context).booru, false),
+    ));
 
     settingsWatcher = Settings.watch((s) {
       state.settings = s!;
@@ -241,9 +244,9 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
 
           return BooruAPINotifier(
               api: widget.api,
-              child: TagManagerNotifier(
-                  tagManager: widget.tagManager,
-                  child: GridSkeleton(
+              child: TagManagerNotifier.unrestorable(
+                  widget.tagManager,
+                  GridSkeleton(
                     state,
                     (context) => CallbackGrid<Post>(
                       key: state.gridKey,
@@ -262,9 +265,8 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                       addFabPadding:
                           Scaffold.of(context).widget.bottomNavigationBar !=
                               null,
-                      registerNotifiers: (child) => TagManagerNotifier(
-                          tagManager: widget.tagManager,
-                          child:
+                      registerNotifiers: (child) =>
+                          TagManagerNotifier.unrestorable(widget.tagManager,
                               BooruAPINotifier(api: widget.api, child: child)),
                       menuButtonItems: [
                         if (widget.state == null)

@@ -9,25 +9,44 @@ import 'package:flutter/material.dart';
 
 import '../../db/state_restoration.dart';
 
-class TagManagerNotifier extends InheritedWidget {
-  final TagManager tagManager;
+class TagManagerNotifier<T extends TagManagerType> extends InheritedWidget {
+  const TagManagerNotifier._(
+      {super.key, required this.tagManager, required super.child});
+
+  final TagManager<T> tagManager;
 
   @override
   bool updateShouldNotify(TagManagerNotifier oldWidget) {
     return tagManager != oldWidget.tagManager;
   }
 
-  static TagManager of(BuildContext context) {
-    return maybeOf(context)!;
+  static TagManagerNotifier<Restorable> restorable(
+          TagManager<Restorable> tagManager, Widget child) =>
+      TagManagerNotifier._(tagManager: tagManager, child: child);
+
+  static TagManagerNotifier<Unrestorable> unrestorable(
+          TagManager<Unrestorable> tagManager, Widget child) =>
+      TagManagerNotifier._(tagManager: tagManager, child: child);
+
+  static TagManager<Restorable> ofRestorable(BuildContext context) {
+    return maybeOfRestorable(context)!;
   }
 
-  static TagManager? maybeOf(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<TagManagerNotifier>();
+  static TagManager<Restorable>? maybeOfRestorable(BuildContext context) {
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<TagManagerNotifier<Restorable>>();
 
     return widget?.tagManager;
   }
 
-  const TagManagerNotifier(
-      {super.key, required this.tagManager, required super.child});
+  static TagManager<Unrestorable> ofUnrestorable(BuildContext context) {
+    return maybeOfUnrestorable(context)!;
+  }
+
+  static TagManager<Unrestorable>? maybeOfUnrestorable(BuildContext context) {
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<TagManagerNotifier<Unrestorable>>();
+
+    return widget?.tagManager;
+  }
 }

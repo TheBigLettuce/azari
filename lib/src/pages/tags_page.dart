@@ -20,7 +20,7 @@ import '../widgets/single_post.dart';
 import '../widgets/tags_widget.dart';
 
 class TagsPage extends StatefulWidget {
-  final TagManager tagManager;
+  final TagManager<Unrestorable> tagManager;
   final FocusNode mainFocus;
   final BooruAPI booru;
 

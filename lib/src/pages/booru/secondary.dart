@@ -45,7 +45,7 @@ import '../settings/settings_widget.dart';
 class SecondaryBooruGrid extends StatefulWidget {
   final StateRestoration restore;
   final Isar instance;
-  final TagManager tagManager;
+  final TagManager<Restorable> tagManager;
   final BooruAPI api;
 
   final bool noRestoreOnBack;
@@ -79,10 +79,12 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
     super.initState();
 
     searchHook(SearchLaunchGridData(
-        mainFocus: state.mainFocus,
-        searchText: widget.restore.copy.tags,
-        addItems: null,
-        restorable: true));
+      mainFocus: state.mainFocus,
+      searchText: widget.restore.copy.tags,
+      addItems: null,
+      onSubmit: (context, tag) => TagManagerNotifier.ofRestorable(context)
+          .onTagPressed(context, tag, BooruAPINotifier.of(context).booru, true),
+    ));
 
     settingsWatcher = Settings.watch((s) {
       state.settings = s!;
@@ -233,9 +235,9 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
 
           return BooruAPINotifier(
               api: widget.api,
-              child: TagManagerNotifier(
-                  tagManager: widget.tagManager,
-                  child: GridSkeleton(
+              child: TagManagerNotifier.restorable(
+                  widget.tagManager,
+                  GridSkeleton(
                     state,
                     (context) => CallbackGrid<Post>(
                       key: state.gridKey,
@@ -254,9 +256,8 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                       addFabPadding:
                           Scaffold.of(context).widget.bottomNavigationBar !=
                               null,
-                      registerNotifiers: (child) => TagManagerNotifier(
-                          tagManager: widget.tagManager,
-                          child:
+                      registerNotifiers: (child) =>
+                          TagManagerNotifier.restorable(widget.tagManager,
                               BooruAPINotifier(api: widget.api, child: child)),
                       menuButtonItems: [
                         MainBooruGrid.bookmarkButton(context, state, glue, () {

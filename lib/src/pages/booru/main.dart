@@ -197,7 +197,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
 
   late final BooruAPI api;
   late final StateRestoration restore;
-  late final TagManager tagManager;
+  late final TagManager<Restorable> tagManager;
 
   int? currentSkipped;
 
@@ -226,7 +226,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
         state.settings.selectedBooru.string, state.settings.safeMode);
     api = BooruAPI.fromSettings(page: restore.copy.page);
 
-    tagManager = TagManager(restore, (fire, f) {
+    tagManager = TagManager.restorable(restore, (fire, f) {
       return widget.mainGrid.tags
           .watchLazy(fireImmediately: fire)
           .listen((event) {
@@ -235,10 +235,12 @@ class _MainBooruGridState extends State<MainBooruGrid>
     });
 
     searchHook(SearchLaunchGridData(
-        mainFocus: state.mainFocus,
-        searchText: "",
-        addItems: null,
-        restorable: true));
+      mainFocus: state.mainFocus,
+      searchText: "",
+      addItems: null,
+      onSubmit: (context, tag) => TagManagerNotifier.ofRestorable(context)
+          .onTagPressed(context, tag, BooruAPINotifier.of(context).booru, true),
+    ));
 
     if (api.wouldBecomeStale &&
         state.settings.autoRefresh &&
@@ -368,9 +370,9 @@ class _MainBooruGridState extends State<MainBooruGrid>
 
     return BooruAPINotifier(
         api: api,
-        child: TagManagerNotifier(
-            tagManager: tagManager,
-            child: GridSkeleton(
+        child: TagManagerNotifier.restorable(
+            tagManager,
+            GridSkeleton(
               state,
               (context) => CallbackGrid<Post>(
                 key: state.gridKey,
@@ -382,9 +384,8 @@ class _MainBooruGridState extends State<MainBooruGrid>
                             ? 80
                             : 0)),
                 selectionGlue: glue,
-                registerNotifiers: (child) => TagManagerNotifier(
-                    tagManager: tagManager,
-                    child: BooruAPINotifier(api: api, child: child)),
+                registerNotifiers: (child) => TagManagerNotifier.restorable(
+                    tagManager, BooruAPINotifier(api: api, child: child)),
                 inlineMenuButtonItems: true,
                 addFabPadding:
                     Scaffold.of(context).widget.bottomNavigationBar == null,
@@ -595,7 +596,7 @@ class _BookmarkButtonState extends State<BookmarkButton> {
                       builder: (context) {
                         return RandomBooruGrid(
                           api: BooruAPI.fromEnum(e.booru, page: e.page),
-                          tagManager: TagManager.fromEnum(e.booru, true),
+                          tagManager: TagManager.fromEnum(e.booru),
                           tags: e.tags,
                           state: e,
                         );

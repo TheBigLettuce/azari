@@ -7,13 +7,10 @@
 
 import 'dart:io';
 
-import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery/src/interfaces/contentable.dart';
-import 'package:gallery/src/widgets/choose_kaomoji.dart';
-import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/loading_error_widget.dart';
 import 'package:gallery/src/widgets/notifiers/reload_image.dart';
 import 'package:gallery/src/widgets/video/photo_gallery_page_video.dart';

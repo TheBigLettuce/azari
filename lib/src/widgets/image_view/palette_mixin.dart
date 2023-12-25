@@ -8,7 +8,6 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/thumbnail.dart';
 import 'package:gallery/src/interfaces/cell.dart';
 import 'package:logging/logging.dart';
 import 'package:palette_generator/palette_generator.dart';

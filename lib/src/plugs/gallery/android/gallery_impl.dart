@@ -142,11 +142,8 @@ class _GalleryImpl implements GalleryApi {
     if (NetworkStatus.g.hasInternet != hasInternet) {
       NetworkStatus.g.hasInternet = hasInternet;
       NetworkStatus.g.notify?.call();
-      print("netChange: $hasInternet");
     }
   }
-
-  // static GalleryImpl get g => _global!;
 
   factory _GalleryImpl(bool temporary) {
     if (_global != null) {

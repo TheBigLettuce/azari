@@ -202,8 +202,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           canPop: currentRoute == 0,
           onPopInvoked: _procPop,
           child: TagsPage(
-            tagManager:
-                TagManager.fromEnum(Settings.fromDb().selectedBooru, true),
+            tagManager: TagManager.fromEnum(Settings.fromDb().selectedBooru),
             booru:
                 BooruAPI.fromEnum(Settings.fromDb().selectedBooru, page: null),
             mainFocus: state.mainFocus,

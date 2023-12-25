@@ -316,7 +316,7 @@ class SystemGalleryDirectoryFile implements Cell {
           : (t) {
               try {
                 final res = PostTags.g.dissassembleFilename(name);
-                final tagManager = TagManager.fromEnum(res.booru, true);
+                final tagManager = TagManager.fromEnum(res.booru);
 
                 tagManager.onTagPressed(
                     context,

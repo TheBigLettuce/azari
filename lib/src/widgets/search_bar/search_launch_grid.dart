@@ -11,7 +11,6 @@ import '../../interfaces/cell.dart';
 import '../../interfaces/search_mixin.dart';
 import 'autocomplete/autocomplete_widget.dart';
 import '../notifiers/booru_api.dart';
-import '../notifiers/tag_manager.dart';
 import 'search_launch_grid_data.dart';
 
 /// Search mixin which launches a new page with a grid.
@@ -54,8 +53,7 @@ mixin SearchLaunchGrid<T extends Cell>
         (s) {
           currentlyHighlightedTag = s;
         },
-        (s) => TagManagerNotifier.of(context).onTagPressed(
-            context, s, BooruAPINotifier.of(context).booru, _state.restorable),
+        (s) => _state.onSubmit(context, s),
         () => _state.mainFocus.requestFocus(),
         BooruAPINotifier.of(context).completeTag,
         searchFocus,

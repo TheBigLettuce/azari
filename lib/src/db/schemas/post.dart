@@ -192,12 +192,8 @@ class PostBase implements Cell {
   List<Widget>? addInfo(
       BuildContext context, dynamic extra, AddInfoColorData colors) {
     final dUrl = fileDownloadUrl();
-    late final TagManager tagManager;
-    try {
-      tagManager = TagManagerNotifier.of(context);
-    } catch (_) {
-      tagManager = TagManager.fromEnum(Booru.fromPrefix(prefix)!, true);
-    }
+    final tagManager = TagManagerNotifier.maybeOfRestorable(context) ??
+        TagManager.fromEnum(Booru.fromPrefix(prefix)!);
 
     return wrapTagsSearch(
       context,
