@@ -246,9 +246,7 @@ class _FavoritesPageState extends State<FavoritesPage>
       setState(() {});
     });
 
-    favoritesWatcher = Dbs.g.main.favoriteBoorus
-        .watchLazy(fireImmediately: false)
-        .listen((event) {
+    favoritesWatcher = FavoriteBooru.watch((event) {
       performSearch(searchTextController.text);
     });
   }
@@ -264,11 +262,11 @@ class _FavoritesPageState extends State<FavoritesPage>
 
       return g;
     }, (selected, value) {
-      for (var e in selected) {
+      for (final e in selected) {
         e.group = value.isEmpty ? null : value;
       }
-      Dbs.g.main.writeTxnSync(
-          () => Dbs.g.main.favoriteBoorus.putAllByFileUrlSync(selected));
+
+      FavoriteBooru.addAllFileUrl(selected);
 
       Navigator.pop(context);
     });
@@ -329,14 +327,7 @@ class _FavoritesPageState extends State<FavoritesPage>
               addFabPadding:
                   Scaffold.of(context).widget.bottomNavigationBar == null,
               mainFocus: state.mainFocus,
-              searchWidget: SearchAndFocus(
-                  searchWidget(
-                    context,
-                    // hint: AppLocalizations.of(context)!
-                    //     .favoritesLabel
-                    //     .toLowerCase()
-                  ),
-                  searchFocus),
+              searchWidget: SearchAndFocus(searchWidget(context), searchFocus),
               refresh: () => Future.value(loader.count()),
               description: GridDescription([
                 BooruGridActions.download(context, booru),

@@ -23,6 +23,7 @@ class BlacklistedPostsPage extends StatefulWidget {
 class _BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
   final state = GridSkeletonState<HiddenBooruPost>();
   var list = <HiddenBooruPost>[];
+  bool hideImages = true;
 
   @override
   void initState() {
@@ -49,6 +50,17 @@ class _BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
           getCell: (i) => list[i],
           initalCellCount: list.length,
           initalScrollPosition: 0,
+          menuButtonItems: [
+            IconButton(
+                onPressed: () {
+                  hideImages = !hideImages;
+
+                  setState(() {});
+                },
+                icon: hideImages
+                    ? const Icon(Icons.image_rounded)
+                    : const Icon(Icons.hide_image_rounded))
+          ],
           scaffoldKey: state.scaffoldKey,
           systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context),
           hasReachedEnd: () => true,
@@ -71,7 +83,7 @@ class _BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
             }, true)
           ],
               keybindsDescription: "Blacklisted posts",
-              layout: const ListLayout()),
+              layout: ListLayout(hideThumbnails: hideImages)),
         ),
         canPop: true,
       ),

@@ -25,6 +25,7 @@ import '../keybinds/describe_keys.dart';
 import '../keybinds/keybind_description.dart';
 import '../keybinds/single_activator_description.dart';
 import '../notifiers/focus.dart';
+import '../shimmer_loading_indicator.dart';
 import 'cell.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 

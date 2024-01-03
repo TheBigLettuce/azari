@@ -14,6 +14,8 @@ part 'thumbnail.g.dart';
 
 @collection
 class Thumbnail {
+  const Thumbnail(this.id, this.updatedAt, this.path, this.differenceHash);
+
   final Id id;
   @Index()
   final String path;
@@ -21,7 +23,10 @@ class Thumbnail {
   final int differenceHash;
   final DateTime updatedAt;
 
-  const Thumbnail(this.id, this.updatedAt, this.path, this.differenceHash);
+  static void clear() {
+    Dbs.g.thumbnail!
+        .writeTxnSync(() => Dbs.g.thumbnail!.thumbnails.clearSync());
+  }
 
   static void addAll(List<ThumbId> l) {
     if (Dbs.g.thumbnail!.thumbnails.countSync() >= 3000) {

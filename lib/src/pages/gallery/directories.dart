@@ -26,12 +26,10 @@ import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 import 'package:gallery/src/db/schemas/gallery/favorite_media.dart';
 import 'package:gallery/src/db/schemas/gallery/pinned_directories.dart';
-import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 
 import '../../db/schemas/settings/settings.dart';
@@ -244,19 +242,13 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
 
           final dirTag = PostTags.g.directoryTag(cell.bucketId);
           if (dirTag != null) {
-            return (
-              dirTag,
-              Dbs.g.blacklisted.pinnedDirectories.getSync(fastHash(dirTag)) !=
-                  null
-            );
+            return (dirTag, PinnedDirectories.exist(dirTag));
           }
 
           final name = cell.name.split(" ");
           return (
             name.first.toLowerCase(),
-            Dbs.g.blacklisted.pinnedDirectories
-                    .getSync(fastHash(name.first.toLowerCase())) !=
-                null
+            PinnedDirectories.exist(name.first.toLowerCase())
           );
         },
         addToSticky: (seg, {unsticky}) {
@@ -264,20 +256,15 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
             return false;
           }
           if (unsticky == true) {
-            Dbs.g.blacklisted.writeTxnSync(() {
-              Dbs.g.blacklisted.pinnedDirectories.deleteSync(fastHash(seg));
-            });
+            PinnedDirectories.delete(seg);
           } else {
-            Dbs.g.blacklisted.writeTxnSync(() {
-              Dbs.g.blacklisted.pinnedDirectories
-                  .putSync(PinnedDirectories(seg, DateTime.now()));
-            });
+            PinnedDirectories.add(seg);
           }
 
           return true;
         },
         injectedSegments: [
-          if (Dbs.g.blacklisted.favoriteMedias.countSync() != 0)
+          if (FavoriteMedia.isNotEmpty())
             SystemGalleryDirectory(
                 bucketId: "favorites",
                 name: "Favorites", // change
@@ -287,11 +274,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                 lastModified: 0,
                 thumbFileId: miscSettings.favoritesThumbId != 0
                     ? miscSettings.favoritesThumbId
-                    : Dbs.g.blacklisted.favoriteMedias
-                        .where()
-                        .sortByTimeDesc()
-                        .findFirstSync()!
-                        .id),
+                    : FavoriteMedia.thumbnail),
           if (trashThumbId != null)
             SystemGalleryDirectory(
                 bucketId: "trash",

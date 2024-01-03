@@ -9,16 +9,13 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/post_base.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:html_unescape/html_unescape_small.dart';
 
 import '../../../net/downloader.dart';
 import '../../../interfaces/booru/booru_api.dart';
 import '../../../db/tags/post_tags.dart';
-import '../../../db/initalize_db.dart';
 import '../../../db/schemas/downloader/download_file.dart';
 import '../../../db/schemas/tags/local_tag_dictionary.dart';
 import '../../../db/schemas/settings/settings.dart';
-import '../../../db/schemas/tags/tags.dart';
 import '../callback_grid.dart';
 
 class BooruGridActions {
@@ -78,21 +75,9 @@ class BooruGridActions {
         isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
         (selected) {
       Settings.addRemoveFavorites(context, selected, showDeleteSnackbar);
-      Dbs.g.main.writeTxnSync(
-        () {
-          for (final post in selected) {
-            Dbs.g.main.localTagDictionarys.putAllSync(post.tags
-                .map((e) => LocalTagDictionary(
-                    HtmlUnescape().convert(e),
-                    (Dbs.g.main.localTagDictionarys
-                                .getSync(fastHash(e))
-                                ?.frequency ??
-                            0) +
-                        1))
-                .toList());
-          }
-        },
-      );
+      for (final post in selected) {
+        LocalTagDictionary.addAll(post.tags);
+      }
     }, true,
         color: isFavorite ? Colors.red.shade900 : null,
         animate: p != null,

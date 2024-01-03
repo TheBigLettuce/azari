@@ -13,7 +13,6 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/grid_settings/files.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
-import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/gallery/note_gallery.dart';
 import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
@@ -299,32 +298,32 @@ class _GalleryFilesState extends State<GalleryFiles>
 
   void _favoriteOrUnfavorite(
       BuildContext context, List<SystemGalleryDirectoryFile> selected) {
-    final deleted = <int>[];
+    final toDelete = <int>[];
+    final toAdd = <int>[];
 
     for (final fav in selected) {
       if (fav.isFavorite) {
-        deleted.add(fav.id);
-
-        Dbs.g.blacklisted.writeTxnSync(
-            () => Dbs.g.blacklisted.favoriteMedias.deleteSync(fav.id));
+        toDelete.add(fav.id);
       } else {
-        Dbs.g.blacklisted.writeTxnSync(() => Dbs.g.blacklisted.favoriteMedias
-            .putSync(FavoriteMedia(fav.id, DateTime.now())));
+        toAdd.add(fav.id);
       }
+    }
+
+    if (toAdd.isNotEmpty) {
+      FavoriteMedia.addAll(toAdd);
     }
 
     plug.notify(null);
 
-    if (deleted.isNotEmpty) {
+    if (toDelete.isNotEmpty) {
+      FavoriteMedia.deleteAll(toDelete);
+
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("Deleted from favorites"),
         action: SnackBarAction(
             label: "Undo",
             onPressed: () {
-              Dbs.g.blacklisted.writeTxnSync(() =>
-                  Dbs.g.blacklisted.favoriteMedias.putAllSync(deleted
-                      .map((e) => FavoriteMedia(e, DateTime.now()))
-                      .toList()));
+              FavoriteMedia.addAll(toDelete);
 
               plug.notify(null);
             }),
@@ -525,8 +524,7 @@ class _GalleryFilesState extends State<GalleryFiles>
         final t = selected.first.getCellData(false, context: context).thumb;
         t?.evict();
 
-        final deleted = Dbs.g.thumbnail!.writeTxnSync(() =>
-            Dbs.g.thumbnail!.pinnedThumbnails.deleteSync(selected.first.id));
+        final deleted = PinnedThumbnail.delete(selected.first.id);
 
         if (t != null) {
           PaintingBinding.instance.imageCache.evict(t, includeLive: true);

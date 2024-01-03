@@ -19,7 +19,6 @@ import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/display_quality.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 
-import '../../db/initalize_db.dart';
 import '../../db/tags/post_tags.dart';
 import '../../db/schemas/settings/settings.dart';
 import '../../widgets/radio_dialog.dart';
@@ -246,12 +245,7 @@ class _SettingsListState extends State<SettingsList> {
                                                           .no)),
                                               TextButton(
                                                   onPressed: () {
-                                                    Dbs.g.thumbnail!
-                                                        .writeTxnSync(() => Dbs
-                                                            .g
-                                                            .thumbnail!
-                                                            .thumbnails
-                                                            .clearSync());
+                                                    Thumbnail.clear();
 
                                                     PlatformFunctions
                                                         .clearCachedThumbs();
@@ -315,12 +309,7 @@ class _SettingsListState extends State<SettingsList> {
                                                           .no)),
                                               TextButton(
                                                   onPressed: () {
-                                                    Dbs.g.thumbnail!
-                                                        .writeTxnSync(() => Dbs
-                                                            .g
-                                                            .thumbnail!
-                                                            .pinnedThumbnails
-                                                            .clearSync());
+                                                    PinnedThumbnail.clear();
 
                                                     PlatformFunctions
                                                         .clearCachedThumbs(

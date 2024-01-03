@@ -51,9 +51,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
     super.initState();
     searchHook(state);
 
-    blacklistedWatcher = Dbs.g.blacklisted.blacklistedDirectorys
-        .watchLazy(fireImmediately: true)
-        .listen((event) {
+    blacklistedWatcher = BlacklistedDirectory.watch((event) {
       performSearch(searchTextController.text);
       setState(() {});
     });
@@ -96,8 +94,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
               menuButtonItems: [
                 IconButton(
                     onPressed: () {
-                      Dbs.g.blacklisted.writeTxnSync(() =>
-                          Dbs.g.blacklisted.blacklistedDirectorys.clearSync());
+                      BlacklistedDirectory.clear();
                       chooseGalleryPlug().notify(null);
                     },
                     icon: const Icon(Icons.delete))
@@ -107,11 +104,8 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
                 GridAction(
                   Icons.restore_page,
                   (selected) {
-                    Dbs.g.blacklisted.writeTxnSync(() {
-                      return Dbs.g.blacklisted.blacklistedDirectorys
-                          .deleteAllByBucketIdSync(
-                              selected.map((e) => e.bucketId).toList());
-                    });
+                    BlacklistedDirectory.deleteAll(
+                        selected.map((e) => e.bucketId).toList());
                   },
                   true,
                 )

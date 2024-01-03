@@ -24,7 +24,6 @@ import 'package:qrscan/qrscan.dart';
 import '../db/schemas/booru/post.dart';
 import 'grid/actions/booru_grid.dart';
 import '../interfaces/booru/booru_api.dart';
-import '../db/initalize_db.dart';
 import '../db/state_restoration.dart';
 import '../db/schemas/downloader/download_file.dart';
 import '../db/schemas/settings/settings.dart';
@@ -91,9 +90,7 @@ class _SinglePostState extends State<SinglePost> {
 
       final key = GlobalKey<ImageViewState>();
 
-      final favoritesWatcher = Dbs.g.main.favoriteBoorus
-          .watchLazy(fireImmediately: false)
-          .listen((event) {
+      final favoritesWatcher = FavoriteBooru.watch((event) {
         key.currentState?.setState(() {});
       });
 

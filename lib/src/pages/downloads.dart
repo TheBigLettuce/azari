@@ -61,9 +61,7 @@ class _DownloadsState extends State<Downloads>
 
     Downloader.g.markStale();
 
-    _updates = Dbs.g.main.downloadFiles
-        .watchLazy(fireImmediately: true)
-        .listen((_) async {
+    _updates = DownloadFile.watch((_) async {
       performSearch(searchTextController.text);
     });
   }
@@ -99,14 +97,7 @@ class _DownloadsState extends State<Downloads>
             if (!n.isNegative && n != 0) {
               Downloader.g.addAll([
                 ...children,
-                ...Dbs.g.main.downloadFiles
-                    .where()
-                    .inProgressEqualTo(false)
-                    .filter()
-                    .isFailedEqualTo(false)
-                    .sortByDateDesc()
-                    .limit(6 - children.length)
-                    .findAllSync()
+                ...DownloadFile.nextNumber(children.length),
               ], state.settings);
             } else {
               Downloader.g.addAll(children, state.settings);

@@ -5,24 +5,25 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:isar/isar.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
-part 'pinned_thumbnail.g.dart';
+class ShimmerLoadingIndicator extends StatelessWidget {
+  const ShimmerLoadingIndicator({super.key});
 
-@collection
-class PinnedThumbnail {
-  const PinnedThumbnail(this.id, this.differenceHash, this.path);
-
-  final Id id;
-  @Index()
-  final String path;
-  @Index()
-  final int differenceHash;
-
-  static void clear() => Dbs.g.thumbnail!
-      .writeTxnSync(() => Dbs.g.thumbnail!.pinnedThumbnails.clearSync());
-
-  static bool delete(int id) => Dbs.g.thumbnail!
-      .writeTxnSync(() => Dbs.g.thumbnail!.pinnedThumbnails.deleteSync(id));
+  @override
+  Widget build(BuildContext context) {
+    return Animate(
+      onComplete: (controller) => controller.repeat(),
+      effects: [
+        ShimmerEffect(
+            color:
+                Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+            delay: const Duration(seconds: 2),
+            duration: const Duration(milliseconds: 500))
+      ],
+      child: Container(
+          color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5)),
+    );
+  }
 }

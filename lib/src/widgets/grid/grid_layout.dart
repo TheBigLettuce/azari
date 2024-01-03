@@ -263,10 +263,13 @@ class GridLayout<T extends Cell> implements GridLayouter<T> {
 }
 
 class ListLayout<T extends Cell> implements GridLayouter<T> {
+  final bool hideThumbnails;
+
   @override
   Widget call(BuildContext context, CallbackGridState<T> state) {
     return _GridLayouts.list<T>(context, state._state, state.selection,
         state.widget.systemNavigationInsets.bottom,
+        hideThumbnails: hideThumbnails,
         onPressed: state.widget.unpressable ? null : state.onPressed);
   }
 
@@ -276,7 +279,7 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
   @override
   bool get isList => true;
 
-  const ListLayout();
+  const ListLayout({this.hideThumbnails = false});
 }
 
 /// [CallbackGrid] supports multiple layout modes.
@@ -287,6 +290,7 @@ abstract class _GridLayouts {
     GridMutationInterface<T> state,
     SelectionInterface<T> selection,
     double systemNavigationInsets, {
+    required bool hideThumbnails,
     required void Function(BuildContext, T, int)? onPressed,
   }) =>
       SliverList.separated(
@@ -301,6 +305,7 @@ abstract class _GridLayouts {
           systemNavigationInsets,
           index: index,
           cell: state.getCell(index),
+          hideThumbnails: hideThumbnails,
           onPressed: onPressed,
         ),
       );
@@ -312,6 +317,7 @@ abstract class _GridLayouts {
       double systemNavigationInsets,
       {required int index,
       required T cell,
+      required bool hideThumbnails,
       required void Function(BuildContext, T, int)? onPressed}) {
     final cellData = cell.getCellData(true, context: context);
     final selected = selection.isSelected(index);
@@ -331,7 +337,7 @@ abstract class _GridLayouts {
         onLongPress: () => selection.selectOrUnselect(
             context, index, cell, systemNavigationInsets),
         onTap: onPressed == null ? null : () => onPressed(context, cell, index),
-        leading: cellData.thumb != null
+        leading: !hideThumbnails && cellData.thumb != null
             ? CircleAvatar(
                 backgroundColor: Theme.of(context).colorScheme.background,
                 foregroundImage: cellData.thumb,
@@ -399,7 +405,10 @@ abstract class _GridLayouts {
                   constraints: BoxConstraints(maxWidth: constraints),
                   child: listTile(
                       context, state, selection, systemNavigationInsets,
-                      index: indx, cell: cell, onPressed: null),
+                      index: indx,
+                      cell: cell,
+                      onPressed: null,
+                      hideThumbnails: false),
                 )
               : ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: constraints),
@@ -446,7 +455,10 @@ abstract class _GridLayouts {
                   constraints: BoxConstraints(maxWidth: constraints),
                   child: listTile<T>(
                       context, state, selection, systemNavigationInsets,
-                      index: cell.$1, cell: cell.$2, onPressed: null),
+                      index: cell.$1,
+                      cell: cell.$2,
+                      onPressed: null,
+                      hideThumbnails: false),
                 )
               : ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: constraints),

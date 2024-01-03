@@ -5,7 +5,10 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
+import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/cell.dart';
 import 'package:gallery/src/interfaces/contentable.dart';
 import 'package:gallery/src/widgets/grid/cell_data.dart';
@@ -15,6 +18,8 @@ part 'blacklisted_directory.g.dart';
 
 @collection
 class BlacklistedDirectory implements Cell {
+  BlacklistedDirectory(this.bucketId, this.name);
+
   @override
   Id? isarId;
 
@@ -54,5 +59,20 @@ class BlacklistedDirectory implements Cell {
   CellData getCellData(bool isList, {BuildContext? context}) =>
       CellData(thumb: null, name: name, stickers: []);
 
-  BlacklistedDirectory(this.bucketId, this.name);
+  static StreamSubscription<void> watch(void Function(void) f,
+      [bool fire = true]) {
+    return Dbs.g.blacklisted.blacklistedDirectorys
+        .watchLazy(fireImmediately: fire)
+        .listen(f);
+  }
+
+  static void clear() => Dbs.g.blacklisted
+      .writeTxnSync(() => Dbs.g.blacklisted.blacklistedDirectorys.clearSync());
+
+  static void deleteAll(List<String> bucketIds) {
+    Dbs.g.blacklisted.writeTxnSync(() {
+      return Dbs.g.blacklisted.blacklistedDirectorys
+          .deleteAllByBucketIdSync(bucketIds);
+    });
+  }
 }
