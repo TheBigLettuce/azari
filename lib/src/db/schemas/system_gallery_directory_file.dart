@@ -440,7 +440,7 @@ class ThumbnailProvider extends ImageProvider {
     }
 
     final cachedThumb = await PlatformFunctions.getCachedThumb(id);
-    ThumbId.addThumbnailsToDb([cachedThumb]);
+    Thumbnail.addAll([cachedThumb]);
 
     if (cachedThumb.path.isEmpty || cachedThumb.differenceHash == 0) {
       return MemoryImage(kTransparentImage);

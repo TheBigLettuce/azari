@@ -47,10 +47,6 @@ class DownloadFile implements Cell {
     Dbs.g.main.writeTxnSync(() => Dbs.g.main.downloadFiles.putSync(this));
   }
 
-  static void saveAll(List<DownloadFile> l) {
-    Dbs.g.main.writeTxnSync(() => Dbs.g.main.downloadFiles.putAllSync(l));
-  }
-
   DownloadFile inprogress() => DownloadFile(true, false,
       isarId: isarId, url: url, thumbUrl: thumbUrl, name: name, site: site);
   DownloadFile failed() => DownloadFile(false, true,
@@ -105,4 +101,41 @@ class DownloadFile implements Cell {
       thumb: thumbUrl.isEmpty ? null : CachedNetworkImageProvider(thumbUrl),
       name: name,
       stickers: []);
+
+  static void saveAll(List<DownloadFile> l) {
+    Dbs.g.main.writeTxnSync(() => Dbs.g.main.downloadFiles.putAllSync(l));
+  }
+
+  static void deleteAll(List<String> urls) {
+    Dbs.g.main
+        .writeTxnSync(() => Dbs.g.main.downloadFiles.deleteAllByUrlSync(urls));
+  }
+
+  static DownloadFile? get(String url) {
+    return Dbs.g.main.downloadFiles.getByUrlSync(url);
+  }
+
+  static bool exist(String url) {
+    return Dbs.g.main.downloadFiles.getByUrlSync(url) != null;
+  }
+
+  static List<DownloadFile> get inProgressNow =>
+      Dbs.g.main.downloadFiles.filter().inProgressEqualTo(true).findAllSync();
+
+  static bool notExist(String url) => !exist(url);
+
+  static void clear() {
+    Dbs.g.main.writeTxnSync(() {
+      Dbs.g.main.downloadFiles.clearSync();
+    });
+  }
+
+  static DownloadFile? next() {
+    return Dbs.g.main.downloadFiles
+        .filter()
+        .inProgressEqualTo(false)
+        .or()
+        .isFailedEqualTo(true)
+        .findFirstSync();
+  }
 }

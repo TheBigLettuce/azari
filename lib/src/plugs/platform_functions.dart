@@ -192,6 +192,7 @@ class PlatformFunctions {
   const PlatformFunctions();
 }
 
+@immutable
 class ThumbId {
   final int id;
   final String path;
@@ -199,34 +200,4 @@ class ThumbId {
 
   const ThumbId(
       {required this.id, required this.path, required this.differenceHash});
-
-  static void addThumbnailsToDb(List<ThumbId> l) {
-    if (Dbs.g.thumbnail!.thumbnails.countSync() >= 3000) {
-      final List<int> toDelete = Dbs.g.thumbnail!.writeTxnSync(() {
-        final toDelete = Dbs.g.thumbnail!.thumbnails
-            .where()
-            .sortByUpdatedAt()
-            .limit(l.length)
-            .findAllSync()
-            .map((e) => e.id)
-            .toList();
-
-        if (toDelete.isEmpty) {
-          return [];
-        }
-
-        Dbs.g.thumbnail!.thumbnails.deleteAllSync(toDelete);
-
-        return toDelete;
-      });
-
-      PlatformFunctions.deleteCachedThumbs(toDelete);
-    }
-
-    Dbs.g.thumbnail!.writeTxnSync(() {
-      Dbs.g.thumbnail!.thumbnails.putAllSync(l
-          .map((e) => Thumbnail(e.id, DateTime.now(), e.path, e.differenceHash))
-          .toList());
-    });
-  }
 }

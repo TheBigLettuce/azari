@@ -16,11 +16,9 @@ import 'package:gallery/src/plugs/download_movers.dart';
 import 'package:gallery/src/plugs/notifications.dart';
 import 'package:gallery/src/db/schemas/download_file.dart';
 import 'package:gallery/src/db/schemas/settings.dart';
-import 'package:isar/isar.dart';
 import 'package:path/path.dart' as path;
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
-import '../db/initalize_db.dart';
 
 Downloader? _global;
 
@@ -101,12 +99,7 @@ class Downloader with _CancelTokens, _StatisticsTimer {
 
   void _done() {
     if (_inWork <= maximum) {
-      final f = Dbs.g.main.downloadFiles
-          .filter()
-          .inProgressEqualTo(false)
-          .or()
-          .isFailedEqualTo(true)
-          .findFirstSync();
+      final f = DownloadFile.next();
       if (f != null) {
         f.inprogress().save();
 
@@ -136,8 +129,7 @@ class Downloader with _CancelTokens, _StatisticsTimer {
       }
     }
 
-    Dbs.g.main.writeTxnSync(() => Dbs.g.main.downloadFiles
-        .deleteAllByUrlSync(l.map((e) => e.url).toList()));
+    DownloadFile.deleteAll(l.map((e) => e.url).toList());
   }
 
   void add(DownloadFile download, Settings settings) {
@@ -147,7 +139,7 @@ class Downloader with _CancelTokens, _StatisticsTimer {
       return;
     }
     if ((download.isarId != null && _hasCancelKey(download.url)) ||
-        Dbs.g.main.downloadFiles.getByUrlSync(download.url) != null) {
+        DownloadFile.exist(download.url)) {
       return;
     }
 
@@ -171,7 +163,7 @@ class Downloader with _CancelTokens, _StatisticsTimer {
         .where((element) =>
             element.isarId == null ||
             !_hasCancelKey(element.url) ||
-            Dbs.g.main.downloadFiles.getByUrlSync(element.url) == null)
+            DownloadFile.notExist(element.url))
         .map((e) => e.onHold())
         .toList();
 
@@ -200,9 +192,7 @@ class Downloader with _CancelTokens, _StatisticsTimer {
   }
 
   void removeAll() {
-    Dbs.g.main.writeTxnSync(() {
-      Dbs.g.main.downloadFiles.clearSync();
-    });
+    DownloadFile.clear();
 
     for (final element in _tokens.values) {
       element.cancel();
@@ -220,18 +210,14 @@ class Downloader with _CancelTokens, _StatisticsTimer {
         }
       }
 
-      Dbs.g.main.writeTxnSync(() {
-        Dbs.g.main.downloadFiles
-            .putAllSync(override.map((e) => e.failed()).toList());
-      });
+      DownloadFile.saveAll(override.map((e) => e.failed()).toList());
 
       return;
     }
 
     final toUpdate = <DownloadFile>[];
 
-    final inProgress =
-        Dbs.g.main.downloadFiles.filter().inProgressEqualTo(true).findAllSync();
+    final inProgress = DownloadFile.inProgressNow;
     for (final element in inProgress) {
       if (_tokens[element.url] == null) {
         toUpdate.add(element.failed());
@@ -242,9 +228,7 @@ class Downloader with _CancelTokens, _StatisticsTimer {
       return;
     }
 
-    Dbs.g.main.writeTxnSync(() {
-      Dbs.g.main.downloadFiles.putAllSync(toUpdate);
-    });
+    DownloadFile.saveAll(toUpdate);
   }
 
   void _download(DownloadFile d) async {
@@ -292,12 +276,8 @@ class Downloader with _CancelTokens, _StatisticsTimer {
         moverPlug.move(MoveOp(
             source: filePath, rootDir: settings.path, targetDir: d.site));
 
-        Dbs.g.main.writeTxnSync(
-          () {
-            _removeToken(d.url);
-            Dbs.g.main.downloadFiles.deleteSync(d.isarId!);
-          },
-        );
+        DownloadFile.deleteAll([d.url]);
+        _removeToken(d.url);
 
         StatisticsBooru.addDownloaded();
       } catch (e, trace) {

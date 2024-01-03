@@ -54,7 +54,7 @@ class _GalleryFilesExtra implements GalleryFilesExtra {
           thumbnails.add(PlatformFunctions.getCachedThumb(file.id));
 
           if (thumbnails.length > 8) {
-            ThumbId.addThumbnailsToDb(await thumbnails.wait);
+            Thumbnail.addAll(await thumbnails.wait);
             thumbnails.clear();
           }
         }
@@ -66,7 +66,7 @@ class _GalleryFilesExtra implements GalleryFilesExtra {
     }
 
     if (thumbnails.isNotEmpty) {
-      ThumbId.addThumbnailsToDb(await thumbnails.wait);
+      Thumbnail.addAll(await thumbnails.wait);
     }
 
     callback();
