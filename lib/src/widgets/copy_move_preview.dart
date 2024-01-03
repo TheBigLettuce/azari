@@ -10,7 +10,7 @@ import 'package:gallery/src/widgets/grid/callback_grid.dart';
 
 import '../interfaces/cell.dart';
 import '../pages/image_view.dart';
-import '../db/schemas/system_gallery_directory_file.dart';
+import '../db/schemas/gallery/system_gallery_directory_file.dart';
 import 'grid/cell.dart';
 
 class CopyMovePreview extends StatefulWidget {

@@ -7,10 +7,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/interfaces/gallery/gallery_files_extra.dart';
 
-import '../../../db/post_tags.dart';
-import '../../../db/schemas/system_gallery_directory_file.dart';
-import '../../../interfaces/gallery.dart';
+import '../../../db/tags/post_tags.dart';
+import '../../../db/schemas/gallery/system_gallery_directory_file.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 /// Data for the [FilteringMode.same].

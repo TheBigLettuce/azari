@@ -6,15 +6,18 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/blacklisted_directory.dart';
-import 'package:gallery/src/db/schemas/system_gallery_directory.dart';
+import 'package:gallery/src/db/schemas/gallery/blacklisted_directory.dart';
+import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 import 'package:gallery/src/interfaces/filtering/filter_result.dart';
 import 'package:gallery/src/interfaces/filtering/filtering_interface.dart';
 import 'package:gallery/src/interfaces/filtering/filtering_mode.dart';
 import 'package:gallery/src/interfaces/filtering/sorting_mode.dart';
-import 'package:gallery/src/interfaces/gallery.dart';
+import 'package:gallery/src/interfaces/gallery/gallery_api_files.dart';
+import 'package:gallery/src/interfaces/gallery/gallery_directories_extra.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:isar/isar.dart';
+
+import '../../interfaces/gallery/gallery_api_directories.dart';
 
 class DummyGallery implements GalleryPlug {
   @override

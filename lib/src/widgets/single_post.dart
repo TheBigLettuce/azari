@@ -10,9 +10,10 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/pages/image_view.dart';
-import 'package:gallery/src/db/schemas/favorite_booru.dart';
+import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/widgets/notifiers/booru_api.dart';
 import 'package:gallery/src/widgets/notifiers/tag_manager.dart';
 import 'package:logging/logging.dart';
@@ -20,13 +21,13 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:qrscan/qrscan.dart';
 
-import '../db/schemas/post.dart';
+import '../db/schemas/booru/post.dart';
 import 'grid/actions/booru_grid.dart';
-import '../interfaces/booru.dart';
+import '../interfaces/booru/booru_api.dart';
 import '../db/initalize_db.dart';
 import '../db/state_restoration.dart';
-import '../db/schemas/download_file.dart';
-import '../db/schemas/settings.dart';
+import '../db/schemas/downloader/download_file.dart';
+import '../db/schemas/settings/settings.dart';
 
 class SinglePost extends StatefulWidget {
   final FocusNode focus;

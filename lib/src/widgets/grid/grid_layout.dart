@@ -181,7 +181,7 @@ class SegmentListLayout<T extends Cell> implements GridLayouter<T> {
 
 class SegmentLayout<T extends Cell> implements GridLayouter<T> {
   final Segments<T> segments;
-  final settings.GridAspectRatio aspectRatio;
+  final GridAspectRatio aspectRatio;
 
   @override
   final GridColumn columns;
@@ -243,7 +243,7 @@ class GridListLayout<T extends Cell> implements GridLayouter<T> {
 }
 
 class GridLayout<T extends Cell> implements GridLayouter<T> {
-  final settings.GridAspectRatio aspectRatio;
+  final GridAspectRatio aspectRatio;
 
   @override
   final GridColumn columns;

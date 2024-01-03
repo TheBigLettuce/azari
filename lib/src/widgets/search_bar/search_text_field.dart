@@ -10,7 +10,7 @@ import 'package:gallery/src/interfaces/cell.dart';
 import 'package:gallery/src/widgets/notifiers/focus.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../db/post_tags.dart';
+import '../../db/tags/post_tags.dart';
 import '../notifiers/filter.dart';
 import '../notifiers/tag_refresh.dart';
 

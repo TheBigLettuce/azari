@@ -11,10 +11,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/pages/booru/main.dart';
-import 'package:gallery/src/db/schemas/favorite_booru.dart';
-import 'package:gallery/src/db/schemas/grid_state_booru.dart';
-import 'package:gallery/src/db/schemas/tags.dart';
+import 'package:gallery/src/interfaces/booru/safe_mode.dart';
+import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
+import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
+import 'package:gallery/src/db/schemas/tags/tags.dart';
+import 'package:gallery/src/pages/booru/main_grid_settings_mixin.dart';
 import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:isar/isar.dart';
@@ -22,18 +23,18 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../db/schemas/note.dart';
-import '../../db/schemas/statistics_booru.dart';
-import '../../db/schemas/statistics_general.dart';
+import '../../db/schemas/booru/note_booru.dart';
+import '../../db/schemas/statistics/statistics_booru.dart';
+import '../../db/schemas/statistics/statistics_general.dart';
 import '../../widgets/grid/actions/booru_grid.dart';
 import '../../net/downloader.dart';
-import '../../interfaces/booru.dart';
-import '../../db/post_tags.dart';
+import '../../interfaces/booru/booru_api.dart';
+import '../../db/tags/post_tags.dart';
 import '../../db/initalize_db.dart';
 import '../../db/state_restoration.dart';
-import '../../db/schemas/download_file.dart';
-import '../../db/schemas/post.dart';
-import '../../db/schemas/settings.dart';
+import '../../db/schemas/downloader/download_file.dart';
+import '../../db/schemas/booru/post.dart';
+import '../../db/schemas/settings/settings.dart';
 import '../../widgets/search_bar/search_launch_grid_data.dart';
 import '../../widgets/skeletons/grid_skeleton_state.dart';
 import '../../widgets/skeletons/grid_skeleton.dart';
@@ -42,6 +43,8 @@ import '../../widgets/notifiers/tag_manager.dart';
 import '../../widgets/search_bar/search_launch_grid.dart';
 import '../../widgets/grid/callback_grid.dart';
 import '../image_view.dart';
+import 'bookmark_button.dart';
+import 'grid_button.dart';
 
 class RandomBooruGrid extends StatefulWidget {
   final BooruAPI api;
@@ -61,7 +64,7 @@ class RandomBooruGrid extends StatefulWidget {
 }
 
 class _RandomBooruGridState extends State<RandomBooruGrid>
-    with SearchLaunchGrid<Post> {
+    with SearchLaunchGrid<Post>, MainGridSettingsMixin {
   late final StreamSubscription<Settings?> settingsWatcher;
   late final StreamSubscription favoritesWatcher;
 
@@ -83,6 +86,8 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
   @override
   void initState() {
     super.initState();
+
+    gridSettingsHook();
 
     searchHook(SearchLaunchGridData(
       mainFocus: state.mainFocus,
@@ -114,6 +119,7 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
 
     widget.api.close();
 
+    disposeGridSettings();
     disposeSearch();
 
     state.dispose();
@@ -270,11 +276,10 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                               BooruAPINotifier(api: widget.api, child: child)),
                       menuButtonItems: [
                         if (widget.state == null)
-                          MainBooruGrid.bookmarkButton(context, state, glue,
-                              () {
+                          bookmarkButton(context, state, glue, () {
                             addedToBookmarks = true;
                           }),
-                        MainBooruGrid.gridButton(state.settings,
+                        gridButton(state.settings, gridSettings,
                             currentSafeMode: _safeMode(),
                             selectSafeMode: widget.state != null
                                 ? (safeMode) {
@@ -309,10 +314,10 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                       ],
                           keybindsDescription:
                               AppLocalizations.of(context)!.booruGridPageName,
-                          layout: state.settings.booru.listView
+                          layout: gridSettings.listView
                               ? const ListLayout()
-                              : GridLayout(state.settings.booru.columns,
-                                  state.settings.booru.aspectRatio)),
+                              : GridLayout(gridSettings.columns,
+                                  gridSettings.aspectRatio)),
                       hasReachedEnd: () => reachedEnd,
                       mainFocus: state.mainFocus,
                       statistics: const ImageViewStatistics(

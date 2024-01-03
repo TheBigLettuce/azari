@@ -7,10 +7,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/db/schemas/statistics_booru.dart';
+import 'package:gallery/src/db/schemas/statistics/statistics_booru.dart';
+import 'package:gallery/src/interfaces/booru/booru.dart';
 
-import '../../interfaces/booru.dart';
-import '../../db/schemas/settings.dart';
+import '../../db/schemas/settings/settings.dart';
 import '../../widgets/restart_widget.dart';
 import '../../widgets/skeletons/skeleton_settings.dart';
 import '../../widgets/skeletons/skeleton_state.dart';

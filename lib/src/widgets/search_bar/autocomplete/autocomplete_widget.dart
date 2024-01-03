@@ -12,7 +12,7 @@ import 'package:gallery/src/widgets/notifiers/focus.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../../db/schemas/tags.dart';
+import '../../../db/schemas/tags/tags.dart';
 import 'autocomplete_tag.dart';
 
 class AutocompleteWidget extends StatelessWidget {

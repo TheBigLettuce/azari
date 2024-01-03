@@ -7,13 +7,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/db/schemas/statistics_booru.dart';
-import 'package:gallery/src/db/schemas/statistics_gallery.dart';
-import 'package:gallery/src/db/schemas/statistics_general.dart';
+import 'package:gallery/src/db/schemas/statistics/statistics_booru.dart';
+import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
+import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 
-import '../db/post_tags.dart';
+import '../db/tags/post_tags.dart';
 import '../widgets/dashboard_card.dart';
 
 class Dashboard extends StatefulWidget {

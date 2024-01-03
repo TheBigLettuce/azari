@@ -7,8 +7,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/db/schemas/favorite_booru.dart';
-import 'package:gallery/src/db/schemas/system_gallery_directory.dart';
+import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
+import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
+import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/pages/notes_page.dart';
 import 'package:gallery/src/pages/settings/network_status.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
@@ -18,11 +19,11 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../main.dart';
 import '../db/initalize_db.dart';
-import '../db/post_tags.dart';
-import '../db/schemas/post.dart';
-import '../db/schemas/settings.dart';
+import '../db/tags/post_tags.dart';
+import '../db/schemas/booru/post.dart';
+import '../db/schemas/settings/settings.dart';
 import '../db/state_restoration.dart';
-import '../interfaces/booru.dart';
+import '../interfaces/booru/booru_api.dart';
 import '../widgets/grid/selection_glue_state.dart';
 import '../widgets/skeletons/home_skeleton.dart';
 import '../widgets/skeletons/skeleton_state.dart';

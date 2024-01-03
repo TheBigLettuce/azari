@@ -11,17 +11,14 @@ import 'dart:io';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart' as material show AspectRatio;
-import 'package:gallery/src/db/schemas/settings.dart' as settings
-    show GridAspectRatio;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/db/schemas/statistics_general.dart';
+import 'package:gallery/src/db/base/note_base.dart';
+import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
 import 'package:gallery/src/pages/image_view.dart';
-import 'package:gallery/src/db/schemas/settings.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 import 'package:logging/logging.dart';
-import '../../db/schemas/note.dart';
 import '../../interfaces/cell.dart';
 import '../../interfaces/grid_mutation_interface.dart';
 import '../keybinds/describe_keys.dart';
@@ -30,6 +27,9 @@ import '../keybinds/single_activator_description.dart';
 import '../notifiers/focus.dart';
 import 'cell.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+import 'enums/grid_aspect_ratio.dart';
+import 'enums/grid_column.dart';
 
 part 'selection_interface.dart';
 part 'wrapped_selection.dart';

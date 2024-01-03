@@ -49,7 +49,7 @@ app.*.map.json
 # generated code
 # /lib/src/dbus/*
 /lib/src/plugs/gallery/android/*.g.dart
-/lib/src/db/schemas/*.g.dart
+/lib/src/db/schemas/**/*.g.dart
 /test/test_api.g.dart
 
 /.vscode/settings

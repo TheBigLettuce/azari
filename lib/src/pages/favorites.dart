@@ -8,30 +8,31 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/note.dart';
+import 'package:gallery/src/db/schemas/booru/note_booru.dart';
+import 'package:gallery/src/db/schemas/grid_settings/favorites.dart';
+import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/widgets/grid/actions/favorites.dart';
 import 'package:gallery/src/net/downloader.dart';
-import 'package:gallery/src/interfaces/booru.dart';
+import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/interfaces/contentable.dart';
 import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/pages/booru/main.dart';
-import 'package:gallery/src/db/schemas/favorite_booru.dart';
-import 'package:gallery/src/db/schemas/local_tag_dictionary.dart';
+import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
+import 'package:gallery/src/db/schemas/tags/local_tag_dictionary.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../db/linear_isar_loader.dart';
+import '../db/loaders/linear_isar_loader.dart';
 import '../interfaces/filtering/filtering_mode.dart';
 import '../interfaces/filtering/sorting_mode.dart';
 import '../widgets/grid/actions/booru_grid.dart';
-import '../db/post_tags.dart';
-import '../db/schemas/download_file.dart';
-import '../db/schemas/settings.dart';
+import '../db/tags/post_tags.dart';
+import '../db/schemas/downloader/download_file.dart';
 import '../widgets/skeletons/grid_skeleton_state_filter.dart';
 import '../widgets/skeletons/grid_skeleton.dart';
+import 'booru/grid_settings_button.dart';
 
 class FavoritesPage extends StatefulWidget {
   final void Function(bool) procPop;
@@ -44,10 +45,14 @@ class FavoritesPage extends StatefulWidget {
 
 class _FavoritesPageState extends State<FavoritesPage>
     with SearchFilterGrid<FavoriteBooru> {
-  final booru = BooruAPI.fromSettings();
-  late final StreamSubscription<Settings?> settingsWatcher;
   late final StreamSubscription favoritesWatcher;
+  late final StreamSubscription<MiscSettings?> miscSettingsWatcher;
+  late final StreamSubscription<GridSettingsFavorites?> gridSettingsWatcher;
 
+  final booru = BooruAPI.fromSettings();
+
+  MiscSettings miscSettings = MiscSettings.current;
+  GridSettingsFavorites gridSettings = GridSettingsFavorites.current;
   Map<String, int>? segments;
 
   bool segmented = false;
@@ -173,7 +178,7 @@ class _FavoritesPageState extends State<FavoritesPage>
         setState(() {});
       }
 
-      Settings.fromDb().copy(favoritesPageMode: selected).save();
+      MiscSettings.setFavoritesPageMode(selected);
 
       return SortingMode.none;
     },
@@ -208,10 +213,17 @@ class _FavoritesPageState extends State<FavoritesPage>
   @override
   void initState() {
     super.initState();
+
+    gridSettingsWatcher = GridSettingsFavorites.watch((newSettings) {
+      gridSettings = newSettings!;
+
+      setState(() {});
+    });
+
     searchHook(state);
 
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      setFilteringMode(state.settings.favoritesPageMode);
+      setFilteringMode(miscSettings.favoritesPageMode);
       setLocalTagCompleteF((string) {
         final result = Dbs.g.main.localTagDictionarys
             .filter()
@@ -228,8 +240,8 @@ class _FavoritesPageState extends State<FavoritesPage>
       setState(() {});
     });
 
-    settingsWatcher = Settings.watch((s) {
-      state.settings = s!;
+    miscSettingsWatcher = MiscSettings.watch((s) {
+      miscSettings = s!;
 
       setState(() {});
     });
@@ -264,8 +276,9 @@ class _FavoritesPageState extends State<FavoritesPage>
 
   @override
   void dispose() {
-    settingsWatcher.cancel();
+    miscSettingsWatcher.cancel();
     favoritesWatcher.cancel();
+    gridSettingsWatcher.cancel();
 
     state.dispose();
     disposeSearch();
@@ -302,19 +315,13 @@ class _FavoritesPageState extends State<FavoritesPage>
               hasReachedEnd: () => true,
               hideAlias: true,
               menuButtonItems: [
-                gridSettingsButton(state.settings.favorites,
+                gridSettingsButton(gridSettings,
                     selectHideName: null,
-                    selectRatio: (ratio) => state.settings
-                        .copy(
-                            favorites: state.settings.favorites
-                                .copy(aspectRatio: ratio))
-                        .save(),
+                    selectRatio: (ratio) =>
+                        gridSettings.copy(aspectRatio: ratio).save(),
                     selectListView: null,
-                    selectGridColumn: (columns) => state.settings
-                        .copy(
-                            favorites:
-                                state.settings.favorites.copy(columns: columns))
-                        .save())
+                    selectGridColumn: (columns) =>
+                        gridSettings.copy(columns: columns).save())
               ],
               download: _download,
               immutable: false,
@@ -344,10 +351,10 @@ class _FavoritesPageState extends State<FavoritesPage>
                             hidePinnedIcon: true,
                             prebuiltSegments: segments,
                           ),
-                          state.settings.favorites.columns,
-                          state.settings.favorites.aspectRatio)
-                      : GridLayout(state.settings.favorites.columns,
-                          state.settings.favorites.aspectRatio)),
+                          gridSettings.columns,
+                          gridSettings.aspectRatio)
+                      : GridLayout(
+                          gridSettings.columns, gridSettings.aspectRatio)),
             ),
         canPop: false, overrideOnPop: (pop, hideAppBar) {
       if (searchTextController.text.isNotEmpty) {

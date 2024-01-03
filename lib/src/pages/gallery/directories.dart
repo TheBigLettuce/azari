@@ -9,22 +9,24 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/misc_settings.dart';
-import 'package:gallery/src/db/schemas/statistics_gallery.dart';
+import 'package:gallery/src/db/schemas/grid_settings/directories.dart';
+import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
+import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
+import 'package:gallery/src/interfaces/booru/booru.dart';
+import 'package:gallery/src/pages/booru/grid_settings_button.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/widgets/copy_move_preview.dart';
 import 'package:gallery/src/widgets/grid/actions/favorites.dart';
 import 'package:gallery/src/widgets/grid/actions/gallery_directories.dart';
-import 'package:gallery/src/db/post_tags.dart';
+import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/pages/gallery/files.dart';
-import 'package:gallery/src/pages/booru/main.dart';
-import 'package:gallery/src/db/schemas/system_gallery_directory.dart';
-import 'package:gallery/src/db/schemas/system_gallery_directory_file.dart';
-import 'package:gallery/src/db/schemas/favorite_media.dart';
-import 'package:gallery/src/db/schemas/pinned_directories.dart';
-import 'package:gallery/src/db/schemas/tags.dart';
+import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
+import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
+import 'package:gallery/src/db/schemas/gallery/favorite_media.dart';
+import 'package:gallery/src/db/schemas/gallery/pinned_directories.dart';
+import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
@@ -32,8 +34,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 
-import '../../interfaces/booru.dart';
-import '../../db/schemas/settings.dart';
+import '../../db/schemas/settings/settings.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
 import '../../widgets/skeletons/grid_skeleton_state_filter.dart';
 import '../../widgets/skeletons/grid_skeleton.dart';
@@ -93,8 +94,10 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
     with SearchFilterGrid<SystemGalleryDirectory> {
   late final StreamSubscription<Settings?> settingsWatcher;
   late final StreamSubscription<MiscSettings?> miscSettingsWatcher;
+  late final StreamSubscription<GridSettingsDirectories?> gridSettingsWatcher;
   late final AppLifecycleListener lifecycleListener;
 
+  GridSettingsDirectories gridSettings = GridSettingsDirectories.current;
   MiscSettings miscSettings = MiscSettings.current;
 
   int galleryVersion = 0;
@@ -134,6 +137,12 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
   void initState() {
     super.initState();
 
+    gridSettingsWatcher = GridSettingsDirectories.watch((newSettings) {
+      gridSettings = newSettings!;
+
+      setState(() {});
+    });
+
     galleryPlug.version.then((value) => galleryVersion = value);
 
     lifecycleListener = AppLifecycleListener(
@@ -164,6 +173,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
 
     miscSettingsWatcher = MiscSettings.watch((s) {
       miscSettings = s!;
+
       setState(() {});
     });
 
@@ -194,9 +204,12 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
 
   @override
   void dispose() {
+    settingsWatcher.cancel();
+    miscSettingsWatcher.cancel();
+    gridSettingsWatcher.cancel();
+
     api.close();
     stream.close();
-    settingsWatcher.cancel();
     disposeSearch();
     state.dispose();
     Dbs.g.clearTemporaryImages();
@@ -339,25 +352,16 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                       }
                     },
                     icon: const Icon(Icons.create_new_folder_outlined)),
-              gridSettingsButton(state.settings.galleryDirectories,
-                  selectRatio: (ratio) => state.settings
-                      .copy(
-                          galleryDirectories: state.settings.galleryDirectories
-                              .copy(aspectRatio: ratio))
-                      .save(),
-                  selectHideName: (hideNames) => state.settings
-                      .copy(
-                          galleryDirectories: state.settings.galleryDirectories
-                              .copy(hideName: hideNames))
-                      .save(),
+              gridSettingsButton(gridSettings,
+                  selectRatio: (ratio) =>
+                      gridSettings.copy(aspectRatio: ratio).save(),
+                  selectHideName: (hideNames) =>
+                      gridSettings.copy(hideName: hideNames).save(),
                   selectListView: null,
-                  selectGridColumn: (columns) => state.settings
-                      .copy(
-                          galleryDirectories: state.settings.galleryDirectories
-                              .copy(columns: columns))
-                      .save()),
+                  selectGridColumn: (columns) =>
+                      gridSettings.copy(columns: columns).save()),
             ],
-            hideAlias: state.settings.galleryDirectories.hideName,
+            hideAlias: gridSettings.hideName,
             immutable: false,
             mainFocus: state.mainFocus,
             footer: widget.callback?.preview,
@@ -465,10 +469,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                         : null,
                 keybindsDescription:
                     AppLocalizations.of(context)!.androidGKeybindsDescription,
-                layout: SegmentLayout(
-                    _makeSegments(context),
-                    state.settings.galleryDirectories.columns,
-                    state.settings.galleryDirectories.aspectRatio))),
+                layout: SegmentLayout(_makeSegments(context),
+                    gridSettings.columns, gridSettings.aspectRatio))),
         noDrawer: widget.noDrawer ?? false,
         canPop: widget.callback != null || widget.nestedCallback != null
             ? currentFilteringMode() == FilteringMode.noFilter &&

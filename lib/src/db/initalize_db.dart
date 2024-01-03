@@ -8,37 +8,41 @@
 import 'dart:async';
 import 'dart:io' as io;
 
-import 'package:gallery/src/db/schemas/blacklisted_directory.dart';
-import 'package:gallery/src/db/schemas/download_file.dart';
-import 'package:gallery/src/db/schemas/favorite_booru.dart';
-import 'package:gallery/src/db/schemas/hidden_booru_post.dart';
-import 'package:gallery/src/db/schemas/local_tag_dictionary.dart';
-import 'package:gallery/src/db/schemas/local_tags.dart';
-import 'package:gallery/src/db/schemas/misc_settings.dart';
-import 'package:gallery/src/db/schemas/note.dart';
-import 'package:gallery/src/db/schemas/note_gallery.dart';
-import 'package:gallery/src/db/schemas/pinned_directories.dart';
-import 'package:gallery/src/db/schemas/pinned_thumbnail.dart';
-import 'package:gallery/src/db/schemas/statistics_booru.dart';
-import 'package:gallery/src/db/schemas/statistics_gallery.dart';
-import 'package:gallery/src/db/schemas/statistics_general.dart';
-import 'package:gallery/src/db/schemas/thumbnail.dart';
-import 'package:gallery/src/db/schemas/video_settings.dart';
+import 'package:gallery/src/db/schemas/gallery/blacklisted_directory.dart';
+import 'package:gallery/src/db/schemas/downloader/download_file.dart';
+import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
+import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
+import 'package:gallery/src/db/schemas/grid_settings/directories.dart';
+import 'package:gallery/src/db/schemas/grid_settings/favorites.dart';
+import 'package:gallery/src/db/schemas/grid_settings/files.dart';
+import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
+import 'package:gallery/src/db/schemas/tags/local_tag_dictionary.dart';
+import 'package:gallery/src/db/schemas/tags/local_tags.dart';
+import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
+import 'package:gallery/src/db/schemas/booru/note_booru.dart';
+import 'package:gallery/src/db/schemas/gallery/note_gallery.dart';
+import 'package:gallery/src/db/schemas/gallery/pinned_directories.dart';
+import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
+import 'package:gallery/src/db/schemas/statistics/statistics_booru.dart';
+import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
+import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
+import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
+import 'package:gallery/src/db/schemas/settings/video_settings.dart';
+import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
-import '../interfaces/booru.dart';
-import 'schemas/system_gallery_directory.dart';
-import 'schemas/system_gallery_directory_file.dart';
-import 'schemas/directory_tags.dart';
-import 'schemas/favorite_media.dart';
-import 'schemas/grid_state.dart';
-import 'schemas/grid_state_booru.dart';
-import 'schemas/post.dart';
-import 'schemas/settings.dart';
+import 'schemas/gallery/system_gallery_directory.dart';
+import 'schemas/gallery/system_gallery_directory_file.dart';
+import 'schemas/gallery/directory_tags.dart';
+import 'schemas/gallery/favorite_media.dart';
+import 'schemas/grid_state/grid_state.dart';
+import 'schemas/grid_state/grid_state_booru.dart';
+import 'schemas/booru/post.dart';
+import 'schemas/settings/settings.dart';
 
 import 'package:path/path.dart' as path;
 
-import 'schemas/tags.dart';
+import 'schemas/tags/tags.dart';
 
 part 'dbs.dart';
 part 'dbs_open.dart';
@@ -83,6 +87,10 @@ Future initalizeDb(bool temporary) async {
     StatisticsBooruSchema,
     VideoSettingsSchema,
     MiscSettingsSchema,
+    GridSettingsBooruSchema,
+    GridSettingsDirectoriesSchema,
+    GridSettingsFavoritesSchema,
+    GridSettingsFilesSchema,
   ], directory: directoryPath, inspector: false);
 
   final blacklistedDirIsar = Isar.openSync([

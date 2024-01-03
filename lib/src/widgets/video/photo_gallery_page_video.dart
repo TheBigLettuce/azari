@@ -7,7 +7,7 @@
 
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/video_settings.dart';
+import 'package:gallery/src/db/schemas/settings/video_settings.dart';
 import 'package:gallery/src/widgets/loading_error_widget.dart';
 import 'package:gallery/src/widgets/notifiers/pause_video.dart';
 import 'package:gallery/src/widgets/video/video_controls.dart';

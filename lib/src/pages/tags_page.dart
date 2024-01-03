@@ -9,11 +9,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/db/schemas/tags.dart';
+import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/pages/notes_page.dart';
 
-import '../interfaces/booru.dart';
+import '../interfaces/booru/booru_api.dart';
 import '../db/state_restoration.dart';
 import '../widgets/search_bar/autocomplete/autocomplete_widget.dart';
 import '../widgets/single_post.dart';

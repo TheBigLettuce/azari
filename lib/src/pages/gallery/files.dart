@@ -11,27 +11,29 @@ import 'dart:developer';
 import 'dart:math' as math;
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
-import 'package:gallery/src/db/post_tags.dart';
+import 'package:gallery/src/db/schemas/grid_settings/files.dart';
+import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/db/schemas/misc_settings.dart';
-import 'package:gallery/src/db/schemas/note_gallery.dart';
-import 'package:gallery/src/db/schemas/pinned_thumbnail.dart';
-import 'package:gallery/src/db/schemas/statistics_gallery.dart';
+import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
+import 'package:gallery/src/db/schemas/gallery/note_gallery.dart';
+import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
+import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
+import 'package:gallery/src/interfaces/gallery/gallery_api_files.dart';
+import 'package:gallery/src/interfaces/gallery/gallery_files_extra.dart';
+import 'package:gallery/src/pages/booru/grid_settings_button.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/pages/gallery/directories.dart';
-import 'package:gallery/src/interfaces/gallery.dart';
-import 'package:gallery/src/pages/booru/main.dart';
 import 'package:gallery/src/plugs/notifications.dart';
-import 'package:gallery/src/db/schemas/system_gallery_directory_file.dart';
-import 'package:gallery/src/db/schemas/favorite_media.dart';
+import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
+import 'package:gallery/src/db/schemas/gallery/favorite_media.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../db/schemas/settings.dart';
-import '../../db/schemas/system_gallery_directory.dart';
+import '../../db/schemas/settings/settings.dart';
+import '../../db/schemas/gallery/system_gallery_directory.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
 import '../../interfaces/filtering/sorting_mode.dart';
 import '../../plugs/gallery.dart';
@@ -68,6 +70,10 @@ class _GalleryFilesState extends State<GalleryFiles>
   final plug = chooseGalleryPlug();
 
   late final StreamSubscription<Settings?> settingsWatcher;
+  late final StreamSubscription<GridSettingsFiles?> gridSettingsWatcher;
+
+  GridSettingsFiles gridSettings = GridSettingsFiles.current;
+
   bool proceed = true;
 
   late final GalleryFilesExtra extra = widget.api.getExtra()
@@ -189,6 +195,12 @@ class _GalleryFilesState extends State<GalleryFiles>
   void initState() {
     super.initState();
 
+    gridSettingsWatcher = GridSettingsFiles.watch((newSettings) {
+      gridSettings = newSettings!;
+
+      setState(() {});
+    });
+
     settingsWatcher = Settings.watch((s) {
       state.settings = s!;
 
@@ -199,9 +211,11 @@ class _GalleryFilesState extends State<GalleryFiles>
 
   @override
   void dispose() {
+    settingsWatcher.cancel();
+    gridSettingsWatcher.cancel();
+
     widget.api.close();
     stream.close();
-    settingsWatcher.cancel();
     disposeSearch();
     state.dispose();
     super.dispose();
@@ -615,7 +629,7 @@ class _GalleryFilesState extends State<GalleryFiles>
                             _moveAction()
                           ];
               },
-              hideAlias: state.settings.galleryFiles.hideName,
+              hideAlias: gridSettings.hideName,
               showCount: true,
               searchWidget: SearchAndFocus(
                   searchWidget(context, hint: widget.dirName), searchFocus),
@@ -705,27 +719,15 @@ class _GalleryFilesState extends State<GalleryFiles>
                         }
                       },
                       icon: const Icon(Icons.casino_outlined)),
-                gridSettingsButton(state.settings.galleryFiles,
-                    selectRatio: (ratio) => state.settings
-                        .copy(
-                            galleryFiles: state.settings.galleryFiles
-                                .copy(aspectRatio: ratio))
-                        .save(),
-                    selectHideName: (hideNames) => state.settings
-                        .copy(
-                            galleryFiles: state.settings.galleryFiles
-                                .copy(hideName: hideNames))
-                        .save(),
-                    selectListView: (listView) => state.settings
-                        .copy(
-                            galleryFiles: state.settings.galleryFiles
-                                .copy(listView: listView))
-                        .save(),
-                    selectGridColumn: (columns) => state.settings
-                        .copy(
-                            galleryFiles: state.settings.galleryFiles
-                                .copy(columns: columns))
-                        .save()),
+                gridSettingsButton(gridSettings,
+                    selectRatio: (ratio) =>
+                        gridSettings.copy(aspectRatio: ratio).save(),
+                    selectHideName: (hideNames) =>
+                        gridSettings.copy(hideName: hideNames).save(),
+                    selectListView: (listView) =>
+                        gridSettings.copy(listView: listView).save(),
+                    selectGridColumn: (columns) =>
+                        gridSettings.copy(columns: columns).save()),
               ],
               inlineMenuButtonItems: true,
               noteInterface: NoteGallery.interface((
@@ -772,10 +774,10 @@ class _GalleryFilesState extends State<GalleryFiles>
                           AppLocalizations.of(context)!.chooseFileNotice)
                       : null,
                   keybindsDescription: widget.dirName,
-                  layout: state.settings.galleryFiles.listView
+                  layout: gridSettings.listView
                       ? const ListLayout()
-                      : GridLayout(state.settings.galleryFiles.columns,
-                          state.settings.galleryFiles.aspectRatio))),
+                      : GridLayout(
+                          gridSettings.columns, gridSettings.aspectRatio))),
           noDrawer: widget.callback != null,
           canPop: currentFilteringMode() == FilteringMode.noFilter &&
               searchTextController.text.isEmpty,

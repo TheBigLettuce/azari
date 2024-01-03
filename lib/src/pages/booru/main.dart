@@ -11,13 +11,14 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/db/schemas/favorite_booru.dart';
-import 'package:gallery/src/db/schemas/grid_state_booru.dart';
-import 'package:gallery/src/db/schemas/hidden_booru_post.dart';
-import 'package:gallery/src/db/schemas/note.dart';
-import 'package:gallery/src/db/schemas/statistics_booru.dart';
-import 'package:gallery/src/db/schemas/statistics_general.dart';
-import 'package:gallery/src/db/schemas/tags.dart';
+import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
+import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
+import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
+import 'package:gallery/src/db/schemas/booru/note_booru.dart';
+import 'package:gallery/src/db/schemas/statistics/statistics_booru.dart';
+import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
+import 'package:gallery/src/db/schemas/tags/tags.dart';
+import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/pages/booru/random.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
@@ -26,18 +27,16 @@ import 'package:logging/logging.dart';
 
 import '../../widgets/grid/actions/booru_grid.dart';
 import '../../net/downloader.dart';
-import '../../interfaces/booru.dart';
-import '../../db/post_tags.dart';
+import '../../db/tags/post_tags.dart';
 import '../../db/initalize_db.dart';
 import '../../db/state_restoration.dart';
-import '../../db/schemas/download_file.dart';
-import '../../db/schemas/post.dart';
-import '../../db/schemas/settings.dart';
+import '../../db/schemas/downloader/download_file.dart';
+import '../../db/schemas/booru/post.dart';
+import '../../db/schemas/settings/settings.dart';
 import '../../widgets/search_bar/search_launch_grid_data.dart';
 import '../../widgets/skeletons/grid_skeleton_state.dart';
 import '../../widgets/notifiers/booru_api.dart';
 import '../../widgets/notifiers/tag_manager.dart';
-import '../../widgets/radio_dialog.dart';
 import '../../widgets/search_bar/search_launch_grid.dart';
 
 import '../../widgets/skeletons/grid_skeleton.dart';
@@ -46,96 +45,9 @@ import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../widgets/time_label.dart';
+import 'grid_button.dart';
+import 'main_grid_settings_mixin.dart';
 import 'secondary.dart';
-import '../../db/schemas/settings.dart' as schema show GridAspectRatio;
-
-PopupMenuButton gridSettingsButton(GridSettings gridSettings,
-    {required void Function(schema.GridAspectRatio?) selectRatio,
-    required void Function(bool)? selectHideName,
-    required void Function(bool)? selectListView,
-    required void Function(GridColumn?) selectGridColumn,
-    SafeMode? safeMode,
-    void Function(SafeMode?)? selectSafeMode}) {
-  return PopupMenuButton(
-    icon: const Icon(Icons.more_horiz_outlined),
-    itemBuilder: (context) => [
-      if (safeMode != null)
-        _safeMode(context, safeMode, selectSafeMode: selectSafeMode),
-      if (selectListView != null)
-        _listView(gridSettings.listView, selectListView),
-      if (selectHideName != null)
-        _hideName(context, gridSettings.hideName, selectHideName),
-      _ratio(context, gridSettings.aspectRatio, selectRatio),
-      _columns(context, gridSettings.columns, selectGridColumn)
-    ],
-  );
-}
-
-PopupMenuItem _safeMode(BuildContext context, SafeMode safeMode,
-    {void Function(SafeMode?)? selectSafeMode}) {
-  return PopupMenuItem(
-    child: Text(AppLocalizations.of(context)!.safeModeSetting),
-    onTap: () => radioDialog<SafeMode>(
-      context,
-      SafeMode.values.map((e) => (e, e.string)),
-      safeMode,
-      selectSafeMode ??
-          (value) {
-            Settings.fromDb().copy(safeMode: value).save();
-          },
-      title: AppLocalizations.of(context)!.safeModeSetting,
-    ),
-  );
-}
-
-PopupMenuItem _hideName(
-    BuildContext context, bool hideName, void Function(bool) select) {
-  return PopupMenuItem(
-    child: Text(hideName
-        ? "Show names" // TODO: change
-        : "Hide names"),
-    onTap: () => select(!hideName),
-  );
-}
-
-PopupMenuItem _ratio(BuildContext context, schema.GridAspectRatio aspectRatio,
-    void Function(schema.GridAspectRatio?) select) {
-  return PopupMenuItem(
-    child: Text(AppLocalizations.of(context)!.aspectRatio),
-    onTap: () => radioDialog(
-      context,
-      schema.GridAspectRatio.values
-          .map((e) => (e, e.value.toString()))
-          .toList(),
-      aspectRatio,
-      select,
-      title: AppLocalizations.of(context)!.aspectRatio,
-    ),
-  );
-}
-
-PopupMenuItem _columns(BuildContext context, GridColumn columns,
-    void Function(GridColumn?) select) {
-  return PopupMenuItem(
-    child: const Text("Columns"), // TODO: change
-    onTap: () => radioDialog(
-      context,
-      GridColumn.values.map((e) => (e, e.number.toString())).toList(),
-      columns,
-      select,
-      title: AppLocalizations.of(context)!.nPerElementsSetting,
-    ),
-  );
-}
-
-PopupMenuItem _listView(bool listView, void Function(bool) select) {
-  return PopupMenuItem(
-    child: Text(listView
-        ? "Grid view" // TODO: change
-        : "List view"),
-    onTap: () => select(!listView),
-  );
-}
 
 class MainBooruGrid extends StatefulWidget {
   final Isar mainGrid;
@@ -148,45 +60,12 @@ class MainBooruGrid extends StatefulWidget {
       required this.refreshingInterface,
       required this.procPop});
 
-  static Widget bookmarkButton(BuildContext context, GridSkeletonState state,
-      SelectionGlue glue, void Function() f) {
-    return IconButton(
-        onPressed: () {
-          f();
-          ScaffoldMessenger.of(state.scaffoldKey.currentContext!)
-              .showSnackBar(const SnackBar(
-                  content: Text(
-            "Bookmarked", // TODO: change
-          )));
-          glue.close();
-          state.gridKey.currentState?.selection.selected.clear();
-          Navigator.pop(context);
-        },
-        icon: const Icon(Icons.bookmark_add));
-  }
-
-  static PopupMenuButton gridButton(Settings settings,
-      {void Function(SafeMode?)? selectSafeMode, SafeMode? currentSafeMode}) {
-    return gridSettingsButton(
-      settings.booru,
-      selectSafeMode: selectSafeMode,
-      selectHideName: null,
-      safeMode: currentSafeMode ?? settings.safeMode,
-      selectGridColumn: (columns) =>
-          settings.copy(booru: settings.booru.copy(columns: columns)).save(),
-      selectListView: (listView) =>
-          settings.copy(booru: settings.booru.copy(listView: listView)).save(),
-      selectRatio: (ratio) =>
-          settings.copy(booru: settings.booru.copy(aspectRatio: ratio)).save(),
-    );
-  }
-
   @override
   State<MainBooruGrid> createState() => _MainBooruGridState();
 }
 
 class _MainBooruGridState extends State<MainBooruGrid>
-    with SearchLaunchGrid<Post> {
+    with SearchLaunchGrid<Post>, MainGridSettingsMixin {
   late final StreamSubscription<Settings?> settingsWatcher;
   late final StreamSubscription favoritesWatcher;
   late final StreamSubscription timeUpdater;
@@ -208,6 +87,8 @@ class _MainBooruGridState extends State<MainBooruGrid>
   @override
   void initState() {
     super.initState();
+
+    gridSettingsHook();
 
     lifecycleListener = AppLifecycleListener(onHide: () {
       inForeground = false;
@@ -270,6 +151,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
     settingsWatcher.cancel();
     favoritesWatcher.cancel();
 
+    disposeGridSettings();
     disposeSearch();
 
     state.dispose();
@@ -391,7 +273,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
                     Scaffold.of(context).widget.bottomNavigationBar == null,
                 menuButtonItems: [
                   const BookmarkButton(),
-                  MainBooruGrid.gridButton(state.settings)
+                  gridButton(state.settings, gridSettings)
                 ],
                 addIconsImage: (post) => [
                   BooruGridActions.favorites(context, post),
@@ -415,10 +297,10 @@ class _MainBooruGridState extends State<MainBooruGrid>
                 ],
                     keybindsDescription:
                         AppLocalizations.of(context)!.booruGridPageName,
-                    layout: state.settings.booru.listView
+                    layout: gridSettings.listView
                         ? const ListLayout()
-                        : GridLayout(state.settings.booru.columns,
-                            state.settings.booru.aspectRatio)),
+                        : GridLayout(
+                            gridSettings.columns, gridSettings.aspectRatio)),
                 hasReachedEnd: () => reachedEnd,
                 mainFocus: state.mainFocus,
                 scaffoldKey: state.scaffoldKey,

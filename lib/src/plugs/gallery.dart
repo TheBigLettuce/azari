@@ -7,7 +7,8 @@
 
 import 'dart:io';
 
-import '../interfaces/gallery.dart';
+import 'package:gallery/src/interfaces/gallery/gallery_api_directories.dart';
+
 import 'gallery/android/android_api_directories.dart';
 import 'gallery/dummy.dart';
 

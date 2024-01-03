@@ -6,18 +6,19 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/hidden_booru_post.dart';
+import 'package:gallery/src/db/base/post_base.dart';
+import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
+import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 
 import '../../../net/downloader.dart';
-import '../../../interfaces/booru.dart';
-import '../../../db/post_tags.dart';
+import '../../../interfaces/booru/booru_api.dart';
+import '../../../db/tags/post_tags.dart';
 import '../../../db/initalize_db.dart';
-import '../../../db/schemas/download_file.dart';
-import '../../../db/schemas/local_tag_dictionary.dart';
-import '../../../db/schemas/post.dart';
-import '../../../db/schemas/settings.dart';
-import '../../../db/schemas/tags.dart';
+import '../../../db/schemas/downloader/download_file.dart';
+import '../../../db/schemas/tags/local_tag_dictionary.dart';
+import '../../../db/schemas/settings/settings.dart';
+import '../../../db/schemas/tags/tags.dart';
 import '../callback_grid.dart';
 
 class BooruGridActions {

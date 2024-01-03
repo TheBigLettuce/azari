@@ -10,12 +10,8 @@ import 'dart:io';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gallery/src/db/schemas/thumbnail.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
-import 'package:gallery/src/db/schemas/system_gallery_directory_file.dart';
-import 'package:isar/isar.dart';
-
-import '../db/initalize_db.dart';
+import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 
 const MethodChannel _channel = MethodChannel("lol.bruh19.azari.gallery");
 

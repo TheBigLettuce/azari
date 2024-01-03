@@ -10,9 +10,9 @@ import 'dart:math' as math;
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/db/base/note_base.dart';
 import 'package:gallery/src/pages/image_view.dart';
 
-import '../../db/schemas/note.dart';
 import '../../interfaces/cell.dart';
 import 'notes_container.dart';
 

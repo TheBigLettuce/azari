@@ -6,10 +6,10 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/widgets/gesture_dead_zones.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 
-import '../../interfaces/booru.dart';
 import '../../interfaces/cell.dart';
 import '../grid/callback_grid.dart';
 import 'grid_skeleton_state.dart';

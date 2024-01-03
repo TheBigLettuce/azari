@@ -7,16 +7,21 @@
 
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
-import 'package:gallery/src/interfaces/booru.dart';
-import 'package:gallery/src/db/schemas/settings.dart';
+import 'package:gallery/src/interfaces/booru/booru.dart';
+import 'package:gallery/src/interfaces/booru/booru_api.dart';
+import 'package:gallery/src/db/schemas/settings/settings.dart';
+import 'package:gallery/src/interfaces/booru/safe_mode.dart';
+import 'package:gallery/src/interfaces/booru/strip_html.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 import 'package:path/path.dart' as path;
 import 'package:xml/xml.dart';
 
-import '../../db/schemas/post.dart';
+import '../../db/schemas/booru/post.dart';
 import 'package:intl/intl.dart';
 
 import '../../interfaces/tags.dart';
+import '../cloudflare_exception.dart';
+import '../unsaveable_cookie_jar.dart';
 
 List<String> _fromGelbooruTags(List<dynamic> l) {
   return l.map((e) => HtmlUnescape().convert(e["name"] as String)).toList();
