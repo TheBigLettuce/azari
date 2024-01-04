@@ -14,7 +14,8 @@ import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
-import 'package:gallery/src/widgets/grid/enums/grid_column.dart';
+import 'package:gallery/src/interfaces/grid/grid_column.dart';
+import 'package:gallery/src/widgets/grid/layouts/segment_list_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:isar/isar.dart';
@@ -108,7 +109,7 @@ class _DownloadsState extends State<Downloads>
 
   @override
   Widget build(BuildContext context) {
-    return WrappedGridPage<DownloadFile>(
+    return WrapGridPage<DownloadFile>(
         scaffoldKey: state.scaffoldKey,
         child: GridSkeleton(
           state,
@@ -136,8 +137,7 @@ class _DownloadsState extends State<Downloads>
                         autoPlay: false)),
               ],
               inlineMenuButtonItems: true,
-              immutable: false,
-              unpressable: true,
+              // unpressable: true,
               searchWidget: SearchAndFocus(
                   searchWidget(context,
                       hint: AppLocalizations.of(context)!.downloadsPageName),
@@ -150,7 +150,9 @@ class _DownloadsState extends State<Downloads>
                   keybindsDescription:
                       AppLocalizations.of(context)!.downloadsPageName,
                   layout: SegmentListLayout(
-                      _makeSegments(context), GridColumn.two))),
+                    _makeSegments(context),
+                    GridColumn.two,
+                  ))),
           canPop: true,
           overrideOnPop: (pop, hideAppBar) {
             if (hideAppBar()) {

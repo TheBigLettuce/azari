@@ -10,8 +10,8 @@ import 'dart:io';
 
 import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/widgets/grid/enums/grid_aspect_ratio.dart';
-import 'package:gallery/src/widgets/grid/enums/grid_column.dart';
+import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
+import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:isar/isar.dart';
 
 part 'directories.g.dart';

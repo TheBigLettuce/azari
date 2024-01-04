@@ -12,6 +12,7 @@ import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/db/schemas/gallery/blacklisted_directory.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/grid/layouts/list_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:isar/isar.dart';
@@ -68,7 +69,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
 
   @override
   Widget build(BuildContext context) {
-    return WrappedGridPage<BlacklistedDirectory>(
+    return WrapGridPage<BlacklistedDirectory>(
         scaffoldKey: state.scaffoldKey,
         child: GridSkeleton(
           state,
@@ -80,7 +81,6 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
               systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context),
               hasReachedEnd: () => true,
               onBack: () => Navigator.pop(context),
-              immutable: false,
               addFabPadding: true,
               selectionGlue: GlueProvider.of(context),
               searchWidget: SearchAndFocus(
@@ -89,7 +89,6 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
                           .blacklistedDirectoriesPageName),
                   searchFocus),
               mainFocus: state.mainFocus,
-              unpressable: true,
               showCount: true,
               menuButtonItems: [
                 IconButton(
@@ -112,7 +111,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
               ],
                   keybindsDescription: AppLocalizations.of(context)!
                       .blacklistedDirectoriesPageName,
-                  layout: const ListLayout())),
+                  layout: const ListLayout(unpressable: true))),
           canPop: true,
           overrideOnPop: (pop, hideAppBar) {
             if (hideAppBar()) {

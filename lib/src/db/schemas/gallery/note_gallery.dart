@@ -11,10 +11,10 @@ import 'package:gallery/src/db/base/note_base.dart';
 import 'package:gallery/src/interfaces/note_interface.dart';
 import 'package:isar/isar.dart';
 
-import '../../../interfaces/cell.dart';
-import '../../../interfaces/contentable.dart';
+import '../../../interfaces/cell/cell.dart';
+import '../../../interfaces/cell/contentable.dart';
 import '../../../plugs/platform_functions.dart';
-import '../../../widgets/grid/cell_data.dart';
+import '../../../interfaces/cell/cell_data.dart';
 import 'system_gallery_directory_file.dart';
 
 part 'note_gallery.g.dart';

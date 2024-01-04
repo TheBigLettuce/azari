@@ -5,12 +5,31 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of 'callback_grid.dart';
+import 'package:flutter/material.dart';
 
-class SearchAndFocus {
-  final Widget search;
-  final FocusNode focus;
-  final void Function()? onPressed;
+class GlueBottomAppBar extends StatelessWidget {
+  final List<Widget> actions;
 
-  const SearchAndFocus(this.search, this.focus, {this.onPressed});
+  const GlueBottomAppBar(this.actions, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.passthrough,
+      children: [
+        const SizedBox(
+            height: 80,
+            child: AbsorbPointer(
+              child: SizedBox.shrink(),
+            )),
+        BottomAppBar(
+          color: Theme.of(context).colorScheme.surface.withOpacity(0.95),
+          child: Wrap(
+            spacing: 4,
+            children: actions,
+          ),
+        )
+      ],
+    );
+  }
 }

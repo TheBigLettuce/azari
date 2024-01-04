@@ -7,7 +7,7 @@
 
 import 'package:isar/isar.dart';
 
-import '../interfaces/cell.dart';
+import '../interfaces/cell/cell.dart';
 import '../interfaces/filtering/filter_result.dart';
 import '../interfaces/filtering/filtering_interface.dart';
 import '../interfaces/filtering/filtering_mode.dart';

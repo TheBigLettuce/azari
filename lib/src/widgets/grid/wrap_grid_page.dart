@@ -10,23 +10,24 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 
-import '../../interfaces/cell.dart';
-import 'selection_glue.dart';
-import 'selection_glue_state.dart';
+import '../../interfaces/cell/cell.dart';
+import 'glue_bottom_app_bar.dart';
+import '../../interfaces/grid/selection_glue.dart';
+import 'selection/selection_glue_state.dart';
 
-class WrappedGridPage<T extends Cell> extends StatefulWidget {
+class WrapGridPage<T extends Cell> extends StatefulWidget {
   // final Widget Function(SelectionGlue<T> glue) f;
   final GlobalKey<ScaffoldState> scaffoldKey;
   final Widget child;
 
-  const WrappedGridPage(
+  const WrapGridPage(
       {super.key, required this.scaffoldKey, required this.child});
 
   @override
-  State<WrappedGridPage<T>> createState() => _WrappedGridPageState();
+  State<WrapGridPage<T>> createState() => _WrapGridPageState();
 }
 
-class _WrappedGridPageState<T extends Cell> extends State<WrappedGridPage<T>>
+class _WrapGridPageState<T extends Cell> extends State<WrapGridPage<T>>
     with SingleTickerProviderStateMixin {
   final glueState = SelectionGlueState();
   late final SelectionGlue<T> glue = glueState.glue<T>(

@@ -8,7 +8,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../../db/schemas/settings/settings.dart';
-import '../../interfaces/cell.dart';
+import '../../interfaces/cell/cell.dart';
 import '../grid/callback_grid.dart';
 import 'skeleton_state.dart';
 

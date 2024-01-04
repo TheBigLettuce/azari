@@ -12,7 +12,7 @@ import 'package:gallery/src/widgets/notifiers/loading_progress.dart';
 import 'package:gallery/src/widgets/notifiers/pause_video.dart';
 import 'package:gallery/src/widgets/notifiers/reload_image.dart';
 
-import '../../interfaces/cell.dart';
+import '../../interfaces/cell/cell.dart';
 import '../notifiers/filter.dart';
 import '../notifiers/filter_value.dart';
 import '../notifiers/focus.dart';

@@ -8,7 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/note_base.dart';
 
-import 'cell.dart';
+import 'cell/cell.dart';
 
 class NoteInterface<T extends Cell> {
   final void Function(

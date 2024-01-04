@@ -8,41 +8,38 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
-import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart' as material show AspectRatio;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/db/base/note_base.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
+import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
 import 'package:gallery/src/interfaces/note_interface.dart';
 import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
-import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 import 'package:logging/logging.dart';
-import '../../interfaces/cell.dart';
-import '../../interfaces/grid_mutation_interface.dart';
+import '../../interfaces/cell/cell.dart';
+import '../../interfaces/grid/grid_mutation_interface.dart';
 import '../keybinds/describe_keys.dart';
 import '../keybinds/keybind_description.dart';
 import '../keybinds/single_activator_description.dart';
 import '../notifiers/focus.dart';
-import '../shimmer_loading_indicator.dart';
-import 'cell.dart';
+import 'grid_cell.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import 'enums/grid_aspect_ratio.dart';
-import 'enums/grid_column.dart';
-import 'selection_glue.dart';
+import 'segment_label.dart';
+import '../../interfaces/grid/selection_glue.dart';
 
-part 'selection_interface.dart';
-part 'wrapped_selection.dart';
+part 'selection/grid_selection.dart';
+part 'selection/wrap_selection.dart';
 part 'mutation.dart';
-part 'segments.dart';
-part 'grid_action.dart';
-part 'grid_description.dart';
-part 'search_and_focus.dart';
-part 'grid_layout.dart';
+part '../../interfaces/grid/segments.dart';
+part '../../interfaces/grid/grid_action.dart';
+part '../../interfaces/grid/grid_description.dart';
+part '../../interfaces/grid/search_and_focus.dart';
+part 'layouts/grid_layout_.dart';
+part 'fab.dart';
 
 class _SegSticky {
   final String seg;
@@ -88,7 +85,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   /// [overrideOnPress] can, for example, include calls to [Navigator.push] of routes.
   final void Function(BuildContext context, T cell)? overrideOnPress;
 
-  final bool unpressable;
+  // final bool unpressable;
 
   /// Grid gets the cell from [getCell].
   final T Function(int) getCell;
@@ -118,12 +115,6 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   /// If not null, [pageViewScrollingOffset] gets supplied to the [ImageView.infoScrollOffset].
   final double? pageViewScrollingOffset;
 
-  /// If [tightMode] is true, removes extra padding around the cells.
-  final bool tightMode;
-
-  /// If [hideAlias] is true, hides the cell names.
-  final bool? hideAlias;
-
   /// Used for enabling bottom sheets and the drawer.
   final GlobalKey<ScaffoldState> scaffoldKey;
 
@@ -141,11 +132,6 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   /// If the elemnts of the grid arrive in batches [progressTicker] can be set to not null,
   /// grid will subscribe to it and set the cell count from this ticker's events.
   final Stream<int>? progressTicker;
-
-  // Mark the grid as immutable.
-  /// If [immutable] is false then [CallbackGridState.mutationInterface] will return not null
-  /// [GridMutationInterface] with which some of the grid behaviour can be augumented.
-  final bool immutable;
 
   /// Some additional metadata about the grid.
   final GridDescription<T> description;
@@ -174,7 +160,6 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   final void Function()? beforeImageViewRestore;
 
   final bool showCount;
-  final bool showSearchBarFirst;
 
   final bool addFabPadding;
 
@@ -204,7 +189,6 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       this.showCount = false,
       this.overrideBackButton,
       this.addFabPadding = false,
-      this.showSearchBarFirst = false,
       this.beforeImageViewRestore,
       required this.mainFocus,
       this.addIconsImage,
@@ -212,9 +196,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       this.refreshInterface,
       this.footer,
       this.registerNotifiers,
-      this.immutable = true,
       this.backButtonBadge,
-      this.tightMode = false,
       this.belowMainFocus,
       this.inlineMenuButtonItems = false,
       this.progressTicker,
@@ -228,11 +210,9 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       required this.refresh,
       this.updateScrollPosition,
       this.download,
-      this.hideAlias,
       this.onBack,
       this.initalCellCount = 0,
       this.overrideOnPress,
-      this.unpressable = false,
       required this.description});
 
   @override
@@ -246,17 +226,14 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
   final GlobalKey<ImageViewState<T>> imageViewKey = GlobalKey();
 
-  late final selection = SelectionInterface<T>._(
+  late final selection = GridSelection<T>._(
       setState, widget.description.actions, widget.selectionGlue, controller);
 
   StreamSubscription<int>? ticker;
 
-  GridMutationInterface<T>? get mutationInterface =>
-      widget.immutable ? null : _state;
+  GridMutationInterface<T> get mutationInterface => _state;
 
   bool inImageView = false;
-  // late bool showSearchBar =
-  // widget.searchWidget == null ? false : widget.showSearchBarFirst;
 
   List<int>? segTranslation;
 
@@ -290,7 +267,6 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         : (status) {
             widget.refreshInterface?.save(status);
           },
-    immutable: widget.immutable,
     widget: () => widget,
     update: (f) {
       try {
@@ -567,16 +543,16 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     );
   }
 
-  GridCell makeGridCell(BuildContext context, T cell, int indx) => GridCell(
+  GridCell makeGridCell(BuildContext context, T cell, int indx,
+          {required bool hideAlias, required bool tightMode}) =>
+      GridCell(
         cell: cell.getCellData(widget.description.layout.isList,
             context: context),
-        hidealias: widget.hideAlias,
+        hidealias: hideAlias,
         indx: indx,
         download: widget.download,
-        tight: widget.tightMode,
-        onPressed: widget.unpressable
-            ? null
-            : (context) => onPressed(context, cell, indx),
+        tight: tightMode,
+        onPressed: (context) => onPressed(context, cell, indx),
         onLongPress: indx.isNegative
             ? null
             : () {
@@ -585,46 +561,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
               }, //extend: maxExtend,
       );
 
-  Widget? _makeTitle1(BuildContext context) {
-    // Widget make() {
-    //   // Outline
-    //   return Padding(
-    //     padding: EdgeInsets.all(4),
-    //     child: Container(
-    //       height: 38,
-    //       // width: 400,
-    //       decoration: ShapeDecoration(
-    //         color: Theme.of(context).colorScheme.inverseSurface,
-    //         shape: RoundedRectangleBorder(
-    //             borderRadius: BorderRadius.all(Radius.circular(5))),
-    //       ),
-    //       child: Align(
-    //         alignment: Alignment.centerLeft,
-    //         child: Padding(
-    //           padding: EdgeInsets.only(left: 2, right: 2),
-    //           child: Row(children: [
-    //             Icon(
-    //               Icons.search,
-    //               color: Theme.of(context).colorScheme.onInverseSurface,
-    //               size: 18,
-    //             ),
-    //             Text(
-    //               "Search",
-    //               style: TextStyle(
-    //                   fontSize: 18,
-    //                   color: Theme.of(context)
-    //                       .colorScheme
-    //                       .onInverseSurface
-    //                       .withOpacity(0.5)),
-    //             )
-    //           ]),
-    //         ),
-    //       ),
-    //     ),
-    //   );
-    // }
-
-    // if (widget.searchWidget == null) {
+  Widget? _makeTitle(BuildContext context) {
     return widget.searchWidget?.search ??
         Badge.count(
           count: _state.cellCount,
@@ -638,89 +575,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                     fontFamily: "ZenKurenaido"),
           ),
         );
-    // }
-
-    // return Animate(
-    //   effects: [
-    //     const FadeEffect(begin: 1, end: 0),
-    //     SwapEffect(builder: (context, _) {
-    //       return Padding(
-    //         padding: const EdgeInsets.only(bottom: 4),
-    //         child: widget.searchWidget!.search,
-    //       );
-    //     })
-    //   ],
-    //   target: showSearchBar ? 1 : 0,
-    //   child: GestureDetector(
-    //     onTap: () {
-    //       if (!showSearchBar) {
-    //         widget.searchWidget?.focus.requestFocus();
-    //       }
-    //       setState(() {
-    //         showSearchBar = !showSearchBar;
-    //       });
-    //     },
-    //     child: AbsorbPointer(
-    //       child: SizedBox(
-    //         width: 36 * 4,
-    //         height: 64,
-    //         child: Center(child: make()),
-    //       ),
-    //     ),
-    //   ),
-    // );
   }
-
-  // Widget? _makeTitle(BuildContext context) {
-  //   Widget make() {
-  //     return Badge.count(
-  //       count: _state.cellCount,
-  //       isLabelVisible: widget.showCount,
-  //       child: Text(
-  //         widget.description.pageName ?? "探",
-  //         style: widget.description.pageName != null
-  //             ? null
-  //             : TextStyle(
-  //                 color: Theme.of(context).colorScheme.primary,
-  //                 fontFamily: "ZenKurenaido"),
-  //       ),
-  //     );
-  //   }
-
-  //   if (widget.searchWidget == null) {
-  //     return make();
-  //   }
-
-  //   return Animate(
-  //     effects: [
-  //       const FadeEffect(begin: 1, end: 0),
-  //       SwapEffect(builder: (context, _) {
-  //         return Padding(
-  //           padding: const EdgeInsets.only(bottom: 4),
-  //           child: widget.searchWidget!.search,
-  //         );
-  //       })
-  //     ],
-  //     target: showSearchBar ? 1 : 0,
-  //     child: GestureDetector(
-  //       onTap: () {
-  //         if (!showSearchBar) {
-  //           widget.searchWidget?.focus.requestFocus();
-  //         }
-  //         setState(() {
-  //           showSearchBar = !showSearchBar;
-  //         });
-  //       },
-  //       child: AbsorbPointer(
-  //         child: SizedBox(
-  //           width: 64,
-  //           height: 64,
-  //           child: Center(child: make()),
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
 
   List<Widget> _makeActions(BuildContext context) {
     if (widget.menuButtonItems == null) {
@@ -761,20 +616,6 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                 Icons.close_rounded,
               )));
     }
-
-    // if (showSearchBar) {
-    //   return IconButton(
-    //       onPressed: () {
-    //         if (widget.searchWidget?.focus.hasFocus ?? false) {
-    //           widget.mainFocus.requestFocus();
-    //         } else {
-    //           setState(() {
-    //             showSearchBar = !showSearchBar;
-    //           });
-    //         }
-    //       },
-    //       icon: const Icon(Icons.arrow_back));
-    // }
 
     if (widget.onBack != null) {
       return IconButton(
@@ -833,9 +674,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                       automaticallyImplyLeading: false,
                       actions: _makeActions(context),
                       centerTitle: true,
-
-                      // widget.description.pageName == null ? true : false,
-                      title: _makeTitle1(context),
+                      title: _makeTitle(context),
                       leading: _makeLeading(context),
                       pinned: true,
                       stretch: true,
@@ -935,70 +774,5 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     return widget.registerNotifiers == null
         ? _makeBody(context, bindings)
         : widget.registerNotifiers!(_makeBody(context, bindings));
-  }
-}
-
-class _Fab extends StatefulWidget {
-  final ScrollController controller;
-  final void Function(double, {double? infoPos, int? selectedCell})? scrollPos;
-  final SelectionGlue selectionGlue;
-  final EdgeInsets systemNavigationInsets;
-  final bool addFabPadding;
-  final PreferredSizeWidget? footer;
-
-  const _Fab(
-      {super.key,
-      required this.controller,
-      required this.selectionGlue,
-      required this.systemNavigationInsets,
-      required this.addFabPadding,
-      required this.scrollPos,
-      required this.footer});
-
-  @override
-  State<_Fab> createState() => __FabState();
-}
-
-class __FabState extends State<_Fab> {
-  bool showFab = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return !showFab
-        ? const SizedBox.shrink()
-        : GestureDetector(
-            onLongPress: () {
-              final scroll = widget.controller.position.maxScrollExtent;
-              if (scroll.isInfinite || scroll == 0) {
-                return;
-              }
-
-              widget.controller.animateTo(scroll,
-                  duration: 200.ms, curve: Easing.emphasizedAccelerate);
-              widget.scrollPos?.call(scroll);
-            },
-            child: Padding(
-              padding: EdgeInsets.only(
-                  right: 4,
-                  bottom: widget.systemNavigationInsets.bottom +
-                      (!widget.addFabPadding
-                          ? 0
-                          : (widget.selectionGlue.isOpen() &&
-                                      !widget.selectionGlue.keyboardVisible()
-                                  ? 84
-                                  : 0) +
-                              (widget.footer != null
-                                  ? widget.footer!.preferredSize.height
-                                  : 0))),
-              child: FloatingActionButton(
-                onPressed: () {
-                  widget.controller.animateTo(0,
-                      duration: 200.ms, curve: Easing.emphasizedAccelerate);
-                  StatisticsGeneral.addScrolledUp();
-                },
-                child: const Icon(Icons.arrow_upward),
-              ),
-            ),
-          ).animate().fadeIn(curve: Easing.standard);
   }
 }

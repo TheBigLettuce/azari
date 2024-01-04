@@ -10,7 +10,7 @@ import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/widgets/gesture_dead_zones.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 
-import '../../interfaces/cell.dart';
+import '../../interfaces/cell/cell.dart';
 import '../grid/callback_grid.dart';
 import 'grid_skeleton_state.dart';
 

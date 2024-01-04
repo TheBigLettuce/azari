@@ -12,7 +12,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/notifiers/current_cell.dart';
 import 'package:gallery/src/widgets/notifiers/loading_progress.dart';
 
-import '../../interfaces/cell.dart';
+import '../../interfaces/cell/cell.dart';
 import '../notifiers/app_bar_visibility.dart';
 
 class ImageViewAppBar<T extends Cell> extends StatelessWidget {

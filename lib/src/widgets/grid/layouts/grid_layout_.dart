@@ -5,290 +5,23 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of 'callback_grid.dart';
+part of '../callback_grid.dart';
 
-class NoteLayout<T extends Cell> implements GridLayouter<T> {
-  @override
-  final GridColumn columns;
-
-  final List<String> Function(T cell) getText;
-
-  @override
-  Widget call(BuildContext context, CallbackGridState<T> state) {
-    return SliverPadding(
-      padding: const EdgeInsets.all(8),
-      sliver: SliverGrid.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3, childAspectRatio: 0.7, crossAxisSpacing: 2),
-        itemBuilder: (context, index) {
-          final note = state.widget.getCell(index);
-          final provider = note.getCellData(false, context: context).thumb;
-
-          final backgroundColor =
-              note is NoteBase ? (note as NoteBase).backgroundColor : null;
-          final textColor =
-              note is NoteBase ? (note as NoteBase).textColor : null;
-
-          return InkWell(
-              borderRadius: const BorderRadius.all(Radius.circular(10)),
-              onTap: () => state.onPressed(context, note, index),
-              child: Padding(
-                padding: const EdgeInsets.all(2),
-                child: Container(
-                  decoration: BoxDecoration(
-                      color: backgroundColor != null
-                          ? Color(backgroundColor).harmonizeWith(
-                              Theme.of(context).colorScheme.primary)
-                          : Theme.of(context).colorScheme.secondaryContainer,
-                      borderRadius:
-                          const BorderRadius.all(Radius.circular(10))),
-                  child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          return Stack(
-                            children: [
-                              Align(
-                                  alignment: Alignment.topLeft,
-                                  child: Container(
-                                    width: constraints.minHeight * 0.2,
-                                    height: constraints.maxHeight * 0.2,
-                                    decoration: const BoxDecoration(
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(10))),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: provider != null
-                                        ? Image(
-                                            fit: BoxFit.cover,
-                                            filterQuality: FilterQuality.high,
-                                            frameBuilder: (
-                                              context,
-                                              child,
-                                              frame,
-                                              wasSynchronouslyLoaded,
-                                            ) {
-                                              if (wasSynchronouslyLoaded) {
-                                                return child;
-                                              }
-
-                                              return frame == null
-                                                  ? const ShimmerLoadingIndicator()
-                                                  : child.animate().fadeIn();
-                                            },
-                                            image: provider)
-                                        : null,
-                                  )),
-                              Align(
-                                alignment: Alignment.bottomRight,
-                                child: Container(
-                                    clipBehavior: Clip.antiAlias,
-                                    decoration: const BoxDecoration(
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(8))),
-                                    width: (constraints.maxHeight * 0.8),
-                                    height: (constraints.maxHeight * 0.78),
-                                    child: SingleChildScrollView(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: getText(note)
-                                            .map((e) => Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          bottom: 8.3),
-                                                  child: Text(
-                                                    e,
-                                                    softWrap: true,
-                                                    style: TextStyle(
-                                                        wordSpacing: 2.6,
-                                                        color: textColor != null
-                                                            ? Color(textColor)
-                                                                .harmonizeWith(Theme.of(
-                                                                        context)
-                                                                    .colorScheme
-                                                                    .primary)
-                                                            : null,
-                                                        letterSpacing: 1.3,
-                                                        fontFamily:
-                                                            "ZenKurenaido"),
-                                                  ),
-                                                ))
-                                            .toList(),
-                                      ),
-                                    )),
-                              )
-                            ],
-                          );
-                        },
-                      )),
-                ),
-              ));
-        },
-        itemCount: state.mutationInterface!.cellCount,
-      ),
-    );
-  }
-
-  @override
-  bool get isList => false;
-
-  const NoteLayout(this.columns, this.getText);
-}
-
-class SegmentListLayout<T extends Cell> implements GridLayouter<T> {
-  final Segments<T> segments;
-
-  @override
-  final GridColumn columns;
-
-  @override
-  Widget call(BuildContext context, CallbackGridState<T> state) {
-    if (segments.prebuiltSegments != null) {
-      return _GridLayouts.segmentsPrebuilt(
-        context,
-        segments,
-        state._state,
-        state.selection,
-        true,
-        columns.number,
-        state.makeGridCell,
-        systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
-        aspectRatio: 1,
-      );
-    }
-    final (s, t) = _GridLayouts.segmentsFnc<T>(
-      context,
-      segments,
-      state._state,
-      state.selection,
-      true,
-      columns.number,
-      state.makeGridCell,
-      systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
-      aspectRatio: 1,
-    );
-
-    state.segTranslation = t;
-
-    return s;
-  }
-
-  @override
-  bool get isList => true;
-
-  const SegmentListLayout(this.segments, this.columns);
-}
-
-class SegmentLayout<T extends Cell> implements GridLayouter<T> {
-  final Segments<T> segments;
-  final GridAspectRatio aspectRatio;
-
-  @override
-  final GridColumn columns;
-
-  @override
-  Widget call(BuildContext context, CallbackGridState<T> state) {
-    if (segments.prebuiltSegments != null) {
-      return _GridLayouts.segmentsPrebuilt(
-        context,
-        segments,
-        state._state,
-        state.selection,
-        false,
-        columns.number,
-        state.makeGridCell,
-        systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
-        aspectRatio: aspectRatio.value,
-      );
-    }
-    final (s, t) = _GridLayouts.segmentsFnc<T>(
-      context,
-      segments,
-      state._state,
-      state.selection,
-      false,
-      columns.number,
-      state.makeGridCell,
-      systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
-      aspectRatio: aspectRatio.value,
-    );
-
-    state.segTranslation = t;
-
-    return s;
-  }
-
-  @override
-  bool get isList => false;
-
-  const SegmentLayout(this.segments, this.columns, this.aspectRatio);
-}
-
-class GridListLayout<T extends Cell> implements GridLayouter<T> {
-  @override
-  final GridColumn columns;
-
-  @override
-  Widget call(BuildContext context, CallbackGridState<T> state) {
-    return _GridLayouts.grid<T>(context, state._state, state.selection,
-        columns.number, true, state.makeGridCell,
-        systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
-        aspectRatio: 1);
-  }
-
-  @override
-  bool get isList => true;
-
-  const GridListLayout(this.columns);
-}
-
-class GridLayout<T extends Cell> implements GridLayouter<T> {
-  final GridAspectRatio aspectRatio;
-
-  @override
-  final GridColumn columns;
-
-  @override
-  Widget call(BuildContext context, CallbackGridState<T> state) {
-    return _GridLayouts.grid<T>(context, state._state, state.selection,
-        columns.number, false, state.makeGridCell,
-        systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
-        aspectRatio: aspectRatio.value);
-  }
-
-  @override
-  bool get isList => false;
-
-  const GridLayout(this.columns, this.aspectRatio);
-}
-
-class ListLayout<T extends Cell> implements GridLayouter<T> {
-  final bool hideThumbnails;
-
-  @override
-  Widget call(BuildContext context, CallbackGridState<T> state) {
-    return _GridLayouts.list<T>(context, state._state, state.selection,
-        state.widget.systemNavigationInsets.bottom,
-        hideThumbnails: hideThumbnails,
-        onPressed: state.widget.unpressable ? null : state.onPressed);
-  }
-
-  @override
-  GridColumn? get columns => null;
-
-  @override
-  bool get isList => true;
-
-  const ListLayout({this.hideThumbnails = false});
-}
+typedef MakeCellFunc<T extends Cell> = GridCell Function(
+  BuildContext,
+  T,
+  int, {
+  required bool hideAlias,
+  required bool tightMode,
+});
 
 /// [CallbackGrid] supports multiple layout modes.
 /// [GridLayout] actually implements them all.
-abstract class _GridLayouts {
+abstract class GridLayouts {
   static Widget list<T extends Cell>(
     BuildContext context,
     GridMutationInterface<T> state,
-    SelectionInterface<T> selection,
+    GridSelection<T> selection,
     double systemNavigationInsets, {
     required bool hideThumbnails,
     required void Function(BuildContext, T, int)? onPressed,
@@ -313,7 +46,7 @@ abstract class _GridLayouts {
   static Widget listTile<T extends Cell>(
       BuildContext context,
       GridMutationInterface<T> state,
-      SelectionInterface<T> selection,
+      GridSelection<T> selection,
       double systemNavigationInsets,
       {required int index,
       required T cell,
@@ -322,7 +55,7 @@ abstract class _GridLayouts {
     final cellData = cell.getCellData(true, context: context);
     final selected = selection.isSelected(index);
 
-    return _WrappedSelection(
+    return _WrapSelection(
       selectUntil: (i) => selection.selectUnselectUntil(i, state),
       thisIndx: index,
       isSelected: selected,
@@ -356,10 +89,12 @@ abstract class _GridLayouts {
   static Widget grid<T extends Cell>(
     BuildContext context,
     GridMutationInterface<T> state,
-    SelectionInterface<T> selection,
+    GridSelection<T> selection,
     int columns,
     bool listView,
-    GridCell Function(BuildContext, T, int) gridCell, {
+    MakeCellFunc<T> gridCell, {
+    required bool hideAlias,
+    required bool tightMode,
     required double systemNavigationInsets,
     required double aspectRatio,
   }) =>
@@ -370,7 +105,7 @@ abstract class _GridLayouts {
         itemBuilder: (context, indx) {
           final cell = state.getCell(indx);
 
-          return _WrappedSelection(
+          return _WrapSelection(
             selectionEnabled: selection.selected.isNotEmpty,
             thisIndx: indx,
             bottomPadding: systemNavigationInsets,
@@ -379,7 +114,8 @@ abstract class _GridLayouts {
             selectUnselect: () => selection.selectOrUnselect(
                 context, indx, cell, systemNavigationInsets),
             isSelected: selection.isSelected(indx),
-            child: gridCell(context, cell, indx),
+            child: gridCell(context, cell, indx,
+                hideAlias: hideAlias, tightMode: tightMode),
           );
         },
       );
@@ -387,10 +123,12 @@ abstract class _GridLayouts {
   static Widget segmentedRow<T extends Cell>(
     BuildContext context,
     GridMutationInterface<T> state,
-    SelectionInterface<T> selection,
+    GridSelection<T> selection,
     List<int> val,
     bool listView,
-    GridCell Function(BuildContext, T, int) gridCell, {
+    MakeCellFunc<T> gridCell, {
+    required bool hideAlias,
+    required bool tightMode,
     List<int> Function()? predefined,
     required double constraints,
     required double systemNavigationInsets,
@@ -414,7 +152,7 @@ abstract class _GridLayouts {
                   constraints: BoxConstraints(maxWidth: constraints),
                   child: material.AspectRatio(
                     aspectRatio: aspectRatio,
-                    child: _WrappedSelection(
+                    child: _WrapSelection(
                       selectionEnabled: selection.selected.isNotEmpty,
                       thisIndx: indx,
                       bottomPadding: systemNavigationInsets,
@@ -430,7 +168,8 @@ abstract class _GridLayouts {
                       selectUnselect: () => selection.selectOrUnselect(
                           context, indx, cell, systemNavigationInsets),
                       isSelected: selection.isSelected(indx),
-                      child: gridCell(context, cell, indx),
+                      child: gridCell(context, cell, indx,
+                          hideAlias: hideAlias, tightMode: tightMode),
                     ),
                   ),
                 );
@@ -440,10 +179,12 @@ abstract class _GridLayouts {
   static Widget segmentedRowCells<T extends Cell>(
     BuildContext context,
     GridMutationInterface<T> state,
-    SelectionInterface<T> selection,
+    GridSelection<T> selection,
     List<T> val,
     bool listView,
-    GridCell Function(BuildContext, T, int) gridCell, {
+    MakeCellFunc<T> gridCell, {
+    required bool hideAlias,
+    required bool tightMode,
     required double constraints,
     required double systemNavigationInsets,
     required double aspectRatio,
@@ -464,7 +205,7 @@ abstract class _GridLayouts {
                   constraints: BoxConstraints(maxWidth: constraints),
                   child: material.AspectRatio(
                     aspectRatio: aspectRatio,
-                    child: _WrappedSelection(
+                    child: _WrapSelection(
                       selectionEnabled: selection.selected.isNotEmpty,
                       thisIndx: -1,
                       bottomPadding: systemNavigationInsets,
@@ -474,7 +215,8 @@ abstract class _GridLayouts {
                       selectUnselect: () => selection.selectOrUnselect(
                           context, -1, cell.$2, systemNavigationInsets),
                       isSelected: selection.isSelected(-1),
-                      child: gridCell(context, cell.$2, -1),
+                      child: gridCell(context, cell.$2, -1,
+                          tightMode: tightMode, hideAlias: hideAlias),
                     ),
                   ),
                 );
@@ -485,10 +227,12 @@ abstract class _GridLayouts {
     BuildContext context,
     Segments<T> segments,
     GridMutationInterface<T> state,
-    SelectionInterface<T> selection,
+    GridSelection<T> selection,
     bool listView,
     int columns,
-    GridCell Function(BuildContext, T, int) gridCell, {
+    MakeCellFunc<T> gridCell, {
+    required bool hideAlias,
+    required bool tightMode,
     required double systemNavigationInsets,
     required double aspectRatio,
   }) {
@@ -591,6 +335,8 @@ abstract class _GridLayouts {
               constraints: constraints,
               systemNavigationInsets: systemNavigationInsets,
               aspectRatio: aspectRatio,
+              hideAlias: hideAlias,
+              tightMode: tightMode,
             );
           } else if (val is List<T>) {
             return segmentedRowCells(
@@ -603,6 +349,8 @@ abstract class _GridLayouts {
               constraints: constraints,
               systemNavigationInsets: systemNavigationInsets,
               aspectRatio: aspectRatio,
+              hideAlias: hideAlias,
+              tightMode: tightMode,
             );
           }
           throw "invalid type";
@@ -625,10 +373,12 @@ abstract class _GridLayouts {
     BuildContext context,
     Segments<T> segments,
     GridMutationInterface<T> state,
-    SelectionInterface<T> selection,
+    GridSelection<T> selection,
     bool listView,
     int columns,
-    GridCell Function(BuildContext, T, int) gridCell, {
+    MakeCellFunc<T> gridCell, {
+    required bool hideAlias,
+    required bool tightMode,
     required double systemNavigationInsets,
     required double aspectRatio,
   }) {
@@ -790,6 +540,8 @@ abstract class _GridLayouts {
               systemNavigationInsets: systemNavigationInsets,
               aspectRatio: aspectRatio,
               predefined: () => predefined,
+              hideAlias: hideAlias,
+              tightMode: tightMode,
             );
           } else if (val is List<T>) {
             return segmentedRowCells(
@@ -802,6 +554,8 @@ abstract class _GridLayouts {
               constraints: constraints,
               systemNavigationInsets: systemNavigationInsets,
               aspectRatio: aspectRatio,
+              hideAlias: hideAlias,
+              tightMode: tightMode,
             );
           }
           throw "invalid type";

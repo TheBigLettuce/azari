@@ -9,11 +9,11 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/widgets.dart';
-import 'package:gallery/src/interfaces/contentable.dart';
-import 'package:gallery/src/widgets/grid/cell_data.dart';
+import 'package:gallery/src/interfaces/cell/contentable.dart';
+import 'package:gallery/src/interfaces/cell/cell_data.dart';
 import 'package:isar/isar.dart';
 
-import '../../../interfaces/cell.dart';
+import '../../../interfaces/cell/cell.dart';
 import '../../initalize_db.dart';
 
 part 'download_file.g.dart';

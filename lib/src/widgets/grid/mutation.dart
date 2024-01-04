@@ -236,8 +236,7 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
   }
 
   _Mutation(
-      {required bool immutable,
-      required this.widget,
+      {required this.widget,
       required this.update,
       required this.saveStatus,
       required this.updateImageView,

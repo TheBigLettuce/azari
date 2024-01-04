@@ -7,7 +7,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../interfaces/cell.dart';
+import '../../interfaces/cell/cell.dart';
 
 class CurrentCellNotifier<T extends Cell> extends InheritedWidget {
   final T cell;

@@ -14,8 +14,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/base/post_base.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/widgets/grid/enums/grid_aspect_ratio.dart';
-import 'package:gallery/src/widgets/grid/enums/grid_column.dart';
+import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
+import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 

@@ -10,14 +10,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:gallery/src/interfaces/contentable.dart';
+import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/widgets/loading_error_widget.dart';
 import 'package:gallery/src/widgets/notifiers/reload_image.dart';
 import 'package:gallery/src/widgets/video/photo_gallery_page_video.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 
-import '../../interfaces/cell.dart';
+import '../../interfaces/cell/cell.dart';
 import '../../pages/image_view.dart';
 
 mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {

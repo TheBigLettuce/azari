@@ -7,7 +7,7 @@
 
 import 'package:isar/isar.dart';
 
-import '../../interfaces/cell.dart';
+import '../../interfaces/cell/cell.dart';
 import '../initalize_db.dart';
 
 class PagingIsarLoader<T extends Cell> {

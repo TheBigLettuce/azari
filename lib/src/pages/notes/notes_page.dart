@@ -8,132 +8,27 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/db/loaders/paging_isar_loader.dart';
 import 'package:gallery/src/db/schemas/booru/note_booru.dart';
 import 'package:gallery/src/db/schemas/gallery/note_gallery.dart';
-import 'package:gallery/src/interfaces/note_interface.dart';
 import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
 import 'package:gallery/src/pages/gallery/directories.dart';
-import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/widgets/copy_move_preview.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
-import 'package:gallery/src/widgets/grid/enums/grid_column.dart';
-import 'package:gallery/src/widgets/grid/selection_glue.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
-import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:palette_generator/palette_generator.dart';
 
-import '../db/schemas/gallery/system_gallery_directory.dart';
-import '../db/schemas/gallery/system_gallery_directory_file.dart';
-import '../interfaces/cell.dart';
-import '../widgets/grid/wrap_grid_page.dart';
+import '../../db/schemas/gallery/system_gallery_directory.dart';
+import '../../db/schemas/gallery/system_gallery_directory_file.dart';
+import '../../widgets/grid/wrap_grid_page.dart';
+import 'note_page_container.dart';
+import 'tab_with_count.dart';
 
 const kNoteLoadCount = 30;
-
-class _NotePageContainer<T extends Cell> {
-  final state = GridSkeletonState<T>();
-  final PagingIsarLoader<T> notes;
-  final List<T> Function(String text) filterFnc;
-  final NoteInterface<T> noteInterface;
-  final List<GridAction<T>> addActions;
-  final List<String> Function(T cell) getText;
-
-  Iterable<Widget> filter(BuildContext context, SearchController controller) {
-    return filterFnc(controller.text).map((e1) => ListTile(
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(
-              builder: (context) {
-                final overlayColor =
-                    Theme.of(context).colorScheme.background.withOpacity(0.5);
-
-                return ImageView<T>(
-                    updateTagScrollPos: (_, __) {},
-                    cellCount: 1,
-                    scrollUntill: (_) {},
-                    startingCell: 0,
-                    onExit: () {},
-                    ignoreEndDrawer: true,
-                    onEmptyNotes: () {
-                      WidgetsBinding.instance
-                          .scheduleFrameCallback((timeStamp) {
-                        Navigator.pop(context);
-                      });
-                    },
-                    noteInterface: noteInterface,
-                    getCell: (idx) => e1,
-                    onNearEnd: null,
-                    focusMain: () => state.mainFocus,
-                    systemOverlayRestoreColor: overlayColor);
-              },
-            ));
-          },
-          title: Container(
-            height: 100,
-            clipBehavior: Clip.antiAlias,
-            decoration: const BoxDecoration(
-              borderRadius: BorderRadius.all(Radius.circular(10)),
-            ),
-            child: Image(
-                fit: BoxFit.cover,
-                filterQuality: FilterQuality.high,
-                image: e1.getCellData(false, context: context).thumb!),
-          ),
-        ).animate().fadeIn());
-  }
-
-  Widget widget(BuildContext context, double? bottomPadding) => GlueProvider<T>(
-        glue: SelectionGlue.empty(context),
-        child: GridSkeleton<T>(
-            state,
-            (context) => CallbackGrid<T>(
-                  key: state.gridKey,
-                  getCell: notes.get,
-                  initalScrollPosition: 0,
-                  scaffoldKey: state.scaffoldKey,
-                  ignoreImageViewEndDrawer: true,
-                  immutable: false,
-                  onBack: () {
-                    Navigator.pop(context);
-                  },
-                  systemNavigationInsets:
-                      MediaQuery.systemGestureInsetsOf(context) +
-                          EdgeInsets.only(bottom: bottomPadding ?? 0),
-                  hasReachedEnd: notes.reachedEnd,
-                  selectionGlue: SelectionGlue.empty(context),
-                  mainFocus: state.mainFocus,
-                  refresh: notes.refresh,
-                  noteInterface: noteInterface,
-                  addIconsImage: (_) => addActions,
-                  initalCellCount: notes.count(),
-                  loadNext: notes.next,
-                  description: GridDescription<T>([],
-                      keybindsDescription: "Notes page",
-                      showAppBar: false,
-                      layout: NoteLayout<T>(GridColumn.three, getText)),
-                ),
-            canPop: true),
-      );
-
-  void dispose() {
-    state.dispose();
-    notes.dispose(force: true);
-  }
-
-  _NotePageContainer(List<CollectionSchema> schemas, this.noteInterface,
-      {required Iterable<T> Function(int) loadNext,
-      required this.filterFnc,
-      this.addActions = const [],
-      required this.getText})
-      : notes = PagingIsarLoader<T>(schemas, loadNext);
-}
 
 class NotesPage extends StatefulWidget {
   final CallbackDescriptionNested? callback;
@@ -155,8 +50,8 @@ class _NotesPageState extends State<NotesPage>
   late final StreamSubscription<void> booruNotesWatcher;
   late final StreamSubscription<void> galleryNotesWatcher;
 
-  late final _NotePageContainer<NoteBooru> booruContainer =
-      _NotePageContainer<NoteBooru>(
+  late final NotePageContainer<NoteBooru> booruContainer =
+      NotePageContainer<NoteBooru>(
           [NoteBooruSchema],
           NoteBooru.interfaceSelf(() {
             booruContainer.state.gridKey.currentState?.refresh(() =>
@@ -175,8 +70,8 @@ class _NotesPageState extends State<NotesPage>
                 .findAllSync();
           },
           getText: (cell) => cell.currentText());
-  late final _NotePageContainer<NoteGallery> galleryContainer =
-      _NotePageContainer<NoteGallery>(
+  late final NotePageContainer<NoteGallery> galleryContainer =
+      NotePageContainer<NoteGallery>(
           [NoteGallerySchema],
           NoteGallery.interfaceSelf(() {
             galleryContainer.state.gridKey.currentState?.refresh(() =>
@@ -228,7 +123,7 @@ class _NotesPageState extends State<NotesPage>
                     (selected) {
                       Navigator.push(context,
                           MaterialPageRoute(builder: (context) {
-                        return WrappedGridPage<SystemGalleryDirectory>(
+                        return WrapGridPage<SystemGalleryDirectory>(
                             scaffoldKey: GlobalKey(),
                             child: GalleryDirectories(
                               procPop: (p) {},
@@ -360,31 +255,5 @@ class _NotesPageState extends State<NotesPage>
               galleryContainer.widget(context, widget.bottomPadding)
             ]),
     );
-  }
-}
-
-class TabWithCount extends StatelessWidget {
-  final String title;
-  final int count;
-
-  const TabWithCount(this.title, this.count, {super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Tab(
-        child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(title),
-        Padding(
-          padding: const EdgeInsets.only(left: 4),
-          child: Badge.count(
-            backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-            textColor: Theme.of(context).colorScheme.onSurfaceVariant,
-            count: count,
-          ),
-        )
-      ],
-    ));
   }
 }

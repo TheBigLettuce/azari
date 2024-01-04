@@ -9,31 +9,45 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/widgets/grid/enums/grid_aspect_ratio.dart';
-import 'package:gallery/src/widgets/grid/enums/grid_column.dart';
+import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
+import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/radio_dialog.dart';
 
-PopupMenuButton gridSettingsButton(GridSettingsBase gridSettings,
-    {required void Function(GridAspectRatio?) selectRatio,
-    required void Function(bool)? selectHideName,
-    required void Function(bool)? selectListView,
-    required void Function(GridColumn?) selectGridColumn,
-    SafeMode? safeMode,
-    void Function(SafeMode?)? selectSafeMode}) {
-  return PopupMenuButton(
-    icon: const Icon(Icons.more_horiz_outlined),
-    itemBuilder: (context) => [
-      if (safeMode != null)
-        _safeMode(context, safeMode, selectSafeMode: selectSafeMode),
-      if (selectListView != null)
-        _listView(gridSettings.listView, selectListView),
-      if (selectHideName != null)
-        _hideName(context, gridSettings.hideName, selectHideName),
-      _ratio(context, gridSettings.aspectRatio, selectRatio),
-      _columns(context, gridSettings.columns, selectGridColumn)
-    ],
-  );
+class GridSettingsButton extends StatelessWidget {
+  final GridSettingsBase gridSettings;
+  final void Function(GridAspectRatio?) selectRatio;
+  final void Function(bool)? selectHideName;
+  final void Function(bool)? selectListView;
+  final void Function(GridColumn?) selectGridColumn;
+  final SafeMode? safeMode;
+  final void Function(SafeMode?)? selectSafeMode;
+
+  const GridSettingsButton(this.gridSettings,
+      {super.key,
+      required this.selectRatio,
+      required this.selectHideName,
+      required this.selectListView,
+      required this.selectGridColumn,
+      this.safeMode,
+      this.selectSafeMode});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton(
+      icon: const Icon(Icons.more_horiz_outlined),
+      itemBuilder: (context) => [
+        if (safeMode != null)
+          _safeMode(context, safeMode!, selectSafeMode: selectSafeMode),
+        if (selectListView != null)
+          _listView(gridSettings.listView, selectListView!),
+        if (selectHideName != null)
+          _hideName(context, gridSettings.hideName, selectHideName!),
+        _ratio(context, gridSettings.aspectRatio, selectRatio),
+        _columns(context, gridSettings.columns, selectGridColumn)
+      ],
+    );
+  }
 }
 
 PopupMenuItem _safeMode(BuildContext context, SafeMode safeMode,

@@ -67,7 +67,7 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
         roundBorders: false,
         // ignoreFocusNotifier: Platform.isAndroid,
         searchCount: widget
-            .instance._state.gridKey.currentState?.mutationInterface?.cellCount,
+            .instance._state.gridKey.currentState?.mutationInterface.cellCount,
         addItems: _addItems(),
         onChanged: () {
           widget.instance
@@ -88,7 +88,7 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
           focusNode: widget.instance.searchFocus,
           addItems: _addItems(),
           count: widget.instance._state.gridKey.currentState?.mutationInterface
-              ?.cellCount,
+              .cellCount,
           textController: widget.instance.searchTextController,
           onChanged: () => widget.instance
               ._onChanged(widget.instance.searchTextController.text, false),

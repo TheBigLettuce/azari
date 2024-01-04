@@ -10,7 +10,7 @@ import 'package:flutter/widgets.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 
 import 'contentable.dart';
-import '../widgets/grid/cell_data.dart';
+import 'cell_data.dart';
 
 class AddInfoColorData {
   final Color borderColor;

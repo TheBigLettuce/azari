@@ -13,7 +13,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/base/note_base.dart';
 import 'package:gallery/src/interfaces/note_interface.dart';
 
-import '../../interfaces/cell.dart';
+import '../../interfaces/cell/cell.dart';
 import 'notes_container.dart';
 
 import 'package:gallery/src/widgets/notifiers/current_cell.dart';

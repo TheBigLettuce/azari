@@ -7,7 +7,7 @@
 
 import 'package:isar/isar.dart';
 
-import '../../interfaces/cell.dart';
+import '../../interfaces/cell/cell.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
 import '../../interfaces/filtering/sorting_mode.dart';
 import '../initalize_db.dart';

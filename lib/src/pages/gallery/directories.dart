@@ -26,6 +26,7 @@ import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 import 'package:gallery/src/db/schemas/gallery/favorite_media.dart';
 import 'package:gallery/src/db/schemas/gallery/pinned_directories.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/grid/layouts/segment_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -77,9 +78,9 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
     ..setRefreshGridCallback(() {
       if (widget.callback != null) {
         stream.add(0);
-        state.gridKey.currentState?.mutationInterface?.setIsRefreshing(true);
+        state.gridKey.currentState?.mutationInterface.setIsRefreshing(true);
       } else {
-        if (state.gridKey.currentState?.mutationInterface?.isRefreshing ==
+        if (state.gridKey.currentState?.mutationInterface.isRefreshing ==
             false) {
           _refresh();
         }
@@ -131,7 +132,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
         stream.add(i);
 
         if (end) {
-          state.gridKey.currentState?.mutationInterface?.setIsRefreshing(false);
+          state.gridKey.currentState?.mutationInterface.setIsRefreshing(false);
         }
       });
     }
@@ -160,12 +161,12 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
     }
 
     extra.setRefreshingStatusCallback((i, inRefresh, empty) {
-      state.gridKey.currentState?.mutationInterface?.unselectAll();
+      state.gridKey.currentState?.mutationInterface.unselectAll();
 
       stream.add(i);
 
       if (!inRefresh || empty) {
-        state.gridKey.currentState?.mutationInterface?.setIsRefreshing(false);
+        state.gridKey.currentState?.mutationInterface.setIsRefreshing(false);
         performSearch(searchTextController.text);
         setState(() {});
       }
@@ -197,7 +198,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
       } catch (_) {}
     });
     stream.add(0);
-    state.gridKey.currentState?.mutationInterface?.setIsRefreshing(true);
+    state.gridKey.currentState?.mutationInterface.setIsRefreshing(true);
     api.refresh();
     galleryPlug.version.then((value) => galleryVersion = value);
   }
@@ -307,7 +308,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                       }
                     },
                     icon: const Icon(Icons.create_new_folder_outlined)),
-              gridSettingsButton(gridSettings,
+              GridSettingsButton(gridSettings,
                   selectRatio: (ratio) =>
                       gridSettings.copy(aspectRatio: ratio).save(),
                   selectHideName: (hideNames) =>
@@ -316,8 +317,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                   selectGridColumn: (columns) =>
                       gridSettings.copy(columns: columns).save()),
             ],
-            hideAlias: gridSettings.hideName,
-            immutable: false,
             mainFocus: state.mainFocus,
             footer: widget.callback?.preview,
             initalCellCount: widget.callback != null
@@ -344,7 +343,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                 return null;
               }
             },
-            showSearchBarFirst: widget.callback != null,
             overrideOnPress: (context, cell) {
               if (widget.callback != null) {
                 widget.callback!.c(cell, null).then((_) {
@@ -424,8 +422,12 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                         : null,
                 keybindsDescription:
                     AppLocalizations.of(context)!.androidGKeybindsDescription,
-                layout: SegmentLayout(_makeSegments(context),
-                    gridSettings.columns, gridSettings.aspectRatio))),
+                layout: SegmentLayout(
+                  _makeSegments(context),
+                  gridSettings.columns,
+                  gridSettings.aspectRatio,
+                  hideAlias: gridSettings.hideName,
+                ))),
         noDrawer: widget.noDrawer ?? false,
         canPop: widget.callback != null || widget.nestedCallback != null
             ? currentFilteringMode() == FilteringMode.noFilter &&

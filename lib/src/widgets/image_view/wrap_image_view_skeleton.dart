@@ -7,9 +7,10 @@
 
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/cell.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/pages/image_view.dart';
-import 'package:gallery/src/widgets/grid/sticker.dart';
+import 'package:gallery/src/interfaces/cell/sticker.dart';
+import 'package:gallery/src/widgets/grid/sticker_widget.dart';
 import 'package:palette_generator/palette_generator.dart';
 
 import '../notifiers/current_cell.dart';

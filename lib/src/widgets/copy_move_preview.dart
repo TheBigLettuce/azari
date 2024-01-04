@@ -8,10 +8,10 @@
 import 'package:flutter/material.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 
-import '../interfaces/cell.dart';
+import '../interfaces/cell/cell.dart';
 import '../pages/image_view.dart';
 import '../db/schemas/gallery/system_gallery_directory_file.dart';
-import 'grid/cell.dart';
+import 'grid/grid_cell.dart';
 
 class CopyMovePreview extends StatefulWidget {
   final List<SystemGalleryDirectoryFile> files;

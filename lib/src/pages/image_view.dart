@@ -14,6 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/interfaces/note_interface.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
+import 'package:gallery/src/widgets/grid/wrap_grid_action_button.dart';
 import 'package:gallery/src/widgets/image_view/loading_builder.dart';
 import 'package:gallery/src/widgets/image_view/make_image_view_bindings.dart';
 import 'package:gallery/src/widgets/image_view/wrap_image_view_notifiers.dart';
@@ -28,8 +29,8 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../widgets/keybinds/keybind_description.dart';
-import '../interfaces/cell.dart';
-import '../interfaces/contentable.dart';
+import '../interfaces/cell/cell.dart';
+import '../interfaces/cell/contentable.dart';
 import '../widgets/keybinds/describe_keys.dart';
 import '../widgets/image_view/body.dart';
 import '../widgets/image_view/bottom_bar.dart';

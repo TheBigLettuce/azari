@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/grid/layouts/list_layout.dart';
 import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
@@ -34,7 +35,7 @@ class _BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return WrappedGridPage<HiddenBooruPost>(
+    return WrapGridPage<HiddenBooruPost>(
       scaffoldKey: state.scaffoldKey,
       child: GridSkeleton<HiddenBooruPost>(
         state,

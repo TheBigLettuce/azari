@@ -6,7 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/widgets.dart';
-import 'package:gallery/src/widgets/grid/sticker.dart';
+import 'package:gallery/src/interfaces/cell/sticker.dart';
 
 /// From this the actual grid cell as displayed on the screen gets built.
 class CellData {

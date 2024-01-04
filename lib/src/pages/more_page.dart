@@ -8,7 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/pages/blacklisted_posts.dart';
-import 'package:gallery/src/pages/notes_page.dart';
+import 'package:gallery/src/pages/notes/notes_page.dart';
 
 import '../widgets/skeletons/drawer/azari_icon.dart';
 import 'dashboard.dart';

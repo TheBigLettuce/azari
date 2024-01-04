@@ -6,11 +6,11 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/widgets/grid/cell_data.dart';
+import 'package:gallery/src/interfaces/cell/cell_data.dart';
 import 'package:isar/isar.dart';
 
-import '../../../interfaces/cell.dart';
-import '../../../interfaces/contentable.dart';
+import '../../../interfaces/cell/cell.dart';
+import '../../../interfaces/cell/contentable.dart';
 import 'system_gallery_directory_file.dart';
 
 part 'system_gallery_directory.g.dart';

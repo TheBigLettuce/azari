@@ -6,13 +6,13 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/widgets.dart';
-import 'package:gallery/src/interfaces/cell.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
 
-import 'callback_grid.dart';
+import '../../widgets/grid/callback_grid.dart';
 
 class SelectionGlue<T extends Cell> {
-  final void Function(
-      List<GridAction<T>> actions, SelectionInterface<T> selection) open;
+  final void Function(List<GridAction<T>> actions, GridSelection<T> selection)
+      open;
   final void Function(int) updateCount;
   final void Function() close;
   final bool Function() isOpen;

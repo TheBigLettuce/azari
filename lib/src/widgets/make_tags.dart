@@ -11,7 +11,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 
 import '../db/tags/post_tags.dart';
-import '../interfaces/cell.dart';
+import '../interfaces/cell/cell.dart';
 import '../plugs/platform_fullscreens.dart';
 import 'load_tags.dart';
 import 'notifiers/filter.dart';

@@ -11,9 +11,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:transparent_image/transparent_image.dart';
 import '../loading_error_widget.dart';
 import '../shimmer_loading_indicator.dart';
-import 'cell_data.dart';
+import '../../interfaces/cell/cell_data.dart';
 import 'callback_grid.dart';
-import 'sticker.dart';
+import 'sticker_widget.dart';
 
 /// The cell of [CallbackGrid].
 class GridCell<T extends CellData> extends StatefulWidget {

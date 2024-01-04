@@ -7,7 +7,7 @@
 
 import 'package:flutter/widgets.dart';
 
-import '../../interfaces/cell.dart';
+import '../../interfaces/cell/cell.dart';
 import '../../interfaces/search_mixin.dart';
 import 'autocomplete/autocomplete_widget.dart';
 import '../notifiers/booru_api.dart';

@@ -15,14 +15,14 @@ import 'package:gallery/src/interfaces/note_interface.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path_util;
 import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/interfaces/contentable.dart';
-import 'package:gallery/src/widgets/grid/cell_data.dart';
+import 'package:gallery/src/interfaces/cell/contentable.dart';
+import 'package:gallery/src/interfaces/cell/cell_data.dart';
 import 'package:isar/isar.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../interfaces/booru/booru_api.dart';
-import '../../../interfaces/cell.dart';
+import '../../../interfaces/cell/cell.dart';
 import '../../../plugs/platform_functions.dart';
 import '../../../interfaces/booru/display_quality.dart';
 import '../../base/note_base.dart';

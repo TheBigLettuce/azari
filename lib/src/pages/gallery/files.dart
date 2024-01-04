@@ -27,6 +27,8 @@ import 'package:gallery/src/plugs/notifications.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 import 'package:gallery/src/db/schemas/gallery/favorite_media.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
+import 'package:gallery/src/widgets/grid/layouts/list_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -94,12 +96,12 @@ class _GalleryFilesState extends State<GalleryFiles>
         return;
       }
 
-      state.gridKey.currentState?.mutationInterface?.unselectAll();
+      state.gridKey.currentState?.mutationInterface.unselectAll();
 
       stream.add(i);
 
       if (!inRefresh) {
-        state.gridKey.currentState?.mutationInterface?.setIsRefreshing(false);
+        state.gridKey.currentState?.mutationInterface.setIsRefreshing(false);
 
         performSearch(searchTextController.text);
         if (i == 1) {
@@ -109,8 +111,7 @@ class _GalleryFilesState extends State<GalleryFiles>
       }
     })
     ..setRefreshGridCallback(() {
-      if (state.gridKey.currentState?.mutationInterface?.isRefreshing ==
-          false) {
+      if (state.gridKey.currentState?.mutationInterface.isRefreshing == false) {
         _refresh();
       }
     })
@@ -224,13 +225,13 @@ class _GalleryFilesState extends State<GalleryFiles>
 
   void _refresh() {
     stream.add(0);
-    state.gridKey.currentState?.mutationInterface?.setIsRefreshing(true);
+    state.gridKey.currentState?.mutationInterface.setIsRefreshing(true);
     widget.api.refresh();
   }
 
   @override
   Widget build(BuildContext context) {
-    return WrappedGridPage<SystemGalleryDirectoryFile>(
+    return WrapGridPage<SystemGalleryDirectoryFile>(
         scaffoldKey: state.scaffoldKey,
         child: GridSkeleton<SystemGalleryDirectoryFile>(
           state,
@@ -242,10 +243,8 @@ class _GalleryFilesState extends State<GalleryFiles>
               systemNavigationInsets:
                   MediaQuery.of(context).systemGestureInsets,
               hasReachedEnd: () => true,
-              immutable: false,
               addFabPadding: true,
               selectionGlue: GlueProvider.of(context),
-              tightMode: true,
               statistics: const ImageViewStatistics(
                   swiped: StatisticsGallery.addFilesSwiped,
                   viewed: StatisticsGallery.addViewedFiles),
@@ -268,7 +267,6 @@ class _GalleryFilesState extends State<GalleryFiles>
                             _moveAction(state, plug)
                           ];
               },
-              hideAlias: gridSettings.hideName,
               showCount: true,
               searchWidget: SearchAndFocus(
                   searchWidget(context, hint: widget.dirName), searchFocus),
@@ -329,13 +327,13 @@ class _GalleryFilesState extends State<GalleryFiles>
                   IconButton(
                       onPressed: () {
                         if (state.gridKey.currentState?.mutationInterface
-                                ?.isRefreshing !=
+                                .isRefreshing !=
                             false) {
                           return;
                         }
 
                         final upTo = state
-                            .gridKey.currentState?.mutationInterface?.cellCount;
+                            .gridKey.currentState?.mutationInterface.cellCount;
                         if (upTo == null) {
                           return;
                         }
@@ -344,7 +342,7 @@ class _GalleryFilesState extends State<GalleryFiles>
                           final n = math.Random.secure().nextInt(upTo);
 
                           widget.callback?.call(state
-                              .gridKey.currentState!.mutationInterface!
+                              .gridKey.currentState!.mutationInterface
                               .getCell(n));
                         } catch (e) {
                           log("getting random number",
@@ -358,7 +356,7 @@ class _GalleryFilesState extends State<GalleryFiles>
                         }
                       },
                       icon: const Icon(Icons.casino_outlined)),
-                gridSettingsButton(gridSettings,
+                GridSettingsButton(gridSettings,
                     selectRatio: (ratio) =>
                         gridSettings.copy(aspectRatio: ratio).save(),
                     selectHideName: (hideNames) =>
@@ -371,8 +369,8 @@ class _GalleryFilesState extends State<GalleryFiles>
               inlineMenuButtonItems: true,
               noteInterface: NoteGallery.interface((
                   {int? replaceIndx, bool addNote = false, int? removeNote}) {
-                if (state.gridKey.currentState?.mutationInterface
-                        ?.isRefreshing ==
+                if (state
+                        .gridKey.currentState?.mutationInterface.isRefreshing ==
                     true) {
                   return;
                 }
@@ -416,7 +414,11 @@ class _GalleryFilesState extends State<GalleryFiles>
                   layout: gridSettings.listView
                       ? const ListLayout()
                       : GridLayout(
-                          gridSettings.columns, gridSettings.aspectRatio))),
+                          gridSettings.columns,
+                          gridSettings.aspectRatio,
+                          tightMode: true,
+                          hideAlias: gridSettings.hideName,
+                        ))),
           noDrawer: widget.callback != null,
           canPop: currentFilteringMode() == FilteringMode.noFilter &&
               searchTextController.text.isEmpty,

@@ -9,9 +9,9 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/interfaces/cell.dart';
-import 'package:gallery/src/interfaces/contentable.dart';
-import 'package:gallery/src/widgets/grid/cell_data.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/cell/contentable.dart';
+import 'package:gallery/src/interfaces/cell/cell_data.dart';
 import 'package:isar/isar.dart';
 
 part 'blacklisted_directory.g.dart';

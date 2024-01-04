@@ -15,11 +15,13 @@ import 'package:gallery/src/interfaces/filtering/filters.dart';
 import 'package:gallery/src/widgets/grid/actions/favorites.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
-import 'package:gallery/src/interfaces/contentable.dart';
+import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/tags/local_tag_dictionary.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
+import 'package:gallery/src/widgets/grid/layouts/segment_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:isar/isar.dart';
@@ -290,9 +292,8 @@ class _FavoritesPageState extends State<FavoritesPage>
                           ? 80
                           : 0)),
               hasReachedEnd: () => true,
-              hideAlias: true,
               menuButtonItems: [
-                gridSettingsButton(gridSettings,
+                GridSettingsButton(gridSettings,
                     selectHideName: null,
                     selectRatio: (ratio) =>
                         gridSettings.copy(aspectRatio: ratio).save(),
@@ -301,7 +302,6 @@ class _FavoritesPageState extends State<FavoritesPage>
                         gridSettings.copy(columns: columns).save())
               ],
               download: _download,
-              immutable: false,
               noteInterface: NoteBooru.interface<FavoriteBooru>(setState),
               addFabPadding:
                   Scaffold.of(context).widget.bottomNavigationBar == null,
@@ -322,9 +322,12 @@ class _FavoritesPageState extends State<FavoritesPage>
                             prebuiltSegments: segments,
                           ),
                           gridSettings.columns,
-                          gridSettings.aspectRatio)
+                          gridSettings.aspectRatio,
+                          hideAlias: gridSettings.hideName,
+                        )
                       : GridLayout(
-                          gridSettings.columns, gridSettings.aspectRatio)),
+                          gridSettings.columns, gridSettings.aspectRatio,
+                          hideAlias: gridSettings.hideName)),
             ),
         canPop: false, overrideOnPop: (pop, hideAppBar) {
       if (searchTextController.text.isNotEmpty) {

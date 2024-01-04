@@ -7,9 +7,9 @@
 
 import 'package:flutter/material.dart';
 
-import '../../interfaces/cell.dart';
-import 'callback_grid.dart';
-import 'selection_glue.dart';
+import '../../../interfaces/cell/cell.dart';
+import '../../../interfaces/grid/selection_glue.dart';
+import '../wrap_grid_action_button.dart';
 
 class SelectionGlueState {
   List<Widget>? actions;
@@ -98,31 +98,4 @@ class SelectionGlueState {
 
   SelectionGlueState({Future Function(bool backward)? playAnimation})
       : _playAnimation = playAnimation;
-}
-
-class GlueBottomAppBar extends StatelessWidget {
-  final List<Widget> actions;
-
-  const GlueBottomAppBar(this.actions, {super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.passthrough,
-      children: [
-        const SizedBox(
-            height: 80,
-            child: AbsorbPointer(
-              child: SizedBox.shrink(),
-            )),
-        BottomAppBar(
-          color: Theme.of(context).colorScheme.surface.withOpacity(0.95),
-          child: Wrap(
-            spacing: 4,
-            children: actions,
-          ),
-        )
-      ],
-    );
-  }
 }

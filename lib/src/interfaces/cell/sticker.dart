@@ -6,22 +6,13 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/widgets/grid/selection_glue.dart';
-import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
 
-Widget bookmarkButton(BuildContext context, GridSkeletonState state,
-    SelectionGlue glue, void Function() f) {
-  return IconButton(
-      onPressed: () {
-        f();
-        ScaffoldMessenger.of(state.scaffoldKey.currentContext!)
-            .showSnackBar(const SnackBar(
-                content: Text(
-          "Bookmarked", // TODO: change
-        )));
-        glue.close();
-        state.gridKey.currentState?.selection.selected.clear();
-        Navigator.pop(context);
-      },
-      icon: const Icon(Icons.bookmark_add));
+class Sticker {
+  final IconData icon;
+  final Color? color;
+  final Color? backgroundColor;
+  final bool right;
+
+  const Sticker(this.icon,
+      {this.color, this.backgroundColor, this.right = false});
 }

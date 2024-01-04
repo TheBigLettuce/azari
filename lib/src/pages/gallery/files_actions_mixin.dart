@@ -195,7 +195,7 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
         ?.pauseVideo();
     Navigator.push(context, MaterialPageRoute(
       builder: (context) {
-        return WrappedGridPage<SystemGalleryDirectory>(
+        return WrapGridPage<SystemGalleryDirectory>(
             scaffoldKey: GlobalKey(),
             child: GalleryDirectories(
               showBackButton: true,

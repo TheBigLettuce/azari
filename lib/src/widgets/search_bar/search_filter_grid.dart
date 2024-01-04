@@ -11,7 +11,7 @@ import 'package:gallery/src/interfaces/search_mixin.dart';
 import 'package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../interfaces/cell.dart';
+import '../../interfaces/cell/cell.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
 import '../skeletons/grid_skeleton_state_filter.dart';
 
@@ -95,7 +95,7 @@ mixin SearchFilterGrid<T extends Cell>
 
   void _reset(bool resetFilterMode) {
     searchTextController.clear();
-    _state.gridKey.currentState?.mutationInterface?.restore();
+    _state.gridKey.currentState?.mutationInterface.restore();
     if (_state.filteringModes.isNotEmpty) {
       _searchVirtual = false;
       if (resetFilterMode) {

@@ -15,7 +15,7 @@ import 'package:gallery/src/widgets/notifiers/loading_progress.dart';
 import 'package:logging/logging.dart';
 import 'package:palette_generator/palette_generator.dart';
 
-import '../../interfaces/cell.dart';
+import '../../interfaces/cell/cell.dart';
 
 mixin ImageViewLoadingBuilderMixin<T extends Cell> on State<ImageView<T>> {
   Widget loadingBuilder(

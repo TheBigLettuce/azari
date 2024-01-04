@@ -5,16 +5,15 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 
 import 'grid_settings_button.dart';
 
-PopupMenuButton gridButton(Settings settings, GridSettingsBooru gridSettings,
+GridSettingsButton gridButton(Settings settings, GridSettingsBooru gridSettings,
     {void Function(SafeMode?)? selectSafeMode, SafeMode? currentSafeMode}) {
-  return gridSettingsButton(
+  return GridSettingsButton(
     gridSettings,
     selectSafeMode: selectSafeMode,
     selectHideName: null,
