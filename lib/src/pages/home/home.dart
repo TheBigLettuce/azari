@@ -8,7 +8,6 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
@@ -21,22 +20,27 @@ import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../main.dart';
-import '../db/initalize_db.dart';
-import '../db/tags/post_tags.dart';
-import '../db/schemas/booru/post.dart';
-import '../db/schemas/settings/settings.dart';
-import '../db/state_restoration.dart';
-import '../interfaces/booru/booru_api.dart';
-import '../widgets/grid/selection_glue_state.dart';
-import '../widgets/skeletons/home_skeleton.dart';
-import '../widgets/skeletons/skeleton_state.dart';
-import 'booru/main.dart';
-import 'favorites.dart';
-import 'gallery/directories.dart';
-import 'more_page.dart';
-import 'settings/settings_widget.dart';
-import 'tags_page.dart';
+import '../../../main.dart';
+import '../../db/initalize_db.dart';
+import '../../db/tags/post_tags.dart';
+import '../../db/schemas/booru/post.dart';
+import '../../db/schemas/settings/settings.dart';
+import '../../db/state_restoration.dart';
+import '../../interfaces/booru/booru_api.dart';
+import '../../widgets/grid/selection_glue_state.dart';
+import '../../widgets/skeletons/home_skeleton.dart';
+import '../../widgets/skeletons/skeleton_state.dart';
+import '../booru/main.dart';
+import '../favorites.dart';
+import '../gallery/directories.dart';
+import '../more_page.dart';
+import '../settings/settings_widget.dart';
+import '../tags_page.dart';
+
+part 'tags_icon.dart';
+part 'gallery_icon.dart';
+part 'booru_icon.dart';
+part 'favorites_icon.dart';
 
 class Home extends StatefulWidget {
   final CallbackDescriptionNested? callback;
@@ -99,23 +103,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   );
 
   @override
-  void dispose() {
-    favoriteBooruWatcher.cancel();
-
-    NetworkStatus.g.notify = null;
-    mainGrid.close().then((value) => restartOver());
-    state.dispose();
-
-    controller.dispose();
-    booruIconController.dispose();
-    galleryIconController.dispose();
-    favoritesIconController.dispose();
-    tagsIconController.dispose();
-
-    super.dispose();
-  }
-
-  @override
   void initState() {
     super.initState();
 
@@ -125,16 +112,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       setState(() {});
     });
 
-    glueState = SelectionGlueState(
-        //   playAnimation: (backward) {
-        //   if (backward) {
-        //     return controllerNavBar.animateBack(0);
-        //   }
-        //   // return controller.animateTo(1);
-
-        //   return controllerNavBar.animateTo(1);
-        // }
-        );
+    glueState = SelectionGlueState();
 
     final settings = Settings.fromDb();
 
@@ -180,6 +158,23 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         setState(() {});
       } catch (_) {}
     };
+  }
+
+  @override
+  void dispose() {
+    favoriteBooruWatcher.cancel();
+
+    NetworkStatus.g.notify = null;
+    mainGrid.close().then((value) => restartOver());
+    state.dispose();
+
+    controller.dispose();
+    booruIconController.dispose();
+    galleryIconController.dispose();
+    favoritesIconController.dispose();
+    tagsIconController.dispose();
+
+    super.dispose();
   }
 
   bool keyboardVisible() => MediaQuery.viewInsetsOf(context).bottom != 0;
@@ -357,230 +352,3 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     );
   }
 }
-
-class _TagsIcon extends StatelessWidget {
-  final bool isSelected;
-  final AnimationController controller;
-
-  const _TagsIcon({
-    super.key,
-    required this.controller,
-    required this.isSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return NavigationDestination(
-      icon: Animate(
-          controller: controller,
-          autoPlay: false,
-          target: 0,
-          effects: [
-            RotateEffect(
-              delay: 50.ms,
-              duration: 400.ms,
-              begin: 0,
-              end: 0.5,
-              curve: Easing.emphasizedDecelerate,
-            ),
-            ThenEffect(delay: 200.ms),
-            RotateEffect(
-              duration: 200.ms,
-              begin: 0.5,
-              end: 1,
-              curve: Easing.emphasizedDecelerate,
-            ),
-          ],
-          child: Icon(
-            Icons.tag,
-            color: isSelected ? Theme.of(context).colorScheme.primary : null,
-          )),
-      label: AppLocalizations.of(context)!.tagsLabel,
-    );
-  }
-}
-
-class _FavoritesIcon extends StatelessWidget {
-  final bool isSelected;
-  final AnimationController controller;
-  final int count;
-
-  const _FavoritesIcon(
-      {super.key,
-      required this.controller,
-      required this.isSelected,
-      required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    return NavigationDestination(
-      icon: Badge.count(
-        alignment: Alignment.topRight,
-        count: count,
-        child: Animate(
-          controller: controller,
-          autoPlay: false,
-          target: 1,
-          effects: [
-            ShimmerEffect(angle: pi / -5, duration: 440.ms, colors: [
-              Theme.of(context)
-                  .colorScheme
-                  .primary
-                  .withOpacity(isSelected ? 1 : 0),
-              Colors.red,
-              Colors.orange,
-              Colors.yellow,
-              Colors.green,
-              Colors.blue,
-              Colors.indigo,
-              Colors.purple,
-              Colors.red
-              // Theme.of(context).colorScheme.primary,
-            ])
-          ],
-          child: Icon(
-            Icons.favorite,
-            color: isSelected ? Theme.of(context).colorScheme.primary : null,
-          ),
-        ),
-      ),
-      label: AppLocalizations.of(context)!.favoritesLabel,
-    );
-  }
-}
-
-class _GalleryIcon extends StatelessWidget {
-  final bool isSelected;
-  final AnimationController controller;
-
-  const _GalleryIcon(
-      {super.key, required this.controller, required this.isSelected});
-
-  @override
-  Widget build(BuildContext context) {
-    return NavigationDestination(
-      icon: Animate(
-        autoPlay: false,
-        target: 1,
-        controller: controller,
-        effects: [SlideEffect(duration: 150.ms, curve: Curves.bounceInOut)],
-        child: Icon(
-          Icons.collections,
-          color: isSelected ? Theme.of(context).colorScheme.primary : null,
-        ),
-      ),
-      label: AppLocalizations.of(context)!.galleryLabel,
-    );
-  }
-}
-
-class _BooruIcon extends StatelessWidget {
-  final bool isSelected;
-  final AnimationController controller;
-  final MenuController menuController;
-
-  const _BooruIcon(
-      {super.key,
-      required this.controller,
-      required this.isSelected,
-      required this.menuController});
-
-  @override
-  Widget build(BuildContext context) {
-    return NavigationDestination(
-      icon: Animate(
-        autoPlay: true,
-        controller: controller,
-        effects: const [ShakeEffect(curve: Easing.standardAccelerate)],
-        child: MenuAnchor(
-          consumeOutsideTap: true,
-          alignmentOffset: const Offset(8, 8),
-          controller: menuController,
-          menuChildren: Booru.values
-              .map((e) => ListTile(
-                    title: Text(e.string),
-                    onTap: () {
-                      selectBooru(context, Settings.fromDb(), e);
-                    },
-                  ))
-              .toList(),
-          child: GestureDetector(
-            onLongPress: () {
-              menuController.open();
-            },
-            child: Icon(
-              Icons.image,
-              color: isSelected ? Theme.of(context).colorScheme.primary : null,
-            ),
-          ),
-        ),
-      ),
-      label: Settings.fromDb().selectedBooru.string,
-    );
-  }
-}
-
-// class _BooruIcon extends StatefulWidget {
-//   final bool isSelected;
-
-//   const _BooruIcon({super.key, required this.isSelected});
-
-//   @override
-//   State<_BooruIcon> createState() => __BooruIconState();
-// }
-
-// class __BooruIconState extends State<_BooruIcon>
-//     with SingleTickerProviderStateMixin {
-//   final menuController = MenuController();
-
-//   @override
-//   void initState() {
-//     super.initState();
-
-//     controller = AnimationController(vsync: this);
-//   }
-
-//   @override
-//   void dispose() {
-//     controller.dispose();
-
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return NavigationDestination(
-//       icon: Animate(
-//         autoPlay: true,
-//         controller: controller,
-//         effects: [FlipEffect()],
-//         child: MenuAnchor(
-//           consumeOutsideTap: true,
-//           alignmentOffset: const Offset(8, 8),
-//           controller: menuController,
-//           menuChildren: Booru.values
-//               .map((e) => ListTile(
-//                     title: Text(e.string),
-//                     onTap: () {
-//                       selectBooru(context, Settings.fromDb(), e);
-//                     },
-//                   ))
-//               .toList(),
-//           child: GestureDetector(
-         
-//             onLongPress: () {
-//               menuController.open();
-//             },
-//             child: Icon(
-//               Icons.image,
-//               color: widget.isSelected
-//                   ? Theme.of(context).colorScheme.primary
-//                   : null,
-//             ),
-//           ),
-//         ),
-//       ),
-//       label: Settings.fromDb().selectedBooru.string,
-//     );
-//   }
-// }

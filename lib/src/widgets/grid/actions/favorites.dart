@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import '../callback_grid.dart';
 // import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-class FavoritesActions {
+abstract class FavoritesActions {
   static GridAction<T> addToGroup<T>(
       BuildContext context,
       String? Function(List<T>) initalValue,

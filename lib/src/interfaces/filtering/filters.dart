@@ -7,10 +7,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/db/base/post_base.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_files_extra.dart';
 
-import '../../../db/tags/post_tags.dart';
-import '../../../db/schemas/gallery/system_gallery_directory_file.dart';
+import '../../db/tags/post_tags.dart';
+import '../../db/schemas/gallery/system_gallery_directory_file.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 /// Data for the [FilteringMode.same].
@@ -23,7 +24,34 @@ class SameFilterAccumulator {
         skipped = 0;
 }
 
-class Filters {
+abstract class Filters {
+  static (Iterable<T>, dynamic) sameFavorites<T extends PostBase>(
+      Iterable<T> cells,
+      Map<String, Set<String>>? data,
+      bool end,
+      Iterable<T> Function(Map<String, Set<String>>? data) collect) {
+    data = data ?? {};
+
+    T? prevCell;
+    for (final e in cells) {
+      if (prevCell != null) {
+        if (prevCell.md5 == e.md5) {
+          final prev = data[e.md5] ?? {prevCell.fileUrl};
+
+          data[e.md5] = {...prev, e.fileUrl};
+        }
+      }
+
+      prevCell = e;
+    }
+
+    if (end) {
+      return (collect(data), null);
+    }
+
+    return (const [], data);
+  }
+
   static (Iterable<SystemGalleryDirectoryFile>, dynamic) tag(
       Iterable<SystemGalleryDirectoryFile> cells, String searchText) {
     if (searchText.isEmpty) {

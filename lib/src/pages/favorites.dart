@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/booru/note_booru.dart';
 import 'package:gallery/src/db/schemas/grid_settings/favorites.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
+import 'package:gallery/src/interfaces/filtering/filters.dart';
 import 'package:gallery/src/widgets/grid/actions/favorites.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
@@ -112,7 +113,8 @@ class _FavoritesPageState extends State<FavoritesPage>
       }
 
       return switch (filterMode) {
-        FilteringMode.same => _same(cells, data, end),
+        FilteringMode.same =>
+          Filters.sameFavorites(cells, data, end, _collector),
         FilteringMode.ungrouped => (
             cells.where(
                 (element) => element.group == null || element.group!.isEmpty),
@@ -130,39 +132,16 @@ class _FavoritesPageState extends State<FavoritesPage>
       };
     };
 
-  (Iterable<FavoriteBooru>, dynamic) _same(
-      Iterable<FavoriteBooru> cells, Map<String, Set<String>>? data, bool end) {
-    data = data ?? {};
-
-    FavoriteBooru? prevCell;
-    for (final e in cells) {
-      if (prevCell != null) {
-        if (prevCell.md5 == e.md5) {
-          final prev = data[e.md5] ?? {prevCell.fileUrl};
-
-          data[e.md5] = {...prev, e.fileUrl};
+  Iterable<FavoriteBooru> _collector(Map<String, Set<String>>? data) {
+    return () sync* {
+      for (final ids in data!.values) {
+        for (final i in ids) {
+          final f = loader.instance.favoriteBoorus.getByFileUrlSync(i)!;
+          f.isarId = null;
+          yield f;
         }
       }
-
-      prevCell = e;
-    }
-
-    if (end) {
-      return (
-        () sync* {
-          for (final ids in data!.values) {
-            for (final i in ids) {
-              final f = loader.instance.favoriteBoorus.getByFileUrlSync(i)!;
-              f.isarId = null;
-              yield f;
-            }
-          }
-        }(),
-        null
-      );
-    }
-
-    return ([], data);
+    }();
   }
 
   late final state = GridSkeletonStateFilter<FavoriteBooru>(
@@ -251,7 +230,19 @@ class _FavoritesPageState extends State<FavoritesPage>
     });
   }
 
-  GridAction<FavoriteBooru> _groupButton(BuildContext context) {
+  @override
+  void dispose() {
+    miscSettingsWatcher.cancel();
+    favoritesWatcher.cancel();
+    gridSettingsWatcher.cancel();
+
+    state.dispose();
+    disposeSearch();
+
+    super.dispose();
+  }
+
+  static GridAction<FavoriteBooru> _groupButton(BuildContext context) {
     return FavoritesActions.addToGroup(context, (selected) {
       final g = selected.first.group;
       for (final e in selected.skip(1)) {
@@ -270,18 +261,6 @@ class _FavoritesPageState extends State<FavoritesPage>
 
       Navigator.pop(context);
     });
-  }
-
-  @override
-  void dispose() {
-    miscSettingsWatcher.cancel();
-    favoritesWatcher.cancel();
-    gridSettingsWatcher.cancel();
-
-    state.dispose();
-    disposeSearch();
-
-    super.dispose();
   }
 
   @override

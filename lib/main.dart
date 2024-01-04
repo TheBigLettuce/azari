@@ -24,7 +24,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import 'src/pages/home.dart';
+import 'src/pages/home/home.dart';
 
 late final String azariVersion;
 
