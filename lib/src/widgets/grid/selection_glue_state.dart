@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 
 import '../../interfaces/cell.dart';
 import 'callback_grid.dart';
+import 'selection_glue.dart';
 
 class SelectionGlueState {
   List<Widget>? actions;

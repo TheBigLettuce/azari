@@ -12,11 +12,12 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/net/downloader.dart';
+import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
 import 'package:gallery/src/pages/settings/network_status.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
-import 'package:gallery/src/pages/gallery/directories.dart';
 import 'package:gallery/src/db/initalize_db.dart';
+import 'package:gallery/src/widgets/fade_sideways_page_transition_builder.dart';
 import 'package:gallery/src/widgets/restart_widget.dart';
 // import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -27,35 +28,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'src/pages/home/home.dart';
 
 late final String azariVersion;
-
-// shamelessly stolen from the Flutter source
-class FadeSidewaysPageTransitionBuilder implements PageTransitionsBuilder {
-  // Fractional offset from 1/4 screen below the top to fully on screen.
-  static final Tween<Offset> _bottomUpTween = Tween<Offset>(
-    begin: const Offset(0.25, 0.0),
-    end: Offset.zero,
-  );
-  static final Animatable<double> _fastOutSlowInTween =
-      CurveTween(curve: Curves.fastOutSlowIn);
-
-  @override
-  Widget buildTransitions<T>(
-      PageRoute<T> route,
-      BuildContext context,
-      Animation<double> animation,
-      Animation<double> secondaryAnimation,
-      Widget child) {
-    return SlideTransition(
-      position: animation.drive(_bottomUpTween.chain(_fastOutSlowInTween)),
-      child: FadeTransition(
-        opacity: animation.drive(_fastOutSlowInTween),
-        child: child,
-      ),
-    );
-  }
-
-  const FadeSidewaysPageTransitionBuilder();
-}
 
 ThemeData _buildTheme(Brightness brightness, Color accentColor) {
   var baseTheme = ThemeData(

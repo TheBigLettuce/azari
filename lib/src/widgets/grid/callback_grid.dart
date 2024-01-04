@@ -15,6 +15,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/base/note_base.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
+import 'package:gallery/src/interfaces/note_interface.dart';
+import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/notifiers/selection_count.dart';
@@ -31,6 +33,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'enums/grid_aspect_ratio.dart';
 import 'enums/grid_column.dart';
+import 'selection_glue.dart';
 
 part 'selection_interface.dart';
 part 'wrapped_selection.dart';
@@ -41,19 +44,6 @@ part 'grid_description.dart';
 part 'search_and_focus.dart';
 part 'grid_layout.dart';
 
-class RefreshingStatusInterface {
-  final void Function(Future<int>) save;
-  final void Function(void Function(int?, bool)) register;
-  final void Function() reset;
-  final void Function(void Function(int?, bool)) unregister;
-
-  const RefreshingStatusInterface(
-      {required this.save,
-      required this.register,
-      required this.reset,
-      required this.unregister});
-}
-
 class _SegSticky {
   final String seg;
   final bool sticky;
@@ -62,30 +52,6 @@ class _SegSticky {
 
   const _SegSticky(this.seg, this.sticky, this.onLabelPressed,
       {this.unstickable = true});
-}
-
-class SelectionGlue<T extends Cell> {
-  final void Function(
-      List<GridAction<T>> actions, SelectionInterface<T> selection) open;
-  final void Function(int) updateCount;
-  final void Function() close;
-  final bool Function() isOpen;
-  final bool Function() keyboardVisible;
-
-  static SelectionGlue<T> empty<T extends Cell>(BuildContext context) =>
-      SelectionGlue(
-          close: () {},
-          updateCount: (_) {},
-          open: (_, __) {},
-          isOpen: () => false,
-          keyboardVisible: () => MediaQuery.viewInsetsOf(context).bottom != 0);
-
-  const SelectionGlue(
-      {required this.close,
-      required this.updateCount,
-      required this.open,
-      required this.isOpen,
-      required this.keyboardVisible});
 }
 
 /// The grid of images.

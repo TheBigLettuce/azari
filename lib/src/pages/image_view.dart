@@ -12,7 +12,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/db/base/note_base.dart';
+import 'package:gallery/src/interfaces/note_interface.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/image_view/loading_builder.dart';
 import 'package:gallery/src/widgets/image_view/make_image_view_bindings.dart';
@@ -45,22 +45,6 @@ class ImageViewStatistics {
   final void Function() viewed;
 
   const ImageViewStatistics({required this.swiped, required this.viewed});
-}
-
-class NoteInterface<T extends Cell> {
-  final void Function(
-      String text, T cell, Color? backgroundColor, Color? textColor) addNote;
-  final NoteBase? Function(T cell) load;
-  final void Function(T cell, int indx, String newCell) replace;
-  final void Function(T cell, int indx) delete;
-  final void Function(T cell, int from, int to) reorder;
-
-  const NoteInterface(
-      {required this.addNote,
-      required this.delete,
-      required this.load,
-      required this.replace,
-      required this.reorder});
 }
 
 class ImageView<T extends Cell> extends StatefulWidget {

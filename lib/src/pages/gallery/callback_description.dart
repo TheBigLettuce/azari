@@ -5,22 +5,21 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/cell.dart';
-import 'package:gallery/src/widgets/grid/selection_glue.dart';
+import 'package:flutter/widgets.dart';
+import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 
-class GlueProvider<T extends Cell> extends InheritedWidget {
-  final SelectionGlue<T> glue;
+class CallbackDescription {
+  final Future<void> Function(SystemGalleryDirectory? chosen, String? newDir) c;
+  final String description;
 
-  const GlueProvider({super.key, required this.glue, required super.child});
+  final PreferredSizeWidget? preview;
 
-  static SelectionGlue<T> of<T extends Cell>(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<GlueProvider<T>>();
+  final bool joinable;
 
-    return widget!.glue;
+  void call(SystemGalleryDirectory? chosen, String? newDir) {
+    c(chosen, newDir);
   }
 
-  @override
-  bool updateShouldNotify(GlueProvider<T> oldWidget) => glue != oldWidget.glue;
+  const CallbackDescription(this.description, this.c,
+      {this.preview, required this.joinable});
 }

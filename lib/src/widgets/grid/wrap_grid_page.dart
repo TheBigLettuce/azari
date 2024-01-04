@@ -11,7 +11,7 @@ import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 
 import '../../interfaces/cell.dart';
-import 'callback_grid.dart';
+import 'selection_glue.dart';
 import 'selection_glue_state.dart';
 
 class WrappedGridPage<T extends Cell> extends StatefulWidget {

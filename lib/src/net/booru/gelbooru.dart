@@ -19,7 +19,7 @@ import 'package:xml/xml.dart';
 import '../../db/schemas/booru/post.dart';
 import 'package:intl/intl.dart';
 
-import '../../interfaces/tags.dart';
+import '../../interfaces/booru_tagging.dart';
 import '../cloudflare_exception.dart';
 import '../unsaveable_cookie_jar.dart';
 

@@ -16,7 +16,7 @@ import 'safe_mode.dart';
 import '../../db/schemas/booru/post.dart';
 import '../../net/booru/danbooru.dart';
 import '../../net/booru/gelbooru.dart';
-import '../tags.dart';
+import '../booru_tagging.dart';
 import 'booru.dart';
 
 /// The interface to interact with the various booru APIs.

@@ -8,11 +8,11 @@
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/base/note_base.dart';
+import 'package:gallery/src/interfaces/note_interface.dart';
 import 'package:isar/isar.dart';
 
 import '../../../interfaces/cell.dart';
 import '../../../interfaces/contentable.dart';
-import '../../../pages/image_view.dart';
 import '../../../plugs/platform_functions.dart';
 import '../../../widgets/grid/cell_data.dart';
 import 'system_gallery_directory_file.dart';

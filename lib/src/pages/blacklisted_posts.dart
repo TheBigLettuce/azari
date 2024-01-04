@@ -26,13 +26,6 @@ class _BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
   bool hideImages = true;
 
   @override
-  void initState() {
-    super.initState();
-
-    // list.addAll(HiddenBooruPost.getAll());
-  }
-
-  @override
   void dispose() {
     state.dispose();
 

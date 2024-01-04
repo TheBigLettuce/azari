@@ -19,6 +19,7 @@ import 'package:gallery/src/db/schemas/statistics/statistics_booru.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
+import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
 import 'package:gallery/src/pages/booru/random.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';

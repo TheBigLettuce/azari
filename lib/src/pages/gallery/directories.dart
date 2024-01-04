@@ -23,7 +23,6 @@ import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/pages/gallery/files.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
-import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 import 'package:gallery/src/db/schemas/gallery/favorite_media.dart';
 import 'package:gallery/src/db/schemas/gallery/pinned_directories.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
@@ -36,35 +35,8 @@ import '../../db/schemas/settings/settings.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
 import '../../widgets/skeletons/grid_skeleton_state_filter.dart';
 import '../../widgets/skeletons/grid_skeleton.dart';
-
-class CallbackDescription {
-  final Future<void> Function(SystemGalleryDirectory? chosen, String? newDir) c;
-  final String description;
-
-  final PreferredSizeWidget? preview;
-
-  final bool joinable;
-
-  void call(SystemGalleryDirectory? chosen, String? newDir) {
-    c(chosen, newDir);
-  }
-
-  const CallbackDescription(this.description, this.c,
-      {this.preview, required this.joinable});
-}
-
-class CallbackDescriptionNested {
-  final void Function(SystemGalleryDirectoryFile chosen) c;
-  final String description;
-  final bool returnBack;
-
-  void call(SystemGalleryDirectoryFile chosen) {
-    c(chosen);
-  }
-
-  const CallbackDescriptionNested(this.description, this.c,
-      {this.returnBack = false});
-}
+import 'callback_description.dart';
+import 'callback_description_nested.dart';
 
 class GalleryDirectories extends StatefulWidget {
   final CallbackDescription? callback;

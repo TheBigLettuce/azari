@@ -14,7 +14,7 @@ import 'package:gallery/src/interfaces/booru/strip_html.dart';
 
 import '../../db/schemas/settings/settings.dart';
 import '../../interfaces/booru/booru_api.dart';
-import '../../interfaces/tags.dart';
+import '../../interfaces/booru_tagging.dart';
 import '../cloudflare_exception.dart';
 import '../unsaveable_cookie_jar.dart';
 

@@ -9,7 +9,7 @@ import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:isar/isar.dart';
 
-import '../interfaces/tags.dart';
+import '../interfaces/booru_tagging.dart';
 import '../pages/settings/settings_widget.dart';
 import '../interfaces/booru/safe_mode.dart';
 import 'schemas/grid_state/grid_state.dart';

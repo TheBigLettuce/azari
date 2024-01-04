@@ -7,7 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
-import 'package:gallery/src/pages/gallery/directories.dart';
+import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
