@@ -27,11 +27,14 @@ class GridDescription<T extends Cell> {
 
   final bool showAppBar;
 
+  final bool ignoreSwipeSelectGesture;
+
   const GridDescription(
     this.actions, {
     this.showAppBar = true,
     required this.keybindsDescription,
     this.bottomWidget,
+    this.ignoreSwipeSelectGesture = false,
     this.pageName,
     required this.layout,
   });

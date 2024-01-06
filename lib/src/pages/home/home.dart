@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
+import 'package:gallery/src/interfaces/anime.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
 import 'package:gallery/src/pages/anime/anime.dart';
@@ -248,10 +249,10 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           glue: glueState.glue(keyboardVisible, setState),
           child: FavoritesPage(procPop: _procPop),
         ),
-      3 => PopScope(
-          canPop: currentRoute == 0,
-          onPopInvoked: _procPop,
-          child: AnimePage(glue: glueState.glue(keyboardVisible, setState))),
+      3 => GlueProvider<AnimeEntry>(
+          glue: glueState.glue(keyboardVisible, setState),
+          child: AnimePage(procPop: _procPop),
+        ),
       4 => PopScope(
           canPop: currentRoute == 0,
           onPopInvoked: _procPop,

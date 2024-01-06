@@ -59,6 +59,7 @@ abstract class GridLayouts {
       selectUntil: (i) => selection.selectUnselectUntil(i, state),
       thisIndx: index,
       isSelected: selected,
+      ignoreSwipeGesture: selection.ignoreSwipe,
       selectionEnabled: selection.selected.isNotEmpty,
       scrollController: selection.controller,
       bottomPadding: systemNavigationInsets,
@@ -108,6 +109,7 @@ abstract class GridLayouts {
           return _WrapSelection(
             selectionEnabled: selection.selected.isNotEmpty,
             thisIndx: indx,
+            ignoreSwipeGesture: selection.ignoreSwipe,
             bottomPadding: systemNavigationInsets,
             scrollController: selection.controller,
             selectUntil: (i) => selection.selectUnselectUntil(i, state),
@@ -155,6 +157,7 @@ abstract class GridLayouts {
                     child: _WrapSelection(
                       selectionEnabled: selection.selected.isNotEmpty,
                       thisIndx: indx,
+                      ignoreSwipeGesture: selection.ignoreSwipe,
                       bottomPadding: systemNavigationInsets,
                       scrollController: selection.controller,
                       selectUntil: (i) {
@@ -208,6 +211,7 @@ abstract class GridLayouts {
                     child: _WrapSelection(
                       selectionEnabled: selection.selected.isNotEmpty,
                       thisIndx: -1,
+                      ignoreSwipeGesture: selection.ignoreSwipe,
                       bottomPadding: systemNavigationInsets,
                       scrollController: selection.controller,
                       selectUntil: (i) =>

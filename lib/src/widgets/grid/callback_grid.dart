@@ -175,6 +175,8 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
 
   final RefreshingStatusInterface? refreshInterface;
 
+  final void Function()? onDispose;
+
   const CallbackGrid(
       {required super.key,
       this.additionalKeybinds,
@@ -185,6 +187,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       required this.hasReachedEnd,
       this.pageChangeImage,
       this.onError,
+      this.onDispose,
       this.statistics,
       required this.selectionGlue,
       this.showCount = false,
@@ -228,11 +231,9 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   final GlobalKey<ImageViewState<T>> imageViewKey = GlobalKey();
 
   late final selection = GridSelection<T>._(
-      setState,
-      widget.description.actions,
-      widget.selectionGlue,
-      controller,
-      !widget.description.showAppBar);
+      setState, widget.description.actions, widget.selectionGlue, controller,
+      noAppBar: !widget.description.showAppBar,
+      ignoreSwipe: widget.description.ignoreSwipeSelectGesture);
 
   StreamSubscription<int>? ticker;
 
@@ -390,6 +391,8 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
       widget.refreshInterface?.unregister(_refreshCallbackUpdate);
     });
+
+    widget.onDispose?.call();
 
     super.dispose();
   }

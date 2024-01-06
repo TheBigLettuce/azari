@@ -28,9 +28,11 @@ class Jikan implements AnimeAPI {
   }
 
   @override
-  Future<List<AnimeSearchResult>> search(String title) {
-    // TODO: implement search
-    throw UnimplementedError();
+  Future<List<AnimeEntry>> search(String title) async {
+    final response =
+        await api.Jikan(debug: kDebugMode).searchAnime(query: title);
+
+    return response.map((e) => _fromJikenAnime(e)).toList();
   }
 
   @override

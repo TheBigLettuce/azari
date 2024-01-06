@@ -33,6 +33,24 @@ class SelectionGlueState {
   int? count;
   final Future Function(bool backward)? _playAnimation;
 
+  void _close(void Function(void Function()) setState) {
+    if (actions == null) {
+      return;
+    }
+
+    if (_playAnimation != null) {
+      _playAnimation!(true).then((value) {
+        actions = null;
+        setState(() {});
+      });
+    } else {}
+    try {
+      actions = null;
+
+      setState(() {});
+    } catch (_) {}
+  }
+
   SelectionGlue<T> glue<T extends Cell>(bool Function() keyboardVisible,
           void Function(Function()) setState) =>
       SelectionGlue<T>(
@@ -41,30 +59,14 @@ class SelectionGlueState {
 
             setState(() {});
           },
-          close: () {
-            if (actions == null) {
-              return;
-            }
-
-            if (_playAnimation != null) {
-              _playAnimation!(true).then((value) {
-                actions = null;
-                setState(() {});
-              });
-            } else {}
-            try {
-              actions = null;
-
-              setState(() {});
-            } catch (_) {}
-          },
+          close: () => _close(setState),
           open: (addActions, selection) {
             if (actions != null || addActions.isEmpty) {
               return;
             }
             final a = [
               if (selection.noAppBar)
-                WrapGridActionButton(Icons.close, () {}, true,
+                WrapGridActionButton(Icons.close, selection.reset, true,
                     onLongPress: null,
                     showOnlyWhenSingle: false,
                     play: false,

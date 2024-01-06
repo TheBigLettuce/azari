@@ -11,6 +11,8 @@ class GridSelection<T extends Cell> {
   final selected = <int, T>{};
   final List<GridAction<T>> addActions;
   final bool noAppBar;
+  final bool ignoreSwipe;
+
   int? lastSelected;
 
   void use(void Function(List<T> l) f) {
@@ -117,7 +119,7 @@ class GridSelection<T extends Cell> {
   }
 
   GridSelection._(this._setState, this.addActions, this.glue, this.controller,
-      this.noAppBar);
+      {required this.noAppBar, required this.ignoreSwipe});
   GridSelection(this._setState, this.addActions, this.glue, this.controller,
-      this.noAppBar);
+      {required this.noAppBar, required this.ignoreSwipe});
 }

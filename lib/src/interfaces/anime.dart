@@ -16,12 +16,9 @@ import 'cell/cell.dart';
 
 abstract class AnimeAPI {
   Future<AnimeEntry?> info(int id);
-  Future<List<AnimeSearchResult>> search(String title);
+  Future<List<AnimeEntry>> search(String title);
   Future<List<AnimeEntry>> top(int page);
 }
-
-@immutable
-class AnimeSearchResult {}
 
 // @immutable
 class AnimeEntry implements Cell {
