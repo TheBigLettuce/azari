@@ -14,11 +14,14 @@ import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
+import 'package:gallery/src/pages/anime/anime.dart';
+import 'package:gallery/src/pages/booru/main2.dart';
 import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
 import 'package:gallery/src/pages/notes/notes_page.dart';
 import 'package:gallery/src/pages/settings/network_status.dart';
 import 'package:gallery/src/widgets/grid/glue_bottom_app_bar.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
+import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -28,8 +31,10 @@ import '../../db/tags/post_tags.dart';
 import '../../db/schemas/booru/post.dart';
 import '../../db/schemas/settings/settings.dart';
 import '../../db/state_restoration.dart';
-import '../../interfaces/booru/booru_api.dart';
+import '../../interfaces/booru/booru_api_state.dart';
 import '../../widgets/grid/selection/selection_glue_state.dart';
+import '../../widgets/grid2/selection/selection_glue_state.dart' as grid2_state;
+import '../../widgets/grid2/selection/selection_glue.dart' as grid2_glue;
 import '../../widgets/skeletons/home_skeleton.dart';
 import '../../widgets/skeletons/skeleton_state.dart';
 import '../booru/main.dart';
@@ -39,7 +44,7 @@ import '../more_page.dart';
 import '../settings/settings_widget.dart';
 import '../tags_page.dart';
 
-part 'tags_icon.dart';
+part 'anime_icon.dart';
 part 'gallery_icon.dart';
 part 'booru_icon.dart';
 part 'favorites_icon.dart';
@@ -222,10 +227,15 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       0 => GlueProvider<Post>(
           glue: glueState.glue(keyboardVisible, setState),
           child: MainBooruGrid(
-            mainGrid: mainGrid,
-            refreshingInterface: refreshInterface,
-            procPop: _procPop,
-          ),
+              mainGrid: mainGrid,
+              refreshingInterface: refreshInterface,
+              procPop: _procPop),
+          // MainBooruGrid2(
+          //   mainGrid: mainGrid,
+          //   glue: grid2_glue.SelectionGlue.empty(context),
+          //   // refreshingInterface: refreshInterface,
+          //   procPop: _procPop,
+          // ),
         ),
       1 => GlueProvider<SystemGalleryDirectory>(
           glue: glueState.glue(keyboardVisible, setState),
@@ -241,16 +251,16 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       3 => PopScope(
           canPop: currentRoute == 0,
           onPopInvoked: _procPop,
-          child: TagsPage(
-            tagManager: TagManager.fromEnum(Settings.fromDb().selectedBooru),
-            booru:
-                BooruAPI.fromEnum(Settings.fromDb().selectedBooru, page: null),
-            mainFocus: state.mainFocus,
-          )),
+          child: AnimePage(glue: glueState.glue(keyboardVisible, setState))),
       4 => PopScope(
           canPop: currentRoute == 0,
           onPopInvoked: _procPop,
-          child: const MorePage().animate()),
+          child: MorePage(
+            tagManager: TagManager.fromEnum(Settings.fromDb().selectedBooru),
+            api: BooruAPIState.fromEnum(Settings.fromDb().selectedBooru,
+                page: null),
+            mainFocus: state.mainFocus,
+          ).animate()),
       int() => throw "unimpl",
     };
   }
@@ -274,83 +284,88 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return HomeSkeleton(
-      "Home",
-      state,
-      (context) {
-        return Animate(
-            target: 0,
-            effects: [FadeEffect(duration: 50.ms, begin: 1, end: 0)],
-            controller: controller,
-            child: _currentPage(context));
-      },
-      navBar: Animate(
-          controller: controllerNavBar,
-          target: glueState.actions != null ? 1 : 0,
-          effects: [
-            MoveEffect(
-              curve: Easing.emphasizedAccelerate,
-              begin: Offset.zero,
-              end: Offset(0, 100 + MediaQuery.viewInsetsOf(context).bottom),
-            ),
-            SwapEffect(
-              builder: (context, _) {
-                return glueState.actions != null
-                    ? GlueBottomAppBar(glueState.actions!)
-                    : const SizedBox();
+    return SelectionCountNotifier(
+      count: glueState.count ?? 0,
+      child: HomeSkeleton(
+        "Home",
+        state,
+        (context) {
+          return Animate(
+              target: 0,
+              effects: [FadeEffect(duration: 50.ms, begin: 1, end: 0)],
+              controller: controller,
+              child: _currentPage(context));
+        },
+        navBar: Animate(
+            controller: controllerNavBar,
+            target: glueState.actions != null ? 1 : 0,
+            effects: [
+              MoveEffect(
+                curve: Easing.emphasizedAccelerate,
+                begin: Offset.zero,
+                end: Offset(0, 100 + MediaQuery.viewInsetsOf(context).bottom),
+              ),
+              SwapEffect(
+                builder: (context, _) {
+                  return glueState.actions != null
+                      ? GlueBottomAppBar(glueState.actions!)
+                      : const SizedBox();
+                },
+              )
+            ],
+            child: NavigationBar(
+              labelBehavior:
+                  NavigationDestinationLabelBehavior.onlyShowSelected,
+              backgroundColor:
+                  Theme.of(context).colorScheme.surface.withOpacity(0.95),
+              selectedIndex: currentRoute,
+              onDestinationSelected: (route) {
+                _switchPage(route);
               },
-            )
-          ],
-          child: NavigationBar(
-            labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-            backgroundColor:
-                Theme.of(context).colorScheme.surface.withOpacity(0.95),
-            selectedIndex: currentRoute,
-            onDestinationSelected: (route) {
-              _switchPage(route);
-            },
-            destinations: widget.callback != null
-                ? [
-                    NavigationDestination(
-                      icon: const Icon(Icons.collections),
-                      label: AppLocalizations.of(context)!.galleryLabel,
-                    ),
-                    const NavigationDestination(
-                      icon: Icon(Icons.sticky_note_2),
-                      label: "Notes", // TODO: change
-                    ),
-                  ]
-                : [
-                    _BooruIcon(
-                      isSelected: currentRoute == 0,
-                      controller: booruIconController,
-                      menuController: menuController,
-                    ),
-                    _GalleryIcon(
-                      isSelected: currentRoute == 1,
-                      controller: galleryIconController,
-                    ),
-                    _FavoritesIcon(
-                      isSelected: currentRoute == 2,
-                      controller: favoritesIconController,
-                      count: favoriteBooruCount,
-                    ),
-                    _TagsIcon(
-                      isSelected: currentRoute == 3,
-                      controller: tagsIconController,
-                    ),
-                    NavigationDestination(
-                      icon: Icon(
-                        Icons.more_horiz,
-                        color: currentRoute == 4
-                            ? Theme.of(context).colorScheme.primary
-                            : null,
+              destinations: widget.callback != null
+                  ? [
+                      NavigationDestination(
+                        icon: const Icon(Icons.collections),
+                        label: AppLocalizations.of(context)!.galleryLabel,
                       ),
-                      label: AppLocalizations.of(context)!.more, // TODO: change
-                    ),
-                  ],
-          )),
-      selectedRoute: currentRoute,
+                      const NavigationDestination(
+                        icon: Icon(Icons.sticky_note_2),
+                        label: "Notes", // TODO: change
+                      ),
+                    ]
+                  : [
+                      _BooruIcon(
+                        isSelected: currentRoute == 0,
+                        controller: booruIconController,
+                        menuController: menuController,
+                      ),
+                      _GalleryIcon(
+                        isSelected: currentRoute == 1,
+                        controller: galleryIconController,
+                      ),
+                      _FavoritesIcon(
+                        isSelected: currentRoute == 2,
+                        controller: favoritesIconController,
+                        count: favoriteBooruCount,
+                      ),
+                      _AnimeIcon(
+                        isSelected: currentRoute == 3,
+                        controller: tagsIconController,
+                      ),
+                      NavigationDestination(
+                        icon: Icon(
+                          Icons.more_horiz,
+                          color: currentRoute == 4
+                              ? Theme.of(context).colorScheme.primary
+                              : null,
+                        ),
+                        label:
+                            AppLocalizations.of(context)!.more, // TODO: change
+                      ),
+                    ],
+            )),
+        selectedRoute: currentRoute,
+      ),
     );
   }
 }

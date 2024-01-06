@@ -8,10 +8,11 @@
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/booru/booru_api.dart';
+import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru/strip_html.dart';
+import 'package:gallery/src/logging/logging.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 import 'package:path/path.dart' as path;
 import 'package:xml/xml.dart';
@@ -27,7 +28,9 @@ List<String> _fromGelbooruTags(List<dynamic> l) {
   return l.map((e) => HtmlUnescape().convert(e["name"] as String)).toList();
 }
 
-class Gelbooru implements BooruAPI {
+class Gelbooru implements BooruAPIState {
+  static const _log = LogTarget.booru;
+
   final UnsaveableCookieJar cookieJar;
 
   @override
@@ -58,13 +61,14 @@ class Gelbooru implements BooruAPI {
 
   @override
   Future<Iterable<String>> notes(int postId) async {
-    final resp = await client.getUri(
+    final resp = await client.getUriLog(
         Uri.https(booru.url, "/index.php", {
           "page": "dapi",
           "s": "note",
           "q": "index",
           "post_id": postId.toString(),
         }),
+        LogReq(LogReq.notes(booru, postId), _log),
         options: Options(
           responseType: ResponseType.plain,
         ));
@@ -81,21 +85,29 @@ class Gelbooru implements BooruAPI {
 
   @override
   Future<List<String>> completeTag(String t) async {
-    final resp = await client.getUri(Uri.https(booru.url, "/index.php", {
-      "page": "dapi",
-      "s": "tag",
-      "q": "index",
-      "limit": "10",
-      "json": "1",
-      "name_pattern": "$t%",
-      "orderby": "count"
-    }));
+    if (t.isEmpty) {
+      return const [];
+    }
+
+    final resp = await client.getUriLog(
+        Uri.https(booru.url, "/index.php", {
+          "page": "dapi",
+          "s": "tag",
+          "q": "index",
+          "limit": "10",
+          "json": "1",
+          "name_pattern": "$t%",
+          "orderby": "count"
+        }),
+        LogReq(LogReq.completeTag(booru, t), _log));
 
     if (resp.statusCode != 200) {
       throw "status code not 200";
     }
 
-    return _fromGelbooruTags(resp.data["tag"]);
+    final tags = resp.data["tag"];
+
+    return tags == null ? const [] : _fromGelbooruTags(tags);
   }
 
   @override
@@ -132,12 +144,13 @@ class Gelbooru implements BooruAPI {
       "pid": p.toString(),
       "json": "1",
       "tags": "${safeModeS()} $excludedTagsString $tags",
-      "limit": BooruAPI.numberOfElementsPerRefresh().toString()
+      "limit": BooruAPIState.numberOfElementsPerRefresh().toString()
     };
 
     try {
-      final resp =
-          await client.getUri(Uri.https(booru.url, "/index.php", query));
+      final resp = await client.getUriLog(
+          Uri.https(booru.url, "/index.php", query),
+          LogReq(LogReq.page(booru, p), _log));
 
       if (resp.statusCode != 200) {
         throw "status not 200";
@@ -162,13 +175,15 @@ class Gelbooru implements BooruAPI {
   @override
   Future<Post> singlePost(int id) async {
     try {
-      final resp = await client.getUri(Uri.https(booru.url, "/index.php", {
-        "page": "dapi",
-        "s": "post",
-        "q": "index",
-        "id": id.toString(),
-        "json": "1"
-      }));
+      final resp = await client.getUriLog(
+          Uri.https(booru.url, "/index.php", {
+            "page": "dapi",
+            "s": "post",
+            "q": "index",
+            "id": id.toString(),
+            "json": "1"
+          }),
+          LogReq(LogReq.singlePost(booru, id), _log));
 
       if (resp.statusCode != 200) {
         throw "status is not 200";

@@ -46,7 +46,7 @@ class TagManager<T extends TagManagerType> {
         return SecondaryBooruGrid(
           tagManager: this as TagManager<Restorable>,
           noRestoreOnBack: true,
-          api: BooruAPI.fromEnum(booru, page: null),
+          api: BooruAPIState.fromEnum(booru, page: null),
           restore: _insert(
               tags: t.tag,
               name: instance.name,
@@ -61,7 +61,7 @@ class TagManager<T extends TagManagerType> {
               ? this as TagManager<Unrestorable>
               : TagManager._copy(
                   _insert, _excluded, _latest, _temporary, watch),
-          api: BooruAPI.fromEnum(booru, page: null),
+          api: BooruAPIState.fromEnum(booru, page: null),
           tags: t.tag,
         );
       }));

@@ -10,7 +10,7 @@ import 'dart:io' as io;
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/booru/booru_api.dart';
+import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
@@ -62,7 +62,7 @@ class PostTags {
   /// Resolves to an empty list in case of any error.
   Future<List<String>> loadFromDissassemble(
       String filename, DisassembleResult dissassembled) async {
-    final api = BooruAPI.fromEnum(dissassembled.booru, page: null);
+    final api = BooruAPIState.fromEnum(dissassembled.booru, page: null);
 
     try {
       final post = await api.singlePost(dissassembled.id);

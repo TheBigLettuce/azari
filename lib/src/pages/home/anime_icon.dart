@@ -7,11 +7,11 @@
 
 part of 'home.dart';
 
-class _TagsIcon extends StatelessWidget {
+class _AnimeIcon extends StatelessWidget {
   final bool isSelected;
   final AnimationController controller;
 
-  const _TagsIcon({
+  const _AnimeIcon({
     super.key,
     required this.controller,
     required this.isSelected,
@@ -29,22 +29,15 @@ class _TagsIcon extends StatelessWidget {
               delay: 50.ms,
               duration: 400.ms,
               begin: 0,
-              end: 0.5,
-              curve: Easing.emphasizedDecelerate,
-            ),
-            ThenEffect(delay: 200.ms),
-            RotateEffect(
-              duration: 200.ms,
-              begin: 0.5,
               end: 1,
               curve: Easing.emphasizedDecelerate,
             ),
           ],
           child: Icon(
-            Icons.tag,
+            Icons.video_library,
             color: isSelected ? Theme.of(context).colorScheme.primary : null,
           )),
-      label: AppLocalizations.of(context)!.tagsLabel,
+      label: "Anime",
     );
   }
 }

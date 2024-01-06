@@ -26,7 +26,7 @@ import 'booru.dart';
 /// it should keep the page number and increase it after calls to [fromPost],
 /// return the current page in [currentPage], return true in [wouldBecomeStale]
 /// and reset page number after calls to [page].
-abstract class BooruAPI {
+abstract class BooruAPIState {
   // The client with which all the requests are made to the booru API.
   Dio get client;
 
@@ -81,11 +81,11 @@ abstract class BooruAPI {
   /// Some *booru have no way to retreive posts down
   /// of a post number, in this case [page] comes in handy:
   /// that is, it makes refreshes on restore few.
-  static BooruAPI fromSettings({int? page}) {
-    return BooruAPI.fromEnum(Settings.fromDb().selectedBooru, page: page);
+  static BooruAPIState fromSettings({int? page}) {
+    return BooruAPIState.fromEnum(Settings.fromDb().selectedBooru, page: page);
   }
 
-  static BooruAPI fromEnum(Booru booru, {required int? page}) {
+  static BooruAPIState fromEnum(Booru booru, {required int? page}) {
     final dio = Dio(BaseOptions(
       responseType: ResponseType.json,
     ));

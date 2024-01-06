@@ -9,6 +9,7 @@ import 'dart:developer';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
@@ -61,6 +62,9 @@ Future<DartFileMover> initalizeDartMover() {
     SendPort send = await recv.first;
 
     _global = DartFileMover._new(send);
+
+    LogTarget.init
+        .logDefault("Downloader(Linux)".messageInit, LogSeverity.init);
 
     return _global!;
   });

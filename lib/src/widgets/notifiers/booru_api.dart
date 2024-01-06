@@ -7,16 +7,16 @@
 
 import 'package:flutter/material.dart';
 
-import '../../interfaces/booru/booru_api.dart';
+import '../../interfaces/booru/booru_api_state.dart';
 
 class BooruAPINotifier extends InheritedWidget {
-  final BooruAPI api;
+  final BooruAPIState api;
 
-  static BooruAPI of(BuildContext context) {
+  static BooruAPIState of(BuildContext context) {
     return maybeOf(context)!;
   }
 
-  static BooruAPI? maybeOf(BuildContext context) {
+  static BooruAPIState? maybeOf(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<BooruAPINotifier>();
 

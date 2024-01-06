@@ -6,18 +6,17 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:async';
-import 'dart:developer';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_booru.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
+import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
 import 'package:gallery/src/plugs/notifications.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:path/path.dart' as path;
-import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 
 Downloader? _global;
@@ -60,6 +59,8 @@ mixin _CancelTokens {
 }
 
 class Downloader with _CancelTokens, _StatisticsTimer {
+  static const _log = LogTarget.downloader;
+
   int _inWork = 0;
   final dio = Dio();
   final int maximum;
@@ -242,8 +243,8 @@ class Downloader with _CancelTokens, _StatisticsTimer {
       }
       await Directory(dirpath).create();
     } catch (e, trace) {
-      log("while creating directory $dirpath",
-          level: Level.SEVERE.value, error: e, stackTrace: trace);
+      _log.logDefaultImportant(
+          "while creating directory $dirpath".errorMessage(e), trace);
 
       return;
     }
@@ -258,6 +259,8 @@ class Downloader with _CancelTokens, _StatisticsTimer {
         d.name, d.isarId!, d.site, "Downloader");
 
     _start();
+
+    _log.logDefault("Started download: $d".message);
 
     dio.download(d.url, filePath,
         cancelToken: _tokens[d.url],
@@ -281,8 +284,8 @@ class Downloader with _CancelTokens, _StatisticsTimer {
 
         StatisticsBooru.addDownloaded();
       } catch (e, trace) {
-        log("writting downloaded file ${d.name} to uri",
-            level: Level.SEVERE.value, error: e, stackTrace: trace);
+        _log.logDefaultImportant(
+            "writting downloaded file ${d.name} to uri".errorMessage(e), trace);
         _removeToken(d.url);
         d.failed().save();
       }
@@ -308,8 +311,8 @@ class Downloader with _CancelTokens, _StatisticsTimer {
         event.deleteSync(recursive: true);
       }).drain();
     } catch (e, trace) {
-      log("deleting temp directories",
-          level: Level.WARNING.value, error: e, stackTrace: trace);
+      _log.logDefaultImportant(
+          "deleting temp directories".errorMessage(e), trace);
     }
   }
 

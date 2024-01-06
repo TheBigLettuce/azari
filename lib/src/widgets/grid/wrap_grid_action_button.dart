@@ -15,7 +15,6 @@ class WrapGridActionButton extends StatefulWidget {
   final void Function()? onPressed;
   final void Function()? onLongPress;
   final bool addBadge;
-  final String label;
   final bool? followColorTheme;
   final Color? backgroundColor;
   final Color? color;
@@ -23,8 +22,7 @@ class WrapGridActionButton extends StatefulWidget {
   final bool play;
   final bool showOnlyWhenSingle;
 
-  const WrapGridActionButton(
-      this.icon, this.onPressed, this.addBadge, this.label,
+  const WrapGridActionButton(this.icon, this.onPressed, this.addBadge,
       {super.key,
       this.followColorTheme,
       this.backgroundColor,
@@ -102,19 +100,35 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
                       _controller = controller;
                     },
                     autoPlay: false,
-                    child: icn,
+                    child: widget.addBadge
+                        ? Badge.count(
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primaryContainer,
+                            textColor: Theme.of(context)
+                                .colorScheme
+                                .onPrimaryContainer,
+                            count: SelectionCountNotifier.countOf(context),
+                            child: icn,
+                            // child: iconBtn(context),
+                          )
+                        : icn,
                   )
-                : icn,
+                : widget.addBadge
+                    ? Badge.count(
+                        backgroundColor:
+                            Theme.of(context).colorScheme.primaryContainer,
+                        textColor:
+                            Theme.of(context).colorScheme.onPrimaryContainer,
+                        count: SelectionCountNotifier.countOf(context),
+                        child: icn,
+                        // child: iconBtn(context),
+                      )
+                    : icn,
           ),
         ),
       );
     }
 
-    return widget.addBadge
-        ? Badge(
-            label: Text(widget.label),
-            child: iconBtn(context),
-          )
-        : iconBtn(context);
+    return iconBtn(context);
   }
 }

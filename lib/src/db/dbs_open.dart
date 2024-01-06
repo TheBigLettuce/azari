@@ -7,6 +7,14 @@
 
 part of 'initalize_db.dart';
 
+const kFilesSchemas = [SystemGalleryDirectoryFileSchema];
+const kDirectoriesSchemas = [SystemGalleryDirectorySchema];
+const kPrimaryGridSchemas = [
+  GridStateSchema,
+  TagSchema,
+  PostSchema,
+];
+
 abstract class DbsOpen {
   static Isar primaryGrid(Booru booru) {
     final instance = Isar.getInstance(booru.string);
@@ -14,11 +22,8 @@ abstract class DbsOpen {
       return instance;
     }
 
-    return Isar.openSync([
-      GridStateSchema,
-      TagSchema,
-      PostSchema,
-    ], directory: _dbs.directory, inspector: false, name: booru.string);
+    return Isar.openSync(kPrimaryGridSchemas,
+        directory: _dbs.directory, inspector: false, name: booru.string);
   }
 
   static Isar secondaryGrid({bool temporary = true}) {
@@ -41,7 +46,7 @@ abstract class DbsOpen {
       );
 
   static Isar androidGalleryDirectories({bool? temporary}) => Isar.openSync(
-        [SystemGalleryDirectorySchema],
+        kDirectoriesSchemas,
         directory: temporary == true ? _dbs.temporaryDbDir : _dbs.directory,
         inspector: false,
         name: temporary == true
@@ -50,7 +55,7 @@ abstract class DbsOpen {
       );
 
   static Isar androidGalleryFiles() => Isar.openSync(
-        [SystemGalleryDirectoryFileSchema],
+        kFilesSchemas,
         directory: _dbs.temporaryDbDir,
         inspector: false,
         name: _microsecSinceEpoch(),

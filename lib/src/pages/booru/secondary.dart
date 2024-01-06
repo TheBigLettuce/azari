@@ -6,19 +6,18 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
+import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/widgets/add_to_bookmarks_button.dart';
 import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/grid/layouts/list_layout.dart';
 import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:isar/isar.dart';
-import 'package:logging/logging.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../db/schemas/booru/note_booru.dart';
@@ -30,7 +29,7 @@ import 'grid_button.dart';
 import '../../widgets/grid/actions/booru_grid.dart';
 import '../../widgets/grid/callback_grid.dart';
 import '../../net/downloader.dart';
-import '../../interfaces/booru/booru_api.dart';
+import '../../interfaces/booru/booru_api_state.dart';
 import '../../db/tags/post_tags.dart';
 import '../../db/initalize_db.dart';
 import '../../db/state_restoration.dart';
@@ -50,7 +49,7 @@ class SecondaryBooruGrid extends StatefulWidget {
   final StateRestoration restore;
   final Isar instance;
   final TagManager<Restorable> tagManager;
-  final BooruAPI api;
+  final BooruAPIState api;
 
   final bool noRestoreOnBack;
 
@@ -68,6 +67,8 @@ class SecondaryBooruGrid extends StatefulWidget {
 
 class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
     with SearchLaunchGrid<Post>, MainGridSettingsMixin {
+  static const _log = LogTarget.booru;
+
   late final StreamSubscription<Settings?> settingsWatcher;
   late final StreamSubscription favoritesWatcher;
 
@@ -204,8 +205,10 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
         }
       }
     } catch (e, trace) {
-      log("_addLast on grid ${state.settings.selectedBooru.string}",
-          level: Level.WARNING.value, error: e, stackTrace: trace);
+      _log.logDefaultImportant(
+          "_addLast on grid ${state.settings.selectedBooru.string}"
+              .errorMessage(e),
+          trace);
     }
 
     return widget.instance.posts.count();
@@ -223,7 +226,7 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
           return SecondaryBooruGrid(
             restore: next,
             noRestoreOnBack: false,
-            api: BooruAPI.fromEnum(widget.api.booru, page: next.copy.page),
+            api: BooruAPIState.fromEnum(widget.api.booru, page: next.copy.page),
             tagManager: widget.tagManager,
             instance: DbsOpen.secondaryGridName(next.copy.name),
           );

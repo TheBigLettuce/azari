@@ -6,7 +6,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:async';
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -15,6 +14,7 @@ import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
+import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/pages/booru/main_grid_settings_mixin.dart';
 import 'package:gallery/src/widgets/add_to_bookmarks_button.dart';
 import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
@@ -22,7 +22,6 @@ import 'package:gallery/src/widgets/grid/layouts/list_layout.dart';
 import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:isar/isar.dart';
-import 'package:logging/logging.dart';
 import 'package:path/path.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -31,7 +30,7 @@ import '../../db/schemas/statistics/statistics_booru.dart';
 import '../../db/schemas/statistics/statistics_general.dart';
 import '../../widgets/grid/actions/booru_grid.dart';
 import '../../net/downloader.dart';
-import '../../interfaces/booru/booru_api.dart';
+import '../../interfaces/booru/booru_api_state.dart';
 import '../../db/tags/post_tags.dart';
 import '../../db/initalize_db.dart';
 import '../../db/state_restoration.dart';
@@ -49,7 +48,7 @@ import '../image_view.dart';
 import 'grid_button.dart';
 
 class RandomBooruGrid extends StatefulWidget {
-  final BooruAPI api;
+  final BooruAPIState api;
   final String tags;
   final TagManager<Unrestorable> tagManager;
   final GridStateBooru? state;
@@ -67,6 +66,8 @@ class RandomBooruGrid extends StatefulWidget {
 
 class _RandomBooruGridState extends State<RandomBooruGrid>
     with SearchLaunchGrid<Post>, MainGridSettingsMixin {
+  static const _log = LogTarget.booru;
+
   late final StreamSubscription<Settings?> settingsWatcher;
   late final StreamSubscription favoritesWatcher;
 
@@ -235,8 +236,10 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
         }
       }
     } catch (e, trace) {
-      log("_addLast on grid ${state.settings.selectedBooru.string}",
-          level: Level.WARNING.value, error: e, stackTrace: trace);
+      _log.logDefaultImportant(
+          "_addLast on grid ${state.settings.selectedBooru.string}"
+              .errorMessage(e),
+          trace);
     }
 
     return instance.posts.count();

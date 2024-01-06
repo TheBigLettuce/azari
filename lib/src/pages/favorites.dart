@@ -14,7 +14,7 @@ import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/interfaces/filtering/filters.dart';
 import 'package:gallery/src/widgets/grid/actions/favorites.dart';
 import 'package:gallery/src/net/downloader.dart';
-import 'package:gallery/src/interfaces/booru/booru_api.dart';
+import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
@@ -52,7 +52,7 @@ class _FavoritesPageState extends State<FavoritesPage>
   late final StreamSubscription<MiscSettings?> miscSettingsWatcher;
   late final StreamSubscription<GridSettingsFavorites?> gridSettingsWatcher;
 
-  final booru = BooruAPI.fromSettings();
+  final booru = BooruAPIState.fromSettings();
 
   MiscSettings miscSettings = MiscSettings.current;
   GridSettingsFavorites gridSettings = GridSettingsFavorites.current;

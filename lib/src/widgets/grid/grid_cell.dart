@@ -8,15 +8,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:transparent_image/transparent_image.dart';
 import '../loading_error_widget.dart';
 import '../shimmer_loading_indicator.dart';
-import '../../interfaces/cell/cell_data.dart';
 import 'callback_grid.dart';
 import 'sticker_widget.dart';
 
 /// The cell of [CallbackGrid].
-class GridCell<T extends CellData> extends StatefulWidget {
+class GridCell<T extends Cell> extends StatefulWidget {
   final T _data;
   final int indx;
   final void Function(BuildContext context)? onPressed;
@@ -25,7 +25,7 @@ class GridCell<T extends CellData> extends StatefulWidget {
   /// If [tight] is true, margin between the [GridCell]s on the grid is tight.
   final bool tight;
   final void Function()? onLongPress;
-  final Future Function(int)? download;
+  final void Function(int)? download;
 
   /// If [shadowOnTop] is true, then on top of the [GridCell] painted [Colors.black],
   /// with 0.5 opacity.
@@ -34,6 +34,8 @@ class GridCell<T extends CellData> extends StatefulWidget {
   /// [GridCell] is displayed in form as a beveled rectangle.
   /// If [circle] is true, then it's displayed as a circle instead.
   final bool circle;
+
+  final bool isList;
 
   /// If [ignoreStickers] is true, then stickers aren't displayed on top of the cell.
   final bool ignoreStickers;
@@ -48,6 +50,7 @@ class GridCell<T extends CellData> extends StatefulWidget {
       bool? hidealias,
       this.shadowOnTop = false,
       this.circle = false,
+      required this.isList,
       this.ignoreStickers = false,
       this.onLongPress})
       : _data = cell,
@@ -57,7 +60,7 @@ class GridCell<T extends CellData> extends StatefulWidget {
   State<GridCell> createState() => _GridCellState();
 }
 
-class _GridCellState<T extends CellData> extends State<GridCell<T>>
+class _GridCellState<T extends Cell> extends State<GridCell<T>>
     with SingleTickerProviderStateMixin {
   int _tries = 0;
   late final AnimationController controller;
@@ -78,6 +81,8 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>>
 
   @override
   Widget build(BuildContext context) {
+    final data = widget._data.getCellData(widget.isList, context: context);
+
     return Animate(
         autoPlay: false,
         controller: controller,
@@ -127,7 +132,7 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>>
                     Center(
                         child: LayoutBuilder(builder: (context, constraints) {
                       return Image(
-                        key: ValueKey((widget._data.thumb.hashCode, _tries)),
+                        key: ValueKey((data.thumb.hashCode, _tries)),
                         errorBuilder: (context, error, stackTrace) =>
                             LoadingErrorWidget(
                           error: error.toString(),
@@ -151,8 +156,7 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>>
                               ? const ShimmerLoadingIndicator()
                               : child.animate().fadeIn();
                         },
-                        image: widget._data.thumb ??
-                            MemoryImage(kTransparentImage),
+                        image: data.thumb ?? MemoryImage(kTransparentImage),
                         alignment: Alignment.center,
                         color: widget.shadowOnTop
                             ? Colors.black.withOpacity(0.5)
@@ -164,15 +168,14 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>>
                         height: constraints.maxHeight,
                       );
                     })),
-                    if (widget._data.stickers.isNotEmpty &&
-                        !widget.ignoreStickers) ...[
+                    if (data.stickers.isNotEmpty && !widget.ignoreStickers) ...[
                       Align(
                         alignment: Alignment.topRight,
                         child: Padding(
                             padding: const EdgeInsets.all(8),
                             child: Wrap(
                               direction: Axis.vertical,
-                              children: widget._data.stickers
+                              children: data.stickers
                                   .where((element) => element.right)
                                   .map((e) => StickerWidget(e))
                                   .toList(),
@@ -182,7 +185,7 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>>
                           padding: const EdgeInsets.all(8),
                           child: Wrap(
                             direction: Axis.vertical,
-                            children: widget._data.stickers
+                            children: data.stickers
                                 .where((element) => !element.right)
                                 .map((e) => StickerWidget(e))
                                 .toList(),
@@ -203,7 +206,7 @@ class _GridCellState<T extends CellData> extends State<GridCell<T>>
                         child: Padding(
                             padding: const EdgeInsets.all(6),
                             child: Text(
-                              widget._data.name,
+                              data.name,
                               softWrap: false,
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,

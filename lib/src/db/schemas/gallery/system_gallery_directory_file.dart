@@ -11,10 +11,12 @@ import 'dart:io';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/post_base.dart';
+import 'package:gallery/src/db/schemas/gallery/favorite_media.dart';
+import 'package:gallery/src/db/schemas/gallery/note_gallery.dart';
 import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
 import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
 import 'package:gallery/src/net/downloader.dart';
-import 'package:gallery/src/interfaces/booru/booru_api.dart';
+import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/pages/settings/global_progress.dart';
@@ -123,7 +125,7 @@ class SystemGalleryDirectoryFile implements Cell {
                       builder: (context) {
                         return TranslationNotes(
                           postId: res!.id,
-                          api: BooruAPI.fromEnum(res.booru, page: null),
+                          api: BooruAPIState.fromEnum(res.booru, page: null),
                         );
                       },
                     ),
@@ -154,7 +156,7 @@ class SystemGalleryDirectoryFile implements Cell {
       if (size == 0 && res != null)
         IconButton(
             onPressed: () {
-              final api = BooruAPI.fromEnum(res!.booru, page: null);
+              final api = BooruAPIState.fromEnum(res!.booru, page: null);
 
               api.singlePost(res.id).then((post) {
                 PlatformFunctions.deleteFiles([this]);
@@ -181,7 +183,7 @@ class SystemGalleryDirectoryFile implements Cell {
       if (res != null)
         IconButton(
             onPressed: () {
-              final api = BooruAPI.fromEnum(res!.booru, page: null);
+              final api = BooruAPIState.fromEnum(res!.booru, page: null);
 
               launchUrl(api.browserLink(res.id),
                   mode: LaunchMode.externalApplication);
@@ -306,7 +308,7 @@ class SystemGalleryDirectoryFile implements Cell {
         addInfoTile(colors: colors, title: "Size", subtitle: kbMbSize(size)),
         if (res != null && tagsFlat.contains("translated"))
           TranslationNotes.tile(context, colors.foregroundColor, res.id,
-              () => BooruAPI.fromEnum(res!.booru, page: null)),
+              () => BooruAPIState.fromEnum(res!.booru, page: null)),
       ],
       name,
       temporary: plug.temporary,
@@ -372,6 +374,32 @@ class SystemGalleryDirectoryFile implements Cell {
   Thumbnail? getThumbnail() {
     return Dbs.g.thumbnail!.thumbnails.getSync(id);
   }
+
+  static SystemGalleryDirectoryFile decode(Object result) {
+    result as List<Object?>;
+
+    final id = result[0]! as int;
+    final name = result[2]! as String;
+
+    return SystemGalleryDirectoryFile(
+      isOriginal: PostTags.g.isOriginal(name),
+      isDuplicate: RegExp(r'[(][0-9].*[)][.][a-zA-Z0-9].*').hasMatch(name),
+      isFavorite: Dbs.g.blacklisted.favoriteMedias.getSync(id) != null,
+      tagsFlat: PostTags.g.getTagsPost(name).join(" "),
+      notesFlat:
+          Dbs.g.main.noteGallerys.getSync(id)?.text.join().toLowerCase() ?? "",
+      id: id,
+      bucketId: result[1]! as String,
+      name: name,
+      originalUri: result[3]! as String,
+      lastModified: result[4]! as int,
+      height: result[5]! as int,
+      width: result[6]! as int,
+      size: result[7]! as int,
+      isVideo: result[8]! as bool,
+      isGif: result[9]! as bool,
+    );
+  }
 }
 
 Future<void> loadNetworkThumb(String filename, int id,
@@ -394,7 +422,7 @@ Future<void> loadNetworkThumb(String filename, int id,
 
   try {
     final res = PostTags.g.dissassembleFilename(filename);
-    final api = BooruAPI.fromEnum(res.booru, page: null);
+    final api = BooruAPIState.fromEnum(res.booru, page: null);
 
     try {
       final post = await api.singlePost(res.id);

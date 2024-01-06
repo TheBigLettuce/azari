@@ -6,13 +6,13 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/grid_settings/directories.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
+import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/pages/booru/grid_settings_button.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/widgets/copy_move_preview.dart';
@@ -30,7 +30,6 @@ import 'package:gallery/src/widgets/grid/layouts/segment_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:logging/logging.dart';
 
 import '../../db/schemas/settings/settings.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
@@ -63,6 +62,8 @@ class GalleryDirectories extends StatefulWidget {
 
 class _GalleryDirectoriesState extends State<GalleryDirectories>
     with SearchFilterGrid<SystemGalleryDirectory> {
+  static const _log = LogTarget.gallery;
+
   late final StreamSubscription<Settings?> settingsWatcher;
   late final StreamSubscription<MiscSettings?> miscSettingsWatcher;
   late final StreamSubscription<GridSettingsDirectories?> gridSettingsWatcher;
@@ -300,9 +301,11 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                                 temporary: true));
                         // ignore: use_build_context_synchronously
                         Navigator.pop(context);
-                      } catch (e) {
-                        log("new folder in android_directories",
-                            level: Level.SEVERE.value, error: e);
+                      } catch (e, trace) {
+                        _log.logDefaultImportant(
+                            "new folder in android_directories".errorMessage(e),
+                            trace);
+
                         // ignore: use_build_context_synchronously
                         Navigator.pop(context);
                       }

@@ -11,9 +11,10 @@ import 'package:gallery/src/db/schemas/booru/post.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru/strip_html.dart';
+import 'package:gallery/src/logging/logging.dart';
 
 import '../../db/schemas/settings/settings.dart';
-import '../../interfaces/booru/booru_api.dart';
+import '../../interfaces/booru/booru_api_state.dart';
 import '../../interfaces/booru_tagging.dart';
 import '../cloudflare_exception.dart';
 import '../unsaveable_cookie_jar.dart';
@@ -21,7 +22,9 @@ import '../unsaveable_cookie_jar.dart';
 List<String> _fromDanbooruTags(List<dynamic> l) =>
     l.map((e) => e["name"] as String).toList();
 
-class Danbooru implements BooruAPI {
+class Danbooru implements BooruAPIState {
+  static const _log = LogTarget.booru;
+
   final UnsaveableCookieJar cookieJar;
 
   @override
@@ -46,9 +49,11 @@ class Danbooru implements BooruAPI {
 
   @override
   Future<Iterable<String>> notes(int postId) async {
-    final resp = await client.getUri(Uri.https(booru.url, "/notes.json", {
-      "search[post_id]": postId.toString(),
-    }));
+    final resp = await client.getUriLog(
+        Uri.https(booru.url, "/notes.json", {
+          "search[post_id]": postId.toString(),
+        }),
+        LogReq(LogReq.notes(booru, postId), _log));
 
     if (resp.statusCode != 200) {
       throw "status code not 200";
@@ -60,13 +65,17 @@ class Danbooru implements BooruAPI {
 
   @override
   Future<List<String>> completeTag(String tag) async {
-    final resp = await client.getUri(
-      Uri.https(booru.url, "/tags.json", {
-        "search[name_matches]": "$tag*",
-        "search[order]": "count",
-        "limit": "10",
-      }),
-    );
+    if (tag.isEmpty) {
+      return const [];
+    }
+
+    final resp = await client.getUriLog(
+        Uri.https(booru.url, "/tags.json", {
+          "search[name_matches]": "$tag*",
+          "search[order]": "count",
+          "limit": "10",
+        }),
+        LogReq(LogReq.completeTag(booru, tag), _log));
 
     if (resp.statusCode != 200) {
       throw "status code not 200";
@@ -78,7 +87,9 @@ class Danbooru implements BooruAPI {
   @override
   Future<Post> singlePost(int id) async {
     try {
-      final resp = await client.getUri(Uri.https(booru.url, "/posts/$id.json"));
+      final resp = await client.getUriLog(
+          Uri.https(booru.url, "/posts/$id.json"),
+          LogReq(LogReq.singlePost(booru, id), _log));
 
       if (resp.statusCode != 200) {
         throw resp.data["message"];
@@ -132,7 +143,7 @@ class Danbooru implements BooruAPI {
         };
 
     final query = <String, dynamic>{
-      "limit": BooruAPI.numberOfElementsPerRefresh().toString(),
+      "limit": BooruAPIState.numberOfElementsPerRefresh().toString(),
       "format": "json",
       "post[tags]": "${safeModeS()} $tags",
     };
@@ -146,8 +157,13 @@ class Danbooru implements BooruAPI {
     }
 
     try {
-      final resp =
-          await client.getUri(Uri.https(booru.url, "/posts.json", query));
+      final resp = await client.getUriLog(
+          Uri.https(booru.url, "/posts.json", query),
+          LogReq(
+              postid != null
+                  ? LogReq.singlePost(booru, postid)
+                  : LogReq.page(booru, page!),
+              _log));
 
       if (resp.statusCode != 200) {
         throw "status not ok";

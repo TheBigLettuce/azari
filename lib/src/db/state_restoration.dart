@@ -17,7 +17,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../interfaces/booru/booru_api.dart';
+import '../interfaces/booru/booru_api_state.dart';
 import '../pages/booru/random.dart';
 import '../pages/booru/secondary.dart';
 import 'schemas/settings/settings.dart';
@@ -33,6 +33,16 @@ class StateRestoration {
 
   GridState get current => _mainGrid.gridStates.getByNameSync(_copy.name)!;
   GridState get copy => _copy;
+
+  void updatePage(int? page) {
+    final prev = current;
+    if (prev.page == page) {
+      return;
+    }
+
+    _mainGrid.writeTxnSync(
+        () => _mainGrid.gridStates.putSync(prev.copy(false, page: page)));
+  }
 
   void updateSession(String newTags) {
     if (_copy.name == _mainGrid.name) {

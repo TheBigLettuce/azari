@@ -7,14 +7,14 @@
 
 import 'package:flutter/material.dart';
 
-import '../interfaces/booru/booru_api.dart';
+import '../interfaces/booru/booru_api_state.dart';
 
 class TranslationNotes extends StatefulWidget {
   final int postId;
-  final BooruAPI api;
+  final BooruAPIState api;
 
   static Widget tile(BuildContext context, Color foregroundColor, int postId,
-      BooruAPI Function() api) {
+      BooruAPIState Function() api) {
     return ListTile(
       textColor: foregroundColor,
       title: Text("Has translations"),

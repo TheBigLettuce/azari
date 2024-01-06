@@ -23,7 +23,7 @@ import 'package:qrscan/qrscan.dart';
 
 import '../db/schemas/booru/post.dart';
 import 'grid/actions/booru_grid.dart';
-import '../interfaces/booru/booru_api.dart';
+import '../interfaces/booru/booru_api_state.dart';
 import '../db/state_restoration.dart';
 import '../db/schemas/downloader/download_file.dart';
 import '../db/schemas/settings/settings.dart';
@@ -39,7 +39,7 @@ class SinglePost extends StatefulWidget {
 }
 
 class _SinglePostState extends State<SinglePost> {
-  final defaultBooru = BooruAPI.fromSettings();
+  final defaultBooru = BooruAPIState.fromSettings();
   final controller = TextEditingController();
   final menuController = MenuController();
 
@@ -65,9 +65,9 @@ class _SinglePostState extends State<SinglePost> {
 
     inProcessLoading = true;
 
-    BooruAPI booru;
+    BooruAPIState booru;
     if (replaceBooru != null) {
-      booru = BooruAPI.fromEnum(replaceBooru, page: null);
+      booru = BooruAPIState.fromEnum(replaceBooru, page: null);
     } else {
       booru = defaultBooru;
     }

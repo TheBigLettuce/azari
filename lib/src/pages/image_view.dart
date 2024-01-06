@@ -374,7 +374,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                         .map(
                           (e) => WrapGridActionButton(e.icon, () {
                             e.onPress([currentCell]);
-                          }, false, "",
+                          }, false,
                               followColorTheme: true,
                               color: e.color,
                               play: e.play,

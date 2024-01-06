@@ -21,6 +21,10 @@ part 'download_file.g.dart';
 @collection
 class DownloadFile implements Cell {
   @override
+  String toString() =>
+      "Download${isFailed ? '(failed)' : inProgress ? '(in progress)' : ''}: $name, url: $url";
+
+  @override
   Id? isarId;
 
   @override

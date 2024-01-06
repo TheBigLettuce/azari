@@ -10,7 +10,13 @@ part of '../callback_grid.dart';
 class GridSelection<T extends Cell> {
   final selected = <int, T>{};
   final List<GridAction<T>> addActions;
+  final bool noAppBar;
   int? lastSelected;
+
+  void use(void Function(List<T> l) f) {
+    f(selected.values.toList());
+    reset();
+  }
 
   final void Function(Function()) _setState;
   final SelectionGlue<T> glue;
@@ -110,5 +116,8 @@ class GridSelection<T extends Cell> {
     HapticFeedback.selectionClick();
   }
 
-  GridSelection._(this._setState, this.addActions, this.glue, this.controller);
+  GridSelection._(this._setState, this.addActions, this.glue, this.controller,
+      this.noAppBar);
+  GridSelection(this._setState, this.addActions, this.glue, this.controller,
+      this.noAppBar);
 }

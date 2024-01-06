@@ -11,6 +11,12 @@ import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:gallery/src/db/schemas/booru/post.dart';
+import 'package:gallery/src/db/schemas/settings/settings.dart';
+import 'package:gallery/src/db/state_restoration.dart';
+import 'package:gallery/src/interfaces/background_data_loader/loader_keys.dart';
+import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
+import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
 import 'package:gallery/src/pages/settings/network_status.dart';
@@ -18,7 +24,9 @@ import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/widgets/fade_sideways_page_transition_builder.dart';
+import 'package:gallery/src/widgets/grid2/data_loaders/cell_loader.dart';
 import 'package:gallery/src/widgets/restart_widget.dart';
+import 'package:isar/isar.dart';
 // import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -60,6 +68,8 @@ ThemeData _buildTheme(Brightness brightness, Color accentColor) {
 /// Picks a file and returns to the app requested.
 @pragma('vm:entry-point')
 void mainPickfile() async {
+  initLogger();
+
   WidgetsFlutterBinding.ensureInitialized();
   await initalizeDb(true);
   initalizeGalleryPlug(true);
@@ -94,9 +104,39 @@ void mainPickfile() async {
 }
 
 void main() async {
+  initLogger();
+
   WidgetsFlutterBinding.ensureInitialized();
   await initalizeDb(false);
   await initalizeDownloader();
+
+  await BackgroundCellLoader<Post>.cache(kMainGridLoaderKey, () {
+    final settings = Settings.fromDb();
+    final db = DbsOpen.primaryGrid(settings.selectedBooru);
+    final state =
+        StateRestoration(db, settings.selectedBooru.string, settings.safeMode);
+
+    return (
+      (db, idx) => db.posts.getSync(idx + 1),
+      db,
+      kPrimaryGridSchemas,
+      (loader) {
+        final tagManager = TagManager.fromEnum(settings.selectedBooru);
+
+        return BooruAPILoaderStateController(
+            loader,
+            BooruAPIState.fromEnum(settings.selectedBooru,
+                page: state.copy.page),
+            tagManager.excluded,
+            "",
+            db.posts.where().sortById().findFirstSync()?.id,
+            onPostsLoaded: (api) {
+          state.updatePage(api.currentPage);
+        });
+      },
+      null
+    );
+  }).init();
 
   changeExceptionErrorColors();
 

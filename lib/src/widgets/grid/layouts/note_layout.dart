@@ -16,7 +16,14 @@ import 'package:gallery/src/widgets/shimmer_loading_indicator.dart';
 
 import '../callback_grid.dart';
 
+enum NoteLayoutVariant {
+  normal,
+  singleText;
+}
+
 class NoteLayout<T extends Cell> implements GridLayouter<T> {
+  final NoteLayoutVariant variant;
+
   @override
   final GridColumn columns;
 
@@ -27,80 +34,146 @@ class NoteLayout<T extends Cell> implements GridLayouter<T> {
     return SliverPadding(
       padding: const EdgeInsets.all(8),
       sliver: SliverGrid.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3, childAspectRatio: 0.7, crossAxisSpacing: 2),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns.number,
+            childAspectRatio: 0.7,
+            crossAxisSpacing: 2),
         itemBuilder: (context, index) {
           final note = state.widget.getCell(index);
-          final provider = note.getCellData(false, context: context).thumb;
 
-          final backgroundColor =
-              note is NoteBase ? (note as NoteBase).backgroundColor : null;
-          final textColor =
-              note is NoteBase ? (note as NoteBase).textColor : null;
+          final text = getText(note);
 
-          return InkWell(
-              borderRadius: const BorderRadius.all(Radius.circular(10)),
-              onTap: () => state.onPressed(context, note, index),
-              child: Padding(
-                padding: const EdgeInsets.all(2),
-                child: Container(
-                  decoration: BoxDecoration(
-                      color: backgroundColor != null
-                          ? Color(backgroundColor).harmonizeWith(
-                              Theme.of(context).colorScheme.primary)
-                          : Theme.of(context).colorScheme.secondaryContainer,
-                      borderRadius:
-                          const BorderRadius.all(Radius.circular(10))),
-                  child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          return Stack(
-                            children: [
-                              Align(
-                                  alignment: Alignment.topLeft,
-                                  child: Container(
-                                    width: constraints.minHeight * 0.2,
-                                    height: constraints.maxHeight * 0.2,
-                                    decoration: const BoxDecoration(
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(10))),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: provider != null
-                                        ? Image(
-                                            fit: BoxFit.cover,
-                                            filterQuality: FilterQuality.high,
-                                            frameBuilder: (
-                                              context,
-                                              child,
-                                              frame,
-                                              wasSynchronouslyLoaded,
-                                            ) {
-                                              if (wasSynchronouslyLoaded) {
-                                                return child;
-                                              }
+          return Note(
+            note: note,
+            text: text,
+            onPressed: () => state.onPressed(context, note, index),
+            variant: variant,
+          );
+        },
+        itemCount: state.mutationInterface.cellCount,
+      ),
+    );
+  }
 
-                                              return frame == null
-                                                  ? const ShimmerLoadingIndicator()
-                                                  : child.animate().fadeIn();
-                                            },
-                                            image: provider)
-                                        : null,
-                                  )),
-                              Align(
-                                alignment: Alignment.bottomRight,
-                                child: Container(
-                                    clipBehavior: Clip.antiAlias,
-                                    decoration: const BoxDecoration(
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(8))),
-                                    width: (constraints.maxHeight * 0.8),
-                                    height: (constraints.maxHeight * 0.78),
-                                    child: SingleChildScrollView(
+  @override
+  bool get isList => false;
+
+  const NoteLayout(this.columns, this.getText,
+      {this.variant = NoteLayoutVariant.normal});
+}
+
+class Note<T extends Cell> extends StatelessWidget {
+  final T note;
+  final List<String>? text;
+  final void Function()? onPressed;
+  final NoteLayoutVariant variant;
+
+  const Note(
+      {super.key,
+      required this.note,
+      required this.onPressed,
+      required this.text,
+      required this.variant});
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = note.getCellData(false, context: context).thumb;
+
+    final backgroundColor =
+        note is NoteBase ? (note as NoteBase).backgroundColor : null;
+    final textColor = note is NoteBase ? (note as NoteBase).textColor : null;
+
+    return InkWell(
+      borderRadius: const BorderRadius.all(Radius.circular(10)),
+      onTap: onPressed,
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: Container(
+          decoration: BoxDecoration(
+              color: backgroundColor != null
+                  ? Color(backgroundColor)
+                      .harmonizeWith(Theme.of(context).colorScheme.primary)
+                  : Theme.of(context).colorScheme.secondaryContainer,
+              borderRadius: const BorderRadius.all(Radius.circular(10))),
+          child: Padding(
+              padding: text == null
+                  ? EdgeInsets.zero
+                  : variant == NoteLayoutVariant.singleText
+                      ? const EdgeInsets.all(4)
+                      : const EdgeInsets.all(8),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Stack(
+                    children: [
+                      Align(
+                          alignment: Alignment.topLeft,
+                          child: Container(
+                            width: text == null
+                                ? constraints.maxWidth
+                                : constraints.minHeight *
+                                    (variant == NoteLayoutVariant.singleText
+                                        ? 0.8
+                                        : 0.2),
+                            height: text == null
+                                ? constraints.maxHeight
+                                : constraints.maxHeight *
+                                    (variant == NoteLayoutVariant.singleText
+                                        ? 0.73
+                                        : 0.2),
+                            decoration: const BoxDecoration(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(10))),
+                            clipBehavior: Clip.antiAlias,
+                            child: provider != null
+                                ? Image(
+                                    fit: BoxFit.cover,
+                                    filterQuality: FilterQuality.high,
+                                    frameBuilder: (
+                                      context,
+                                      child,
+                                      frame,
+                                      wasSynchronouslyLoaded,
+                                    ) {
+                                      if (wasSynchronouslyLoaded) {
+                                        return child;
+                                      }
+
+                                      return frame == null
+                                          ? const ShimmerLoadingIndicator()
+                                          : child.animate().fadeIn();
+                                    },
+                                    image: provider)
+                                : null,
+                          )),
+                      if (text != null)
+                        Align(
+                          alignment: variant == NoteLayoutVariant.singleText
+                              ? Alignment.bottomCenter
+                              : Alignment.bottomRight,
+                          child: Container(
+                              clipBehavior: Clip.antiAlias,
+                              decoration: const BoxDecoration(
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(8))),
+                              width: constraints.maxHeight *
+                                  (variant == NoteLayoutVariant.singleText
+                                      ? 1
+                                      : 0.8),
+                              height: constraints.maxHeight *
+                                  (variant == NoteLayoutVariant.singleText
+                                      ? 0.25
+                                      : 0.78),
+                              child: variant == NoteLayoutVariant.singleText
+                                  ? Text(
+                                      text!.firstOrNull ?? "",
+                                      overflow: TextOverflow.fade,
+                                      textAlign: TextAlign.center,
+                                    )
+                                  : SingleChildScrollView(
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
-                                        children: getText(note)
+                                        children: text!
                                             .map((e) => Padding(
                                                   padding:
                                                       const EdgeInsets.only(
@@ -125,21 +198,13 @@ class NoteLayout<T extends Cell> implements GridLayouter<T> {
                                             .toList(),
                                       ),
                                     )),
-                              )
-                            ],
-                          );
-                        },
-                      )),
-                ),
-              ));
-        },
-        itemCount: state.mutationInterface.cellCount,
+                        )
+                    ],
+                  );
+                },
+              )),
+        ),
       ),
     );
   }
-
-  @override
-  bool get isList => false;
-
-  const NoteLayout(this.columns, this.getText);
 }

@@ -53,7 +53,8 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
         height: widget.size,
         width: widget.size,
         child: GridCell(
-          cell: cellData.getCellData(false, context: context),
+          cell: cellData,
+          isList: false,
           indx: id,
           ignoreStickers: true,
           onPressed: (context) {

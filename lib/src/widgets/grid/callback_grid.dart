@@ -18,6 +18,7 @@ import 'package:gallery/src/interfaces/note_interface.dart';
 import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
+import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 import 'package:logging/logging.dart';
 import '../../interfaces/cell/cell.dart';
 import '../../interfaces/grid/grid_mutation_interface.dart';
@@ -227,7 +228,11 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
   final GlobalKey<ImageViewState<T>> imageViewKey = GlobalKey();
 
   late final selection = GridSelection<T>._(
-      setState, widget.description.actions, widget.selectionGlue, controller);
+      setState,
+      widget.description.actions,
+      widget.selectionGlue,
+      controller,
+      !widget.description.showAppBar);
 
   StreamSubscription<int>? ticker;
 
@@ -286,8 +291,6 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     }
 
     _state.updateImageView();
-
-    // widget.updateScrollPosition?.call(0);
 
     setState(() {});
   }
@@ -528,27 +531,12 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         if (widget.additionalKeybinds != null) ...widget.additionalKeybinds!,
       };
 
-  Widget _withPadding(BuildContext context, Widget child) {
-    return SliverPadding(
-      padding: EdgeInsets.only(
-          bottom: widget.systemNavigationInsets.bottom +
-              (widget.selectionGlue.isOpen() &&
-                      !widget.selectionGlue.keyboardVisible()
-                  ? 84
-                  : 0) +
-              (widget.footer != null
-                  ? widget.footer!.preferredSize.height
-                  : 0)),
-      sliver: child,
-    );
-  }
-
   GridCell makeGridCell(BuildContext context, T cell, int indx,
           {required bool hideAlias, required bool tightMode}) =>
       GridCell(
-        cell: cell.getCellData(widget.description.layout.isList,
-            context: context),
+        cell: cell,
         hidealias: hideAlias,
+        isList: widget.description.layout.isList,
         indx: indx,
         download: widget.download,
         tight: tightMode,
@@ -713,7 +701,12 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                     ),
                   ),
                 )
-              : _withPadding(context, widget.description.layout(context, this)),
+              : _WrapPadding<T>(
+                  systemNavigationInsets: widget.systemNavigationInsets.bottom,
+                  footer: widget.footer,
+                  selectionGlue: widget.selectionGlue,
+                  child: widget.description.layout(context, this),
+                ),
         ],
       );
 
@@ -730,38 +723,58 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
           child: Focus(
             autofocus: true,
             focusNode: widget.mainFocus,
-            child: Stack(
+            child: Column(
               children: [
-                RefreshIndicator(
-                    onRefresh: _state.onRefresh,
-                    child: Scrollbar(
-                        interactive: false,
-                        thumbVisibility:
-                            Platform.isAndroid || Platform.isIOS ? false : true,
-                        thickness: 6,
-                        controller: controller,
-                        child: _makeGrid(context))),
-                if (widget.footer != null)
-                  Align(
-                    alignment: Alignment.bottomLeft,
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        bottom: widget.systemNavigationInsets.bottom,
+                Expanded(
+                    child: Stack(
+                  children: [
+                    RefreshIndicator(
+                        onRefresh: _state.onRefresh,
+                        child: Scrollbar(
+                            interactive: false,
+                            thumbVisibility:
+                                Platform.isAndroid || Platform.isIOS
+                                    ? false
+                                    : true,
+                            thickness: 6,
+                            controller: controller,
+                            child: _makeGrid(context))),
+                    if (widget.footer != null)
+                      Align(
+                        alignment: Alignment.bottomLeft,
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            bottom: widget.systemNavigationInsets.bottom,
+                          ),
+                          child: widget.footer!,
+                        ),
                       ),
-                      child: widget.footer!,
-                    ),
-                  ),
-                Align(
-                    alignment: Alignment.bottomRight,
-                    child: _Fab(
-                      key: _fabKey,
-                      scrollPos: widget.updateScrollPosition,
-                      controller: controller,
-                      selectionGlue: widget.selectionGlue,
-                      systemNavigationInsets: widget.systemNavigationInsets,
-                      addFabPadding: widget.addFabPadding,
-                      footer: widget.footer,
-                    )),
+                    if (!widget.description.showAppBar)
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: PreferredSize(
+                          preferredSize: const Size.fromHeight(4),
+                          child: !_state.isRefreshing
+                              ? const Padding(
+                                  padding: EdgeInsets.only(top: 4),
+                                  child: SizedBox(),
+                                )
+                              : const LinearProgressIndicator(),
+                        ),
+                      ),
+                    Align(
+                        alignment: Alignment.bottomRight,
+                        child: _Fab(
+                          key: _fabKey,
+                          scrollPos: widget.updateScrollPosition,
+                          controller: controller,
+                          selectionGlue: widget.selectionGlue,
+                          systemNavigationInsets: widget.systemNavigationInsets,
+                          addFabPadding: widget.addFabPadding,
+                          footer: widget.footer,
+                        )),
+                  ],
+                ))
               ],
             ),
           ));
@@ -774,5 +787,33 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     return widget.registerNotifiers == null
         ? _makeBody(context, bindings)
         : widget.registerNotifiers!(_makeBody(context, bindings));
+  }
+}
+
+class _WrapPadding<T extends Cell> extends StatelessWidget {
+  final PreferredSizeWidget? footer;
+  final SelectionGlue<T> selectionGlue;
+  final double systemNavigationInsets;
+  final Widget child;
+
+  const _WrapPadding({
+    super.key,
+    required this.footer,
+    required this.selectionGlue,
+    required this.systemNavigationInsets,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverPadding(
+      padding: EdgeInsets.only(
+          bottom: systemNavigationInsets +
+              (selectionGlue.isOpen() && selectionGlue.keyboardVisible()
+                  ? 84
+                  : 0) +
+              (footer != null ? footer!.preferredSize.height : 0)),
+      sliver: child,
+    );
   }
 }

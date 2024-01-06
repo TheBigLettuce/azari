@@ -6,7 +6,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:async';
-import 'dart:developer';
 
 import 'dart:math' as math;
 import 'package:dynamic_color/dynamic_color.dart';
@@ -19,6 +18,7 @@ import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_api_files.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_files_extra.dart';
+import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/pages/booru/grid_settings_button.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
@@ -30,7 +30,6 @@ import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/grid/layouts/list_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../db/schemas/settings/settings.dart';
@@ -70,6 +69,8 @@ class GalleryFiles extends StatefulWidget {
 
 class _GalleryFilesState extends State<GalleryFiles>
     with SearchFilterGrid<SystemGalleryDirectoryFile>, _FilesActionsMixin {
+  static const _log = LogTarget.gallery;
+
   final stream = StreamController<int>(sync: true);
 
   final plug = chooseGalleryPlug();
@@ -344,9 +345,10 @@ class _GalleryFilesState extends State<GalleryFiles>
                           widget.callback?.call(state
                               .gridKey.currentState!.mutationInterface
                               .getCell(n));
-                        } catch (e) {
-                          log("getting random number",
-                              level: Level.WARNING.value, error: e);
+                        } catch (e, trace) {
+                          _log.logDefaultImportant(
+                              "getting random number".errorMessage(e), trace);
+
                           return;
                         }
 

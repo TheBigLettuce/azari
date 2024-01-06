@@ -17,15 +17,16 @@ import 'package:gallery/src/db/schemas/booru/note_booru.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_booru.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
-import 'package:gallery/src/interfaces/booru/booru_api.dart';
+import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
+import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/widgets/bookmark_button.dart';
 import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/grid/layouts/list_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
+import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 import 'package:isar/isar.dart';
-import 'package:logging/logging.dart';
 
 import '../../widgets/grid/actions/booru_grid.dart';
 import '../../net/downloader.dart';
@@ -67,6 +68,8 @@ class MainBooruGrid extends StatefulWidget {
 
 class _MainBooruGridState extends State<MainBooruGrid>
     with SearchLaunchGrid<Post>, MainGridSettingsMixin {
+  static const _log = LogTarget.booru;
+
   late final StreamSubscription<Settings?> settingsWatcher;
   late final StreamSubscription favoritesWatcher;
   late final StreamSubscription timeUpdater;
@@ -74,7 +77,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
 
   late final AppLifecycleListener lifecycleListener;
 
-  late final BooruAPI api;
+  late final BooruAPIState api;
   late final StateRestoration restore;
   late final TagManager<Restorable> tagManager;
 
@@ -105,7 +108,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
     // main grid safe mode only from Settings
     restore = StateRestoration(widget.mainGrid,
         state.settings.selectedBooru.string, state.settings.safeMode);
-    api = BooruAPI.fromSettings(page: restore.copy.page);
+    api = BooruAPIState.fromSettings(page: restore.copy.page);
 
     tagManager = TagManager.restorable(restore, (fire, f) {
       return widget.mainGrid.tags
@@ -239,8 +242,10 @@ class _MainBooruGridState extends State<MainBooruGrid>
         }
       }
     } catch (e, trace) {
-      log("_addLast on grid ${state.settings.selectedBooru.string}",
-          level: Level.WARNING.value, error: e, stackTrace: trace);
+      _log.logDefaultImportant(
+          "_addLast on grid ${state.settings.selectedBooru.string}"
+              .errorMessage(e),
+          trace);
     }
 
     return widget.mainGrid.posts.count();
@@ -338,7 +343,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
                         return SecondaryBooruGrid(
                           restore: last,
                           noRestoreOnBack: false,
-                          api: BooruAPI.fromEnum(api.booru,
+                          api: BooruAPIState.fromEnum(api.booru,
                               page: last.copy.page),
                           tagManager: tagManager,
                           instance: DbsOpen.secondaryGridName(last.copy.name),

@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/db/state_restoration.dart';
-import 'package:gallery/src/interfaces/booru/booru_api.dart';
+import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/pages/booru/random.dart';
 import 'package:isar/isar.dart';
 
@@ -118,7 +118,7 @@ class _BookmarkButtonState extends State<BookmarkButton> {
                     Navigator.push(context, MaterialPageRoute(
                       builder: (context) {
                         return RandomBooruGrid(
-                          api: BooruAPI.fromEnum(e.booru, page: e.page),
+                          api: BooruAPIState.fromEnum(e.booru, page: e.page),
                           tagManager: TagManager.fromEnum(e.booru),
                           tags: e.tags,
                           state: e,

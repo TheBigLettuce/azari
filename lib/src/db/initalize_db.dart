@@ -11,6 +11,7 @@ import 'dart:io' as io;
 import 'package:gallery/src/db/schemas/gallery/blacklisted_directory.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
+import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/grid_settings/directories.dart';
 import 'package:gallery/src/db/schemas/grid_settings/favorites.dart';
@@ -29,6 +30,7 @@ import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
 import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
 import 'package:gallery/src/db/schemas/settings/video_settings.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
+import 'package:gallery/src/logging/logging.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'schemas/gallery/system_gallery_directory.dart';
@@ -91,6 +93,7 @@ Future initalizeDb(bool temporary) async {
     GridSettingsDirectoriesSchema,
     GridSettingsFavoritesSchema,
     GridSettingsFilesSchema,
+    GridSettingsAnimeDiscoverySchema,
   ], directory: directoryPath, inspector: false);
 
   final blacklistedDirIsar = Isar.openSync([
@@ -122,4 +125,7 @@ Future initalizeDb(bool temporary) async {
       temporaryImagesDir: temporaryImagesPath,
       blacklisted: blacklistedDirIsar,
       thumbnail: thumbnailIsar);
+
+  LogTarget.init.logDefault(
+      "DB${temporary ? '(temporary)' : ''}".messageInit, LogSeverity.init);
 }

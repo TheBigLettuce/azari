@@ -16,7 +16,7 @@ import 'package:gallery/src/widgets/radio_dialog.dart';
 
 class GridSettingsButton extends StatelessWidget {
   final GridSettingsBase gridSettings;
-  final void Function(GridAspectRatio?) selectRatio;
+  final void Function(GridAspectRatio?)? selectRatio;
   final void Function(bool)? selectHideName;
   final void Function(bool)? selectListView;
   final void Function(GridColumn?) selectGridColumn;
@@ -43,7 +43,8 @@ class GridSettingsButton extends StatelessWidget {
           _listView(gridSettings.listView, selectListView!),
         if (selectHideName != null)
           _hideName(context, gridSettings.hideName, selectHideName!),
-        _ratio(context, gridSettings.aspectRatio, selectRatio),
+        if (selectRatio != null)
+          _ratio(context, gridSettings.aspectRatio, selectRatio!),
         _columns(context, gridSettings.columns, selectGridColumn)
       ],
     );

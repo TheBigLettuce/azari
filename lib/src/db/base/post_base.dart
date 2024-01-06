@@ -33,7 +33,7 @@ import 'package:transparent_image/transparent_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../interfaces/booru/booru_api.dart';
+import '../../interfaces/booru/booru_api_state.dart';
 import '../../interfaces/cell/contentable.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
 import '../../plugs/platform_functions.dart';
@@ -99,30 +99,40 @@ class PostBase implements Cell {
         ));
   }
 
+  static Widget openInBrowserButton(Uri uri,
+          [void Function()? overrideOnPressed]) =>
+      IconButton(
+        icon: const Icon(Icons.public),
+        onPressed: overrideOnPressed ??
+            () => launchUrl(uri, mode: LaunchMode.externalApplication),
+      );
+
+  static Widget shareButton(BuildContext context, String url,
+          [void Function()? onLongPress]) =>
+      GestureDetector(
+        onLongPress: onLongPress,
+        child: IconButton(
+            onPressed: () {
+              PlatformFunctions.shareMedia(url, url: true);
+            },
+            icon: const Icon(Icons.share)),
+      );
+
   @override
   List<Widget>? addButtons(BuildContext context) {
     return [
-      IconButton(
-        icon: const Icon(Icons.public),
-        onPressed: () {
-          final booru =
-              BooruAPI.fromEnum(Booru.fromPrefix(prefix)!, page: null);
-          launchUrl(booru.browserLink(id),
-              mode: LaunchMode.externalApplication);
-          booru.close();
-        },
-      ),
+      openInBrowserButton(Uri.base, () {
+        final booru =
+            BooruAPIState.fromEnum(Booru.fromPrefix(prefix)!, page: null);
+
+        launchUrl(booru.browserLink(id), mode: LaunchMode.externalApplication);
+
+        booru.close();
+      }),
       if (Platform.isAndroid)
-        GestureDetector(
-          onLongPress: () {
-            showQr(context, prefix, id);
-          },
-          child: IconButton(
-              onPressed: () {
-                PlatformFunctions.shareMedia(fileUrl, url: true);
-              },
-              icon: const Icon(Icons.share)),
-        )
+        shareButton(context, fileUrl, () {
+          showQr(context, prefix, id);
+        })
       else
         IconButton(
             onPressed: () {
@@ -151,7 +161,7 @@ class PostBase implements Cell {
                       builder: (context) {
                         return TranslationNotes(
                           postId: id,
-                          api: BooruAPI.fromEnum(Booru.fromPrefix(prefix)!,
+                          api: BooruAPIState.fromEnum(Booru.fromPrefix(prefix)!,
                               page: null),
                         );
                       },
@@ -223,8 +233,12 @@ class PostBase implements Cell {
           subtitle: Text(score.toString()),
         ),
         if (tags.contains("translated"))
-          TranslationNotes.tile(context, colors.foregroundColor, id,
-              () => BooruAPI.fromEnum(Booru.fromPrefix(prefix)!, page: null)),
+          TranslationNotes.tile(
+              context,
+              colors.foregroundColor,
+              id,
+              () => BooruAPIState.fromEnum(Booru.fromPrefix(prefix)!,
+                  page: null)),
       ],
       filename(),
       supplyTags: tags,

@@ -18,6 +18,7 @@ import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_api_directories.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_api_files.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_files_extra.dart';
+import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/pages/settings/network_status.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';

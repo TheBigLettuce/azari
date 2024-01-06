@@ -77,6 +77,8 @@ dependencies:
   qrscan: ^0.3.3
   stream_transform: ^2.1.0
   stream_channel: ^2.1.2
+  meta: ^1.11.0
+  jikan_api: ^2.2.0
 
 dev_dependencies:
   flutter_test:

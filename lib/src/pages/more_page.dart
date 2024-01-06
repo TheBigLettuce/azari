@@ -7,8 +7,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/db/state_restoration.dart';
+import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/pages/blacklisted_posts.dart';
 import 'package:gallery/src/pages/notes/notes_page.dart';
+import 'package:gallery/src/pages/tags_page.dart';
 
 import '../widgets/skeletons/drawer/azari_icon.dart';
 import 'dashboard.dart';
@@ -17,7 +20,15 @@ import 'settings/blacklisted_directores.dart';
 import 'settings/settings_widget.dart';
 
 class MorePage extends StatelessWidget {
-  const MorePage({super.key});
+  final TagManager<Unrestorable> tagManager;
+  final FocusNode mainFocus;
+  final BooruAPIState api;
+
+  const MorePage(
+      {super.key,
+      required this.api,
+      required this.mainFocus,
+      required this.tagManager});
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +39,22 @@ class MorePage extends StatelessWidget {
       ),
       body: ListView(
         children: [
+          ListTile(
+            style: ListTileStyle.drawer,
+            leading: Icon(
+              Icons.tag,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            title: Text("Tags"),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) {
+                  return TagsPage(
+                      tagManager: tagManager, mainFocus: mainFocus, booru: api);
+                },
+              ));
+            },
+          ),
           ListTile(
             style: ListTileStyle.drawer,
             leading: Icon(

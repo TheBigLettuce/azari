@@ -7,6 +7,123 @@
 
 import 'package:flutter/material.dart';
 
+class UnsizedCard extends StatelessWidget {
+  final Widget title;
+  final Widget subtitle;
+  final String tooltip;
+  final bool transparentBackground;
+  final void Function()? onPressed;
+
+  const UnsizedCard({
+    super.key,
+    required this.subtitle,
+    required this.title,
+    required this.tooltip,
+    this.transparentBackground = false,
+    this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BaseCard(
+      subtitle: subtitle,
+      title: title,
+      tooltip: tooltip,
+      transparentBackground: transparentBackground,
+      onPressed: onPressed,
+      width: null,
+      height: null,
+    );
+  }
+}
+
+class BaseCard extends StatelessWidget {
+  final Widget title;
+  final Widget subtitle;
+  final String tooltip;
+  final bool transparentBackground;
+  final void Function()? onPressed;
+  final double? width;
+  final double? height;
+
+  const BaseCard({
+    super.key,
+    required this.subtitle,
+    required this.title,
+    required this.tooltip,
+    this.height = 80,
+    this.width = 100,
+    this.transparentBackground = false,
+    this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        Widget card() => InkWell(
+              onTap: onPressed,
+              splashColor: Theme.of(context).colorScheme.onSurface,
+              child: Card.filled(
+                color: transparentBackground ? Colors.transparent : null,
+                child: SizedBox(
+                  width: width,
+                  height: height,
+                  child: Center(
+                    child: Wrap(
+                      direction: Axis.vertical,
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        DefaultTextStyle.merge(
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleSmall
+                              ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primary
+                                      .withOpacity(0.8),
+                                  letterSpacing: 0.8),
+                          child: Padding(
+                            padding: height == null
+                                ? EdgeInsets.zero
+                                : const EdgeInsets.all(4),
+                            child: title,
+                          ),
+                        ),
+                        if (constraints.maxWidth > 50)
+                          DefaultTextStyle.merge(
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.6),
+                                    ),
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 8, right: 8),
+                              child: subtitle,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+
+        return constraints.maxWidth > 50
+            ? card()
+            : Tooltip(
+                message: tooltip,
+                child: card(),
+              );
+      },
+    );
+  }
+}
+
 class DashboardCard extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -15,42 +132,14 @@ class DashboardCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card.filled(
-      child: SizedBox(
-        width: 100,
-        height: 80,
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(4),
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.8),
-                      letterSpacing: 0.8),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 8, right: 8),
-                child: Text(
-                  subtitle,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.6),
-                      ),
-                ),
-              ),
-            ],
-          ),
-        ),
+    return BaseCard(
+      tooltip: subtitle,
+      subtitle: Text(
+        subtitle,
+        textAlign: TextAlign.center,
+      ),
+      title: Text(
+        title,
       ),
     );
   }
