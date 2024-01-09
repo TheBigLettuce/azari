@@ -5,26 +5,40 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of 'anime.dart';
+part of '../anime.dart';
 
 class _DiscoverTab extends StatefulWidget {
+  final RefreshingStatusInterface refreshingInterface;
   final void Function(bool) procPop;
+  final List<AnimeEntry> entries;
+  final void Function(double, {double? infoPos, int? selectedCell})?
+      updateScrollPosition;
+  final double Function() initalScrollOffset;
+  final int Function() initalPage;
+  final void Function(int) savePage;
 
-  const _DiscoverTab({super.key, required this.procPop});
+  const _DiscoverTab(
+      {super.key,
+      required this.procPop,
+      required this.entries,
+      required this.initalPage,
+      required this.savePage,
+      required this.initalScrollOffset,
+      required this.updateScrollPosition,
+      required this.refreshingInterface});
 
   @override
   State<_DiscoverTab> createState() => __DiscoverTabState();
 }
 
 class __DiscoverTabState extends State<_DiscoverTab> {
-  final List<AnimeEntry> _list = [];
   late final StreamSubscription<GridSettingsAnimeDiscovery?>
       gridSettingsWatcher;
   final state = GridSkeletonState<AnimeEntry>();
 
   GridSettingsAnimeDiscovery gridSettings = GridSettingsAnimeDiscovery.current;
 
-  int _page = 0;
+  late int _page = widget.initalPage();
   bool _reachedEnd = false;
 
   @override
@@ -54,8 +68,8 @@ class __DiscoverTabState extends State<_DiscoverTab> {
       state,
       (context) => CallbackGrid<AnimeEntry>(
         key: state.gridKey,
-        getCell: (i) => _list[i],
-        initalScrollPosition: 0,
+        getCell: (i) => widget.entries[i],
+        initalScrollPosition: widget.initalScrollOffset(),
         overrideOnPress: (context, cell) {
           Navigator.push(context, MaterialPageRoute(
             builder: (context) {
@@ -63,7 +77,7 @@ class __DiscoverTabState extends State<_DiscoverTab> {
             },
           ));
         },
-        initalCellCount: _list.length,
+        initalCellCount: widget.entries.length,
         scaffoldKey: state.scaffoldKey,
         systemNavigationInsets:
             viewInsets.copyWith(bottom: viewInsets.bottom + 6),
@@ -71,31 +85,38 @@ class __DiscoverTabState extends State<_DiscoverTab> {
         selectionGlue: GlueProvider.of<AnimeEntry>(context),
         mainFocus: state.mainFocus,
         refresh: () async {
-          _list.clear();
+          widget.entries.clear();
+          widget.savePage(0);
           _page = 0;
           _reachedEnd = false;
 
           final p = await const Jikan().top(_page);
 
-          _list.addAll(p);
+          widget.entries.addAll(p);
 
-          return _list.length;
+          return widget.entries.length;
         },
         addFabPadding: true,
+        updateScrollPosition: widget.updateScrollPosition,
+        refreshInterface: widget.refreshingInterface,
         loadNext: () async {
           final p = await const Jikan().top(_page + 1);
+
           _page += 1;
+          widget.savePage(_page);
 
           if (p.isEmpty) {
             _reachedEnd = true;
           }
-          _list.addAll(p);
+          widget.entries.addAll(p);
 
-          return _list.length;
+          return widget.entries.length;
         },
         description: GridDescription(
           [
-            GridAction(Icons.add, (selected) {}, true),
+            GridAction(Icons.add, (selected) {
+              SavedAnimeEntry.addAll(selected, AnimeMetadata.jikan);
+            }, true),
           ],
           showAppBar: false,
           keybindsDescription: "Anime",
@@ -103,7 +124,7 @@ class __DiscoverTabState extends State<_DiscoverTab> {
           layout: GridLayout(
             gridSettings.columns,
             GridAspectRatio.zeroSeven,
-            hideAlias: gridSettings.hideName,
+            hideAlias: false,
           ),
         ),
       ),

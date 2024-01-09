@@ -369,7 +369,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
               initalCell: restore.copy.selectedPost,
             ),
             overrideBooru: api.booru,
-            canPop: true,
+            canPop: false,
             overrideOnPop: (pop, hideAppBar) {
               if (hideAppBar()) {
                 setState(() {});

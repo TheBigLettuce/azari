@@ -17,11 +17,13 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
   final bool unpressable;
 
   @override
-  Widget call(BuildContext context, CallbackGridState<T> state) {
-    return GridLayouts.list<T>(context, state.mutationInterface,
-        state.selection, state.widget.systemNavigationInsets.bottom,
-        hideThumbnails: hideThumbnails,
-        onPressed: unpressable ? null : state.onPressed);
+  List<Widget> call(BuildContext context, CallbackGridState<T> state) {
+    return [
+      GridLayouts.list<T>(context, state.mutationInterface, state.selection,
+          state.widget.systemNavigationInsets.bottom,
+          hideThumbnails: hideThumbnails,
+          onPressed: unpressable ? null : state.onPressed)
+    ];
   }
 
   @override

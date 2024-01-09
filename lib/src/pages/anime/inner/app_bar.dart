@@ -7,18 +7,24 @@
 
 part of 'anime_inner.dart';
 
-class _AppBar extends StatefulWidget {
+class AnimeInnerAppBar extends StatefulWidget {
   final AnimeEntry entry;
   final ScrollController scrollController;
+  final List<Widget> appBarActions;
 
-  const _AppBar(
-      {super.key, required this.entry, required this.scrollController});
+  const AnimeInnerAppBar({
+    super.key,
+    required this.entry,
+    required this.scrollController,
+    this.appBarActions = const [],
+  });
 
   @override
-  State<_AppBar> createState() => __AppBarState();
+  State<AnimeInnerAppBar> createState() => _AnimeInnerAppBarState();
 }
 
-class __AppBarState extends State<_AppBar> with SingleTickerProviderStateMixin {
+class _AnimeInnerAppBarState extends State<AnimeInnerAppBar>
+    with SingleTickerProviderStateMixin {
   late final animation = AnimationController(
       animationBehavior: AnimationBehavior.preserve,
       vsync: this,
@@ -61,6 +67,7 @@ class __AppBarState extends State<_AppBar> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return AppBar(
       actions: [
+        ...widget.appBarActions,
         IconButton(
           onPressed: () {
             final overlayColor =

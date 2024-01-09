@@ -29,9 +29,12 @@ class GridDescription<T extends Cell> {
 
   final bool ignoreSwipeSelectGesture;
 
+  final bool ignoreEmptyWidgetOnNoContent;
+
   const GridDescription(
     this.actions, {
     this.showAppBar = true,
+    this.ignoreEmptyWidgetOnNoContent = false,
     required this.keybindsDescription,
     this.bottomWidget,
     this.ignoreSwipeSelectGesture = false,

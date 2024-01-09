@@ -5,16 +5,27 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/interfaces/anime.dart';
+import 'package:gallery/src/db/schemas/anime/saved_anime_characters.dart';
+import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
+import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
+import 'package:gallery/src/interfaces/anime/anime_api.dart';
+import 'package:gallery/src/interfaces/anime/anime_entry.dart';
+import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
+import 'package:gallery/src/net/anime/jikan.dart';
+import 'package:gallery/src/pages/anime/finished_inner/finished_page.dart';
+import 'package:gallery/src/pages/anime/inner/padding_background_image.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/widgets/dashboard_card.dart';
+import 'package:gallery/src/widgets/grid/grid_cell.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import 'anime_name_widget.dart';
 
 part 'label.dart';
 part 'app_bar.dart';
@@ -58,8 +69,8 @@ class _AnimeInnerState extends State<AnimeInner> with TickerProviderStateMixin {
       state,
       appBar: PreferredSize(
           preferredSize: const Size.fromHeight(kToolbarHeight),
-          child:
-              _AppBar(entry: widget.entry, scrollController: scrollController)),
+          child: AnimeInnerAppBar(
+              entry: widget.entry, scrollController: scrollController)),
       extendBodyBehindAppBar: true,
       child: SingleChildScrollView(
         controller: scrollController,
@@ -68,9 +79,16 @@ class _AnimeInnerState extends State<AnimeInner> with TickerProviderStateMixin {
               EdgeInsets.only(bottom: MediaQuery.viewPaddingOf(context).bottom),
           child: Stack(
             children: [
-              _BackgroundImage(entry: widget.entry),
-              _CardPanel(entry: widget.entry),
-              _Body(entry: widget.entry),
+              BackgroundImage(entry: widget.entry),
+              CardPanel(
+                  viewPadding: MediaQuery.viewPaddingOf(context),
+                  entry: widget.entry,
+                  site: AnimeMetadata.jikan),
+              AnimeInnerBody(
+                api: const Jikan(),
+                entry: widget.entry,
+                viewPadding: MediaQuery.viewPaddingOf(context),
+              ),
             ],
           ),
         ),

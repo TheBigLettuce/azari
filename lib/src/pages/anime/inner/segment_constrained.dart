@@ -8,38 +8,62 @@
 part of 'anime_inner.dart';
 
 class _SegmentConstrained extends StatelessWidget {
-  final String label;
-  final String content;
+  // final String label;
+  // final String content;
+  final AnimeEntry entry;
+  final AnimeAPI api;
   final BoxConstraints constraints;
 
-  const _SegmentConstrained(
-      {super.key,
-      required this.content,
-      required this.label,
-      this.constraints = const BoxConstraints(maxWidth: 200, maxHeight: 300)});
+  const _SegmentConstrained({
+    super.key,
+    required this.entry,
+    required this.api,
+    this.constraints = const BoxConstraints(maxWidth: 200, maxHeight: 300),
+  });
 
   @override
   Widget build(BuildContext context) {
     return Wrap(
+      // mainAxisSize: MainAxisSize.min,
+
+      // : MainAxisAlignment.center,
       alignment: WrapAlignment.center,
       crossAxisAlignment: WrapCrossAlignment.center,
       direction: Axis.vertical,
       children: [
-        _Label(text: label),
+        _Label(text: "Synopsis"),
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 4, right: 4),
           child: AnimatedContainer(
             duration: 200.ms,
             constraints: constraints,
             child: Text(
-              content,
+              entry.synopsis,
               overflow: TextOverflow.fade,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
             ),
           ),
-        )
+        ),
+        if (entry.background.isNotEmpty) _Label(text: "Background"),
+        if (entry.background.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 4, right: 4),
+            child: AnimatedContainer(
+              duration: 200.ms,
+              constraints: constraints,
+              child: Text(
+                entry.background,
+                overflow: TextOverflow.fade,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.8)),
+              ),
+            ),
+          ),
       ],
     );
   }

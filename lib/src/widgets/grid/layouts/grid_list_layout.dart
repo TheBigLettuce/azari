@@ -20,19 +20,21 @@ class GridListLayout<T extends Cell> implements GridLayouter<T> {
   final bool hideAlias;
 
   @override
-  Widget call(BuildContext context, CallbackGridState<T> state) {
-    return GridLayouts.grid<T>(
-      context,
-      state.mutationInterface,
-      state.selection,
-      columns.number,
-      true,
-      state.makeGridCell,
-      systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
-      aspectRatio: 1,
-      hideAlias: hideAlias,
-      tightMode: tightMode,
-    );
+  List<Widget> call(BuildContext context, CallbackGridState<T> state) {
+    return [
+      GridLayouts.grid<T>(
+        context,
+        state.mutationInterface,
+        state.selection,
+        columns.number,
+        true,
+        state.makeGridCell,
+        systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
+        aspectRatio: 1,
+        hideAlias: hideAlias,
+        tightMode: tightMode,
+      )
+    ];
   }
 
   @override

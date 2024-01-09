@@ -7,7 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
-import 'package:gallery/src/interfaces/anime.dart';
+import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/net/anime/jikan.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
@@ -17,7 +17,7 @@ import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
 
-import 'inner/anime_inner.dart';
+import '../inner/anime_inner.dart';
 
 class SearchAnimePage extends StatefulWidget {
   const SearchAnimePage({super.key});
@@ -32,6 +32,11 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
   final state = GridSkeletonState<AnimeEntry>();
 
   final gridSettings = GridSettingsAnimeDiscovery.current;
+
+  int _page = 0;
+  String currentSearch = "";
+
+  bool _reachedEnd = false;
 
   @override
   void initState() {
@@ -50,13 +55,28 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
     state.gridKey.currentState?.mutationInterface.tick(0);
 
     _results.clear();
+    _page = 0;
+    _reachedEnd = false;
+    currentSearch = value;
 
-    final result = await const Jikan().search(value);
+    final result = await const Jikan().search(value, 0);
 
     _results.addAll(result);
 
     state.gridKey.currentState?.mutationInterface.setIsRefreshing(false);
     state.gridKey.currentState?.mutationInterface.tick(_results.length);
+  }
+
+  Future<int> _loadNext() async {
+    final result = await const Jikan().search(currentSearch, _page + 1);
+    _page += 1;
+    if (result.isEmpty) {
+      _reachedEnd = true;
+    }
+
+    _results.addAll(result);
+
+    return _results.length;
   }
 
   @override
@@ -66,49 +86,57 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
       child: GridSkeleton<AnimeEntry>(
         state,
         (context) => CallbackGrid<AnimeEntry>(
-            key: state.gridKey,
-            getCell: (i) => _results[i],
-            searchWidget: SearchAndFocus(
-                TextField(
-                  focusNode: searchFocus,
-                  onSubmitted: (value) {
-                    final grid = state.gridKey.currentState;
-                    if (grid == null || grid.mutationInterface.isRefreshing) {
-                      return;
-                    }
+          key: state.gridKey,
+          getCell: (i) => _results[i],
+          searchWidget: SearchAndFocus(
+              TextField(
+                decoration: const InputDecoration(
+                    hintText: "Search", border: InputBorder.none),
+                focusNode: searchFocus,
+                onSubmitted: (value) {
+                  final grid = state.gridKey.currentState;
+                  if (grid == null || grid.mutationInterface.isRefreshing) {
+                    return;
+                  }
 
-                    state.gridKey.currentState?.mutationInterface
-                        .setIsRefreshing(true);
+                  state.gridKey.currentState?.mutationInterface
+                      .setIsRefreshing(true);
 
-                    _load(value);
-                  },
-                ),
-                searchFocus),
-            initalScrollPosition: 0,
-            overrideOnPress: (context, cell) {
-              Navigator.push(context, MaterialPageRoute(
-                builder: (context) {
-                  return AnimeInner(entry: cell);
+                  _load(value);
                 },
-              ));
-            },
-            onBack: () {
-              Navigator.pop(context);
-            },
-            scaffoldKey: state.scaffoldKey,
-            systemNavigationInsets: MediaQuery.viewInsetsOf(context),
-            hasReachedEnd: () => true,
-            selectionGlue: GlueProvider.of(context),
-            mainFocus: state.mainFocus,
-            refresh: () {
-              return Future.value(_results.length);
-            },
-            description: GridDescription([],
-                keybindsDescription: "Anime search",
-                layout: GridLayout(
-                    gridSettings.columns, GridAspectRatio.zeroSeven,
-                    hideAlias: false))),
-        canPop: false,
+              ),
+              searchFocus),
+          initalScrollPosition: 0,
+          overrideOnPress: (context, cell) {
+            Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return AnimeInner(entry: cell);
+              },
+            ));
+          },
+          onBack: () {
+            Navigator.pop(context);
+          },
+          scaffoldKey: state.scaffoldKey,
+          systemNavigationInsets: MediaQuery.viewPaddingOf(context),
+          hasReachedEnd: () => _reachedEnd,
+          selectionGlue: GlueProvider.of(context),
+          mainFocus: state.mainFocus,
+          refresh: () {
+            return Future.value(_results.length);
+          },
+          loadNext: _loadNext,
+          description: GridDescription(
+            [],
+            keybindsDescription: "Anime search",
+            layout: GridLayout(
+              gridSettings.columns,
+              GridAspectRatio.zeroSeven,
+              hideAlias: false,
+            ),
+          ),
+        ),
+        canPop: true,
       ),
     );
   }

@@ -30,29 +30,31 @@ class NoteLayout<T extends Cell> implements GridLayouter<T> {
   final List<String> Function(T cell) getText;
 
   @override
-  Widget call(BuildContext context, CallbackGridState<T> state) {
-    return SliverPadding(
-      padding: const EdgeInsets.all(8),
-      sliver: SliverGrid.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: columns.number,
-            childAspectRatio: 0.7,
-            crossAxisSpacing: 2),
-        itemBuilder: (context, index) {
-          final note = state.widget.getCell(index);
+  List<Widget> call(BuildContext context, CallbackGridState<T> state) {
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.all(8),
+        sliver: SliverGrid.builder(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns.number,
+              childAspectRatio: 0.7,
+              crossAxisSpacing: 2),
+          itemBuilder: (context, index) {
+            final note = state.widget.getCell(index);
 
-          final text = getText(note);
+            final text = getText(note);
 
-          return Note(
-            note: note,
-            text: text,
-            onPressed: () => state.onPressed(context, note, index),
-            variant: variant,
-          );
-        },
-        itemCount: state.mutationInterface.cellCount,
-      ),
-    );
+            return Note(
+              note: note,
+              text: text,
+              onPressed: () => state.onPressed(context, note, index),
+              variant: variant,
+            );
+          },
+          itemCount: state.mutationInterface.cellCount,
+        ),
+      )
+    ];
   }
 
   @override

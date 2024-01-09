@@ -350,8 +350,11 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
     if (widget.initalCellCount != 0) {
       _state._cellCount = widget.initalCellCount;
-    } else {
+    } else if (widget.refreshInterface == null ||
+        !widget.refreshInterface!.isRefreshing()) {
       refresh();
+    } else {
+      _state._refreshing = true;
     }
 
     if (widget.loadNext == null) {
@@ -534,7 +537,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         if (widget.additionalKeybinds != null) ...widget.additionalKeybinds!,
       };
 
-  GridCell makeGridCell(BuildContext context, T cell, int indx,
+  GridCell<T> makeGridCell(BuildContext context, T cell, int indx,
           {required bool hideAlias, required bool tightMode}) =>
       GridCell(
         cell: cell,
@@ -685,31 +688,35 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                     );
                   },
                 )),
-          !_state.isRefreshing && _state.cellCount == 0
-              ? SliverFillRemaining(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        EmptyWidget(
-                          error: _state.refreshingError == null
-                              ? null
-                              : EmptyWidget.unwrapDioError(
-                                  _state.refreshingError),
-                        ),
-                        if (widget.onError != null &&
-                            _state.refreshingError != null)
-                          widget.onError!(_state.refreshingError!),
-                      ],
+          if (!_state.isRefreshing &&
+              _state.cellCount == 0 &&
+              !widget.description.ignoreEmptyWidgetOnNoContent)
+            SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    EmptyWidget(
+                      error: _state.refreshingError == null
+                          ? null
+                          : EmptyWidget.unwrapDioError(_state.refreshingError),
                     ),
-                  ),
-                )
-              : _WrapPadding<T>(
-                  systemNavigationInsets: widget.systemNavigationInsets.bottom,
-                  footer: widget.footer,
-                  selectionGlue: widget.selectionGlue,
-                  child: widget.description.layout(context, this),
+                    if (widget.onError != null &&
+                        _state.refreshingError != null)
+                      widget.onError!(_state.refreshingError!),
+                  ],
                 ),
+              ),
+            ),
+          ...widget.description
+              .layout(context, this)
+              .map((e) => _WrapPadding<T>(
+                    systemNavigationInsets:
+                        widget.systemNavigationInsets.bottom,
+                    footer: widget.footer,
+                    selectionGlue: widget.selectionGlue,
+                    child: e,
+                  )),
         ],
       );
 

@@ -23,21 +23,23 @@ class SegmentLayout<T extends Cell> implements GridLayouter<T> {
   final GridColumn columns;
 
   @override
-  Widget call(BuildContext context, CallbackGridState<T> state) {
+  List<Widget> call(BuildContext context, CallbackGridState<T> state) {
     if (segments.prebuiltSegments != null) {
-      return GridLayouts.segmentsPrebuilt(
-        context,
-        segments,
-        state.mutationInterface,
-        state.selection,
-        false,
-        columns.number,
-        state.makeGridCell,
-        systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
-        aspectRatio: aspectRatio.value,
-        hideAlias: hideAlias,
-        tightMode: tightMode,
-      );
+      return [
+        GridLayouts.segmentsPrebuilt(
+          context,
+          segments,
+          state.mutationInterface,
+          state.selection,
+          false,
+          columns.number,
+          state.makeGridCell,
+          systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
+          aspectRatio: aspectRatio.value,
+          hideAlias: hideAlias,
+          tightMode: tightMode,
+        )
+      ];
     }
     final (s, t) = GridLayouts.segmentsFnc<T>(
       context,
@@ -55,7 +57,7 @@ class SegmentLayout<T extends Cell> implements GridLayouter<T> {
 
     state.segTranslation = t;
 
-    return s;
+    return [s];
   }
 
   @override

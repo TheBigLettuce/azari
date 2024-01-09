@@ -8,6 +8,9 @@
 import 'dart:async';
 import 'dart:io' as io;
 
+import 'package:gallery/src/db/schemas/anime/saved_anime_characters.dart';
+import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
+import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/db/schemas/gallery/blacklisted_directory.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
@@ -76,6 +79,12 @@ Future initalizeDb(bool temporary) async {
 
   final temporaryImagesPath = dimages.path;
 
+  final anime = Isar.openSync([
+    SavedAnimeEntrySchema,
+    WatchedAnimeEntrySchema,
+    SavedAnimeCharactersSchema,
+  ], name: "anime", directory: directoryPath, inspector: false);
+
   final main = Isar.openSync([
     SettingsSchema,
     FavoriteBooruSchema,
@@ -121,6 +130,7 @@ Future initalizeDb(bool temporary) async {
   _dbs = Dbs._(
       directory: directoryPath,
       main: main,
+      anime: anime,
       temporaryDbDir: temporaryDbPath,
       temporaryImagesDir: temporaryImagesPath,
       blacklisted: blacklistedDirIsar,

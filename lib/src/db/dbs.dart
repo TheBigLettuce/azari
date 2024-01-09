@@ -9,6 +9,7 @@ part of 'initalize_db.dart';
 
 class Dbs {
   final Isar main;
+  final Isar anime;
   final Isar? thumbnail;
   final Isar blacklisted;
 
@@ -29,6 +30,7 @@ class Dbs {
       {required this.blacklisted,
       required this.directory,
       required this.main,
+      required this.anime,
       required this.temporaryDbDir,
       required this.temporaryImagesDir,
       required this.thumbnail});

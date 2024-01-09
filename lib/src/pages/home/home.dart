@@ -12,7 +12,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
-import 'package:gallery/src/interfaces/anime.dart';
+import 'package:gallery/src/interfaces/anime/anime_api.dart';
+import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
 import 'package:gallery/src/pages/anime/anime.dart';
@@ -78,10 +79,12 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   late final Isar mainGrid;
 
   Future<int>? status;
+  bool isRefreshing = false;
 
   final Map<void Function(int?, bool), Null> m = {};
 
   late final refreshInterface = RefreshingStatusInterface(
+    isRefreshing: () => status != null,
     save: (s) {
       status?.ignore();
       status = s;
@@ -90,6 +93,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
         for (final f in m.keys) {
           f(value, false);
         }
+
+        // isRefreshing = false;
       }).onError((error, stackTrace) {
         for (final f in m.keys) {
           f(null, false);
@@ -230,7 +235,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           child: MainBooruGrid(
               mainGrid: mainGrid,
               refreshingInterface: refreshInterface,
-              procPop: _procPop),
+              procPop: _procPopA),
           // MainBooruGrid2(
           //   mainGrid: mainGrid,
           //   glue: grid2_glue.SelectionGlue.empty(context),
@@ -280,6 +285,12 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   void _procPop(bool pop) {
     if (!pop) {
       _switchPage(0);
+    }
+  }
+
+  void _procPopA(bool pop) {
+    if (!pop) {
+      _switchPage(3);
     }
   }
 

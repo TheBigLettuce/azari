@@ -7,18 +7,37 @@
 
 part of 'anime_inner.dart';
 
-class _BackgroundImage extends StatelessWidget {
+class BackgroundImage extends StatelessWidget {
   final AnimeEntry entry;
 
-  const _BackgroundImage({super.key, required this.entry});
+  const BackgroundImage({super.key, required this.entry});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return BackgroundImageBase(
+      image: entry.getCellData(false, context: context).thumb!,
       width: MediaQuery.sizeOf(context).width,
       height: MediaQuery.sizeOf(context).height * 0.3 +
           kToolbarHeight +
           MediaQuery.viewPaddingOf(context).top,
+    );
+  }
+}
+
+class BackgroundImageBase extends StatelessWidget {
+  final ImageProvider<Object> image;
+  final Widget? child;
+  final double? width;
+  final double? height;
+
+  const BackgroundImageBase(
+      {super.key, this.height, required this.image, this.width, this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
       foregroundDecoration: BoxDecoration(
         gradient: LinearGradient(
             begin: Alignment.bottomCenter,
@@ -37,8 +56,9 @@ class _BackgroundImage extends StatelessWidget {
             filterQuality: FilterQuality.high,
             colorFilter:
                 const ColorFilter.mode(Colors.black87, BlendMode.softLight),
-            image: entry.getCellData(false, context: context).thumb!),
+            image: image),
       ),
+      child: child,
     );
   }
 }

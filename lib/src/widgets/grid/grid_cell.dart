@@ -40,6 +40,9 @@ class GridCell<T extends Cell> extends StatefulWidget {
   /// If [ignoreStickers] is true, then stickers aren't displayed on top of the cell.
   final bool ignoreStickers;
 
+  final bool labelAtBottom;
+  // final double?
+
   const GridCell(
       {super.key,
       required T cell,
@@ -50,6 +53,7 @@ class GridCell<T extends Cell> extends StatefulWidget {
       bool? hidealias,
       this.shadowOnTop = false,
       this.circle = false,
+      this.labelAtBottom = false,
       required this.isList,
       this.ignoreStickers = false,
       this.onLongPress})
@@ -83,24 +87,7 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
   Widget build(BuildContext context) {
     final data = widget._data.getCellData(widget.isList, context: context);
 
-    return Animate(
-        autoPlay: false,
-        controller: controller,
-        effects: [
-          MoveEffect(
-            duration: 220.ms,
-            curve: Easing.emphasizedAccelerate,
-            begin: Offset.zero,
-            end: const Offset(0, -10),
-          ),
-          TintEffect(
-              duration: 220.ms,
-              begin: 0,
-              end: 0.1,
-              curve: Easing.standardAccelerate,
-              color: Theme.of(context).colorScheme.primary)
-        ],
-        child: InkWell(
+    Widget card() => InkWell(
           borderRadius: BorderRadius.circular(15.0),
           onTap: widget.onPressed == null
               ? null
@@ -191,7 +178,9 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                                 .toList(),
                           ))
                     ],
-                    if (!widget.hideAlias && !widget.shadowOnTop)
+                    if (!widget.hideAlias &&
+                        !widget.shadowOnTop &&
+                        !widget.labelAtBottom)
                       Container(
                         alignment: Alignment.bottomCenter,
                         decoration: BoxDecoration(
@@ -217,6 +206,41 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                   ],
                 ),
               )),
-        ));
+        );
+
+    return Animate(
+      autoPlay: false,
+      controller: controller,
+      effects: [
+        MoveEffect(
+          duration: 220.ms,
+          curve: Easing.emphasizedAccelerate,
+          begin: Offset.zero,
+          end: const Offset(0, -10),
+        ),
+        TintEffect(
+            duration: 220.ms,
+            begin: 0,
+            end: 0.1,
+            curve: Easing.standardAccelerate,
+            color: Theme.of(context).colorScheme.primary)
+      ],
+      child: Column(
+        // mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(flex: 2, child: card()),
+          if (widget.labelAtBottom)
+            Expanded(
+                flex: 1,
+                child: Padding(
+                  padding: widget.tight
+                      ? const EdgeInsets.only(left: 0.5, right: 0.5)
+                      : const EdgeInsets.only(right: 4, left: 4),
+                  child: Text(widget._data.alias(false)),
+                ))
+        ],
+      ),
+    );
   }
 }

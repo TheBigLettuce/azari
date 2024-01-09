@@ -22,19 +22,21 @@ class GridLayout<T extends Cell> implements GridLayouter<T> {
   final GridColumn columns;
 
   @override
-  Widget call(BuildContext context, CallbackGridState<T> state) {
-    return GridLayouts.grid<T>(
-      context,
-      state.mutationInterface,
-      state.selection,
-      columns.number,
-      false,
-      state.makeGridCell,
-      systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
-      aspectRatio: aspectRatio.value,
-      hideAlias: hideAlias,
-      tightMode: tightMode,
-    );
+  List<Widget> call(BuildContext context, CallbackGridState<T> state) {
+    return [
+      GridLayouts.grid<T>(
+        context,
+        state.mutationInterface,
+        state.selection,
+        columns.number,
+        false,
+        state.makeGridCell,
+        systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
+        aspectRatio: aspectRatio.value,
+        hideAlias: hideAlias,
+        tightMode: tightMode,
+      )
+    ];
   }
 
   @override
