@@ -157,6 +157,7 @@ class _CurrentlyWatchingEntry extends StatelessWidget {
           indx: 0,
           onPressed: null,
           tight: true,
+          hidealias: true,
           download: null,
           isList: false,
           circle: true,

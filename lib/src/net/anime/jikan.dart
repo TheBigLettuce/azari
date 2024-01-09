@@ -42,9 +42,15 @@ class Jikan implements AnimeAPI {
   }
 
   @override
-  Future<List<AnimeEntry>> search(String title, int page) async {
-    final response = await api.Jikan(debug: kDebugMode)
-        .searchAnime(query: title, page: page + 1);
+  Future<List<AnimeEntry>> search(String title, int page,
+      [int? genreId]) async {
+    final response = await api.Jikan(debug: kDebugMode).searchAnime(
+      query: title,
+      page: page + 1,
+      genres: genreId != null ? [genreId] : null,
+      orderBy: "popularity",
+      sort: "asc",
+    );
 
     return response.map((e) => _fromJikenAnime(e)).toList();
   }
@@ -60,6 +66,13 @@ class Jikan implements AnimeAPI {
       _log.logDefaultImportant("Jikan API top".errorMessage(e), trace);
       return const [];
     }
+  }
+
+  @override
+  Future<List<AnimeGenre>> genres() async {
+    final response = await api.Jikan(debug: kDebugMode).getAnimeGenres();
+
+    return response.map((e) => AnimeGenre(e.malId, e.name)).toList();
   }
 }
 

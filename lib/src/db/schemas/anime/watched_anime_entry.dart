@@ -120,10 +120,20 @@ class WatchedAnimeEntry extends AnimeEntry {
     return Dbs.g.anime.watchedAnimeEntrys.getBySiteIdSync(site, id) != null;
   }
 
+  static void delete(int id, AnimeMetadata site) {
+    Dbs.g.anime.writeTxnSync(
+        () => Dbs.g.anime.watchedAnimeEntrys.deleteBySiteIdSync(site, id));
+  }
+
   static int count() => Dbs.g.anime.watchedAnimeEntrys.countSync();
 
   static List<WatchedAnimeEntry> get all =>
       Dbs.g.anime.watchedAnimeEntrys.where().findAllSync();
+
+  static void readd(WatchedAnimeEntry entry) {
+    Dbs.g.anime.writeTxnSync(
+        () => Dbs.g.anime.watchedAnimeEntrys.putBySiteIdSync(entry));
+  }
 
   static void move(SavedAnimeEntry entry, String closingWords) {
     SavedAnimeEntry.deleteAll([entry.isarId!]);

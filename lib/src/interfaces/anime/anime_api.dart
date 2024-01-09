@@ -20,10 +20,18 @@ import 'anime_entry.dart';
 abstract class AnimeAPI {
   Future<AnimeEntry?> info(int id);
   Future<List<AnimeCharacter>> characters(AnimeEntry entry);
-  Future<List<AnimeEntry>> search(String title, int page);
+  Future<List<AnimeEntry>> search(String title, int page, [int? genreId]);
+  Future<List<AnimeGenre>> genres();
   Future<List<AnimeEntry>> top(int page);
 
   bool get charactersIsSync;
+}
+
+class AnimeGenre {
+  final String name;
+  final int id;
+
+  const AnimeGenre(this.id, this.name);
 }
 
 enum AnimeMetadata {

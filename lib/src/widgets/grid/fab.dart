@@ -60,6 +60,7 @@ class __FabState extends State<_Fab> {
                                   ? widget.footer!.preferredSize.height
                                   : 0))),
               child: FloatingActionButton(
+                elevation: 0,
                 onPressed: () {
                   widget.controller.animateTo(0,
                       duration: 200.ms, curve: Easing.emphasizedAccelerate);

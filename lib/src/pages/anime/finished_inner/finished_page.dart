@@ -78,7 +78,12 @@ class _FinishedPageState extends State<FinishedPage> {
     super.initState();
 
     watcher = entry.watch((e) {
-      entry = e!;
+      if (e == null) {
+        Navigator.pop(context);
+        return;
+      }
+
+      entry = e;
 
       setState(() {});
     });
@@ -121,85 +126,41 @@ class _FinishedPageState extends State<FinishedPage> {
               entry: entry,
               viewPadding: MediaQuery.viewPaddingOf(context),
               children: [
-                ...CardPanel.defaultCards(context, entry,
-                    isWatching: false,
-                    inBacklog: false,
-                    watched: true,
-                    replaceWatchCard: UnsizedCard(
-                      subtitle: Text("Watched"),
-                      title: Icon(
-                        Icons.check_rounded,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      tooltip: "Watched",
-                      transparentBackground: true,
-                    )
-                    // UnsizedCard(
-                    //   subtitle: Text("Watching"),
-                    //   title: Icon(
-                    //     Icons.play_arrow_rounded,
-                    //     color: entry.inBacklog
-                    //         ? null
-                    //         : Theme.of(context).colorScheme.primary,
-                    //   ),
-                    //   tooltip: "Watching",
-                    //   onPressed: () {
-                    //     if (!entry.inBacklog) {
-                    //       entry.unsetIsWatching();
-                    //       return;
-                    //     }
-
-                    //     if (!entry.setCurrentlyWatching()) {
-                    //       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    //           content:
-                    //               Text("Can't watch more than 3 at a time")));
-                    //     }
-                    //   },
-                    //   transparentBackground: true,
-                    // ),
+                ...CardPanel.defaultCards(
+                  context,
+                  entry,
+                  isWatching: false,
+                  inBacklog: false,
+                  watched: true,
+                  replaceWatchCard: UnsizedCard(
+                    subtitle: Text("Watched"),
+                    title: Icon(
+                      Icons.check_rounded,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
-                // UnsizedCard(
-                //   subtitle: Text("Done"),
-                //   title: Icon(Icons.check_rounded),
-                //   tooltip: "Done",
-                //   transparentBackground: true,
-                //   onPressed: () {
-                //     Navigator.push(
-                //         context,
-                //         DialogRoute(
-                //           context: context,
-                //           builder: (context) {
-                //             return AlertDialog(
-                //               actions: [
-                //                 TextButton(
-                //                     onPressed: _addToWatched, child: Text("ok"))
-                //               ],
-                //               title: Text("Closing words"),
-                //               content: Column(
-                //                 mainAxisSize: MainAxisSize.min,
-                //                 children: [
-                //                   TextField(
-                //                     controller: textController,
-                //                     autofocus: true,
-                //                     onSubmitted: (_) => _addToWatched(),
-                //                   ),
-                //                   Wrap(
-                //                     children: [
-                //                       ActionChip(
-                //                         label: Text("I prefer Jojo"),
-                //                         onPressed: () {
-                //                           textController.text = "I prefer Jojo";
-                //                         },
-                //                       )
-                //                     ],
-                //                   )
-                //                 ],
-                //               ),
-                //             );
-                //           },
-                //         )).then((value) => textController.text = "");
-                //   },
-                // )
+                    tooltip: "Watched",
+                    transparentBackground: true,
+                  ),
+                ),
+                UnsizedCard(
+                  subtitle: Text("Remove"),
+                  title: const Icon(Icons.close_rounded),
+                  tooltip: "Remove",
+                  transparentBackground: true,
+                  onPressed: () {
+                    WatchedAnimeEntry.delete(
+                        widget.entry.id, widget.entry.site);
+
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text("Removed from watched"),
+                      action: SnackBarAction(
+                          label: "Undo",
+                          onPressed: () {
+                            WatchedAnimeEntry.readd(widget.entry);
+                          }),
+                    ));
+                  },
+                )
               ],
             ),
             AnimeInnerBody(

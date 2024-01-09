@@ -95,7 +95,7 @@ class _AnimeInnerAppBarState extends State<AnimeInnerAppBar>
       ],
       surfaceTintColor: Colors.transparent,
       backgroundColor: ColorTween(
-              begin: Colors.transparent,
+              begin: Theme.of(context).colorScheme.background.withOpacity(0),
               end: Theme.of(context).colorScheme.background.withOpacity(0.8))
           .transform(animation.value),
       // title: Text(widget.entry.title),

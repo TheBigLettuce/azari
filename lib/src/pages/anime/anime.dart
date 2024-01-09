@@ -166,6 +166,33 @@ class _AnimePageState extends State<AnimePage>
                 alignment: Alignment.topRight,
                 children: [
                   tabBar,
+                  Container(
+                    height: 44,
+                    width: 44,
+                    decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                            begin: Alignment.centerRight,
+                            end: Alignment.centerLeft,
+                            colors: [
+                          Theme.of(context).colorScheme.background,
+                          Theme.of(context)
+                              .colorScheme
+                              .background
+                              .withOpacity(0.7),
+                          Theme.of(context)
+                              .colorScheme
+                              .background
+                              .withOpacity(0.5),
+                          Theme.of(context)
+                              .colorScheme
+                              .background
+                              .withOpacity(0.3),
+                          Theme.of(context)
+                              .colorScheme
+                              .background
+                              .withOpacity(0)
+                        ])),
+                  ),
                   Padding(
                     padding: const EdgeInsets.only(top: 10, right: 8),
                     child: GestureDetector(
@@ -182,7 +209,6 @@ class _AnimePageState extends State<AnimePage>
                             .colorScheme
                             .surfaceTint
                             .withOpacity(0.8),
-                        shadows: const [Shadow(blurRadius: 10)],
                       ),
                     ),
                   )
