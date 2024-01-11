@@ -14,7 +14,6 @@ import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
-import 'package:gallery/src/net/anime/jikan.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
@@ -24,8 +23,15 @@ import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
 
 import '../inner/anime_inner.dart';
 
+part 'filtering_genres.dart';
+
 class SearchAnimePage extends StatefulWidget {
-  const SearchAnimePage({super.key});
+  final int? initalGenreId;
+  final String? initalText;
+  final AnimeAPI api;
+
+  const SearchAnimePage(
+      {super.key, required this.api, this.initalGenreId, this.initalText});
 
   @override
   State<SearchAnimePage> createState() => _SearchAnimePageState();
@@ -38,7 +44,7 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
   final searchFocus = FocusNode();
   final state = GridSkeletonState<AnimeEntry>();
 
-  Future<List<AnimeGenre>>? _genreFuture;
+  Future<Map<int, AnimeGenre>>? _genreFuture;
 
   final gridSettings = GridSettingsAnimeDiscovery.current;
 
@@ -56,6 +62,19 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
     watcher = SavedAnimeEntry.watchAll((_) {
       setState(() {});
     });
+
+    if (widget.initalGenreId != null) {
+      _genreFuture = widget.api.genres();
+    }
+
+    currentGenre = widget.initalGenreId;
+    currentSearch = widget.initalText ?? "";
+
+    if (widget.initalGenreId != null || widget.initalText != null) {
+      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+        _load(currentSearch);
+      });
+    }
   }
 
   @override
@@ -79,7 +98,7 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
     _reachedEnd = false;
     currentSearch = value;
 
-    final result = await const Jikan().search(value, 0, currentGenre);
+    final result = await widget.api.search(value, 0, currentGenre);
 
     _results.addAll(result);
 
@@ -88,7 +107,7 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
   }
 
   Future<int> _loadNext() async {
-    final result = await const Jikan().search(currentSearch, _page + 1);
+    final result = await widget.api.search(currentSearch, _page + 1);
     _page += 1;
     if (result.isEmpty) {
       _reachedEnd = true;
@@ -110,7 +129,7 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
           menuButtonItems: [
             PopupMenuButton(
               itemBuilder: (context) {
-                _genreFuture ??= const Jikan().genres();
+                _genreFuture ??= widget.api.genres();
 
                 return [
                   PopupMenuItem(
@@ -135,17 +154,25 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
           ],
           getCell: (i) => _results[i],
           searchWidget: SearchAndFocus(
-              TextField(
-                decoration: const InputDecoration(
-                    hintText: "Search", border: InputBorder.none),
-                focusNode: searchFocus,
-                onSubmitted: (value) {
-                  final grid = state.gridKey.currentState;
-                  if (grid == null || grid.mutationInterface.isRefreshing) {
-                    return;
-                  }
+              FutureBuilder(
+                future: _genreFuture,
+                builder: (context, snapshot) {
+                  return TextFormField(
+                    initialValue: currentSearch,
+                    decoration: InputDecoration(
+                        hintText:
+                            "Search ${currentGenre == null ? '' : !snapshot.hasData ? '...' : snapshot.data?[currentGenre!]?.title ?? ''}",
+                        border: InputBorder.none),
+                    focusNode: searchFocus,
+                    onFieldSubmitted: (value) {
+                      final grid = state.gridKey.currentState;
+                      if (grid == null || grid.mutationInterface.isRefreshing) {
+                        return;
+                      }
 
-                  _load(value);
+                      _load(value);
+                    },
+                  );
                 },
               ),
               searchFocus),
@@ -172,6 +199,7 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
           loadNext: _loadNext,
           description: GridDescription(
             [],
+            titleLines: 2,
             keybindsDescription: "Anime search",
             layout: GridLayout(
               gridSettings.columns,
@@ -181,89 +209,6 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
           ),
         ),
         canPop: true,
-      ),
-    );
-  }
-}
-
-class _FilteringGenres extends StatefulWidget {
-  final Future<List<AnimeGenre>> future;
-  final int? currentGenre;
-  final void Function(int?) setGenre;
-
-  const _FilteringGenres({
-    super.key,
-    required this.future,
-    required this.currentGenre,
-    required this.setGenre,
-  });
-
-  @override
-  State<_FilteringGenres> createState() => __FilteringGenresState();
-}
-
-class __FilteringGenresState extends State<_FilteringGenres> {
-  List<AnimeGenre>? _result;
-
-  Widget _tile(AnimeGenre e) => ListTile(
-        titleTextStyle:
-            TextStyle(color: Theme.of(context).colorScheme.onSurface),
-        title: Text(e.name),
-        selected: e.id == widget.currentGenre,
-        onTap: () {
-          widget.setGenre(e.id);
-
-          Navigator.pop(context);
-        },
-      );
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: FutureBuilder(
-        future: widget.future,
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            return Column(children: [
-              TextButton(
-                  onPressed: () {
-                    widget.setGenre(null);
-
-                    Navigator.pop(context);
-                  },
-                  child: Text("Reset")),
-              TextField(
-                autofocus: true,
-                decoration: InputDecoration(hintText: "Filter"),
-                onChanged: (value) {
-                  _result = snapshot.data!
-                      .where((element) => element.name
-                          .toLowerCase()
-                          .contains(value.toLowerCase()))
-                      .toList();
-
-                  setState(() {});
-                },
-              ),
-              if (_result != null)
-                if (_result == null)
-                  const SizedBox.shrink()
-                else
-                  ..._result!.map((e) => _tile(e))
-              else
-                ...snapshot.data!.map((e) => _tile(e)),
-            ]).animate().fadeIn();
-          } else {
-            return const Center(
-              child: SizedBox(
-                height: 18,
-                width: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            );
-          }
-        },
       ),
     );
   }

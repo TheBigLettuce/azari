@@ -8,7 +8,7 @@
 part of '../anime.dart';
 
 class _WatchingTab extends StatefulWidget {
-  const _WatchingTab({super.key});
+  const _WatchingTab();
 
   @override
   State<_WatchingTab> createState() => __WatchingTabState();
@@ -141,7 +141,7 @@ class _WatchingLayout implements GridLayouter<SavedAnimeEntry> {
 class _CurrentlyWatchingEntry extends StatelessWidget {
   final SavedAnimeEntry entry;
 
-  const _CurrentlyWatchingEntry({super.key, required this.entry});
+  const _CurrentlyWatchingEntry({required this.entry});
 
   @override
   Widget build(BuildContext context) {

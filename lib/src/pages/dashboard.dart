@@ -44,7 +44,7 @@ class _DashboardState extends State<Dashboard> {
       "Dashboard",
       state,
       appBar: AppBar(
-        title: Text("Dashboard"),
+        title: const Text("Dashboard"), // TODO: change
       ),
       child: SingleChildScrollView(
         child: Padding(
@@ -59,76 +59,76 @@ class _DashboardState extends State<Dashboard> {
                 Wrap(
                   children: [
                     DashboardCard(
-                      subtitle: "Time spent",
+                      subtitle: "Time spent", // TODO: change
                       title: "${general.timeSpent.milliseconds.inHours} hrs",
                     ),
                     DashboardCard(
-                      subtitle: "Scrolled up",
+                      subtitle: "Scrolled up", // TODO: change
                       title: general.scrolledUp.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Tags saved",
+                      subtitle: "Tags saved", // TODO: change
                       title: postTagsCount,
                     ),
                     DashboardCard(
-                      subtitle: "Refreshes",
+                      subtitle: "Refreshes", // TODO: change
                       title: general.refreshes.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Download time",
+                      subtitle: "Download time", // TODO: change
                       title: "${general.timeDownload.milliseconds.inHours} hrs",
                     ),
                     DashboardCard(
-                      subtitle: "Posts viewed",
+                      subtitle: "Posts viewed", // TODO: change
                       title: booru.viewed.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Posts downloaded",
+                      subtitle: "Posts downloaded", // TODO: change
                       title: booru.downloaded.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Posts swiped",
+                      subtitle: "Posts swiped", // TODO: change
                       title: booru.swiped.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Booru switches",
+                      subtitle: "Booru switches", // TODO: change
                       title: booru.booruSwitches.toString(),
                     ),
                   ],
                 ),
-                const _Label(text: "Gallery"),
+                const _Label(text: "Gallery"), // TODO: change
                 Wrap(
                   children: [
                     DashboardCard(
-                      subtitle: "Directories viewed",
+                      subtitle: "Directories viewed", // TODO: change
                       title: gallery.viewedDirectories.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Files viewed",
+                      subtitle: "Files viewed", // TODO: change
                       title: gallery.viewedFiles.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Files swiped",
+                      subtitle: "Files swiped", // TODO: change
                       title: gallery.filesSwiped.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Joined times",
+                      subtitle: "Joined times", // TODO: change
                       title: gallery.joined.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Same filtered",
+                      subtitle: "Same filtered", // TODO: change
                       title: gallery.sameFiltered.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Trashed",
+                      subtitle: "Trashed", // TODO: change
                       title: gallery.deleted.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Copied",
+                      subtitle: "Copied", // TODO: change
                       title: gallery.copied.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Moved",
+                      subtitle: "Moved", // TODO: change
                       title: gallery.moved.toString(),
                     ),
                   ],
@@ -144,7 +144,8 @@ class _DashboardState extends State<Dashboard> {
 
 class _Label extends StatelessWidget {
   final String text;
-  const _Label({super.key, required this.text});
+
+  const _Label({required this.text});
 
   @override
   Widget build(BuildContext context) {

@@ -17,8 +17,8 @@ class TranslationNotes extends StatefulWidget {
       BooruAPIState Function() api) {
     return ListTile(
       textColor: foregroundColor,
-      title: Text("Has translations"),
-      subtitle: Text("Tap to view"),
+      title: const Text("Has translations"), // TODO: change
+      subtitle: const Text("Tap to view"), // TODO: change
       onTap: () {
         Navigator.push(
             context,
@@ -53,7 +53,7 @@ class _TranslationNotesState extends State<TranslationNotes> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text("Translation"),
+      title: const Text("Translation"), // TODO: change
       content: FutureBuilder(
           future: future,
           builder: (context, snapshot) {

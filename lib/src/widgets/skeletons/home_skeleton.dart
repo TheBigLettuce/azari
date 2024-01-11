@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/pages/settings/network_status.dart';
 import 'package:gallery/src/widgets/gesture_dead_zones.dart';
-import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
 
 import '../keybinds/describe_keys.dart';
 import '../keybinds/keybind_description.dart';

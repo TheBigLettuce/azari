@@ -12,11 +12,11 @@ class _BooruIcon extends StatelessWidget {
   final AnimationController controller;
   final MenuController menuController;
 
-  const _BooruIcon(
-      {super.key,
-      required this.controller,
-      required this.isSelected,
-      required this.menuController});
+  const _BooruIcon({
+    required this.controller,
+    required this.isSelected,
+    required this.menuController,
+  });
 
   @override
   Widget build(BuildContext context) {

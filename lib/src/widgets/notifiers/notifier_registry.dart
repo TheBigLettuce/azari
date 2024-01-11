@@ -29,7 +29,6 @@ class NotifierRegistryHolder extends StatelessWidget {
       List<InheritedWidget Function(Widget)> l, Widget child) {
     final l1 = NotifierRegistry.inherit(context);
     final l2 = l1 == null ? l : [...l1, ...l];
-    print(l2);
 
     return NotifierRegistry(
       notifiers: l2,
@@ -118,10 +117,6 @@ class NotifierRegistry extends InheritedWidget {
   static Widget Function(Widget child)? registrerOf(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<NotifierRegistry>();
-
-    for (final f in widget!.notifiers) {
-      print(f);
-    }
 
     return widget == null
         ? null

@@ -12,11 +12,11 @@ class _FavoritesIcon extends StatelessWidget {
   final AnimationController controller;
   final int count;
 
-  const _FavoritesIcon(
-      {super.key,
-      required this.controller,
-      required this.isSelected,
-      required this.count});
+  const _FavoritesIcon({
+    required this.controller,
+    required this.isSelected,
+    required this.count,
+  });
 
   @override
   Widget build(BuildContext context) {

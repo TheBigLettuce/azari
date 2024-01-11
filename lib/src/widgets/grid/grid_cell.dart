@@ -43,6 +43,10 @@ class GridCell<T extends Cell> extends StatefulWidget {
   final bool labelAtBottom;
   // final double?
 
+  final int? lines;
+
+  final String? forceAlias;
+
   const GridCell(
       {super.key,
       required T cell,
@@ -50,11 +54,13 @@ class GridCell<T extends Cell> extends StatefulWidget {
       required this.onPressed,
       required this.tight,
       required this.download,
+      this.forceAlias,
       bool? hidealias,
       this.shadowOnTop = false,
       this.circle = false,
       this.labelAtBottom = false,
       required this.isList,
+      this.lines,
       this.ignoreStickers = false,
       this.onLongPress})
       : _data = cell,
@@ -86,6 +92,28 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
   @override
   Widget build(BuildContext context) {
     final data = widget._data.getCellData(widget.isList, context: context);
+
+    Widget alias() => Container(
+          alignment: Alignment.bottomCenter,
+          decoration: BoxDecoration(
+              gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                Colors.black.withAlpha(50),
+                Colors.black12,
+                Colors.black45
+              ])),
+          child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: Text(
+                widget.forceAlias ?? data.name,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                maxLines: widget.lines ?? 1,
+                style: TextStyle(color: Colors.white.withOpacity(0.7)),
+              )),
+        );
 
     Widget card() => InkWell(
           borderRadius: BorderRadius.circular(15.0),
@@ -178,31 +206,11 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                                 .toList(),
                           ))
                     ],
-                    if (!widget.hideAlias &&
-                        !widget.shadowOnTop &&
-                        !widget.labelAtBottom)
-                      Container(
-                        alignment: Alignment.bottomCenter,
-                        decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                              Colors.black.withAlpha(50),
-                              Colors.black12,
-                              Colors.black45
-                            ])),
-                        child: Padding(
-                            padding: const EdgeInsets.all(6),
-                            child: Text(
-                              data.name,
-                              softWrap: false,
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                              style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7)),
-                            )),
-                      ),
+                    if ((!widget.hideAlias &&
+                            !widget.shadowOnTop &&
+                            !widget.labelAtBottom) ||
+                        widget.forceAlias != null)
+                      alias(),
                   ],
                 ),
               )),

@@ -29,7 +29,8 @@ class Jikan implements AnimeAPI {
       return _fromJikenAnime(response);
     } catch (e, trace) {
       _log.logDefaultImportant("Jikan API info".errorMessage(e), trace);
-      return null;
+
+      rethrow;
     }
   }
 
@@ -69,10 +70,21 @@ class Jikan implements AnimeAPI {
   }
 
   @override
-  Future<List<AnimeGenre>> genres() async {
+  Future<Map<int, AnimeGenre>> genres() async {
     final response = await api.Jikan(debug: kDebugMode).getAnimeGenres();
+    final map = <int, AnimeGenre>{};
 
-    return response.map((e) => AnimeGenre(e.malId, e.name)).toList();
+    for (final e in response) {
+      map[e.malId] = AnimeGenre(id: e.malId, title: e.name);
+    }
+
+    return map;
+  }
+
+  @override
+  Future<List<AnimeNewsEntry>> news(int page) {
+    // TODO: implement news
+    throw UnimplementedError();
   }
 }
 
@@ -80,11 +92,14 @@ AnimeCharacter _fromJikanCharacter(api.CharacterMeta e) =>
     AnimeCharacter(imageUrl: e.imageUrl, name: e.name, role: e.role);
 
 List<Relation> _fromMeta(api.BuiltList<api.Meta> l) {
-  return l.map((e) => Relation(thumbUrl: e.url, title: e.name)).toList();
+  return l
+      .map((e) => Relation(thumbUrl: e.url, title: e.name, type: e.type))
+      .toList();
 }
 
 AnimeEntry _fromJikenAnime(api.Anime e) {
   return AnimeEntry(
+    type: e.type ?? "",
     thumbUrl: e.imageUrl,
     title: e.title,
     site: AnimeMetadata.jikan,
@@ -103,10 +118,17 @@ AnimeEntry _fromJikenAnime(api.Anime e) {
     titleEnglish: e.titleEnglish ?? "",
     titleJapanese: e.titleJapanese ?? "",
     titleSynonyms: e.titleSynonyms.toList(),
-    genres: e.genres.map((e) => e.name).toList() +
-        e.explicitGenres.map((e) => e.name).toList() +
-        e.demographics.map((e) => e.name).toList() +
-        e.studios.map((e) => e.name).toList(),
+    genres:
+        e.genres.map((e) => AnimeGenre(title: e.name, id: e.malId)).toList() +
+            e.explicitGenres
+                .map((e) => AnimeGenre(title: e.name, id: e.malId))
+                .toList() +
+            e.demographics
+                .map((e) => AnimeGenre(title: e.name, id: e.malId))
+                .toList() +
+            e.studios
+                .map((e) => AnimeGenre(title: e.name, unpressable: true))
+                .toList(),
     trailerUrl: e.trailerUrl ?? "",
     episodes: e.episodes ?? 0,
     background: e.background ?? "",

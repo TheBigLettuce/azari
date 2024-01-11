@@ -18,8 +18,8 @@ part 'watched_anime_entry.g.dart';
 @collection
 class WatchedAnimeEntry extends AnimeEntry {
   WatchedAnimeEntry({
-    required this.closingWords,
     required this.date,
+    required super.type,
     required super.site,
     required super.thumbUrl,
     required super.title,
@@ -39,17 +39,16 @@ class WatchedAnimeEntry extends AnimeEntry {
     required super.episodes,
   });
 
-  final String closingWords;
   final DateTime date;
 
-  WatchedAnimeEntry copySuper(AnimeEntry e) {
+  WatchedAnimeEntry copySuper(AnimeEntry e, [bool ignoreRelations = false]) {
     return WatchedAnimeEntry(
-      closingWords: closingWords,
       date: date,
+      type: e.type,
       site: e.site,
       thumbUrl: e.thumbUrl,
       title: e.title,
-      relations: e.relations,
+      relations: ignoreRelations ? relations : e.relations,
       titleJapanese: e.titleJapanese,
       titleEnglish: e.titleEnglish,
       score: e.score,
@@ -77,7 +76,7 @@ class WatchedAnimeEntry extends AnimeEntry {
     String? titleEnglish,
     String? background,
     int? id,
-    List<String>? genres,
+    List<AnimeGenre>? genres,
     List<String>? titleSynonyms,
     List<Relation>? relations,
     bool? isAiring,
@@ -85,11 +84,11 @@ class WatchedAnimeEntry extends AnimeEntry {
     double? score,
     String? thumbUrl,
     String? synopsis,
-    String? closingWords,
     DateTime? date,
+    String? type,
   }) {
     return WatchedAnimeEntry(
-      closingWords: closingWords ?? this.closingWords,
+      type: type ?? this.type,
       date: date ?? this.date,
       site: site ?? this.site,
       thumbUrl: thumbUrl ?? this.thumbUrl,
@@ -130,18 +129,21 @@ class WatchedAnimeEntry extends AnimeEntry {
   static List<WatchedAnimeEntry> get all =>
       Dbs.g.anime.watchedAnimeEntrys.where().findAllSync();
 
-  static void readd(WatchedAnimeEntry entry) {
+  static void read(WatchedAnimeEntry entry) {
     Dbs.g.anime.writeTxnSync(
         () => Dbs.g.anime.watchedAnimeEntrys.putBySiteIdSync(entry));
   }
 
-  static void move(SavedAnimeEntry entry, String closingWords) {
+  static WatchedAnimeEntry? maybeGet(int id, AnimeMetadata site) =>
+      Dbs.g.anime.watchedAnimeEntrys.getBySiteIdSync(site, id);
+
+  static void move(SavedAnimeEntry entry) {
     SavedAnimeEntry.deleteAll([entry.isarId!]);
 
     Dbs.g.anime
         .writeTxnSync(() => Dbs.g.anime.watchedAnimeEntrys.putBySiteIdSync(
               WatchedAnimeEntry(
-                closingWords: closingWords,
+                type: entry.type,
                 date: DateTime.now(),
                 site: entry.site,
                 relations: entry.relations,

@@ -7,10 +7,10 @@
 
 part of 'anime_inner.dart';
 
-class _Label extends StatelessWidget {
+class BodySegmentLabel extends StatelessWidget {
   final String text;
 
-  const _Label({super.key, required this.text});
+  const BodySegmentLabel({super.key, required this.text});
 
   @override
   Widget build(BuildContext context) {

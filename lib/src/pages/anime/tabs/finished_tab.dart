@@ -8,7 +8,7 @@
 part of '../anime.dart';
 
 class _FinishedTab extends StatefulWidget {
-  const _FinishedTab({super.key});
+  const _FinishedTab();
 
   @override
   State<_FinishedTab> createState() => __FinishedTabState();
@@ -71,12 +71,16 @@ class __FinishedTabState extends State<_FinishedTab> {
         selectionGlue: SelectionGlue.empty(context),
         mainFocus: state.mainFocus,
         refresh: () => Future.value(_list.length),
-        description: GridDescription([],
-            keybindsDescription: "Finished tab",
+        description: const GridDescription([],
+            keybindsDescription: "Finished tab", // TODO: change
             showAppBar: false,
             ignoreSwipeSelectGesture: true,
-            layout: GridLayout(GridColumn.three, GridAspectRatio.one,
-                hideAlias: false)),
+            layout: GridLayout(
+              GridColumn.three,
+              GridAspectRatio.one,
+              hideAlias: false,
+              tightMode: true,
+            )),
       ),
       canPop: false,
     );

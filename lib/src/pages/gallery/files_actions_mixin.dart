@@ -281,7 +281,7 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
       FavoriteMedia.deleteAll(toDelete);
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Deleted from favorites"),
+        content: const Text("Deleted from favorites"), // TODO: change
         action: SnackBarAction(
             label: "Undo",
             onPressed: () {

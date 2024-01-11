@@ -21,13 +21,24 @@ import 'package:isar/isar.dart';
 part 'saved_anime_entry.g.dart';
 
 @embedded
+class AnimeGenre {
+  final String title;
+  final int id;
+  final bool unpressable;
+
+  const AnimeGenre({this.id = 0, this.title = "", this.unpressable = false});
+}
+
+@embedded
 class Relation implements Cell {
   final String thumbUrl;
   final String title;
+  final String type;
 
   Relation({
     this.thumbUrl = "",
     this.title = "",
+    this.type = "",
   });
 
   @override
@@ -69,6 +80,7 @@ class SavedAnimeEntry extends AnimeEntry {
   SavedAnimeEntry({
     required super.id,
     required this.inBacklog,
+    required super.type,
     required super.site,
     required super.thumbUrl,
     required super.title,
@@ -94,9 +106,10 @@ class SavedAnimeEntry extends AnimeEntry {
         .writeTxnSync(() => Dbs.g.anime.savedAnimeEntrys.putBySiteIdSync(this));
   }
 
-  SavedAnimeEntry copySuper(AnimeEntry e) {
+  SavedAnimeEntry copySuper(AnimeEntry e, [bool ignoreRelations = false]) {
     return SavedAnimeEntry(
       id: e.id,
+      type: e.type,
       inBacklog: inBacklog,
       site: e.site,
       thumbUrl: e.thumbUrl,
@@ -104,7 +117,7 @@ class SavedAnimeEntry extends AnimeEntry {
       titleJapanese: e.titleJapanese,
       titleEnglish: e.titleEnglish,
       score: e.score,
-      relations: e.relations,
+      relations: ignoreRelations ? relations : e.relations,
       synopsis: e.synopsis,
       year: e.year,
       siteUrl: e.siteUrl,
@@ -128,7 +141,7 @@ class SavedAnimeEntry extends AnimeEntry {
     String? titleEnglish,
     String? background,
     int? id,
-    List<String>? genres,
+    List<AnimeGenre>? genres,
     List<String>? titleSynonyms,
     List<Relation>? relations,
     bool? isAiring,
@@ -136,9 +149,11 @@ class SavedAnimeEntry extends AnimeEntry {
     double? score,
     String? thumbUrl,
     String? synopsis,
+    String? type,
   }) {
     return SavedAnimeEntry(
       id: id ?? this.id,
+      type: type ?? this.type,
       relations: relations ?? this.relations,
       background: background ?? this.background,
       inBacklog: inBacklog ?? this.inBacklog,
@@ -199,6 +214,9 @@ class SavedAnimeEntry extends AnimeEntry {
   static SavedAnimeEntry get(int id, [bool addOne = true]) =>
       Dbs.g.anime.savedAnimeEntrys.getSync(id + (addOne ? 1 : 0))!;
 
+  static SavedAnimeEntry? maybeGet(int id, AnimeMetadata site) =>
+      Dbs.g.anime.savedAnimeEntrys.getBySiteIdSync(site, id);
+
   static int count() => Dbs.g.anime.savedAnimeEntrys.countSync();
 
   static (bool, bool) isWatchingBacklog(int id, AnimeMetadata site) {
@@ -222,6 +240,7 @@ class SavedAnimeEntry extends AnimeEntry {
           .where((element) => !WatchedAnimeEntry.watched(element.id, site))
           .map((e) => SavedAnimeEntry(
               id: e.id,
+              type: e.type,
               inBacklog: true,
               site: site,
               relations: e.relations,

@@ -17,15 +17,15 @@ class _DiscoverTab extends StatefulWidget {
   final int Function() initalPage;
   final void Function(int) savePage;
 
-  const _DiscoverTab(
-      {super.key,
-      required this.procPop,
-      required this.entries,
-      required this.initalPage,
-      required this.savePage,
-      required this.initalScrollOffset,
-      required this.updateScrollPosition,
-      required this.refreshingInterface});
+  const _DiscoverTab({
+    required this.procPop,
+    required this.entries,
+    required this.initalPage,
+    required this.savePage,
+    required this.initalScrollOffset,
+    required this.updateScrollPosition,
+    required this.refreshingInterface,
+  });
 
   @override
   State<_DiscoverTab> createState() => __DiscoverTabState();

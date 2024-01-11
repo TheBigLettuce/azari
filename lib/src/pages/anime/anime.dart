@@ -6,13 +6,11 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
-import 'package:gallery/src/db/schemas/grid_state/grid_state.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
@@ -30,7 +28,6 @@ import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/grid/grid_cell.dart';
 import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
-import 'package:gallery/src/widgets/grid/layouts/note_layout.dart';
 import 'package:gallery/src/widgets/grid/segment_label.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
@@ -144,9 +141,9 @@ class _AnimePageState extends State<AnimePage>
         isScrollable: true,
         controller: tabController,
         tabs: [
-          Tab(text: "News"),
+          const Tab(text: "News"), // TODO: change
           TabWithCount("Watching", savedCount),
-          Tab(text: "Discover"),
+          const Tab(text: "Discover"), // TODO: change
           TabWithCount("Finished", WatchedAnimeEntry.count()),
         ]);
 
@@ -199,7 +196,7 @@ class _AnimePageState extends State<AnimePage>
                       onTap: () {
                         Navigator.push(context, MaterialPageRoute(
                           builder: (context) {
-                            return const SearchAnimePage();
+                            return const SearchAnimePage(api: Jikan());
                           },
                         ));
                       },
@@ -218,8 +215,8 @@ class _AnimePageState extends State<AnimePage>
         child: TabBarView(
           controller: tabController,
           children: [
-            EmptyWidget(),
-            _WatchingTab(),
+            const EmptyWidget(),
+            const _WatchingTab(),
             _DiscoverTab(
               procPop: widget.procPop,
               entries: _discoverEntries,
@@ -230,7 +227,7 @@ class _AnimePageState extends State<AnimePage>
                   discoverScrollOffset = offset,
               savePage: (p) => _discoverPage = p,
             ),
-            _FinishedTab(),
+            const _FinishedTab(),
           ],
         ),
       ),

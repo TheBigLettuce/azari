@@ -18,7 +18,6 @@ import 'package:gallery/src/interfaces/note_interface.dart';
 import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
-import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 import 'package:logging/logging.dart';
 import '../../interfaces/cell/cell.dart';
 import '../../interfaces/grid/grid_mutation_interface.dart';
@@ -545,7 +544,9 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         isList: widget.description.layout.isList,
         indx: indx,
         download: widget.download,
+        lines: widget.description.titleLines,
         tight: tightMode,
+        labelAtBottom: widget.description.cellTitleAtBottom,
         onPressed: (context) => onPressed(context, cell, indx),
         onLongPress: indx.isNegative
             ? null

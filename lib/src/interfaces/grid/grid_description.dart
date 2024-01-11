@@ -31,6 +31,10 @@ class GridDescription<T extends Cell> {
 
   final bool ignoreEmptyWidgetOnNoContent;
 
+  final bool cellTitleAtBottom;
+
+  final int titleLines;
+
   const GridDescription(
     this.actions, {
     this.showAppBar = true,
@@ -38,6 +42,8 @@ class GridDescription<T extends Cell> {
     required this.keybindsDescription,
     this.bottomWidget,
     this.ignoreSwipeSelectGesture = false,
+    this.cellTitleAtBottom = false,
+    this.titleLines = 1,
     this.pageName,
     required this.layout,
   });

@@ -113,8 +113,10 @@ class BaseCard extends StatelessWidget {
               splashColor:
                   Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               child: Card.filled(
-                clipBehavior: Clip.hardEdge,
-                color: transparentBackground ? Colors.transparent : null,
+                clipBehavior: Clip.antiAlias,
+                color: transparentBackground || backgroundImage != null
+                    ? Colors.transparent
+                    : null,
                 child: SizedBox(
                   width: width,
                   height: height,

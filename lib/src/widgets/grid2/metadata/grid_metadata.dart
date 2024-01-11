@@ -9,12 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
-import 'package:gallery/src/pages/image_view.dart';
-import 'package:gallery/src/widgets/notifiers/cell_provider.dart';
 import 'package:gallery/src/widgets/notifiers/grid_element_count.dart';
 import 'package:gallery/src/widgets/notifiers/grid_metadata.dart';
 import 'package:gallery/src/widgets/notifiers/network_configuration.dart';
-import 'package:gallery/src/widgets/notifiers/notifier_registry.dart';
 
 import 'grid_action.dart';
 

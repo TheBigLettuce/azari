@@ -22,6 +22,7 @@ import 'anime_api.dart';
 class AnimeEntry implements Cell {
   AnimeEntry({
     required this.site,
+    required this.type,
     required this.thumbUrl,
     required this.title,
     required this.titleJapanese,
@@ -58,9 +59,10 @@ class AnimeEntry implements Cell {
   final String titleEnglish;
   final String synopsis;
   final String background;
+  final String type;
 
   final List<String> titleSynonyms;
-  final List<String> genres;
+  final List<AnimeGenre> genres;
   final List<Relation> relations;
 
   final double score;

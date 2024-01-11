@@ -8,6 +8,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 
@@ -20,11 +21,19 @@ class AnimeNameWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget title() => Column(
           children: [
-            Text(
-              entry.title,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
+            GestureDetector(
+              onLongPress: () {
+                Clipboard.setData(ClipboardData(text: entry.title));
+                HapticFeedback.mediumImpact();
+              },
+              child: Text(
+                entry.title,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.8)),
+              ),
             ),
             Text(
               "${entry.titleEnglish} / ${entry.titleJapanese}",

@@ -18,6 +18,7 @@ class MiscSettings {
   final Id id = 0;
 
   final bool filesExtendedActions;
+  final bool animeAlwaysLoadFromNet;
   final int favoritesThumbId;
 
   @enumerated
@@ -25,6 +26,7 @@ class MiscSettings {
 
   const MiscSettings({
     required this.filesExtendedActions,
+    required this.animeAlwaysLoadFromNet,
     required this.favoritesThumbId,
     required this.favoritesPageMode,
   });
@@ -32,8 +34,11 @@ class MiscSettings {
   MiscSettings copy(
           {bool? filesExtendedActions,
           int? favoritesThumbId,
+          bool? animeAlwaysLoadFromNet,
           FilteringMode? favoritesPageMode}) =>
       MiscSettings(
+          animeAlwaysLoadFromNet:
+              animeAlwaysLoadFromNet ?? this.animeAlwaysLoadFromNet,
           favoritesPageMode: favoritesPageMode ?? this.favoritesPageMode,
           filesExtendedActions:
               filesExtendedActions ?? this.filesExtendedActions,
@@ -42,6 +47,7 @@ class MiscSettings {
   static MiscSettings get current =>
       Dbs.g.main.miscSettings.getSync(0) ??
       const MiscSettings(
+        animeAlwaysLoadFromNet: false,
         filesExtendedActions: false,
         favoritesThumbId: 0,
         favoritesPageMode: FilteringMode.tag,
@@ -60,6 +66,11 @@ class MiscSettings {
   static void setFavoritesPageMode(FilteringMode favoritesPageMode) {
     Dbs.g.main.writeTxnSync(() => Dbs.g.main.miscSettings
         .putSync(current.copy(favoritesPageMode: favoritesPageMode)));
+  }
+
+  static void setAnimeAlwaysLoadFromNet(bool animeAlwaysLoadFromNet) {
+    Dbs.g.main.writeTxnSync(() => Dbs.g.main.miscSettings
+        .putSync(current.copy(animeAlwaysLoadFromNet: animeAlwaysLoadFromNet)));
   }
 
   static StreamSubscription<MiscSettings?> watch(void Function(MiscSettings?) f,

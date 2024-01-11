@@ -77,16 +77,17 @@ mixin _ImageViewNotesMixin<T extends Cell> on State<NoteList<T>> {
               ),
               actions: [
                 TextButton(
-                    onPressed: () {
-                      final c = currentPalette?.dominantColor;
+                  onPressed: () {
+                    final c = currentPalette?.dominantColor;
 
-                      widget.noteInterface.addNote(noteTextController.text,
-                          currentCell, c?.color, c?.bodyTextColor);
-                      loadNotes(currentCell);
-                      setState(() {});
-                      Navigator.pop(context);
-                    },
-                    child: Text("Add"))
+                    widget.noteInterface.addNote(noteTextController.text,
+                        currentCell, c?.color, c?.bodyTextColor);
+                    loadNotes(currentCell);
+                    setState(() {});
+                    Navigator.pop(context);
+                  },
+                  child: const Text("Add"), // TODO: change
+                )
               ],
             );
           },
@@ -173,7 +174,7 @@ mixin _ImageViewNotesMixin<T extends Cell> on State<NoteList<T>> {
     loadNotes(currentCell, removeNote: idx);
     setState(() {});
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text("Note deleted"),
+      content: const Text("Note deleted"), // TODO: change
       action: SnackBarAction(
           label: "Undo",
           onPressed: () {

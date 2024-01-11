@@ -8,15 +8,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
-import 'package:gallery/src/interfaces/anime/anime_api.dart';
+import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/net/anime/jikan.dart';
 import 'package:gallery/src/pages/anime/inner/anime_inner.dart';
 import 'package:gallery/src/widgets/dashboard_card.dart';
-import 'package:gallery/src/widgets/empty_widget.dart';
-import 'package:gallery/src/widgets/grid/grid_cell.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 
@@ -58,6 +56,45 @@ class _RefreshEntryIconState extends State<RefreshEntryIcon> {
   }
 }
 
+mixin AlwaysLoadingAnimeMixin {
+  final alwaysLoading = MiscSettings.current.animeAlwaysLoadFromNet;
+  Future? loadingFuture;
+
+  void maybeFetchInfo(AnimeEntry entry, void Function(AnimeEntry e) f) {
+    if (alwaysLoading) {
+      loadingFuture = const Jikan().info(entry.id).then((value) {
+        if (value == null) {
+          return value;
+        }
+
+        f(value);
+
+        return value;
+      });
+    }
+  }
+
+  Widget wrapLoading(BuildContext context, Widget child) => alwaysLoading
+      ? FutureBuilder(
+          future: loadingFuture,
+          builder: (context, snapshot) {
+            if (!snapshot.hasData && !snapshot.hasError) {
+              return const Scaffold(
+                body: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            } else {
+              return Container(
+                color: Theme.of(context).colorScheme.surface,
+                child: child.animate().fadeIn(),
+              );
+            }
+          },
+        )
+      : child;
+}
+
 class FinishedPage extends StatefulWidget {
   final WatchedAnimeEntry entry;
 
@@ -67,7 +104,8 @@ class FinishedPage extends StatefulWidget {
   State<FinishedPage> createState() => _FinishedPageState();
 }
 
-class _FinishedPageState extends State<FinishedPage> {
+class _FinishedPageState extends State<FinishedPage>
+    with AlwaysLoadingAnimeMixin {
   late final StreamSubscription<WatchedAnimeEntry?> watcher;
   late WatchedAnimeEntry entry = widget.entry;
   final state = SkeletonState();
@@ -76,6 +114,8 @@ class _FinishedPageState extends State<FinishedPage> {
   @override
   void initState() {
     super.initState();
+
+    maybeFetchInfo(entry, (e) => entry.copySuper(e).save());
 
     watcher = entry.watch((e) {
       if (e == null) {
@@ -95,82 +135,89 @@ class _FinishedPageState extends State<FinishedPage> {
     scrollController.dispose();
     state.dispose();
 
+    loadingFuture?.ignore();
+
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return SkeletonSettings(
-      "Finished page",
-      state,
-      extendBodyBehindAppBar: true,
-      appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(kToolbarHeight),
-          child: AnimeInnerAppBar(
-            entry: entry,
-            scrollController: scrollController,
-            appBarActions: [
-              RefreshEntryIcon(entry, (e) => entry.copySuper(e).save())
-            ],
-          )),
-      child: SingleChildScrollView(
-        controller: scrollController,
-        child: Padding(
-          padding:
-              EdgeInsets.only(bottom: MediaQuery.viewPaddingOf(context).bottom),
-          child: Stack(children: [
-            BackgroundImage(
-              entry: entry,
-            ),
-            CardShell(
-              entry: entry,
-              viewPadding: MediaQuery.viewPaddingOf(context),
-              children: [
-                ...CardPanel.defaultCards(
-                  context,
-                  entry,
-                  isWatching: false,
-                  inBacklog: false,
-                  watched: true,
-                  replaceWatchCard: UnsizedCard(
-                    subtitle: Text("Watched"),
-                    title: Icon(
-                      Icons.check_rounded,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    tooltip: "Watched",
-                    transparentBackground: true,
-                  ),
+    Widget body() => SkeletonSettings(
+          "Finished page",
+          state,
+          extendBodyBehindAppBar: true,
+          appBar: PreferredSize(
+              preferredSize: const Size.fromHeight(kToolbarHeight),
+              child: AnimeInnerAppBar(
+                entry: entry,
+                scrollController: scrollController,
+                appBarActions: [
+                  RefreshEntryIcon(entry, (e) => entry.copySuper(e).save())
+                ],
+              )),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            child: Padding(
+              padding: EdgeInsets.only(
+                  bottom: MediaQuery.viewPaddingOf(context).bottom),
+              child: Stack(children: [
+                BackgroundImage(
+                  entry: entry,
                 ),
-                UnsizedCard(
-                  subtitle: Text("Remove"),
-                  title: const Icon(Icons.close_rounded),
-                  tooltip: "Remove",
-                  transparentBackground: true,
-                  onPressed: () {
-                    WatchedAnimeEntry.delete(
-                        widget.entry.id, widget.entry.site);
+                CardShell(
+                  entry: entry,
+                  viewPadding: MediaQuery.viewPaddingOf(context),
+                  info: [
+                    ...CardPanel.defaultInfo(context, entry),
+                  ],
+                  buttons: [
+                    ...CardPanel.defaultButtons(
+                      context,
+                      entry,
+                      isWatching: false,
+                      inBacklog: false,
+                      watched: true,
+                      replaceWatchCard: UnsizedCard(
+                        subtitle: const Text("Watched"), // TODO: change
+                        title: Icon(
+                          Icons.check_rounded,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        tooltip: "Watched",
+                        transparentBackground: true,
+                      ),
+                    ),
+                    UnsizedCard(
+                      subtitle: const Text("Remove"), // TODO: change
+                      title: const Icon(Icons.close_rounded),
+                      tooltip: "Remove",
+                      transparentBackground: true,
+                      onPressed: () {
+                        WatchedAnimeEntry.delete(entry.id, entry.site);
 
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text("Removed from watched"),
-                      action: SnackBarAction(
-                          label: "Undo",
-                          onPressed: () {
-                            WatchedAnimeEntry.readd(widget.entry);
-                          }),
-                    ));
-                  },
-                )
-              ],
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: const Text(
+                              "Removed from watched"), // TODO: change
+                          action: SnackBarAction(
+                              label: "Undo",
+                              onPressed: () {
+                                WatchedAnimeEntry.read(entry);
+                              }),
+                        ));
+                      },
+                    )
+                  ],
+                ),
+                AnimeInnerBody(
+                  api: const Jikan(),
+                  entry: entry,
+                  viewPadding: MediaQuery.viewPaddingOf(context),
+                ),
+              ]),
             ),
-            AnimeInnerBody(
-              api: const Jikan(),
-              entry: entry,
-              viewPadding: MediaQuery.viewPaddingOf(context),
-            ),
-          ]),
-        ),
-      ),
-    );
+          ),
+        );
+
+    return wrapLoading(context, body());
   }
 }

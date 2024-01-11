@@ -96,7 +96,7 @@ class VideoControls extends StatelessWidget {
 class _PlayButton extends StatefulWidget {
   final VideoPlayerController controller;
 
-  const _PlayButton({super.key, required this.controller});
+  const _PlayButton({required this.controller});
 
   @override
   State<_PlayButton> createState() => __PlayButtonState();
@@ -151,7 +151,8 @@ class __PlayButtonState extends State<_PlayButton> {
 
 class _VideoTime extends StatefulWidget {
   final VideoPlayerController controller;
-  const _VideoTime({super.key, required this.controller});
+
+  const _VideoTime({required this.controller});
 
   @override
   State<_VideoTime> createState() => __VideoTimeState();

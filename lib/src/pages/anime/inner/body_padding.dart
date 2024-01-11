@@ -5,31 +5,26 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of 'home.dart';
+import 'package:flutter/material.dart';
 
-class _GalleryIcon extends StatelessWidget {
-  final bool isSelected;
-  final AnimationController controller;
+class BodyPadding extends StatelessWidget {
+  final Widget child;
+  final EdgeInsets viewPadding;
 
-  const _GalleryIcon({
-    required this.controller,
-    required this.isSelected,
-  });
+  const BodyPadding(
+      {super.key, required this.viewPadding, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return NavigationDestination(
-      icon: Animate(
-        autoPlay: false,
-        target: 1,
-        controller: controller,
-        effects: [SlideEffect(duration: 150.ms, curve: Curves.bounceInOut)],
-        child: Icon(
-          Icons.collections,
-          color: isSelected ? Theme.of(context).colorScheme.primary : null,
-        ),
+    return Padding(
+      padding: EdgeInsets.only(
+        top: MediaQuery.sizeOf(context).height * 0.3 +
+            kToolbarHeight +
+            viewPadding.top,
+        left: 8,
+        right: 8,
       ),
-      label: AppLocalizations.of(context)!.galleryLabel,
+      child: child,
     );
   }
 }

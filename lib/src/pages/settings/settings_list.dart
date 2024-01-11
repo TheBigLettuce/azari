@@ -356,6 +356,11 @@ class _SettingsListState extends State<SettingsList> {
           title: Text(AppLocalizations.of(context)!.licenseSetting),
           subtitle: const Text("GPL-2.0-only"),
         ),
+        SwitchListTile(
+          value: _miscSettings!.animeAlwaysLoadFromNet,
+          onChanged: (value) => MiscSettings.setAnimeAlwaysLoadFromNet(value),
+          title: const Text("Always load Anime info from net"), // TODO: change
+        ),
       ];
 
   String _calculateMBSize(int i) {

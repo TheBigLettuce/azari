@@ -12,18 +12,45 @@ class CardPanel extends StatefulWidget {
   final AnimeMetadata site;
   final EdgeInsets viewPadding;
 
-  static List<Widget> defaultCards(BuildContext context, AnimeEntry entry,
+  static List<Widget> defaultInfo(BuildContext context, AnimeEntry entry) => [
+        UnsizedCard(
+          subtitle: const Text("Year"), // TODO: change
+          tooltip: "Year",
+          title: Text(entry.year == 0 ? "?" : entry.year.toString()),
+          transparentBackground: true,
+        ),
+        UnsizedCard(
+          subtitle: const Text("Score"), // TODO: change
+          tooltip: "Score",
+          title: Text(entry.score == 0 ? "?" : entry.score.toString()),
+          transparentBackground: true,
+        ),
+        UnsizedCard(
+          subtitle: const Text("Airing"),
+          tooltip: "Airing",
+          title: Text(entry.isAiring ? "yes" : "no"),
+          transparentBackground: true,
+        ),
+        UnsizedCard(
+          subtitle: const Text("Episodes"), // TODO: change
+          tooltip: "Episodes",
+          title: Text(entry.episodes == 0 ? "?" : entry.episodes.toString()),
+          transparentBackground: true,
+        ),
+        UnsizedCard(
+          subtitle: const Text("Type"), // TODO: change
+          tooltip: "Type",
+          title: Text(entry.type.isEmpty ? "?" : entry.type.toLowerCase()),
+          transparentBackground: true,
+        ),
+      ];
+
+  static List<Widget> defaultButtons(BuildContext context, AnimeEntry entry,
           {required bool isWatching,
           required bool inBacklog,
           required bool watched,
           Widget? replaceWatchCard}) =>
       [
-        UnsizedCard(
-          subtitle: Text("Year"),
-          tooltip: "Year",
-          title: Text(entry.year == 0 ? "?" : entry.year.toString()),
-          transparentBackground: true,
-        ),
         replaceWatchCard ??
             UnsizedCard(
               subtitle: Text(watched
@@ -54,13 +81,7 @@ class CardPanel extends StatefulWidget {
                     },
             ),
         UnsizedCard(
-          subtitle: Text("Score"),
-          tooltip: "Score",
-          title: Text(entry.score == 0 ? "?" : entry.score.toString()),
-          transparentBackground: true,
-        ),
-        UnsizedCard(
-          subtitle: Text("In browser"),
+          subtitle: const Text("In browser"), // TODO: change
           tooltip: "In browser",
           title: const Icon(Icons.public),
           transparentBackground: true,
@@ -68,17 +89,11 @@ class CardPanel extends StatefulWidget {
             launchUrl(Uri.parse(entry.siteUrl));
           },
         ),
-        UnsizedCard(
-          subtitle: Text("Airing"),
-          tooltip: "Airing",
-          title: Text(entry.isAiring ? "yes" : "no"),
-          transparentBackground: true,
-        ),
         if (entry.trailerUrl.isEmpty)
           const SizedBox.shrink()
         else
           UnsizedCard(
-            subtitle: Text("Trailer"),
+            subtitle: const Text("Trailer"), // TODO: change
             tooltip: "Trailer",
             title: const Icon(Icons.smart_display_rounded),
             transparentBackground: true,
@@ -87,12 +102,6 @@ class CardPanel extends StatefulWidget {
                   mode: LaunchMode.externalNonBrowserApplication);
             },
           ),
-        UnsizedCard(
-          subtitle: Text("Episodes"),
-          tooltip: "Episodes",
-          title: Text(entry.episodes == 0 ? "?" : entry.episodes.toString()),
-          transparentBackground: true,
-        ),
       ];
 
   const CardPanel(
@@ -140,24 +149,31 @@ class _CardPanelState extends State<CardPanel> {
     return CardShell(
       viewPadding: widget.viewPadding,
       entry: widget.entry,
-      children: CardPanel.defaultCards(context, widget.entry,
-          isWatching: _isWatchingBacklog.$1,
-          inBacklog: _isWatchingBacklog.$2,
-          watched: _watched),
+      info: CardPanel.defaultInfo(context, widget.entry),
+      buttons: CardPanel.defaultButtons(
+        context,
+        widget.entry,
+        isWatching: _isWatchingBacklog.$1,
+        inBacklog: _isWatchingBacklog.$2,
+        watched: _watched,
+      ),
     );
   }
 }
 
 class CardShell extends StatefulWidget {
-  final List<Widget> children;
+  final List<Widget> buttons;
+  final List<Widget> info;
   final AnimeEntry entry;
   final EdgeInsets viewPadding;
 
-  const CardShell(
-      {super.key,
-      required this.entry,
-      required this.viewPadding,
-      required this.children});
+  const CardShell({
+    super.key,
+    required this.entry,
+    required this.viewPadding,
+    required this.info,
+    required this.buttons,
+  });
 
   @override
   State<CardShell> createState() => _CardShellState();
@@ -214,6 +230,30 @@ class _CardShellState extends State<CardShell> {
     super.dispose();
   }
 
+  List<Widget> _insertBlanks(List<Widget> from, List<Widget> compared) {
+    if (from.length == compared.length) {
+      final res = <Widget>[];
+      for (final e in from.indexed) {
+        res.add(e.$2);
+        res.add(compared[e.$1]);
+      }
+
+      return res;
+    }
+
+    final res = <Widget>[];
+    for (final e in from.indexed) {
+      res.add(e.$2);
+      res.add(compared.elementAtOrNull(e.$1) ?? const SizedBox.shrink());
+    }
+
+    return res;
+  }
+
+  List<Widget> _merge() {
+    return _insertBlanks(widget.info, widget.buttons);
+  }
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -244,7 +284,7 @@ class _CardShellState extends State<CardShell> {
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2),
-                    children: widget.children,
+                    children: _merge(),
                   ),
                   LeftArrow(show: _showArrorLeft),
                   RightArrow(show: _showArrowRight),

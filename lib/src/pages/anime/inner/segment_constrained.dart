@@ -8,55 +8,79 @@
 part of 'anime_inner.dart';
 
 class _SegmentConstrained extends StatelessWidget {
-  // final String label;
-  // final String content;
   final AnimeEntry entry;
   final AnimeAPI api;
   final BoxConstraints constraints;
 
   const _SegmentConstrained({
-    super.key,
     required this.entry,
     required this.api,
     this.constraints = const BoxConstraints(maxWidth: 200, maxHeight: 300),
   });
 
+  Widget _selectionToolbar(
+      BuildContext context, EditableTextState editableTextState) {
+    return AdaptiveTextSelectionToolbar.buttonItems(
+      buttonItems: [
+        ...editableTextState.contextMenuButtonItems,
+        ContextMenuButtonItem(
+            onPressed: () {
+              editableTextState.hideToolbar();
+
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) {
+                  return SearchAnimePage(
+                    api: api,
+                    initalText: editableTextState
+                        .currentTextEditingValue.selection
+                        .textInside(
+                            editableTextState.currentTextEditingValue.text),
+                  );
+                },
+              ));
+            },
+            label: "Search")
+      ],
+      anchors: editableTextState.contextMenuAnchors,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      // mainAxisSize: MainAxisSize.min,
-
-      // : MainAxisAlignment.center,
       alignment: WrapAlignment.center,
       crossAxisAlignment: WrapCrossAlignment.center,
       direction: Axis.vertical,
       children: [
-        _Label(text: "Synopsis"),
+        const BodySegmentLabel(text: "Synopsis"), // TODO: change
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 4, right: 4),
           child: AnimatedContainer(
             duration: 200.ms,
             constraints: constraints,
-            child: Text(
+            child: SelectableText(
               entry.synopsis,
-              overflow: TextOverflow.fade,
+              contextMenuBuilder: _selectionToolbar,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  overflow: TextOverflow.fade,
                   color:
                       Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
             ),
           ),
         ),
-        if (entry.background.isNotEmpty) _Label(text: "Background"),
+        if (entry.background.isNotEmpty)
+          const BodySegmentLabel(text: "Background"), // TODO: change
         if (entry.background.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 4, right: 4),
             child: AnimatedContainer(
               duration: 200.ms,
               constraints: constraints,
-              child: Text(
+              child: SelectableText(
                 entry.background,
-                overflow: TextOverflow.fade,
+                contextMenuBuilder: _selectionToolbar,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    overflow: TextOverflow.fade,
                     color: Theme.of(context)
                         .colorScheme
                         .onSurface

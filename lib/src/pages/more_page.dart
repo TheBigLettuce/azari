@@ -45,7 +45,7 @@ class MorePage extends StatelessWidget {
               Icons.tag,
               color: Theme.of(context).colorScheme.primary,
             ),
-            title: Text("Tags"),
+            title: const Text("Tags"), // TODO: change
             onTap: () {
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) {
@@ -61,7 +61,7 @@ class MorePage extends StatelessWidget {
               Icons.dashboard_outlined,
               color: Theme.of(context).colorScheme.primary,
             ),
-            title: Text("Dashboard"),
+            title: const Text("Dashboard"), // TODO: change
             onTap: () {
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) {
@@ -76,7 +76,7 @@ class MorePage extends StatelessWidget {
               Icons.notes_outlined,
               color: Theme.of(context).colorScheme.primary,
             ),
-            title: Text("Notes"),
+            title: const Text("Notes"), // TODO: change
             onTap: () {
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) {
@@ -124,7 +124,7 @@ class MorePage extends StatelessWidget {
               Icons.hide_image_rounded,
               color: Theme.of(context).colorScheme.primary,
             ),
-            title: Text("Blacklisted Posts"),
+            title: const Text("Blacklisted Posts"), // TODO: change
             onTap: () {
               Navigator.push(
                   context,

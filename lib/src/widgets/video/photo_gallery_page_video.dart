@@ -144,8 +144,10 @@ class _BlankVideo extends StatefulWidget {
   final VideoPlayerController controller;
   final bool isPreviouslyPlayed;
 
-  const _BlankVideo(
-      {super.key, required this.controller, required this.isPreviouslyPlayed});
+  const _BlankVideo({
+    required this.controller,
+    required this.isPreviouslyPlayed,
+  });
 
   @override
   State<_BlankVideo> createState() => __BlankVideoState();

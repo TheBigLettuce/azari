@@ -10,7 +10,7 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
+import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
@@ -91,7 +91,10 @@ class AnimeCharacter implements Cell {
 
   @override
   List<Widget>? addInfo(BuildContext context, extra, AddInfoColorData colors) =>
-      null;
+      [
+        addInfoTile(colors: colors, title: "Url", subtitle: imageUrl),
+        addInfoTile(colors: colors, title: "Role", subtitle: role),
+      ];
 
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;

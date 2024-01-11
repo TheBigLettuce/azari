@@ -12,7 +12,6 @@ class _AnimeIcon extends StatelessWidget {
   final AnimationController controller;
 
   const _AnimeIcon({
-    super.key,
     required this.controller,
     required this.isSelected,
   });

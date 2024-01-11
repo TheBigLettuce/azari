@@ -9,23 +9,22 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/db/schemas/anime/saved_anime_characters.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/net/anime/jikan.dart';
-import 'package:gallery/src/pages/anime/finished_inner/finished_page.dart';
-import 'package:gallery/src/pages/anime/inner/padding_background_image.dart';
+import 'package:gallery/src/pages/anime/search/search_anime.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/widgets/dashboard_card.dart';
-import 'package:gallery/src/widgets/grid/grid_cell.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'anime_characters_widgets.dart';
 import 'anime_name_widget.dart';
+import 'anime_relations.dart';
+import 'body_padding.dart';
 
 part 'label.dart';
 part 'app_bar.dart';
@@ -51,6 +50,15 @@ class _AnimeInnerState extends State<AnimeInner> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+
+    SavedAnimeEntry.maybeGet(widget.entry.id, widget.entry.site)
+        ?.copySuper(widget.entry, true)
+        .save();
+
+    WatchedAnimeEntry.maybeGet(
+      widget.entry.id,
+      widget.entry.site,
+    )?.copySuper(widget.entry, true).save();
   }
 
   @override

@@ -11,7 +11,7 @@ class _Segment extends StatelessWidget {
   final String label;
   final String content;
 
-  const _Segment({super.key, required this.content, required this.label});
+  const _Segment({required this.content, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +20,7 @@ class _Segment extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       direction: Axis.vertical,
       children: [
-        _Label(text: label),
+        BodySegmentLabel(text: label),
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 4),
           child: Text(
