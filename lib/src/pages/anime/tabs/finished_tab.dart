@@ -8,9 +8,11 @@
 part of '../anime.dart';
 
 class _FinishedTab extends StatefulWidget {
+  final void Function() onDispose;
   final EdgeInsets viewInsets;
 
-  const _FinishedTab(this.viewInsets);
+  const _FinishedTab(this.viewInsets,
+      {required super.key, required this.onDispose});
 
   @override
   State<_FinishedTab> createState() => __FinishedTabState();
@@ -20,8 +22,11 @@ class __FinishedTabState extends State<_FinishedTab> {
   late final StreamSubscription<void> watcher;
 
   final List<WatchedAnimeEntry> _list = [];
+  final List<WatchedAnimeEntry> _filter = [];
 
   final state = GridSkeletonState<WatchedAnimeEntry>();
+
+  String _filteringValue = "";
 
   @override
   void initState() {
@@ -36,17 +41,47 @@ class __FinishedTabState extends State<_FinishedTab> {
 
       setState(() {});
 
-      state.gridKey.currentState?.mutationInterface.tick(_list.length);
+      if (_filteringValue.isNotEmpty) {
+        filter(_filteringValue);
+      } else {
+        state.gridKey.currentState?.mutationInterface.tick(_list.length);
+      }
     });
   }
 
   @override
   void dispose() {
+    widget.onDispose();
+
     watcher.cancel();
 
     state.dispose();
 
     super.dispose();
+  }
+
+  void filter(String value) {
+    final m = state.gridKey.currentState?.mutationInterface;
+    if (m == null) {
+      return;
+    }
+
+    _filteringValue = value;
+
+    final l = value.toLowerCase();
+
+    _filter.clear();
+
+    if (value.isEmpty) {
+      m.restore();
+
+      return;
+    }
+
+    _filter.addAll(
+        _list.where((element) => element.title.toLowerCase().contains(l)));
+
+    m.setSource(_filter.length, (i) => _filter[i]);
   }
 
   @override

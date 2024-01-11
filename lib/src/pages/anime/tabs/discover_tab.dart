@@ -79,8 +79,11 @@ class __DiscoverTabState extends State<_DiscoverTab> {
         },
         initalCellCount: widget.entries.length,
         scaffoldKey: state.scaffoldKey,
-        systemNavigationInsets:
-            widget.viewInsets.copyWith(bottom: widget.viewInsets.bottom + 80),
+        systemNavigationInsets: widget.viewInsets.copyWith(
+            bottom: widget.viewInsets.bottom +
+                (!GlueProvider.of<AnimeEntry>(context).keyboardVisible()
+                    ? 80
+                    : 0)),
         hasReachedEnd: () => _reachedEnd,
         selectionGlue: GlueProvider.of<AnimeEntry>(context),
         mainFocus: state.mainFocus,

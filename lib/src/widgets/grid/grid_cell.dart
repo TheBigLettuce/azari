@@ -47,6 +47,8 @@ class GridCell<T extends Cell> extends StatefulWidget {
 
   final String? forceAlias;
 
+  final bool animate;
+
   const GridCell(
       {super.key,
       required T cell,
@@ -56,6 +58,7 @@ class GridCell<T extends Cell> extends StatefulWidget {
       required this.download,
       this.forceAlias,
       bool? hidealias,
+      this.animate = false,
       this.shadowOnTop = false,
       this.circle = false,
       this.labelAtBottom = false,
@@ -237,7 +240,11 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
         // mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(flex: 2, child: card()),
+          Expanded(
+              flex: 2,
+              child: widget.animate
+                  ? card().animate(key: widget._data.uniqueKey()).fadeIn()
+                  : card()),
           if (widget.labelAtBottom)
             Expanded(
                 flex: 1,

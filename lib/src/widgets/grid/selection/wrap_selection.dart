@@ -20,7 +20,8 @@ class _WrapSelection extends StatelessWidget {
   final bool ignoreSwipeGesture;
 
   const _WrapSelection(
-      {required this.child,
+      {super.key,
+      required this.child,
       required this.isSelected,
       required this.ignoreSwipeGesture,
       required this.selectUnselect,

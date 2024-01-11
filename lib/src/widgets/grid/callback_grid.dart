@@ -556,6 +556,27 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
               }, //extend: maxExtend,
       );
 
+  GridCell<T> makeGridCellAnimate(BuildContext context, T cell, int indx,
+          {required bool hideAlias, required bool tightMode}) =>
+      GridCell(
+        cell: cell,
+        animate: true,
+        hidealias: hideAlias,
+        isList: widget.description.layout.isList,
+        indx: indx,
+        download: widget.download,
+        lines: widget.description.titleLines,
+        tight: tightMode,
+        labelAtBottom: widget.description.cellTitleAtBottom,
+        onPressed: (context) => onPressed(context, cell, indx),
+        onLongPress: indx.isNegative
+            ? null
+            : () {
+                selection.selectOrUnselect(
+                    context, indx, cell, widget.systemNavigationInsets.bottom);
+              }, //extend: maxExtend,
+      );
+
   Widget? _makeTitle(BuildContext context) {
     return widget.searchWidget?.search ??
         Badge.count(

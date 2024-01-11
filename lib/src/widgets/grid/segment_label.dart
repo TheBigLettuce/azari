@@ -13,17 +13,28 @@ class SegmentLabel extends StatelessWidget {
   final void Function()? onPress;
   final bool sticky;
   final bool hidePinnedIcon;
-  const SegmentLabel(this.text,
-      {super.key,
-      required this.hidePinnedIcon,
-      this.onLongPress,
-      required this.onPress,
-      required this.sticky});
+  final Widget? overridePinnedIcon;
+
+  const SegmentLabel(
+    this.text, {
+    super.key,
+    required this.hidePinnedIcon,
+    this.onLongPress,
+    required this.onPress,
+    required this.sticky,
+    this.overridePinnedIcon,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final rightGesture = MediaQuery.systemGestureInsetsOf(context).right;
+
     return Padding(
-        padding: const EdgeInsets.only(bottom: 8, top: 16, left: 8, right: 8),
+        padding: EdgeInsets.only(
+            bottom: 8,
+            top: 16,
+            left: 8,
+            right: rightGesture == 0 ? 8 : rightGesture / 2),
         child: GestureDetector(
           onLongPress: onLongPress,
           onTap: onPress,
@@ -39,10 +50,11 @@ class SegmentLabel extends StatelessWidget {
                       letterSpacing: 2,
                       color: Theme.of(context).colorScheme.secondary),
                 ),
-                if (sticky && !hidePinnedIcon)
-                  const Align(
+                if ((sticky && !hidePinnedIcon) || overridePinnedIcon != null)
+                  Align(
                     alignment: Alignment.centerRight,
-                    child: Icon(Icons.push_pin_outlined),
+                    child: overridePinnedIcon ??
+                        const Icon(Icons.push_pin_outlined),
                   ),
               ],
             ),
