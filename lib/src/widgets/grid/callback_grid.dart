@@ -709,15 +709,13 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                 ),
               ),
             ),
-          ...widget.description
-              .layout(context, this)
-              .map((e) => _WrapPadding<T>(
-                    systemNavigationInsets:
-                        widget.systemNavigationInsets.bottom,
-                    footer: widget.footer,
-                    selectionGlue: widget.selectionGlue,
-                    child: e,
-                  )),
+          ...widget.description.layout(context, this),
+          _WrapPadding<T>(
+            systemNavigationInsets: widget.systemNavigationInsets.bottom,
+            footer: widget.footer,
+            selectionGlue: widget.selectionGlue,
+            child: null,
+          )
         ],
       );
 
@@ -763,27 +761,32 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                     if (!widget.description.showAppBar)
                       Align(
                         alignment: Alignment.bottomCenter,
-                        child: PreferredSize(
-                          preferredSize: const Size.fromHeight(4),
-                          child: !_state.isRefreshing
-                              ? const Padding(
-                                  padding: EdgeInsets.only(top: 4),
-                                  child: SizedBox(),
-                                )
-                              : const LinearProgressIndicator(),
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                              bottom: widget.systemNavigationInsets.bottom),
+                          child: PreferredSize(
+                            preferredSize: const Size.fromHeight(4),
+                            child: !_state.isRefreshing
+                                ? const Padding(
+                                    padding: EdgeInsets.only(top: 4),
+                                    child: SizedBox(),
+                                  )
+                                : const LinearProgressIndicator(),
+                          ),
                         ),
                       ),
                     Align(
-                        alignment: Alignment.bottomRight,
-                        child: _Fab(
-                          key: _fabKey,
-                          scrollPos: widget.updateScrollPosition,
-                          controller: controller,
-                          selectionGlue: widget.selectionGlue,
-                          systemNavigationInsets: widget.systemNavigationInsets,
-                          addFabPadding: widget.addFabPadding,
-                          footer: widget.footer,
-                        )),
+                      alignment: Alignment.bottomRight,
+                      child: _Fab(
+                        key: _fabKey,
+                        scrollPos: widget.updateScrollPosition,
+                        controller: controller,
+                        selectionGlue: widget.selectionGlue,
+                        systemNavigationInsets: widget.systemNavigationInsets,
+                        addFabPadding: widget.addFabPadding,
+                        footer: widget.footer,
+                      ),
+                    ),
                   ],
                 ))
               ],
@@ -805,7 +808,7 @@ class _WrapPadding<T extends Cell> extends StatelessWidget {
   final PreferredSizeWidget? footer;
   final SelectionGlue<T> selectionGlue;
   final double systemNavigationInsets;
-  final Widget child;
+  final Widget? child;
 
   const _WrapPadding({
     super.key,
@@ -817,11 +820,13 @@ class _WrapPadding<T extends Cell> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    FloatingActionButton;
     return SliverPadding(
       padding: EdgeInsets.only(
-          bottom: systemNavigationInsets +
-              (selectionGlue.isOpen() && selectionGlue.keyboardVisible()
-                  ? 84
+          bottom: (kFloatingActionButtonMargin * 2 + 24 + 8) +
+              systemNavigationInsets +
+              (selectionGlue.isOpen() //&& selectionGlue.keyboardVisible()
+                  ? selectionGlue.barHeight
                   : 0) +
               (footer != null ? footer!.preferredSize.height : 0)),
       sliver: child,

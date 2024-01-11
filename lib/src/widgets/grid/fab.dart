@@ -49,18 +49,19 @@ class __FabState extends State<_Fab> {
             child: Padding(
               padding: EdgeInsets.only(
                   right: 4,
-                  bottom: widget.systemNavigationInsets.bottom +
+                  bottom: 4 +
+                      widget.systemNavigationInsets.bottom +
                       (!widget.addFabPadding
                           ? 0
                           : (widget.selectionGlue.isOpen() &&
                                       !widget.selectionGlue.keyboardVisible()
-                                  ? 84
+                                  ? widget.selectionGlue.barHeight
                                   : 0) +
                               (widget.footer != null
                                   ? widget.footer!.preferredSize.height
                                   : 0))),
               child: FloatingActionButton(
-                elevation: 0,
+                elevation: 2,
                 onPressed: () {
                   widget.controller.animateTo(0,
                       duration: 200.ms, curve: Easing.emphasizedAccelerate);

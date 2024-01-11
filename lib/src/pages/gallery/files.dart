@@ -232,6 +232,8 @@ class _GalleryFilesState extends State<GalleryFiles>
 
   @override
   Widget build(BuildContext context) {
+    final viewPadding = MediaQuery.of(context).viewPadding;
+
     return WrapGridPage<SystemGalleryDirectoryFile>(
         scaffoldKey: state.scaffoldKey,
         child: GridSkeleton<SystemGalleryDirectoryFile>(
@@ -241,8 +243,7 @@ class _GalleryFilesState extends State<GalleryFiles>
               getCell: (i) => widget.api.directCell(i),
               initalScrollPosition: 0,
               scaffoldKey: state.scaffoldKey,
-              systemNavigationInsets:
-                  MediaQuery.of(context).systemGestureInsets,
+              systemNavigationInsets: viewPadding,
               hasReachedEnd: () => true,
               addFabPadding: true,
               selectionGlue: GlueProvider.of(context),

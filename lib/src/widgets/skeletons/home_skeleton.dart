@@ -42,7 +42,7 @@ class HomeSkeleton extends StatelessWidget {
         autofocus: true,
         focusNode: state.mainFocus,
         child: Scaffold(
-          extendBody: selectedRoute == 3 || selectedRoute == 4 ? false : true,
+          extendBody: selectedRoute == 4 ? false : true,
           appBar: null,
           drawerEnableOpenDragGesture:
               MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,

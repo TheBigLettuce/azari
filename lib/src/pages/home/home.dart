@@ -187,11 +187,11 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
   bool keyboardVisible() => MediaQuery.viewInsetsOf(context).bottom != 0;
 
-  Widget _currentPage(BuildContext context) {
+  Widget _currentPage(BuildContext context, EdgeInsets padding) {
     if (widget.callback != null) {
       if (currentRoute == 0) {
         return GlueProvider<SystemGalleryDirectory>(
-            glue: glueState.glue(keyboardVisible, setState),
+            glue: glueState.glue(keyboardVisible, setState, 0),
             child: GalleryDirectories(
               nestedCallback: widget.callback,
               procPop: _procPop,
@@ -226,9 +226,10 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
     return switch (currentRoute) {
       0 => GlueProvider<Post>(
-          glue: glueState.glue(keyboardVisible, setState),
+          glue: glueState.glue(keyboardVisible, setState, 0),
           child: MainBooruGrid(
               mainGrid: mainGrid,
+              viewPadding: padding,
               refreshingInterface: refreshInterface,
               procPop: _procPopA),
           // MainBooruGrid2(
@@ -239,19 +240,20 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           // ),
         ),
       1 => GlueProvider<SystemGalleryDirectory>(
-          glue: glueState.glue(keyboardVisible, setState),
+          glue: glueState.glue(keyboardVisible, setState, 0),
           child: GalleryDirectories(
             procPop: _procPop,
+            viewPadding: padding,
             bottomPadding: keyboardVisible() ? 0 : 80,
           ),
         ),
       2 => GlueProvider<FavoriteBooru>(
-          glue: glueState.glue(keyboardVisible, setState),
-          child: FavoritesPage(procPop: _procPop),
+          glue: glueState.glue(keyboardVisible, setState, 0),
+          child: FavoritesPage(procPop: _procPop, viewPadding: padding),
         ),
       3 => GlueProvider<AnimeEntry>(
-          glue: glueState.glue(keyboardVisible, setState),
-          child: AnimePage(procPop: _procPop),
+          glue: glueState.glue(keyboardVisible, setState, 0),
+          child: AnimePage(procPop: _procPop, viewPadding: padding),
         ),
       4 => PopScope(
           canPop: currentRoute == 0,
@@ -291,6 +293,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final edgeInsets = MediaQuery.viewPaddingOf(context);
+
     return SelectionCountNotifier(
       count: glueState.count ?? 0,
       child: HomeSkeleton(
@@ -301,7 +305,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
               target: 0,
               effects: [FadeEffect(duration: 50.ms, begin: 1, end: 0)],
               controller: controller,
-              child: _currentPage(context));
+              child: _currentPage(context, edgeInsets));
         },
         navBar: Animate(
             controller: controllerNavBar,

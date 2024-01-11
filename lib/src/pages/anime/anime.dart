@@ -43,8 +43,10 @@ part 'tabs/finished_tab.dart';
 
 class AnimePage extends StatefulWidget {
   final void Function(bool) procPop;
+  final EdgeInsets viewPadding;
 
-  const AnimePage({super.key, required this.procPop});
+  const AnimePage(
+      {super.key, required this.procPop, required this.viewPadding});
 
   @override
   State<AnimePage> createState() => _AnimePageState();
@@ -153,12 +155,12 @@ class _AnimePageState extends State<AnimePage>
       child: SkeletonSettings(
         "Anime",
         state,
+        // extendBody: true,
         appBar: PreferredSize(
-            preferredSize: tabBar.preferredSize +
-                Offset(0, MediaQuery.viewPaddingOf(context).top),
+            preferredSize:
+                tabBar.preferredSize + Offset(0, widget.viewPadding.top),
             child: Padding(
-              padding:
-                  EdgeInsets.only(top: MediaQuery.viewPaddingOf(context).top),
+              padding: EdgeInsets.only(top: widget.viewPadding.top),
               child: Stack(
                 alignment: Alignment.topRight,
                 children: [
@@ -216,10 +218,11 @@ class _AnimePageState extends State<AnimePage>
           controller: tabController,
           children: [
             const EmptyWidget(),
-            const _WatchingTab(),
+            _WatchingTab(widget.viewPadding),
             _DiscoverTab(
               procPop: widget.procPop,
               entries: _discoverEntries,
+              viewInsets: widget.viewPadding,
               refreshingInterface: discoverInterface,
               initalPage: () => _discoverPage,
               initalScrollOffset: () => discoverScrollOffset,
@@ -227,7 +230,7 @@ class _AnimePageState extends State<AnimePage>
                   discoverScrollOffset = offset,
               savePage: (p) => _discoverPage = p,
             ),
-            const _FinishedTab(),
+            _FinishedTab(widget.viewPadding),
           ],
         ),
       ),

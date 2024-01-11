@@ -50,8 +50,9 @@ class SelectionGlueState {
   }
 
   SelectionGlue<T> glue<T extends Cell>(bool Function() keyboardVisible,
-          void Function(Function()) setState) =>
+          void Function(Function()) setState, int barHeight) =>
       SelectionGlue<T>(
+          barHeight: barHeight,
           updateCount: (c) {
             count = c;
 

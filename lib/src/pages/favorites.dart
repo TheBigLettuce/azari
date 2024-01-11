@@ -39,8 +39,10 @@ import 'booru/grid_settings_button.dart';
 
 class FavoritesPage extends StatefulWidget {
   final void Function(bool) procPop;
+  final EdgeInsets viewPadding;
 
-  const FavoritesPage({super.key, required this.procPop});
+  const FavoritesPage(
+      {super.key, required this.procPop, required this.viewPadding});
 
   @override
   State<FavoritesPage> createState() => _FavoritesPageState();
@@ -285,7 +287,7 @@ class _FavoritesPageState extends State<FavoritesPage>
                 _groupButton(context)
               ],
               systemNavigationInsets: EdgeInsets.only(
-                  bottom: MediaQuery.systemGestureInsetsOf(context).bottom +
+                  bottom: widget.viewPadding.bottom +
                       (Scaffold.of(context).widget.bottomNavigationBar !=
                                   null &&
                               !glue.keyboardVisible()

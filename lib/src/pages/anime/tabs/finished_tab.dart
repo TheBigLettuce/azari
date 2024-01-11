@@ -8,7 +8,9 @@
 part of '../anime.dart';
 
 class _FinishedTab extends StatefulWidget {
-  const _FinishedTab();
+  final EdgeInsets viewInsets;
+
+  const _FinishedTab(this.viewInsets);
 
   @override
   State<_FinishedTab> createState() => __FinishedTabState();
@@ -49,8 +51,6 @@ class __FinishedTabState extends State<_FinishedTab> {
 
   @override
   Widget build(BuildContext context) {
-    final viewInsets = MediaQuery.viewInsetsOf(context);
-
     return GridSkeleton<WatchedAnimeEntry>(
       state,
       (context) => CallbackGrid<WatchedAnimeEntry>(
@@ -59,7 +59,7 @@ class __FinishedTabState extends State<_FinishedTab> {
         initalScrollPosition: 0,
         scaffoldKey: state.scaffoldKey,
         systemNavigationInsets:
-            viewInsets.copyWith(bottom: viewInsets.bottom + 6),
+            widget.viewInsets.copyWith(bottom: widget.viewInsets.bottom + 80),
         hasReachedEnd: () => true,
         overrideOnPress: (context, cell) {
           Navigator.push(context, MaterialPageRoute(

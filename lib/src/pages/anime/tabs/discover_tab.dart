@@ -8,6 +8,7 @@
 part of '../anime.dart';
 
 class _DiscoverTab extends StatefulWidget {
+  final EdgeInsets viewInsets;
   final RefreshingStatusInterface refreshingInterface;
   final void Function(bool) procPop;
   final List<AnimeEntry> entries;
@@ -25,6 +26,7 @@ class _DiscoverTab extends StatefulWidget {
     required this.initalScrollOffset,
     required this.updateScrollPosition,
     required this.refreshingInterface,
+    required this.viewInsets,
   });
 
   @override
@@ -62,8 +64,6 @@ class __DiscoverTabState extends State<_DiscoverTab> {
 
   @override
   Widget build(BuildContext context) {
-    final viewInsets = MediaQuery.viewInsetsOf(context);
-
     return GridSkeleton<AnimeEntry>(
       state,
       (context) => CallbackGrid<AnimeEntry>(
@@ -80,7 +80,7 @@ class __DiscoverTabState extends State<_DiscoverTab> {
         initalCellCount: widget.entries.length,
         scaffoldKey: state.scaffoldKey,
         systemNavigationInsets:
-            viewInsets.copyWith(bottom: viewInsets.bottom + 6),
+            widget.viewInsets.copyWith(bottom: widget.viewInsets.bottom + 80),
         hasReachedEnd: () => _reachedEnd,
         selectionGlue: GlueProvider.of<AnimeEntry>(context),
         mainFocus: state.mainFocus,
@@ -96,7 +96,6 @@ class __DiscoverTabState extends State<_DiscoverTab> {
 
           return widget.entries.length;
         },
-        addFabPadding: true,
         updateScrollPosition: widget.updateScrollPosition,
         refreshInterface: widget.refreshingInterface,
         loadNext: () async {

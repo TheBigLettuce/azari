@@ -21,11 +21,13 @@ class SkeletonSettings extends StatelessWidget {
   final Widget child;
   final PreferredSizeWidget? appBar;
   final bool extendBodyBehindAppBar;
+  final bool extendBody;
 
   const SkeletonSettings(this.pageDescription, this.state,
       {super.key,
       this.appBar,
       required this.child,
+      this.extendBody = false,
       this.extendBodyBehindAppBar = false});
 
   @override
@@ -51,6 +53,7 @@ class SkeletonSettings extends StatelessWidget {
           autofocus: true,
           focusNode: state.mainFocus,
           child: Scaffold(
+            extendBody: extendBody,
             extendBodyBehindAppBar: extendBodyBehindAppBar,
             drawerEnableOpenDragGesture:
                 MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,

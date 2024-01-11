@@ -45,12 +45,14 @@ class GalleryDirectories extends StatefulWidget {
   final bool showBackButton;
   final void Function(bool) procPop;
   final double bottomPadding;
+  final EdgeInsets? viewPadding;
 
   const GalleryDirectories(
       {super.key,
       this.callback,
       this.nestedCallback,
       this.noDrawer,
+      this.viewPadding,
       required this.procPop,
       this.bottomPadding = 0,
       this.showBackButton = false})
@@ -279,7 +281,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
             scaffoldKey: state.scaffoldKey,
             onBack: widget.showBackButton ? () => Navigator.pop(context) : null,
             systemNavigationInsets: EdgeInsets.only(
-                bottom: MediaQuery.of(context).systemGestureInsets.bottom +
+                bottom: (widget.viewPadding?.bottom ??
+                        MediaQuery.systemGestureInsetsOf(context).bottom) +
                     (glue.isOpen() && !glue.keyboardVisible()
                         ? 80
                         : widget.bottomPadding)),

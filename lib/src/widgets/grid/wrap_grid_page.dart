@@ -31,7 +31,7 @@ class _WrapGridPageState<T extends Cell> extends State<WrapGridPage<T>>
     with SingleTickerProviderStateMixin {
   final glueState = SelectionGlueState();
   late final SelectionGlue<T> glue = glueState.glue<T>(
-      () => MediaQuery.viewInsetsOf(context).bottom != 0, setState);
+      () => MediaQuery.viewInsetsOf(context).bottom != 0, setState, 80);
 
   @override
   Widget build(BuildContext context) {

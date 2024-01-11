@@ -53,12 +53,15 @@ class MainBooruGrid extends StatefulWidget {
   final Isar mainGrid;
   final void Function(bool) procPop;
   final RefreshingStatusInterface refreshingInterface;
+  final EdgeInsets viewPadding;
 
-  const MainBooruGrid(
-      {super.key,
-      required this.mainGrid,
-      required this.refreshingInterface,
-      required this.procPop});
+  const MainBooruGrid({
+    super.key,
+    required this.mainGrid,
+    required this.refreshingInterface,
+    required this.procPop,
+    required this.viewPadding,
+  });
 
   @override
   State<MainBooruGrid> createState() => _MainBooruGridState();
@@ -262,7 +265,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
             (context) => CallbackGrid<Post>(
               key: state.gridKey,
               systemNavigationInsets: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).systemGestureInsets.bottom +
+                  bottom: widget.viewPadding.bottom +
                       (Scaffold.of(context).widget.bottomNavigationBar !=
                                   null &&
                               !glue.keyboardVisible()
