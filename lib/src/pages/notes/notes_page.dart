@@ -216,7 +216,7 @@ class _NotesPageState extends State<NotesPage>
                   Padding(
                     padding: const EdgeInsets.only(top: 12, bottom: 12),
                     child: Text(
-                      "Showing ${w.length} results", // TODO: change
+                      AppLocalizations.of(context)!.showingResults(w.length),
                       style: TextStyle(
                           fontStyle: FontStyle.italic,
                           color: Theme.of(context).colorScheme.primary),
@@ -226,7 +226,8 @@ class _NotesPageState extends State<NotesPage>
                 ],
               );
             },
-            viewHintText: "Search", // TOOD: change
+            viewHintText:
+                AppLocalizations.of(context)!.searchHint, // TOOD: change
             suggestionsBuilder: (context, controller) {
               if (controller.text.isEmpty) {
                 return [];
@@ -238,7 +239,7 @@ class _NotesPageState extends State<NotesPage>
             },
           )
         ],
-        title: Text("Notes"),
+        title: Text(AppLocalizations.of(context)!.notesPage),
         bottom: widget.callback != null
             ? CopyMovePreview.hintWidget(context, widget.callback!.description)
             : TabBar(controller: tabController, tabs: [

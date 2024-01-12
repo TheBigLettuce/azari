@@ -482,6 +482,7 @@ class ThumbnailProvider extends ImageProvider {
     if (key is MemoryImage) {
       return key.loadImage(key, decode);
     } else if (key is FileImage) {
+      // ignore: invalid_use_of_protected_member
       return key.loadImage(key, decode);
     }
 

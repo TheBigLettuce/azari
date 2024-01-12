@@ -221,9 +221,9 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
                   _favoriteOrUnfavorite(context, selected, plug);
                 } else if (chosen?.bucketId == "trash") {
                   if (!move) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text(
-                      "Can't copy files to the trash. Use move.", // TODO: change
+                      AppLocalizations.of(context)!.cantCopyToTrash,
                     )));
                     return Future.value();
                   }
@@ -281,9 +281,9 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
       FavoriteMedia.deleteAll(toDelete);
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text("Deleted from favorites"), // TODO: change
+        content: Text(AppLocalizations.of(context)!.deletedFromFavorites),
         action: SnackBarAction(
-            label: "Undo",
+            label: AppLocalizations.of(context)!.undoLabel,
             onPressed: () {
               FavoriteMedia.addAll(toDelete);
 

@@ -57,7 +57,8 @@ class __WatchingTabState extends State<_WatchingTab> {
     _watchingFilter.addAll(currentlyWatching
         .where((element) => element.title.toLowerCase().contains(l)));
 
-    m.setSource(_backlogFilter.length, (i) => _backlogFilter[i]);
+    m.setSource(_backlogFilter.length,
+        (i) => _backlogFilter[upward ? _backlogFilter.length - 1 - i : i]);
   }
 
   @override
@@ -117,7 +118,7 @@ class __WatchingTabState extends State<_WatchingTab> {
         mainFocus: state.mainFocus,
         refresh: () => Future.value(backlog.length),
         description: GridDescription([],
-            keybindsDescription: "Watching",
+            keybindsDescription: AppLocalizations.of(context)!.watchingTab,
             showAppBar: false,
             ignoreSwipeSelectGesture: true,
             ignoreEmptyWidgetOnNoContent: true,
@@ -170,7 +171,7 @@ class _WatchingLayout implements GridLayouter<SavedAnimeEntry> {
     return [
       SliverToBoxAdapter(
         child: SegmentLabel(
-          "Currently watching",
+          AppLocalizations.of(context)!.watchingLabel,
           hidePinnedIcon: true,
           onPress: null,
           sticky: false,
@@ -205,7 +206,7 @@ class _WatchingLayout implements GridLayouter<SavedAnimeEntry> {
         const SliverToBoxAdapter(child: EmptyWidget()),
       SliverToBoxAdapter(
         child: SegmentLabel(
-          "Backlog",
+          AppLocalizations.of(context)!.backlogLabel,
           hidePinnedIcon: true,
           onPress: null,
           sticky: false,

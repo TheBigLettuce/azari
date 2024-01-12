@@ -288,9 +288,9 @@
     "@addFiles": {
         "description": "Choose files for upload"
     },
-    "deleteImageOption": "Delete",
-    "@deleteImageOption": {
-        "description": "Delete image button label"
+    "delete": "Delete",
+    "@delete": {
+        "description": "Delete label"
     },
     "deleteImageConfirm": "Do you want to delete:",
     "@deleteImageConfirm": {
@@ -346,7 +346,7 @@
     },
     "hideNames": "Hide names",
     "@hideNames": {
-        "description": "Settings, hide cell names on grid"
+        "description": "Grid settings, hide cell names on grid"
     },
     "gridColumns": "Grid columns",
     "@gridColumns": {
@@ -551,9 +551,9 @@
     "@infoHeadline": {
         "description": "Title of the info end drawer in the image view"
     },
-    "errorHalf": "Error:",
-    "@errorHalf": {
-        "description": "First half of the error message on booru refresh"
+    "error": "Error",
+    "@error": {
+        "description": "Showed on errors"
     },
     "favoritesLabel": "Favorites",
     "@favoritesLabel": {
@@ -630,5 +630,328 @@
     "more": "More",
     "@more": {
         "description": "Nav bar destination"
+    },
+    "newsTab": "News",
+    "@newsTab": {
+        "description": "Anime page, news tab"
+    },
+    "watchingTab": "Watching",
+    "@watchingTab": {
+        "description": "Anime page, watching tab"
+    },
+    "discoverTab": "Discover",
+    "@discoverTab": {
+        "description": "Anime page, discover tab"
+    },
+    "finishedTab": "Finished",
+    "@finishedTab": {
+        "description": "Anime page, finished tab"
+    },
+    "animePage": "Anime",
+    "@animePage": {
+        "description": "Anime page label"
+    },
+    "cardWatched": "Watched",
+    "@cardWatched": {
+        "description": "Anime card panel, watched button"
+    },
+    "cardRemove": "Remove",
+    "@cardRemove": {
+        "description": "Anime card panel, remove button"
+    },
+    "removeFromWatched": "Removed from watched",
+    "@removeFromWatched": {
+        "description": "Anime card panel, remove button snackbar text"
+    },
+    "hasTranslations": "Has translations",
+    "@hasTranslations": {
+        "description": "Image view, has translations tile"
+    },
+    "tapToView": "Tap to view",
+    "@tapToView": {
+        "description": "Image view, has translations tile subtitle"
+    },
+    "translationTitle": "Translation",
+    "@translationTitle": {
+        "description": "Image view, translation title dialog title"
+    },
+    "cameraPermQrCodeErr": "Camera permission must be granted for reading the QR codes.",
+    "@cameraPermQrCodeErr": {
+        "description": "Showed when camera permission is not granted when reading Qr code"
+    },
+    "note": "Note",
+    "@note": {
+        "description": "Notes page, note name"
+    },
+    "save": "Save",
+    "@save": {
+        "description": "Notes page, save the notes button"
+    },
+    "miscLabel": "Misc",
+    "@miscLabel": {
+        "description": "Settings, misc title"
+    },
+    "loadingPlaceholder": "Save",
+    "@loadingPlaceholder": {
+        "description": "Settings, thumbnail cache size placeholder"
+    },
+    "pinnedThumbnailsSize": "Pinned thumbnails size",
+    "@pinnedThumbnailsSize": {
+        "description": "Settings, pinned thumbnails size tile"
+    },
+    "extendedFilesGridActions": "Show extended files grid actions",
+    "@extendedFilesGridActions": {
+        "description": "Settings, additional buttons in the files page of the gallery"
+    },
+    "animeAlwaysOnline": "Always load Anime info from net",
+    "@animeAlwaysOnline": {
+        "description": "Settings, always load anime info data from the API"
+    },
+    "add": "Add",
+    "@add": {
+        "description": "Add button text"
+    },
+    "newNotePlaceholder": "New note",
+    "@newNotePlaceholder": {
+        "description": "Notes page, new note text placeholder"
+    },
+    "noteDeleted": "Note deleted",
+    "@noteDeleted": {
+        "description": "Notes page, note deleted snackbar text"
+    },
+    "group": "Group",
+    "@group": {
+        "description": "Group feature title"
+    },
+    "noBookmarks": "No bookmarks",
+    "@noBookmarks": {
+        "description": "Booru grid, no bookmarks snackbar text"
+    },
+    "bookmarked": "Bookmarked",
+    "@bookmarked": {
+        "description": "Booru grid, bookmarked snackbar text"
+    },
+    "notesPage": "Notes",
+    "@notesPage": {
+        "description": "Notes page name"
+    },
+    "showingResults": "Showing {number} results",
+    "@showingResults": {
+        "description": "Notes page, search results count",
+        "placeholders": {
+            "number": {
+                "type": "int"
+            }
+        }
+    },
+    "dashboardPage": "Dashboard",
+    "@dashboardPage": {
+        "description": "Drawer destination, dashboard page"
+    },
+    "emptyTrashTitle": "Are you sure you want to empty the trash?",
+    "@emptyTrashTitle": {
+        "description": "Android gallery, add to trash text"
+    },
+    "thisIsPermanent": "This is permanent",
+    "@thisIsPermanent": {
+        "description": "Android gallery, add to trash subtitle"
+    },
+    "cantCopyToTrash": "Can't copy files to the trash. Use move.",
+    "@cantCopyToTrash": {
+        "description": "Android gallery, copy to trash error snackbar text"
+    },
+    "unknownSegmentsPlaceholder": "Unknown",
+    "@unknownSegmentsPlaceholder": {
+        "description": "Grid segments unknown segment"
+    },
+    "hoursShort": "{number} hrs",
+    "@hoursShort": {
+        "description": "Dashboard, hours time",
+        "placeholders": {
+            "number": {
+                "type": "int"
+            }
+        }
+    },
+    "cardTimeSpent": "Tile spent",
+    "@cardTimeSpent": {
+        "description": "Dashboard, time spent on booru card"
+    },
+    "cardScrollerUp": "Scrolled up",
+    "@cardScrollerUp": {
+        "description": "Dashboard, grid scrolled up times card"
+    },
+    "cardTagsSaved": "Tags saved",
+    "@cardTagsSaved": {
+        "description": "Dashboard, tags saved times card"
+    },
+    "cardRefreshes": "Refreshes",
+    "@cardRefreshes": {
+        "description": "Dashboard, grid booru refreshes times card"
+    },
+    "cardDownloadTime": "Download time",
+    "@cardDownloadTime": {
+        "description": "Dashboard, download time card"
+    },
+    "cardPostsViewed": "Posts viewed",
+    "@cardPostsViewed": {
+        "description": "Dashboard, booru posts viewed times card"
+    },
+    "cardPostsDownloaded": "Posts downloaded",
+    "@cardPostsDownloaded": {
+        "description": "Dashboard, booru posts downloaded times card"
+    },
+    "cardPostsSwiped": "Posts swiped",
+    "@cardPostsSwiped": {
+        "description": "Dashboard, booru posts swiped times card"
+    },
+    "cardBooruSwitches": "Booru switches",
+    "@cardBooruSwitches": {
+        "description": "Dashboard, booru switches times card"
+    },
+    "cardDirectoriesViewed": "Directories viewed",
+    "@cardDirectoriesViewed": {
+        "description": "Dashboard, gallery directories viewed times card"
+    },
+    "cardFilesSwiped": "Files swiped",
+    "@cardFilesSwiped": {
+        "description": "Dashboard, files swaped times card"
+    },
+    "cardFilesViewed": "Files viewed",
+    "@cardFilesViewed": {
+        "description": "Dashboard, files viewed times card"
+    },
+    "cardJoinedTimes": "Joined times",
+    "@cardJoinedTimes": {
+        "description": "Dashboard, gallery directories joined times count card"
+    },
+    "cardSameFiltered": "Same filtered",
+    "@cardSameFiltered": {
+        "description": "Dashboard, same filtered times card"
+    },
+    "cardTrashed": "Trashed",
+    "@cardTrashed": {
+        "description": "Dashboard, files trashed times card"
+    },
+    "cardCopied": "Copied",
+    "@cardCopied": {
+        "description": "Dashboard, files copied times card"
+    },
+    "cardMoved": "Moved",
+    "@cardMoved": {
+        "description": "Dashboard, files moved times card"
+    },
+    "showNames": "Show names",
+    "@showNames": {
+        "description": "Grid settings, show names on grid"
+    },
+    "gridView": "Grid view",
+    "@gridView": {
+        "description": "Grid settings, grid view on the grid"
+    },
+    "listView": "List view",
+    "@listView": {
+        "description": "Grid settings, list view on the grid"
+    },
+    "cardDone": "Done",
+    "@cardDone": {
+        "description": "Anime card panel, add to finished button card"
+    },
+    "removedFromWatching": "Removed from watching",
+    "@removedFromWatching": {
+        "description": "Anime card panel, remove button watching page snackbar text"
+    },
+    "cantWatchThree": "Can't watch more than 3 at a time",
+    "@cantWatchThree": {
+        "description": "Anime card panel, watching button card"
+    },
+    "cardWatching": "Watching",
+    "@cardWatching": {
+        "description": "Anime card panel, watching card in watching page"
+    },
+    "reset": "Reset",
+    "@reset": {
+        "description": "Reset action"
+    },
+    "cardInBrowser": "In browser",
+    "@cardInBrowser": {
+        "description": "Anime card panel, open in browser card"
+    },
+    "cardTrailer": "Trailer",
+    "@cardTrailer": {
+        "description": "Anime card panel, open trailer card"
+    },
+    "cardBacklog": "Backlog",
+    "@cardBacklog": {
+        "description": "Anime card panel, backlog card"
+    },
+    "cardInBacklog": "In backlog",
+    "@cardInBacklog": {
+        "description": "Anime card panel, in backlog card"
+    },
+    "cardType": "Type",
+    "@cardType": {
+        "description": "Anime card panel, type card"
+    },
+    "cardEpisodes": "Episodes",
+    "@cardEpisodes": {
+        "description": "Anime card panel, episodes card"
+    },
+    "cardAiring": "Airing",
+    "@cardAiring": {
+        "description": "Anime card panel, airing card"
+    },
+    "cardScore": "Score",
+    "@cardScore": {
+        "description": "Anime card panel, score card"
+    },
+    "cardYear": "Year",
+    "@cardYear": {
+        "description": "Anime card panel, year card"
+    },
+    "cardUnknownValue": "?",
+    "@cardUnknownValue": {
+        "description": "Anime card panel, unknown value placeholder"
+    },
+    "synopsisLabel": "Synopsis",
+    "@synopsisLabel": {
+        "description": "Anime page, body synopsis label"
+    },
+    "charactersLabel": "Characters",
+    "@charactersLabel": {
+        "description": "Anime page, body characters label"
+    },
+    "backgroundLabel": "Background",
+    "@backgroundLabel": {
+        "description": "Anime page, body background label"
+    },
+    "relationsLabel": "Related",
+    "@relationsLabel": {
+        "description": "Anime page, body related label"
+    },
+    "backlogLabel": "Backlog",
+    "@backlogLabel": {
+        "description": "Anime page, watching page backlog label"
+    },
+    "watchingLabel": "Currently watching",
+    "@watchingLabel": {
+        "description": "Anime page,  watching page watching label"
+    },
+    "searchAnimePage": "Search Anime",
+    "@searchAnimePage": {
+        "description": "Anime page, search anime page"
+    },
+    "alsoKnownAs": "Also known as:\n{titles}",
+    "@alsoKnownAs": {
+        "description": "Anime page, titles synonyms",
+        "placeholders": {
+            "titles": {
+                "type": "String"
+            }
+        }
+    },
+    "role": "role",
+    "@role": {
+        "description": "Image info, role of the anime character"
     }
 }

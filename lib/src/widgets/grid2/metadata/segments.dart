@@ -7,15 +7,15 @@
 
 import 'package:flutter/material.dart';
 
-class _SegSticky {
-  final String seg;
-  final bool sticky;
-  final void Function()? onLabelPressed;
-  final bool unstickable;
+// class _SegSticky {
+//   final String seg;
+//   final bool sticky;
+//   final void Function()? onLabelPressed;
+//   final bool unstickable;
 
-  const _SegSticky(this.seg, this.sticky, this.onLabelPressed,
-      {this.unstickable = true});
-}
+//   const _SegSticky(this.seg, this.sticky, this.onLabelPressed,
+//       {this.unstickable = true});
+// }
 
 /// Segments of the grid.
 class Segments<T> {

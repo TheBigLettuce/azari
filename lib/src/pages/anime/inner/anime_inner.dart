@@ -20,6 +20,7 @@ import 'package:gallery/src/widgets/dashboard_card.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'anime_characters_widgets.dart';
 import 'anime_name_widget.dart';
@@ -73,7 +74,7 @@ class _AnimeInnerState extends State<AnimeInner> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return SkeletonSettings(
-      "Anime inner",
+      AppLocalizations.of(context)!.discoverTab,
       state,
       appBar: PreferredSize(
           preferredSize: const Size.fromHeight(kToolbarHeight),

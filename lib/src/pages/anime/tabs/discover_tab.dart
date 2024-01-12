@@ -121,7 +121,7 @@ class __DiscoverTabState extends State<_DiscoverTab> {
             }, true),
           ],
           showAppBar: false,
-          keybindsDescription: "Anime",
+          keybindsDescription: AppLocalizations.of(context)!.discoverTab,
           ignoreSwipeSelectGesture: true,
           layout: GridLayout(
             gridSettings.columns,

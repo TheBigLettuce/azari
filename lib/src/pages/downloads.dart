@@ -77,7 +77,7 @@ class _DownloadsState extends State<Downloads>
   }
 
   Segments<DownloadFile> _makeSegments(BuildContext context) => Segments(
-        "Unknown", // TODO: change
+        AppLocalizations.of(context)!.unknownSegmentsPlaceholder,
         hidePinnedIcon: true,
         limitLabelChildren: 6,
         segment: (cell) {

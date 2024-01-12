@@ -339,7 +339,7 @@ abstract class CellLoaderHandlers {
   static void files(HandlerPayload record) async {
     final (port, db, rx) = _normalSequence(record);
 
-    final codec = _GalleryApiCodec();
+    const codec = _GalleryApiCodec();
     String currentContext = "";
 
     await for (final ControlMessage e in rx) {
@@ -485,20 +485,6 @@ abstract class CellLoaderHandlers {
 
     return (port, db, rx);
   }
-}
-
-class _Incrementer {
-  _Incrementer(this.currentValue);
-  int currentValue = 0;
-
-  // void increment() => currentValue += 1;
-  int next() {
-    currentValue += 1;
-
-    return currentValue;
-  }
-
-  void reset() => currentValue = 0;
 }
 
 class _GalleryApiCodec extends StandardMessageCodec {

@@ -16,6 +16,7 @@ import 'package:gallery/src/pages/anime/inner/anime_inner.dart';
 import 'package:gallery/src/widgets/dashboard_card.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class WatchingPage extends StatefulWidget {
   final SavedAnimeEntry entry;
@@ -75,7 +76,7 @@ class _WatchingPageState extends State<WatchingPage>
     return wrapLoading(
       context,
       SkeletonSettings(
-        "Watching Page", // TODO: change
+        AppLocalizations.of(context)!.watchingTab,
         state,
         extendBodyBehindAppBar: true,
         appBar: PreferredSize(
@@ -110,14 +111,15 @@ class _WatchingPageState extends State<WatchingPage>
                     inBacklog: entry.inBacklog,
                     watched: false,
                     replaceWatchCard: UnsizedCard(
-                      subtitle: const Text("Watching"), // TODO: change
+                      subtitle:
+                          Text(AppLocalizations.of(context)!.cardWatching),
                       title: Icon(
                         Icons.play_arrow_rounded,
                         color: entry.inBacklog
                             ? null
                             : Theme.of(context).colorScheme.primary,
                       ),
-                      tooltip: "Watching",
+                      tooltip: AppLocalizations.of(context)!.cardWatching,
                       onPressed: () {
                         if (!entry.inBacklog) {
                           entry.unsetIsWatching();
@@ -125,34 +127,34 @@ class _WatchingPageState extends State<WatchingPage>
                         }
 
                         if (!entry.setCurrentlyWatching()) {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                              content: Text(
-                                  "Can't watch more than 3 at a time"))); // TODO: change
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text(AppLocalizations.of(context)!
+                                  .cantWatchThree)));
                         }
                       },
                       transparentBackground: true,
                     ),
                   ),
                   UnsizedCard(
-                    subtitle: const Text("Done"), // TODO: change
+                    subtitle: Text(AppLocalizations.of(context)!.cardDone),
                     title: const Icon(Icons.check_rounded),
-                    tooltip: "Done",
+                    tooltip: AppLocalizations.of(context)!.cardDone,
                     transparentBackground: true,
                     onPressed: _addToWatched,
                   ),
                   UnsizedCard(
-                    subtitle: const Text("Remove"), // TODO: change
+                    subtitle: Text(AppLocalizations.of(context)!.cardRemove),
                     title: const Icon(Icons.close),
-                    tooltip: "Remove",
+                    tooltip: AppLocalizations.of(context)!.cardRemove,
                     transparentBackground: true,
                     onPressed: () {
                       SavedAnimeEntry.deleteAll([widget.entry.isarId!]);
 
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content:
-                            const Text("Removed from watching"), // TODO: change
+                        content: Text(
+                            AppLocalizations.of(context)!.removedFromWatching),
                         action: SnackBarAction(
-                            label: "Undo",
+                            label: AppLocalizations.of(context)!.undoLabel,
                             onPressed: () {
                               SavedAnimeEntry.addAll(
                                   [widget.entry], widget.entry.site);

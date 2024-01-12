@@ -10,14 +10,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_characters.dart';
-import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
-import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/pages/anime/inner/anime_inner.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/widgets/grid/grid_cell.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class AnimeCharactersWidget extends StatefulWidget {
   final AnimeAPI api;
@@ -32,7 +31,6 @@ class AnimeCharactersWidget extends StatefulWidget {
 
 class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
   late final StreamSubscription<SavedAnimeCharacters?> watcher;
-  // Future<List<AnimeCharacter>>? future;
   bool _loading = false;
   List<AnimeCharacter> list = [];
 
@@ -71,7 +69,8 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
 
     return Column(
       children: [
-        if (!_loading) const BodySegmentLabel(text: "Characters"),
+        if (!_loading)
+          BodySegmentLabel(text: AppLocalizations.of(context)!.charactersLabel),
         _loading
             ? const SizedBox(
                 height: 18,

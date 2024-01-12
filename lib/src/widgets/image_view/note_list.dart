@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/base/note_base.dart';
 import 'package:gallery/src/interfaces/note_interface.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../interfaces/cell/cell.dart';
 import 'notes_container.dart';
@@ -109,7 +110,10 @@ class NoteListState<T extends Cell> extends State<NoteList<T>>
                                                 context: context,
                                                 builder: (context) {
                                                   return AlertDialog(
-                                                    title: Text("Note"),
+                                                    title: Text(
+                                                        AppLocalizations.of(
+                                                                context)!
+                                                            .note),
                                                     content: TextFormField(
                                                       controller:
                                                           noteTextController,
@@ -130,7 +134,10 @@ class NoteListState<T extends Cell> extends State<NoteList<T>>
                                                                 noteTextController
                                                                     .text);
                                                           },
-                                                          child: Text("Save"))
+                                                          child: Text(
+                                                              AppLocalizations.of(
+                                                                      context)!
+                                                                  .save))
                                                     ],
                                                   );
                                                 },

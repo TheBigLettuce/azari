@@ -295,10 +295,11 @@ class _GalleryFilesState extends State<GalleryFiles>
                                 context: context,
                                 builder: (context) {
                                   return AlertDialog(
-                                    title: Text(
-                                        "Are you sure you want to empty the trash?"),
+                                    title: Text(AppLocalizations.of(context)!
+                                        .emptyTrashTitle),
                                     content: Text(
-                                      "This is permanent", // TODO: change
+                                      AppLocalizations.of(context)!
+                                          .thisIsPermanent,
                                       style: TextStyle(
                                           color: Colors.red.harmonizeWith(
                                               Theme.of(context)

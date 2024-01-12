@@ -80,8 +80,10 @@ class ImageViewAppBar<T extends Cell> extends StatelessWidget {
 }
 
 class _BottomLoadIndicator extends PreferredSize {
-  const _BottomLoadIndicator(
-      {super.key, required super.preferredSize, required super.child});
+  const _BottomLoadIndicator({
+    required super.preferredSize,
+    required super.child,
+  });
 
   @override
   Widget build(BuildContext context) {

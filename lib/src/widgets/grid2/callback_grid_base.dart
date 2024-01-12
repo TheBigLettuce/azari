@@ -106,7 +106,7 @@ class _CallbackGridBaseState<T extends Cell>
                       (GridFooterNotifier.sizeOf(context) ?? 0)),
               child: PrimaryScrollController(
                 controller: scrollController,
-                child: Align(
+                child: const Align(
                   alignment: Alignment.bottomRight,
                   child: CallbackGridFab(),
                 ),

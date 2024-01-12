@@ -19,17 +19,17 @@ class _WrapSelection extends StatelessWidget {
 
   final bool ignoreSwipeGesture;
 
-  const _WrapSelection(
-      {super.key,
-      required this.child,
-      required this.isSelected,
-      required this.ignoreSwipeGesture,
-      required this.selectUnselect,
-      required this.thisIndx,
-      required this.bottomPadding,
-      required this.scrollController,
-      required this.selectionEnabled,
-      required this.selectUntil});
+  const _WrapSelection({
+    required this.child,
+    required this.isSelected,
+    required this.ignoreSwipeGesture,
+    required this.selectUnselect,
+    required this.thisIndx,
+    required this.bottomPadding,
+    required this.scrollController,
+    required this.selectionEnabled,
+    required this.selectUntil,
+  });
 
   @override
   Widget build(BuildContext context) {

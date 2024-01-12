@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../interfaces/booru/booru_api_state.dart';
 
@@ -17,8 +18,8 @@ class TranslationNotes extends StatefulWidget {
       BooruAPIState Function() api) {
     return ListTile(
       textColor: foregroundColor,
-      title: const Text("Has translations"), // TODO: change
-      subtitle: const Text("Tap to view"), // TODO: change
+      title: Text(AppLocalizations.of(context)!.hasTranslations),
+      subtitle: Text(AppLocalizations.of(context)!.tapToView),
       onTap: () {
         Navigator.push(
             context,
@@ -53,7 +54,7 @@ class _TranslationNotesState extends State<TranslationNotes> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text("Translation"), // TODO: change
+      title: Text(AppLocalizations.of(context)!.translationTitle),
       content: FutureBuilder(
           future: future,
           builder: (context, snapshot) {

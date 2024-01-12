@@ -9,9 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
-import 'package:gallery/src/widgets/notifiers/grid_element_count.dart';
-import 'package:gallery/src/widgets/notifiers/grid_metadata.dart';
-import 'package:gallery/src/widgets/notifiers/network_configuration.dart';
 
 import 'grid_action.dart';
 
@@ -133,21 +130,21 @@ class GridMetadata<T extends Cell> {
   });
 }
 
-class _Test1<T extends Cell> extends StatelessWidget {
-  final Widget child;
+// class _Test1<T extends Cell> extends StatelessWidget {
+//   final Widget child;
 
-  const _Test1({super.key, required this.child});
+//   const _Test1({super.key, required this.child});
 
-  @override
-  Widget build(BuildContext context) {
-    NetworkConfigurationProvider.of(context);
-    // CellProvider.of<T>(context);
-    GridMetadataProvider.isListOf<T>(context);
-    GridElementCountNotifier.of(context);
+//   @override
+//   Widget build(BuildContext context) {
+//     NetworkConfigurationProvider.of(context);
+//     // CellProvider.of<T>(context);
+//     GridMetadataProvider.isListOf<T>(context);
+//     GridElementCountNotifier.of(context);
 
-    return child;
-  }
-}
+//     return child;
+//   }
+// }
 
 // abstract class GridLayouter {
 //   Widget call(BuildContext context, CallbackGridShellState<T> state);

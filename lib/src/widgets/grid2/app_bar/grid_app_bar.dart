@@ -146,8 +146,7 @@ class GridAppBar extends StatelessWidget {
 }
 
 class _BottomWidget extends PreferredSize {
-  const _BottomWidget(
-      {super.key, required super.preferredSize, required super.child});
+  const _BottomWidget({required super.preferredSize, required super.child});
 
   @override
   Widget build(BuildContext context) {

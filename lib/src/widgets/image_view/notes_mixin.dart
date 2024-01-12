@@ -40,8 +40,11 @@ mixin _ImageViewNotesMixin<T extends Cell> on State<NoteList<T>> {
 
     if (_extendNotes) {
       final c = currentPalette?.dominantColor;
-      widget.noteInterface
-          .addNote("New note", currentCell, c?.color, c?.bodyTextColor);
+      widget.noteInterface.addNote(
+          AppLocalizations.of(context)!.newNotePlaceholder,
+          currentCell,
+          c?.color,
+          c?.bodyTextColor);
 
       loadNotes(currentCell, addNote: true);
       setState(() {});
@@ -52,7 +55,7 @@ mixin _ImageViewNotesMixin<T extends Cell> on State<NoteList<T>> {
       return;
     }
 
-    noteTextController.text = "New note";
+    noteTextController.text = AppLocalizations.of(context)!.newNotePlaceholder;
 
     Navigator.push(
         context,
@@ -60,7 +63,7 @@ mixin _ImageViewNotesMixin<T extends Cell> on State<NoteList<T>> {
           context: context,
           builder: (context) {
             return AlertDialog(
-              title: const Text("New note"), // TODO: change
+              title: Text(AppLocalizations.of(context)!.newNotePlaceholder),
               content: TextFormField(
                 autofocus: true,
                 controller: noteTextController,
@@ -69,7 +72,7 @@ mixin _ImageViewNotesMixin<T extends Cell> on State<NoteList<T>> {
                 autovalidateMode: AutovalidateMode.always,
                 validator: (value) {
                   if ((value?.isEmpty ?? true)) {
-                    return "Value is empty";
+                    return AppLocalizations.of(context)!.valueIsEmpty;
                   }
 
                   return null;
@@ -86,7 +89,7 @@ mixin _ImageViewNotesMixin<T extends Cell> on State<NoteList<T>> {
                     setState(() {});
                     Navigator.pop(context);
                   },
-                  child: const Text("Add"), // TODO: change
+                  child: Text(AppLocalizations.of(context)!.add),
                 )
               ],
             );
@@ -174,9 +177,9 @@ mixin _ImageViewNotesMixin<T extends Cell> on State<NoteList<T>> {
     loadNotes(currentCell, removeNote: idx);
     setState(() {});
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: const Text("Note deleted"), // TODO: change
+      content: Text(AppLocalizations.of(context)!.noteDeleted),
       action: SnackBarAction(
-          label: "Undo",
+          label: AppLocalizations.of(context)!.undoLabel,
           onPressed: () {
             widget.noteInterface.addNote(
                 d,

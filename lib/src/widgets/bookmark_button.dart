@@ -34,8 +34,8 @@ class _BookmarkButtonState extends State<BookmarkButton> {
               Dbs.g.main.gridStateBoorus.where().sortByTimeDesc().findAllSync();
 
           if (l.isEmpty) {
-            ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text("No bookmarks")));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(AppLocalizations.of(context)!.noBookmarks)));
             return [];
           }
 
@@ -75,8 +75,8 @@ class _BookmarkButtonState extends State<BookmarkButton> {
                           context: context,
                           builder: (context) {
                             return AlertDialog(
-                              title: const Text(
-                                "Delete", // TODO: change
+                              title: Text(
+                                AppLocalizations.of(context)!.delete,
                               ),
                               content: ListTile(
                                 title: Text(e.tags),

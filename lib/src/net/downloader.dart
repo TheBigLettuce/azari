@@ -78,14 +78,6 @@ class Downloader with _CancelTokens, _StatisticsTimer {
     }
   }
 
-  String downloadAction(DownloadFile f) {
-    if (f.isOnHold() || _hasCancelKey(f.url)) {
-      return "Cancel the download?"; // TODO: change
-    } else {
-      return "Retry?"; // TODO: change
-    }
-  }
-
   String downloadDescription(DownloadFile f) {
     if (_hasCancelKey(f.url)) {
       return kDownloadInProgress;

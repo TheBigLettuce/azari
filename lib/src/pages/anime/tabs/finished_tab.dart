@@ -81,7 +81,7 @@ class __FinishedTabState extends State<_FinishedTab> {
     _filter.addAll(
         _list.where((element) => element.title.toLowerCase().contains(l)));
 
-    m.setSource(_filter.length, (i) => _filter[i]);
+    m.setSource(_filter.length, (i) => _filter[_filter.length - 1 - i]);
   }
 
   @override
@@ -106,11 +106,11 @@ class __FinishedTabState extends State<_FinishedTab> {
         selectionGlue: SelectionGlue.empty(context),
         mainFocus: state.mainFocus,
         refresh: () => Future.value(_list.length),
-        description: const GridDescription([],
-            keybindsDescription: "Finished tab", // TODO: change
+        description: GridDescription([],
+            keybindsDescription: AppLocalizations.of(context)!.finishedTab,
             showAppBar: false,
             ignoreSwipeSelectGesture: true,
-            layout: GridLayout(
+            layout: const GridLayout(
               GridColumn.three,
               GridAspectRatio.one,
               hideAlias: false,

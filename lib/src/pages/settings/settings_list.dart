@@ -87,7 +87,7 @@ class _SettingsListState extends State<SettingsList> {
                     },
                     child: Text(AppLocalizations.of(context)!.ok))
               ],
-              title: Text(AppLocalizations.of(context)!.errorHalf),
+              title: Text(AppLocalizations.of(context)!.error),
               content: Text(s),
             )));
   }
@@ -165,7 +165,7 @@ class _SettingsListState extends State<SettingsList> {
                 ));
           },
         ),
-        SettingsLabel("Misc", titleStyle),
+        SettingsLabel(AppLocalizations.of(context)!.miscLabel, titleStyle),
         ListTile(
           title: Text(AppLocalizations.of(context)!.savedTagsCount),
           trailing: PopupMenuButton(
@@ -218,7 +218,7 @@ class _SettingsListState extends State<SettingsList> {
                   title: Text(AppLocalizations.of(context)!.thumbnailsCSize),
                   subtitle: data.hasData
                       ? Text(_calculateMBSize(data.data!))
-                      : Text("Loading..."),
+                      : Text(AppLocalizations.of(context)!.loadingPlaceholder),
                   trailing: PopupMenuButton(
                     itemBuilder: (context) {
                       return [
@@ -279,10 +279,11 @@ class _SettingsListState extends State<SettingsList> {
               future: pinnedThumbnailCount,
               builder: (context, data) {
                 return ListTile(
-                  title: Text("Pinned thumbnails size"),
+                  title:
+                      Text(AppLocalizations.of(context)!.pinnedThumbnailsSize),
                   subtitle: data.hasData
                       ? Text(_calculateMBSize(data.data!))
-                      : Text("Loading..."),
+                      : Text(AppLocalizations.of(context)!.loadingPlaceholder),
                   trailing: PopupMenuButton(
                     itemBuilder: (context) {
                       return [
@@ -343,7 +344,7 @@ class _SettingsListState extends State<SettingsList> {
         SwitchListTile(
           value: _miscSettings!.filesExtendedActions,
           onChanged: (value) => MiscSettings.setFilesExtendedActions(value),
-          title: const Text("Show extended files grid actions"), // TODO: change
+          title: Text(AppLocalizations.of(context)!.extendedFilesGridActions),
         ),
         ListTile(
           onTap: () {
@@ -359,7 +360,7 @@ class _SettingsListState extends State<SettingsList> {
         SwitchListTile(
           value: _miscSettings!.animeAlwaysLoadFromNet,
           onChanged: (value) => MiscSettings.setAnimeAlwaysLoadFromNet(value),
-          title: const Text("Always load Anime info from net"), // TODO: change
+          title: Text(AppLocalizations.of(context)!.animeAlwaysOnline),
         ),
       ];
 

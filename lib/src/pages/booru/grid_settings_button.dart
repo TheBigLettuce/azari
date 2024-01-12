@@ -40,7 +40,7 @@ class GridSettingsButton extends StatelessWidget {
         if (safeMode != null)
           _safeMode(context, safeMode!, selectSafeMode: selectSafeMode),
         if (selectListView != null)
-          _listView(gridSettings.listView, selectListView!),
+          _listView(context, gridSettings.listView, selectListView!),
         if (selectHideName != null)
           _hideName(context, gridSettings.hideName, selectHideName!),
         if (selectRatio != null)
@@ -72,8 +72,8 @@ PopupMenuItem _hideName(
     BuildContext context, bool hideName, void Function(bool) select) {
   return PopupMenuItem(
     child: Text(hideName
-        ? "Show names" // TODO: change
-        : "Hide names"),
+        ? AppLocalizations.of(context)!.showNames
+        : AppLocalizations.of(context)!.hideNames),
     onTap: () => select(!hideName),
   );
 }
@@ -95,7 +95,7 @@ PopupMenuItem _ratio(BuildContext context, GridAspectRatio aspectRatio,
 PopupMenuItem _columns(BuildContext context, GridColumn columns,
     void Function(GridColumn?) select) {
   return PopupMenuItem(
-    child: const Text("Columns"), // TODO: change
+    child: Text(AppLocalizations.of(context)!.gridColumns),
     onTap: () => radioDialog(
       context,
       GridColumn.values.map((e) => (e, e.number.toString())).toList(),
@@ -106,11 +106,12 @@ PopupMenuItem _columns(BuildContext context, GridColumn columns,
   );
 }
 
-PopupMenuItem _listView(bool listView, void Function(bool) select) {
+PopupMenuItem _listView(
+    BuildContext context, bool listView, void Function(bool) select) {
   return PopupMenuItem(
     child: Text(listView
-        ? "Grid view" // TODO: change
-        : "List view"),
+        ? AppLocalizations.of(context)!.gridView
+        : AppLocalizations.of(context)!.listView),
     onTap: () => select(!listView),
   );
 }

@@ -7,31 +7,31 @@
 
 part of 'anime_inner.dart';
 
-class _Segment extends StatelessWidget {
-  final String label;
-  final String content;
+// class _Segment extends StatelessWidget {
+//   final String label;
+//   final String content;
 
-  const _Segment({required this.content, required this.label});
+//   const _Segment({required this.content, required this.label});
 
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      alignment: WrapAlignment.center,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      direction: Axis.vertical,
-      children: [
-        BodySegmentLabel(text: label),
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 4),
-          child: Text(
-            content,
-            overflow: TextOverflow.fade,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color:
-                    Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
-          ),
-        )
-      ],
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Wrap(
+//       alignment: WrapAlignment.center,
+//       crossAxisAlignment: WrapCrossAlignment.center,
+//       direction: Axis.vertical,
+//       children: [
+//         BodySegmentLabel(text: label),
+//         Padding(
+//           padding: const EdgeInsets.only(left: 4, bottom: 4),
+//           child: Text(
+//             content,
+//             overflow: TextOverflow.fade,
+//             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+//                 color:
+//                     Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
+//           ),
+//         )
+//       ],
+//     );
+//   }
+// }

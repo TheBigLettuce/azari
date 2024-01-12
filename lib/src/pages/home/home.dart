@@ -339,10 +339,9 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                         icon: const Icon(Icons.collections),
                         label: AppLocalizations.of(context)!.galleryLabel,
                       ),
-                      const NavigationDestination(
-                        icon: Icon(Icons.sticky_note_2),
-                        label: "Notes", // TODO: change
-                      ),
+                      NavigationDestination(
+                          icon: const Icon(Icons.sticky_note_2),
+                          label: AppLocalizations.of(context)!.notesPage),
                     ]
                   : [
                       _BooruIcon(
@@ -370,8 +369,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                               ? Theme.of(context).colorScheme.primary
                               : null,
                         ),
-                        label:
-                            AppLocalizations.of(context)!.more, // TODO: change
+                        label: AppLocalizations.of(context)!.more,
                       ),
                     ],
             )),

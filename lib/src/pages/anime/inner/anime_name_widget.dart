@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class AnimeNameWidget extends StatelessWidget {
   final AnimeEntry entry;
@@ -50,8 +51,8 @@ class AnimeNameWidget extends StatelessWidget {
           : Tooltip(
               triggerMode: Platform.isAndroid ? TooltipTriggerMode.tap : null,
               showDuration: Platform.isAndroid ? 2.seconds : null,
-              message:
-                  "Also known as:\n${entry.titleSynonyms.reduce((value, element) => '$value\n$element')}",
+              message: AppLocalizations.of(context)!
+                  .alsoKnownAs(entry.titleSynonyms.join('\n')),
               child: title(),
             ),
     );

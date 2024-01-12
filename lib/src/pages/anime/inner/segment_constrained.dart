@@ -24,22 +24,23 @@ class _SegmentConstrained extends StatelessWidget {
       buttonItems: [
         ...editableTextState.contextMenuButtonItems,
         ContextMenuButtonItem(
-            onPressed: () {
-              editableTextState.hideToolbar();
+          onPressed: () {
+            editableTextState.hideToolbar();
 
-              Navigator.push(context, MaterialPageRoute(
-                builder: (context) {
-                  return SearchAnimePage(
-                    api: api,
-                    initalText: editableTextState
-                        .currentTextEditingValue.selection
-                        .textInside(
-                            editableTextState.currentTextEditingValue.text),
-                  );
-                },
-              ));
-            },
-            label: "Search")
+            Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return SearchAnimePage(
+                  api: api,
+                  initalText: editableTextState
+                      .currentTextEditingValue.selection
+                      .textInside(
+                          editableTextState.currentTextEditingValue.text),
+                );
+              },
+            ));
+          },
+          label: AppLocalizations.of(context)!.searchHint,
+        )
       ],
       anchors: editableTextState.contextMenuAnchors,
     );
@@ -52,7 +53,7 @@ class _SegmentConstrained extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       direction: Axis.vertical,
       children: [
-        const BodySegmentLabel(text: "Synopsis"), // TODO: change
+        BodySegmentLabel(text: AppLocalizations.of(context)!.synopsisLabel),
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 4, right: 4),
           child: AnimatedContainer(
@@ -69,7 +70,7 @@ class _SegmentConstrained extends StatelessWidget {
           ),
         ),
         if (entry.background.isNotEmpty)
-          const BodySegmentLabel(text: "Background"), // TODO: change
+          BodySegmentLabel(text: AppLocalizations.of(context)!.backgroundLabel),
         if (entry.background.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 4, right: 4),

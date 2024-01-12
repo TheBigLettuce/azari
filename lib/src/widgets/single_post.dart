@@ -181,10 +181,10 @@ class _SinglePostState extends State<SinglePost> {
                         DialogRoute(
                           context: context,
                           builder: (context) {
-                            return const AlertDialog(
-                              title: Text("Error"), // TODO: change
-                              content: Text(
-                                  "Camera permission must be granted for reading the QR codes."), // TODO: change
+                            return AlertDialog(
+                              title: Text(AppLocalizations.of(context)!.error),
+                              content: Text(AppLocalizations.of(context)!
+                                  .cameraPermQrCodeErr),
                             );
                           },
                         ));

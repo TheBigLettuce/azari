@@ -31,6 +31,7 @@ import 'package:gallery/src/widgets/notifiers/notifier_registry.dart';
 import 'package:gallery/src/widgets/notifiers/state_restoration.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton2.dart';
 import 'package:isar/isar.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../db/initalize_db.dart';
 import '../../db/state_restoration.dart';
@@ -54,9 +55,9 @@ class MainBooruGrid2 extends StatefulWidget {
         onPressed: () {
           f();
           ScaffoldMessenger.of(state.scaffoldKey.currentContext!)
-              .showSnackBar(const SnackBar(
+              .showSnackBar(SnackBar(
                   content: Text(
-            "Bookmarked", // TODO: change
+            AppLocalizations.of(context)!.bookmarked,
           )));
           glue.close();
           // state.gridKey.currentState?.selection.selected.clear();

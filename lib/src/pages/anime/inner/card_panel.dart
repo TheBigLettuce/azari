@@ -14,33 +14,43 @@ class CardPanel extends StatefulWidget {
 
   static List<Widget> defaultInfo(BuildContext context, AnimeEntry entry) => [
         UnsizedCard(
-          subtitle: const Text("Year"), // TODO: change
-          tooltip: "Year",
-          title: Text(entry.year == 0 ? "?" : entry.year.toString()),
+          subtitle: Text(AppLocalizations.of(context)!.cardYear),
+          tooltip: AppLocalizations.of(context)!.cardYear,
+          title: Text(entry.year == 0
+              ? AppLocalizations.of(context)!.cardUnknownValue
+              : entry.year.toString()),
           transparentBackground: true,
         ),
         UnsizedCard(
-          subtitle: const Text("Score"), // TODO: change
-          tooltip: "Score",
-          title: Text(entry.score == 0 ? "?" : entry.score.toString()),
+          subtitle: Text(AppLocalizations.of(context)!.cardScore),
+          tooltip: AppLocalizations.of(context)!.cardScore,
+          title: Text(entry.score == 0
+              ? AppLocalizations.of(context)!.cardUnknownValue
+              : entry.score.toString()),
           transparentBackground: true,
         ),
         UnsizedCard(
-          subtitle: const Text("Airing"),
-          tooltip: "Airing",
-          title: Text(entry.isAiring ? "yes" : "no"),
+          subtitle: Text(AppLocalizations.of(context)!.cardAiring),
+          tooltip: AppLocalizations.of(context)!.cardAiring,
+          title: Text(entry.isAiring
+              ? AppLocalizations.of(context)!.yes
+              : AppLocalizations.of(context)!.no),
           transparentBackground: true,
         ),
         UnsizedCard(
-          subtitle: const Text("Episodes"), // TODO: change
-          tooltip: "Episodes",
-          title: Text(entry.episodes == 0 ? "?" : entry.episodes.toString()),
+          subtitle: Text(AppLocalizations.of(context)!.cardEpisodes),
+          tooltip: AppLocalizations.of(context)!.cardEpisodes,
+          title: Text(entry.episodes == 0
+              ? AppLocalizations.of(context)!.cardUnknownValue
+              : entry.episodes.toString()),
           transparentBackground: true,
         ),
         UnsizedCard(
-          subtitle: const Text("Type"), // TODO: change
-          tooltip: "Type",
-          title: Text(entry.type.isEmpty ? "?" : entry.type.toLowerCase()),
+          subtitle: Text(AppLocalizations.of(context)!.cardType),
+          tooltip: AppLocalizations.of(context)!.cardType,
+          title: Text(entry.type.isEmpty
+              ? AppLocalizations.of(context)!.cardUnknownValue
+              : entry.type.toLowerCase()),
           transparentBackground: true,
         ),
       ];
@@ -54,12 +64,12 @@ class CardPanel extends StatefulWidget {
         replaceWatchCard ??
             UnsizedCard(
               subtitle: Text(watched
-                  ? "Watched"
+                  ? AppLocalizations.of(context)!.cardWatched
                   : isWatching
                       ? inBacklog
-                          ? "In backlog"
-                          : "Watching"
-                      : "Backlog"),
+                          ? AppLocalizations.of(context)!.cardInBacklog
+                          : AppLocalizations.of(context)!.cardWatching
+                      : AppLocalizations.of(context)!.cardBacklog),
               title: watched
                   ? Icon(Icons.check_rounded,
                       color: Theme.of(context).colorScheme.primary)
@@ -67,12 +77,12 @@ class CardPanel extends StatefulWidget {
                       ? const Icon(Icons.library_add_check)
                       : const Icon(Icons.add_rounded),
               tooltip: watched
-                  ? "Watched"
+                  ? AppLocalizations.of(context)!.cardWatched
                   : isWatching
                       ? inBacklog
-                          ? "In backlog"
-                          : "Watching"
-                      : "Backlog",
+                          ? AppLocalizations.of(context)!.cardInBacklog
+                          : AppLocalizations.of(context)!.cardWatching
+                      : AppLocalizations.of(context)!.cardBacklog,
               transparentBackground: true,
               onPressed: isWatching || watched
                   ? null
@@ -81,8 +91,8 @@ class CardPanel extends StatefulWidget {
                     },
             ),
         UnsizedCard(
-          subtitle: const Text("In browser"), // TODO: change
-          tooltip: "In browser",
+          subtitle: Text(AppLocalizations.of(context)!.cardInBrowser),
+          tooltip: AppLocalizations.of(context)!.cardInBrowser,
           title: const Icon(Icons.public),
           transparentBackground: true,
           onPressed: () {
@@ -93,8 +103,8 @@ class CardPanel extends StatefulWidget {
           const SizedBox.shrink()
         else
           UnsizedCard(
-            subtitle: const Text("Trailer"), // TODO: change
-            tooltip: "Trailer",
+            subtitle: Text(AppLocalizations.of(context)!.cardTrailer),
+            tooltip: AppLocalizations.of(context)!.cardTrailer,
             title: const Icon(Icons.smart_display_rounded),
             transparentBackground: true,
             onPressed: () {
@@ -104,11 +114,12 @@ class CardPanel extends StatefulWidget {
           ),
       ];
 
-  const CardPanel(
-      {super.key,
-      required this.entry,
-      required this.viewPadding,
-      required this.site});
+  const CardPanel({
+    super.key,
+    required this.entry,
+    required this.viewPadding,
+    required this.site,
+  });
 
   @override
   State<CardPanel> createState() => _CardPanelState();
@@ -291,7 +302,6 @@ class _CardShellState extends State<CardShell> {
                 ],
               )),
             )
-            // IconButton(onPressed: () {}, icon:)/s
           ],
         ),
       ),

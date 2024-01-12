@@ -10,6 +10,7 @@ import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/pages/anime/inner/anime_inner.dart';
 import 'package:gallery/src/pages/anime/search/search_anime.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class AnimeRelations extends StatelessWidget {
   final AnimeAPI api;
@@ -23,7 +24,8 @@ class AnimeRelations extends StatelessWidget {
         ? const SizedBox.shrink()
         : Column(
             children: [
-              const BodySegmentLabel(text: "Related"),
+              BodySegmentLabel(
+                  text: AppLocalizations.of(context)!.relationsLabel),
               ...entry.relations.map(
                 (e) => TextButton(
                   onPressed: () {

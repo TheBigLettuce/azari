@@ -17,6 +17,7 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/cell/cell_data.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:isar/isar.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 part 'saved_anime_characters.g.dart';
 
@@ -92,8 +93,14 @@ class AnimeCharacter implements Cell {
   @override
   List<Widget>? addInfo(BuildContext context, extra, AddInfoColorData colors) =>
       [
-        addInfoTile(colors: colors, title: "Url", subtitle: imageUrl),
-        addInfoTile(colors: colors, title: "Role", subtitle: role),
+        addInfoTile(
+            colors: colors,
+            title: AppLocalizations.of(context)!.sourceFileInfoPage,
+            subtitle: imageUrl),
+        addInfoTile(
+            colors: colors,
+            title: AppLocalizations.of(context)!.role,
+            subtitle: role),
       ];
 
   @override

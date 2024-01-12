@@ -64,7 +64,7 @@ class WrappedSelection extends StatelessWidget {
                     duration: 200.ms, curve: Curves.linear);
               }
             },
-            onWillAccept: (data) => true,
+            onWillAcceptWithDetails: (data) => true,
             builder: (context, _, __) {
               return Draggable(
                 data: 1,

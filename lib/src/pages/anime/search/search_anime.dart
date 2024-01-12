@@ -20,6 +20,7 @@ import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../inner/anime_inner.dart';
 
@@ -40,7 +41,6 @@ class SearchAnimePage extends StatefulWidget {
 class _SearchAnimePageState extends State<SearchAnimePage> {
   final List<AnimeEntry> _results = [];
   late final StreamSubscription<void> watcher;
-  // final List<AnimeGenre> _genres = [];
   final searchFocus = FocusNode();
   final state = GridSkeletonState<AnimeEntry>();
 
@@ -161,7 +161,7 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
                     initialValue: currentSearch,
                     decoration: InputDecoration(
                         hintText:
-                            "Search ${currentGenre == null ? '' : !snapshot.hasData ? '...' : snapshot.data?[currentGenre!]?.title ?? ''}",
+                            "${AppLocalizations.of(context)!.searchHint} ${currentGenre == null ? '' : !snapshot.hasData ? '...' : snapshot.data?[currentGenre!]?.title ?? ''}",
                         border: InputBorder.none),
                     focusNode: searchFocus,
                     onFieldSubmitted: (value) {
@@ -200,7 +200,7 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
           description: GridDescription(
             [],
             titleLines: 2,
-            keybindsDescription: "Anime search",
+            keybindsDescription: AppLocalizations.of(context)!.searchAnimePage,
             layout: GridLayout(
               gridSettings.columns,
               GridAspectRatio.zeroSeven,

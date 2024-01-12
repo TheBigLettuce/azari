@@ -17,6 +17,7 @@ import 'package:gallery/src/pages/anime/inner/anime_inner.dart';
 import 'package:gallery/src/widgets/dashboard_card.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class RefreshEntryIcon extends StatefulWidget {
   final AnimeEntry entry;
@@ -143,7 +144,7 @@ class _FinishedPageState extends State<FinishedPage>
   @override
   Widget build(BuildContext context) {
     Widget body() => SkeletonSettings(
-          "Finished page",
+          AppLocalizations.of(context)!.finishedTab,
           state,
           extendBodyBehindAppBar: true,
           appBar: PreferredSize(
@@ -178,28 +179,29 @@ class _FinishedPageState extends State<FinishedPage>
                       inBacklog: false,
                       watched: true,
                       replaceWatchCard: UnsizedCard(
-                        subtitle: const Text("Watched"), // TODO: change
+                        subtitle:
+                            Text(AppLocalizations.of(context)!.cardWatched),
                         title: Icon(
                           Icons.check_rounded,
                           color: Theme.of(context).colorScheme.primary,
                         ),
-                        tooltip: "Watched",
+                        tooltip: AppLocalizations.of(context)!.cardWatched,
                         transparentBackground: true,
                       ),
                     ),
                     UnsizedCard(
-                      subtitle: const Text("Remove"), // TODO: change
+                      subtitle: Text(AppLocalizations.of(context)!.cardRemove),
                       title: const Icon(Icons.close_rounded),
-                      tooltip: "Remove",
+                      tooltip: AppLocalizations.of(context)!.cardRemove,
                       transparentBackground: true,
                       onPressed: () {
                         WatchedAnimeEntry.delete(entry.id, entry.site);
 
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: const Text(
-                              "Removed from watched"), // TODO: change
+                          content: Text(
+                              AppLocalizations.of(context)!.removeFromWatched),
                           action: SnackBarAction(
-                              label: "Undo",
+                              label: AppLocalizations.of(context)!.undoLabel,
                               onPressed: () {
                                 WatchedAnimeEntry.read(entry);
                               }),

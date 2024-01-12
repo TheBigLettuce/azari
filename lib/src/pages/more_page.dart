@@ -24,11 +24,12 @@ class MorePage extends StatelessWidget {
   final FocusNode mainFocus;
   final BooruAPIState api;
 
-  const MorePage(
-      {super.key,
-      required this.api,
-      required this.mainFocus,
-      required this.tagManager});
+  const MorePage({
+    super.key,
+    required this.api,
+    required this.mainFocus,
+    required this.tagManager,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +46,7 @@ class MorePage extends StatelessWidget {
               Icons.tag,
               color: Theme.of(context).colorScheme.primary,
             ),
-            title: const Text("Tags"), // TODO: change
+            title: Text(AppLocalizations.of(context)!.tagsLabel),
             onTap: () {
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) {
@@ -61,7 +62,7 @@ class MorePage extends StatelessWidget {
               Icons.dashboard_outlined,
               color: Theme.of(context).colorScheme.primary,
             ),
-            title: const Text("Dashboard"), // TODO: change
+            title: Text(AppLocalizations.of(context)!.dashboardPage),
             onTap: () {
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) {
@@ -76,7 +77,7 @@ class MorePage extends StatelessWidget {
               Icons.notes_outlined,
               color: Theme.of(context).colorScheme.primary,
             ),
-            title: const Text("Notes"), // TODO: change
+            title: Text(AppLocalizations.of(context)!.notesPage),
             onTap: () {
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) {
@@ -124,7 +125,8 @@ class MorePage extends StatelessWidget {
               Icons.hide_image_rounded,
               color: Theme.of(context).colorScheme.primary,
             ),
-            title: const Text("Blacklisted Posts"), // TODO: change
+            title: Text(
+                AppLocalizations.of(context)!.blacklistedDirectoriesPageName),
             onTap: () {
               Navigator.push(
                   context,

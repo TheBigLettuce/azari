@@ -35,6 +35,7 @@ import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'search/search_anime.dart';
 
@@ -195,10 +196,11 @@ class _AnimePageState extends State<AnimePage>
         isScrollable: true,
         controller: tabController,
         tabs: [
-          const Tab(text: "News"), // TODO: change
-          TabWithCount("Watching", savedCount),
-          const Tab(text: "Discover"), // TODO: change
-          TabWithCount("Finished", WatchedAnimeEntry.count()),
+          Tab(text: AppLocalizations.of(context)!.newsTab),
+          TabWithCount(AppLocalizations.of(context)!.watchingTab, savedCount),
+          Tab(text: AppLocalizations.of(context)!.discoverTab),
+          TabWithCount(AppLocalizations.of(context)!.finishedTab,
+              WatchedAnimeEntry.count()),
         ]);
 
     return PopScope(
@@ -209,7 +211,7 @@ class _AnimePageState extends State<AnimePage>
               ? null
               : widget.procPop,
       child: SkeletonSettings(
-        "Anime",
+        AppLocalizations.of(context)!.animePage,
         state,
         appBar: PreferredSize(
           preferredSize:
@@ -321,6 +323,25 @@ class __TabBarWrapperState extends State<_TabBarWrapper> {
                 builder: (_, __) {
                   return Stack(
                     children: [
+                      TextField(
+                        autofocus: true,
+                        decoration: InputDecoration(
+                            contentPadding: EdgeInsets.only(
+                                left: (rightPadding <= 0
+                                    ? 44
+                                    : 44 + (rightPadding / 2)),
+                                right: 44 + 8),
+                            hintText: AppLocalizations.of(context)!.filterHint,
+                            border: InputBorder.none,
+                            hintStyle: TextStyle(
+                              fontSize: Theme.of(context)
+                                  .tabBarTheme
+                                  .labelStyle
+                                  ?.fontSize,
+                            )),
+                        controller: widget.controller,
+                        onChanged: widget.filter,
+                      ),
                       Padding(
                         padding: const EdgeInsets.only(top: 10, left: 4),
                         child: SizedBox(
@@ -339,25 +360,6 @@ class __TabBarWrapperState extends State<_TabBarWrapper> {
                                     .withOpacity(0.8),
                               ),
                             )),
-                      ),
-                      TextField(
-                        autofocus: true,
-                        decoration: InputDecoration(
-                            contentPadding: EdgeInsets.only(
-                                left: (rightPadding <= 0
-                                    ? 44
-                                    : 44 + (rightPadding / 2)),
-                                right: 44 + 8),
-                            hintText: "Filter",
-                            border: InputBorder.none,
-                            hintStyle: TextStyle(
-                              fontSize: Theme.of(context)
-                                  .tabBarTheme
-                                  .labelStyle
-                                  ?.fontSize,
-                            )),
-                        controller: widget.controller,
-                        onChanged: widget.filter,
                       )
                     ],
                   );

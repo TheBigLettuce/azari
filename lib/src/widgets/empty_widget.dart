@@ -51,7 +51,7 @@ class EmptyWidget extends StatelessWidget {
           TextSpan(
               text: error == null
                   ? "${AppLocalizations.of(context)!.emptyValue}..."
-                  : "${AppLocalizations.of(context)!.errorHalf} $error",
+                  : "${AppLocalizations.of(context)!.error}: $error",
               style: TextStyle(
                   fontStyle: FontStyle.italic,
                   fontSize: error != null ? 14 * 2 : null)),

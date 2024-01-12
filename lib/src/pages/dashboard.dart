@@ -12,6 +12,7 @@ import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../db/tags/post_tags.dart';
 import '../widgets/dashboard_card.dart';
@@ -41,10 +42,10 @@ class _DashboardState extends State<Dashboard> {
   @override
   Widget build(BuildContext context) {
     return SkeletonSettings(
-      "Dashboard",
+      AppLocalizations.of(context)!.dashboardPage,
       state,
       appBar: AppBar(
-        title: const Text("Dashboard"), // TODO: change
+        title: Text(AppLocalizations.of(context)!.dashboardPage),
       ),
       child: SingleChildScrollView(
         child: Padding(
@@ -55,80 +56,84 @@ class _DashboardState extends State<Dashboard> {
               alignment: WrapAlignment.center,
               runAlignment: WrapAlignment.center,
               children: [
-                const _Label(text: "Booru"),
+                _Label(text: AppLocalizations.of(context)!.booruLabel),
                 Wrap(
                   children: [
                     DashboardCard(
-                      subtitle: "Time spent", // TODO: change
-                      title: "${general.timeSpent.milliseconds.inHours} hrs",
+                      subtitle: AppLocalizations.of(context)!.cardTimeSpent,
+                      title: AppLocalizations.of(context)!
+                          .hoursShort(general.timeSpent.milliseconds.inHours),
                     ),
                     DashboardCard(
-                      subtitle: "Scrolled up", // TODO: change
+                      subtitle: AppLocalizations.of(context)!.cardScrollerUp,
                       title: general.scrolledUp.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Tags saved", // TODO: change
+                      subtitle: AppLocalizations.of(context)!.cardTagsSaved,
                       title: postTagsCount,
                     ),
                     DashboardCard(
-                      subtitle: "Refreshes", // TODO: change
+                      subtitle: AppLocalizations.of(context)!.cardRefreshes,
                       title: general.refreshes.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Download time", // TODO: change
-                      title: "${general.timeDownload.milliseconds.inHours} hrs",
+                      subtitle: AppLocalizations.of(context)!.cardDownloadTime,
+                      title: AppLocalizations.of(context)!.hoursShort(
+                          general.timeDownload.milliseconds.inHours),
                     ),
                     DashboardCard(
-                      subtitle: "Posts viewed", // TODO: change
+                      subtitle: AppLocalizations.of(context)!.cardPostsViewed,
                       title: booru.viewed.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Posts downloaded", // TODO: change
+                      subtitle:
+                          AppLocalizations.of(context)!.cardPostsDownloaded,
                       title: booru.downloaded.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Posts swiped", // TODO: change
+                      subtitle: AppLocalizations.of(context)!.cardPostsSwiped,
                       title: booru.swiped.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Booru switches", // TODO: change
+                      subtitle: AppLocalizations.of(context)!.cardBooruSwitches,
                       title: booru.booruSwitches.toString(),
                     ),
                   ],
                 ),
-                const _Label(text: "Gallery"), // TODO: change
+                _Label(text: AppLocalizations.of(context)!.galleryLabel),
                 Wrap(
                   children: [
                     DashboardCard(
-                      subtitle: "Directories viewed", // TODO: change
+                      subtitle:
+                          AppLocalizations.of(context)!.cardDirectoriesViewed,
                       title: gallery.viewedDirectories.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Files viewed", // TODO: change
+                      subtitle: AppLocalizations.of(context)!.cardFilesViewed,
                       title: gallery.viewedFiles.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Files swiped", // TODO: change
+                      subtitle: AppLocalizations.of(context)!.cardFilesSwiped,
                       title: gallery.filesSwiped.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Joined times", // TODO: change
+                      subtitle: AppLocalizations.of(context)!.cardJoinedTimes,
                       title: gallery.joined.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Same filtered", // TODO: change
+                      subtitle: AppLocalizations.of(context)!.cardSameFiltered,
                       title: gallery.sameFiltered.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Trashed", // TODO: change
+                      subtitle: AppLocalizations.of(context)!.cardTrashed,
                       title: gallery.deleted.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Copied", // TODO: change
+                      subtitle: AppLocalizations.of(context)!.cardCopied,
                       title: gallery.copied.toString(),
                     ),
                     DashboardCard(
-                      subtitle: "Moved", // TODO: change
+                      subtitle: AppLocalizations.of(context)!.cardMoved,
                       title: gallery.moved.toString(),
                     ),
                   ],

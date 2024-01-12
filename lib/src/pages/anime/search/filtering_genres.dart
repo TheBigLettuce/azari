@@ -52,12 +52,12 @@ class __FilteringGenresState extends State<_FilteringGenres> {
 
                   Navigator.pop(context);
                 },
-                child: const Text("Reset"), // TODO: change
+                child: Text(AppLocalizations.of(context)!.reset),
               ),
               TextField(
                 autofocus: true,
-                decoration:
-                    const InputDecoration(hintText: "Filter"), // TODO: change
+                decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context)!.filterHint),
                 onChanged: (value) {
                   _result = snapshot.data!.values
                       .where((element) => element.title

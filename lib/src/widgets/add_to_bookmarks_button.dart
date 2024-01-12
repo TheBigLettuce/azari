@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'skeletons/grid_skeleton_state.dart';
 
@@ -24,9 +25,9 @@ class AddToBookmarksButton extends StatelessWidget {
         onPressed: () {
           f();
           ScaffoldMessenger.of(state.scaffoldKey.currentContext!)
-              .showSnackBar(const SnackBar(
+              .showSnackBar(SnackBar(
                   content: Text(
-            "Bookmarked", // TODO: change
+            AppLocalizations.of(context)!.bookmarked,
           )));
           glue.close();
           state.gridKey.currentState?.selection.selected.clear();
