@@ -950,7 +950,7 @@
             }
         }
     },
-    "role": "role",
+    "role": "Role",
     "@role": {
         "description": "Image info, role of the anime character"
     }
