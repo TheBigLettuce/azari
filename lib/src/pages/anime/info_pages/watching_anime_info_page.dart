@@ -10,24 +10,28 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
-import 'package:gallery/src/net/anime/jikan.dart';
-import 'package:gallery/src/pages/anime/finished_inner/finished_page.dart';
-import 'package:gallery/src/pages/anime/inner/anime_inner.dart';
+import 'package:gallery/src/pages/anime/info_base/anime_info_app_bar.dart';
+import 'package:gallery/src/pages/anime/info_base/background_image/background_image.dart';
+import 'package:gallery/src/pages/anime/info_base/body/anime_info_body.dart';
+import 'package:gallery/src/pages/anime/info_base/card_panel/card_panel.dart';
+import 'package:gallery/src/pages/anime/info_base/card_panel/card_shell.dart';
+import 'package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart';
+import 'package:gallery/src/pages/anime/info_base/refresh_entry_icon.dart';
 import 'package:gallery/src/widgets/dashboard_card.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-class WatchingPage extends StatefulWidget {
+class WatchingAnimeInfoPage extends StatefulWidget {
   final SavedAnimeEntry entry;
 
-  const WatchingPage({super.key, required this.entry});
+  const WatchingAnimeInfoPage({super.key, required this.entry});
 
   @override
-  State<WatchingPage> createState() => _WatchingPageState();
+  State<WatchingAnimeInfoPage> createState() => _WatchingAnimeInfoPageState();
 }
 
-class _WatchingPageState extends State<WatchingPage>
+class _WatchingAnimeInfoPageState extends State<WatchingAnimeInfoPage>
     with AlwaysLoadingAnimeMixin {
   late final StreamSubscription<SavedAnimeEntry?> watcher;
 
@@ -81,7 +85,7 @@ class _WatchingPageState extends State<WatchingPage>
         extendBodyBehindAppBar: true,
         appBar: PreferredSize(
             preferredSize: const Size.fromHeight(kToolbarHeight),
-            child: AnimeInnerAppBar(
+            child: AnimeInfoAppBar(
               entry: entry,
               scrollController: scrollController,
               appBarActions: [
@@ -97,9 +101,7 @@ class _WatchingPageState extends State<WatchingPage>
             padding: EdgeInsets.only(
                 bottom: MediaQuery.viewPaddingOf(context).bottom),
             child: Stack(children: [
-              BackgroundImage(
-                entry: entry,
-              ),
+              BackgroundImage(entry: entry),
               CardShell(
                 entry: entry,
                 viewPadding: MediaQuery.viewPaddingOf(context),
@@ -170,8 +172,7 @@ class _WatchingPageState extends State<WatchingPage>
                   ),
                 ],
               ),
-              AnimeInnerBody(
-                api: const Jikan(),
+              AnimeInfoBody(
                 entry: entry,
                 viewPadding: MediaQuery.viewPaddingOf(context),
               ),

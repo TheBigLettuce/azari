@@ -5,46 +5,29 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
-import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/net/anime/jikan.dart';
-import 'package:gallery/src/pages/anime/search/search_anime.dart';
-import 'package:gallery/src/pages/image_view.dart';
-import 'package:gallery/src/widgets/dashboard_card.dart';
+import 'package:gallery/src/pages/anime/info_base/anime_info_app_bar.dart';
+import 'package:gallery/src/pages/anime/info_base/background_image/background_image.dart';
+import 'package:gallery/src/pages/anime/info_base/body/anime_info_body.dart';
+import 'package:gallery/src/pages/anime/info_base/card_panel/card_panel.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import 'anime_characters_widgets.dart';
-import 'anime_name_widget.dart';
-import 'anime_relations.dart';
-import 'body_padding.dart';
-
-part 'label.dart';
-part 'app_bar.dart';
-part 'segment.dart';
-part 'segment_constrained.dart';
-part 'body.dart';
-part 'background_image.dart';
-part 'card_panel.dart';
-
-class AnimeInner extends StatefulWidget {
+class DiscoverAnimeInfoPage extends StatefulWidget {
   final AnimeEntry entry;
 
-  const AnimeInner({super.key, required this.entry});
+  const DiscoverAnimeInfoPage({super.key, required this.entry});
 
   @override
-  State<AnimeInner> createState() => _AnimeInnerState();
+  State<DiscoverAnimeInfoPage> createState() => _DiscoverAnimeInfoPageState();
 }
 
-class _AnimeInnerState extends State<AnimeInner> with TickerProviderStateMixin {
+class _DiscoverAnimeInfoPageState extends State<DiscoverAnimeInfoPage>
+    with TickerProviderStateMixin {
   final state = SkeletonState();
   final scrollController = ScrollController();
 
@@ -78,7 +61,7 @@ class _AnimeInnerState extends State<AnimeInner> with TickerProviderStateMixin {
       state,
       appBar: PreferredSize(
           preferredSize: const Size.fromHeight(kToolbarHeight),
-          child: AnimeInnerAppBar(
+          child: AnimeInfoAppBar(
               entry: widget.entry, scrollController: scrollController)),
       extendBodyBehindAppBar: true,
       child: SingleChildScrollView(
@@ -90,11 +73,10 @@ class _AnimeInnerState extends State<AnimeInner> with TickerProviderStateMixin {
             children: [
               BackgroundImage(entry: widget.entry),
               CardPanel(
-                  viewPadding: MediaQuery.viewPaddingOf(context),
-                  entry: widget.entry,
-                  site: AnimeMetadata.jikan),
-              AnimeInnerBody(
-                api: const Jikan(),
+                viewPadding: MediaQuery.viewPaddingOf(context),
+                entry: widget.entry,
+              ),
+              AnimeInfoBody(
                 entry: widget.entry,
                 viewPadding: MediaQuery.viewPaddingOf(context),
               ),

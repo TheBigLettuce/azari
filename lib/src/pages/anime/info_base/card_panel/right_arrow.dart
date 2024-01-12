@@ -5,24 +5,31 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of 'anime_inner.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
-class BodySegmentLabel extends StatelessWidget {
-  final String text;
+class RightArrow extends StatelessWidget {
+  final bool show;
 
-  const BodySegmentLabel({super.key, required this.text});
+  const RightArrow({super.key, required this.show});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 4),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.titleMedium!.copyWith(
-              letterSpacing: 0.5,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-            ),
+    return Animate(
+      target: show ? 1 : 0,
+      effects: [
+        FadeEffect(
+            duration: 200.ms,
+            curve: Easing.emphasizedAccelerate,
+            begin: 0,
+            end: 1)
+      ],
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Icon(
+          Icons.arrow_right,
+          color: Theme.of(context).iconTheme.color?.withOpacity(0.2),
+        ),
       ),
     );
   }

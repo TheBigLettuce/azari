@@ -7,6 +7,7 @@
 
 import 'package:gallery/src/db/schemas/anime/saved_anime_characters.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
+import 'package:gallery/src/net/anime/jikan.dart';
 import 'anime_entry.dart';
 
 abstract class AnimeAPI {
@@ -17,6 +18,8 @@ abstract class AnimeAPI {
   Future<List<AnimeEntry>> top(int page);
   Future<List<AnimeNewsEntry>> news(int page);
 
+  AnimeMetadata get site;
+
   bool get charactersIsSync;
 }
 
@@ -24,4 +27,8 @@ class AnimeNewsEntry {}
 
 enum AnimeMetadata {
   jikan;
+
+  AnimeAPI get api => switch (this) {
+        AnimeMetadata.jikan => const Jikan(),
+      };
 }

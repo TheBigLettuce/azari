@@ -6,17 +6,16 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/pages/anime/inner/anime_inner.dart';
 import 'package:gallery/src/pages/anime/search/search_anime.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import 'body_segment_label.dart';
+
 class AnimeRelations extends StatelessWidget {
-  final AnimeAPI api;
   final AnimeEntry entry;
 
-  const AnimeRelations({super.key, required this.entry, required this.api});
+  const AnimeRelations({super.key, required this.entry});
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +30,8 @@ class AnimeRelations extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(context, MaterialPageRoute(
                       builder: (context) {
-                        return SearchAnimePage(api: api, initalText: e.title);
+                        return SearchAnimePage(
+                            api: entry.site.api, initalText: e.title);
                       },
                     ));
                   },

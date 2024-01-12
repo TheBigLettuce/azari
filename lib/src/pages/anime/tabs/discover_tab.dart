@@ -17,11 +17,13 @@ class _DiscoverTab extends StatefulWidget {
   final double Function() initalScrollOffset;
   final int Function() initalPage;
   final void Function(int) savePage;
+  final AnimeAPI api;
 
   const _DiscoverTab({
     required this.procPop,
     required this.entries,
     required this.initalPage,
+    required this.api,
     required this.savePage,
     required this.initalScrollOffset,
     required this.updateScrollPosition,
@@ -73,7 +75,7 @@ class __DiscoverTabState extends State<_DiscoverTab> {
         overrideOnPress: (context, cell) {
           Navigator.push(context, MaterialPageRoute(
             builder: (context) {
-              return AnimeInner(entry: cell);
+              return DiscoverAnimeInfoPage(entry: cell);
             },
           ));
         },
@@ -93,7 +95,7 @@ class __DiscoverTabState extends State<_DiscoverTab> {
           _page = 0;
           _reachedEnd = false;
 
-          final p = await const Jikan().top(_page);
+          final p = await widget.api.top(_page);
 
           widget.entries.addAll(p);
 
@@ -102,7 +104,7 @@ class __DiscoverTabState extends State<_DiscoverTab> {
         updateScrollPosition: widget.updateScrollPosition,
         refreshInterface: widget.refreshingInterface,
         loadNext: () async {
-          final p = await const Jikan().top(_page + 1);
+          final p = await widget.api.top(_page + 1);
 
           _page += 1;
           widget.savePage(_page);
@@ -117,7 +119,7 @@ class __DiscoverTabState extends State<_DiscoverTab> {
         description: GridDescription(
           [
             GridAction(Icons.add, (selected) {
-              SavedAnimeEntry.addAll(selected, AnimeMetadata.jikan);
+              SavedAnimeEntry.addAll(selected, widget.api.site);
             }, true),
           ],
           showAppBar: false,

@@ -99,7 +99,7 @@ class __FinishedTabState extends State<_FinishedTab> {
         overrideOnPress: (context, cell) {
           Navigator.push(context, MaterialPageRoute(
             builder: (context) {
-              return FinishedPage(entry: cell);
+              return FinishedAnimeInfoPage(entry: cell);
             },
           ));
         },

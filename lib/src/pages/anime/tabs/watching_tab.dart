@@ -110,7 +110,7 @@ class __WatchingTabState extends State<_WatchingTab> {
         overrideOnPress: (context, cell) {
           Navigator.push(context, MaterialPageRoute(
             builder: (context) {
-              return WatchingPage(entry: cell);
+              return WatchingAnimeInfoPage(entry: cell);
             },
           ));
         },
@@ -272,7 +272,7 @@ class _CurrentlyWatchingEntry extends StatelessWidget {
       onPressed: () {
         Navigator.push(context, MaterialPageRoute(
           builder: (context) {
-            return WatchingPage(entry: entry);
+            return WatchingAnimeInfoPage(entry: entry);
           },
         ));
       },

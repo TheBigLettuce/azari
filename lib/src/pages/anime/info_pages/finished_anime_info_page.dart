@@ -8,104 +8,29 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
-import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
-import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/net/anime/jikan.dart';
-import 'package:gallery/src/pages/anime/inner/anime_inner.dart';
+import 'package:gallery/src/pages/anime/info_base/anime_info_app_bar.dart';
+import 'package:gallery/src/pages/anime/info_base/background_image/background_image.dart';
+import 'package:gallery/src/pages/anime/info_base/body/anime_info_body.dart';
+import 'package:gallery/src/pages/anime/info_base/card_panel/card_panel.dart';
+import 'package:gallery/src/pages/anime/info_base/card_panel/card_shell.dart';
+import 'package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart';
+import 'package:gallery/src/pages/anime/info_base/refresh_entry_icon.dart';
 import 'package:gallery/src/widgets/dashboard_card.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-class RefreshEntryIcon extends StatefulWidget {
-  final AnimeEntry entry;
-  final void Function(AnimeEntry) save;
-
-  const RefreshEntryIcon(this.entry, this.save, {super.key});
-
-  @override
-  State<RefreshEntryIcon> createState() => _RefreshEntryIconState();
-}
-
-class _RefreshEntryIconState extends State<RefreshEntryIcon> {
-  Future? _refreshingProgress;
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-        onPressed: _refreshingProgress != null
-            ? null
-            : () {
-                _refreshingProgress = const Jikan().info(widget.entry.id)
-                  ..then((value) {
-                    if (value != null) {
-                      widget.save(value);
-                    }
-                  }).whenComplete(() {
-                    _refreshingProgress = null;
-
-                    try {
-                      setState(() {});
-                    } catch (_) {}
-                  });
-
-                setState(() {});
-              },
-        icon: const Icon(Icons.refresh_rounded));
-  }
-}
-
-mixin AlwaysLoadingAnimeMixin {
-  final alwaysLoading = MiscSettings.current.animeAlwaysLoadFromNet;
-  Future? loadingFuture;
-
-  void maybeFetchInfo(AnimeEntry entry, void Function(AnimeEntry e) f) {
-    if (alwaysLoading) {
-      loadingFuture = const Jikan().info(entry.id).then((value) {
-        if (value == null) {
-          return value;
-        }
-
-        f(value);
-
-        return value;
-      });
-    }
-  }
-
-  Widget wrapLoading(BuildContext context, Widget child) => alwaysLoading
-      ? FutureBuilder(
-          future: loadingFuture,
-          builder: (context, snapshot) {
-            if (!snapshot.hasData && !snapshot.hasError) {
-              return const Scaffold(
-                body: Center(
-                  child: CircularProgressIndicator(),
-                ),
-              );
-            } else {
-              return Container(
-                color: Theme.of(context).colorScheme.surface,
-                child: child.animate().fadeIn(),
-              );
-            }
-          },
-        )
-      : child;
-}
-
-class FinishedPage extends StatefulWidget {
+class FinishedAnimeInfoPage extends StatefulWidget {
   final WatchedAnimeEntry entry;
 
-  const FinishedPage({super.key, required this.entry});
+  const FinishedAnimeInfoPage({super.key, required this.entry});
 
   @override
-  State<FinishedPage> createState() => _FinishedPageState();
+  State<FinishedAnimeInfoPage> createState() => _FinishedAnimeInfoPageState();
 }
 
-class _FinishedPageState extends State<FinishedPage>
+class _FinishedAnimeInfoPageState extends State<FinishedAnimeInfoPage>
     with AlwaysLoadingAnimeMixin {
   late final StreamSubscription<WatchedAnimeEntry?> watcher;
   late WatchedAnimeEntry entry = widget.entry;
@@ -149,7 +74,7 @@ class _FinishedPageState extends State<FinishedPage>
           extendBodyBehindAppBar: true,
           appBar: PreferredSize(
               preferredSize: const Size.fromHeight(kToolbarHeight),
-              child: AnimeInnerAppBar(
+              child: AnimeInfoAppBar(
                 entry: entry,
                 scrollController: scrollController,
                 appBarActions: [
@@ -162,9 +87,7 @@ class _FinishedPageState extends State<FinishedPage>
               padding: EdgeInsets.only(
                   bottom: MediaQuery.viewPaddingOf(context).bottom),
               child: Stack(children: [
-                BackgroundImage(
-                  entry: entry,
-                ),
+                BackgroundImage(entry: entry),
                 CardShell(
                   entry: entry,
                   viewPadding: MediaQuery.viewPaddingOf(context),
@@ -210,8 +133,7 @@ class _FinishedPageState extends State<FinishedPage>
                     )
                   ],
                 ),
-                AnimeInnerBody(
-                  api: const Jikan(),
+                AnimeInfoBody(
                   entry: entry,
                   viewPadding: MediaQuery.viewPaddingOf(context),
                 ),

@@ -20,9 +20,9 @@ import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
 import 'package:gallery/src/net/anime/jikan.dart';
-import 'package:gallery/src/pages/anime/finished_inner/finished_page.dart';
-import 'package:gallery/src/pages/anime/inner/anime_inner.dart';
-import 'package:gallery/src/pages/anime/watching_inner/watching_page.dart';
+import 'package:gallery/src/pages/anime/info_pages/finished_anime_info_page.dart';
+import 'package:gallery/src/pages/anime/info_pages/discover_anime_info_page.dart';
+import 'package:gallery/src/pages/anime/info_pages/watching_anime_info_page.dart';
 import 'package:gallery/src/pages/notes/tab_with_count.dart';
 import 'package:gallery/src/widgets/dashboard_card.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
@@ -42,6 +42,7 @@ import 'search/search_anime.dart';
 part 'tabs/discover_tab.dart';
 part 'tabs/watching_tab.dart';
 part 'tabs/finished_tab.dart';
+part 'tab_bar_wrapper.dart';
 
 class AnimePage extends StatefulWidget {
   final void Function(bool) procPop;
@@ -78,6 +79,8 @@ class _AnimePageState extends State<AnimePage>
   Future<int>? status;
 
   final Map<void Function(int?, bool), Null> m = {};
+
+  final api = const Jikan();
 
   late final discoverInterface = RefreshingStatusInterface(
     isRefreshing: () => status != null,
@@ -151,7 +154,7 @@ class _AnimePageState extends State<AnimePage>
         : offsetIndex >= 1.5 && offsetIndex < 2.5) {
       Navigator.push(context, MaterialPageRoute(
         builder: (context) {
-          return const SearchAnimePage(api: Jikan());
+          return SearchAnimePage(api: api);
         },
       ));
 
@@ -232,6 +235,7 @@ class _AnimePageState extends State<AnimePage>
             _WatchingTab(widget.viewPadding,
                 key: watchingKey, onDispose: _hideResetSelection),
             _DiscoverTab(
+              api: api,
               procPop: widget.procPop,
               entries: _discoverEntries,
               viewInsets: widget.viewPadding,
@@ -246,166 +250,6 @@ class _AnimePageState extends State<AnimePage>
                 key: finishedKey, onDispose: _hideResetSelection),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _TabBarWrapper extends StatefulWidget {
-  final TextEditingController controller;
-  final EdgeInsets viewPadding;
-  final TabBar tabBar;
-  final void Function(String? value) filter;
-  final bool Function() onPressed;
-
-  const _TabBarWrapper({
-    required super.key,
-    required this.tabBar,
-    required this.controller,
-    required this.filter,
-    required this.viewPadding,
-    required this.onPressed,
-  });
-
-  @override
-  State<_TabBarWrapper> createState() => __TabBarWrapperState();
-}
-
-class __TabBarWrapperState extends State<_TabBarWrapper> {
-  bool _showSearchField = false;
-
-  bool clearOrHide() {
-    if (widget.controller.text.isNotEmpty) {
-      widget.controller.clear();
-      widget.filter("");
-
-      setState(() {});
-
-      return false;
-    } else {
-      hide();
-
-      return true;
-    }
-  }
-
-  void hideAndClear() {
-    widget.controller.clear();
-
-    hide();
-  }
-
-  void hide() {
-    _showSearchField = false;
-
-    setState(() {});
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final rightPadding = MediaQuery.systemGestureInsetsOf(context).right;
-
-    return Padding(
-      padding: EdgeInsets.only(top: widget.viewPadding.top),
-      child: Stack(
-        alignment: Alignment.topRight,
-        children: [
-          Animate(
-            target: _showSearchField ? 1 : 0,
-            effects: [
-              const FadeEffect(begin: 1, end: 0),
-              SwapEffect(
-                builder: (_, __) {
-                  return Stack(
-                    children: [
-                      TextField(
-                        autofocus: true,
-                        decoration: InputDecoration(
-                            contentPadding: EdgeInsets.only(
-                                left: (rightPadding <= 0
-                                    ? 44
-                                    : 44 + (rightPadding / 2)),
-                                right: 44 + 8),
-                            hintText: AppLocalizations.of(context)!.filterHint,
-                            border: InputBorder.none,
-                            hintStyle: TextStyle(
-                              fontSize: Theme.of(context)
-                                  .tabBarTheme
-                                  .labelStyle
-                                  ?.fontSize,
-                            )),
-                        controller: widget.controller,
-                        onChanged: widget.filter,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 10, left: 4),
-                        child: SizedBox(
-                            width:
-                                24 + (rightPadding <= 0 ? 8 : rightPadding / 2),
-                            child: GestureDetector(
-                              onTap: () {
-                                widget.controller.text = "";
-                                widget.filter("");
-                              },
-                              child: Icon(
-                                Icons.close_rounded,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.8),
-                              ),
-                            )),
-                      )
-                    ],
-                  );
-                },
-              )
-            ],
-            child: widget.tabBar,
-          ),
-          Container(
-            height: 44,
-            width: rightPadding <= 0 ? 44 : 44 + (rightPadding / 2),
-            decoration: BoxDecoration(
-                gradient: LinearGradient(
-                    begin: Alignment.centerRight,
-                    end: Alignment.centerLeft,
-                    colors: [
-                  Theme.of(context).colorScheme.background,
-                  Theme.of(context).colorScheme.background.withOpacity(0.7),
-                  Theme.of(context).colorScheme.background.withOpacity(0.5),
-                  Theme.of(context).colorScheme.background.withOpacity(0.3),
-                  Theme.of(context).colorScheme.background.withOpacity(0)
-                ])),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: SizedBox(
-                width: 24 + (rightPadding <= 0 ? 8 : rightPadding / 2),
-                child: GestureDetector(
-                  onTap: () {
-                    if (!widget.onPressed()) {
-                      _showSearchField = !_showSearchField;
-                      widget.filter(null);
-
-                      setState(() {});
-                    }
-                  },
-                  child: Icon(
-                    Icons.search,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceTint
-                        .withOpacity(0.8),
-                  ),
-                )),
-          ),
-        ],
       ),
     );
   }

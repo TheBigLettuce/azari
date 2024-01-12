@@ -10,20 +10,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_characters.dart';
-import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
-import 'package:gallery/src/pages/anime/inner/anime_inner.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/widgets/grid/grid_cell.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+import 'body_segment_label.dart';
+
 class AnimeCharactersWidget extends StatefulWidget {
-  final AnimeAPI api;
   final AnimeEntry entry;
 
-  const AnimeCharactersWidget(
-      {super.key, required this.api, required this.entry});
+  const AnimeCharactersWidget({super.key, required this.entry});
 
   @override
   State<AnimeCharactersWidget> createState() => _AnimeCharactersWidgetState();
@@ -42,7 +40,7 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
     if (l.isNotEmpty) {
       list.addAll(l);
     } else {
-      SavedAnimeCharacters.addAsync(widget.entry, widget.api);
+      SavedAnimeCharacters.addAsync(widget.entry, widget.entry.site.api);
       _loading = true;
     }
 

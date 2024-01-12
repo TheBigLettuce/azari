@@ -4,13 +4,27 @@
 // This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; version 2.
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+import 'dart:async';
 
-part of 'anime_inner.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
+import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
+import 'package:gallery/src/interfaces/anime/anime_entry.dart';
+import 'package:gallery/src/widgets/dashboard_card.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import 'card_shell.dart';
 
 class CardPanel extends StatefulWidget {
   final AnimeEntry entry;
-  final AnimeMetadata site;
   final EdgeInsets viewPadding;
+
+  const CardPanel({
+    super.key,
+    required this.entry,
+    required this.viewPadding,
+  });
 
   static List<Widget> defaultInfo(BuildContext context, AnimeEntry entry) => [
         UnsizedCard(
@@ -114,13 +128,6 @@ class CardPanel extends StatefulWidget {
           ),
       ];
 
-  const CardPanel({
-    super.key,
-    required this.entry,
-    required this.viewPadding,
-    required this.site,
-  });
-
   @override
   State<CardPanel> createState() => _CardPanelState();
 }
@@ -129,7 +136,7 @@ class _CardPanelState extends State<CardPanel> {
   late final StreamSubscription<void> entriesWatcher;
 
   late (bool, bool) _isWatchingBacklog =
-      SavedAnimeEntry.isWatchingBacklog(widget.entry.id, widget.site);
+      SavedAnimeEntry.isWatchingBacklog(widget.entry.id, widget.entry.site);
 
   late bool _watched =
       WatchedAnimeEntry.watched(widget.entry.id, widget.entry.site);
@@ -140,7 +147,7 @@ class _CardPanelState extends State<CardPanel> {
 
     entriesWatcher = SavedAnimeEntry.watchAll((_) {
       _isWatchingBacklog =
-          SavedAnimeEntry.isWatchingBacklog(widget.entry.id, widget.site);
+          SavedAnimeEntry.isWatchingBacklog(widget.entry.id, widget.entry.site);
 
       _watched = WatchedAnimeEntry.watched(widget.entry.id, widget.entry.site);
 
@@ -167,197 +174,6 @@ class _CardPanelState extends State<CardPanel> {
         isWatching: _isWatchingBacklog.$1,
         inBacklog: _isWatchingBacklog.$2,
         watched: _watched,
-      ),
-    );
-  }
-}
-
-class CardShell extends StatefulWidget {
-  final List<Widget> buttons;
-  final List<Widget> info;
-  final AnimeEntry entry;
-  final EdgeInsets viewPadding;
-
-  const CardShell({
-    super.key,
-    required this.entry,
-    required this.viewPadding,
-    required this.info,
-    required this.buttons,
-  });
-
-  @override
-  State<CardShell> createState() => _CardShellState();
-}
-
-class _CardShellState extends State<CardShell> {
-  final cardsController = ScrollController();
-
-  bool _showArrowRight = true;
-  bool _showArrorLeft = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    cardsController.addListener(() {
-      if (cardsController.offset > 0 && !_showArrorLeft) {
-        _showArrorLeft = true;
-
-        setState(() {});
-      } else if (cardsController.offset == 0 && _showArrorLeft) {
-        _showArrorLeft = false;
-
-        setState(() {});
-      }
-
-      if (cardsController.position.maxScrollExtent == cardsController.offset &&
-          _showArrowRight) {
-        _showArrowRight = false;
-
-        setState(() {});
-      } else if (cardsController.position.maxScrollExtent !=
-              cardsController.offset &&
-          !_showArrowRight) {
-        _showArrowRight = true;
-
-        setState(() {});
-      }
-    });
-
-    WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      if (cardsController.position.maxScrollExtent == 0) {
-        _showArrowRight = false;
-
-        setState(() {});
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    cardsController.dispose();
-
-    super.dispose();
-  }
-
-  List<Widget> _insertBlanks(List<Widget> from, List<Widget> compared) {
-    if (from.length == compared.length) {
-      final res = <Widget>[];
-      for (final e in from.indexed) {
-        res.add(e.$2);
-        res.add(compared[e.$1]);
-      }
-
-      return res;
-    }
-
-    final res = <Widget>[];
-    for (final e in from.indexed) {
-      res.add(e.$2);
-      res.add(compared.elementAtOrNull(e.$1) ?? const SizedBox.shrink());
-    }
-
-    return res;
-  }
-
-  List<Widget> _merge() {
-    return _insertBlanks(widget.info, widget.buttons);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 2 +
-          kToolbarHeight +
-          widget.viewPadding.top +
-          MediaQuery.sizeOf(context).height * 0.3,
-      child: Padding(
-        padding: EdgeInsets.only(
-            top: 2 + kToolbarHeight + widget.viewPadding.top,
-            left: 22,
-            right: 22),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AnimeNameWidget(entry: widget.entry),
-            Theme(
-              data: Theme.of(context).copyWith(
-                  iconTheme: IconThemeData(
-                      color:
-                          Theme.of(context).iconTheme.color?.withOpacity(0.8))),
-              child: Expanded(
-                  child: Stack(
-                children: [
-                  GridView(
-                    controller: cardsController,
-                    scrollDirection: Axis.horizontal,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2),
-                    children: _merge(),
-                  ),
-                  LeftArrow(show: _showArrorLeft),
-                  RightArrow(show: _showArrowRight),
-                ],
-              )),
-            )
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class LeftArrow extends StatelessWidget {
-  final bool show;
-
-  const LeftArrow({super.key, required this.show});
-
-  @override
-  Widget build(BuildContext context) {
-    return Animate(
-      target: show ? 1 : 0,
-      effects: [
-        FadeEffect(
-            duration: 200.ms,
-            curve: Easing.emphasizedAccelerate,
-            begin: 0,
-            end: 1)
-      ],
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Icon(
-          Icons.arrow_left,
-          color: Theme.of(context).iconTheme.color?.withOpacity(0.2),
-        ),
-      ),
-    );
-  }
-}
-
-class RightArrow extends StatelessWidget {
-  final bool show;
-
-  const RightArrow({super.key, required this.show});
-
-  @override
-  Widget build(BuildContext context) {
-    return Animate(
-      target: show ? 1 : 0,
-      effects: [
-        FadeEffect(
-            duration: 200.ms,
-            curve: Easing.emphasizedAccelerate,
-            begin: 0,
-            end: 1)
-      ],
-      child: Align(
-        alignment: Alignment.centerRight,
-        child: Icon(
-          Icons.arrow_right,
-          color: Theme.of(context).iconTheme.color?.withOpacity(0.2),
-        ),
       ),
     );
   }

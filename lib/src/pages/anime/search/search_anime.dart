@@ -22,7 +22,7 @@ import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../inner/anime_inner.dart';
+import '../info_pages/discover_anime_info_page.dart';
 
 part 'filtering_genres.dart';
 
@@ -31,8 +31,12 @@ class SearchAnimePage extends StatefulWidget {
   final String? initalText;
   final AnimeAPI api;
 
-  const SearchAnimePage(
-      {super.key, required this.api, this.initalGenreId, this.initalText});
+  const SearchAnimePage({
+    super.key,
+    required this.api,
+    this.initalGenreId,
+    this.initalText,
+  });
 
   @override
   State<SearchAnimePage> createState() => _SearchAnimePageState();
@@ -180,7 +184,7 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
           overrideOnPress: (context, cell) {
             Navigator.push(context, MaterialPageRoute(
               builder: (context) {
-                return AnimeInner(entry: cell);
+                return DiscoverAnimeInfoPage(entry: cell);
               },
             ));
           },
