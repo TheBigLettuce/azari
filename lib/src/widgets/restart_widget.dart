@@ -33,6 +33,56 @@ class _RestartWidgetState extends State<RestartWidget> {
   @override
   Widget build(BuildContext context) {
     return KeyedSubtree(
-        key: key, child: widget.child.animate(effects: [const FadeEffect()]));
+      key: key,
+      child: Stack(
+        alignment: Alignment.topCenter,
+        children: [
+          widget.child.animate(effects: [const FadeEffect()]),
+          // const NotificationsArea()
+        ],
+      ),
+    );
   }
 }
+
+// class NotificationStateNotifier extends InheritedWidget {
+//   NotificationStateNotifier({super.key, required super.child});
+
+//   @override
+//   bool updateShouldNotify(covariant InheritedWidget oldWidget) {
+//     throw UnimplementedError();
+//   }
+// }
+
+// class NotificationsStateHolder extends StatefulWidget {
+//   final Widget child;
+
+//   const NotificationsStateHolder({super.key, required this.child});
+
+//   @override
+//   State<NotificationsStateHolder> createState() =>
+//       _NotificationsStateHolderState();
+// }
+
+// class _NotificationsStateHolderState extends State<NotificationsStateHolder> {
+//   @override
+//   Widget build(BuildContext context) {
+//     return const Placeholder();
+//   }
+// }
+
+// class AppNotification {}
+
+// class NotificationsArea extends StatefulWidget {
+//   const NotificationsArea({required super.key});
+
+//   @override
+//   State<NotificationsArea> createState() => NotificationsAreaState();
+// }
+
+// class NotificationsAreaState extends State<NotificationsArea> {
+//   @override
+//   Widget build(BuildContext context) {
+//     return const Placeholder();
+//   }
+// }

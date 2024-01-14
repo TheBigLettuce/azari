@@ -19,6 +19,7 @@ part 'watched_anime_entry.g.dart';
 class WatchedAnimeEntry extends AnimeEntry {
   WatchedAnimeEntry({
     required this.date,
+    required super.explicit,
     required super.type,
     required super.site,
     required super.thumbUrl,
@@ -45,6 +46,7 @@ class WatchedAnimeEntry extends AnimeEntry {
     return WatchedAnimeEntry(
       date: date,
       type: e.type,
+      explicit: e.explicit,
       site: e.site,
       thumbUrl: e.thumbUrl,
       title: e.title,
@@ -86,8 +88,10 @@ class WatchedAnimeEntry extends AnimeEntry {
     String? synopsis,
     DateTime? date,
     String? type,
+    AnimeSafeMode? explicit,
   }) {
     return WatchedAnimeEntry(
+      explicit: explicit ?? this.explicit,
       type: type ?? this.type,
       date: date ?? this.date,
       site: site ?? this.site,
@@ -144,6 +148,7 @@ class WatchedAnimeEntry extends AnimeEntry {
         .writeTxnSync(() => Dbs.g.anime.watchedAnimeEntrys.putBySiteIdSync(
               WatchedAnimeEntry(
                 type: entry.type,
+                explicit: entry.explicit,
                 date: DateTime.now(),
                 site: entry.site,
                 relations: entry.relations,

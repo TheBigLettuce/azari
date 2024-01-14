@@ -125,8 +125,7 @@ class MorePage extends StatelessWidget {
               Icons.hide_image_rounded,
               color: Theme.of(context).colorScheme.primary,
             ),
-            title: Text(
-                AppLocalizations.of(context)!.blacklistedDirectoriesPageName),
+            title: Text(AppLocalizations.of(context)!.blacklistedPostsPageName),
             onTap: () {
               Navigator.push(
                   context,

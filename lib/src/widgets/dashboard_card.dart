@@ -77,10 +77,11 @@ class BaseCard extends StatelessWidget {
                   DefaultTextStyle.merge(
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withOpacity(0.8),
+                        color: DefaultTextStyle.of(context).style.color ??
+                            Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withOpacity(0.8),
                         letterSpacing: 0.8),
                     child: Padding(
                       padding: height == null

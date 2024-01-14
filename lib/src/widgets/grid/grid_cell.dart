@@ -237,7 +237,6 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
             color: Theme.of(context).colorScheme.primary)
       ],
       child: Column(
-        // mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
@@ -252,7 +251,14 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                   padding: widget.tight
                       ? const EdgeInsets.only(left: 0.5, right: 0.5)
                       : const EdgeInsets.only(right: 4, left: 4),
-                  child: Text(widget._data.alias(false)),
+                  child: Text(
+                    widget._data.alias(false),
+                    style: TextStyle(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.8)),
+                  ),
                 ))
         ],
       ),

@@ -28,7 +28,10 @@ class __FilteringGenresState extends State<_FilteringGenres> {
   Widget _tile(AnimeGenre e) => ListTile(
         titleTextStyle:
             TextStyle(color: Theme.of(context).colorScheme.onSurface),
-        title: Text(e.title),
+        title: Text(
+          e.title,
+          style: TextStyle(color: e.explicit ? Colors.red : null),
+        ),
         selected: e.id == widget.currentGenre,
         onTap: () {
           widget.setGenre(e.id);

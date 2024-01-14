@@ -74,8 +74,7 @@ class _AnimeInfoAppBarState extends State<AnimeInfoAppBar>
         ...widget.appBarActions,
         IconButton(
           onPressed: () {
-            final overlayColor =
-                Theme.of(context).colorScheme.background.withOpacity(0.5);
+            final overlayColor = Theme.of(context).colorScheme.background;
 
             Navigator.push(context, MaterialPageRoute(
               builder: (context) {
@@ -97,7 +96,7 @@ class _AnimeInfoAppBarState extends State<AnimeInfoAppBar>
           icon: const Icon(Icons.image),
         )
       ],
-      surfaceTintColor: Colors.transparent,
+      surfaceTintColor: Theme.of(context).colorScheme.background.withOpacity(0),
       backgroundColor: ColorTween(
               begin: Theme.of(context).colorScheme.background.withOpacity(0),
               end: Theme.of(context).colorScheme.background.withOpacity(0.8))

@@ -22,13 +22,9 @@ class AnimeGenres extends StatelessWidget {
         spacing: 4,
         children: entry.genres
             .map((e) => ActionChip(
+                  // backgroundColor: Theme.of(context).chipTheme.backgroundColor,
                   surfaceTintColor: Theme.of(context).colorScheme.surfaceTint,
                   elevation: 4,
-                  labelStyle: TextStyle(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.8)),
                   visualDensity: VisualDensity.compact,
                   label: Text(e.title),
                   onPressed: e.unpressable
@@ -39,6 +35,7 @@ class AnimeGenres extends StatelessWidget {
                               return SearchAnimePage(
                                 api: entry.site.api,
                                 initalGenreId: e.id,
+                                explicit: entry.explicit,
                               );
                             },
                           ));

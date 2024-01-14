@@ -10,6 +10,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -30,17 +31,23 @@ class AnimeNameWidget extends StatelessWidget {
               child: Text(
                 entry.title,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.8)),
+                    color: entry.explicit == AnimeSafeMode.h ||
+                            entry.explicit == AnimeSafeMode.ecchi
+                        ? Colors.pink.withOpacity(0.8)
+                        : Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.8)),
               ),
             ),
             Text(
               "${entry.titleEnglish} / ${entry.titleJapanese}",
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.8),
+                  ),
             ),
           ],
         );
@@ -49,6 +56,24 @@ class AnimeNameWidget extends StatelessWidget {
       child: entry.titleSynonyms.isEmpty
           ? title()
           : Tooltip(
+              textStyle: entry.explicit == AnimeSafeMode.h ||
+                      entry.explicit == AnimeSafeMode.ecchi
+                  ? TextStyle(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onPrimary
+                          .withOpacity(0.8))
+                  : null,
+              decoration: entry.explicit == AnimeSafeMode.h ||
+                      entry.explicit == AnimeSafeMode.ecchi
+                  ? BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withOpacity(0.8),
+                      borderRadius: const BorderRadius.all(Radius.circular(4)),
+                    )
+                  : null,
               triggerMode: Platform.isAndroid ? TooltipTriggerMode.tap : null,
               showDuration: Platform.isAndroid ? 2.seconds : null,
               message: AppLocalizations.of(context)!

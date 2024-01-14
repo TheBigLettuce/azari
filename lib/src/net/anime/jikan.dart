@@ -47,13 +47,21 @@ class Jikan implements AnimeAPI {
 
   @override
   Future<List<AnimeEntry>> search(String title, int page,
-      [int? genreId]) async {
+      {int? genreId, AnimeSafeMode? mode}) async {
     final response = await api.Jikan(debug: kDebugMode).searchAnime(
       query: title,
       page: page + 1,
-      genres: genreId != null ? [genreId] : null,
-      orderBy: "popularity",
-      sort: "asc",
+      genres: [
+        if (genreId != null) genreId,
+        if (mode == AnimeSafeMode.ecchi) 9, // havent found a good way
+      ],
+      orderBy: "score",
+      sort: "desc",
+      rawQuery: mode == AnimeSafeMode.h
+          ? "&rating=rx"
+          : mode == AnimeSafeMode.safe
+              ? "&sfw=true"
+              : null,
     );
 
     return response.map((e) => _fromJikenAnime(e)).toList();
@@ -73,12 +81,14 @@ class Jikan implements AnimeAPI {
   }
 
   @override
-  Future<Map<int, AnimeGenre>> genres() async {
-    final response = await api.Jikan(debug: kDebugMode).getAnimeGenres();
+  Future<Map<int, AnimeGenre>> genres(AnimeSafeMode mode) async {
+    final response = await api.Jikan(debug: kDebugMode).getAnimeGenres(
+        type: mode == AnimeSafeMode.h ? api.GenreType.explicit_genres : null);
     final map = <int, AnimeGenre>{};
 
     for (final e in response) {
-      map[e.malId] = AnimeGenre(id: e.malId, title: e.name);
+      map[e.malId] = AnimeGenre(
+          id: e.malId, title: e.name, explicit: mode == AnimeSafeMode.h);
     }
 
     return map;
@@ -89,6 +99,32 @@ class Jikan implements AnimeAPI {
     // TODO: implement news
     throw UnimplementedError();
   }
+
+  @override
+  Future<List<AnimeRecommendations>> recommendations(AnimeEntry entry) async {
+    final response =
+        await api.Jikan(debug: kDebugMode).getAnimeRecommendations(entry.id);
+
+    return response
+        .map((e) => AnimeRecommendations(
+            thumbUrl: e.entry.imageUrl,
+            title: e.entry.title,
+            id: e.entry.malId))
+        .toList();
+  }
+
+  @override
+  Future<List<AnimePicture>> pictures(AnimeEntry entry) async {
+    final result =
+        await api.Jikan(debug: kDebugMode).getAnimePictures(entry.id);
+
+    return result
+        .map((e) => AnimePicture(
+              imageUrl: e.largeImageUrl ?? e.imageUrl,
+              thumbUrl: e.smallImageUrl ?? e.imageUrl,
+            ))
+        .toList();
+  }
 }
 
 AnimeCharacter _fromJikanCharacter(api.CharacterMeta e) =>
@@ -96,12 +132,22 @@ AnimeCharacter _fromJikanCharacter(api.CharacterMeta e) =>
 
 List<Relation> _fromMeta(api.BuiltList<api.Meta> l) {
   return l
-      .map((e) => Relation(thumbUrl: e.url, title: e.name, type: e.type))
+      .map((e) => Relation(
+            thumbUrl: e.url,
+            title: e.name,
+            type: e.type,
+            id: e.malId,
+          ))
       .toList();
 }
 
 AnimeEntry _fromJikenAnime(api.Anime e) {
   return AnimeEntry(
+    explicit: e.genres.indexWhere((e) => e.name == "Hentai") != -1
+        ? AnimeSafeMode.h
+        : e.genres.indexWhere((e) => e.name == "Ecchi") != -1
+            ? AnimeSafeMode.ecchi
+            : AnimeSafeMode.safe,
     type: e.type ?? "",
     thumbUrl: e.imageUrl,
     title: e.title,
@@ -121,17 +167,19 @@ AnimeEntry _fromJikenAnime(api.Anime e) {
     titleEnglish: e.titleEnglish ?? "",
     titleJapanese: e.titleJapanese ?? "",
     titleSynonyms: e.titleSynonyms.toList(),
-    genres:
-        e.genres.map((e) => AnimeGenre(title: e.name, id: e.malId)).toList() +
-            e.explicitGenres
-                .map((e) => AnimeGenre(title: e.name, id: e.malId))
-                .toList() +
-            e.demographics
-                .map((e) => AnimeGenre(title: e.name, id: e.malId))
-                .toList() +
-            e.studios
-                .map((e) => AnimeGenre(title: e.name, unpressable: true))
-                .toList(),
+    genres: e.genres
+            .map((e) => AnimeGenre(title: e.name, id: e.malId))
+            .toList() +
+        e.explicitGenres
+            .map((e) => AnimeGenre(title: e.name, id: e.malId, explicit: true))
+            .toList() +
+        e.demographics
+            .map((e) => AnimeGenre(title: e.name, id: e.malId))
+            .toList() +
+        e.themes.map((e) => AnimeGenre(title: e.name, id: e.malId)).toList() +
+        e.studios
+            .map((e) => AnimeGenre(title: e.name, unpressable: true))
+            .toList(),
     trailerUrl: e.trailerUrl ?? "",
     episodes: e.episodes ?? 0,
     background: e.background ?? "",

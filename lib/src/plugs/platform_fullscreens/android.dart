@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gallery/main.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
 
 class AndroidFullscreen implements PlatformFullscreensPlug {
@@ -28,10 +29,11 @@ class AndroidFullscreen implements PlatformFullscreensPlug {
 
   @override
   void unfullscreen() {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      systemNavigationBarColor: overlayFullscreenColor,
-    ));
+    changeSystemUiOverlay(null, overlayFullscreenColor);
+    // SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+    //   systemNavigationBarColor: overlayFullscreenColor,
+    // ));
   }
 
   @override

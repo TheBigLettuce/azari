@@ -25,8 +25,14 @@ class AnimeGenre {
   final String title;
   final int id;
   final bool unpressable;
+  final bool explicit;
 
-  const AnimeGenre({this.id = 0, this.title = "", this.unpressable = false});
+  const AnimeGenre({
+    this.id = 0,
+    this.title = "",
+    this.unpressable = false,
+    this.explicit = false,
+  });
 }
 
 @embedded
@@ -34,11 +40,15 @@ class Relation implements Cell {
   final String thumbUrl;
   final String title;
   final String type;
+  final int id;
+
+  bool get idIsValid => id != 0 && type != "manga";
 
   Relation({
     this.thumbUrl = "",
     this.title = "",
     this.type = "",
+    this.id = 0,
   });
 
   @override
@@ -81,6 +91,7 @@ class SavedAnimeEntry extends AnimeEntry {
     required super.id,
     required this.inBacklog,
     required super.type,
+    required super.explicit,
     required super.site,
     required super.thumbUrl,
     required super.title,
@@ -112,6 +123,7 @@ class SavedAnimeEntry extends AnimeEntry {
       type: e.type,
       inBacklog: inBacklog,
       site: e.site,
+      explicit: e.explicit,
       thumbUrl: e.thumbUrl,
       title: e.title,
       titleJapanese: e.titleJapanese,
@@ -150,9 +162,11 @@ class SavedAnimeEntry extends AnimeEntry {
     String? thumbUrl,
     String? synopsis,
     String? type,
+    AnimeSafeMode? explicit,
   }) {
     return SavedAnimeEntry(
       id: id ?? this.id,
+      explicit: explicit ?? this.explicit,
       type: type ?? this.type,
       relations: relations ?? this.relations,
       background: background ?? this.background,
@@ -240,6 +254,7 @@ class SavedAnimeEntry extends AnimeEntry {
           .where((element) => !WatchedAnimeEntry.watched(element.id, site))
           .map((e) => SavedAnimeEntry(
               id: e.id,
+              explicit: e.explicit,
               type: e.type,
               inBacklog: true,
               site: site,

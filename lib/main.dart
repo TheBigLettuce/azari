@@ -173,16 +173,20 @@ void main() async {
     });
   }
 
-  runApp(RestartWidget(
+  runApp(
+    RestartWidget(
       key: restartKey,
       child: MaterialApp(
+        themeAnimationCurve: Easing.emphasizedAccelerate,
         title: 'Ācārya',
         darkTheme: _buildTheme(Brightness.dark, accentColor),
         theme: _buildTheme(Brightness.light, accentColor),
         home: const Home(),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-      )));
+      ),
+    ),
+  );
 }
 
 void changeExceptionErrorColors() {
@@ -190,12 +194,14 @@ void changeExceptionErrorColors() {
   RenderErrorBox.textStyle = ui.TextStyle(color: Colors.white70);
 }
 
-void changeSystemUiOverlay(BuildContext context) {
+void changeSystemUiOverlay(BuildContext? context, [Color? override]) {
+  assert(context != null || override != null);
+
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(
     SystemUiOverlayStyle(
-      systemNavigationBarColor:
-          Theme.of(context).colorScheme.background.withOpacity(0.5),
+      systemNavigationBarColor: override?.withOpacity(0.5) ??
+          Theme.of(context!).colorScheme.background.withOpacity(0.5),
     ),
   );
 }

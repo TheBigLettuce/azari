@@ -20,8 +20,13 @@ import 'body_segment_label.dart';
 
 class AnimeCharactersWidget extends StatefulWidget {
   final AnimeEntry entry;
+  final Color? overlayColor;
 
-  const AnimeCharactersWidget({super.key, required this.entry});
+  const AnimeCharactersWidget({
+    super.key,
+    required this.entry,
+    required this.overlayColor,
+  });
 
   @override
   State<AnimeCharactersWidget> createState() => _AnimeCharactersWidgetState();
@@ -62,9 +67,6 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final overlayColor =
-        Theme.of(context).colorScheme.background.withOpacity(0.5);
-
     return Column(
       children: [
         if (!_loading)
@@ -102,7 +104,11 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
                                       getCell: (i) => list[i],
                                       onNearEnd: null,
                                       focusMain: () {},
-                                      systemOverlayRestoreColor: overlayColor,
+                                      systemOverlayRestoreColor:
+                                          widget.overlayColor ??
+                                              Theme.of(context)
+                                                  .colorScheme
+                                                  .background,
                                     );
                                   },
                                 ));

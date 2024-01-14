@@ -10,6 +10,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_info_app_bar.dart';
+import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
 import 'package:gallery/src/pages/anime/info_base/background_image/background_image.dart';
 import 'package:gallery/src/pages/anime/info_base/body/anime_info_body.dart';
 import 'package:gallery/src/pages/anime/info_base/card_panel/card_panel.dart';
@@ -68,6 +69,8 @@ class _FinishedAnimeInfoPageState extends State<FinishedAnimeInfoPage>
 
   @override
   Widget build(BuildContext context) {
+    final overlayColor = Theme.of(context).colorScheme.background;
+
     Widget body() => SkeletonSettings(
           AppLocalizations.of(context)!.finishedTab,
           state,
@@ -134,6 +137,7 @@ class _FinishedAnimeInfoPageState extends State<FinishedAnimeInfoPage>
                   ],
                 ),
                 AnimeInfoBody(
+                  overlayColor: overlayColor,
                   entry: entry,
                   viewPadding: MediaQuery.viewPaddingOf(context),
                 ),
@@ -142,6 +146,10 @@ class _FinishedAnimeInfoPageState extends State<FinishedAnimeInfoPage>
           ),
         );
 
-    return wrapLoading(context, body());
+    return AnimeInfoTheme(
+      mode: entry.explicit,
+      overlayColor: overlayColor,
+      child: wrapLoading(context, body()),
+    );
   }
 }

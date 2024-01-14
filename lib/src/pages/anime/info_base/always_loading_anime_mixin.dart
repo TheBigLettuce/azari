@@ -40,7 +40,7 @@ mixin AlwaysLoadingAnimeMixin {
               );
             } else {
               return Container(
-                color: Theme.of(context).colorScheme.surface,
+                color: Theme.of(context).colorScheme.background,
                 child: child.animate().fadeIn(),
               );
             }

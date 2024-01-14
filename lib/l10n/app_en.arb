@@ -953,5 +953,9 @@
     "role": "Role",
     "@role": {
         "description": "Image info, role of the anime character"
+    },
+    "blacklistedPostsPageName": "Blacklisted Posts",
+    "@blacklistedPostsPageName": {
+        "description": "Blacklisted posts page"
     }
 }

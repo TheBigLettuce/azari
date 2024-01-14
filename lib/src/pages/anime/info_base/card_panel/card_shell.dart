@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_name_widget.dart';
 
@@ -107,42 +108,52 @@ class _CardShellState extends State<CardShell> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 2 +
-          kToolbarHeight +
-          widget.viewPadding.top +
-          MediaQuery.sizeOf(context).height * 0.3,
-      child: Padding(
-        padding: EdgeInsets.only(
-            top: 2 + kToolbarHeight + widget.viewPadding.top,
-            left: 22,
-            right: 22),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AnimeNameWidget(entry: widget.entry),
-            Theme(
-              data: Theme.of(context).copyWith(
-                  iconTheme: IconThemeData(
-                      color:
-                          Theme.of(context).iconTheme.color?.withOpacity(0.8))),
-              child: Expanded(
-                  child: Stack(
-                children: [
-                  GridView(
-                    controller: cardsController,
-                    scrollDirection: Axis.horizontal,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2),
-                    children: _merge(),
-                  ),
-                  LeftArrow(show: _showArrorLeft),
-                  RightArrow(show: _showArrowRight),
-                ],
-              )),
-            )
-          ],
+    return DefaultTextStyle.merge(
+      style: TextStyle(
+        color: widget.entry.explicit == AnimeSafeMode.h ||
+                widget.entry.explicit == AnimeSafeMode.ecchi
+            ? Colors.pink.withOpacity(0.8)
+            : Theme.of(context).colorScheme.primary.withOpacity(0.8),
+      ),
+      child: SizedBox(
+        height: 2 +
+            kToolbarHeight +
+            widget.viewPadding.top +
+            MediaQuery.sizeOf(context).height * 0.3,
+        child: Padding(
+          padding: EdgeInsets.only(
+              top: 2 + kToolbarHeight + widget.viewPadding.top,
+              left: 22,
+              right: 22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AnimeNameWidget(entry: widget.entry),
+              Theme(
+                data: Theme.of(context).copyWith(
+                    iconTheme: IconThemeData(
+                        color: Theme.of(context)
+                            .iconTheme
+                            .color
+                            ?.withOpacity(0.8))),
+                child: Expanded(
+                    child: Stack(
+                  children: [
+                    GridView(
+                      controller: cardsController,
+                      scrollDirection: Axis.horizontal,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2),
+                      children: _merge(),
+                    ),
+                    LeftArrow(show: _showArrorLeft),
+                    RightArrow(show: _showArrowRight),
+                  ],
+                )),
+              )
+            ],
+          ),
         ),
       ),
     );

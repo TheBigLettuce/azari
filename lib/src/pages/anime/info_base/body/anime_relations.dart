@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
+import 'package:gallery/src/pages/anime/info_pages/anime_info_id.dart';
 import 'package:gallery/src/pages/anime/search/search_anime.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -28,21 +29,32 @@ class AnimeRelations extends StatelessWidget {
               ...entry.relations.map(
                 (e) => TextButton(
                   onPressed: () {
+                    if (e.idIsValid) {
+                      Navigator.push(context, MaterialPageRoute(
+                        builder: (context) {
+                          return AnimeInfoIdPage(
+                            id: e.id,
+                            site: entry.site,
+                          );
+                        },
+                      ));
+
+                      return;
+                    }
+
                     Navigator.push(context, MaterialPageRoute(
                       builder: (context) {
                         return SearchAnimePage(
-                            api: entry.site.api, initalText: e.title);
+                          api: entry.site.api,
+                          initalText: e.title,
+                          explicit: entry.explicit,
+                        );
                       },
                     ));
                   },
                   child: Text(
                     e.type.isNotEmpty ? "${e.title} (${e.type})" : e.title,
                     overflow: TextOverflow.fade,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withOpacity(0.8)),
                   ),
                 ),
               ),

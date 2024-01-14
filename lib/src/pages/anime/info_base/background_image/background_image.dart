@@ -21,6 +21,7 @@ class BackgroundImage extends StatelessWidget {
       height: MediaQuery.sizeOf(context).height * 0.3 +
           kToolbarHeight +
           MediaQuery.viewPaddingOf(context).top,
+      gradient: null,
     );
   }
 }
@@ -30,9 +31,16 @@ class BackgroundImageBase extends StatelessWidget {
   final Widget? child;
   final double? width;
   final double? height;
+  final List<Color>? gradient;
 
-  const BackgroundImageBase(
-      {super.key, this.height, required this.image, this.width, this.child});
+  const BackgroundImageBase({
+    super.key,
+    this.height,
+    required this.image,
+    this.width,
+    this.gradient,
+    this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -41,14 +49,16 @@ class BackgroundImageBase extends StatelessWidget {
       height: height,
       foregroundDecoration: BoxDecoration(
         gradient: LinearGradient(
-            begin: Alignment.bottomCenter,
-            end: Alignment.topCenter,
-            colors: [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.background.withOpacity(0.8),
-              Theme.of(context).colorScheme.background.withOpacity(0.6),
-              Theme.of(context).colorScheme.background.withOpacity(0.4)
-            ]),
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: gradient ??
+              [
+                Theme.of(context).colorScheme.background,
+                Theme.of(context).colorScheme.background.withOpacity(0.8),
+                Theme.of(context).colorScheme.background.withOpacity(0.6),
+                Theme.of(context).colorScheme.background.withOpacity(0.4)
+              ],
+        ),
       ),
       decoration: BoxDecoration(
         image: DecorationImage(

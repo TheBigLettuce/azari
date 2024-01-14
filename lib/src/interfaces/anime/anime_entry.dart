@@ -40,6 +40,7 @@ class AnimeEntry implements Cell {
     required this.trailerUrl,
     required this.episodes,
     required this.background,
+    required this.explicit,
   });
 
   @override
@@ -72,6 +73,8 @@ class AnimeEntry implements Cell {
   final int episodes;
 
   final bool isAiring;
+  @enumerated
+  final AnimeSafeMode explicit;
 
   @override
   List<Widget>? addButtons(BuildContext context) {
@@ -124,5 +127,5 @@ class AnimeEntry implements Cell {
   }
 
   @override
-  Key uniqueKey() => ValueKey(thumbUrl);
+  Key uniqueKey() => ValueKey((thumbUrl, id));
 }
