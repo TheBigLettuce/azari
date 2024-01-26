@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
+import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 
 import '../interfaces/booru/booru_api_state.dart';
 import '../db/state_restoration.dart';
@@ -21,14 +23,13 @@ import 'notes/tab_with_count.dart';
 
 class TagsPage extends StatefulWidget {
   final TagManager<Unrestorable> tagManager;
-  final FocusNode mainFocus;
   final BooruAPIState booru;
 
-  const TagsPage(
-      {super.key,
-      required this.tagManager,
-      required this.mainFocus,
-      required this.booru});
+  const TagsPage({
+    super.key,
+    required this.tagManager,
+    required this.booru,
+  });
 
   @override
   State<TagsPage> createState() => _TagsPageState();
@@ -42,6 +43,7 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
 
   final textController = TextEditingController();
   final excludedTagsTextController = TextEditingController();
+  final state = SkeletonState();
 
   late final StreamSubscription<void> _lastTagsWatcher;
 
@@ -59,30 +61,35 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
   int currentNavBarIndex = 0;
 
   void _focusListener() {
-    if (!widget.mainFocus.hasFocus) {
+    if (!state.mainFocus.hasFocus) {
       searchHighlight = "";
-      widget.mainFocus.requestFocus();
+      state.mainFocus.requestFocus();
     }
   }
 
   @override
   void initState() {
-    widget.mainFocus.addListener(_focusListener);
+    super.initState();
+
+    tabController.addListener(() {
+      state.mainFocus.requestFocus();
+    });
+
+    state.mainFocus.addListener(_focusListener);
 
     excludedFocus.addListener(() {
       if (!excludedFocus.hasFocus) {
         excludedHighlight = "";
-        widget.mainFocus.requestFocus();
+        state.mainFocus.requestFocus();
       }
     });
 
     singlePostFocus.addListener(() {
       if (!singlePostFocus.hasFocus) {
-        widget.mainFocus.requestFocus();
+        state.mainFocus.requestFocus();
       }
     });
 
-    super.initState();
     _lastTagsWatcher = widget.tagManager.watch(true, () {
       _lastTags = widget.tagManager.latest.get();
       _excludedTags = widget.tagManager.excluded.get();
@@ -93,7 +100,7 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    widget.mainFocus.removeListener(_focusListener);
+    state.dispose();
     textController.dispose();
     excludedTagsTextController.dispose();
     _lastTagsWatcher.cancel();
@@ -111,122 +118,126 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        body: NestedScrollView(
-      headerSliverBuilder: (context, scrolled) => [
-        SliverAppBar(
-          pinned: true,
-          floating: true,
-          snap: true,
-          centerTitle: true,
-          title: Text(
-            "阿",
-            style: TextStyle(
-                color: Theme.of(context).colorScheme.primary,
-                fontFamily: "ZenKurenaido"),
-          ),
-          bottom: TabBar(
-            tabs: [
-              TabWithCount("Recent", _lastTags.length),
-              TabWithCount("Excluded", _excludedTags.length),
-            ],
-            controller: tabController,
-          ),
-          actions: [
-            IconButton(
-                onPressed: () {
-                  Navigator.push(
-                      context,
-                      DialogRoute(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: Text(AppLocalizations.of(context)!
-                                .tagsDeletionDialogTitle),
-                            actions: [
-                              TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child:
-                                      Text(AppLocalizations.of(context)!.no)),
-                              TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    deleteAllController
-                                        .forward(from: 0)
-                                        .then((value) {
-                                      widget.tagManager.latest.clear();
-                                      deleteAllController.reverse(from: 1);
-                                    });
-                                  },
-                                  child:
-                                      Text(AppLocalizations.of(context)!.yes))
-                            ],
-                          );
-                        },
-                      ));
-                },
-                icon: const Icon(Icons.delete))
-          ],
-        )
-      ],
-      body: TabBarView(controller: tabController, children: [
-        TagsWidget(
-            tags: _lastTags,
-            searchBar: SinglePost(
-              focus: singlePostFocus,
-              tagManager: widget.tagManager,
+    return SkeletonSettings(
+      "Tags",
+      state,
+      expectSliverBody: false,
+      child: NestedScrollView(
+        headerSliverBuilder: (context, scrolled) => [
+          SliverAppBar(
+            pinned: true,
+            floating: true,
+            snap: true,
+            centerTitle: true,
+            title: Text(
+              "阿",
+              style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontFamily: "ZenKurenaido"),
             ),
-            deleteTag: (t) {
-              deleteAllController.forward(from: 0).then((value) {
-                widget.tagManager.latest.delete(t);
-                deleteAllController.reverse(from: 1);
-              });
-            },
-            onPress: (t) => widget.tagManager
-                .onTagPressed(context, t, widget.booru.booru, true)).animate(
-            controller: deleteAllController,
-            effects: [
-              FadeEffect(
-                begin: 1,
-                end: 0,
-                duration: 150.milliseconds,
-              )
-            ],
-            autoPlay: false),
-        TagsWidget(
-                redBackground: true,
-                tags: _excludedTags,
-                searchBar: AutocompleteWidget(
-                  excludedTagsTextController,
-                  (s) {
-                    excludedHighlight = s;
+            bottom: TabBar(
+              tabs: [
+                TabWithCount("Recent", _lastTags.length),
+                TabWithCount("Excluded", _excludedTags.length),
+              ],
+              controller: tabController,
+            ),
+            actions: [
+              IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                        context,
+                        DialogRoute(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: Text(AppLocalizations.of(context)!
+                                  .tagsDeletionDialogTitle),
+                              actions: [
+                                TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child:
+                                        Text(AppLocalizations.of(context)!.no)),
+                                TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      deleteAllController
+                                          .forward(from: 0)
+                                          .then((value) {
+                                        widget.tagManager.latest.clear();
+                                        deleteAllController.reverse(from: 1);
+                                      });
+                                    },
+                                    child:
+                                        Text(AppLocalizations.of(context)!.yes))
+                              ],
+                            );
+                          },
+                        ));
                   },
-                  widget.tagManager.excluded.add,
-                  () => widget.mainFocus.requestFocus(),
-                  widget.booru.completeTag,
-                  excludedFocus,
-                  submitOnPress: true,
-                  roundBorders: true,
-                  plainSearchBar: true,
-                  showSearch: true,
-                ),
-                deleteTag: (t) {
-                  deleteAllExcludedController.forward(from: 0).then((value) {
-                    widget.tagManager.excluded.delete(t);
-                    deleteAllExcludedController.reverse(from: 1);
-                  });
-                },
-                onPress: (t) {})
-            .animate(effects: [
-          FadeEffect(
-            begin: 1,
-            end: 0,
-            duration: 150.milliseconds,
+                  icon: const Icon(Icons.delete))
+            ],
           )
-        ], controller: deleteAllExcludedController, autoPlay: false),
-      ]),
-    ));
+        ],
+        body: TabBarView(controller: tabController, children: [
+          TagsWidget(
+              tags: _lastTags,
+              searchBar: SinglePost(
+                focus: singlePostFocus,
+                tagManager: widget.tagManager,
+              ),
+              deleteTag: (t) {
+                deleteAllController.forward(from: 0).then((value) {
+                  widget.tagManager.latest.delete(t);
+                  deleteAllController.reverse(from: 1);
+                });
+              },
+              onPress: (t) => widget.tagManager
+                  .onTagPressed(context, t, widget.booru.booru, true)).animate(
+              controller: deleteAllController,
+              effects: [
+                FadeEffect(
+                  begin: 1,
+                  end: 0,
+                  duration: 150.milliseconds,
+                )
+              ],
+              autoPlay: false),
+          TagsWidget(
+                  redBackground: true,
+                  tags: _excludedTags,
+                  searchBar: AutocompleteWidget(
+                    excludedTagsTextController,
+                    (s) {
+                      excludedHighlight = s;
+                    },
+                    widget.tagManager.excluded.add,
+                    () => state.mainFocus.requestFocus(),
+                    widget.booru.completeTag,
+                    excludedFocus,
+                    submitOnPress: true,
+                    roundBorders: true,
+                    plainSearchBar: true,
+                    showSearch: true,
+                  ),
+                  deleteTag: (t) {
+                    deleteAllExcludedController.forward(from: 0).then((value) {
+                      widget.tagManager.excluded.delete(t);
+                      deleteAllExcludedController.reverse(from: 1);
+                    });
+                  },
+                  onPress: (t) {})
+              .animate(effects: [
+            FadeEffect(
+              begin: 1,
+              end: 0,
+              duration: 150.milliseconds,
+            )
+          ], controller: deleteAllExcludedController, autoPlay: false),
+        ]),
+      ),
+    );
   }
 }

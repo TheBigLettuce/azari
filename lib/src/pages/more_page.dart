@@ -21,13 +21,11 @@ import 'settings/settings_widget.dart';
 
 class MorePage extends StatelessWidget {
   final TagManager<Unrestorable> tagManager;
-  final FocusNode mainFocus;
   final BooruAPIState api;
 
   const MorePage({
     super.key,
     required this.api,
-    required this.mainFocus,
     required this.tagManager,
   });
 
@@ -50,8 +48,7 @@ class MorePage extends StatelessWidget {
             onTap: () {
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) {
-                  return TagsPage(
-                      tagManager: tagManager, mainFocus: mainFocus, booru: api);
+                  return TagsPage(tagManager: tagManager, booru: api);
                 },
               ));
             },

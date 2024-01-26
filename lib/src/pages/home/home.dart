@@ -262,7 +262,6 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
             tagManager: TagManager.fromEnum(Settings.fromDb().selectedBooru),
             api: BooruAPIState.fromEnum(Settings.fromDb().selectedBooru,
                 page: null),
-            mainFocus: state.mainFocus,
           ).animate()),
       int() => throw "unimpl",
     };

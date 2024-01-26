@@ -22,13 +22,18 @@ class SkeletonSettings extends StatelessWidget {
   final PreferredSizeWidget? appBar;
   final bool extendBodyBehindAppBar;
   final bool extendBody;
+  final bool expectSliverBody;
 
-  const SkeletonSettings(this.pageDescription, this.state,
-      {super.key,
-      this.appBar,
-      required this.child,
-      this.extendBody = false,
-      this.extendBodyBehindAppBar = false});
+  const SkeletonSettings(
+    this.pageDescription,
+    this.state, {
+    super.key,
+    this.appBar,
+    required this.child,
+    this.expectSliverBody = true,
+    this.extendBody = false,
+    this.extendBodyBehindAppBar = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +67,7 @@ class SkeletonSettings extends StatelessWidget {
             body: GestureDeadZones(
                 left: true,
                 right: true,
-                child: appBar == null
+                child: appBar == null && expectSliverBody
                     ? CustomScrollView(
                         slivers: [
                           SliverAppBar.large(

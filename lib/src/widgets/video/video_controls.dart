@@ -82,7 +82,9 @@ class VideoControls extends StatelessWidget {
                   Divider(
                     color: Theme.of(context).iconTheme.color?.withOpacity(0.5),
                   ),
-                  _VideoTime(controller: controller)
+                  _VideoTime(controller: controller),
+                  _VideoSeekBackward(controller: controller),
+                  _VideoSeekForward(controller: controller),
                 ],
               ),
             ),
@@ -119,10 +121,7 @@ class __PlayButtonState extends State<_PlayButton> {
 
   void _update() {
     try {
-      if (widget.controller.value.isCompleted &&
-          !widget.controller.value.isLooping) {
-        setState(() {});
-      }
+      setState(() {});
     } catch (_) {}
   }
 
@@ -142,9 +141,59 @@ class __PlayButtonState extends State<_PlayButton> {
 
         setState(() {});
       },
-      icon: widget.controller.value.isPlaying
-          ? const Icon(Icons.stop_circle)
-          : const Icon(Icons.play_arrow),
+      icon: widget.controller.value.isBuffering
+          ? SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.blue
+                    .harmonizeWith(Theme.of(context).colorScheme.primary),
+              ),
+            )
+          : widget.controller.value.isPlaying
+              ? const Icon(Icons.stop_circle_rounded)
+              : const Icon(Icons.play_arrow_rounded),
+    );
+  }
+}
+
+class _VideoSeekForward extends StatelessWidget {
+  final VideoPlayerController controller;
+
+  const _VideoSeekForward({
+    super.key,
+    required this.controller,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: () {
+        controller
+            .seekTo(controller.value.position + const Duration(seconds: 5));
+      },
+      icon: const Icon(Icons.fast_forward_rounded),
+    );
+  }
+}
+
+class _VideoSeekBackward extends StatelessWidget {
+  final VideoPlayerController controller;
+
+  const _VideoSeekBackward({
+    super.key,
+    required this.controller,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: () {
+        controller
+            .seekTo(controller.value.position - const Duration(seconds: 5));
+      },
+      icon: const Icon(Icons.fast_rewind_rounded),
     );
   }
 }
