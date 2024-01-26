@@ -12,6 +12,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/db/schemas/booru/post.dart';
+import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/db/state_restoration.dart';
 import 'package:gallery/src/interfaces/background_data_loader/loader_keys.dart';
@@ -37,29 +38,78 @@ import 'src/pages/home/home.dart';
 
 late final String azariVersion;
 
-ThemeData _buildTheme(Brightness brightness, Color accentColor) {
-  var baseTheme = ThemeData(
-    brightness: brightness,
-    menuTheme: const MenuThemeData(
-        style: MenuStyle(
-            shape: MaterialStatePropertyAll(RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(15)))))),
-    popupMenuTheme: const PopupMenuThemeData(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(15)))),
-    pageTransitionsTheme: PageTransitionsTheme(
-        builders: Map.from(const PageTransitionsTheme().builders)
-          ..[TargetPlatform.android] =
-              const FadeSidewaysPageTransitionBuilder()),
-    useMaterial3: true,
-    colorSchemeSeed: accentColor,
-  );
-  baseTheme = baseTheme.copyWith(
-      listTileTheme: baseTheme.listTileTheme.copyWith(
-          isThreeLine: false,
-          subtitleTextStyle: baseTheme.textTheme.bodyMedium!.copyWith(
-            fontWeight: FontWeight.w300,
-          )));
+ThemeData buildTheme(Brightness brightness, Color accentColor) {
+  final type = MiscSettings.current.themeType;
+  final pageTransition = PageTransitionsTheme(
+      builders: Map.from(const PageTransitionsTheme().builders)
+        ..[TargetPlatform.android] = const FadeSidewaysPageTransitionBuilder());
+
+  const menuTheme = MenuThemeData(
+      style: MenuStyle(
+          shape: MaterialStatePropertyAll(RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(15))))));
+
+  const popupMenuTheme = PopupMenuThemeData(
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(15))));
+
+  var baseTheme = switch (type) {
+    ThemeType.systemAccent => ThemeData(
+        brightness: brightness,
+        menuTheme: menuTheme,
+        popupMenuTheme: popupMenuTheme,
+        pageTransitionsTheme: pageTransition,
+        useMaterial3: true,
+        colorSchemeSeed: accentColor,
+      ),
+    ThemeType.secretPink => ThemeData(
+        brightness: Brightness.dark,
+        menuTheme: menuTheme,
+        popupMenuTheme: popupMenuTheme,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.pink,
+          brightness: Brightness.dark,
+          background: null,
+        ),
+        pageTransitionsTheme: pageTransition,
+        useMaterial3: true,
+      ),
+  };
+
+  switch (type) {
+    case ThemeType.systemAccent:
+      baseTheme = baseTheme.copyWith(
+          listTileTheme: baseTheme.listTileTheme.copyWith(
+              isThreeLine: false,
+              subtitleTextStyle: baseTheme.textTheme.bodyMedium!.copyWith(
+                fontWeight: FontWeight.w300,
+              )));
+
+    case ThemeType.secretPink:
+      baseTheme = baseTheme.copyWith(
+        scaffoldBackgroundColor: baseTheme.colorScheme.background,
+        chipTheme: null,
+        filledButtonTheme: FilledButtonThemeData(
+            style: ButtonStyle(
+          foregroundColor: MaterialStatePropertyAll(
+              baseTheme.colorScheme.onPrimary.withOpacity(0.8)),
+          visualDensity: VisualDensity.compact,
+          backgroundColor: MaterialStatePropertyAll(
+            baseTheme.colorScheme.primary.withOpacity(0.8),
+          ),
+        )),
+        // buttonTheme: const ButtonThemeData(),
+        textButtonTheme: TextButtonThemeData(
+          style: ButtonStyle(
+              textStyle: MaterialStatePropertyAll(
+                baseTheme.textTheme.bodyMedium,
+              ),
+              foregroundColor: MaterialStatePropertyAll(
+                baseTheme.colorScheme.primary.withOpacity(0.8),
+              )),
+        ),
+      );
+  }
 
   return baseTheme;
 }
@@ -91,8 +141,8 @@ void mainPickfile() async {
 
   runApp(MaterialApp(
     title: 'Ācārya',
-    darkTheme: _buildTheme(Brightness.dark, accentColor),
-    theme: _buildTheme(Brightness.light, accentColor),
+    darkTheme: buildTheme(Brightness.dark, accentColor),
+    theme: buildTheme(Brightness.light, accentColor),
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     home: Home(
@@ -175,12 +225,13 @@ void main() async {
 
   runApp(
     RestartWidget(
+      accentColor: accentColor,
       key: restartKey,
-      child: MaterialApp(
+      child: (d, l) => MaterialApp(
         themeAnimationCurve: Easing.emphasizedAccelerate,
         title: 'Ācārya',
-        darkTheme: _buildTheme(Brightness.dark, accentColor),
-        theme: _buildTheme(Brightness.light, accentColor),
+        darkTheme: d,
+        theme: l,
         home: const Home(),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,

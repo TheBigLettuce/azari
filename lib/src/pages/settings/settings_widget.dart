@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_booru.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 
@@ -17,6 +18,7 @@ import '../../widgets/skeletons/skeleton_state.dart';
 import 'settings_list.dart';
 
 part 'is_restart.dart';
+part 'select_theme.dart';
 part 'select_booru.dart';
 
 class SettingsWidget extends StatefulWidget {

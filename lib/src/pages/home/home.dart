@@ -173,7 +173,12 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     favoriteBooruWatcher.cancel();
 
     NetworkStatus.g.notify = null;
-    mainGrid.close().then((value) => restartOver());
+    if (!themeIsChanging) {
+      mainGrid.close().then((value) => restartOver());
+    } else {
+      themeChangeOver();
+    }
+
     state.dispose();
 
     controller.dispose();

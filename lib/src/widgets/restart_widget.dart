@@ -7,11 +7,18 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/main.dart';
 
 /// RestartWidget is needed for changing the boorus in the settings.
 class RestartWidget extends StatefulWidget {
-  final Widget child;
-  const RestartWidget({super.key, required this.child});
+  final Color accentColor;
+  final Widget Function(ThemeData dark, ThemeData light) child;
+
+  const RestartWidget({
+    super.key,
+    required this.accentColor,
+    required this.child,
+  });
 
   static void restartApp(BuildContext context) {
     context.findAncestorStateOfType<_RestartWidgetState>()!.restartApp();
@@ -32,12 +39,15 @@ class _RestartWidgetState extends State<RestartWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final d = buildTheme(Brightness.dark, widget.accentColor);
+    final l = buildTheme(Brightness.light, widget.accentColor);
+
     return KeyedSubtree(
       key: key,
       child: Stack(
         alignment: Alignment.topCenter,
         children: [
-          widget.child.animate(effects: [const FadeEffect()]),
+          widget.child(d, l).animate(effects: [const FadeEffect()]),
           // const NotificationsArea()
         ],
       ),

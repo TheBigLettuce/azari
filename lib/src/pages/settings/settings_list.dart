@@ -18,6 +18,7 @@ import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/display_quality.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
+import 'package:gallery/src/widgets/restart_widget.dart';
 
 import '../../db/tags/post_tags.dart';
 import '../../db/schemas/settings/settings.dart';
@@ -112,6 +113,21 @@ class _SettingsListState extends State<SettingsList> {
               selectBooru(context, _settings!, value);
             }
           }, title: AppLocalizations.of(context)!.selectedBooruSetting),
+        ),
+        ListTile(
+          title: const Text("Theme"), // TODO: change
+          onTap: () => radioDialog(
+            context,
+            ThemeType.values.map((e) => (e, e.string)),
+            _miscSettings!.themeType,
+            (value) {
+              if (value != null) {
+                selectTheme(context, _miscSettings!, value);
+              }
+            },
+            title: "Theme",
+          ),
+          subtitle: Text(_miscSettings!.themeType.string),
         ),
         ListTile(
           title: Text(AppLocalizations.of(context)!.imageDisplayQualitySetting),

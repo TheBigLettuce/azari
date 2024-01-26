@@ -13,6 +13,15 @@ import 'package:isar/isar.dart';
 
 part 'misc_settings.g.dart';
 
+enum ThemeType {
+  systemAccent("System Accent"),
+  secretPink("Secret Pink");
+
+  final String string;
+
+  const ThemeType(this.string);
+}
+
 @collection
 class MiscSettings {
   final Id id = 0;
@@ -22,21 +31,27 @@ class MiscSettings {
   final int favoritesThumbId;
 
   @enumerated
+  final ThemeType themeType;
+
+  @enumerated
   final FilteringMode favoritesPageMode;
 
   const MiscSettings({
     required this.filesExtendedActions,
     required this.animeAlwaysLoadFromNet,
     required this.favoritesThumbId,
+    required this.themeType,
     required this.favoritesPageMode,
   });
 
   MiscSettings copy(
           {bool? filesExtendedActions,
           int? favoritesThumbId,
+          ThemeType? themeType,
           bool? animeAlwaysLoadFromNet,
           FilteringMode? favoritesPageMode}) =>
       MiscSettings(
+          themeType: themeType ?? this.themeType,
           animeAlwaysLoadFromNet:
               animeAlwaysLoadFromNet ?? this.animeAlwaysLoadFromNet,
           favoritesPageMode: favoritesPageMode ?? this.favoritesPageMode,
@@ -49,6 +64,7 @@ class MiscSettings {
       const MiscSettings(
         animeAlwaysLoadFromNet: false,
         filesExtendedActions: false,
+        themeType: ThemeType.systemAccent,
         favoritesThumbId: 0,
         favoritesPageMode: FilteringMode.tag,
       );
@@ -71,6 +87,11 @@ class MiscSettings {
   static void setAnimeAlwaysLoadFromNet(bool animeAlwaysLoadFromNet) {
     Dbs.g.main.writeTxnSync(() => Dbs.g.main.miscSettings
         .putSync(current.copy(animeAlwaysLoadFromNet: animeAlwaysLoadFromNet)));
+  }
+
+  static void setThemeType(ThemeType theme) {
+    Dbs.g.main.writeTxnSync(
+        () => Dbs.g.main.miscSettings.putSync(current.copy(themeType: theme)));
   }
 
   static StreamSubscription<MiscSettings?> watch(void Function(MiscSettings?) f,
