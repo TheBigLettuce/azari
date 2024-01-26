@@ -177,6 +177,10 @@ class PlatformFunctions {
     return _channel.invokeMethod("currentNetworkStatus").then((value) => value);
   }
 
+  static Future<void> setWallpaper(int id) {
+    return _channel.invokeMethod("setWallpaper", id);
+  }
+
   static Future<ThumbId> saveThumbNetwork(String url, int id) {
     return _channel.invokeMethod("saveThumbNetwork", {
       "url": url,

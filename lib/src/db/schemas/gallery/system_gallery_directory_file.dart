@@ -15,6 +15,7 @@ import 'package:gallery/src/db/schemas/gallery/favorite_media.dart';
 import 'package:gallery/src/db/schemas/gallery/note_gallery.dart';
 import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
 import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
+import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
@@ -309,6 +310,11 @@ class SystemGalleryDirectoryFile implements Cell {
         if (res != null && tagsFlat.contains("translated"))
           TranslationNotes.tile(context, colors.foregroundColor, res.id,
               () => BooruAPIState.fromEnum(res!.booru, page: null)),
+        if (!isVideo && !isGif)
+          _SetWallpaperTile(
+            colors: colors,
+            id: id,
+          ),
       ],
       name,
       temporary: plug.temporary,
@@ -401,6 +407,132 @@ class SystemGalleryDirectoryFile implements Cell {
     );
   }
 }
+
+class _SetWallpaperTile extends StatefulWidget {
+  final AddInfoColorData colors;
+  final int id;
+
+  const _SetWallpaperTile({
+    super.key,
+    required this.colors,
+    required this.id,
+  });
+
+  @override
+  State<_SetWallpaperTile> createState() => __SetWallpaperTileState();
+}
+
+class __SetWallpaperTileState extends State<_SetWallpaperTile> {
+  Future? _status;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: FilledButton(
+        onPressed: _status != null
+            ? null
+            : () {
+                _status = PlatformFunctions.setWallpaper(widget.id)
+                    .onError((error, stackTrace) {
+                  LogTarget.unknown.logDefaultImportant(
+                      "setWallpaper".errorMessage(error), stackTrace);
+                }).whenComplete(() {
+                  _status = null;
+
+                  setState(() {});
+                });
+
+                setState(() {});
+              },
+        child: _status != null
+            ? const SizedBox(
+                height: 14,
+                width: 14,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Text("Set as wallpaper"), // TODO: change
+
+        // subtitle: subtitle != null ? Text(subtitle) : null,
+      ),
+    );
+  }
+}
+
+// class _WallpaperTargetDialog extends StatefulWidget {
+//   final int id;
+//   final void Function(Future) setProgress;
+
+//   const _WallpaperTargetDialog({
+//     super.key,
+//     required this.setProgress,
+//     required this.id,
+//   });
+
+//   @override
+//   State<_WallpaperTargetDialog> createState() => __WallpaperTargetDialogState();
+// }
+
+// class __WallpaperTargetDialogState extends State<_WallpaperTargetDialog> {
+//   bool asHome = true;
+//   bool asLockscreen = false;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return AlertDialog(
+//       content: Column(
+//         mainAxisSize: MainAxisSize.min,
+//         children: [
+//           CheckboxListTile(
+//               title: const Text("As Home"), // TODO: change
+//               value: asHome,
+//               onChanged: (value) {
+//                 if (value == null) {
+//                   return;
+//                 }
+
+//                 asHome = value;
+
+//                 setState(() {});
+//               }),
+//           CheckboxListTile(
+//               title: const Text("As Lockscreen"), // TODO: change
+//               value: asLockscreen,
+//               onChanged: (value) {
+//                 if (value == null) {
+//                   return;
+//                 }
+
+//                 asLockscreen = value;
+
+//                 setState(() {});
+//               })
+//         ],
+//       ),
+//       actions: [
+//         TextButton(
+//           onPressed: () {
+//             Navigator.pop(context);
+//           },
+//           child: Text(
+//             AppLocalizations.of(context)!.back,
+//           ),
+//         ),
+//         TextButton(
+//           onPressed: asHome == false && asLockscreen == false
+//               ? null
+//               : () {
+//                   widget.setProgress(;
+
+//                   Navigator.pop(context);
+//                 },
+//           child: Text(
+//             AppLocalizations.of(context)!.ok,
+//           ),
+//         ),
+//       ],
+//     );
+//   }
+// }
 
 Future<void> loadNetworkThumb(String filename, int id,
     [bool addToPinned = true]) async {
@@ -507,11 +639,13 @@ class ThumbnailProvider extends ImageProvider {
 ListTile addInfoTile(
         {required AddInfoColorData colors,
         required String title,
-        required String subtitle,
+        required String? subtitle,
+        void Function()? onPressed,
         Widget? trailing}) =>
     ListTile(
       textColor: colors.foregroundColor,
       title: Text(title),
       trailing: trailing,
-      subtitle: Text(subtitle),
+      onTap: onPressed,
+      subtitle: subtitle != null ? Text(subtitle) : null,
     );

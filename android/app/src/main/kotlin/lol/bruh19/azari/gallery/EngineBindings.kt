@@ -9,6 +9,7 @@ package lol.bruh19.azari.gallery
 
 import android.R
 import android.app.Activity
+import android.app.WallpaperManager
 import android.content.ContentUris
 import android.content.Intent
 import android.net.ConnectivityManager
@@ -340,6 +341,23 @@ class EngineBindings(
 
                 "clearCachedThumbs" -> {
                     mover.clearCachedThumbs(call.arguments as Boolean)
+                }
+
+                "setWallpaper" -> {
+                    val idv = call.arguments
+                    val id =
+                        if (idv is Int) idv.toLong() else idv as Long
+
+                    val intent = WallpaperManager.getInstance(context).getCropAndSetWallpaperIntent(
+                        MediaStore.Images.Media.getContentUri(
+                            MediaStore.VOLUME_EXTERNAL,
+                            id
+                        )
+                    )
+
+                    context.startActivity(intent)
+
+                    result.success(null)
                 }
 
                 "thumbCacheSize" -> {

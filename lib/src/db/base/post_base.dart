@@ -353,11 +353,10 @@ class PostBase implements Cell {
     }
 
     return [
-      data?.searchFocus.hasFocus ?? false
-          ? Container()
-          : ListBody(
-              children: lists,
-            ),
+      if (!(data?.searchFocus.hasFocus ?? false))
+        ListBody(
+          children: lists,
+        ),
       if (postTags.isNotEmpty && data != null)
         SearchTextField(data, filename, showDeleteButton, colors),
       ...makeTags(context, extra, colors, postTags, temporary ? "" : filename,
