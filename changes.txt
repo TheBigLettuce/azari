@@ -1,9 +1,13 @@
+1.6.3+13:
+— Set as wallpaper button,
+— App wide themes.
+
 ***
 
-1.6.0+10
+1.6.0+10:
 — Anime page.
 
-1.5.3+9
+1.5.3+9:
 — Add minimal video controls,
 — Ability to hide *booru posts directly,
 — Add local statistics collection.

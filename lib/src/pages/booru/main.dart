@@ -275,12 +275,10 @@ class _MainBooruGridState extends State<MainBooruGrid>
               registerNotifiers: (child) => TagManagerNotifier.restorable(
                   tagManager, BooruAPINotifier(api: api, child: child)),
               inlineMenuButtonItems: true,
+              overrideBackButton: const BookmarkButton(),
               addFabPadding:
                   Scaffold.of(context).widget.bottomNavigationBar == null,
-              menuButtonItems: [
-                const BookmarkButton(),
-                gridButton(state.settings, gridSettings)
-              ],
+              menuButtonItems: [gridButton(state.settings, gridSettings)],
               addIconsImage: (post) => [
                 BooruGridActions.favorites(context, post),
                 BooruGridActions.download(context, api),
