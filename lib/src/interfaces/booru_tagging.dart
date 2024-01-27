@@ -10,6 +10,8 @@ import '../db/schemas/tags/tags.dart';
 /// Tag search history.
 /// Used for both for the recent tags and the excluded.
 abstract class BooruTagging {
+  bool exists(Tag tag);
+
   /// Get the current tags.
   /// Last added first.
   List<Tag> get();

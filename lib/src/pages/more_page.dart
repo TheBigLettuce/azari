@@ -93,9 +93,7 @@ class MorePage extends StatelessWidget {
             onTap: () {
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) {
-                  return const Scaffold(
-                    body: Downloads(),
-                  );
+                  return const Downloads();
                 },
               ));
             },

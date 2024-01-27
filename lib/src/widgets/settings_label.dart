@@ -15,6 +15,11 @@ class SettingsLabel extends StatelessWidget {
   const SettingsLabel(this.string, this.style,
       {super.key, this.removePadding = false});
 
+  static TextStyle defaultStyle(BuildContext context) => Theme.of(context)
+      .textTheme
+      .titleSmall!
+      .copyWith(color: Theme.of(context).colorScheme.secondary);
+
   @override
   Widget build(BuildContext context) {
     return removePadding

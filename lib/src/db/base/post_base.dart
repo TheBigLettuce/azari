@@ -15,6 +15,7 @@ import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/db/schemas/booru/note_booru.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
+import 'package:gallery/src/interfaces/booru_tagging.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/cell/cell_data.dart';
 import 'package:gallery/src/db/state_restoration.dart';
@@ -243,10 +244,7 @@ class PostBase implements Cell {
       ],
       filename(),
       supplyTags: tags,
-      addExcluded: (t) {
-        tagManager.excluded
-            .add(Tag(tag: t, isExcluded: true, time: DateTime.now()));
-      },
+      excluded: tagManager.excluded,
       launchGrid: (t) {
         tagManager.onTagPressed(
             context,
@@ -343,7 +341,7 @@ class PostBase implements Cell {
     bool showDeleteButton = false,
     List<String>? supplyTags,
     void Function(String)? launchGrid,
-    void Function(String)? addExcluded,
+    BooruTagging? excluded,
   }) {
     final data = FilterNotifier.maybeOf(context);
     final pinnedTags = <String>[];
@@ -378,7 +376,7 @@ class PostBase implements Cell {
         tags,
         temporary ? "" : filename,
         launchGrid: launchGrid,
-        addExcluded: addExcluded,
+        excluded: excluded,
         pinnedTags: pinnedTags,
       )
     ];

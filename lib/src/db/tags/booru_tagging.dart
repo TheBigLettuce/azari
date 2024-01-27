@@ -15,6 +15,12 @@ class IsarBooruTagging implements BooruTagging {
   final bool excludedMode;
 
   @override
+  bool exists(Tag tag) {
+    return isarCurrent.tags.getByTagIsExcludedSync(tag.tag, excludedMode) !=
+        null;
+  }
+
+  @override
   List<Tag> get() {
     return isarCurrent.tags
         .filter()

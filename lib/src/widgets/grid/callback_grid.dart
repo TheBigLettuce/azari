@@ -670,158 +670,244 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     return null;
   }
 
-  Widget _makeGrid(BuildContext context) => CustomScrollView(
-        controller: controller,
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          if (widget.description.showAppBar)
-            FocusNotifier(
-                notifier: widget.searchWidget?.focus,
-                focusMain: () {
-                  widget.mainFocus.requestFocus();
-                },
-                child: Builder(
-                  builder: (context) {
-                    return SliverAppBar(
-                      backgroundColor: Theme.of(context)
-                          .colorScheme
-                          .background
-                          .withOpacity(0.95),
-                      automaticallyImplyLeading: false,
-                      actions: _makeActions(context),
-                      centerTitle: true,
-                      title: _makeTitle(context),
-                      leading: _makeLeading(context),
-                      pinned: true,
-                      stretch: true,
-                      snap: selection.selected.isEmpty,
-                      floating: selection.selected.isEmpty,
-                      bottom: widget.description.bottomWidget != null
-                          ? widget.description.bottomWidget!
-                          : PreferredSize(
-                              preferredSize: const Size.fromHeight(4),
-                              child: !_state.isRefreshing
-                                  ? const Padding(
-                                      padding: EdgeInsets.only(top: 4),
-                                      child: SizedBox(),
-                                    )
-                                  : const LinearProgressIndicator(),
-                            ),
-                    );
-                  },
-                )),
-          if (!_state.isRefreshing &&
-              _state.cellCount == 0 &&
-              !widget.description.ignoreEmptyWidgetOnNoContent)
-            SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    EmptyWidget(
-                      error: _state.refreshingError == null
-                          ? null
-                          : EmptyWidget.unwrapDioError(_state.refreshingError),
-                    ),
-                    if (widget.onError != null &&
-                        _state.refreshingError != null)
-                      widget.onError!(_state.refreshingError!),
-                  ],
-                ),
-              ),
-            ),
-          ...widget.description.layout(context, this),
-          _WrapPadding<T>(
-            systemNavigationInsets: widget.systemNavigationInsets.bottom,
-            footer: widget.footer,
-            selectionGlue: widget.selectionGlue,
-            child: null,
-          )
-        ],
-      );
-
-  Widget _makeBody(BuildContext context,
-          Map<SingleActivatorDescription, void Function()> bindings) =>
-      CallbackShortcuts(
-          bindings: {
-            ...bindings,
-            ...keybindDescription(context, describeKeys(bindings),
-                widget.description.keybindsDescription, () {
-              widget.mainFocus.requestFocus();
-            })
-          },
-          child: Focus(
-            autofocus: true,
-            focusNode: widget.mainFocus,
-            child: Column(
-              children: [
-                Expanded(
-                    child: Stack(
-                  children: [
-                    RefreshIndicator(
-                        onRefresh: _state.onRefresh,
-                        child: Scrollbar(
-                            interactive: false,
-                            thumbVisibility:
-                                Platform.isAndroid || Platform.isIOS
-                                    ? false
-                                    : true,
-                            thickness: 6,
-                            controller: controller,
-                            child: _makeGrid(context))),
-                    if (widget.footer != null)
-                      Align(
-                        alignment: Alignment.bottomLeft,
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                            bottom: widget.systemNavigationInsets.bottom,
-                          ),
-                          child: widget.footer!,
-                        ),
-                      ),
-                    if (!widget.description.showAppBar)
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                              bottom: widget.systemNavigationInsets.bottom),
-                          child: PreferredSize(
-                            preferredSize: const Size.fromHeight(4),
-                            child: !_state.isRefreshing
-                                ? const Padding(
-                                    padding: EdgeInsets.only(top: 4),
-                                    child: SizedBox(),
-                                  )
-                                : const LinearProgressIndicator(),
-                          ),
-                        ),
-                      ),
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: _Fab(
-                        key: _fabKey,
-                        scrollPos: widget.updateScrollPosition,
-                        controller: controller,
-                        selectionGlue: widget.selectionGlue,
-                        systemNavigationInsets: widget.systemNavigationInsets,
-                        addFabPadding: widget.addFabPadding,
-                        footer: widget.footer,
-                      ),
-                    ),
-                  ],
-                ))
-              ],
-            ),
-          ));
-
   @override
   Widget build(BuildContext context) {
     final bindings = _makeBindings(context);
     segTranslation = null;
 
-    return widget.registerNotifiers == null
-        ? _makeBody(context, bindings)
-        : widget.registerNotifiers!(_makeBody(context, bindings));
+    final child = _BodyWrapping(
+      bindings: bindings,
+      mainFocus: widget.mainFocus,
+      pageName: widget.description.keybindsDescription,
+      children: [
+        RefreshIndicator(
+          onRefresh: _state.onRefresh,
+          child: Scrollbar(
+            interactive: false,
+            thumbVisibility:
+                Platform.isAndroid || Platform.isIOS ? false : true,
+            thickness: 6,
+            controller: controller,
+            child: CustomScrollView(
+              controller: controller,
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                if (widget.description.showAppBar)
+                  FocusNotifier(
+                    notifier: widget.searchWidget?.focus,
+                    focusMain: () {
+                      widget.mainFocus.requestFocus();
+                    },
+                    child: _AppBar(
+                      leading: _makeLeading(context),
+                      title: _makeTitle(context),
+                      actions: _makeActions(context),
+                      isSelecting: selection.selected.isNotEmpty,
+                      bottomWidget: widget.description.bottomWidget != null
+                          ? widget.description.bottomWidget!
+                          : _BottomWidget<T>(
+                              preferredSize: const Size.fromHeight(4),
+                              child: const Padding(
+                                padding: EdgeInsets.only(top: 4),
+                                child: SizedBox(),
+                              ),
+                            ),
+                    ),
+                  ),
+                if (!_state.isRefreshing &&
+                    _state.cellCount == 0 &&
+                    !widget.description.ignoreEmptyWidgetOnNoContent)
+                  SliverFillRemaining(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          EmptyWidget(
+                            error: _state.refreshingError == null
+                                ? null
+                                : EmptyWidget.unwrapDioError(
+                                    _state.refreshingError),
+                          ),
+                          if (widget.onError != null &&
+                              _state.refreshingError != null)
+                            widget.onError!(_state.refreshingError!),
+                        ],
+                      ),
+                    ),
+                  ),
+                ...widget.description.layout(context, this),
+                _WrapPadding<T>(
+                  systemNavigationInsets: widget.systemNavigationInsets.bottom,
+                  footer: widget.footer,
+                  selectionGlue: widget.selectionGlue,
+                  child: null,
+                )
+              ],
+            ),
+          ),
+        ),
+        if (widget.footer != null)
+          Align(
+            alignment: Alignment.bottomLeft,
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: widget.systemNavigationInsets.bottom,
+              ),
+              child: widget.footer!,
+            ),
+          ),
+        if (!widget.description.showAppBar)
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding:
+                  EdgeInsets.only(bottom: widget.systemNavigationInsets.bottom),
+              child: PreferredSize(
+                preferredSize: const Size.fromHeight(4),
+                child: !_state.isRefreshing
+                    ? const Padding(
+                        padding: EdgeInsets.only(top: 4),
+                        child: SizedBox(),
+                      )
+                    : const LinearProgressIndicator(),
+              ),
+            ),
+          ),
+        Align(
+          alignment: Alignment.bottomRight,
+          child: _Fab(
+            key: _fabKey,
+            scrollPos: widget.updateScrollPosition,
+            controller: controller,
+            selectionGlue: widget.selectionGlue,
+            systemNavigationInsets: widget.systemNavigationInsets,
+            addFabPadding: widget.addFabPadding,
+            footer: widget.footer,
+          ),
+        ),
+      ],
+    );
+
+    return _MutationInterfaceProvider(
+      state: mutationInterface,
+      child: widget.registerNotifiers == null
+          ? child
+          : widget.registerNotifiers!(child),
+    );
+  }
+}
+
+class _AppBar<T extends Cell> extends StatelessWidget {
+  final bool isSelecting;
+  final Widget? title;
+  final Widget? leading;
+  final List<Widget> actions;
+  final PreferredSizeWidget? bottomWidget;
+
+  const _AppBar({
+    super.key,
+    required this.actions,
+    required this.bottomWidget,
+    required this.isSelecting,
+    required this.leading,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverAppBar(
+      backgroundColor:
+          Theme.of(context).colorScheme.background.withOpacity(0.95),
+      automaticallyImplyLeading: false,
+      actions: actions,
+      centerTitle: true,
+      title: title,
+      leading: leading,
+      pinned: true,
+      stretch: true,
+      snap: !isSelecting,
+      floating: !isSelecting,
+      bottom: bottomWidget,
+    );
+  }
+}
+
+class _BottomWidget<T extends Cell> extends PreferredSize {
+  const _BottomWidget({
+    required super.preferredSize,
+    required super.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return !_MutationInterfaceProvider.of<T>(context).isRefreshing
+        ? super.build(context)
+        : const LinearProgressIndicator();
+  }
+}
+
+class _MutationInterfaceProvider<T extends Cell> extends InheritedWidget {
+  final GridMutationInterface<T> state;
+
+  const _MutationInterfaceProvider({
+    super.key,
+    required this.state,
+    required super.child,
+  });
+
+  static GridMutationInterface<T> of<T extends Cell>(BuildContext context) {
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<_MutationInterfaceProvider<T>>();
+
+    return widget!.state;
+  }
+
+  @override
+  bool updateShouldNotify(_MutationInterfaceProvider<T> oldWidget) =>
+      state != oldWidget.state;
+}
+
+class _BodyWrapping extends StatelessWidget {
+  final FocusNode mainFocus;
+  final String pageName;
+  final Map<SingleActivatorDescription, void Function()> bindings;
+  final List<Widget> children;
+
+  const _BodyWrapping({
+    super.key,
+    required this.bindings,
+    required this.mainFocus,
+    required this.pageName,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CallbackShortcuts(
+      bindings: {
+        ...bindings,
+        ...keybindDescription(
+          context,
+          describeKeys(bindings),
+          pageName,
+          () {
+            mainFocus.requestFocus();
+          },
+        )
+      },
+      child: Focus(
+        autofocus: true,
+        focusNode: mainFocus,
+        child: Column(
+          children: [
+            Expanded(
+                child: Stack(
+              children: children,
+            ))
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -18,7 +18,6 @@ import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/display_quality.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
-import 'package:gallery/src/widgets/restart_widget.dart';
 
 import '../../db/tags/post_tags.dart';
 import '../../db/schemas/settings/settings.dart';
