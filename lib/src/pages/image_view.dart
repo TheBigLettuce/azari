@@ -23,6 +23,7 @@ import 'package:gallery/src/widgets/image_view/wrap_image_view_theme.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/notifiers/focus.dart';
+import 'package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart';
 import 'package:logging/logging.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -129,6 +130,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   bool refreshing = false;
 
   Map<ShortcutActivator, void Function()>? bindings;
+
+  int _incr = 0;
 
   @override
   void initState() {
@@ -320,100 +323,113 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     widget.download!(currentPage);
   }
 
+  void _incrTiles() {
+    _incr += 1;
+
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
-    return WrapImageViewNotifiers<T>(
-      hardRefresh: hardRefresh,
-      mainFocus: mainFocus,
-      key: wrapNotifiersKey,
-      onTagRefresh: _onTagRefresh,
-      currentCell: currentCell,
-      registerNotifiers: widget.registerNotifiers,
-      child: WrapImageViewTheme(
-        key: wrapThemeKey,
-        currentPalette: currentPalette,
-        previousPallete: previousPallete,
-        child: WrapImageViewSkeleton<T>(
-            scaffoldKey: key,
-            bindings: bindings ?? {},
-            currentPalette: currentPalette,
-            endDrawer: widget.ignoreEndDrawer
-                ? null
-                : Builder(builder: (context) {
-                    FocusNotifier.of(context);
-
-                    final addInfo = currentCell.addInfo(context, () {
-                      widget.updateTagScrollPos(
-                          scrollController.offset, currentPage);
-                    },
-                        AddInfoColorData(
-                          borderColor:
-                              Theme.of(context).colorScheme.outlineVariant,
-                          foregroundColor: currentPalette
-                                  ?.mutedColor?.bodyTextColor
-                                  .harmonizeWith(
-                                      Theme.of(context).colorScheme.primary) ??
-                              kListTileColorInInfo,
-                          systemOverlayColor: widget.systemOverlayRestoreColor,
-                        ));
-
-                    return addInfo == null || addInfo.isEmpty
-                        ? const Drawer(child: EmptyWidget())
-                        : ImageViewEndDrawer(
-                            scrollController: scrollController,
-                            children: addInfo,
-                          );
-                  }),
-            bottomAppBar: ImageViewBottomAppBar(
-                textController: noteTextController,
-                addNote: () => noteListKey.currentState
-                    ?.addNote(currentCell, currentPalette),
-                showAddNoteButton: widget.noteInterface != null,
-                children: widget.addIcons
-                        ?.call(currentCell)
-                        .map(
-                          (e) => WrapGridActionButton(e.icon, () {
-                            e.onPress([currentCell]);
-                          }, false,
-                              followColorTheme: true,
-                              color: e.color,
-                              play: e.play,
-                              onLongPress: e.onLongPress == null
-                                  ? null
-                                  : () => e.onLongPress!([currentCell]),
-                              backgroundColor: e.backgroundColor,
-                              animate: e.animate,
-                              showOnlyWhenSingle: false),
-                        )
-                        .toList() ??
-                    const []),
-            mainFocus: mainFocus,
-            child: ImageViewBody(
-              onPageChanged: _onPageChanged,
-              onLongPress: _onLongPress,
-              pageController: controller,
-              notes: widget.noteInterface == null
+    return ImageViewInfoTilesRefreshNotifier(
+      count: _incr,
+      incr: _incrTiles,
+      child: WrapImageViewNotifiers<T>(
+        hardRefresh: hardRefresh,
+        mainFocus: mainFocus,
+        key: wrapNotifiersKey,
+        onTagRefresh: _onTagRefresh,
+        currentCell: currentCell,
+        registerNotifiers: widget.registerNotifiers,
+        child: WrapImageViewTheme(
+          key: wrapThemeKey,
+          currentPalette: currentPalette,
+          previousPallete: previousPallete,
+          child: WrapImageViewSkeleton<T>(
+              scaffoldKey: key,
+              bindings: bindings ?? {},
+              currentPalette: currentPalette,
+              endDrawer: widget.ignoreEndDrawer
                   ? null
-                  : NoteList<T>(
-                      key: noteListKey,
-                      noteInterface: widget.noteInterface!,
-                      onEmptyNotes: widget.onEmptyNotes,
-                      backgroundColor: currentPalette?.dominantColor?.color
-                              .harmonizeWith(
-                                  Theme.of(context).colorScheme.primary) ??
-                          Colors.black,
-                    ),
-              loadingBuilder: (context, event, idx) => loadingBuilder(context,
-                  event, idx, currentPage, wrapNotifiersKey, currentPalette),
-              itemCount: cellCount,
-              onTap: _onTap,
-              builder: galleryBuilder,
-              decoration: BoxDecoration(
-                color: currentPalette?.mutedColor?.color
-                    .harmonizeWith(Theme.of(context).colorScheme.primary)
-                    .withOpacity(0.7),
-              ),
-            )),
+                  : Builder(builder: (context) {
+                      FocusNotifier.of(context);
+                      ImageViewInfoTilesRefreshNotifier.of(context);
+
+                      final addInfo = currentCell.addInfo(context, () {
+                        widget.updateTagScrollPos(
+                            scrollController.offset, currentPage);
+                      },
+                          AddInfoColorData(
+                            borderColor:
+                                Theme.of(context).colorScheme.outlineVariant,
+                            foregroundColor: currentPalette
+                                    ?.mutedColor?.bodyTextColor
+                                    .harmonizeWith(Theme.of(context)
+                                        .colorScheme
+                                        .primary) ??
+                                kListTileColorInInfo,
+                            systemOverlayColor:
+                                widget.systemOverlayRestoreColor,
+                          ));
+
+                      return addInfo == null || addInfo.isEmpty
+                          ? const Drawer(child: EmptyWidget())
+                          : ImageViewEndDrawer(
+                              scrollController: scrollController,
+                              children: addInfo,
+                            );
+                    }),
+              bottomAppBar: ImageViewBottomAppBar(
+                  textController: noteTextController,
+                  addNote: () => noteListKey.currentState
+                      ?.addNote(currentCell, currentPalette),
+                  showAddNoteButton: widget.noteInterface != null,
+                  children: widget.addIcons
+                          ?.call(currentCell)
+                          .map(
+                            (e) => WrapGridActionButton(e.icon, () {
+                              e.onPress([currentCell]);
+                            }, false,
+                                followColorTheme: true,
+                                color: e.color,
+                                play: e.play,
+                                onLongPress: e.onLongPress == null
+                                    ? null
+                                    : () => e.onLongPress!([currentCell]),
+                                backgroundColor: e.backgroundColor,
+                                animate: e.animate,
+                                showOnlyWhenSingle: false),
+                          )
+                          .toList() ??
+                      const []),
+              mainFocus: mainFocus,
+              child: ImageViewBody(
+                onPageChanged: _onPageChanged,
+                onLongPress: _onLongPress,
+                pageController: controller,
+                notes: widget.noteInterface == null
+                    ? null
+                    : NoteList<T>(
+                        key: noteListKey,
+                        noteInterface: widget.noteInterface!,
+                        onEmptyNotes: widget.onEmptyNotes,
+                        backgroundColor: currentPalette?.dominantColor?.color
+                                .harmonizeWith(
+                                    Theme.of(context).colorScheme.primary) ??
+                            Colors.black,
+                      ),
+                loadingBuilder: (context, event, idx) => loadingBuilder(context,
+                    event, idx, currentPage, wrapNotifiersKey, currentPalette),
+                itemCount: cellCount,
+                onTap: _onTap,
+                builder: galleryBuilder,
+                decoration: BoxDecoration(
+                  color: currentPalette?.mutedColor?.color
+                      .harmonizeWith(Theme.of(context).colorScheme.primary)
+                      .withOpacity(0.7),
+                ),
+              )),
+        ),
       ),
     );
   }

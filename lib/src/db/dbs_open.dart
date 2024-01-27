@@ -39,7 +39,12 @@ abstract class DbsOpen {
   }
 
   static Isar localTags() => Isar.openSync(
-        [LocalTagsSchema, LocalTagDictionarySchema, DirectoryTagSchema],
+        [
+          LocalTagsSchema,
+          LocalTagDictionarySchema,
+          DirectoryTagSchema,
+          PinnedTagSchema,
+        ],
         directory: _dbs.directory,
         inspector: false,
         name: "localTags",

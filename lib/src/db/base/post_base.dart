@@ -10,6 +10,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/db/schemas/booru/note_booru.dart';
@@ -217,10 +218,10 @@ class PostBase implements Cell {
           textColor: colors.foregroundColor,
           title: Text(AppLocalizations.of(context)!.sourceFileInfoPage),
           subtitle: Text(sourceUrl),
-          onTap: sourceUrl.isEmpty
-              ? null
-              : () => launchUrl(Uri.parse(sourceUrl),
-                  mode: LaunchMode.externalApplication),
+          onTap: sourceUrl.isNotEmpty && Uri.tryParse(sourceUrl) != null
+              ? () => launchUrl(Uri.parse(sourceUrl),
+                  mode: LaunchMode.externalApplication)
+              : null,
         ),
         ListTile(
           textColor: colors.foregroundColor,
@@ -345,11 +346,22 @@ class PostBase implements Cell {
     void Function(String)? addExcluded,
   }) {
     final data = FilterNotifier.maybeOf(context);
+    final pinnedTags = <String>[];
     final List<String> postTags;
     if (supplyTags == null) {
       postTags = PostTags.g.getTagsPost(filename);
     } else {
       postTags = supplyTags;
+    }
+
+    final tags = <String>[];
+
+    for (final e in postTags) {
+      if (PinnedTag.isPinned(e)) {
+        pinnedTags.add(e);
+      } else {
+        tags.add(e);
+      }
     }
 
     return [
@@ -359,8 +371,16 @@ class PostBase implements Cell {
         ),
       if (postTags.isNotEmpty && data != null)
         SearchTextField(data, filename, showDeleteButton, colors),
-      ...makeTags(context, extra, colors, postTags, temporary ? "" : filename,
-          launchGrid: launchGrid, addExcluded: addExcluded)
+      ...makeTags(
+        context,
+        extra,
+        colors,
+        tags,
+        temporary ? "" : filename,
+        launchGrid: launchGrid,
+        addExcluded: addExcluded,
+        pinnedTags: pinnedTags,
+      )
     ];
   }
 
