@@ -51,7 +51,7 @@ class ImageViewStatistics {
 
 class ImageView<T extends Cell> extends StatefulWidget {
   final int startingCell;
-  final T Function(int i) getCell;
+  final T? Function(int i) getCell;
   final int cellCount;
   final void Function(int post) scrollUntill;
   final void Function(double? pos, int? selectedCell) updateTagScrollPos;
@@ -121,7 +121,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   late final PlatformFullscreensPlug fullscreenPlug =
       choosePlatformFullscreenPlug(widget.systemOverlayRestoreColor);
 
-  late T currentCell;
   late int currentPage = widget.startingCell;
   late int cellCount = widget.cellCount;
 
@@ -141,16 +140,16 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     WakelockPlus.enable();
 
+    loadCells(currentPage, cellCount);
+
     WidgetsBinding.instance.scheduleFrameCallback((_) {
       if (widget.infoScrollOffset != null) {
         key.currentState?.openEndDrawer();
       }
 
-      fullscreenPlug.setTitle(currentCell.alias(true));
+      fullscreenPlug.setTitle(drawCell(currentPage).alias(true));
       _loadNext(widget.startingCell);
     });
-
-    currentCell = widget.getCell(widget.startingCell);
 
     widget.updateTagScrollPos(null, widget.startingCell);
 
@@ -166,12 +165,11 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
             AppLocalizations.of(context)!.imageViewPageName, widget.focusMain)
       };
 
-      noteListKey.currentState?.loadNotes(currentCell);
+      noteListKey.currentState?.loadNotes(drawCell(currentPage));
 
       setState(() {});
 
-      extractPalette(context, currentCell, key, scrollController, currentPage,
-          _resetAnimation);
+      refreshPalette();
     });
   }
 
@@ -192,8 +190,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   }
 
   void refreshPalette() {
-    extractPalette(context, currentCell, key, scrollController, currentPage,
-        _resetAnimation);
+    extractPalette(context, widget.getCell(currentPage)!, key, scrollController,
+        currentPage, _resetAnimation);
   }
 
   void _resetAnimation() {
@@ -212,9 +210,10 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   }
 
   void refreshImage() {
-    var i = currentCell.fileDisplay();
-    if (i is NetImage) {
-      PaintingBinding.instance.imageCache.evict(i.provider);
+    final content = drawCell(currentPage).content();
+
+    if (content is NetImage) {
+      PaintingBinding.instance.imageCache.evict(content.provider);
 
       hardRefresh();
     }
@@ -233,27 +232,28 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     if (cellCount == 1) {
       final newCell = widget.getCell(0);
-      if (newCell.isarId == currentCell.isarId) {
+      if (newCell == null) {
+        return;
+      }
+
+      if (newCell.isarId == drawCell(currentPage).isarId) {
         return;
       }
       controller.previousPage(duration: 200.ms, curve: Easing.standard);
 
-      currentCell = newCell;
+      loadCells(0, cellCount);
       hardRefresh();
     } else if (currentPage > cellCount - 1) {
       controller.previousPage(duration: 200.ms, curve: Easing.standard);
-    } else if (widget
-            .getCell(currentPage)
-            .getCellData(false, context: context)
-            .thumb !=
-        currentCell.getCellData(false, context: context).thumb) {
+    } else if (widget.getCell(currentPage)!.uniqueKey() !=
+        drawCell(currentPage, true).uniqueKey()) {
       if (currentPage == 0) {
         controller.nextPage(duration: 200.ms, curve: Easing.standard);
       } else {
         controller.previousPage(duration: 200.ms, curve: Easing.standard);
       }
     } else {
-      currentCell = widget.getCell(currentPage);
+      loadCells(currentPage, cellCount);
     }
 
     setState(() {});
@@ -301,16 +301,18 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     widget.scrollUntill(index);
 
-    final c = widget.getCell(index);
+    // final c = widget.getCell(index);
+    loadCells(index, cellCount);
+
+    final c = drawCell(index);
 
     fullscreenPlug.setTitle(c.alias(true));
 
     setState(() {
-      currentCell = c;
-      noteListKey.currentState?.loadNotes(currentCell);
+      noteListKey.currentState?.loadNotes(c);
 
-      extractPalette(context, currentCell, key, scrollController, currentPage,
-          _resetAnimation);
+      extractPalette(context, widget.getCell(currentPage)!, key,
+          scrollController, currentPage, _resetAnimation);
     });
   }
 
@@ -339,7 +341,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
         mainFocus: mainFocus,
         key: wrapNotifiersKey,
         onTagRefresh: _onTagRefresh,
-        currentCell: currentCell,
+        currentCell: drawCell(currentPage),
         registerNotifiers: widget.registerNotifiers,
         child: WrapImageViewTheme(
           key: wrapThemeKey,
@@ -355,22 +357,24 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                       FocusNotifier.of(context);
                       ImageViewInfoTilesRefreshNotifier.of(context);
 
-                      final addInfo = currentCell.addInfo(context, () {
+                      final addInfo =
+                          drawCell(currentPage).addInfo(context, () {
                         widget.updateTagScrollPos(
                             scrollController.offset, currentPage);
                       },
-                          AddInfoColorData(
-                            borderColor:
-                                Theme.of(context).colorScheme.outlineVariant,
-                            foregroundColor: currentPalette
-                                    ?.mutedColor?.bodyTextColor
-                                    .harmonizeWith(Theme.of(context)
-                                        .colorScheme
-                                        .primary) ??
-                                kListTileColorInInfo,
-                            systemOverlayColor:
-                                widget.systemOverlayRestoreColor,
-                          ));
+                              AddInfoColorData(
+                                borderColor: Theme.of(context)
+                                    .colorScheme
+                                    .outlineVariant,
+                                foregroundColor: currentPalette
+                                        ?.mutedColor?.bodyTextColor
+                                        .harmonizeWith(Theme.of(context)
+                                            .colorScheme
+                                            .primary) ??
+                                    kListTileColorInInfo,
+                                systemOverlayColor:
+                                    widget.systemOverlayRestoreColor,
+                              ));
 
                       return addInfo == null || addInfo.isEmpty
                           ? const Drawer(child: EmptyWidget())
@@ -382,20 +386,21 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
               bottomAppBar: ImageViewBottomAppBar(
                   textController: noteTextController,
                   addNote: () => noteListKey.currentState
-                      ?.addNote(currentCell, currentPalette),
+                      ?.addNote(drawCell(currentPage), currentPalette),
                   showAddNoteButton: widget.noteInterface != null,
                   children: widget.addIcons
-                          ?.call(currentCell)
+                          ?.call(drawCell(currentPage))
                           .map(
                             (e) => WrapGridActionButton(e.icon, () {
-                              e.onPress([currentCell]);
+                              e.onPress([drawCell(currentPage)]);
                             }, false,
                                 followColorTheme: true,
                                 color: e.color,
                                 play: e.play,
                                 onLongPress: e.onLongPress == null
                                     ? null
-                                    : () => e.onLongPress!([currentCell]),
+                                    : () =>
+                                        e.onLongPress!([drawCell(currentPage)]),
                                 backgroundColor: e.backgroundColor,
                                 animate: e.animate,
                                 showOnlyWhenSingle: false),
@@ -418,8 +423,14 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                                     Theme.of(context).colorScheme.primary) ??
                             Colors.black,
                       ),
-                loadingBuilder: (context, event, idx) => loadingBuilder(context,
-                    event, idx, currentPage, wrapNotifiersKey, currentPalette),
+                loadingBuilder: (context, event, idx) => loadingBuilder(
+                    context,
+                    event,
+                    idx,
+                    currentPage,
+                    wrapNotifiersKey,
+                    currentPalette,
+                    drawCell),
                 itemCount: cellCount,
                 onTap: _onTap,
                 builder: galleryBuilder,

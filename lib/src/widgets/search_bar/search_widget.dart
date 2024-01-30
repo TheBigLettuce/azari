@@ -65,6 +65,8 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
         widget.instance.searchFocus,
         // showSearch: !Platform.isAndroid,
         roundBorders: false,
+        swapSearchIcon: true,
+
         // ignoreFocusNotifier: Platform.isAndroid,
         searchCount: widget
             .instance._state.gridKey.currentState?.mutationInterface.cellCount,
@@ -85,6 +87,7 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
       FilteringMode.tag || FilteringMode.tagReversed => _autocompleteWidget(),
       FilteringMode() => makeSearchBar(
           context,
+          swapSearchIcon: true,
           focusNode: widget.instance.searchFocus,
           addItems: _addItems(),
           count: widget.instance._state.gridKey.currentState?.mutationInterface

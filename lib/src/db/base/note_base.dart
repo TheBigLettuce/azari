@@ -5,9 +5,20 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'package:flutter/material.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/cell/contentable.dart';
+import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:isar/isar.dart';
 
-class NoteBase {
+class NoteBase implements Cell {
+  NoteBase(
+    this.text,
+    this.time, {
+    required this.backgroundColor,
+    required this.textColor,
+  });
+
   @Index(caseSensitive: false, type: IndexType.hash)
   final List<String> text;
   @Index()
@@ -16,6 +27,39 @@ class NoteBase {
   final int? backgroundColor;
   final int? textColor;
 
-  const NoteBase(this.text, this.time,
-      {required this.backgroundColor, required this.textColor});
+  @override
+  List<Widget>? addInfo(BuildContext context, extra, AddInfoColorData colors) {
+    return null;
+  }
+
+  @override
+  List<(IconData, void Function()?)>? addStickers(BuildContext context) {
+    return null;
+  }
+
+  @override
+  String alias(bool isList) {
+    return "";
+  }
+
+  @override
+  String? fileDownloadUrl() => null;
+
+  @override
+  Id? isarId;
+
+  @override
+  List<Widget>? addButtons(BuildContext context) => null;
+
+  @override
+  Contentable content() => const EmptyContent();
+
+  @override
+  List<Sticker> stickers(BuildContext context) => const [];
+
+  @override
+  ImageProvider<Object>? thumbnail() => null;
+
+  @override
+  Key uniqueKey() => throw UnimplementedError();
 }

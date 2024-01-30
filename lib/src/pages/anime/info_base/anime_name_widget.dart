@@ -8,11 +8,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/widgets/menu_wrapper.dart';
 
 class AnimeNameWidget extends StatelessWidget {
   final AnimeEntry entry;
@@ -23,11 +23,8 @@ class AnimeNameWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget title() => Column(
           children: [
-            GestureDetector(
-              onLongPress: () {
-                Clipboard.setData(ClipboardData(text: entry.title));
-                HapticFeedback.mediumImpact();
-              },
+            MenuWrapper(
+              title: entry.title,
               child: Text(
                 entry.title,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(

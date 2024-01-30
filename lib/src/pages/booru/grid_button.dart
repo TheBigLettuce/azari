@@ -19,7 +19,8 @@ GridSettingsButton gridButton(Settings settings, GridSettingsBooru gridSettings,
     selectHideName: null,
     safeMode: currentSafeMode ?? settings.safeMode,
     selectGridColumn: (columns) => gridSettings.copy(columns: columns).save(),
-    selectListView: (listView) => gridSettings.copy(listView: listView).save(),
+    selectGridLayout: (layoutType) =>
+        gridSettings.copy(layoutType: layoutType).save(),
     selectRatio: (ratio) => gridSettings.copy(aspectRatio: ratio).save(),
   );
 }

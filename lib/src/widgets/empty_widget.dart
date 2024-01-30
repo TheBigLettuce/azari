@@ -13,8 +13,9 @@ import 'choose_kaomoji.dart';
 
 class EmptyWidget extends StatelessWidget {
   final String? error;
+  final bool mini;
 
-  const EmptyWidget({super.key, this.error});
+  const EmptyWidget({super.key, this.error, this.mini = false});
 
   static String unwrapDioError(Object? error) {
     if (error == null) {
@@ -44,8 +45,8 @@ class EmptyWidget extends StatelessWidget {
         TextSpan(children: [
           TextSpan(
             text: "${chooseKaomoji()}\n",
-            style: const TextStyle(
-              fontSize: 14 * 2,
+            style: TextStyle(
+              fontSize: mini ? 14 : 14 * 2,
             ),
           ),
           TextSpan(
@@ -54,12 +55,18 @@ class EmptyWidget extends StatelessWidget {
                   : "${AppLocalizations.of(context)!.error}: $error",
               style: TextStyle(
                   fontStyle: FontStyle.italic,
-                  fontSize: error != null ? 14 * 2 : null)),
+                  fontSize: error != null
+                      ? mini
+                          ? 14
+                          : 14 * 2
+                      : null)),
         ]),
         maxLines: error != null ? 4 : 2,
         textAlign: TextAlign.center,
         style: TextStyle(
-            color: Theme.of(context).colorScheme.secondary.withOpacity(0.5)),
+          color: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+          fontSize: mini ? 12 : null,
+        ),
       ),
     );
   }

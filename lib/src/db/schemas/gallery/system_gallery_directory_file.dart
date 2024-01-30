@@ -7,8 +7,10 @@
 
 import 'dart:developer';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/post_base.dart';
 import 'package:gallery/src/db/schemas/gallery/favorite_media.dart';
@@ -23,11 +25,11 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/pages/settings/global_progress.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/plugs/notifications.dart';
-import 'package:gallery/src/interfaces/cell/cell_data.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
+import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:transparent_image/transparent_image.dart';
@@ -44,12 +46,40 @@ import '../settings/settings.dart';
 part 'system_gallery_directory_file.g.dart';
 
 @collection
-class SystemGalleryDirectoryFile implements Cell {
+class SystemGalleryDirectoryFile extends Cell with CachedCellValuesFilesMixin {
+  SystemGalleryDirectoryFile({
+    required this.id,
+    required this.bucketId,
+    required this.name,
+    required this.isVideo,
+    required this.isGif,
+    required this.size,
+    required this.height,
+    required this.notesFlat,
+    required this.isDuplicate,
+    required this.isFavorite,
+    required this.width,
+    required this.tagsFlat,
+    required this.isOriginal,
+    required this.lastModified,
+    required this.originalUri,
+  }) {
+    initValues(ValueKey(id), (id, isVideo), () {
+      final size = Size(width.toDouble(), height.toDouble());
+
+      if (isVideo) {
+        return AndroidVideo(uri: originalUri, size: size);
+      }
+
+      if (isGif) {
+        return AndroidGif(uri: originalUri, size: size);
+      }
+
+      return AndroidImage(uri: originalUri, size: size);
+    });
+  }
   @override
   Id? isarId;
-
-  @override
-  Key uniqueKey() => ValueKey(id);
 
   @Index(unique: true)
   final int id;
@@ -78,24 +108,6 @@ class SystemGalleryDirectoryFile implements Cell {
   final String tagsFlat;
   final bool isDuplicate;
   final bool isFavorite;
-
-  SystemGalleryDirectoryFile({
-    required this.id,
-    required this.bucketId,
-    required this.name,
-    required this.isVideo,
-    required this.isGif,
-    required this.size,
-    required this.height,
-    required this.notesFlat,
-    required this.isDuplicate,
-    required this.isFavorite,
-    required this.width,
-    required this.tagsFlat,
-    required this.isOriginal,
-    required this.lastModified,
-    required this.originalUri,
-  });
 
   @override
   String alias(bool isList) => name;
@@ -249,51 +261,54 @@ class SystemGalleryDirectoryFile implements Cell {
       extra,
       colors,
       [
-        addInfoTile(
-            colors: colors,
-            title: AppLocalizations.of(context)!.nameTitle,
-            subtitle: name,
-            trailing: plug.temporary
-                ? null
-                : IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          DialogRoute(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: Text(AppLocalizations.of(context)!
-                                    .enterNewNameTitle),
-                                content: TextFormField(
-                                  autofocus: true,
-                                  initialValue: name,
-                                  autovalidateMode: AutovalidateMode.always,
-                                  decoration:
-                                      const InputDecoration(errorMaxLines: 2),
-                                  validator: (value) {
-                                    if (value == null) {
-                                      return AppLocalizations.of(context)!
-                                          .valueIsNull;
-                                    }
-                                    try {
-                                      PostTags.g.dissassembleFilename(value);
-                                      return null;
-                                    } catch (e) {
-                                      return e.toString();
-                                    }
-                                  },
-                                  onFieldSubmitted: (value) {
-                                    PlatformFunctions.rename(
-                                        originalUri, value);
-                                    Navigator.pop(context);
-                                  },
-                                ),
-                              );
-                            },
-                          ));
-                    },
-                    icon: const Icon(Icons.edit))),
+        MenuWrapper(
+          title: name,
+          child: addInfoTile(
+              colors: colors,
+              title: AppLocalizations.of(context)!.nameTitle,
+              subtitle: name,
+              trailing: plug.temporary
+                  ? null
+                  : IconButton(
+                      onPressed: () {
+                        Navigator.push(
+                            context,
+                            DialogRoute(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: Text(AppLocalizations.of(context)!
+                                      .enterNewNameTitle),
+                                  content: TextFormField(
+                                    autofocus: true,
+                                    initialValue: name,
+                                    autovalidateMode: AutovalidateMode.always,
+                                    decoration:
+                                        const InputDecoration(errorMaxLines: 2),
+                                    validator: (value) {
+                                      if (value == null) {
+                                        return AppLocalizations.of(context)!
+                                            .valueIsNull;
+                                      }
+                                      try {
+                                        PostTags.g.dissassembleFilename(value);
+                                        return null;
+                                      } catch (e) {
+                                        return e.toString();
+                                      }
+                                    },
+                                    onFieldSubmitted: (value) {
+                                      PlatformFunctions.rename(
+                                          originalUri, value);
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                );
+                              },
+                            ));
+                      },
+                      icon: const Icon(Icons.edit))),
+        ),
         addInfoTile(
             colors: colors,
             title: AppLocalizations.of(context)!.dateModified,
@@ -321,16 +336,18 @@ class SystemGalleryDirectoryFile implements Cell {
       showDeleteButton: true,
       launchGrid: plug.temporary
           ? null
-          : (t) {
+          : (context, t, [safeMode]) {
               try {
                 final res = PostTags.g.dissassembleFilename(name);
                 final tagManager = TagManager.fromEnum(res.booru);
 
                 tagManager.onTagPressed(
-                    context,
-                    Tag(tag: t, isExcluded: false, time: DateTime.now()),
-                    res.booru,
-                    false);
+                  context,
+                  Tag(tag: t, isExcluded: false, time: DateTime.now()),
+                  res.booru,
+                  false,
+                  overrideSafeMode: safeMode,
+                );
               } catch (e) {
                 log("launching local tag random booru",
                     level: Level.SEVERE.value, error: e);
@@ -340,26 +357,11 @@ class SystemGalleryDirectoryFile implements Cell {
   }
 
   @override
-  Contentable fileDisplay() {
-    final size = Size(width.toDouble(), height.toDouble());
-
-    if (isVideo) {
-      return AndroidVideo(uri: originalUri, size: size);
-    }
-
-    if (isGif) {
-      return AndroidGif(uri: originalUri, size: size);
-    }
-
-    return AndroidImage(uri: originalUri, size: size);
-  }
+  String? fileDownloadUrl() => null;
 
   @override
-  String fileDownloadUrl() => "";
-
-  @override
-  CellData getCellData(bool isList, {required BuildContext context}) {
-    final stickers = <Sticker>[
+  List<Sticker> stickers(BuildContext context) {
+    return [
       ...injectedStickers,
       ..._stickers(context).map((e) => Sticker(e.$1)),
       if (isFavorite)
@@ -372,9 +374,6 @@ class SystemGalleryDirectoryFile implements Cell {
       if (notesFlat.isNotEmpty)
         const Sticker(Icons.sticky_note_2_outlined, right: true)
     ];
-
-    return CellData(
-        thumb: ThumbnailProvider(id, isVideo), name: name, stickers: stickers);
   }
 
   Thumbnail? getThumbnail() {
@@ -578,47 +577,103 @@ Future<void> loadNetworkThumb(String filename, int id,
   GlobalProgress.unlockThumbLoading();
 }
 
-class ThumbnailProvider extends ImageProvider {
+final _thumbLoadingStatus = <int, Future<ThumbId>>{};
+
+class ThumbnailProvider extends ImageProvider<ThumbnailProvider> {
   final int id;
   final bool tryPinned;
 
   @override
-  Future<Object> obtainKey(ImageConfiguration configuration) async {
-    final thumb = Dbs.g.thumbnail!.thumbnails.getSync(id);
-    if (thumb != null) {
-      if (thumb.path.isEmpty || thumb.differenceHash == 0) {
-        return MemoryImage(kTransparentImage);
-      }
-      return FileImage(File(thumb.path));
-    }
-
-    if (tryPinned) {
-      final thumb = Dbs.g.thumbnail!.pinnedThumbnails.getSync(id);
-      if (thumb != null && thumb.differenceHash != 0 && thumb.path.isNotEmpty) {
-        return FileImage(File(thumb.path));
-      }
-    }
-
-    final cachedThumb = await PlatformFunctions.getCachedThumb(id);
-    Thumbnail.addAll([cachedThumb]);
-
-    if (cachedThumb.path.isEmpty || cachedThumb.differenceHash == 0) {
-      return MemoryImage(kTransparentImage);
-    }
-
-    return FileImage(File(cachedThumb.path));
+  Future<ThumbnailProvider> obtainKey(ImageConfiguration configuration) {
+    return SynchronousFuture(this);
   }
 
   @override
-  ImageStreamCompleter loadImage(Object key, ImageDecoderCallback decode) {
-    if (key is MemoryImage) {
-      return key.loadImage(key, decode);
-    } else if (key is FileImage) {
-      // ignore: invalid_use_of_protected_member
-      return key.loadImage(key, decode);
+  ImageStreamCompleter loadImage(
+      ThumbnailProvider key, ImageDecoderCallback decode) {
+    return MultiFrameImageStreamCompleter(
+      codec: _loadAsync(key, decode),
+      scale: 1,
+    );
+  }
+
+  Future<Codec> _loadAsync(
+      ThumbnailProvider key, ImageDecoderCallback decode) async {
+    Future<File?> setFile() async {
+      final future = _thumbLoadingStatus[id];
+      if (future != null) {
+        final cachedThumb = await future;
+
+        if (cachedThumb.path.isEmpty || cachedThumb.differenceHash == 0) {
+          return null;
+        }
+
+        return File(cachedThumb.path);
+      }
+
+      final thumb = Dbs.g.thumbnail!.thumbnails.getSync(id);
+      if (thumb != null) {
+        if (thumb.path.isEmpty || thumb.differenceHash == 0) {
+          return null;
+        }
+
+        return File(thumb.path);
+      }
+
+      if (tryPinned) {
+        final thumb = Dbs.g.thumbnail!.pinnedThumbnails.getSync(id);
+        if (thumb != null &&
+            thumb.differenceHash != 0 &&
+            thumb.path.isNotEmpty) {
+          return File(thumb.path);
+        }
+      }
+
+      final future2 = _thumbLoadingStatus[id];
+      if (future2 != null) {
+        final cachedThumb = await future2;
+
+        if (cachedThumb.path.isEmpty || cachedThumb.differenceHash == 0) {
+          return null;
+        }
+
+        return File(cachedThumb.path);
+      }
+
+      _thumbLoadingStatus[id] =
+          PlatformFunctions.getCachedThumb(id).whenComplete(() {
+        _thumbLoadingStatus.remove(id);
+      });
+
+      final cachedThumb = await _thumbLoadingStatus[id]!;
+      Thumbnail.addAll([cachedThumb]);
+
+      if (cachedThumb.path.isEmpty || cachedThumb.differenceHash == 0) {
+        return null;
+      }
+
+      return File(cachedThumb.path);
     }
 
-    throw "invalid key: $key";
+    final file = await setFile();
+
+    if (file == null) {
+      return decode(await ImmutableBuffer.fromUint8List(kTransparentImage));
+    }
+
+    // TODO(jonahwilliams): making this sync caused test failures that seem to
+    // indicate that we can fail to call evict unless at least one await has
+    // occurred in the test.
+    // https://github.com/flutter/flutter/issues/113044
+    final int lengthInBytes = await file.length();
+    if (lengthInBytes == 0) {
+      // The file may become available later.
+      PaintingBinding.instance.imageCache.evict(key);
+      throw StateError('$file is empty and cannot be loaded as an image.');
+    }
+    return (file.runtimeType == File)
+        ? decode(await ImmutableBuffer.fromFilePath(file.path))
+        : decode(await ImmutableBuffer.fromUint8List(await file.readAsBytes()));
   }
 
   @override
@@ -633,7 +688,7 @@ class ThumbnailProvider extends ImageProvider {
   @override
   int get hashCode => id.hashCode;
 
-  const ThumbnailProvider(this.id, this.tryPinned);
+  ThumbnailProvider(this.id, this.tryPinned);
 }
 
 ListTile addInfoTile(

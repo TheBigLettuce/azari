@@ -12,6 +12,7 @@ import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru/strip_html.dart';
 import 'package:gallery/src/logging/logging.dart';
+import 'package:html_unescape/html_unescape_small.dart';
 
 import '../../db/schemas/settings/settings.dart';
 import '../../interfaces/booru/booru_api_state.dart';
@@ -187,6 +188,8 @@ class Danbooru implements BooruAPIState {
     int? currentSkipped;
     final exclude = excludedTags?.get();
 
+    final escaper = HtmlUnescape();
+
     outer:
     for (final e in m) {
       try {
@@ -208,7 +211,7 @@ class Danbooru implements BooruAPIState {
             rating: e["rating"] ?? "?",
             createdAt: DateTime.parse(e["created_at"]),
             md5: e["md5"],
-            tags: tags.split(" "),
+            tags: tags.split(" ").map((e) => escaper.convert(e)).toList(),
             width: e["image_width"],
             fileUrl: e["file_url"],
             previewUrl: e["preview_file_url"],

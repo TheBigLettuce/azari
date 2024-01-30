@@ -94,7 +94,7 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
 
   @override
   Widget build(BuildContext context) {
-    final data = widget._data.getCellData(widget.isList, context: context);
+    final stickers = widget._data.stickers(context);
 
     Widget alias() => Container(
           alignment: Alignment.bottomCenter,
@@ -110,7 +110,7 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
           child: Padding(
               padding: const EdgeInsets.all(6),
               child: Text(
-                widget.forceAlias ?? data.name,
+                widget.forceAlias ?? widget._data.alias(widget.isList),
                 softWrap: false,
                 overflow: TextOverflow.ellipsis,
                 maxLines: widget.lines ?? 1,
@@ -150,7 +150,8 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                     Center(
                         child: LayoutBuilder(builder: (context, constraints) {
                       return Image(
-                        key: ValueKey((data.thumb.hashCode, _tries)),
+                        key:
+                            ValueKey((widget._data.thumbnail.hashCode, _tries)),
                         errorBuilder: (context, error, stackTrace) =>
                             LoadingErrorWidget(
                           error: error.toString(),
@@ -174,7 +175,8 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                               ? const ShimmerLoadingIndicator()
                               : child.animate().fadeIn();
                         },
-                        image: data.thumb ?? MemoryImage(kTransparentImage),
+                        image: widget._data.thumbnail() ??
+                            MemoryImage(kTransparentImage),
                         alignment: Alignment.center,
                         color: widget.shadowOnTop
                             ? Colors.black.withOpacity(0.5)
@@ -186,14 +188,14 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                         height: constraints.maxHeight,
                       );
                     })),
-                    if (data.stickers.isNotEmpty && !widget.ignoreStickers) ...[
+                    if (stickers.isNotEmpty && !widget.ignoreStickers) ...[
                       Align(
                         alignment: Alignment.topRight,
                         child: Padding(
                             padding: const EdgeInsets.all(8),
                             child: Wrap(
                               direction: Axis.vertical,
-                              children: data.stickers
+                              children: stickers
                                   .where((element) => element.right)
                                   .map((e) => StickerWidget(e))
                                   .toList(),
@@ -203,7 +205,7 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                           padding: const EdgeInsets.all(8),
                           child: Wrap(
                             direction: Axis.vertical,
-                            children: data.stickers
+                            children: stickers
                                 .where((element) => !element.right)
                                 .map((e) => StickerWidget(e))
                                 .toList(),

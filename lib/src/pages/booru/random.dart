@@ -17,8 +17,6 @@ import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/pages/booru/main_grid_settings_mixin.dart';
 import 'package:gallery/src/widgets/add_to_bookmarks_button.dart';
-import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
-import 'package:gallery/src/widgets/grid/layouts/list_layout.dart';
 import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:isar/isar.dart';
@@ -52,12 +50,14 @@ class RandomBooruGrid extends StatefulWidget {
   final String tags;
   final TagManager<Unrestorable> tagManager;
   final GridStateBooru? state;
+  final SafeMode? overrideSafeMode;
 
   const RandomBooruGrid(
       {super.key,
       required this.api,
       required this.tagManager,
       this.state,
+      this.overrideSafeMode,
       required this.tags});
 
   @override
@@ -89,6 +89,8 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
   @override
   void initState() {
     super.initState();
+
+    safeMode = widget.overrideSafeMode;
 
     gridSettingsHook();
 
@@ -312,20 +314,19 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                       BooruGridActions.favorites(context, post),
                       BooruGridActions.download(context, widget.api)
                     ],
-                    description: GridDescription([
-                      BooruGridActions.download(context, widget.api),
-                      BooruGridActions.favorites(context, null,
-                          showDeleteSnackbar: true)
-                    ],
-                        keybindsDescription:
-                            AppLocalizations.of(context)!.booruGridPageName,
-                        layout: gridSettings.listView
-                            ? const ListLayout()
-                            : GridLayout(
-                                gridSettings.columns,
-                                hideAlias: gridSettings.hideName,
-                                gridSettings.aspectRatio,
-                              )),
+                    description: GridDescription(
+                      [
+                        BooruGridActions.download(context, widget.api),
+                        BooruGridActions.favorites(context, null,
+                            showDeleteSnackbar: true)
+                      ],
+                      keybindsDescription:
+                          AppLocalizations.of(context)!.booruGridPageName,
+                      layout: gridSettings.layoutType.layout(
+                        gridSettings,
+                        gridSeed: state.gridSeed,
+                      ),
+                    ),
                     hasReachedEnd: () => reachedEnd,
                     mainFocus: state.mainFocus,
                     statistics: const ImageViewStatistics(

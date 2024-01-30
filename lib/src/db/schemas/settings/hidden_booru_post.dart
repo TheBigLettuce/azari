@@ -5,19 +5,23 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/widgets.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
-import 'package:gallery/src/interfaces/cell/cell_data.dart';
 import 'package:isar/isar.dart';
+
+import '../../../interfaces/cell/sticker.dart';
 
 part 'hidden_booru_post.g.dart';
 
 @collection
-class HiddenBooruPost extends Cell {
+class HiddenBooruPost extends Cell with CachedCellValuesMixin {
+  HiddenBooruPost(this.booru, this.postId, this.thumbUrl) {
+    initValues(ValueKey((postId, booru)), thumbUrl, () => const EmptyContent());
+  }
+
   @override
   Id? isarId;
 
@@ -56,8 +60,6 @@ class HiddenBooruPost extends Cell {
             booru.map((e) => e.$1).toList(), booru.map((e) => e.$2).toList()));
   }
 
-  HiddenBooruPost(this.booru, this.postId, this.thumbUrl);
-
   @override
   List<Widget>? addButtons(BuildContext context) {
     return null;
@@ -79,25 +81,8 @@ class HiddenBooruPost extends Cell {
   }
 
   @override
-  Contentable fileDisplay() {
-    throw UnimplementedError();
-  }
+  String? fileDownloadUrl() => null;
 
   @override
-  String fileDownloadUrl() {
-    throw UnimplementedError();
-  }
-
-  @override
-  CellData getCellData(bool isList, {required BuildContext context}) {
-    return CellData(
-        thumb: CachedNetworkImageProvider(thumbUrl),
-        name: alias(isList),
-        stickers: const []);
-  }
-
-  @override
-  Key uniqueKey() {
-    return ValueKey((postId, booru));
-  }
+  List<Sticker> stickers(BuildContext context) => const [];
 }

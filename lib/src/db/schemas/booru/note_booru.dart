@@ -8,7 +8,6 @@
 // import 'package:gallery/src/db/schemas/tags.dart';
 import 'dart:io';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/note_interface.dart';
@@ -16,7 +15,6 @@ import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path_util;
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
-import 'package:gallery/src/interfaces/cell/cell_data.dart';
 import 'package:isar/isar.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -32,12 +30,47 @@ import '../settings/settings.dart';
 part 'note_booru.g.dart';
 
 @collection
-class NoteBooru extends NoteBase implements Cell {
-  @override
-  Id? isarId;
+class NoteBooru extends NoteBase with CachedCellValuesMixin {
+  NoteBooru(
+    super.text,
+    super.time, {
+    required this.postId,
+    required this.booru,
+    required super.backgroundColor,
+    required super.textColor,
+    required this.fileUrl,
+    required this.sampleUrl,
+    required this.previewUrl,
+  }) {
+    initValues(ValueKey((postId, booru)), previewUrl, () {
+      String url = switch (Settings.fromDb().quality) {
+        DisplayQuality.original => fileUrl,
+        DisplayQuality.sample => sampleUrl
+      };
 
-  @override
-  Key uniqueKey() => ValueKey((postId, booru));
+      var type = lookupMimeType(url);
+      if (type == null) {
+        return const EmptyContent();
+      }
+
+      var typeHalf = type.split("/");
+
+      if (typeHalf[0] == "image") {
+        ImageProvider provider;
+        try {
+          provider = NetworkImage(url);
+        } catch (e) {
+          provider = MemoryImage(kTransparentImage);
+        }
+
+        return typeHalf[1] == "gif" ? NetGif(provider) : NetImage(provider);
+      } else if (typeHalf[0] == "video") {
+        return NetVideo(url);
+      } else {
+        return const EmptyContent();
+      }
+    });
+  }
 
   @Index(unique: true, replace: true, composite: [CompositeIndex("booru")])
   final int postId;
@@ -47,6 +80,50 @@ class NoteBooru extends NoteBase implements Cell {
   final String fileUrl;
   final String previewUrl;
   final String sampleUrl;
+
+  @override
+  List<Widget>? addButtons(BuildContext context) {
+    return [
+      IconButton(
+        icon: const Icon(Icons.public),
+        onPressed: () {
+          final api = BooruAPIState.fromEnum(booru, page: null);
+          launchUrl(api.browserLink(postId),
+              mode: LaunchMode.externalApplication);
+          api.close();
+        },
+      ),
+      if (Platform.isAndroid)
+        GestureDetector(
+          onLongPress: () {
+            PostBase.showQr(context, booru.prefix, postId);
+          },
+          child: IconButton(
+              onPressed: () {
+                PlatformFunctions.shareMedia(fileUrl, url: true);
+              },
+              icon: const Icon(Icons.share)),
+        )
+      else
+        IconButton(
+            onPressed: () {
+              PostBase.showQr(context, booru.prefix, postId);
+            },
+            icon: const Icon(Icons.qr_code_rounded))
+    ];
+  }
+
+  @override
+  String alias(bool isList) => postId.toString();
+
+  @override
+  String fileDownloadUrl() {
+    if (path_util.extension(fileUrl) == ".zip") {
+      return sampleUrl;
+    } else {
+      return fileUrl;
+    }
+  }
 
   static void reorder(
       {required int postId,
@@ -235,108 +312,5 @@ class NoteBooru extends NoteBase implements Cell {
             .getByPostIdBooruSync(cell.id, Booru.fromPrefix(cell.prefix)!);
       },
     );
-  }
-
-  NoteBooru(super.text, super.time,
-      {required this.postId,
-      required this.booru,
-      required super.backgroundColor,
-      required super.textColor,
-      required this.fileUrl,
-      required this.sampleUrl,
-      required this.previewUrl});
-
-  @override
-  List<Widget>? addButtons(BuildContext context) {
-    return [
-      IconButton(
-        icon: const Icon(Icons.public),
-        onPressed: () {
-          final api = BooruAPIState.fromEnum(booru, page: null);
-          launchUrl(api.browserLink(postId),
-              mode: LaunchMode.externalApplication);
-          api.close();
-        },
-      ),
-      if (Platform.isAndroid)
-        GestureDetector(
-          onLongPress: () {
-            PostBase.showQr(context, booru.prefix, postId);
-          },
-          child: IconButton(
-              onPressed: () {
-                PlatformFunctions.shareMedia(fileUrl, url: true);
-              },
-              icon: const Icon(Icons.share)),
-        )
-      else
-        IconButton(
-            onPressed: () {
-              PostBase.showQr(context, booru.prefix, postId);
-            },
-            icon: const Icon(Icons.qr_code_rounded))
-    ];
-  }
-
-  @override
-  List<Widget>? addInfo(BuildContext context, extra, AddInfoColorData colors) {
-    return null;
-  }
-
-  @override
-  List<(IconData, void Function()?)>? addStickers(BuildContext context) {
-    return null;
-  }
-
-  @override
-  String alias(bool isList) {
-    return postId.toString();
-  }
-
-  @override
-  Contentable fileDisplay() {
-    String url = switch (Settings.fromDb().quality) {
-      DisplayQuality.original => fileUrl,
-      DisplayQuality.sample => sampleUrl
-    };
-
-    var type = lookupMimeType(url);
-    if (type == null) {
-      return const EmptyContent();
-    }
-
-    var typeHalf = type.split("/");
-
-    if (typeHalf[0] == "image") {
-      ImageProvider provider;
-      try {
-        provider = NetworkImage(url);
-      } catch (e) {
-        provider = MemoryImage(kTransparentImage);
-      }
-
-      return typeHalf[1] == "gif" ? NetGif(provider) : NetImage(provider);
-    } else if (typeHalf[0] == "video") {
-      return NetVideo(url);
-    } else {
-      return const EmptyContent();
-    }
-  }
-
-  @override
-  String fileDownloadUrl() {
-    if (path_util.extension(fileUrl) == ".zip") {
-      return sampleUrl;
-    } else {
-      return fileUrl;
-    }
-  }
-
-  @override
-  CellData getCellData(bool isList, {required BuildContext context}) {
-    return CellData(
-        thumb: CachedNetworkImageProvider(previewUrl),
-        name: postId.toString(),
-        stickers: const []);
   }
 }

@@ -130,11 +130,9 @@ class _NotesPageState extends State<NotesPage>
                               nestedCallback: CallbackDescriptionNested(
                                   "Choose file", (chosen) async {
                                 final s = selected.first;
-                                final data =
-                                    chosen.getCellData(false, context: context);
                                 final colors =
                                     await PaletteGenerator.fromImageProvider(
-                                        data.thumb!);
+                                        chosen.thumbnail()!);
 
                                 NoteGallery.add(chosen.id,
                                     text: s.text,

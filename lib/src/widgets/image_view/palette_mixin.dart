@@ -25,7 +25,7 @@ mixin ImageViewPaletteMixin<T extends Cell> on State<ImageView<T>> {
       ScrollController scrollController,
       int currentPage,
       void Function() resetAnimation) {
-    final t = currentCell.getCellData(false, context: context).thumb;
+    final t = currentCell.thumbnail();
     if (t == null) {
       return;
     }

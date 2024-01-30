@@ -9,6 +9,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:gallery/src/db/initalize_db.dart';
+import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:isar/isar.dart';
@@ -19,24 +20,26 @@ part 'favorites.g.dart';
 
 @collection
 class GridSettingsFavorites extends GridSettingsBase {
-  const GridSettingsFavorites(
-      {required super.aspectRatio,
-      required super.columns,
-      required super.listView,
-      required super.hideName});
+  const GridSettingsFavorites({
+    required super.aspectRatio,
+    required super.columns,
+    required super.layoutType,
+    required super.hideName,
+  });
 
   final Id id = 0;
 
-  GridSettingsFavorites copy(
-      {bool? hideName,
-      GridAspectRatio? aspectRatio,
-      GridColumn? columns,
-      bool? listView}) {
+  GridSettingsFavorites copy({
+    bool? hideName,
+    GridAspectRatio? aspectRatio,
+    GridColumn? columns,
+    GridLayoutType? layoutType,
+  }) {
     return GridSettingsFavorites(
         aspectRatio: aspectRatio ?? this.aspectRatio,
         hideName: hideName ?? this.hideName,
         columns: columns ?? this.columns,
-        listView: listView ?? this.listView);
+        layoutType: layoutType ?? this.layoutType);
   }
 
   void save() {
@@ -54,7 +57,7 @@ class GridSettingsFavorites extends GridSettingsBase {
       GridSettingsFavorites(
         aspectRatio: GridAspectRatio.one,
         columns: Platform.isAndroid ? GridColumn.two : GridColumn.six,
-        listView: false,
+        layoutType: GridLayoutType.grid,
         hideName: true,
       );
 }

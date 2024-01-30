@@ -14,9 +14,10 @@ import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/cell/cell_data.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:isar/isar.dart';
+
+import '../../../interfaces/cell/sticker.dart';
 
 part 'saved_anime_entry.g.dart';
 
@@ -36,7 +37,7 @@ class AnimeGenre {
 }
 
 @embedded
-class Relation implements Cell {
+class Relation extends Cell with CachedCellValuesMixin {
   final String thumbUrl;
   final String title;
   final String type;
@@ -49,7 +50,10 @@ class Relation implements Cell {
     this.title = "",
     this.type = "",
     this.id = 0,
-  });
+  }) {
+    initValues(ValueKey(thumbUrl), thumbUrl,
+        () => NetImage(CachedNetworkImageProvider(thumbUrl)));
+  }
 
   @override
   int? isarId;
@@ -68,21 +72,10 @@ class Relation implements Cell {
   String alias(bool isList) => title;
 
   @override
-  Contentable fileDisplay() => NetImage(CachedNetworkImageProvider(thumbUrl));
-
-  @override
   String fileDownloadUrl() => thumbUrl;
 
   @override
-  CellData getCellData(bool isList, {required BuildContext context}) {
-    return CellData(
-        thumb: CachedNetworkImageProvider(thumbUrl),
-        name: title,
-        stickers: const []);
-  }
-
-  @override
-  Key uniqueKey() => ValueKey(thumbUrl);
+  List<Sticker> stickers(BuildContext context) => const [];
 }
 
 @collection

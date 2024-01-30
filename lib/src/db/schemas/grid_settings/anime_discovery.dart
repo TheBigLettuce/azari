@@ -14,16 +14,18 @@ import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:isar/isar.dart';
 
 import '../../base/grid_settings_base.dart';
+import 'booru.dart';
 
 part 'anime_discovery.g.dart';
 
 @collection
 class GridSettingsAnimeDiscovery extends GridSettingsBase {
-  const GridSettingsAnimeDiscovery(
-      {required super.aspectRatio,
-      required super.columns,
-      required super.listView,
-      required super.hideName});
+  const GridSettingsAnimeDiscovery({
+    required super.aspectRatio,
+    required super.columns,
+    required super.layoutType,
+    required super.hideName,
+  });
 
   final Id id = 0;
 
@@ -31,12 +33,13 @@ class GridSettingsAnimeDiscovery extends GridSettingsBase {
       {bool? hideName,
       GridAspectRatio? aspectRatio,
       GridColumn? columns,
-      bool? listView}) {
+      GridLayoutType? layoutType}) {
     return GridSettingsAnimeDiscovery(
-        aspectRatio: aspectRatio ?? this.aspectRatio,
-        hideName: hideName ?? this.hideName,
-        columns: columns ?? this.columns,
-        listView: listView ?? this.listView);
+      aspectRatio: aspectRatio ?? this.aspectRatio,
+      hideName: hideName ?? this.hideName,
+      columns: columns ?? this.columns,
+      layoutType: layoutType ?? this.layoutType,
+    );
   }
 
   void save() {
@@ -54,7 +57,7 @@ class GridSettingsAnimeDiscovery extends GridSettingsBase {
       GridSettingsAnimeDiscovery(
         aspectRatio: GridAspectRatio.one,
         columns: Platform.isAndroid ? GridColumn.three : GridColumn.six,
-        listView: false,
+        layoutType: GridLayoutType.grid,
         hideName: true,
       );
 }

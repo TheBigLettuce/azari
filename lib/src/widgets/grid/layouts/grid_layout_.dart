@@ -52,7 +52,6 @@ abstract class GridLayouts {
       required T cell,
       required bool hideThumbnails,
       required void Function(BuildContext, T, int)? onPressed}) {
-    final cellData = cell.getCellData(true, context: context);
     final selected = selection.isSelected(index);
 
     return _WrapSelection(
@@ -71,15 +70,15 @@ abstract class GridLayouts {
         onLongPress: () => selection.selectOrUnselect(
             context, index, cell, systemNavigationInsets),
         onTap: onPressed == null ? null : () => onPressed(context, cell, index),
-        leading: !hideThumbnails && cellData.thumb != null
+        leading: !hideThumbnails && cell.thumbnail() != null
             ? CircleAvatar(
                 backgroundColor: Theme.of(context).colorScheme.background,
-                foregroundImage: cellData.thumb,
+                foregroundImage: cell.thumbnail(),
                 onForegroundImageError: (_, __) {},
               )
             : null,
         title: Text(
-          cellData.name,
+          cell.alias(true),
           softWrap: false,
           overflow: TextOverflow.ellipsis,
         ),
@@ -98,15 +97,81 @@ abstract class GridLayouts {
     required bool tightMode,
     required double systemNavigationInsets,
     required double aspectRatio,
-  }) =>
-      SliverGrid.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            childAspectRatio: aspectRatio, crossAxisCount: columns),
-        itemCount: state.cellCount,
-        itemBuilder: (context, indx) {
-          final cell = state.getCell(indx);
+  }) {
+    return SliverGrid.builder(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          childAspectRatio: aspectRatio, crossAxisCount: columns),
+      itemCount: state.cellCount,
+      itemBuilder: (context, indx) {
+        final cell = state.getCell(indx);
 
-          return _WrapSelection(
+        return _WrapSelection(
+          selectionEnabled: selection.selected.isNotEmpty,
+          thisIndx: indx,
+          ignoreSwipeGesture: selection.ignoreSwipe,
+          bottomPadding: systemNavigationInsets,
+          scrollController: selection.controller,
+          selectUntil: (i) => selection.selectUnselectUntil(i, state),
+          selectUnselect: () => selection.selectOrUnselect(
+              context, indx, cell, systemNavigationInsets),
+          isSelected: selection.isSelected(indx),
+          child: gridCell(context, cell, indx,
+              hideAlias: hideAlias, tightMode: tightMode),
+        );
+      },
+    );
+  }
+
+  static Widget masonryGrid<T extends Cell>(
+    BuildContext context,
+    GridMutationInterface<T> state,
+    GridSelection<T> selection,
+    int columns,
+    bool listView,
+    MakeCellFunc<T> gridCell, {
+    required bool hideAlias,
+    required bool tightMode,
+    required double systemNavigationInsets,
+    required double aspectRatio,
+    required int randomNumber,
+  }) {
+    final size = (MediaQuery.sizeOf(context).shortestSide * 0.95) / columns;
+
+    return SliverMasonryGrid(
+      mainAxisSpacing: 0,
+      crossAxisSpacing: 0,
+      delegate: SliverChildBuilderDelegate(childCount: state.cellCount,
+          (context, indx) {
+        final cell = state.getCell(indx);
+
+        // final n1 = switch (columns) {
+        //   2 => 4,
+        //   3 => 3,
+        //   4 => 3,
+        //   5 => 3,
+        //   6 => 3,
+        //   int() => 4,
+        // };
+
+        // final n2 = switch (columns) {
+        //   2 => 40,
+        //   3 => 40,
+        //   4 => 30,
+        //   5 => 30,
+        //   6 => 20,
+        //   int() => 40,
+        // };
+
+        // final int i = ((randomNumber + indx) % 5 + n1) * n2;
+
+        final rem = ((randomNumber + indx) % 11) * 0.5;
+
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+              maxHeight: (size / aspectRatio) +
+                  (rem * (size * (0.037 + (columns / 100) - rem * 0.01)))
+                      .toInt()),
+          child: _WrapSelection(
             selectionEnabled: selection.selected.isNotEmpty,
             thisIndx: indx,
             ignoreSwipeGesture: selection.ignoreSwipe,
@@ -118,9 +183,53 @@ abstract class GridLayouts {
             isSelected: selection.isSelected(indx),
             child: gridCell(context, cell, indx,
                 hideAlias: hideAlias, tightMode: tightMode),
-          );
-        },
-      );
+          ),
+        );
+      }),
+      gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: columns),
+    );
+  }
+
+  static Widget quiltedGrid<T extends Cell>(
+    BuildContext context,
+    GridMutationInterface<T> state,
+    GridSelection<T> selection,
+    GridColumn columns,
+    bool listView,
+    MakeCellFunc<T> gridCell, {
+    required bool hideAlias,
+    required bool tightMode,
+    required double systemNavigationInsets,
+    required double aspectRatio,
+    required int randomNumber,
+  }) {
+    return SliverGrid.builder(
+      itemCount: state.cellCount,
+      gridDelegate: SliverQuiltedGridDelegate(
+        crossAxisCount: columns.number,
+        repeatPattern: QuiltedGridRepeatPattern.inverted,
+        pattern: columns.pattern(randomNumber),
+      ),
+      itemBuilder: (context, indx) {
+        final cell = state.getCell(indx);
+
+        return _WrapSelection(
+          selectionEnabled: selection.selected.isNotEmpty,
+          thisIndx: indx,
+          ignoreSwipeGesture: selection.ignoreSwipe,
+          bottomPadding: systemNavigationInsets,
+          scrollController: selection.controller,
+          selectUntil: (i) => selection.selectUnselectUntil(i, state),
+          selectUnselect: () => selection.selectOrUnselect(
+              context, indx, cell, systemNavigationInsets),
+          isSelected: selection.isSelected(indx),
+          child: gridCell(context, cell, indx,
+              hideAlias: hideAlias, tightMode: tightMode),
+        );
+      },
+    );
+  }
 
   static Widget segmentedRow<T extends Cell>(
     BuildContext context,

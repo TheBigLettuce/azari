@@ -319,7 +319,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                       gridSettings.copy(aspectRatio: ratio).save(),
                   selectHideName: (hideNames) =>
                       gridSettings.copy(hideName: hideNames).save(),
-                  selectListView: null,
+                  selectGridLayout: null,
                   selectGridColumn: (columns) =>
                       gridSettings.copy(columns: columns).save()),
             ],

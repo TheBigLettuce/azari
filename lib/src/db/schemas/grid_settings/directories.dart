@@ -10,6 +10,7 @@ import 'dart:io';
 
 import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/db/initalize_db.dart';
+import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:isar/isar.dart';
@@ -21,7 +22,7 @@ class GridSettingsDirectories extends GridSettingsBase {
   const GridSettingsDirectories(
       {required super.aspectRatio,
       required super.columns,
-      required super.listView,
+      required super.layoutType,
       required super.hideName});
 
   final Id id = 0;
@@ -30,12 +31,12 @@ class GridSettingsDirectories extends GridSettingsBase {
       {bool? hideName,
       GridAspectRatio? aspectRatio,
       GridColumn? columns,
-      bool? listView}) {
+      GridLayoutType? layoutType}) {
     return GridSettingsDirectories(
         aspectRatio: aspectRatio ?? this.aspectRatio,
         hideName: hideName ?? this.hideName,
         columns: columns ?? this.columns,
-        listView: listView ?? this.listView);
+        layoutType: layoutType ?? this.layoutType);
   }
 
   void save() {
@@ -53,7 +54,7 @@ class GridSettingsDirectories extends GridSettingsBase {
       GridSettingsDirectories(
         aspectRatio: GridAspectRatio.oneTwo,
         columns: Platform.isAndroid ? GridColumn.three : GridColumn.six,
-        listView: false,
+        layoutType: GridLayoutType.grid,
         hideName: false,
       );
 }

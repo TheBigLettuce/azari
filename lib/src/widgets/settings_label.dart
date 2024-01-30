@@ -37,3 +37,39 @@ class SettingsLabel extends StatelessWidget {
           );
   }
 }
+
+class MenuLabel extends StatefulWidget {
+  final String title;
+
+  const MenuLabel({
+    super.key,
+    required this.title,
+  });
+
+  @override
+  State<MenuLabel> createState() => _MenuLabelState();
+}
+
+class _MenuLabelState extends State<MenuLabel> {
+  bool expandTitle = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        expandTitle = !expandTitle;
+
+        setState(() {});
+      },
+      child: Text(
+        widget.title,
+        style: Theme.of(context).textTheme.titleSmall!.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+              letterSpacing: 0.6,
+            ),
+        maxLines: expandTitle ? null : 1,
+        overflow: expandTitle ? null : TextOverflow.ellipsis,
+      ),
+    );
+  }
+}

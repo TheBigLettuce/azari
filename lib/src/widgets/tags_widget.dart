@@ -6,8 +6,9 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/interfaces/booru/safe_mode.dart';
+import 'package:gallery/src/widgets/make_tags.dart';
+import 'package:gallery/src/widgets/menu_wrapper.dart';
 
 import '../db/schemas/tags/tags.dart';
 import 'empty_widget.dart';
@@ -15,7 +16,7 @@ import 'time_label.dart';
 
 class TagsWidget extends StatelessWidget {
   final void Function(Tag tag) deleteTag;
-  final void Function(Tag tag)? onPress;
+  final void Function(Tag tag, SafeMode? safeMode)? onPress;
   final bool redBackground;
   final List<Tag> tags;
   final Widget searchBar;
@@ -73,25 +74,24 @@ class TagsWidget extends StatelessWidget {
         list.clear();
       }
 
-      list.add(GestureDetector(
-        onLongPress: () {
-          HapticFeedback.vibrate();
-          Navigator.of(context).push(DialogRoute(
-              context: context,
-              builder: (context) => AlertDialog(
-                    title: Text(
-                        AppLocalizations.of(context)!.tagDeleteDialogTitle),
-                    content: Text(e.tag),
-                    actions: [
-                      TextButton(
-                          onPressed: () {
-                            deleteTag(e);
-                            Navigator.of(context).pop();
-                          },
-                          child: Text(AppLocalizations.of(context)!.yes))
-                    ],
-                  )));
-        },
+      list.add(MenuWrapper(
+        title: e.tag,
+        items: [
+          if (onPress != null)
+            launchGridSafeModeItem(
+              context,
+              e.tag,
+              (context, _, [safeMode]) {
+                onPress!(e, safeMode);
+              },
+            ),
+          PopupMenuItem(
+            onTap: () {
+              deleteTag(e);
+            },
+            child: const Text("Delete"), // TODO: change
+          )
+        ],
         child: ActionChip(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
@@ -104,7 +104,7 @@ class TagsWidget extends StatelessWidget {
           onPressed: onPress == null
               ? null
               : () {
-                  onPress!(e);
+                  onPress!(e, null);
                 },
         ),
       ));

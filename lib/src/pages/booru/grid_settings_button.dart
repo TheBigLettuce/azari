@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
+import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
@@ -18,19 +19,21 @@ class GridSettingsButton extends StatelessWidget {
   final GridSettingsBase gridSettings;
   final void Function(GridAspectRatio?)? selectRatio;
   final void Function(bool)? selectHideName;
-  final void Function(bool)? selectListView;
+  final void Function(GridLayoutType?)? selectGridLayout;
   final void Function(GridColumn?) selectGridColumn;
   final SafeMode? safeMode;
   final void Function(SafeMode?)? selectSafeMode;
 
-  const GridSettingsButton(this.gridSettings,
-      {super.key,
-      required this.selectRatio,
-      required this.selectHideName,
-      required this.selectListView,
-      required this.selectGridColumn,
-      this.safeMode,
-      this.selectSafeMode});
+  const GridSettingsButton(
+    this.gridSettings, {
+    super.key,
+    required this.selectRatio,
+    required this.selectHideName,
+    required this.selectGridLayout,
+    required this.selectGridColumn,
+    this.safeMode,
+    this.selectSafeMode,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +42,8 @@ class GridSettingsButton extends StatelessWidget {
       itemBuilder: (context) => [
         if (safeMode != null)
           _safeMode(context, safeMode!, selectSafeMode: selectSafeMode),
-        if (selectListView != null)
-          _listView(context, gridSettings.listView, selectListView!),
+        if (selectGridLayout != null)
+          _gridLayout(context, gridSettings.layoutType, selectGridLayout!),
         if (selectHideName != null)
           _hideName(context, gridSettings.hideName, selectHideName!),
         if (selectRatio != null)
@@ -106,12 +109,16 @@ PopupMenuItem _columns(BuildContext context, GridColumn columns,
   );
 }
 
-PopupMenuItem _listView(
-    BuildContext context, bool listView, void Function(bool) select) {
+PopupMenuItem _gridLayout(BuildContext context, GridLayoutType selectGridLayout,
+    void Function(GridLayoutType?) select) {
   return PopupMenuItem(
-    child: Text(listView
-        ? AppLocalizations.of(context)!.gridView
-        : AppLocalizations.of(context)!.listView),
-    onTap: () => select(!listView),
+    child: const Text("Layout"), // TODO: layout
+    onTap: () => radioDialog(
+      context,
+      GridLayoutType.values.map((e) => (e, e.text)),
+      selectGridLayout,
+      select,
+      title: "Layout",
+    ),
   );
 }

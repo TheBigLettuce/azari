@@ -21,11 +21,12 @@ import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
 import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/pages/image_view.dart';
 import 'package:gallery/src/widgets/bookmark_button.dart';
-import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
-import 'package:gallery/src/widgets/grid/layouts/list_layout.dart';
+import 'package:gallery/src/widgets/make_tags.dart';
+import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:isar/isar.dart';
 
+import '../../interfaces/booru/booru.dart';
 import '../../widgets/grid/actions/booru_grid.dart';
 import '../../net/downloader.dart';
 import '../../db/tags/post_tags.dart';
@@ -122,7 +123,14 @@ class _MainBooruGridState extends State<MainBooruGrid>
     searchHook(SearchLaunchGridData(
       mainFocus: state.mainFocus,
       searchText: "",
-      addItems: null,
+      swapSearchIconWithAddItems: false,
+      addItems: [
+        OpenMenuButton(
+            context: context,
+            controller: searchTextController,
+            tagManager: tagManager,
+            booru: api.booru)
+      ],
       onSubmit: (context, tag) => TagManagerNotifier.ofRestorable(context)
           .onTagPressed(context, tag, BooruAPINotifier.of(context).booru, true),
     ));
@@ -275,39 +283,46 @@ class _MainBooruGridState extends State<MainBooruGrid>
               registerNotifiers: (child) => TagManagerNotifier.restorable(
                   tagManager, BooruAPINotifier(api: api, child: child)),
               inlineMenuButtonItems: true,
-              overrideBackButton: const BookmarkButton(),
               addFabPadding:
                   Scaffold.of(context).widget.bottomNavigationBar == null,
-              menuButtonItems: [gridButton(state.settings, gridSettings)],
+              menuButtonItems: [
+                const BookmarkButton(),
+                gridButton(state.settings, gridSettings),
+              ],
               addIconsImage: (post) => [
                 BooruGridActions.favorites(context, post),
                 BooruGridActions.download(context, api),
                 BooruGridActions.hide(context, () {
                   setState(() {});
 
-                  state.gridKey.currentState?.imageViewKey.currentState
-                      ?.setState(() {});
+                  final imgState =
+                      state.gridKey.currentState?.imageViewKey.currentState;
+                  if (imgState == null) {
+                    return;
+                  }
+
+                  imgState.loadCells(imgState.currentPage, imgState.cellCount);
+                  imgState.setState(() {});
                 }, post: post),
               ],
               statistics: const ImageViewStatistics(
                   swiped: StatisticsBooru.addSwiped,
                   viewed: StatisticsBooru.addViewed),
               onExitImageView: () => restore.removeScrollTagsSelectedPost(),
-              description: GridDescription([
-                BooruGridActions.download(context, api),
-                BooruGridActions.favorites(context, null,
-                    showDeleteSnackbar: true),
-                BooruGridActions.hide(context, () => setState(() {})),
-              ],
-                  keybindsDescription:
-                      AppLocalizations.of(context)!.booruGridPageName,
-                  layout: gridSettings.listView
-                      ? const ListLayout()
-                      : GridLayout(
-                          hideAlias: gridSettings.hideName,
-                          gridSettings.columns,
-                          gridSettings.aspectRatio,
-                        )),
+              description: GridDescription(
+                [
+                  BooruGridActions.download(context, api),
+                  BooruGridActions.favorites(context, null,
+                      showDeleteSnackbar: true),
+                  BooruGridActions.hide(context, () => setState(() {})),
+                ],
+                keybindsDescription:
+                    AppLocalizations.of(context)!.booruGridPageName,
+                layout: gridSettings.layoutType.layout(
+                  gridSettings,
+                  gridSeed: state.gridSeed,
+                ),
+              ),
               hasReachedEnd: () => reachedEnd,
               mainFocus: state.mainFocus,
               scaffoldKey: state.scaffoldKey,
@@ -378,6 +393,47 @@ class _MainBooruGridState extends State<MainBooruGrid>
               widget.procPop(pop);
             },
           )),
+    );
+  }
+}
+
+class OpenMenuButton extends StatefulWidget {
+  final TextEditingController controller;
+  final TagManager tagManager;
+  final Booru booru;
+  final BuildContext context;
+
+  const OpenMenuButton({
+    super.key,
+    required this.controller,
+    required this.tagManager,
+    required this.booru,
+    required this.context,
+  });
+
+  @override
+  State<OpenMenuButton> createState() => _OpenMenuButtonState();
+}
+
+class _OpenMenuButtonState extends State<OpenMenuButton> {
+  @override
+  Widget build(BuildContext __) {
+    return PopupMenuButton(
+      // icon: const Icon(Icons.search_rounded),
+      itemBuilder: (_) {
+        return MenuWrapper.menuItems(widget.controller.text, [
+          launchGridSafeModeItem(widget.context, widget.controller.text,
+              (_, text, [safeMode]) {
+            widget.tagManager.onTagPressed(
+              widget.context,
+              Tag.string(tag: text),
+              widget.booru,
+              false,
+              overrideSafeMode: safeMode,
+            );
+          })
+        ]);
+      },
     );
   }
 }

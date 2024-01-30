@@ -14,18 +14,38 @@ import 'package:isar/isar.dart';
 import '../../../interfaces/cell/cell.dart';
 import '../../../interfaces/cell/contentable.dart';
 import '../../../plugs/platform_functions.dart';
-import '../../../interfaces/cell/cell_data.dart';
 import 'system_gallery_directory_file.dart';
 
 part 'note_gallery.g.dart';
 
 @collection
-class NoteGallery extends NoteBase implements Cell {
-  @override
-  Id? isarId;
+class NoteGallery extends NoteBase with CachedCellValuesFilesMixin {
+  NoteGallery(
+    super.text,
+    super.time, {
+    required this.id,
+    required this.originalUri,
+    required this.height,
+    required this.width,
+    required super.backgroundColor,
+    required super.textColor,
+    required this.isGif,
+    required this.isVideo,
+  }) {
+    initValues(ValueKey(id), (id, isVideo), () {
+      final size = Size(width.toDouble(), height.toDouble());
 
-  @override
-  Key uniqueKey() => ValueKey(id);
+      if (isVideo) {
+        return AndroidVideo(uri: originalUri, size: size);
+      }
+
+      if (isGif) {
+        return AndroidGif(uri: originalUri, size: size);
+      }
+
+      return AndroidImage(uri: originalUri, size: size);
+    });
+  }
 
   @Index(unique: true, replace: true)
   final int id;
@@ -199,16 +219,6 @@ class NoteGallery extends NoteBase implements Cell {
     return Dbs.g.main.noteGallerys.getByIdSync(id)!.text;
   }
 
-  NoteGallery(super.text, super.time,
-      {required this.id,
-      required this.originalUri,
-      required this.height,
-      required this.width,
-      required super.backgroundColor,
-      required super.textColor,
-      required this.isGif,
-      required this.isVideo});
-
   @override
   List<Widget>? addButtons(BuildContext context) {
     return [
@@ -218,48 +228,5 @@ class NoteGallery extends NoteBase implements Cell {
           },
           icon: const Icon(Icons.share))
     ];
-  }
-
-  @override
-  List<Widget>? addInfo(BuildContext context, extra, AddInfoColorData colors) {
-    return null;
-  }
-
-  @override
-  List<(IconData, void Function()?)>? addStickers(BuildContext context) {
-    return null;
-  }
-
-  @override
-  String alias(bool isList) {
-    return "";
-  }
-
-  @override
-  Contentable fileDisplay() {
-    final size = Size(width.toDouble(), height.toDouble());
-
-    if (isVideo) {
-      return AndroidVideo(uri: originalUri, size: size);
-    }
-
-    if (isGif) {
-      return AndroidGif(uri: originalUri, size: size);
-    }
-
-    return AndroidImage(uri: originalUri, size: size);
-  }
-
-  @override
-  String fileDownloadUrl() {
-    return "";
-  }
-
-  @override
-  CellData getCellData(bool isList, {required BuildContext context}) {
-    return CellData(
-        thumb: ThumbnailProvider(id, isVideo),
-        name: id.toString(),
-        stickers: const []);
   }
 }

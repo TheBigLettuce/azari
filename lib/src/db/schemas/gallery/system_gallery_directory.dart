@@ -6,26 +6,35 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/cell/cell_data.dart';
 import 'package:isar/isar.dart';
 
 import '../../../interfaces/cell/cell.dart';
 import '../../../interfaces/cell/contentable.dart';
-import 'system_gallery_directory_file.dart';
+import '../../../interfaces/cell/sticker.dart';
 
 part 'system_gallery_directory.g.dart';
 
 @collection
-class SystemGalleryDirectory implements Cell {
+class SystemGalleryDirectory extends Cell with CachedCellValuesFilesMixin {
+  SystemGalleryDirectory({
+    required this.bucketId,
+    required this.name,
+    required this.tag,
+    required this.volumeName,
+    required this.relativeLoc,
+    required this.lastModified,
+    required this.thumbFileId,
+  }) {
+    initValues(
+        ValueKey(bucketId), (thumbFileId, true), () => const EmptyContent());
+  }
+
   @override
   Id? isarId;
 
   final int thumbFileId;
   @Index(unique: true)
   final String bucketId;
-
-  @override
-  Key uniqueKey() => ValueKey(bucketId);
 
   @Index()
   final String name;
@@ -38,15 +47,6 @@ class SystemGalleryDirectory implements Cell {
 
   @Index()
   final String tag;
-
-  SystemGalleryDirectory(
-      {required this.bucketId,
-      required this.name,
-      required this.tag,
-      required this.volumeName,
-      required this.relativeLoc,
-      required this.lastModified,
-      required this.thumbFileId});
 
   @override
   List<Widget>? addButtons(BuildContext context) => null;
@@ -63,16 +63,10 @@ class SystemGalleryDirectory implements Cell {
   String alias(bool isList) => name;
 
   @override
-  Contentable fileDisplay() => const EmptyContent();
+  String? fileDownloadUrl() => null;
 
   @override
-  String fileDownloadUrl() => "";
-
-  @override
-  CellData getCellData(bool isList, {BuildContext? context}) {
-    return CellData(
-        thumb: ThumbnailProvider(thumbFileId, true), name: name, stickers: []);
-  }
+  List<Sticker> stickers(BuildContext context) => const [];
 
   static SystemGalleryDirectory decode(Object result) {
     result as List<Object?>;

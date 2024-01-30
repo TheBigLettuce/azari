@@ -7,7 +7,6 @@
 
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
-import 'package:html_unescape/html_unescape_small.dart';
 import 'package:isar/isar.dart';
 
 part 'local_tag_dictionary.g.dart';
@@ -28,7 +27,7 @@ class LocalTagDictionary {
       () {
         Dbs.g.main.localTagDictionarys.putAllSync(tags
             .map((e) => LocalTagDictionary(
-                HtmlUnescape().convert(e),
+                e,
                 (Dbs.g.main.localTagDictionarys
                             .getSync(fastHash(e))
                             ?.frequency ??

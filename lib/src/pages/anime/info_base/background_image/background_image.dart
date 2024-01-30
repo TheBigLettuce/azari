@@ -16,7 +16,7 @@ class BackgroundImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BackgroundImageBase(
-      image: entry.getCellData(false, context: context).thumb!,
+      image: entry.thumbnail()!,
       width: MediaQuery.sizeOf(context).width,
       height: MediaQuery.sizeOf(context).height * 0.3 +
           kToolbarHeight +

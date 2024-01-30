@@ -224,6 +224,8 @@ class Gelbooru implements BooruAPIState {
 
     final dateFormatter = DateFormat("EEE MMM dd HH:mm:ss");
 
+    final escaper = HtmlUnescape();
+
     for (final post in m) {
       String createdAt = post["created_at"];
       DateTime date = dateFormatter.parse(createdAt).copyWith(
@@ -234,7 +236,9 @@ class Gelbooru implements BooruAPIState {
           prefix: booru.prefix,
           id: post["id"],
           md5: post["md5"],
-          tags: post["tags"].split(" "),
+          tags: (post["tags"].split(" ") as List<String>)
+              .map((e) => escaper.convert(e))
+              .toList(),
           score: post["score"],
           sourceUrl: post["source"],
           createdAt: date,

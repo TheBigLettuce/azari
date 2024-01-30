@@ -11,12 +11,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:gallery/src/db/schemas/booru/post.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
-import 'package:gallery/src/db/schemas/settings/settings.dart';
-import 'package:gallery/src/db/state_restoration.dart';
-import 'package:gallery/src/interfaces/background_data_loader/loader_keys.dart';
-import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
@@ -25,9 +20,7 @@ import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/widgets/fade_sideways_page_transition_builder.dart';
-import 'package:gallery/src/widgets/grid2/data_loaders/cell_loader.dart';
 import 'package:gallery/src/widgets/restart_widget.dart';
-import 'package:isar/isar.dart';
 // import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -50,8 +43,9 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
               borderRadius: BorderRadius.all(Radius.circular(15))))));
 
   const popupMenuTheme = PopupMenuThemeData(
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(15))));
+    shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(15))),
+  );
 
   var baseTheme = switch (type) {
     ThemeType.systemAccent => ThemeData(
@@ -76,9 +70,17 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
       ),
   };
 
+  final scrollBarTheme = ScrollbarThemeData(
+    radius: const ui.Radius.circular(15),
+    mainAxisMargin: 0.75,
+    thumbColor: MaterialStatePropertyAll(
+        baseTheme.colorScheme.onSurface.withOpacity(0.75)),
+  );
+
   switch (type) {
     case ThemeType.systemAccent:
       baseTheme = baseTheme.copyWith(
+          scrollbarTheme: scrollBarTheme,
           listTileTheme: baseTheme.listTileTheme.copyWith(
               isThreeLine: false,
               subtitleTextStyle: baseTheme.textTheme.bodyMedium!.copyWith(
@@ -87,6 +89,7 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
 
     case ThemeType.secretPink:
       baseTheme = baseTheme.copyWith(
+        scrollbarTheme: scrollBarTheme,
         scaffoldBackgroundColor: baseTheme.colorScheme.background,
         chipTheme: null,
         filledButtonTheme: FilledButtonThemeData(
@@ -159,34 +162,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initalizeDb(false);
   await initalizeDownloader();
-
-  await BackgroundCellLoader<Post>.cache(kMainGridLoaderKey, () {
-    final settings = Settings.fromDb();
-    final db = DbsOpen.primaryGrid(settings.selectedBooru);
-    final state =
-        StateRestoration(db, settings.selectedBooru.string, settings.safeMode);
-
-    return (
-      (db, idx) => db.posts.getSync(idx + 1),
-      db,
-      kPrimaryGridSchemas,
-      (loader) {
-        final tagManager = TagManager.fromEnum(settings.selectedBooru);
-
-        return BooruAPILoaderStateController(
-            loader,
-            BooruAPIState.fromEnum(settings.selectedBooru,
-                page: state.copy.page),
-            tagManager.excluded,
-            "",
-            db.posts.where().sortById().findFirstSync()?.id,
-            onPostsLoaded: (api) {
-          state.updatePage(api.currentPage);
-        });
-      },
-      null
-    );
-  }).init();
 
   changeExceptionErrorColors();
 

@@ -12,7 +12,6 @@ import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/cell/cell_data.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:isar/isar.dart';
@@ -20,7 +19,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'anime_api.dart';
 
-class AnimeEntry implements Cell {
+class AnimeEntry extends Cell with CachedCellValuesMixin {
   AnimeEntry({
     required this.site,
     required this.type,
@@ -41,7 +40,10 @@ class AnimeEntry implements Cell {
     required this.episodes,
     required this.background,
     required this.explicit,
-  });
+  }) {
+    initValues(ValueKey((thumbUrl, id)), thumbUrl,
+        () => NetImage(CachedNetworkImageProvider(thumbUrl)));
+  }
 
   @override
   Id? isarId;
@@ -101,31 +103,19 @@ class AnimeEntry implements Cell {
   String alias(bool isList) => title;
 
   @override
-  Contentable fileDisplay() {
-    return NetImage(CachedNetworkImageProvider(thumbUrl));
-  }
-
-  @override
   String fileDownloadUrl() => thumbUrl;
 
   @override
-  CellData getCellData(bool isList, {required BuildContext context}) {
+  List<Sticker> stickers(BuildContext context) {
     final (watching, inBacklog) = SavedAnimeEntry.isWatchingBacklog(id, site);
 
-    return CellData(
-      thumb: CachedNetworkImageProvider(thumbUrl),
-      name: title,
-      stickers: [
-        if (this is! SavedAnimeEntry && watching)
-          !inBacklog
-              ? const Sticker(Icons.play_arrow_rounded, right: true)
-              : const Sticker(Icons.library_add_check, right: true),
-        if (this is! WatchedAnimeEntry && WatchedAnimeEntry.watched(id, site))
-          const Sticker(Icons.check, right: true),
-      ],
-    );
+    return [
+      if (this is! SavedAnimeEntry && watching)
+        !inBacklog
+            ? const Sticker(Icons.play_arrow_rounded, right: true)
+            : const Sticker(Icons.library_add_check, right: true),
+      if (this is! WatchedAnimeEntry && WatchedAnimeEntry.watched(id, site))
+        const Sticker(Icons.check, right: true),
+    ];
   }
-
-  @override
-  Key uniqueKey() => ValueKey((thumbUrl, id));
 }

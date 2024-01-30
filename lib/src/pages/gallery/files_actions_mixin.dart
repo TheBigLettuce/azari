@@ -114,7 +114,7 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
       onLongPress: (selected) {
         PlatformFunctions.deleteCachedThumbs([selected.first.id], true);
 
-        final t = selected.first.getCellData(false, context: context).thumb;
+        final t = selected.first.thumbnail();
         t?.evict();
 
         final deleted = PinnedThumbnail.delete(selected.first.id);

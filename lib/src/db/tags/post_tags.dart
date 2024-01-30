@@ -20,7 +20,6 @@ import 'package:gallery/src/db/schemas/tags/local_tags.dart';
 import 'package:gallery/src/db/schemas/booru/post.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
-import 'package:html_unescape/html_unescape_small.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart';
@@ -200,7 +199,7 @@ class PostTags {
   void _putTagsAndIncreaseFreq(List<String> tags) {
     tagsDb.localTagDictionarys.putAllSync(tags
         .map((e) => LocalTagDictionary(
-            HtmlUnescape().convert(e),
+            e,
             (tagsDb.localTagDictionarys.getSync(fastHash(e))?.frequency ?? 0) +
                 1))
         .toList());

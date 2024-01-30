@@ -8,41 +8,49 @@
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
+import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
 
 import '../callback_grid.dart';
 
-class GridListLayout<T extends Cell> implements GridLayouter<T> {
-  @override
-  final GridColumn columns;
-
+class GridQuiltedLayout<T extends Cell> implements GridLayouter<T> {
+  final GridAspectRatio aspectRatio;
   final bool tightMode;
   final bool hideAlias;
+
+  final int gridSeed;
+
+  @override
+  final GridColumn columns;
 
   @override
   List<Widget> call(BuildContext context, CallbackGridState<T> state) {
     return [
-      GridLayouts.grid<T>(
+      GridLayouts.quiltedGrid<T>(
         context,
         state.mutationInterface,
         state.selection,
-        columns.number,
-        true,
+        columns,
+        false,
         state.makeGridCell,
+        randomNumber: gridSeed,
         systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
-        aspectRatio: 1,
+        aspectRatio: aspectRatio.value,
         hideAlias: hideAlias,
         tightMode: tightMode,
+        // randomNumber: gridSeed,
       )
     ];
   }
 
   @override
-  bool get isList => true;
+  bool get isList => false;
 
-  const GridListLayout(
-    this.columns, {
+  const GridQuiltedLayout(
+    this.columns,
+    this.aspectRatio, {
+    required this.gridSeed,
     required this.hideAlias,
-    required this.tightMode,
+    this.tightMode = false,
   });
 }

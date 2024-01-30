@@ -35,8 +35,8 @@ void radioDialog<T>(BuildContext context, Iterable<(T, String)> values,
                       title: Text(e.$2),
                       groupValue: groupValue,
                       onChanged: (value) {
-                        onChanged(value);
                         Navigator.pop(context);
+                        onChanged(value);
                       }))
                   .toList(),
             ),

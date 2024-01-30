@@ -23,11 +23,12 @@ class GridSkeletonStateFilter<T extends Cell> extends GridSkeletonState<T> {
 
   final T Function(T cell, SortingMode sort) transform;
 
-  GridSkeletonStateFilter(
-      {required this.filter,
-      required this.transform,
-      this.filteringModes = const {},
-      this.defaultMode = FilteringMode.noFilter,
-      this.hook = _doNothing,
-      this.unsetFilteringModeOnReset = true});
+  GridSkeletonStateFilter({
+    required this.filter,
+    required this.transform,
+    this.filteringModes = const {},
+    this.defaultMode = FilteringMode.noFilter,
+    this.hook = _doNothing,
+    this.unsetFilteringModeOnReset = true,
+  });
 }

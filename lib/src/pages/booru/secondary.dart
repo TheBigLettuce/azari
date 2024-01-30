@@ -13,8 +13,6 @@ import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/widgets/add_to_bookmarks_button.dart';
-import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
-import 'package:gallery/src/widgets/grid/layouts/list_layout.dart';
 import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:isar/isar.dart';
@@ -298,13 +296,10 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                       ],
                       keybindsDescription:
                           AppLocalizations.of(context)!.booruGridPageName,
-                      layout: gridSettings.listView
-                          ? const ListLayout()
-                          : GridLayout(
-                              gridSettings.columns,
-                              gridSettings.aspectRatio,
-                              hideAlias: gridSettings.hideName,
-                            ),
+                      layout: gridSettings.layoutType.layout(
+                        gridSettings,
+                        gridSeed: state.gridSeed,
+                      ),
                     ),
                     inlineMenuButtonItems: true,
                     statistics: const ImageViewStatistics(

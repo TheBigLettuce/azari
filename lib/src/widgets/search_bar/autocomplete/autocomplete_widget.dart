@@ -34,6 +34,7 @@ class AutocompleteWidget extends StatelessWidget {
   final List<Widget>? addItems;
   final String? searchTextOverride;
   final bool plainSearchBar;
+  final bool swapSearchIcon;
 
   const AutocompleteWidget(this.controller, this.highlightChanged,
       this.onSubmit, this.focusMain, this.complF, this.focus,
@@ -44,6 +45,7 @@ class AutocompleteWidget extends StatelessWidget {
       this.roundBorders = false,
       this.searchTextOverride,
       this.customHint,
+      required this.swapSearchIcon,
       this.showSearch = false,
       this.plainSearchBar = false,
       this.searchCount,
@@ -141,6 +143,7 @@ class AutocompleteWidget extends StatelessWidget {
                 onChanged: onChanged,
                 onSubmit: onSubmit,
                 count: searchCount,
+                swapSearchIcon: swapSearchIcon,
                 searchTextOverride: searchTextOverride,
                 customHint: customHint);
       },
@@ -168,6 +171,7 @@ Widget makeSearchBar(
   required TextEditingController textController,
   required void Function()? onChanged,
   required void Function(Tag) onSubmit,
+  required bool swapSearchIcon,
 }) {
   final notifier = FocusNotifier.of(context);
 
@@ -215,7 +219,7 @@ Widget makeSearchBar(
       child: SearchBar(
         side: const MaterialStatePropertyAll(BorderSide.none),
         leading: !notifier.hasFocus
-            ? addItems != null && addItems.length == 1
+            ? swapSearchIcon && addItems != null && addItems.length == 1
                 ? addItems.first
                 : const Icon(Icons.search_rounded)
             : BackButton(

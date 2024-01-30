@@ -115,12 +115,15 @@ class _WrappedSelectionCore extends StatelessWidget {
           alignment: Alignment.bottomCenter,
           child: Padding(
               padding: const EdgeInsets.all(0.5),
-              child: Container(
+              child: AnimatedContainer(
                 decoration: BoxDecoration(
-                  color:
-                      isSelected ? Theme.of(context).colorScheme.primary : null,
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.primary.withOpacity(0),
                   borderRadius: BorderRadius.circular(15),
                 ),
+                duration: const Duration(milliseconds: 160),
+                curve: Easing.emphasizedAccelerate,
                 child: GestureDetector(
                   onTap: thisIndx.isNegative
                       ? null
@@ -171,7 +174,10 @@ class _WrappedSelectionCore extends StatelessWidget {
                 ),
               ),
             ),
-          )
+          ).animate().fadeIn(
+                duration: const Duration(milliseconds: 160),
+                curve: Easing.emphasizedAccelerate,
+              )
         ],
       ],
     );

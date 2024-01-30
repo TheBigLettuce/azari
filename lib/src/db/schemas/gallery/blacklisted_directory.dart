@@ -11,7 +11,7 @@ import 'package:flutter/widgets.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
-import 'package:gallery/src/interfaces/cell/cell_data.dart';
+import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:isar/isar.dart';
 
 part 'blacklisted_directory.g.dart';
@@ -46,18 +46,16 @@ class BlacklistedDirectory implements Cell {
   String alias(bool isList) => name;
 
   @override
-  Contentable fileDisplay() {
-    throw UnimplementedError();
-  }
+  String? fileDownloadUrl() => null;
 
   @override
-  String fileDownloadUrl() {
-    throw UnimplementedError();
-  }
+  Contentable content() => const EmptyContent();
 
   @override
-  CellData getCellData(bool isList, {BuildContext? context}) =>
-      CellData(thumb: null, name: name, stickers: []);
+  List<Sticker> stickers(BuildContext context) => const [];
+
+  @override
+  ImageProvider<Object>? thumbnail() => null;
 
   static StreamSubscription<void> watch(void Function(void) f,
       [bool fire = true]) {

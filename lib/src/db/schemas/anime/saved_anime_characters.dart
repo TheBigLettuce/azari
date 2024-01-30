@@ -14,10 +14,11 @@ import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dar
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/cell/cell_data.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+import '../../../interfaces/cell/sticker.dart';
 
 part 'saved_anime_characters.g.dart';
 
@@ -73,7 +74,7 @@ class SavedAnimeCharacters {
 }
 
 @embedded
-class AnimeCharacter implements Cell {
+class AnimeCharacter extends Cell with CachedCellValuesMixin {
   final String imageUrl;
   final String name;
   final String role;
@@ -82,7 +83,10 @@ class AnimeCharacter implements Cell {
     this.imageUrl = "",
     this.name = "",
     this.role = "",
-  });
+  }) {
+    initValues(ValueKey(imageUrl), imageUrl,
+        () => NetImage(CachedNetworkImageProvider(imageUrl)));
+  }
 
   @override
   int? isarId;
@@ -110,19 +114,8 @@ class AnimeCharacter implements Cell {
   String alias(bool isList) => name;
 
   @override
-  Contentable fileDisplay() => NetImage(CachedNetworkImageProvider(imageUrl));
+  List<Sticker> stickers(BuildContext context) => const [];
 
   @override
-  String fileDownloadUrl() => imageUrl;
-
-  @override
-  CellData getCellData(bool isList, {required BuildContext context}) {
-    return CellData(
-        thumb: CachedNetworkImageProvider(imageUrl),
-        name: name,
-        stickers: const []);
-  }
-
-  @override
-  Key uniqueKey() => ValueKey(imageUrl);
+  String? fileDownloadUrl() => imageUrl;
 }

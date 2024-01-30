@@ -12,7 +12,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/material.dart' as material show AspectRatio;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
+import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
 import 'package:gallery/src/interfaces/note_interface.dart';
 import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
@@ -686,7 +688,6 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
             interactive: false,
             thumbVisibility:
                 Platform.isAndroid || Platform.isIOS ? false : true,
-            thickness: 6,
             controller: controller,
             child: CustomScrollView(
               controller: controller,

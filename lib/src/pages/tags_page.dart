@@ -41,7 +41,6 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
 
   late final tabController = TabController(length: 2, vsync: this);
 
-  final textController = TextEditingController();
   final excludedTagsTextController = TextEditingController();
   final state = SkeletonState();
 
@@ -101,7 +100,6 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
   @override
   void dispose() {
     state.dispose();
-    textController.dispose();
     excludedTagsTextController.dispose();
     _lastTagsWatcher.cancel();
 
@@ -194,8 +192,13 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
                   deleteAllController.reverse(from: 1);
                 });
               },
-              onPress: (t) => widget.tagManager
-                  .onTagPressed(context, t, widget.booru.booru, true)).animate(
+              onPress: (t, safeMode) => widget.tagManager.onTagPressed(
+                    context,
+                    t,
+                    widget.booru.booru,
+                    true,
+                    overrideSafeMode: safeMode,
+                  )).animate(
               controller: deleteAllController,
               effects: [
                 FadeEffect(
@@ -213,6 +216,7 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
                     (s) {
                       excludedHighlight = s;
                     },
+                    swapSearchIcon: false,
                     widget.tagManager.excluded.add,
                     () => state.mainFocus.requestFocus(),
                     widget.booru.completeTag,
@@ -228,7 +232,7 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
                       deleteAllExcludedController.reverse(from: 1);
                     });
                   },
-                  onPress: (t) {})
+                  onPress: null)
               .animate(effects: [
             FadeEffect(
               begin: 1,

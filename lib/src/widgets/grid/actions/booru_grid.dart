@@ -72,15 +72,17 @@ class BooruGridActions {
       {bool showDeleteSnackbar = false}) {
     final isFavorite = p != null && Settings.isFavorite(p.fileUrl);
     return GridAction(
-        isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-        (selected) {
-      Settings.addRemoveFavorites(context, selected, showDeleteSnackbar);
-      for (final post in selected) {
-        LocalTagDictionary.addAll(post.tags);
-      }
-    }, true,
-        color: isFavorite ? Colors.red.shade900 : null,
-        animate: p != null,
-        play: !isFavorite);
+      isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+      (selected) {
+        Settings.addRemoveFavorites(context, selected, showDeleteSnackbar);
+        for (final post in selected) {
+          LocalTagDictionary.addAll(post.tags);
+        }
+      },
+      true,
+      color: isFavorite ? Colors.red.shade900 : null,
+      animate: p != null,
+      play: !isFavorite,
+    );
   }
 }

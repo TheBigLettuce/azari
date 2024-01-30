@@ -10,6 +10,7 @@ import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/pages/anime/info_pages/anime_info_id.dart';
 import 'package:gallery/src/pages/anime/search/search_anime.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/widgets/menu_wrapper.dart';
 
 import 'body_segment_label.dart';
 
@@ -27,34 +28,37 @@ class AnimeRelations extends StatelessWidget {
               BodySegmentLabel(
                   text: AppLocalizations.of(context)!.relationsLabel),
               ...entry.relations.map(
-                (e) => TextButton(
-                  onPressed: () {
-                    if (e.idIsValid) {
+                (e) => MenuWrapper(
+                  title: e.title,
+                  child: TextButton(
+                    onPressed: () {
+                      if (e.idIsValid) {
+                        Navigator.push(context, MaterialPageRoute(
+                          builder: (context) {
+                            return AnimeInfoIdPage(
+                              id: e.id,
+                              site: entry.site,
+                            );
+                          },
+                        ));
+
+                        return;
+                      }
+
                       Navigator.push(context, MaterialPageRoute(
                         builder: (context) {
-                          return AnimeInfoIdPage(
-                            id: e.id,
-                            site: entry.site,
+                          return SearchAnimePage(
+                            api: entry.site.api,
+                            initalText: e.title,
+                            explicit: entry.explicit,
                           );
                         },
                       ));
-
-                      return;
-                    }
-
-                    Navigator.push(context, MaterialPageRoute(
-                      builder: (context) {
-                        return SearchAnimePage(
-                          api: entry.site.api,
-                          initalText: e.title,
-                          explicit: entry.explicit,
-                        );
-                      },
-                    ));
-                  },
-                  child: Text(
-                    e.type.isNotEmpty ? "${e.title} (${e.type})" : e.title,
-                    overflow: TextOverflow.fade,
+                    },
+                    child: Text(
+                      e.type.isNotEmpty ? "${e.title} (${e.type})" : e.title,
+                      overflow: TextOverflow.fade,
+                    ),
                   ),
                 ),
               ),

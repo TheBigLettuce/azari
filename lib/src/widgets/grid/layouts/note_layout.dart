@@ -79,8 +79,6 @@ class Note<T extends Cell> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = note.getCellData(false, context: context).thumb;
-
     final backgroundColor =
         note is NoteBase ? (note as NoteBase).backgroundColor : null;
     final textColor = note is NoteBase ? (note as NoteBase).textColor : null;
@@ -126,7 +124,7 @@ class Note<T extends Cell> extends StatelessWidget {
                                 borderRadius:
                                     BorderRadius.all(Radius.circular(10))),
                             clipBehavior: Clip.antiAlias,
-                            child: provider != null
+                            child: note.thumbnail() != null
                                 ? Image(
                                     fit: BoxFit.cover,
                                     filterQuality: FilterQuality.high,
@@ -144,7 +142,8 @@ class Note<T extends Cell> extends StatelessWidget {
                                           ? const ShimmerLoadingIndicator()
                                           : child.animate().fadeIn();
                                     },
-                                    image: provider)
+                                    image: note.thumbnail()!,
+                                  )
                                 : null,
                           )),
                       if (text != null)

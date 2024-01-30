@@ -31,7 +31,13 @@ class TagManager<T extends TagManagerType> {
   BooruTagging get excluded => _excluded;
   BooruTagging get latest => _latest;
 
-  void onTagPressed(BuildContext context, Tag t, Booru booru, bool restore) {
+  void onTagPressed(
+    BuildContext context,
+    Tag t,
+    Booru booru,
+    bool restore, {
+    SafeMode? overrideSafeMode,
+  }) {
     t = t.trim();
     if (t.tag.isEmpty) {
       return;
@@ -50,7 +56,7 @@ class TagManager<T extends TagManagerType> {
           restore: _insert(
               tags: t.tag,
               name: instance.name,
-              safeMode: Settings.fromDb().safeMode),
+              safeMode: overrideSafeMode ?? Settings.fromDb().safeMode),
           instance: instance,
         );
       }));
@@ -63,6 +69,7 @@ class TagManager<T extends TagManagerType> {
                   _insert, _excluded, _latest, _temporary, watch),
           api: BooruAPIState.fromEnum(booru, page: null),
           tags: t.tag,
+          overrideSafeMode: overrideSafeMode,
         );
       }));
     }

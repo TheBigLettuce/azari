@@ -23,20 +23,60 @@ import '../../pages/image_view.dart';
 mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
   ImageProvider? fakeProvider;
 
-  PhotoViewGalleryPageOptions galleryBuilder(BuildContext context, int indx) {
-    final fileContent = widget.predefinedIndexes != null
-        ? widget.getCell(widget.predefinedIndexes![indx]).fileDisplay()
-        : widget.getCell(indx).fileDisplay();
+  (T, int)? _currentCell;
+  (T, int)? _previousCell;
+  (T, int)? _nextCell;
 
-    return switch (fileContent) {
+  T drawCell(int i, [bool currentCellOnly = false]) {
+    if (currentCellOnly) {
+      return _currentCell!.$1;
+    }
+
+    if (_currentCell != null && _currentCell!.$2 == i) {
+      return _currentCell!.$1;
+    } else if (_nextCell != null && _nextCell!.$2 == i) {
+      return _nextCell!.$1;
+    } else {
+      return _previousCell!.$1;
+    }
+  }
+
+  void loadCells(int i, int maxCells) {
+    _currentCell = (widget.getCell(i)!, i);
+
+    if (i != 0 && !i.isNegative) {
+      final c2 = widget.getCell(i - 1);
+
+      if (c2 != null) {
+        _previousCell = (c2, i - 1);
+      }
+    }
+
+    if (maxCells != i + 1) {
+      final c3 = widget.getCell(i + 1);
+
+      if (c3 != null) {
+        _nextCell = (c3, i + 1);
+      }
+    }
+  }
+
+  PhotoViewGalleryPageOptions galleryBuilder(BuildContext context, int i) {
+    final content = drawCell(i).content();
+
+    // final fileContent = widget.predefinedIndexes != null
+    //     ? widget.getCell(widget.predefinedIndexes![indx]).fileDisplay()
+    //     : widget.getCell(indx).fileDisplay();
+
+    return switch (content) {
       AndroidImage() =>
-        _makeAndroidImage(context, fileContent.size, fileContent.uri, false),
+        _makeAndroidImage(context, content.size, content.uri, false),
       AndroidGif() =>
-        _makeAndroidImage(context, fileContent.size, fileContent.uri, true),
-      NetGif() => _makeNetImage(fileContent.provider),
-      NetImage() => _makeNetImage(fileContent.provider),
-      AndroidVideo() => _makeVideo(context, fileContent.uri, true),
-      NetVideo() => _makeVideo(context, fileContent.uri, false),
+        _makeAndroidImage(context, content.size, content.uri, true),
+      NetGif() => _makeNetImage(content.provider),
+      NetImage() => _makeNetImage(content.provider),
+      AndroidVideo() => _makeVideo(context, content.uri, true),
+      NetVideo() => _makeVideo(context, content.uri, false),
       EmptyContent() =>
         PhotoViewGalleryPageOptions.customChild(child: const SizedBox.shrink())
     };

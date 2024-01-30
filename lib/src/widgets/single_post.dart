@@ -31,8 +31,14 @@ import '../db/schemas/settings/settings.dart';
 class SinglePost extends StatefulWidget {
   final FocusNode focus;
   final TagManager<Unrestorable> tagManager;
+  final Widget? overrideLeading;
 
-  const SinglePost({super.key, required this.focus, required this.tagManager});
+  const SinglePost({
+    super.key,
+    required this.focus,
+    required this.tagManager,
+    this.overrideLeading,
+  });
 
   @override
   State<SinglePost> createState() => _SinglePostState();
@@ -161,7 +167,7 @@ class _SinglePostState extends State<SinglePost> {
         hintText: AppLocalizations.of(context)!.goPostHint,
         focusNode: widget.focus,
         controller: controller,
-        leading: const Icon(Icons.search),
+        leading: widget.overrideLeading ?? const Icon(Icons.search),
         trailing: [
           IconButton(
             icon: const Icon(Icons.close),

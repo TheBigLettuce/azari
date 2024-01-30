@@ -10,9 +10,9 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_characters.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/cell/cell_data.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/net/anime/jikan.dart';
+import '../cell/sticker.dart';
 import 'anime_entry.dart';
 
 abstract class AnimeAPI {
@@ -31,14 +31,17 @@ abstract class AnimeAPI {
   bool get charactersIsSync;
 }
 
-class AnimePicture implements Cell {
+class AnimePicture extends Cell with CachedCellValuesMixin {
   final String imageUrl;
   final String thumbUrl;
 
   AnimePicture({
     required this.imageUrl,
     required this.thumbUrl,
-  });
+  }) {
+    initValues(ValueKey(thumbUrl), thumbUrl,
+        () => NetImage(CachedNetworkImageProvider(imageUrl)));
+  }
 
   @override
   int? isarId;
@@ -57,21 +60,10 @@ class AnimePicture implements Cell {
   String alias(bool isList) => "";
 
   @override
-  Contentable fileDisplay() => NetImage(CachedNetworkImageProvider(imageUrl));
-
-  @override
   String fileDownloadUrl() => imageUrl;
 
   @override
-  CellData getCellData(bool isList, {required BuildContext context}) {
-    return CellData(
-        thumb: CachedNetworkImageProvider(thumbUrl),
-        name: "",
-        stickers: const []);
-  }
-
-  @override
-  Key uniqueKey() => ValueKey(thumbUrl);
+  List<Sticker> stickers(BuildContext context) => const [];
 }
 
 enum AnimeSafeMode {
@@ -80,12 +72,15 @@ enum AnimeSafeMode {
   h;
 }
 
-class AnimeRecommendations implements Cell {
+class AnimeRecommendations extends Cell with CachedCellValuesMixin {
   AnimeRecommendations({
     required this.id,
     required this.thumbUrl,
     required this.title,
-  });
+  }) {
+    initValues(ValueKey((thumbUrl, id)), thumbUrl,
+        () => NetImage(CachedNetworkImageProvider(thumbUrl)));
+  }
 
   final String thumbUrl;
   final String title;
@@ -108,21 +103,10 @@ class AnimeRecommendations implements Cell {
   String alias(bool isList) => title;
 
   @override
-  Contentable fileDisplay() => NetImage(CachedNetworkImageProvider(thumbUrl));
-
-  @override
   String fileDownloadUrl() => thumbUrl;
 
   @override
-  CellData getCellData(bool isList, {required BuildContext context}) {
-    return CellData(
-        thumb: CachedNetworkImageProvider(thumbUrl),
-        name: title,
-        stickers: const []);
-  }
-
-  @override
-  Key uniqueKey() => ValueKey((thumbUrl, id));
+  List<Sticker> stickers(BuildContext context) => const [];
 }
 
 class AnimeNewsEntry {}

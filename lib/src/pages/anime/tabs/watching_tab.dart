@@ -28,6 +28,7 @@ class __WatchingTabState extends State<_WatchingTab> {
   final List<SavedAnimeEntry> _watchingFilter = [];
 
   late final StreamSubscription<void> watcher;
+  final gridSeed = math.Random().nextInt(948512342);
 
   bool upward = false;
   bool right = false;
@@ -125,6 +126,7 @@ class __WatchingTabState extends State<_WatchingTab> {
             layout: _WatchingLayout(
               GridColumn.three,
               currentlyWatching,
+              randomNumber: gridSeed,
               flipBacklogUpward: () {
                 upward = !upward;
 
@@ -152,6 +154,7 @@ class _WatchingLayout implements GridLayouter<SavedAnimeEntry> {
     required this.flipBacklogUpward,
     required this.flipWatchingRight,
     required this.watchingRight,
+    required this.randomNumber,
   });
 
   final bool backlogUpward;
@@ -161,6 +164,8 @@ class _WatchingLayout implements GridLayouter<SavedAnimeEntry> {
   final void Function() flipWatchingRight;
 
   final List<SavedAnimeEntry> currentlyWatching;
+
+  final int randomNumber;
 
   @override
   final GridColumn columns;
@@ -249,8 +254,6 @@ class _CurrentlyWatchingEntry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final thumb = entry.getCellData(false, context: context).thumb;
-
     return UnsizedCard(
       subtitle: Text(entry.title),
       title: SizedBox(
@@ -267,7 +270,7 @@ class _CurrentlyWatchingEntry extends StatelessWidget {
           circle: true,
         ),
       ),
-      backgroundImage: thumb,
+      backgroundImage: entry.thumbnail(),
       tooltip: entry.title,
       onPressed: () {
         Navigator.push(context, MaterialPageRoute(

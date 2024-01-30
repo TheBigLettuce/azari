@@ -18,6 +18,7 @@ import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/display_quality.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
+import 'package:gallery/src/widgets/menu_wrapper.dart';
 
 import '../../db/tags/post_tags.dart';
 import '../../db/schemas/settings/settings.dart';
@@ -94,12 +95,15 @@ class _SettingsListState extends State<SettingsList> {
 
   List<Widget> makeList(BuildContext context, TextStyle titleStyle) => [
         SettingsLabel(AppLocalizations.of(context)!.booruLabel, titleStyle),
-        ListTile(
-          title: Text(AppLocalizations.of(context)!.downloadDirectorySetting),
-          subtitle: Text(_settings!.path),
-          onTap: () async {
-            await Settings.chooseDirectory(showDialog);
-          },
+        MenuWrapper(
+          title: _settings!.path,
+          child: ListTile(
+            title: Text(AppLocalizations.of(context)!.downloadDirectorySetting),
+            subtitle: Text(_settings!.path),
+            onTap: () async {
+              await Settings.chooseDirectory(showDialog);
+            },
+          ),
         ),
         ListTile(
           title: Text(AppLocalizations.of(context)!.selectedBooruSetting),
@@ -361,16 +365,19 @@ class _SettingsListState extends State<SettingsList> {
           onChanged: (value) => MiscSettings.setFilesExtendedActions(value),
           title: Text(AppLocalizations.of(context)!.extendedFilesGridActions),
         ),
-        ListTile(
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(
-              builder: (context) {
-                return const LicensePage();
-              },
-            ));
-          },
-          title: Text(AppLocalizations.of(context)!.licenseSetting),
-          subtitle: const Text("GPL-2.0-only"),
+        MenuWrapper(
+          title: "GPL-2.0-only",
+          child: ListTile(
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) {
+                  return const LicensePage();
+                },
+              ));
+            },
+            title: Text(AppLocalizations.of(context)!.licenseSetting),
+            subtitle: const Text("GPL-2.0-only"),
+          ),
         ),
         SwitchListTile(
           value: _miscSettings!.animeAlwaysLoadFromNet,

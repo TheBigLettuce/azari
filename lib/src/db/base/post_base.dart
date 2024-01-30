@@ -7,26 +7,26 @@
 
 import 'dart:io';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/db/schemas/booru/note_booru.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
+import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru_tagging.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/cell/cell_data.dart';
 import 'package:gallery/src/db/state_restoration.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:gallery/src/widgets/make_tags.dart';
+import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:gallery/src/widgets/notifiers/filter.dart';
 import 'package:gallery/src/widgets/notifiers/tag_manager.dart';
 import 'package:gallery/src/widgets/search_bar/search_text_field.dart';
 import 'package:gallery/src/widgets/translation_notes.dart';
-import 'package:html_unescape/html_unescape_small.dart';
 import 'package:isar/isar.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path_util;
@@ -42,7 +42,73 @@ import '../../plugs/platform_functions.dart';
 import '../../interfaces/booru/display_quality.dart';
 import '../schemas/tags/tags.dart';
 
-class PostBase implements Cell {
+class PostBase extends Cell with CachedCellValuesMixin {
+  PostBase({
+    required this.id,
+    required this.height,
+    required this.md5,
+    required this.tags,
+    required this.width,
+    required this.fileUrl,
+    required this.prefix,
+    required this.previewUrl,
+    required this.sampleUrl,
+    required this.ext,
+    required this.sourceUrl,
+    required this.rating,
+    required this.score,
+    required this.createdAt,
+    this.isarId,
+  }) {
+    // if (isHidden) {
+    //   provider = MemoryImage(kTransparentImage);
+    // } else {
+    //   try {
+    //     provider = CachedNetworkImageProvider(
+    //       previewUrl,
+    //     );
+    //   } catch (_) {
+    //     provider = MemoryImage(kTransparentImage);
+    //   }
+    // }
+
+    initValues(
+        ValueKey(fileUrl),
+        HiddenBooruPost.isHidden(id, Booru.fromPrefix(prefix)!)
+            ? null
+            : previewUrl, () {
+      if (HiddenBooruPost.isHidden(id, Booru.fromPrefix(prefix)!)) {
+        return const EmptyContent();
+      }
+
+      String url = switch (Settings.fromDb().quality) {
+        DisplayQuality.original => fileUrl,
+        DisplayQuality.sample => sampleUrl
+      };
+
+      var type = lookupMimeType(url);
+      if (type == null) {
+        return const EmptyContent();
+      }
+
+      var typeHalf = type.split("/");
+
+      if (typeHalf[0] == "image") {
+        ImageProvider provider;
+        try {
+          provider = NetworkImage(url);
+        } catch (e) {
+          provider = MemoryImage(kTransparentImage);
+        }
+
+        return typeHalf[1] == "gif" ? NetGif(provider) : NetImage(provider);
+      } else if (typeHalf[0] == "video") {
+        return NetVideo(path_util.extension(url) == ".zip" ? sampleUrl : url);
+      } else {
+        return const EmptyContent();
+      }
+    });
+  }
   @override
   Id? isarId;
 
@@ -56,9 +122,6 @@ class PostBase implements Cell {
 
   final int width;
   final int height;
-
-  @override
-  Key uniqueKey() => ValueKey(fileUrl);
 
   @Index(unique: true, replace: true)
   final String fileUrl;
@@ -176,7 +239,7 @@ class PostBase implements Cell {
 
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) {
-    final icons = _stickers(fileDisplay(), context);
+    final icons = _stickers(content(), context);
 
     return icons.isEmpty ? null : icons;
   }
@@ -193,12 +256,15 @@ class PostBase implements Cell {
       extra,
       colors,
       [
-        ListTile(
-          textColor: colors.foregroundColor,
-          title: Text(AppLocalizations.of(context)!.pathInfoPage),
-          subtitle: Text(dUrl),
-          onTap: () =>
-              launchUrl(Uri.parse(dUrl), mode: LaunchMode.externalApplication),
+        MenuWrapper(
+          title: dUrl,
+          child: ListTile(
+            textColor: colors.foregroundColor,
+            title: Text(AppLocalizations.of(context)!.pathInfoPage),
+            subtitle: Text(dUrl),
+            onTap: () => launchUrl(Uri.parse(dUrl),
+                mode: LaunchMode.externalApplication),
+          ),
         ),
         ListTile(
           textColor: colors.foregroundColor,
@@ -215,14 +281,17 @@ class PostBase implements Cell {
           title: Text(AppLocalizations.of(context)!.createdAtInfoPage),
           subtitle: Text(AppLocalizations.of(context)!.date(createdAt)),
         ),
-        ListTile(
-          textColor: colors.foregroundColor,
-          title: Text(AppLocalizations.of(context)!.sourceFileInfoPage),
-          subtitle: Text(sourceUrl),
-          onTap: sourceUrl.isNotEmpty && Uri.tryParse(sourceUrl) != null
-              ? () => launchUrl(Uri.parse(sourceUrl),
-                  mode: LaunchMode.externalApplication)
-              : null,
+        MenuWrapper(
+          title: sourceUrl,
+          child: ListTile(
+            textColor: colors.foregroundColor,
+            title: Text(AppLocalizations.of(context)!.sourceFileInfoPage),
+            subtitle: Text(sourceUrl),
+            onTap: sourceUrl.isNotEmpty && Uri.tryParse(sourceUrl) != null
+                ? () => launchUrl(Uri.parse(sourceUrl),
+                    mode: LaunchMode.externalApplication)
+                : null,
+          ),
         ),
         ListTile(
           textColor: colors.foregroundColor,
@@ -245,48 +314,20 @@ class PostBase implements Cell {
       filename(),
       supplyTags: tags,
       excluded: tagManager.excluded,
-      launchGrid: (t) {
+      launchGrid: (context, t, [safeMode]) {
         tagManager.onTagPressed(
-            context,
-            Tag.string(tag: HtmlUnescape().convert(t)),
-            Booru.fromPrefix(prefix)!,
-            true);
+          context,
+          Tag.string(tag: t),
+          Booru.fromPrefix(prefix)!,
+          true,
+          overrideSafeMode: safeMode,
+        );
       },
     );
   }
 
   @override
   String alias(bool isList) => isList ? tags.join(" ") : id.toString();
-
-  @override
-  Contentable fileDisplay() {
-    String url = switch (Settings.fromDb().quality) {
-      DisplayQuality.original => fileUrl,
-      DisplayQuality.sample => sampleUrl
-    };
-
-    var type = lookupMimeType(url);
-    if (type == null) {
-      return const EmptyContent();
-    }
-
-    var typeHalf = type.split("/");
-
-    if (typeHalf[0] == "image") {
-      ImageProvider provider;
-      try {
-        provider = NetworkImage(url);
-      } catch (e) {
-        provider = MemoryImage(kTransparentImage);
-      }
-
-      return typeHalf[1] == "gif" ? NetGif(provider) : NetImage(provider);
-    } else if (typeHalf[0] == "video") {
-      return NetVideo(path_util.extension(url) == ".zip" ? sampleUrl : url);
-    } else {
-      return const EmptyContent();
-    }
-  }
 
   @override
   String fileDownloadUrl() {
@@ -298,27 +339,25 @@ class PostBase implements Cell {
   }
 
   @override
-  CellData getCellData(bool isList, {required BuildContext context}) {
-    ImageProvider provider;
+  List<Sticker> stickers(BuildContext context) {
+    // ImageProvider provider;
     final isHidden = HiddenBooruPost.isHidden(id, Booru.fromPrefix(prefix)!);
 
-    if (isHidden) {
-      provider = MemoryImage(kTransparentImage);
-    } else {
-      try {
-        provider = CachedNetworkImageProvider(
-          previewUrl,
-        );
-      } catch (_) {
-        provider = MemoryImage(kTransparentImage);
-      }
-    }
+    // if (isHidden) {
+    //   provider = MemoryImage(kTransparentImage);
+    // } else {
+    //   try {
+    //     provider = CachedNetworkImageProvider(
+    //       previewUrl,
+    //     );
+    //   } catch (_) {
+    //     provider = MemoryImage(kTransparentImage);
+    //   }
+    // }
 
-    final content = fileDisplay();
-
-    return CellData(thumb: provider, name: alias(isList), stickers: [
+    return [
       if (isHidden) const Sticker(Icons.hide_image_rounded, right: true),
-      if (Settings.isFavorite(fileUrl))
+      if (this is! FavoriteBooru && Settings.isFavorite(fileUrl))
         Sticker(Icons.favorite_rounded,
             color: Colors.red.shade900
                 .harmonizeWith(Theme.of(context).colorScheme.primary),
@@ -327,8 +366,8 @@ class PostBase implements Cell {
             right: true),
       if (NoteBooru.hasNotes(id, Booru.fromPrefix(prefix)!))
         const Sticker(Icons.sticky_note_2_outlined, right: true),
-      ..._stickers(content, context).map((e) => Sticker(e.$1))
-    ]);
+      ..._stickers(content(), context).map((e) => Sticker(e.$1))
+    ];
   }
 
   static List<Widget> wrapTagsSearch(
@@ -340,7 +379,7 @@ class PostBase implements Cell {
     bool temporary = false,
     bool showDeleteButton = false,
     List<String>? supplyTags,
-    void Function(String)? launchGrid,
+    void Function(BuildContext, String, [SafeMode?])? launchGrid,
     BooruTagging? excluded,
   }) {
     final data = FilterNotifier.maybeOf(context);
@@ -381,21 +420,4 @@ class PostBase implements Cell {
       )
     ];
   }
-
-  PostBase(
-      {required this.id,
-      required this.height,
-      required this.md5,
-      required this.tags,
-      required this.width,
-      required this.fileUrl,
-      required this.prefix,
-      required this.previewUrl,
-      required this.sampleUrl,
-      required this.ext,
-      required this.sourceUrl,
-      required this.rating,
-      required this.score,
-      required this.createdAt,
-      this.isarId});
 }

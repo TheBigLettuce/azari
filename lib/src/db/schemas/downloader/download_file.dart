@@ -7,10 +7,9 @@
 
 import 'dart:async';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/widgets.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
-import 'package:gallery/src/interfaces/cell/cell_data.dart';
+import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:isar/isar.dart';
 
 import '../../../interfaces/cell/cell.dart';
@@ -19,16 +18,37 @@ import '../../initalize_db.dart';
 part 'download_file.g.dart';
 
 @collection
-class DownloadFile implements Cell {
+class DownloadFile extends Cell with CachedCellValuesMixin {
+  DownloadFile.d({
+    this.isarId,
+    required this.name,
+    required this.url,
+    required this.thumbUrl,
+    required this.site,
+  })  : inProgress = true,
+        isFailed = false,
+        date = DateTime.now() {
+    initValues(ValueKey(url), thumbUrl, () => const EmptyContent());
+  }
+
+  DownloadFile(
+    this.inProgress,
+    this.isFailed, {
+    this.isarId,
+    required this.name,
+    required this.url,
+    required this.thumbUrl,
+    required this.site,
+  }) : date = DateTime.now() {
+    initValues(ValueKey(url), thumbUrl, () => const EmptyContent());
+  }
+
   @override
   String toString() =>
       "Download${isFailed ? '(failed)' : inProgress ? '(in progress)' : ''}: $name, url: $url";
 
   @override
   Id? isarId;
-
-  @override
-  Key uniqueKey() => ValueKey(url);
 
   @Index(unique: true, replace: true)
   final String url;
@@ -60,24 +80,6 @@ class DownloadFile implements Cell {
   DownloadFile onHold() => DownloadFile(false, false,
       isarId: isarId, url: url, thumbUrl: thumbUrl, name: name, site: site);
 
-  DownloadFile.d(
-      {this.isarId,
-      required this.name,
-      required this.url,
-      required this.thumbUrl,
-      required this.site})
-      : inProgress = true,
-        isFailed = false,
-        date = DateTime.now();
-
-  DownloadFile(this.inProgress, this.isFailed,
-      {this.isarId,
-      required this.name,
-      required this.url,
-      required this.thumbUrl,
-      required this.site})
-      : date = DateTime.now();
-
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
 
@@ -93,20 +95,13 @@ class DownloadFile implements Cell {
   String alias(bool isList) => name;
 
   @override
-  Contentable fileDisplay() {
-    throw UnimplementedError();
-  }
+  String? fileDownloadUrl() => null;
 
   @override
-  String fileDownloadUrl() {
-    throw UnimplementedError();
-  }
+  List<Sticker> stickers(BuildContext context) => const [];
 
   @override
-  CellData getCellData(bool isList, {BuildContext? context}) => CellData(
-      thumb: thumbUrl.isEmpty ? null : CachedNetworkImageProvider(thumbUrl),
-      name: name,
-      stickers: []);
+  ImageProvider<Object>? thumbnail() => null;
 
   static void saveAll(List<DownloadFile> l) {
     Dbs.g.main.writeTxnSync(() => Dbs.g.main.downloadFiles.putAllSync(l));

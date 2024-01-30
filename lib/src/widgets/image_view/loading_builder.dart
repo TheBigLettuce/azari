@@ -25,6 +25,7 @@ mixin ImageViewLoadingBuilderMixin<T extends Cell> on State<ImageView<T>> {
     int currentPage,
     GlobalKey<WrapImageViewNotifiersState> key,
     PaletteGenerator? currentPalette,
+    T Function(int) drawCell,
   ) {
     final expectedBytes = event?.expectedTotalBytes;
     final loadedBytes = event?.cumulativeBytesLoaded;
@@ -45,7 +46,7 @@ mixin ImageViewLoadingBuilderMixin<T extends Cell> on State<ImageView<T>> {
     }
 
     try {
-      final t = widget.getCell(idx).getCellData(false, context: context).thumb;
+      final t = drawCell(idx).thumbnail();
       if (t == null) {
         return const SizedBox.shrink();
       }

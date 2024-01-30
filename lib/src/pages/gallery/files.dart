@@ -27,8 +27,6 @@ import 'package:gallery/src/plugs/notifications.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 import 'package:gallery/src/db/schemas/gallery/favorite_media.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
-import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
-import 'package:gallery/src/widgets/grid/layouts/list_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -239,190 +237,185 @@ class _GalleryFilesState extends State<GalleryFiles>
         child: GridSkeleton<SystemGalleryDirectoryFile>(
           state,
           (context) => CallbackGrid(
-              key: state.gridKey,
-              getCell: (i) => widget.api.directCell(i),
-              initalScrollPosition: 0,
-              scaffoldKey: state.scaffoldKey,
-              systemNavigationInsets: viewPadding,
-              hasReachedEnd: () => true,
-              addFabPadding: true,
-              selectionGlue: GlueProvider.of(context),
-              statistics: const ImageViewStatistics(
-                  swiped: StatisticsGallery.addFilesSwiped,
-                  viewed: StatisticsGallery.addViewedFiles),
-              addIconsImage: (cell) {
-                return widget.callback != null
-                    ? [
-                        _chooseAction(),
-                      ]
-                    : extra.isTrash
-                        ? [
-                            _restoreFromTrash(),
-                          ]
-                        : [
-                            if (MiscSettings.current.filesExtendedActions &&
-                                cell.isVideo)
-                              _loadVideoThumbnailAction(state),
-                            _addToFavoritesAction(cell, plug),
-                            _deleteAction(),
-                            _copyAction(state, plug),
-                            _moveAction(state, plug)
-                          ];
-              },
-              showCount: true,
-              searchWidget: SearchAndFocus(
-                  searchWidget(context, hint: widget.dirName), searchFocus),
-              mainFocus: state.mainFocus,
-              refresh: extra.supportsDirectRefresh
-                  ? () async {
-                      final i = await widget.api.refresh();
+            key: state.gridKey,
+            getCell: (i) => widget.api.directCell(i),
+            initalScrollPosition: 0,
+            scaffoldKey: state.scaffoldKey,
+            systemNavigationInsets: viewPadding,
+            hasReachedEnd: () => true,
+            addFabPadding: true,
+            selectionGlue: GlueProvider.of(context),
+            statistics: const ImageViewStatistics(
+                swiped: StatisticsGallery.addFilesSwiped,
+                viewed: StatisticsGallery.addViewedFiles),
+            addIconsImage: (cell) {
+              return widget.callback != null
+                  ? [
+                      _chooseAction(),
+                    ]
+                  : extra.isTrash
+                      ? [
+                          _restoreFromTrash(),
+                        ]
+                      : [
+                          if (MiscSettings.current.filesExtendedActions &&
+                              cell.isVideo)
+                            _loadVideoThumbnailAction(state),
+                          _addToFavoritesAction(cell, plug),
+                          _deleteAction(),
+                          _copyAction(state, plug),
+                          _moveAction(state, plug)
+                        ];
+            },
+            showCount: true,
+            searchWidget: SearchAndFocus(
+                searchWidget(context, hint: widget.dirName), searchFocus),
+            mainFocus: state.mainFocus,
+            refresh: extra.supportsDirectRefresh
+                ? () async {
+                    final i = await widget.api.refresh();
 
-                      performSearch(searchTextController.text);
+                    performSearch(searchTextController.text);
 
-                      return i;
-                    }
-                  : () {
-                      _refresh();
-                      return null;
+                    return i;
+                  }
+                : () {
+                    _refresh();
+                    return null;
+                  },
+            menuButtonItems: [
+              if (widget.callback == null && extra.isTrash)
+                IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          DialogRoute(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: Text(AppLocalizations.of(context)!
+                                      .emptyTrashTitle),
+                                  content: Text(
+                                    AppLocalizations.of(context)!
+                                        .thisIsPermanent,
+                                    style: TextStyle(
+                                        color: Colors.red.harmonizeWith(
+                                            Theme.of(context)
+                                                .colorScheme
+                                                .primary)),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () {
+                                          PlatformFunctions.emptyTrash();
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                            AppLocalizations.of(context)!.yes)),
+                                    TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                            AppLocalizations.of(context)!.no))
+                                  ],
+                                );
+                              }));
                     },
-              menuButtonItems: [
-                if (widget.callback == null && extra.isTrash)
-                  IconButton(
-                      onPressed: () {
-                        Navigator.push(
-                            context,
-                            DialogRoute(
-                                context: context,
-                                builder: (context) {
-                                  return AlertDialog(
-                                    title: Text(AppLocalizations.of(context)!
-                                        .emptyTrashTitle),
-                                    content: Text(
-                                      AppLocalizations.of(context)!
-                                          .thisIsPermanent,
-                                      style: TextStyle(
-                                          color: Colors.red.harmonizeWith(
-                                              Theme.of(context)
-                                                  .colorScheme
-                                                  .primary)),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                          onPressed: () {
-                                            PlatformFunctions.emptyTrash();
-                                            Navigator.pop(context);
-                                          },
-                                          child: Text(
-                                              AppLocalizations.of(context)!
-                                                  .yes)),
-                                      TextButton(
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                          },
-                                          child: Text(
-                                              AppLocalizations.of(context)!.no))
-                                    ],
-                                  );
-                                }));
-                      },
-                      icon: const Icon(Icons.delete_sweep_outlined)),
-                if (widget.callback != null)
-                  IconButton(
-                      onPressed: () {
-                        if (state.gridKey.currentState?.mutationInterface
-                                .isRefreshing !=
-                            false) {
-                          return;
-                        }
+                    icon: const Icon(Icons.delete_sweep_outlined)),
+              if (widget.callback != null)
+                IconButton(
+                    onPressed: () {
+                      if (state.gridKey.currentState?.mutationInterface
+                              .isRefreshing !=
+                          false) {
+                        return;
+                      }
 
-                        final upTo = state
-                            .gridKey.currentState?.mutationInterface.cellCount;
-                        if (upTo == null) {
-                          return;
-                        }
+                      final upTo = state
+                          .gridKey.currentState?.mutationInterface.cellCount;
+                      if (upTo == null) {
+                        return;
+                      }
 
-                        try {
-                          final n = math.Random.secure().nextInt(upTo);
+                      try {
+                        final n = math.Random.secure().nextInt(upTo);
 
-                          widget.callback?.call(state
-                              .gridKey.currentState!.mutationInterface
-                              .getCell(n));
-                        } catch (e, trace) {
-                          _log.logDefaultImportant(
-                              "getting random number".errorMessage(e), trace);
+                        widget.callback?.call(state
+                            .gridKey.currentState!.mutationInterface
+                            .getCell(n));
+                      } catch (e, trace) {
+                        _log.logDefaultImportant(
+                            "getting random number".errorMessage(e), trace);
 
-                          return;
-                        }
+                        return;
+                      }
 
-                        if (widget.callback!.returnBack) {
-                          Navigator.pop(context);
-                          Navigator.pop(context);
-                        }
-                      },
-                      icon: const Icon(Icons.casino_outlined)),
-                GridSettingsButton(gridSettings,
-                    selectRatio: (ratio) =>
-                        gridSettings.copy(aspectRatio: ratio).save(),
-                    selectHideName: (hideNames) =>
-                        gridSettings.copy(hideName: hideNames).save(),
-                    selectListView: (listView) =>
-                        gridSettings.copy(listView: listView).save(),
-                    selectGridColumn: (columns) =>
-                        gridSettings.copy(columns: columns).save()),
-              ],
-              inlineMenuButtonItems: true,
-              noteInterface: NoteGallery.interface((
-                  {int? replaceIndx, bool addNote = false, int? removeNote}) {
-                if (state
-                        .gridKey.currentState?.mutationInterface.isRefreshing ==
-                    true) {
-                  return;
-                }
+                      if (widget.callback!.returnBack) {
+                        Navigator.pop(context);
+                        Navigator.pop(context);
+                      }
+                    },
+                    icon: const Icon(Icons.casino_outlined)),
+              GridSettingsButton(gridSettings,
+                  selectRatio: (ratio) =>
+                      gridSettings.copy(aspectRatio: ratio).save(),
+                  selectHideName: (hideNames) =>
+                      gridSettings.copy(hideName: hideNames).save(),
+                  selectGridLayout: (layoutType) =>
+                      gridSettings.copy(layoutType: layoutType).save(),
+                  selectGridColumn: (columns) =>
+                      gridSettings.copy(columns: columns).save()),
+            ],
+            inlineMenuButtonItems: true,
+            noteInterface: NoteGallery.interface((
+                {int? replaceIndx, bool addNote = false, int? removeNote}) {
+              if (state.gridKey.currentState?.mutationInterface.isRefreshing ==
+                  true) {
+                return;
+              }
 
-                _refresh();
-              }),
-              onBack: () {
-                final filterMode = currentFilteringMode();
-                if (filterMode != FilteringMode.noFilter) {
-                  resetSearch();
-                  return;
-                }
-                Navigator.pop(context);
-              },
-              progressTicker: stream.stream,
-              description: GridDescription(
-                  widget.callback != null
-                      ? []
-                      : extra.isTrash
-                          ? [
-                              _restoreFromTrash(),
-                            ]
-                          : [
-                              if (extra.isFavorites)
-                                _setFavoritesThumbnailAction(),
-                              if (MiscSettings
-                                  .current.filesExtendedActions) ...[
-                                _bulkRename(),
-                                _saveTagsAction(plug),
-                              ],
-                              _addToFavoritesAction(null, plug),
-                              _deleteAction(),
-                              _copyAction(state, plug),
-                              _moveAction(state, plug),
-                            ],
-                  bottomWidget: widget.callback != null
-                      ? CopyMovePreview.hintWidget(context,
-                          AppLocalizations.of(context)!.chooseFileNotice)
-                      : null,
-                  keybindsDescription: widget.dirName,
-                  layout: gridSettings.listView
-                      ? const ListLayout()
-                      : GridLayout(
-                          gridSettings.columns,
-                          gridSettings.aspectRatio,
-                          tightMode: true,
-                          hideAlias: gridSettings.hideName,
-                        ))),
+              _refresh();
+            }),
+            onBack: () {
+              final filterMode = currentFilteringMode();
+              if (filterMode != FilteringMode.noFilter) {
+                resetSearch();
+                return;
+              }
+              Navigator.pop(context);
+            },
+            progressTicker: stream.stream,
+            description: GridDescription(
+              widget.callback != null
+                  ? []
+                  : extra.isTrash
+                      ? [
+                          _restoreFromTrash(),
+                        ]
+                      : [
+                          if (extra.isFavorites) _setFavoritesThumbnailAction(),
+                          if (MiscSettings.current.filesExtendedActions) ...[
+                            _bulkRename(),
+                            _saveTagsAction(plug),
+                          ],
+                          _addToFavoritesAction(null, plug),
+                          _deleteAction(),
+                          _copyAction(state, plug),
+                          _moveAction(state, plug),
+                        ],
+              bottomWidget: widget.callback != null
+                  ? CopyMovePreview.hintWidget(
+                      context, AppLocalizations.of(context)!.chooseFileNotice)
+                  : null,
+              keybindsDescription: widget.dirName,
+              layout: gridSettings.layoutType.layout(
+                gridSettings,
+                tightMode: true,
+                gridSeed: state.gridSeed,
+              ),
+            ),
+          ),
           noDrawer: widget.callback != null,
           canPop: currentFilteringMode() == FilteringMode.noFilter &&
               searchTextController.text.isEmpty,

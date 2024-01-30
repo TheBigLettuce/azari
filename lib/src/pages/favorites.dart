@@ -20,7 +20,6 @@ import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/tags/local_tag_dictionary.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
-import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/grid/layouts/segment_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
@@ -125,11 +124,11 @@ class _FavoritesPageState extends State<FavoritesPage>
             data
           ),
         FilteringMode.gif => (
-            cells.where((element) => element.fileDisplay() is NetGif),
+            cells.where((element) => element.content is NetGif),
             data
           ),
         FilteringMode.video => (
-            cells.where((element) => element.fileDisplay() is NetVideo),
+            cells.where((element) => element.content is NetVideo),
             data
           ),
         FilteringMode() => (cells, data)
@@ -299,7 +298,8 @@ class _FavoritesPageState extends State<FavoritesPage>
                     selectHideName: null,
                     selectRatio: (ratio) =>
                         gridSettings.copy(aspectRatio: ratio).save(),
-                    selectListView: null,
+                    selectGridLayout: (layoutType) =>
+                        gridSettings.copy(layoutType: layoutType).save(),
                     selectGridColumn: (columns) =>
                         gridSettings.copy(columns: columns).save())
               ],
@@ -310,26 +310,34 @@ class _FavoritesPageState extends State<FavoritesPage>
               mainFocus: state.mainFocus,
               searchWidget: SearchAndFocus(searchWidget(context), searchFocus),
               refresh: () => Future.value(loader.count()),
-              description: GridDescription([
-                BooruGridActions.download(context, booru),
-                _groupButton(context)
-              ],
-                  keybindsDescription:
-                      AppLocalizations.of(context)!.favoritesLabel,
-                  layout: segmented
-                      ? SegmentLayout(
-                          Segments(
-                            "Ungrouped", // TODO: change
-                            hidePinnedIcon: true,
-                            prebuiltSegments: segments,
-                          ),
-                          gridSettings.columns,
-                          gridSettings.aspectRatio,
-                          hideAlias: gridSettings.hideName,
-                        )
-                      : GridLayout(
-                          gridSettings.columns, gridSettings.aspectRatio,
-                          hideAlias: gridSettings.hideName)),
+              description: GridDescription(
+                [
+                  BooruGridActions.download(context, booru),
+                  _groupButton(context),
+                  BooruGridActions.favorites(
+                    context,
+                    null,
+                    showDeleteSnackbar: true,
+                  ),
+                ],
+                keybindsDescription:
+                    AppLocalizations.of(context)!.favoritesLabel,
+                layout: segmented
+                    ? SegmentLayout(
+                        Segments(
+                          "Ungrouped", // TODO: change
+                          hidePinnedIcon: true,
+                          prebuiltSegments: segments,
+                        ),
+                        gridSettings.columns,
+                        gridSettings.aspectRatio,
+                        hideAlias: gridSettings.hideName,
+                      )
+                    : gridSettings.layoutType.layout(
+                        gridSettings,
+                        gridSeed: state.gridSeed,
+                      ),
+              ),
             ),
         canPop: false, overrideOnPop: (pop, hideAppBar) {
       if (searchTextController.text.isNotEmpty) {

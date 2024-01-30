@@ -67,7 +67,7 @@ class NotePageContainer<T extends Cell> {
             child: Image(
                 fit: BoxFit.cover,
                 filterQuality: FilterQuality.high,
-                image: e1.getCellData(false, context: context).thumb!),
+                image: e1.thumbnail()!),
           ),
         ).animate().fadeIn());
   }

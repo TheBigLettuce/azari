@@ -9,21 +9,68 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:gallery/src/db/initalize_db.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
+import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
+import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
+import 'package:gallery/src/widgets/grid/layouts/grid_masonry_layout.dart';
+import 'package:gallery/src/widgets/grid/layouts/grid_quilted.dart';
+import 'package:gallery/src/widgets/grid/layouts/list_layout.dart';
 import 'package:isar/isar.dart';
 
 import '../../base/grid_settings_base.dart';
 
 part 'booru.g.dart';
 
+enum GridLayoutType {
+  grid("Grid"),
+  list("List"),
+  gridQuilted("Quilted grid"),
+  gridMasonry("Masonry grid");
+
+  const GridLayoutType(this.text);
+
+  final String text;
+
+  GridLayouter<T> layout<T extends Cell>(
+    GridSettingsBase base, {
+    required int gridSeed,
+    bool tightMode = false,
+  }) =>
+      switch (this) {
+        GridLayoutType.list => ListLayout<T>(),
+        GridLayoutType.grid => GridLayout<T>(
+            base.columns,
+            base.aspectRatio,
+            hideAlias: base.hideName,
+            tightMode: tightMode,
+          ),
+        GridLayoutType.gridQuilted => GridQuiltedLayout<T>(
+            base.columns,
+            base.aspectRatio,
+            gridSeed: gridSeed,
+            hideAlias: base.hideName,
+            tightMode: tightMode,
+          ),
+        GridLayoutType.gridMasonry => GridMasonryLayout<T>(
+            base.columns,
+            base.aspectRatio,
+            gridSeed: gridSeed,
+            hideAlias: base.hideName,
+            tightMode: tightMode,
+          ),
+      };
+}
+
 @collection
 class GridSettingsBooru extends GridSettingsBase {
-  const GridSettingsBooru(
-      {required super.aspectRatio,
-      required super.columns,
-      required super.listView,
-      required super.hideName});
+  const GridSettingsBooru({
+    required super.aspectRatio,
+    required super.columns,
+    required super.layoutType,
+    required super.hideName,
+  });
 
   final Id id = 0;
 
@@ -31,12 +78,12 @@ class GridSettingsBooru extends GridSettingsBase {
       {bool? hideName,
       GridAspectRatio? aspectRatio,
       GridColumn? columns,
-      bool? listView}) {
+      GridLayoutType? layoutType}) {
     return GridSettingsBooru(
       aspectRatio: aspectRatio ?? this.aspectRatio,
       hideName: hideName ?? this.hideName,
       columns: columns ?? this.columns,
-      listView: listView ?? this.listView,
+      layoutType: layoutType ?? this.layoutType,
     );
   }
 
@@ -54,6 +101,6 @@ class GridSettingsBooru extends GridSettingsBase {
       GridSettingsBooru(
           aspectRatio: GridAspectRatio.one,
           columns: Platform.isAndroid ? GridColumn.two : GridColumn.six,
-          listView: false,
+          layoutType: GridLayoutType.grid,
           hideName: true);
 }

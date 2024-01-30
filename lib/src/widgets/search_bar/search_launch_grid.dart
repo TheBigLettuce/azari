@@ -60,6 +60,7 @@ mixin SearchLaunchGrid<T extends Cell>
         scrollHack: _scrollHack,
         // showSearch: !Platform.isAndroid,
         roundBorders: false,
+        swapSearchIcon: _state.swapSearchIconWithAddItems,
         // ignoreFocusNotifier: Platform.isAndroid,
         addItems: _state.addItems,
       );
