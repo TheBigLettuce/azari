@@ -16,12 +16,19 @@ import '../../interfaces/grid/selection_glue.dart';
 import 'selection/selection_glue_state.dart';
 
 class WrapGridPage<T extends Cell> extends StatefulWidget {
-  // final Widget Function(SelectionGlue<T> glue) f;
   final GlobalKey<ScaffoldState> scaffoldKey;
+  final (
+    SelectionGlue<T>,
+    SelectionGlue<J> Function<J extends Cell>()
+  )? provided;
   final Widget child;
 
-  const WrapGridPage(
-      {super.key, required this.scaffoldKey, required this.child});
+  const WrapGridPage({
+    super.key,
+    required this.scaffoldKey,
+    this.provided,
+    required this.child,
+  });
 
   @override
   State<WrapGridPage<T>> createState() => _WrapGridPageState();
@@ -29,15 +36,25 @@ class WrapGridPage<T extends Cell> extends StatefulWidget {
 
 class _WrapGridPageState<T extends Cell> extends State<WrapGridPage<T>>
     with SingleTickerProviderStateMixin {
-  final glueState = SelectionGlueState();
-  late final SelectionGlue<T> glue = glueState.glue<T>(
-      () => MediaQuery.viewInsetsOf(context).bottom != 0, setState, 80);
+  final glueState = SelectionGlueState(
+    hide: (_) {},
+  );
+  late final SelectionGlue<T> glue = widget.provided?.$1 ??
+      glueState.glue<T>(
+          () => MediaQuery.viewInsetsOf(context).bottom != 0, setState, 80);
+
+  SelectionGlue<J> _generate<J extends Cell>() {
+    return widget.provided?.$2.call() ??
+        glueState.glue(
+            () => MediaQuery.viewInsetsOf(context).bottom != 0, setState, 80);
+  }
 
   @override
   Widget build(BuildContext context) {
     return SelectionCountNotifier(
       count: glueState.count ?? 0,
       child: GlueProvider<T>(
+        generate: _generate,
         glue: glue,
         child: Scaffold(
           key: widget.scaffoldKey,

@@ -8,10 +8,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 import 'package:gallery/src/db/schemas/grid_settings/directories.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/pages/booru/grid_settings_button.dart';
 import 'package:gallery/src/plugs/gallery.dart';
@@ -265,7 +268,13 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
             ? null
             : (label, children) =>
                 SystemGalleryDirectoriesActions.joinedDirectoriesFnc(
-                    context, label, children, extra, widget.nestedCallback),
+                    context,
+                    label,
+                    children,
+                    extra,
+                    widget.viewPadding ??
+                        EdgeInsets.only(bottom: widget.bottomPadding),
+                    widget.nestedCallback),
       );
 
   @override
@@ -358,21 +367,38 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                 StatisticsGallery.addViewedDirectories();
                 final d = cell;
 
+                SelectionGlue<J> generate<J extends Cell>() =>
+                    GlueProvider.generateOf<SystemGalleryDirectory, J>(context);
+
+                final glue = generate<SystemGalleryDirectoryFile>();
+
                 Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => switch (cell.bucketId) {
                         "favorites" => GalleryFiles(
+                            viewPadding: widget.viewPadding ??
+                                EdgeInsets.only(bottom: widget.bottomPadding),
+                            glue: glue,
+                            generateGlue: generate,
                             api: extra.favorites(),
                             callback: widget.nestedCallback,
                             dirName: "favorites",
                             bucketId: "favorites"),
                         "trash" => GalleryFiles(
+                            viewPadding: widget.viewPadding ??
+                                EdgeInsets.only(bottom: widget.bottomPadding),
+                            glue: glue,
                             api: extra.trash(),
+                            generateGlue: generate,
                             callback: widget.nestedCallback,
                             dirName: "trash",
                             bucketId: "trash"),
                         String() => GalleryFiles(
+                            viewPadding: widget.viewPadding ??
+                                EdgeInsets.only(bottom: widget.bottomPadding),
+                            generateGlue: generate,
+                            glue: glue,
                             api: api.files(d),
                             dirName: d.name,
                             callback: widget.nestedCallback,
@@ -388,7 +414,11 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                         if (widget.callback == null ||
                             widget.callback!.joinable)
                           SystemGalleryDirectoriesActions.joinedDirectories(
-                              context, extra, widget.nestedCallback)
+                              context,
+                              extra,
+                              widget.viewPadding ??
+                                  EdgeInsets.only(bottom: widget.bottomPadding),
+                              widget.nestedCallback)
                       ]
                     : [
                         FavoritesActions.addToGroup(context, (selected) {
@@ -416,7 +446,11 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                         SystemGalleryDirectoriesActions.blacklist(
                             context, extra),
                         SystemGalleryDirectoriesActions.joinedDirectories(
-                            context, extra, widget.nestedCallback)
+                            context,
+                            extra,
+                            widget.viewPadding ??
+                                EdgeInsets.only(bottom: widget.bottomPadding),
+                            widget.nestedCallback)
                       ],
                 bottomWidget:
                     widget.callback != null || widget.nestedCallback != null

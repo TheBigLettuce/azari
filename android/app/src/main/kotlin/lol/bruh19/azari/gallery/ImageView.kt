@@ -20,7 +20,7 @@ import io.flutter.plugin.platform.PlatformViewFactory
 internal class ImageView(
     context: Context,
     id: Int,
-    params: Map<String, String>
+    params: Map<String, String>,
 ) : PlatformView {
     private var imageView: android.widget.ImageView
 
@@ -30,6 +30,7 @@ internal class ImageView(
 
     override fun dispose() {
         imageView.invalidate()
+
     }
 
     init {

@@ -7,10 +7,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 
 import '../../../interfaces/gallery/gallery_directories_extra.dart';
 import '../../../pages/gallery/files.dart';
@@ -33,6 +36,7 @@ class SystemGalleryDirectoriesActions {
   static GridAction<SystemGalleryDirectory> joinedDirectories(
       BuildContext context,
       GalleryDirectoriesExtra extra,
+      EdgeInsets viewPadding,
       CallbackDescriptionNested? callback) {
     return GridAction(
       Icons.merge_rounded,
@@ -44,6 +48,7 @@ class SystemGalleryDirectoriesActions {
                 : "${selected.length} ${AppLocalizations.of(context)!.directoriesPlural}",
             selected,
             extra,
+            viewPadding,
             callback);
       },
       true,
@@ -55,13 +60,22 @@ class SystemGalleryDirectoriesActions {
       String label,
       List<SystemGalleryDirectory> dirs,
       GalleryDirectoriesExtra extra,
+      EdgeInsets viewPadding,
       CallbackDescriptionNested? callback) {
     StatisticsGallery.addJoined();
+
+    SelectionGlue<J> generate<J extends Cell>() =>
+        GlueProvider.generateOf<SystemGalleryDirectory, J>(context);
+
+    final joined = extra.joinedDir(dirs.map((e) => e.bucketId).toList());
 
     Navigator.push(context, MaterialPageRoute(
       builder: (context) {
         return GalleryFiles(
-            api: extra.joinedDir(dirs.map((e) => e.bucketId).toList()),
+            viewPadding: viewPadding,
+            generateGlue: generate,
+            glue: generate(),
+            api: joined,
             callback: callback,
             dirName: label,
             bucketId: "joinedDir");

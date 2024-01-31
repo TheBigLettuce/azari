@@ -10,37 +10,34 @@ part of 'files.dart';
 mixin _FilesActionsMixin on State<GalleryFiles> {
   Future<void> _deleteDialog(
       BuildContext context, List<SystemGalleryDirectoryFile> selected) {
-    return Navigator.push(
-        context,
-        DialogRoute(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: Text(selected.length == 1
-                  ? "${AppLocalizations.of(context)!.tagDeleteDialogTitle} ${selected.first.name}"
-                  : "${AppLocalizations.of(context)!.tagDeleteDialogTitle}"
-                      " ${selected.length}"
-                      " ${AppLocalizations.of(context)!.itemPlural}"),
-              content:
-                  Text(AppLocalizations.of(context)!.youCanRestoreFromTrash),
-              actions: [
-                TextButton(
-                    onPressed: () {
-                      PlatformFunctions.addToTrash(
-                          selected.map((e) => e.originalUri).toList());
-                      StatisticsGallery.addDeleted(selected.length);
-                      Navigator.pop(context);
-                    },
-                    child: Text(AppLocalizations.of(context)!.yes)),
-                TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text(AppLocalizations.of(context)!.no))
-              ],
-            );
-          },
-        ));
+    return Navigator.of(context, rootNavigator: true).push(DialogRoute(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(selected.length == 1
+              ? "${AppLocalizations.of(context)!.tagDeleteDialogTitle} ${selected.first.name}"
+              : "${AppLocalizations.of(context)!.tagDeleteDialogTitle}"
+                  " ${selected.length}"
+                  " ${AppLocalizations.of(context)!.itemPlural}"),
+          content: Text(AppLocalizations.of(context)!.youCanRestoreFromTrash),
+          actions: [
+            TextButton(
+                onPressed: () {
+                  PlatformFunctions.addToTrash(
+                      selected.map((e) => e.originalUri).toList());
+                  StatisticsGallery.addDeleted(selected.length);
+                  Navigator.pop(context);
+                },
+                child: Text(AppLocalizations.of(context)!.yes)),
+            TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text(AppLocalizations.of(context)!.no))
+          ],
+        );
+      },
+    ));
   }
 
   GridAction<SystemGalleryDirectoryFile> _restoreFromTrash() {
@@ -193,7 +190,7 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     state.gridKey.currentState?.imageViewKey.currentState?.wrapNotifiersKey
         .currentState
         ?.pauseVideo();
-    Navigator.push(context, MaterialPageRoute(
+    Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
       builder: (context) {
         return WrapGridPage<SystemGalleryDirectory>(
             scaffoldKey: GlobalKey(),
@@ -327,54 +324,51 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     if (selected.isEmpty) {
       return;
     }
-    Navigator.push(
-        context,
-        DialogRoute(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              title: Text(AppLocalizations.of(context)!.bulkRenameTitle),
-              content: TextFormField(
-                autofocus: true,
-                initialValue: "*",
-                autovalidateMode: AutovalidateMode.always,
-                validator: (value) {
-                  if (value == null) {
-                    return AppLocalizations.of(context)!.valueIsNull;
-                  }
-                  if (value.isEmpty) {
-                    return AppLocalizations.of(context)!.newNameShouldntBeEmpty;
-                  }
+    Navigator.of(context, rootNavigator: true).push(DialogRoute(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(AppLocalizations.of(context)!.bulkRenameTitle),
+          content: TextFormField(
+            autofocus: true,
+            initialValue: "*",
+            autovalidateMode: AutovalidateMode.always,
+            validator: (value) {
+              if (value == null) {
+                return AppLocalizations.of(context)!.valueIsNull;
+              }
+              if (value.isEmpty) {
+                return AppLocalizations.of(context)!.newNameShouldntBeEmpty;
+              }
 
-                  if (!value.contains("*")) {
-                    return AppLocalizations.of(context)!
-                        .newNameShouldIncludeOneStar;
-                  }
+              if (!value.contains("*")) {
+                return AppLocalizations.of(context)!
+                    .newNameShouldIncludeOneStar;
+              }
 
-                  return null;
-                },
-                onFieldSubmitted: (value) async {
-                  if (value.isEmpty) {
-                    return;
-                  }
-                  final idx = value.indexOf("*");
-                  if (idx == -1) {
-                    return;
-                  }
+              return null;
+            },
+            onFieldSubmitted: (value) async {
+              if (value.isEmpty) {
+                return;
+              }
+              final idx = value.indexOf("*");
+              if (idx == -1) {
+                return;
+              }
 
-                  final matchBefore = value.substring(0, idx);
+              final matchBefore = value.substring(0, idx);
 
-                  for (final (i, e) in selected.indexed) {
-                    PlatformFunctions.rename(
-                        e.originalUri, "$matchBefore${e.name}",
-                        notify: i == selected.length - 1);
-                  }
+              for (final (i, e) in selected.indexed) {
+                PlatformFunctions.rename(e.originalUri, "$matchBefore${e.name}",
+                    notify: i == selected.length - 1);
+              }
 
-                  Navigator.pop(context);
-                },
-              ),
-            );
-          },
-        ));
+              Navigator.pop(context);
+            },
+          ),
+        );
+      },
+    ));
   }
 }

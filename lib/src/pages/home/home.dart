@@ -14,6 +14,8 @@ import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
 import 'package:gallery/src/pages/anime/anime.dart';
 import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
@@ -56,6 +58,7 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> with TickerProviderStateMixin {
+  final navigatorKey = GlobalKey<NavigatorState>();
   late final controllerNavBar = AnimationController(vsync: this);
   final state = SkeletonState();
   int currentRoute = 0;
@@ -75,6 +78,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
   Future<int>? status;
   bool isRefreshing = false;
+
+  bool hideNavBar = false;
 
   final Map<void Function(int?, bool), Null> m = {};
 
@@ -120,7 +125,15 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       setState(() {});
     });
 
-    glueState = SelectionGlueState();
+    glueState = SelectionGlueState(
+      hide: (hide) {
+        if (hide) {
+          controllerNavBar.animateTo(1);
+        } else {
+          controllerNavBar.animateBack(0);
+        }
+      },
+    );
 
     final settings = Settings.fromDb();
 
@@ -190,12 +203,29 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  void _popGallery(bool b) {
+    final state = navigatorKey.currentState;
+    if (state == null) {
+      return;
+    }
+
+    state.maybePop().then((value) {
+      if (!value) {
+        _switchPage(0);
+      }
+    });
+  }
+
   bool keyboardVisible() => MediaQuery.viewInsetsOf(context).bottom != 0;
+
+  SelectionGlue<T> _generateGlue<T extends Cell>() =>
+      glueState.glue(keyboardVisible, setState, 80);
 
   Widget _currentPage(BuildContext context, EdgeInsets padding) {
     if (widget.callback != null) {
       if (currentRoute == 0) {
         return GlueProvider<SystemGalleryDirectory>(
+            generate: _generateGlue,
             glue: glueState.glue(keyboardVisible, setState, 0),
             child: GalleryDirectories(
               nestedCallback: widget.callback,
@@ -231,6 +261,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
     return switch (currentRoute) {
       0 => GlueProvider<Post>(
+          generate: _generateGlue,
           glue: glueState.glue(keyboardVisible, setState, 0),
           child: MainBooruGrid(
               mainGrid: mainGrid,
@@ -244,19 +275,36 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           //   procPop: _procPop,
           // ),
         ),
-      1 => GlueProvider<SystemGalleryDirectory>(
-          glue: glueState.glue(keyboardVisible, setState, 0),
-          child: GalleryDirectories(
-            procPop: _procPop,
-            viewPadding: padding,
-            bottomPadding: keyboardVisible() ? 0 : 80,
+      1 => PopScope(
+          canPop: false,
+          onPopInvoked: _popGallery,
+          child: Navigator(
+            key: navigatorKey,
+            initialRoute: "/directories",
+            onGenerateRoute: (settings) {
+              return MaterialPageRoute(
+                builder: (context) {
+                  return GlueProvider<SystemGalleryDirectory>(
+                    generate: _generateGlue,
+                    glue: glueState.glue(keyboardVisible, setState, 0),
+                    child: GalleryDirectories(
+                      procPop: _procPop,
+                      viewPadding: padding,
+                      bottomPadding: keyboardVisible() ? 0 : 80,
+                    ),
+                  );
+                },
+              );
+            },
           ),
         ),
       2 => GlueProvider<FavoriteBooru>(
+          generate: _generateGlue,
           glue: glueState.glue(keyboardVisible, setState, 0),
           child: FavoritesPage(procPop: _procPop, viewPadding: padding),
         ),
       3 => GlueProvider<AnimeEntry>(
+          generate: _generateGlue,
           glue: glueState.glue(keyboardVisible, setState, 0),
           child: AnimePage(procPop: _procPop, viewPadding: padding),
         ),
@@ -324,7 +372,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
                 builder: (context, _) {
                   return glueState.actions != null
                       ? GlueBottomAppBar(glueState.actions!)
-                      : const SizedBox();
+                      : Padding(
+                          padding: EdgeInsets.only(bottom: edgeInsets.bottom));
                 },
               )
             ],

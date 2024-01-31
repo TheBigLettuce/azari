@@ -92,7 +92,7 @@ class TagsWidget extends StatelessWidget {
             child: const Text("Delete"), // TODO: change
           )
         ],
-        child: ActionChip(
+        child: RawChip(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
           side: redBackground ? BorderSide(color: Colors.pink.shade200) : null,

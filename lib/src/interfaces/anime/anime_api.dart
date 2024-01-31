@@ -22,7 +22,7 @@ abstract class AnimeAPI {
       {int? genreId, AnimeSafeMode? mode});
   Future<Map<int, AnimeGenre>> genres(AnimeSafeMode mode);
   Future<List<AnimeEntry>> top(int page);
-  Future<List<AnimeNewsEntry>> news(int page);
+  Future<List<AnimeNewsEntry>> animeNews(AnimeEntry entry, int page);
   Future<List<AnimeRecommendations>> recommendations(AnimeEntry entry);
   Future<List<AnimePicture>> pictures(AnimeEntry entry);
 
@@ -109,7 +109,19 @@ class AnimeRecommendations extends Cell with CachedCellValuesMixin {
   List<Sticker> stickers(BuildContext context) => const [];
 }
 
-class AnimeNewsEntry {}
+class AnimeNewsEntry {
+  final String title;
+  final String content;
+  final String? thumbUrl;
+  final String date;
+
+  const AnimeNewsEntry({
+    required this.content,
+    required this.date,
+    required this.thumbUrl,
+    required this.title,
+  });
+}
 
 enum AnimeMetadata {
   jikan;

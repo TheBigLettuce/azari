@@ -45,6 +45,8 @@ class TagManager<T extends TagManagerType> {
 
     latest.add(t);
 
+    PauseVideoNotifier.maybePauseOf(context, true);
+
     if (restore && !_temporary) {
       Navigator.push(context, MaterialPageRoute(builder: (context) {
         final instance = DbsOpen.secondaryGrid(temporary: false);
@@ -59,7 +61,7 @@ class TagManager<T extends TagManagerType> {
               safeMode: overrideSafeMode ?? Settings.fromDb().safeMode),
           instance: instance,
         );
-      }));
+      })).whenComplete(() => PauseVideoNotifier.maybePauseOf(context, false));
     } else {
       Navigator.push(context, MaterialPageRoute(builder: (context) {
         return RandomBooruGrid(
@@ -71,7 +73,7 @@ class TagManager<T extends TagManagerType> {
           tags: t.tag,
           overrideSafeMode: overrideSafeMode,
         );
-      }));
+      })).whenComplete(() => PauseVideoNotifier.maybePauseOf(context, false));
     }
   }
 

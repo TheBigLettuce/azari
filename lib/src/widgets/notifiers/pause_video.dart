@@ -8,16 +8,28 @@
 import 'package:flutter/material.dart';
 
 class PauseVideoNotifier extends InheritedWidget {
+  final void Function(bool) setPause;
   final bool pause;
 
-  const PauseVideoNotifier(
-      {super.key, required this.pause, required super.child});
+  const PauseVideoNotifier({
+    super.key,
+    required this.pause,
+    required this.setPause,
+    required super.child,
+  });
 
   static bool of(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<PauseVideoNotifier>();
 
     return widget!.pause;
+  }
+
+  static void maybePauseOf(BuildContext context, bool pause) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<PauseVideoNotifier>();
+
+    widget?.setPause(pause);
   }
 
   @override

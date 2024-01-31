@@ -82,11 +82,18 @@ class WrapImageViewNotifiersState<T extends Cell>
     });
   }
 
+  void _setPause(bool pause) {
+    _isPaused = pause;
+
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return ReloadImageNotifier(
         reload: widget.hardRefresh,
         child: PauseVideoNotifier(
+          setPause: _setPause,
           pause: _isPaused,
           child: TagRefreshNotifier(
               isRefreshing: _isTagsRefreshing,

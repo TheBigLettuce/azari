@@ -22,6 +22,7 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.ContextThemeWrapper
 import androidx.lifecycle.lifecycleScope
+import com.bumptech.glide.Glide
 import io.flutter.FlutterInjector
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -337,6 +338,11 @@ class EngineBindings(
                         call.argument<List<Long>>("ids")!!,
                         call.argument<Boolean>("fromPinned")!!
                     )
+                }
+
+                "preloadImage" -> {
+                    Log.i("preload", "s")
+                    Glide.with(context).load(Uri.parse(call.arguments as String)).preload()
                 }
 
                 "clearCachedThumbs" -> {

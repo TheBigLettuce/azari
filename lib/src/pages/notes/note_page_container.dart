@@ -72,37 +72,42 @@ class NotePageContainer<T extends Cell> {
         ).animate().fadeIn());
   }
 
-  Widget widget(BuildContext context, double? bottomPadding) => GlueProvider<T>(
-        glue: SelectionGlue.empty(context),
-        child: GridSkeleton<T>(
-            state,
-            (context) => CallbackGrid<T>(
-                  key: state.gridKey,
-                  getCell: notes.get,
-                  initalScrollPosition: 0,
-                  scaffoldKey: state.scaffoldKey,
-                  ignoreImageViewEndDrawer: true,
-                  onBack: () {
-                    Navigator.pop(context);
-                  },
-                  systemNavigationInsets:
-                      MediaQuery.systemGestureInsetsOf(context) +
-                          EdgeInsets.only(bottom: bottomPadding ?? 0),
-                  hasReachedEnd: notes.reachedEnd,
-                  selectionGlue: SelectionGlue.empty(context),
-                  mainFocus: state.mainFocus,
-                  refresh: notes.refresh,
-                  noteInterface: noteInterface,
-                  addIconsImage: (_) => addActions,
-                  initalCellCount: notes.count(),
-                  loadNext: notes.next,
-                  description: GridDescription<T>([],
-                      keybindsDescription: "Notes page",
-                      showAppBar: false,
-                      layout: NoteLayout<T>(GridColumn.three, getText)),
-                ),
-            canPop: true),
-      );
+  Widget widget(BuildContext context, double? bottomPadding) {
+    SelectionGlue<J> generate<J extends Cell>() => SelectionGlue.empty(context);
+
+    return GlueProvider<T>(
+      generate: generate,
+      glue: SelectionGlue.empty(context),
+      child: GridSkeleton<T>(
+          state,
+          (context) => CallbackGrid<T>(
+                key: state.gridKey,
+                getCell: notes.get,
+                initalScrollPosition: 0,
+                scaffoldKey: state.scaffoldKey,
+                ignoreImageViewEndDrawer: true,
+                onBack: () {
+                  Navigator.pop(context);
+                },
+                systemNavigationInsets:
+                    MediaQuery.systemGestureInsetsOf(context) +
+                        EdgeInsets.only(bottom: bottomPadding ?? 0),
+                hasReachedEnd: notes.reachedEnd,
+                selectionGlue: SelectionGlue.empty(context),
+                mainFocus: state.mainFocus,
+                refresh: notes.refresh,
+                noteInterface: noteInterface,
+                addIconsImage: (_) => addActions,
+                initalCellCount: notes.count(),
+                loadNext: notes.next,
+                description: GridDescription<T>([],
+                    keybindsDescription: "Notes page",
+                    showAppBar: false,
+                    layout: NoteLayout<T>(GridColumn.three, getText)),
+              ),
+          canPop: true),
+    );
+  }
 
   void dispose() {
     state.dispose();

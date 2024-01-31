@@ -95,9 +95,18 @@ class Jikan implements AnimeAPI {
   }
 
   @override
-  Future<List<AnimeNewsEntry>> news(int page) {
-    // TODO: implement news
-    throw UnimplementedError();
+  Future<List<AnimeNewsEntry>> animeNews(AnimeEntry entry, int page) async {
+    final response = await api.Jikan(debug: kDebugMode)
+        .getAnimeNews(entry.id, page: page + 1);
+
+    return response
+        .map((e) => AnimeNewsEntry(
+              content: e.excerpt,
+              date: e.date,
+              thumbUrl: e.imageUrl,
+              title: e.title,
+            ))
+        .toList();
   }
 
   @override

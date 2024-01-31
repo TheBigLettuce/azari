@@ -70,6 +70,8 @@ abstract class BooruAPIState {
   /// Constructs a link to the post to be loaded in the browser, outside the app.
   Uri browserLink(int id);
 
+  Uri browserLinkSearch(String tags);
+
   /// Sets the cookies for all the requests done with the [client].
   /// This is useful with Cloudlfare, but currently is usesless.
   void setCookies(List<Cookie> cookies);

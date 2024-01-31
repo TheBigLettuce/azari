@@ -49,6 +49,10 @@ class Danbooru implements BooruAPIState {
   Uri browserLink(int id) => Uri.https(booru.url, "/posts/$id");
 
   @override
+  Uri browserLinkSearch(String tags) =>
+      Uri.https(booru.url, "/posts?tags=$tags");
+
+  @override
   Future<Iterable<String>> notes(int postId) async {
     final resp = await client.getUriLog(
         Uri.https(booru.url, "/notes.json", {

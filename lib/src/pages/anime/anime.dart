@@ -30,6 +30,7 @@ import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/grid/grid_cell.dart';
 import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
+import 'package:gallery/src/widgets/grid/layouts/grid_quilted.dart';
 import 'package:gallery/src/widgets/grid/segment_label.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';

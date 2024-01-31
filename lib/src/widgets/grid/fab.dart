@@ -11,18 +11,21 @@ class _Fab extends StatefulWidget {
   final ScrollController controller;
   final void Function(double, {double? infoPos, int? selectedCell})? scrollPos;
   final SelectionGlue selectionGlue;
+  final bool navBarHeightPersistent;
   final EdgeInsets systemNavigationInsets;
   final bool addFabPadding;
   final PreferredSizeWidget? footer;
 
-  const _Fab(
-      {super.key,
-      required this.controller,
-      required this.selectionGlue,
-      required this.systemNavigationInsets,
-      required this.addFabPadding,
-      required this.scrollPos,
-      required this.footer});
+  const _Fab({
+    super.key,
+    required this.controller,
+    required this.selectionGlue,
+    required this.systemNavigationInsets,
+    required this.addFabPadding,
+    required this.scrollPos,
+    required this.navBarHeightPersistent,
+    required this.footer,
+  });
 
   @override
   State<_Fab> createState() => __FabState();
@@ -56,7 +59,9 @@ class __FabState extends State<_Fab> {
                           : (widget.selectionGlue.isOpen() &&
                                       !widget.selectionGlue.keyboardVisible()
                                   ? widget.selectionGlue.barHeight
-                                  : 0) +
+                                  : widget.navBarHeightPersistent
+                                      ? widget.selectionGlue.barHeight
+                                      : 0) +
                               (widget.footer != null
                                   ? widget.footer!.preferredSize.height
                                   : 0))),

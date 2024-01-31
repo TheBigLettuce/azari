@@ -68,21 +68,21 @@ class MorePage extends StatelessWidget {
               ));
             },
           ),
-          ListTile(
-            style: ListTileStyle.drawer,
-            leading: Icon(
-              Icons.notes_outlined,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            title: Text(AppLocalizations.of(context)!.notesPage),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(
-                builder: (context) {
-                  return const NotesPage();
-                },
-              ));
-            },
-          ),
+          // ListTile(
+          //   style: ListTileStyle.drawer,
+          //   leading: Icon(
+          //     Icons.notes_outlined,
+          //     color: Theme.of(context).colorScheme.primary,
+          //   ),
+          //   title: Text(AppLocalizations.of(context)!.notesPage),
+          //   onTap: () {
+          //     Navigator.push(context, MaterialPageRoute(
+          //       builder: (context) {
+          //         return const NotesPage();
+          //       },
+          //     ));
+          //   },
+          // ),
           ListTile(
             style: ListTileStyle.drawer,
             leading: Icon(

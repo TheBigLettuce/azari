@@ -6,7 +6,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
@@ -54,10 +53,10 @@ class GridSettingsFavorites extends GridSettingsBase {
 
   static GridSettingsFavorites get current =>
       Dbs.g.main.gridSettingsFavorites.getSync(0) ??
-      GridSettingsFavorites(
+      const GridSettingsFavorites(
         aspectRatio: GridAspectRatio.one,
-        columns: Platform.isAndroid ? GridColumn.two : GridColumn.six,
-        layoutType: GridLayoutType.grid,
+        columns: GridColumn.five,
+        layoutType: GridLayoutType.gridQuilted,
         hideName: true,
       );
 }

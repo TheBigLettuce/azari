@@ -110,11 +110,12 @@ class __FinishedTabState extends State<_FinishedTab> {
             keybindsDescription: AppLocalizations.of(context)!.finishedTab,
             showAppBar: false,
             ignoreSwipeSelectGesture: true,
-            layout: const GridLayout(
+            layout: GridQuiltedLayout(
               GridColumn.three,
               GridAspectRatio.one,
               hideAlias: false,
               tightMode: true,
+              gridSeed: state.gridSeed,
             )),
       ),
       canPop: false,

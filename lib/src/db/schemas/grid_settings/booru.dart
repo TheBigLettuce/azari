@@ -101,6 +101,6 @@ class GridSettingsBooru extends GridSettingsBase {
       GridSettingsBooru(
           aspectRatio: GridAspectRatio.one,
           columns: Platform.isAndroid ? GridColumn.two : GridColumn.six,
-          layoutType: GridLayoutType.grid,
+          layoutType: GridLayoutType.gridQuilted,
           hideName: true);
 }

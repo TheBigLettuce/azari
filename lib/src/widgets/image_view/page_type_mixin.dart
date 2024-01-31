@@ -49,6 +49,11 @@ mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
 
       if (c2 != null) {
         _previousCell = (c2, i - 1);
+
+        // if (_previousCell!.$1 is SystemGalleryDirectoryFile) {
+        //   PlatformFunctions.preloadImage(
+        //       (_previousCell!.$1 as SystemGalleryDirectoryFile).originalUri);
+        // }
       }
     }
 
@@ -57,6 +62,11 @@ mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
 
       if (c3 != null) {
         _nextCell = (c3, i + 1);
+
+        // if (_nextCell!.$1 is SystemGalleryDirectoryFile) {
+        //   PlatformFunctions.preloadImage(
+        //       (_nextCell!.$1 as SystemGalleryDirectoryFile).originalUri);
+        // }
       }
     }
   }

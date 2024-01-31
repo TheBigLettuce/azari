@@ -11,14 +11,28 @@ import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 
 class GlueProvider<T extends Cell> extends InheritedWidget {
   final SelectionGlue<T> glue;
+  final SelectionGlue<J> Function<J extends Cell>() generate;
 
-  const GlueProvider({super.key, required this.glue, required super.child});
+  const GlueProvider({
+    super.key,
+    required this.glue,
+    required this.generate,
+    required super.child,
+  });
 
   static SelectionGlue<T> of<T extends Cell>(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<GlueProvider<T>>();
 
     return widget!.glue;
+  }
+
+  static SelectionGlue<J> generateOf<T extends Cell, J extends Cell>(
+      BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<GlueProvider<T>>();
+
+    return widget!.generate();
   }
 
   @override

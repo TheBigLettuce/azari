@@ -178,6 +178,8 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
 
   final void Function()? onDispose;
 
+  final bool navBarHeightIsPersistent;
+
   const CallbackGrid(
       {required super.key,
       this.additionalKeybinds,
@@ -207,6 +209,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
       this.progressTicker,
       this.menuButtonItems,
       this.ignoreImageViewEndDrawer = false,
+      this.navBarHeightIsPersistent = false,
       this.searchWidget,
       this.initalCell,
       this.pageViewScrollingOffset,
@@ -460,7 +463,10 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     final overlayColor =
         Theme.of(context).colorScheme.background.withOpacity(0.5);
 
-    Navigator.push(context, MaterialPageRoute(builder: (context) {
+    widget.selectionGlue.hideNavBar(true);
+
+    Navigator.of(context, rootNavigator: true)
+        .push(MaterialPageRoute(builder: (context) {
       return ImageView<T>(
           key: imageViewKey,
           statistics: widget.statistics,
@@ -497,7 +503,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                 }()
               : startingCell,
           onNearEnd: widget.loadNext == null ? null : _state._onNearEnd);
-    }));
+    })).then((value) => widget.selectionGlue.hideNavBar(false));
   }
 
   Map<SingleActivatorDescription, void Function()> _makeBindings(
@@ -738,6 +744,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                   ),
                 ...widget.description.layout(context, this),
                 _WrapPadding<T>(
+                  navBarHeightPersistent: widget.navBarHeightIsPersistent,
                   systemNavigationInsets: widget.systemNavigationInsets.bottom,
                   footer: widget.footer,
                   selectionGlue: widget.selectionGlue,
@@ -777,6 +784,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         Align(
           alignment: Alignment.bottomRight,
           child: _Fab(
+            navBarHeightPersistent: widget.navBarHeightIsPersistent,
             key: _fabKey,
             scrollPos: widget.updateScrollPosition,
             controller: controller,
@@ -914,6 +922,7 @@ class _BodyWrapping extends StatelessWidget {
 
 class _WrapPadding<T extends Cell> extends StatelessWidget {
   final PreferredSizeWidget? footer;
+  final bool navBarHeightPersistent;
   final SelectionGlue<T> selectionGlue;
   final double systemNavigationInsets;
   final Widget? child;
@@ -923,6 +932,7 @@ class _WrapPadding<T extends Cell> extends StatelessWidget {
     required this.footer,
     required this.selectionGlue,
     required this.systemNavigationInsets,
+    required this.navBarHeightPersistent,
     required this.child,
   });
 
@@ -935,7 +945,9 @@ class _WrapPadding<T extends Cell> extends StatelessWidget {
               systemNavigationInsets +
               (selectionGlue.isOpen() //&& selectionGlue.keyboardVisible()
                   ? selectionGlue.barHeight
-                  : 0) +
+                  : navBarHeightPersistent
+                      ? selectionGlue.barHeight
+                      : 0) +
               (footer != null ? footer!.preferredSize.height : 0)),
       sliver: child,
     );

@@ -16,8 +16,10 @@ import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/gallery/note_gallery.dart';
 import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_api_files.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_files_extra.dart';
+import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/pages/booru/grid_settings_button.dart';
 import 'package:gallery/src/pages/image_view.dart';
@@ -53,13 +55,20 @@ class GalleryFiles extends StatefulWidget {
   final String bucketId;
   final GalleryAPIFiles api;
   final CallbackDescriptionNested? callback;
+  final SelectionGlue<SystemGalleryDirectoryFile> glue;
+  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
+  final EdgeInsets viewPadding;
 
-  const GalleryFiles(
-      {super.key,
-      required this.api,
-      this.callback,
-      required this.dirName,
-      required this.bucketId});
+  const GalleryFiles({
+    super.key,
+    required this.api,
+    this.callback,
+    required this.dirName,
+    required this.bucketId,
+    required this.glue,
+    required this.generateGlue,
+    required this.viewPadding,
+  });
 
   @override
   State<GalleryFiles> createState() => _GalleryFilesState();
@@ -230,18 +239,18 @@ class _GalleryFilesState extends State<GalleryFiles>
 
   @override
   Widget build(BuildContext context) {
-    final viewPadding = MediaQuery.of(context).viewPadding;
-
     return WrapGridPage<SystemGalleryDirectoryFile>(
+        provided: (widget.glue, widget.generateGlue),
         scaffoldKey: state.scaffoldKey,
         child: GridSkeleton<SystemGalleryDirectoryFile>(
           state,
           (context) => CallbackGrid(
+            navBarHeightIsPersistent: true,
             key: state.gridKey,
             getCell: (i) => widget.api.directCell(i),
             initalScrollPosition: 0,
             scaffoldKey: state.scaffoldKey,
-            systemNavigationInsets: viewPadding,
+            systemNavigationInsets: widget.viewPadding,
             hasReachedEnd: () => true,
             addFabPadding: true,
             selectionGlue: GlueProvider.of(context),
@@ -287,9 +296,8 @@ class _GalleryFilesState extends State<GalleryFiles>
               if (widget.callback == null && extra.isTrash)
                 IconButton(
                     onPressed: () {
-                      Navigator.push(
-                          context,
-                          DialogRoute(
+                      Navigator.of(context, rootNavigator: true)
+                          .push(DialogRoute(
                               context: context,
                               builder: (context) {
                                 return AlertDialog(

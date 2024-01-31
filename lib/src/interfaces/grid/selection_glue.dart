@@ -17,6 +17,7 @@ class SelectionGlue<T extends Cell> {
   final void Function() close;
   final bool Function() isOpen;
   final bool Function() keyboardVisible;
+  final void Function(bool hide) hideNavBar;
   final int barHeight;
 
   static SelectionGlue<T> empty<T extends Cell>(BuildContext context) =>
@@ -24,15 +25,18 @@ class SelectionGlue<T extends Cell> {
           close: () {},
           updateCount: (_) {},
           open: (_, __) {},
+          hideNavBar: (_) {},
           isOpen: () => false,
           barHeight: 0,
           keyboardVisible: () => MediaQuery.viewInsetsOf(context).bottom != 0);
 
-  const SelectionGlue(
-      {required this.close,
-      required this.updateCount,
-      required this.open,
-      required this.barHeight,
-      required this.isOpen,
-      required this.keyboardVisible});
+  const SelectionGlue({
+    required this.close,
+    required this.updateCount,
+    required this.open,
+    required this.barHeight,
+    required this.isOpen,
+    required this.keyboardVisible,
+    required this.hideNavBar,
+  });
 }

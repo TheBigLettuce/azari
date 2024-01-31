@@ -60,6 +60,13 @@ class Gelbooru implements BooruAPIState {
       });
 
   @override
+  Uri browserLinkSearch(String tags) => Uri.https(booru.url, "/index.php", {
+        "page": "post",
+        "s": "list",
+        "tags": tags,
+      });
+
+  @override
   Future<Iterable<String>> notes(int postId) async {
     final resp = await client.getUriLog(
         Uri.https(booru.url, "/index.php", {

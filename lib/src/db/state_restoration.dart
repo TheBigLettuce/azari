@@ -7,6 +7,7 @@
 
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
+import 'package:gallery/src/widgets/notifiers/pause_video.dart';
 import 'package:isar/isar.dart';
 
 import '../interfaces/booru_tagging.dart';

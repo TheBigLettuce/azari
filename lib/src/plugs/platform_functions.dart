@@ -147,6 +147,10 @@ class PlatformFunctions {
     }).then((value) => value ?? false);
   }
 
+  static void preloadImage(String uri) {
+    _channel.invokeMethod("preloadImage", uri);
+  }
+
   static Future<int> thumbCacheSize([bool fromPinned = false]) {
     return _channel
         .invokeMethod("thumbCacheSize", fromPinned)

@@ -47,6 +47,7 @@ class _GalleryExtra implements GalleryDirectoriesExtra {
   @override
   GalleryAPIFiles joinedDir(List<String> directoriesId) {
     final db = DbsOpen.androidGalleryFiles();
+
     final instance =
         _JoinedDirectories(directoriesId, db, () => _impl.currentImages = null);
     _impl.currentImages = instance;
