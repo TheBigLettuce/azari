@@ -13,6 +13,8 @@ import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/db/state_restoration.dart';
 import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/pages/booru/random.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
@@ -21,7 +23,12 @@ import 'package:isar/isar.dart';
 import 'time_label.dart';
 
 class BookmarkButton extends StatefulWidget {
-  const BookmarkButton({super.key});
+  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
+
+  const BookmarkButton({
+    super.key,
+    required this.generateGlue,
+  });
 
   @override
   State<BookmarkButton> createState() => _BookmarkButtonState();
@@ -33,10 +40,12 @@ class _BookmarkButtonState extends State<BookmarkButton> {
     return PopupMenuButton(
       itemBuilder: (context) {
         return [
-          const PopupMenuItem(
+          PopupMenuItem(
             enabled: false,
             padding: EdgeInsets.zero,
-            child: _WrapEntries(),
+            child: _WrapEntries(
+              generateGlue: widget.generateGlue,
+            ),
           )
         ];
       },
@@ -46,7 +55,12 @@ class _BookmarkButtonState extends State<BookmarkButton> {
 }
 
 class _WrapEntries extends StatefulWidget {
-  const _WrapEntries({super.key});
+  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
+
+  const _WrapEntries({
+    super.key,
+    required this.generateGlue,
+  });
 
   @override
   State<_WrapEntries> createState() => __WrapEntriesState();
@@ -161,6 +175,7 @@ class __WrapEntriesState extends State<_WrapEntries> {
                     tagManager: tagManager,
                     tags: e.tags,
                     state: e,
+                    generateGlue: widget.generateGlue,
                   );
                 },
               ));

@@ -937,12 +937,14 @@ class _WrapPadding<T extends Cell> extends StatelessWidget {
     return SliverPadding(
       padding: EdgeInsets.only(
           bottom: (kFloatingActionButtonMargin * 2 + 24 + 8) +
-              systemNavigationInsets +
-              (selectionGlue.isOpen() //&& selectionGlue.keyboardVisible()
-                  ? selectionGlue.barHeight
-                  : selectionGlue.persistentBarHeight
-                      ? selectionGlue.barHeight
-                      : 0) +
+              (selectionGlue.keyboardVisible()
+                  ? 0
+                  : systemNavigationInsets +
+                      (selectionGlue.isOpen() //&&
+                          ? selectionGlue.barHeight()
+                          : selectionGlue.persistentBarHeight
+                              ? selectionGlue.barHeight()
+                              : 0)) +
               (footer != null ? footer!.preferredSize.height : 0)),
       sliver: child,
     );

@@ -59,7 +59,10 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> with TickerProviderStateMixin {
-  final navigatorKey = GlobalKey<NavigatorState>();
+  final mainKey = GlobalKey<NavigatorState>();
+  final galleryKey = GlobalKey<NavigatorState>();
+  final moreKey = GlobalKey<NavigatorState>();
+
   late final controllerNavBar = AnimationController(vsync: this);
   final state = SkeletonState();
   int currentRoute = 0;
@@ -205,7 +208,12 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   }
 
   void _popGallery(bool b) {
-    final state = navigatorKey.currentState;
+    final state = switch (currentRoute) {
+      0 => mainKey.currentState,
+      1 => galleryKey.currentState,
+      4 => moreKey.currentState,
+      int() => null,
+    };
     if (state == null) {
       return;
     }
@@ -216,17 +224,25 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
   bool keyboardVisible() => MediaQuery.viewInsetsOf(context).bottom != 0;
 
   SelectionGlue<T> _generateGlue<T extends Cell>() =>
-      glueState.glue(keyboardVisible, setState, 80, true);
+      glueState.glue(keyboardVisible, setState, () => 80, true);
 
   SelectionGlue<T> _generateGlueB<T extends Cell>() =>
-      glueState.glue(keyboardVisible, setState, 0, true);
+      glueState.glue(keyboardVisible, setState, () => 0, true);
 
   Widget _currentPage(BuildContext context, EdgeInsets padding) {
+    SelectionGlue<T> _generateGluePadding<T extends Cell>() {
+      return glueState.glue(
+          keyboardVisible,
+          setState,
+          () => 80 + MediaQuery.viewPaddingOf(this.context).bottom.toInt(),
+          true);
+    }
+
     if (widget.callback != null) {
       if (currentRoute == 0) {
         return _NavigatorShell(
           pop: _popGallery,
-          navigatorKey: navigatorKey,
+          navigatorKey: mainKey,
           child: GlueProvider<SystemGalleryDirectory>(
             generate: _generateGlue,
             glue: _generateGlue(),
@@ -265,13 +281,13 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
 
     return switch (currentRoute) {
       0 => _NavigatorShell(
-          navigatorKey: navigatorKey,
+          navigatorKey: mainKey,
           pop: _popGallery,
           child: GlueProvider<Post>(
-            generate: _generateGlue,
+            generate: _generateGluePadding,
             glue: _generateGlue(),
             child: MainBooruGrid(
-              generateGlue: _generateGlue,
+              generateGlue: _generateGluePadding,
               mainGrid: mainGrid,
               viewPadding: padding,
               refreshingInterface: refreshInterface,
@@ -280,7 +296,8 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           ),
         ),
       1 => _NavigatorShell(
-          navigatorKey: navigatorKey,
+          key: UniqueKey(),
+          navigatorKey: galleryKey,
           pop: _popGallery,
           child: GlueProvider<SystemGalleryDirectory>(
             generate: _generateGlue,
@@ -308,7 +325,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
           ),
         ),
       4 => _NavigatorShell(
-          navigatorKey: navigatorKey,
+          navigatorKey: moreKey,
           pop: _popGallery,
           child: PopScope(
               canPop: currentRoute == 0,
@@ -329,6 +346,13 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     if (to == currentRoute) {
       return;
     }
+
+    if (to == 0) {
+      restartOver();
+    } else {
+      restartStart();
+    }
+
     controller.animateTo(1).then((value) {
       currentRoute = to;
       controller.reset();
@@ -371,7 +395,7 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
               MoveEffect(
                 curve: Easing.emphasizedAccelerate,
                 begin: Offset.zero,
-                end: Offset(0, 100 + MediaQuery.viewInsetsOf(context).bottom),
+                end: Offset(0, 100 + MediaQuery.viewPaddingOf(context).bottom),
               ),
               SwapEffect(
                 builder: (context, _) {

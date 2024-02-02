@@ -418,7 +418,7 @@ class _GalleryFilesState extends State<GalleryFiles>
               layout: gridSettings.layoutType.layout(
                 gridSettings,
                 tightMode: true,
-                gridSeed: state.gridSeed,
+                gridSeed: widget.callback != null ? 0 : state.gridSeed,
               ),
             ),
           ),

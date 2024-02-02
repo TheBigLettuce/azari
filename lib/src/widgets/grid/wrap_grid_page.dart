@@ -43,12 +43,12 @@ class _WrapGridPageState<T extends Cell> extends State<WrapGridPage<T>>
   );
   late final SelectionGlue<T> glue = widget.provided?.$1 ??
       glueState.glue<T>(() => MediaQuery.viewInsetsOf(context).bottom != 0,
-          setState, widget.navBarHeight, false);
+          setState, () => widget.navBarHeight, false);
 
   SelectionGlue<J> _generate<J extends Cell>() {
     return widget.provided?.$2.call() ??
         glueState.glue(() => MediaQuery.viewInsetsOf(context).bottom != 0,
-            setState, widget.navBarHeight, false);
+            setState, () => widget.navBarHeight, false);
   }
 
   @override

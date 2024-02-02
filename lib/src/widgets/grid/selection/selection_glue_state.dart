@@ -53,7 +53,7 @@ class SelectionGlueState {
   SelectionGlue<T> glue<T extends Cell>(
     bool Function() keyboardVisible,
     void Function(Function()) setState,
-    int barHeight,
+    int Function() barHeight,
     bool persistentBarHeight,
   ) =>
       SelectionGlue<T>(

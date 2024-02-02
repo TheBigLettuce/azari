@@ -13,3 +13,7 @@ bool get isRestart => _isRestart;
 void restartOver() {
   _isRestart = false;
 }
+
+void restartStart() {
+  _isRestart = true;
+}

@@ -49,13 +49,14 @@ class __FabState extends State<_Fab> {
               padding: EdgeInsets.only(
                   right: 4,
                   bottom: 4 +
-                      widget.systemNavigationInsets.bottom +
-                      (widget.selectionGlue.isOpen() &&
-                              !widget.selectionGlue.keyboardVisible()
-                          ? widget.selectionGlue.barHeight
-                          : widget.selectionGlue.persistentBarHeight
-                              ? widget.selectionGlue.barHeight
-                              : 0) +
+                      (widget.selectionGlue.keyboardVisible()
+                          ? 0
+                          : widget.systemNavigationInsets.bottom +
+                              (widget.selectionGlue.isOpen()
+                                  ? widget.selectionGlue.barHeight()
+                                  : widget.selectionGlue.persistentBarHeight
+                                      ? widget.selectionGlue.barHeight()
+                                      : 0)) +
                       (widget.footer != null
                           ? widget.footer!.preferredSize.height
                           : 0)),

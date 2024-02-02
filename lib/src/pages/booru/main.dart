@@ -294,7 +294,9 @@ class _MainBooruGridState extends State<MainBooruGrid>
                   tagManager, BooruAPINotifier(api: api, child: child)),
               inlineMenuButtonItems: true,
               menuButtonItems: [
-                const BookmarkButton(),
+                BookmarkButton(
+                  generateGlue: widget.generateGlue,
+                ),
                 gridButton(state.settings, gridSettings),
               ],
               addIconsImage: (post) => [
@@ -373,6 +375,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
                               page: last.copy.page),
                           tagManager: tagManager,
                           instance: db,
+                          generateGlue: widget.generateGlue,
                         );
                       },
                     ));
