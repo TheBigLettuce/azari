@@ -50,9 +50,14 @@ class SelectionGlueState {
     } catch (_) {}
   }
 
-  SelectionGlue<T> glue<T extends Cell>(bool Function() keyboardVisible,
-          void Function(Function()) setState, int barHeight) =>
+  SelectionGlue<T> glue<T extends Cell>(
+    bool Function() keyboardVisible,
+    void Function(Function()) setState,
+    int barHeight,
+    bool persistentBarHeight,
+  ) =>
       SelectionGlue<T>(
+        persistentBarHeight: persistentBarHeight,
         barHeight: barHeight,
         updateCount: (c) {
           count = c;

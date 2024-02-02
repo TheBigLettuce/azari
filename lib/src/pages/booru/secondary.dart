@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/widgets/add_to_bookmarks_button.dart';
 import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
@@ -50,14 +52,17 @@ class SecondaryBooruGrid extends StatefulWidget {
   final BooruAPIState api;
 
   final bool noRestoreOnBack;
+  final SelectionGlue<J> Function<J extends Cell>()? generateGlue;
 
-  const SecondaryBooruGrid(
-      {super.key,
-      required this.restore,
-      required this.instance,
-      required this.api,
-      required this.noRestoreOnBack,
-      required this.tagManager});
+  const SecondaryBooruGrid({
+    super.key,
+    required this.restore,
+    required this.instance,
+    required this.api,
+    required this.noRestoreOnBack,
+    required this.tagManager,
+    this.generateGlue,
+  });
 
   @override
   State<SecondaryBooruGrid> createState() => _SecondaryBooruGridState();
@@ -87,8 +92,14 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
       mainFocus: state.mainFocus,
       searchText: widget.restore.copy.tags,
       addItems: null,
-      onSubmit: (context, tag) => TagManagerNotifier.ofRestorable(context)
-          .onTagPressed(context, tag, BooruAPINotifier.of(context).booru, true),
+      onSubmit: (context, tag) =>
+          TagManagerNotifier.ofRestorable(context).onTagPressed(
+        context,
+        tag,
+        BooruAPINotifier.of(context).booru,
+        true,
+        generateGlue: widget.generateGlue,
+      ),
     ));
 
     settingsWatcher = Settings.watch((s) {
@@ -134,7 +145,12 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
 
   Future<int> _clearAndRefresh() async {
     try {
+      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+        state.gridKey.currentState?.selection.reset();
+      });
       StatisticsGeneral.addRefreshes();
+
+      widget.instance.writeTxnSync(() => widget.instance.posts.clearSync());
 
       final list = await widget.api.page(
           0, widget.restore.copy.tags, widget.tagManager.excluded,
@@ -219,23 +235,29 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
 
     final next = widget.restore.next();
     if (next != null) {
-      Navigator.push(context, MaterialPageRoute(
+      final db = DbsOpen.secondaryGridName(next.copy.name);
+
+      Navigator.of(context, rootNavigator: false).push(MaterialPageRoute(
         builder: (context) {
           return SecondaryBooruGrid(
             restore: next,
             noRestoreOnBack: false,
             api: BooruAPIState.fromEnum(widget.api.booru, page: next.copy.page),
             tagManager: widget.tagManager,
-            instance: DbsOpen.secondaryGridName(next.copy.name),
+            instance: db,
           );
         },
       ));
     }
   }
 
+  late SelectionGlue<Post>? glue = widget.generateGlue?.call();
+
   @override
   Widget build(BuildContext context) {
     return WrapGridPage<Post>(
+      provided:
+          widget.generateGlue == null ? null : (glue!, widget.generateGlue!),
       scaffoldKey: state.scaffoldKey,
       child: Builder(
         builder: (context) {
@@ -250,17 +272,7 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                   (context) => CallbackGrid<Post>(
                     key: state.gridKey,
                     selectionGlue: glue,
-                    systemNavigationInsets: EdgeInsets.only(
-                        bottom: MediaQuery.of(context)
-                                .systemGestureInsets
-                                .bottom +
-                            (Scaffold.of(context).widget.bottomNavigationBar !=
-                                        null &&
-                                    glue.keyboardVisible()
-                                ? 80
-                                : 0)),
-                    addFabPadding:
-                        Scaffold.of(context).widget.bottomNavigationBar != null,
+                    systemNavigationInsets: MediaQuery.of(context).viewPadding,
                     registerNotifiers: (child) => TagManagerNotifier.restorable(
                         widget.tagManager,
                         BooruAPINotifier(api: widget.api, child: child)),
@@ -326,7 +338,7 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                     initalCellCount: widget.instance.posts.countSync(),
                     onBack: () {
                       Navigator.pop(context);
-                      _restore(context);
+                      // _restore(context);
                     },
                     download: _download,
                     updateScrollPosition: (pos, {infoPos, selectedCell}) =>

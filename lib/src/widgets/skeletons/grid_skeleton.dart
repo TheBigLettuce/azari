@@ -22,12 +22,15 @@ class GridSkeleton<T extends Cell> extends StatelessWidget {
   final GridSkeletonState<T> state;
   final CallbackGrid<T> Function(BuildContext context) grid;
 
-  const GridSkeleton(this.state, this.grid,
-      {super.key,
-      this.noDrawer = false,
-      this.overrideBooru,
-      required this.canPop,
-      this.overrideOnPop});
+  const GridSkeleton(
+    this.state,
+    this.grid, {
+    super.key,
+    this.noDrawer = false,
+    this.overrideBooru,
+    required this.canPop,
+    this.overrideOnPop,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +59,11 @@ class GridSkeleton<T extends Cell> extends StatelessWidget {
                 return false;
               });
             },
-      child: GestureDeadZones(left: true, right: true, child: grid(context)),
+      child: GestureDeadZones(
+        left: true,
+        right: true,
+        child: grid(context),
+      ),
     );
   }
 }

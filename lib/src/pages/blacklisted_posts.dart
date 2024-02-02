@@ -7,6 +7,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/grid/layouts/list_layout.dart';
 import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
@@ -15,7 +17,14 @@ import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
 
 class BlacklistedPostsPage extends StatefulWidget {
-  const BlacklistedPostsPage({super.key});
+  final SelectionGlue<HiddenBooruPost> glue;
+  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
+
+  const BlacklistedPostsPage({
+    super.key,
+    required this.generateGlue,
+    required this.glue,
+  });
 
   @override
   State<BlacklistedPostsPage> createState() => _BlacklistedPostsPageState();
@@ -37,6 +46,7 @@ class _BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
   Widget build(BuildContext context) {
     return WrapGridPage<HiddenBooruPost>(
       scaffoldKey: state.scaffoldKey,
+      provided: (widget.glue, widget.generateGlue),
       child: GridSkeleton<HiddenBooruPost>(
         state,
         (context) => CallbackGrid(
@@ -56,7 +66,7 @@ class _BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
                     : const Icon(Icons.hide_image_rounded))
           ],
           scaffoldKey: state.scaffoldKey,
-          systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context),
+          systemNavigationInsets: MediaQuery.viewPaddingOf(context),
           hasReachedEnd: () => true,
           selectionGlue: GlueProvider.of(context),
           showCount: true,

@@ -14,7 +14,7 @@ abstract class FavoritesActions {
   static GridAction<T> addToGroup<T>(
       BuildContext context,
       String? Function(List<T>) initalValue,
-      void Function(List<T>, String) onSubmitted) {
+      void Function(List<T>, String, bool) onSubmitted) {
     return GridAction(
       Icons.group_work_outlined,
       (selected) {
@@ -22,25 +22,71 @@ abstract class FavoritesActions {
           return;
         }
 
-        Navigator.push(
-            context,
-            DialogRoute(
-              context: context,
-              builder: (context) {
-                return AlertDialog(
-                  title: Text(
-                    AppLocalizations.of(context)!.group,
-                  ),
-                  content: TextFormField(
-                    autofocus: true,
-                    initialValue: initalValue(selected),
-                    onFieldSubmitted: (value) => onSubmitted(selected, value),
-                  ),
-                );
-              },
-            ));
+        Navigator.of(context, rootNavigator: true).push(DialogRoute(
+          context: context,
+          builder: (context) {
+            return _GroupDialogWidget<T>(
+              initalValue: initalValue,
+              onSubmitted: onSubmitted,
+              selected: selected,
+            );
+          },
+        ));
       },
       false,
+    );
+  }
+}
+
+class _GroupDialogWidget<T> extends StatefulWidget {
+  final List<T> selected;
+  final String? Function(List<T>) initalValue;
+  final void Function(List<T>, String, bool) onSubmitted;
+
+  const _GroupDialogWidget({
+    super.key,
+    required this.initalValue,
+    required this.onSubmitted,
+    required this.selected,
+  });
+
+  @override
+  State<_GroupDialogWidget<T>> createState() => __GroupDialogWidgetState();
+}
+
+class __GroupDialogWidgetState<T> extends State<_GroupDialogWidget<T>> {
+  bool toPin = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        AppLocalizations.of(context)!.group,
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextFormField(
+            autofocus: true,
+            initialValue: widget.initalValue(widget.selected),
+            onFieldSubmitted: (value) {
+              widget.onSubmitted(widget.selected, value, toPin);
+            },
+          ),
+          SwitchListTile(
+              // controlAffinity: ListTileControlAffinity.leading,
+              title: Text("Pin"),
+              value: toPin,
+              onChanged: (b) {
+                toPin = b;
+
+                setState(() {});
+              })
+        ],
+      ),
+      // actions: [
+
+      // ],
     );
   }
 }

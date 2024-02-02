@@ -17,6 +17,8 @@ import 'package:gallery/src/db/schemas/statistics/statistics_booru.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
 import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/pages/image_view.dart';
@@ -54,7 +56,10 @@ class MainBooruGrid extends StatefulWidget {
   final Isar mainGrid;
   final void Function(bool) procPop;
   final RefreshingStatusInterface refreshingInterface;
+
   final EdgeInsets viewPadding;
+
+  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
 
   const MainBooruGrid({
     super.key,
@@ -62,6 +67,7 @@ class MainBooruGrid extends StatefulWidget {
     required this.refreshingInterface,
     required this.procPop,
     required this.viewPadding,
+    required this.generateGlue,
   });
 
   @override
@@ -126,13 +132,20 @@ class _MainBooruGridState extends State<MainBooruGrid>
       swapSearchIconWithAddItems: false,
       addItems: [
         OpenMenuButton(
+            generateGlue: widget.generateGlue,
             context: context,
             controller: searchTextController,
             tagManager: tagManager,
             booru: api.booru)
       ],
-      onSubmit: (context, tag) => TagManagerNotifier.ofRestorable(context)
-          .onTagPressed(context, tag, BooruAPINotifier.of(context).booru, true),
+      onSubmit: (context, tag) =>
+          TagManagerNotifier.ofRestorable(context).onTagPressed(
+        context,
+        tag,
+        BooruAPINotifier.of(context).booru,
+        true,
+        generateGlue: widget.generateGlue,
+      ),
     ));
 
     if (api.wouldBecomeStale &&
@@ -177,6 +190,9 @@ class _MainBooruGridState extends State<MainBooruGrid>
 
   Future<int> _clearAndRefresh() async {
     try {
+      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+        state.gridKey.currentState?.selection.reset();
+      });
       widget.mainGrid.writeTxnSync(() => widget.mainGrid.posts.clearSync());
 
       StatisticsGeneral.addRefreshes();
@@ -272,19 +288,11 @@ class _MainBooruGridState extends State<MainBooruGrid>
             state,
             (context) => CallbackGrid<Post>(
               key: state.gridKey,
-              systemNavigationInsets: EdgeInsets.only(
-                  bottom: widget.viewPadding.bottom +
-                      (Scaffold.of(context).widget.bottomNavigationBar !=
-                                  null &&
-                              !glue.keyboardVisible()
-                          ? 80
-                          : 0)),
+              systemNavigationInsets: widget.viewPadding,
               selectionGlue: glue,
               registerNotifiers: (child) => TagManagerNotifier.restorable(
                   tagManager, BooruAPINotifier(api: api, child: child)),
               inlineMenuButtonItems: true,
-              addFabPadding:
-                  Scaffold.of(context).widget.bottomNavigationBar == null,
               menuButtonItems: [
                 const BookmarkButton(),
                 gridButton(state.settings, gridSettings),
@@ -350,9 +358,13 @@ class _MainBooruGridState extends State<MainBooruGrid>
               initalCellCount: widget.mainGrid.posts.countSync(),
               beforeImageViewRestore: () {
                 final last = restore.last();
+
                 if (last != null) {
+                  final db = DbsOpen.secondaryGridName(last.copy.name);
+
                   WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-                    Navigator.push(context, MaterialPageRoute(
+                    Navigator.of(context, rootNavigator: false)
+                        .push(MaterialPageRoute(
                       builder: (context) {
                         return SecondaryBooruGrid(
                           restore: last,
@@ -360,7 +372,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
                           api: BooruAPIState.fromEnum(api.booru,
                               page: last.copy.page),
                           tagManager: tagManager,
-                          instance: DbsOpen.secondaryGridName(last.copy.name),
+                          instance: db,
                         );
                       },
                     ));
@@ -373,10 +385,12 @@ class _MainBooruGridState extends State<MainBooruGrid>
                 if (currentlyHighlightedTag != "") {
                   state.mainFocus.unfocus();
                   tagManager.onTagPressed(
-                      context,
-                      Tag.string(tag: currentlyHighlightedTag),
-                      api.booru,
-                      true);
+                    context,
+                    Tag.string(tag: currentlyHighlightedTag),
+                    api.booru,
+                    true,
+                    generateGlue: widget.generateGlue,
+                  );
                 }
               }),
               pageViewScrollingOffset: restore.copy.scrollPositionTags,
@@ -403,12 +417,15 @@ class OpenMenuButton extends StatefulWidget {
   final Booru booru;
   final BuildContext context;
 
+  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
+
   const OpenMenuButton({
     super.key,
     required this.controller,
     required this.tagManager,
     required this.booru,
     required this.context,
+    required this.generateGlue,
   });
 
   @override
@@ -430,6 +447,7 @@ class _OpenMenuButtonState extends State<OpenMenuButton> {
               widget.booru,
               false,
               overrideSafeMode: safeMode,
+              generateGlue: widget.generateGlue,
             );
           })
         ]);

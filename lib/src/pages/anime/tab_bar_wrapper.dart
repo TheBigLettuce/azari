@@ -12,7 +12,7 @@ class _TabBarWrapper extends StatefulWidget {
   final EdgeInsets viewPadding;
   final TabBar tabBar;
   final void Function(String? value) filter;
-  final bool Function() onPressed;
+  final bool Function(bool forceSearchPage) onPressed;
 
   const _TabBarWrapper({
     required super.key,
@@ -144,8 +144,11 @@ class __TabBarWrapperState extends State<_TabBarWrapper> {
             child: SizedBox(
                 width: 24 + (rightPadding <= 0 ? 8 : rightPadding / 2),
                 child: GestureDetector(
+                  onLongPress: () {
+                    widget.onPressed(true);
+                  },
                   onTap: () {
-                    if (!widget.onPressed()) {
+                    if (!widget.onPressed(false)) {
                       _showSearchField = !_showSearchField;
                       widget.filter(null);
 

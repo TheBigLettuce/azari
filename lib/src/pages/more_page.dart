@@ -9,8 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/db/state_restoration.dart';
 import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/pages/blacklisted_posts.dart';
-import 'package:gallery/src/pages/notes/notes_page.dart';
 import 'package:gallery/src/pages/tags_page.dart';
 
 import '../widgets/skeletons/drawer/azari_icon.dart';
@@ -22,11 +23,14 @@ import 'settings/settings_widget.dart';
 class MorePage extends StatelessWidget {
   final TagManager<Unrestorable> tagManager;
   final BooruAPIState api;
+  // final SelectionGlue<SystemGalleryDirectoryFile> glue;
+  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
 
   const MorePage({
     super.key,
     required this.api,
     required this.tagManager,
+    required this.generateGlue,
   });
 
   @override
@@ -48,7 +52,11 @@ class MorePage extends StatelessWidget {
             onTap: () {
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) {
-                  return TagsPage(tagManager: tagManager, booru: api);
+                  return TagsPage(
+                    tagManager: tagManager,
+                    booru: api,
+                    generateGlue: generateGlue,
+                  );
                 },
               ));
             },
@@ -93,7 +101,10 @@ class MorePage extends StatelessWidget {
             onTap: () {
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) {
-                  return const Downloads();
+                  return Downloads(
+                    generateGlue: generateGlue,
+                    glue: generateGlue(),
+                  );
                 },
               ));
             },
@@ -110,7 +121,10 @@ class MorePage extends StatelessWidget {
               Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const BlacklistedDirectories(),
+                    builder: (context) => BlacklistedDirectories(
+                      generateGlue: generateGlue,
+                      glue: generateGlue(),
+                    ),
                   ));
             },
           ),
@@ -125,7 +139,10 @@ class MorePage extends StatelessWidget {
               Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const BlacklistedPostsPage(),
+                    builder: (context) => BlacklistedPostsPage(
+                      generateGlue: generateGlue,
+                      glue: generateGlue(),
+                    ),
                   ));
             },
           ),
@@ -138,11 +155,9 @@ class MorePage extends StatelessWidget {
             ),
             title: Text(AppLocalizations.of(context)!.settingsPageName),
             onTap: () {
-              Navigator.push(context, MaterialPageRoute(
+              Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
                 builder: (context) {
-                  return const Scaffold(
-                    body: SettingsWidget(),
-                  );
+                  return const SettingsWidget();
                 },
               ));
             },

@@ -43,9 +43,12 @@ class _SettingsWidgetState extends State<SettingsWidget> {
     return SkeletonSettings(
       AppLocalizations.of(context)!.settingsPageName,
       skeletonState,
-      child: SettingsList(
-        sliver: true,
-        scaffoldKey: skeletonState.scaffoldKey,
+      child: SliverPadding(
+        padding: const EdgeInsets.only(bottom: 8),
+        sliver: SettingsList(
+          sliver: true,
+          scaffoldKey: skeletonState.scaffoldKey,
+        ),
       ),
     );
   }

@@ -23,8 +23,14 @@ class HomeSkeleton extends StatelessWidget {
   final int selectedRoute;
   final Widget? navBar;
 
-  const HomeSkeleton(this.pageDescription, this.state, this.f,
-      {super.key, required this.selectedRoute, required this.navBar});
+  const HomeSkeleton(
+    this.pageDescription,
+    this.state,
+    this.f, {
+    super.key,
+    required this.selectedRoute,
+    required this.navBar,
+  });
 
   @override
   Widget build(BuildContext context) {

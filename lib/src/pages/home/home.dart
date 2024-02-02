@@ -47,6 +47,7 @@ part 'anime_icon.dart';
 part 'gallery_icon.dart';
 part 'booru_icon.dart';
 part 'favorites_icon.dart';
+part 'navigator_shell.dart';
 
 class Home extends StatefulWidget {
   final CallbackDescriptionNested? callback;
@@ -209,29 +210,32 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
       return;
     }
 
-    state.maybePop().then((value) {
-      if (!value) {
-        _switchPage(0);
-      }
-    });
+    state.maybePop();
   }
 
   bool keyboardVisible() => MediaQuery.viewInsetsOf(context).bottom != 0;
 
   SelectionGlue<T> _generateGlue<T extends Cell>() =>
-      glueState.glue(keyboardVisible, setState, 80);
+      glueState.glue(keyboardVisible, setState, 80, true);
+
+  SelectionGlue<T> _generateGlueB<T extends Cell>() =>
+      glueState.glue(keyboardVisible, setState, 0, true);
 
   Widget _currentPage(BuildContext context, EdgeInsets padding) {
     if (widget.callback != null) {
       if (currentRoute == 0) {
-        return GlueProvider<SystemGalleryDirectory>(
+        return _NavigatorShell(
+          pop: _popGallery,
+          navigatorKey: navigatorKey,
+          child: GlueProvider<SystemGalleryDirectory>(
             generate: _generateGlue,
-            glue: glueState.glue(keyboardVisible, setState, 0),
+            glue: _generateGlue(),
             child: GalleryDirectories(
               nestedCallback: widget.callback,
               procPop: _procPop,
-              bottomPadding: keyboardVisible() ? 0 : 80,
-            ));
+            ),
+          ),
+        );
       } else {
         return NotesPage(
           callback: widget.callback,
@@ -260,62 +264,63 @@ class _HomeState extends State<Home> with TickerProviderStateMixin {
     }
 
     return switch (currentRoute) {
-      0 => GlueProvider<Post>(
-          generate: _generateGlue,
-          glue: glueState.glue(keyboardVisible, setState, 0),
-          child: MainBooruGrid(
+      0 => _NavigatorShell(
+          navigatorKey: navigatorKey,
+          pop: _popGallery,
+          child: GlueProvider<Post>(
+            generate: _generateGlue,
+            glue: _generateGlue(),
+            child: MainBooruGrid(
+              generateGlue: _generateGlue,
               mainGrid: mainGrid,
               viewPadding: padding,
               refreshingInterface: refreshInterface,
-              procPop: _procPopA),
-          // MainBooruGrid2(
-          //   mainGrid: mainGrid,
-          //   glue: grid2_glue.SelectionGlue.empty(context),
-          //   // refreshingInterface: refreshInterface,
-          //   procPop: _procPop,
-          // ),
+              procPop: _procPopA,
+            ),
+          ),
         ),
-      1 => PopScope(
-          canPop: false,
-          onPopInvoked: _popGallery,
-          child: Navigator(
-            key: navigatorKey,
-            initialRoute: "/directories",
-            onGenerateRoute: (settings) {
-              return MaterialPageRoute(
-                builder: (context) {
-                  return GlueProvider<SystemGalleryDirectory>(
-                    generate: _generateGlue,
-                    glue: glueState.glue(keyboardVisible, setState, 0),
-                    child: GalleryDirectories(
-                      procPop: _procPop,
-                      viewPadding: padding,
-                      bottomPadding: keyboardVisible() ? 0 : 80,
-                    ),
-                  );
-                },
-              );
-            },
+      1 => _NavigatorShell(
+          navigatorKey: navigatorKey,
+          pop: _popGallery,
+          child: GlueProvider<SystemGalleryDirectory>(
+            generate: _generateGlue,
+            glue: _generateGlue(),
+            child: GalleryDirectories(
+              procPop: _procPop,
+              viewPadding: padding,
+            ),
           ),
         ),
       2 => GlueProvider<FavoriteBooru>(
           generate: _generateGlue,
-          glue: glueState.glue(keyboardVisible, setState, 0),
-          child: FavoritesPage(procPop: _procPop, viewPadding: padding),
+          glue: _generateGlue(),
+          child: FavoritesPage(
+            procPop: _procPop,
+            viewPadding: padding,
+          ),
         ),
       3 => GlueProvider<AnimeEntry>(
           generate: _generateGlue,
-          glue: glueState.glue(keyboardVisible, setState, 0),
-          child: AnimePage(procPop: _procPop, viewPadding: padding),
+          glue: _generateGlue(),
+          child: AnimePage(
+            procPop: _procPop,
+            viewPadding: padding,
+          ),
         ),
-      4 => PopScope(
-          canPop: currentRoute == 0,
-          onPopInvoked: _procPop,
-          child: MorePage(
-            tagManager: TagManager.fromEnum(Settings.fromDb().selectedBooru),
-            api: BooruAPIState.fromEnum(Settings.fromDb().selectedBooru,
-                page: null),
-          ).animate()),
+      4 => _NavigatorShell(
+          navigatorKey: navigatorKey,
+          pop: _popGallery,
+          child: PopScope(
+              canPop: currentRoute == 0,
+              onPopInvoked: _procPop,
+              child: MorePage(
+                generateGlue: _generateGlueB,
+                tagManager:
+                    TagManager.fromEnum(Settings.fromDb().selectedBooru),
+                api: BooruAPIState.fromEnum(Settings.fromDb().selectedBooru,
+                    page: null),
+              ).animate()),
+        ),
       int() => throw "unimpl",
     };
   }

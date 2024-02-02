@@ -23,6 +23,7 @@ class SkeletonSettings extends StatelessWidget {
   final bool extendBodyBehindAppBar;
   final bool extendBody;
   final bool expectSliverBody;
+  final bool autofocus;
 
   const SkeletonSettings(
     this.pageDescription,
@@ -32,6 +33,7 @@ class SkeletonSettings extends StatelessWidget {
     required this.child,
     this.expectSliverBody = true,
     this.extendBody = false,
+    this.autofocus = true,
     this.extendBodyBehindAppBar = false,
   });
 
@@ -55,7 +57,7 @@ class SkeletonSettings extends StatelessWidget {
           })
         },
         child: Focus(
-          autofocus: true,
+          autofocus: autofocus,
           focusNode: state.mainFocus,
           child: Scaffold(
             extendBody: extendBody,

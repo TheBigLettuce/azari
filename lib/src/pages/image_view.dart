@@ -75,27 +75,31 @@ class ImageView<T extends Cell> extends StatefulWidget {
 
   final bool ignoreEndDrawer;
 
-  const ImageView(
-      {super.key,
-      required this.updateTagScrollPos,
-      required this.cellCount,
-      required this.scrollUntill,
-      required this.startingCell,
-      required this.onExit,
-      this.predefinedIndexes,
-      this.statistics,
-      required this.getCell,
-      required this.onNearEnd,
-      required this.focusMain,
-      this.noteInterface,
-      required this.systemOverlayRestoreColor,
-      this.pageChange,
-      this.onEmptyNotes,
-      this.infoScrollOffset,
-      this.download,
-      this.ignoreEndDrawer = false,
-      this.registerNotifiers,
-      this.addIcons});
+  final BuildContext? gridContext;
+
+  const ImageView({
+    super.key,
+    required this.updateTagScrollPos,
+    required this.cellCount,
+    required this.scrollUntill,
+    required this.startingCell,
+    required this.onExit,
+    this.predefinedIndexes,
+    this.statistics,
+    required this.getCell,
+    required this.onNearEnd,
+    required this.focusMain,
+    this.noteInterface,
+    required this.systemOverlayRestoreColor,
+    this.pageChange,
+    this.onEmptyNotes,
+    this.infoScrollOffset,
+    this.download,
+    this.ignoreEndDrawer = false,
+    this.registerNotifiers,
+    this.addIcons,
+    this.gridContext,
+  });
 
   @override
   State<ImageView<T>> createState() => ImageViewState<T>();
@@ -339,6 +343,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
       child: WrapImageViewNotifiers<T>(
         hardRefresh: hardRefresh,
         mainFocus: mainFocus,
+        gridContext: widget.gridContext,
         key: wrapNotifiersKey,
         onTagRefresh: _onTagRefresh,
         currentCell: drawCell(currentPage),

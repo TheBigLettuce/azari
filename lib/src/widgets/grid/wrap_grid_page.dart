@@ -21,12 +21,14 @@ class WrapGridPage<T extends Cell> extends StatefulWidget {
     SelectionGlue<T>,
     SelectionGlue<J> Function<J extends Cell>()
   )? provided;
+  final int navBarHeight;
   final Widget child;
 
   const WrapGridPage({
     super.key,
     required this.scaffoldKey,
     this.provided,
+    this.navBarHeight = 0,
     required this.child,
   });
 
@@ -40,13 +42,13 @@ class _WrapGridPageState<T extends Cell> extends State<WrapGridPage<T>>
     hide: (_) {},
   );
   late final SelectionGlue<T> glue = widget.provided?.$1 ??
-      glueState.glue<T>(
-          () => MediaQuery.viewInsetsOf(context).bottom != 0, setState, 80);
+      glueState.glue<T>(() => MediaQuery.viewInsetsOf(context).bottom != 0,
+          setState, widget.navBarHeight, false);
 
   SelectionGlue<J> _generate<J extends Cell>() {
     return widget.provided?.$2.call() ??
-        glueState.glue(
-            () => MediaQuery.viewInsetsOf(context).bottom != 0, setState, 80);
+        glueState.glue(() => MediaQuery.viewInsetsOf(context).bottom != 0,
+            setState, widget.navBarHeight, false);
   }
 
   @override

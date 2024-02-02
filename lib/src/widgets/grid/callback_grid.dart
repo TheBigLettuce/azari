@@ -163,8 +163,6 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
 
   final bool showCount;
 
-  final bool addFabPadding;
-
   final SelectionGlue<T> selectionGlue;
   final Widget? overrideBackButton;
 
@@ -178,50 +176,51 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
 
   final void Function()? onDispose;
 
-  final bool navBarHeightIsPersistent;
+  static CallbackGridState<T> of<T extends Cell>(BuildContext context) {
+    return context.findAncestorStateOfType<CallbackGridState<T>>()!;
+  }
 
-  const CallbackGrid(
-      {required super.key,
-      this.additionalKeybinds,
-      required this.getCell,
-      required this.initalScrollPosition,
-      required this.scaffoldKey,
-      required this.systemNavigationInsets,
-      required this.hasReachedEnd,
-      this.pageChangeImage,
-      this.onError,
-      this.onDispose,
-      this.statistics,
-      required this.selectionGlue,
-      this.showCount = false,
-      this.overrideBackButton,
-      this.addFabPadding = false,
-      this.beforeImageViewRestore,
-      required this.mainFocus,
-      this.addIconsImage,
-      this.onExitImageView,
-      this.refreshInterface,
-      this.footer,
-      this.registerNotifiers,
-      this.backButtonBadge,
-      this.belowMainFocus,
-      this.inlineMenuButtonItems = false,
-      this.progressTicker,
-      this.menuButtonItems,
-      this.ignoreImageViewEndDrawer = false,
-      this.navBarHeightIsPersistent = false,
-      this.searchWidget,
-      this.initalCell,
-      this.pageViewScrollingOffset,
-      this.loadNext,
-      this.noteInterface,
-      required this.refresh,
-      this.updateScrollPosition,
-      this.download,
-      this.onBack,
-      this.initalCellCount = 0,
-      this.overrideOnPress,
-      required this.description});
+  const CallbackGrid({
+    required super.key,
+    this.additionalKeybinds,
+    required this.getCell,
+    required this.initalScrollPosition,
+    required this.scaffoldKey,
+    required this.systemNavigationInsets,
+    required this.hasReachedEnd,
+    this.pageChangeImage,
+    this.onError,
+    this.onDispose,
+    this.statistics,
+    required this.selectionGlue,
+    this.showCount = false,
+    this.overrideBackButton,
+    this.beforeImageViewRestore,
+    required this.mainFocus,
+    this.addIconsImage,
+    this.onExitImageView,
+    this.refreshInterface,
+    this.footer,
+    this.registerNotifiers,
+    this.backButtonBadge,
+    this.belowMainFocus,
+    this.inlineMenuButtonItems = false,
+    this.progressTicker,
+    this.menuButtonItems,
+    this.ignoreImageViewEndDrawer = false,
+    this.searchWidget,
+    this.initalCell,
+    this.pageViewScrollingOffset,
+    this.loadNext,
+    this.noteInterface,
+    required this.refresh,
+    this.updateScrollPosition,
+    this.download,
+    this.onBack,
+    this.initalCellCount = 0,
+    this.overrideOnPress,
+    required this.description,
+  });
 
   @override
   State<CallbackGrid<T>> createState() => CallbackGridState<T>();
@@ -316,19 +315,19 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
         widget.beforeImageViewRestore?.call();
 
-        onPressed(
-            context, _state.getCell(widget.initalCell!), widget.initalCell!,
-            offset: widget.pageViewScrollingOffset);
+        // onPressed(
+        //     context, _state.getCell(widget.initalCell!), widget.initalCell!,
+        //     offset: widget.pageViewScrollingOffset);
       });
     } else if (widget.initalCellCount != 0 && widget.initalCell != null) {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
         widget.beforeImageViewRestore?.call();
 
-        onPressed(
-          context,
-          _state.getCell(widget.initalCell!),
-          widget.initalCell!,
-        );
+        // onPressed(
+        //   context,
+        //   _state.getCell(widget.initalCell!),
+        //   widget.initalCell!,
+        // );
       });
     } else {
       widget.beforeImageViewRestore?.call();
@@ -448,11 +447,11 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
     controller.jumpTo(target);
   }
 
-  void onPressed(BuildContext context, T cell, int startingCell,
+  void onPressed(BuildContext gridContext, T cell, int startingCell,
       {double? offset}) {
     if (widget.overrideOnPress != null) {
       widget.mainFocus.requestFocus();
-      widget.overrideOnPress!(context, cell);
+      widget.overrideOnPress!(gridContext, cell);
       return;
     }
     inImageView = true;
@@ -461,7 +460,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
 
     final offsetGrid = controller.offset;
     final overlayColor =
-        Theme.of(context).colorScheme.background.withOpacity(0.5);
+        Theme.of(gridContext).colorScheme.background.withOpacity(0.5);
 
     widget.selectionGlue.hideNavBar(true);
 
@@ -469,6 +468,7 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         .push(MaterialPageRoute(builder: (context) {
       return ImageView<T>(
           key: imageViewKey,
+          gridContext: gridContext,
           statistics: widget.statistics,
           registerNotifiers: widget.registerNotifiers,
           systemOverlayRestoreColor: overlayColor,
@@ -744,7 +744,6 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
                   ),
                 ...widget.description.layout(context, this),
                 _WrapPadding<T>(
-                  navBarHeightPersistent: widget.navBarHeightIsPersistent,
                   systemNavigationInsets: widget.systemNavigationInsets.bottom,
                   footer: widget.footer,
                   selectionGlue: widget.selectionGlue,
@@ -784,13 +783,11 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
         Align(
           alignment: Alignment.bottomRight,
           child: _Fab(
-            navBarHeightPersistent: widget.navBarHeightIsPersistent,
             key: _fabKey,
             scrollPos: widget.updateScrollPosition,
             controller: controller,
             selectionGlue: widget.selectionGlue,
             systemNavigationInsets: widget.systemNavigationInsets,
-            addFabPadding: widget.addFabPadding,
             footer: widget.footer,
           ),
         ),
@@ -922,7 +919,6 @@ class _BodyWrapping extends StatelessWidget {
 
 class _WrapPadding<T extends Cell> extends StatelessWidget {
   final PreferredSizeWidget? footer;
-  final bool navBarHeightPersistent;
   final SelectionGlue<T> selectionGlue;
   final double systemNavigationInsets;
   final Widget? child;
@@ -932,7 +928,6 @@ class _WrapPadding<T extends Cell> extends StatelessWidget {
     required this.footer,
     required this.selectionGlue,
     required this.systemNavigationInsets,
-    required this.navBarHeightPersistent,
     required this.child,
   });
 
@@ -945,7 +940,7 @@ class _WrapPadding<T extends Cell> extends StatelessWidget {
               systemNavigationInsets +
               (selectionGlue.isOpen() //&& selectionGlue.keyboardVisible()
                   ? selectionGlue.barHeight
-                  : navBarHeightPersistent
+                  : selectionGlue.persistentBarHeight
                       ? selectionGlue.barHeight
                       : 0) +
               (footer != null ? footer!.preferredSize.height : 0)),

@@ -36,7 +36,10 @@ class TagManager<T extends TagManagerType> {
     Tag t,
     Booru booru,
     bool restore, {
+    SelectionGlue<J> Function<J extends Cell>()? generateGlue,
     SafeMode? overrideSafeMode,
+    bool useRootNavigator = false,
+    // required EdgeInsets? viewInsets,
   }) {
     t = t.trim();
     if (t.tag.isEmpty) {
@@ -48,32 +51,41 @@ class TagManager<T extends TagManagerType> {
     PauseVideoNotifier.maybePauseOf(context, true);
 
     if (restore && !_temporary) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) {
-        final instance = DbsOpen.secondaryGrid(temporary: false);
+      final instance = DbsOpen.secondaryGrid(temporary: false);
+      final state = _insert(
+          tags: t.tag,
+          name: instance.name,
+          safeMode: overrideSafeMode ?? Settings.fromDb().safeMode);
 
+      Navigator.of(context, rootNavigator: useRootNavigator)
+          .push(MaterialPageRoute(builder: (context) {
         return SecondaryBooruGrid(
           tagManager: this as TagManager<Restorable>,
           noRestoreOnBack: true,
           api: BooruAPIState.fromEnum(booru, page: null),
-          restore: _insert(
-              tags: t.tag,
-              name: instance.name,
-              safeMode: overrideSafeMode ?? Settings.fromDb().safeMode),
+          restore: state,
+          generateGlue: generateGlue,
           instance: instance,
         );
-      })).whenComplete(() => PauseVideoNotifier.maybePauseOf(context, false));
+      }));
+      //.whenComplete(() => PauseVideoNotifier.maybePauseOf(context, false));
     } else {
-      Navigator.push(context, MaterialPageRoute(builder: (context) {
+      final TagManager<Unrestorable> tagManager = this
+              is TagManager<Unrestorable>
+          ? this as TagManager<Unrestorable>
+          : TagManager._copy(_insert, _excluded, _latest, _temporary, watch);
+
+      Navigator.of(context, rootNavigator: useRootNavigator)
+          .push(MaterialPageRoute(builder: (context) {
         return RandomBooruGrid(
-          tagManager: this is TagManager<Unrestorable>
-              ? this as TagManager<Unrestorable>
-              : TagManager._copy(
-                  _insert, _excluded, _latest, _temporary, watch),
+          tagManager: tagManager,
           api: BooruAPIState.fromEnum(booru, page: null),
           tags: t.tag,
           overrideSafeMode: overrideSafeMode,
+          generateGlue: generateGlue,
         );
-      })).whenComplete(() => PauseVideoNotifier.maybePauseOf(context, false));
+      }));
+      //.whenComplete(() => PauseVideoNotifier.maybePauseOf(context, false));
     }
   }
 

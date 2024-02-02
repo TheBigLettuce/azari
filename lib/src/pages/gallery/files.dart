@@ -57,7 +57,7 @@ class GalleryFiles extends StatefulWidget {
   final CallbackDescriptionNested? callback;
   final SelectionGlue<SystemGalleryDirectoryFile> glue;
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;
-  final EdgeInsets viewPadding;
+  final EdgeInsets? viewPadding;
 
   const GalleryFiles({
     super.key,
@@ -67,7 +67,7 @@ class GalleryFiles extends StatefulWidget {
     required this.bucketId,
     required this.glue,
     required this.generateGlue,
-    required this.viewPadding,
+    this.viewPadding,
   });
 
   @override
@@ -245,14 +245,12 @@ class _GalleryFilesState extends State<GalleryFiles>
         child: GridSkeleton<SystemGalleryDirectoryFile>(
           state,
           (context) => CallbackGrid(
-            navBarHeightIsPersistent: true,
             key: state.gridKey,
             getCell: (i) => widget.api.directCell(i),
             initalScrollPosition: 0,
             scaffoldKey: state.scaffoldKey,
-            systemNavigationInsets: widget.viewPadding,
+            systemNavigationInsets: widget.viewPadding ?? EdgeInsets.zero,
             hasReachedEnd: () => true,
-            addFabPadding: true,
             selectionGlue: GlueProvider.of(context),
             statistics: const ImageViewStatistics(
                 swiped: StatisticsGallery.addFilesSwiped,

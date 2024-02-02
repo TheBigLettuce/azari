@@ -36,10 +36,10 @@ class PinnedDirectories {
     });
   }
 
-  static void add(String id) {
+  static void add(String id, [bool silent = false]) {
     Dbs.g.blacklisted.writeTxnSync(() {
       Dbs.g.blacklisted.pinnedDirectories
           .putSync(PinnedDirectories(id, DateTime.now()));
-    });
+    }, silent: silent);
   }
 }

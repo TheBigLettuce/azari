@@ -14,13 +14,15 @@ import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/pages/booru/main_grid_settings_mixin.dart';
 import 'package:gallery/src/widgets/add_to_bookmarks_button.dart';
 import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:isar/isar.dart';
-import 'package:path/path.dart';
+import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../db/schemas/booru/note_booru.dart';
@@ -51,14 +53,17 @@ class RandomBooruGrid extends StatefulWidget {
   final TagManager<Unrestorable> tagManager;
   final GridStateBooru? state;
   final SafeMode? overrideSafeMode;
+  final SelectionGlue<J> Function<J extends Cell>()? generateGlue;
 
-  const RandomBooruGrid(
-      {super.key,
-      required this.api,
-      required this.tagManager,
-      this.state,
-      this.overrideSafeMode,
-      required this.tags});
+  const RandomBooruGrid({
+    super.key,
+    required this.api,
+    required this.tagManager,
+    this.state,
+    this.overrideSafeMode,
+    required this.tags,
+    this.generateGlue,
+  });
 
   @override
   State<RandomBooruGrid> createState() => _RandomBooruGridState();
@@ -74,6 +79,8 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
   (double, double?, int?)? _currentScroll;
 
   SafeMode? safeMode;
+
+  late String tags = widget.tags;
 
   int? currentSkipped;
 
@@ -98,9 +105,14 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
       mainFocus: state.mainFocus,
       searchText: widget.tags,
       addItems: null,
-      onSubmit: (context, tag) => TagManagerNotifier.ofUnrestorable(context)
-          .onTagPressed(
-              context, tag, BooruAPINotifier.of(context).booru, false),
+      onSubmit: (context, tag) {
+        if (widget.state != null) {
+          TagManagerNotifier.ofUnrestorable(context).onTagPressed(
+              context, tag, BooruAPINotifier.of(context).booru, false);
+        } else {
+          _clearAndRefreshB(tag.tag);
+        }
+      },
     ));
 
     settingsWatcher = Settings.watch((s) {
@@ -131,12 +143,13 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
 
     if (addedToBookmarks && widget.state == null) {
       instance.close(deleteFromDisk: false);
-      final f = File.fromUri(
-          Uri.file(joinAll([Dbs.g.temporaryDbDir, "${instance.name}.isar"])));
-      f.renameSync(joinAll([Dbs.g.appStorageDir, "${instance.name}.isar"]));
+      final f = File.fromUri(Uri.file(
+          path.joinAll([Dbs.g.temporaryDbDir, "${instance.name}.isar"])));
+      f.renameSync(
+          path.joinAll([Dbs.g.appStorageDir, "${instance.name}.isar"]));
       Dbs.g.main.writeTxnSync(() => Dbs.g.main.gridStateBoorus.putSync(
           GridStateBooru(widget.api.booru,
-              tags: widget.tags,
+              tags: tags,
               safeMode: safeMode ?? state.settings.safeMode,
               page: widget.api.currentPage,
               scrollPositionTags: _currentScroll!.$2,
@@ -162,12 +175,28 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
     return safeMode ?? state.settings.safeMode;
   }
 
+  void _clearAndRefreshB(String tag) {
+    state.gridKey.currentState?.mutationInterface.tick(0);
+    state.gridKey.currentState?.mutationInterface.setIsRefreshing(true);
+
+    setState(() {
+      tags = tag;
+    });
+
+    state.gridKey.currentState?.refresh();
+  }
+
   Future<int> _clearAndRefresh() async {
     try {
+      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+        state.gridKey.currentState?.selection.reset();
+      });
       StatisticsGeneral.addRefreshes();
 
-      final list = await widget.api.page(
-          0, widget.tags, widget.tagManager.excluded,
+      instance.writeTxnSync(() => instance.posts.clearSync());
+
+      final list = await widget.api.page(0,
+          widget.state == null ? tags : widget.tags, widget.tagManager.excluded,
           overrideSafeMode: _safeMode());
       currentSkipped = list.$2;
       await instance.writeTxn(() {
@@ -214,7 +243,7 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
           currentSkipped != null && currentSkipped! < p.id
               ? currentSkipped!
               : p.id,
-          widget.tags,
+          widget.state == null ? tags : widget.tags,
           widget.tagManager.excluded,
           overrideSafeMode: _safeMode());
       if (list.$1.isEmpty && currentSkipped == null) {
@@ -247,9 +276,13 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
     return instance.posts.count();
   }
 
+  late SelectionGlue<Post>? glue = widget.generateGlue?.call();
+
   @override
   Widget build(BuildContext context) {
     return WrapGridPage<Post>(
+      provided:
+          widget.generateGlue == null ? null : (glue!, widget.generateGlue!),
       scaffoldKey: state.scaffoldKey,
       child: Builder(
         builder: (context) {
@@ -264,17 +297,7 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                   (context) => CallbackGrid<Post>(
                     key: state.gridKey,
                     selectionGlue: glue,
-                    systemNavigationInsets: EdgeInsets.only(
-                        bottom: MediaQuery.of(context)
-                                .systemGestureInsets
-                                .bottom +
-                            (Scaffold.of(context).widget.bottomNavigationBar !=
-                                        null &&
-                                    glue.keyboardVisible()
-                                ? 80
-                                : 0)),
-                    addFabPadding:
-                        Scaffold.of(context).widget.bottomNavigationBar != null,
+                    systemNavigationInsets: MediaQuery.of(context).viewPadding,
                     registerNotifiers: (child) =>
                         TagManagerNotifier.unrestorable(widget.tagManager,
                             BooruAPINotifier(api: widget.api, child: child)),
@@ -375,6 +398,12 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                         searchWidget(context, hint: widget.api.booru.name),
                         searchFocus, onPressed: () {
                       if (currentlyHighlightedTag != "") {
+                        if (widget.state == null) {
+                          _clearAndRefreshB(currentlyHighlightedTag);
+
+                          return;
+                        }
+
                         state.mainFocus.unfocus();
                         widget.tagManager.onTagPressed(
                             context,

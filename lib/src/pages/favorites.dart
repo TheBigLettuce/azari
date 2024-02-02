@@ -255,14 +255,14 @@ class _FavoritesPageState extends State<FavoritesPage>
       }
 
       return g;
-    }, (selected, value) {
+    }, (selected, value, toPin) {
       for (final e in selected) {
         e.group = value.isEmpty ? null : value;
       }
 
       FavoriteBooru.addAllFileUrl(selected);
 
-      Navigator.pop(context);
+      Navigator.of(context, rootNavigator: true).pop();
     });
   }
 
@@ -305,8 +305,6 @@ class _FavoritesPageState extends State<FavoritesPage>
               ],
               download: _download,
               noteInterface: NoteBooru.interface<FavoriteBooru>(setState),
-              addFabPadding:
-                  Scaffold.of(context).widget.bottomNavigationBar == null,
               mainFocus: state.mainFocus,
               searchWidget: SearchAndFocus(searchWidget(context), searchFocus),
               refresh: () => Future.value(loader.count()),

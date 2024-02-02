@@ -154,9 +154,11 @@ class __WrapEntriesState extends State<_WrapEntries> {
 
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) {
+                  final tagManager = TagManager.fromEnum(e.booru);
+
                   return RandomBooruGrid(
                     api: BooruAPIState.fromEnum(e.booru, page: e.page),
-                    tagManager: TagManager.fromEnum(e.booru),
+                    tagManager: tagManager,
                     tags: e.tags,
                     state: e,
                   );

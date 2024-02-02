@@ -7,6 +7,9 @@
 
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/grid/selection_glue.dart';
+import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/notifiers/pause_video.dart';
 import 'package:isar/isar.dart';
 
@@ -159,6 +162,22 @@ class StateRestoration {
     }
 
     return StateRestoration._next(_mainGrid, res);
+  }
+
+  int? previousSelectedPost() {
+    if (secondaryCount() == 1) {
+      return _mainGrid.gridStates.getByNameSync(_mainGrid.name)?.selectedPost;
+    }
+
+    var res = _mainGrid.gridStates.where().sortByTimeDesc().findAllSync();
+
+    final idx = res.indexWhere((element) => element.name == copy.name);
+
+    if (idx <= 0) {
+      return null;
+    }
+
+    return res[idx].selectedPost;
   }
 
   StateRestoration(Isar mainGrid, String name, SafeMode safeMode)

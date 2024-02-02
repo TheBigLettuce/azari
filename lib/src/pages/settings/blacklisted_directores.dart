@@ -9,6 +9,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/db/schemas/gallery/blacklisted_directory.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
@@ -24,7 +26,14 @@ import '../../widgets/skeletons/grid_skeleton_state_filter.dart';
 import '../../widgets/skeletons/grid_skeleton.dart';
 
 class BlacklistedDirectories extends StatefulWidget {
-  const BlacklistedDirectories({super.key});
+  final SelectionGlue<BlacklistedDirectory> glue;
+  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
+
+  const BlacklistedDirectories({
+    super.key,
+    required this.generateGlue,
+    required this.glue,
+  });
 
   @override
   State<BlacklistedDirectories> createState() => _BlacklistedDirectoriesState();
@@ -70,6 +79,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
   @override
   Widget build(BuildContext context) {
     return WrapGridPage<BlacklistedDirectory>(
+        provided: (widget.glue, widget.generateGlue),
         scaffoldKey: state.scaffoldKey,
         child: GridSkeleton(
           state,
@@ -78,10 +88,9 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
               getCell: loader.getCell,
               initalScrollPosition: 0,
               scaffoldKey: state.scaffoldKey,
-              systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context),
+              systemNavigationInsets: MediaQuery.viewPaddingOf(context),
               hasReachedEnd: () => true,
               onBack: () => Navigator.pop(context),
-              addFabPadding: true,
               selectionGlue: GlueProvider.of(context),
               searchWidget: SearchAndFocus(
                   searchWidget(context,

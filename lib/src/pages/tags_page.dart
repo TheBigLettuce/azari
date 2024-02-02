@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 
@@ -23,12 +25,14 @@ import 'notes/tab_with_count.dart';
 
 class TagsPage extends StatefulWidget {
   final TagManager<Unrestorable> tagManager;
+  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
   final BooruAPIState booru;
 
   const TagsPage({
     super.key,
     required this.tagManager,
     required this.booru,
+    required this.generateGlue,
   });
 
   @override
@@ -120,6 +124,7 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
       "Tags",
       state,
       expectSliverBody: false,
+      autofocus: false,
       child: NestedScrollView(
         headerSliverBuilder: (context, scrolled) => [
           SliverAppBar(
@@ -198,6 +203,7 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
                     widget.booru.booru,
                     true,
                     overrideSafeMode: safeMode,
+                    generateGlue: widget.generateGlue,
                   )).animate(
               controller: deleteAllController,
               effects: [

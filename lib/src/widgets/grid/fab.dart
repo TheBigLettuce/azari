@@ -11,9 +11,7 @@ class _Fab extends StatefulWidget {
   final ScrollController controller;
   final void Function(double, {double? infoPos, int? selectedCell})? scrollPos;
   final SelectionGlue selectionGlue;
-  final bool navBarHeightPersistent;
   final EdgeInsets systemNavigationInsets;
-  final bool addFabPadding;
   final PreferredSizeWidget? footer;
 
   const _Fab({
@@ -21,9 +19,7 @@ class _Fab extends StatefulWidget {
     required this.controller,
     required this.selectionGlue,
     required this.systemNavigationInsets,
-    required this.addFabPadding,
     required this.scrollPos,
-    required this.navBarHeightPersistent,
     required this.footer,
   });
 
@@ -54,17 +50,15 @@ class __FabState extends State<_Fab> {
                   right: 4,
                   bottom: 4 +
                       widget.systemNavigationInsets.bottom +
-                      (!widget.addFabPadding
-                          ? 0
-                          : (widget.selectionGlue.isOpen() &&
-                                      !widget.selectionGlue.keyboardVisible()
-                                  ? widget.selectionGlue.barHeight
-                                  : widget.navBarHeightPersistent
-                                      ? widget.selectionGlue.barHeight
-                                      : 0) +
-                              (widget.footer != null
-                                  ? widget.footer!.preferredSize.height
-                                  : 0))),
+                      (widget.selectionGlue.isOpen() &&
+                              !widget.selectionGlue.keyboardVisible()
+                          ? widget.selectionGlue.barHeight
+                          : widget.selectionGlue.persistentBarHeight
+                              ? widget.selectionGlue.barHeight
+                              : 0) +
+                      (widget.footer != null
+                          ? widget.footer!.preferredSize.height
+                          : 0)),
               child: FloatingActionButton(
                 elevation: 2,
                 onPressed: () {

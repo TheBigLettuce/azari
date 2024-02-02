@@ -9,6 +9,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/widgets/grid/actions/downloads.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/db/initalize_db.dart';
@@ -27,7 +29,14 @@ import '../widgets/skeletons/grid_skeleton_state_filter.dart';
 import '../widgets/skeletons/grid_skeleton.dart';
 
 class Downloads extends StatefulWidget {
-  const Downloads({super.key});
+  final SelectionGlue<DownloadFile> glue;
+  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
+
+  const Downloads({
+    super.key,
+    required this.generateGlue,
+    required this.glue,
+  });
 
   @override
   State<Downloads> createState() => _DownloadsState();
@@ -111,6 +120,7 @@ class _DownloadsState extends State<Downloads>
   Widget build(BuildContext context) {
     return WrapGridPage<DownloadFile>(
         scaffoldKey: state.scaffoldKey,
+        provided: (widget.glue, widget.generateGlue),
         child: GridSkeleton(
           state,
           (context) => CallbackGrid<DownloadFile>(
@@ -118,7 +128,7 @@ class _DownloadsState extends State<Downloads>
               getCell: loader.getCell,
               initalScrollPosition: 0,
               scaffoldKey: state.scaffoldKey,
-              systemNavigationInsets: MediaQuery.systemGestureInsetsOf(context),
+              systemNavigationInsets: MediaQuery.viewPaddingOf(context),
               hasReachedEnd: () => true,
               selectionGlue: GlueProvider.of(context),
               showCount: true,

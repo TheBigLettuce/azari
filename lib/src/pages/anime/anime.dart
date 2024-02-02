@@ -148,12 +148,13 @@ class _AnimePageState extends State<AnimePage>
     super.dispose();
   }
 
-  bool _launchSearch() {
+  bool _launchSearch(bool force) {
     final offsetIndex = tabController.index + tabController.offset;
 
-    if (tabController.offset.isNegative
-        ? offsetIndex <= 2.5 && offsetIndex > 1.5
-        : offsetIndex >= 1.5 && offsetIndex < 2.5) {
+    if (force ||
+        (tabController.offset.isNegative
+            ? offsetIndex <= 2.5 && offsetIndex > 1.5
+            : offsetIndex >= 1.5 && offsetIndex < 2.5)) {
       Navigator.push(context, MaterialPageRoute(
         builder: (context) {
           return SearchAnimePage(api: api);

@@ -21,6 +21,8 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/db/state_restoration.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
+import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/image_view/wrap_image_view_notifiers.dart';
 import 'package:gallery/src/widgets/make_tags.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:gallery/src/widgets/notifiers/filter.dart';
@@ -315,12 +317,16 @@ class PostBase extends Cell with CachedCellValuesMixin {
       supplyTags: tags,
       excluded: tagManager.excluded,
       launchGrid: (context, t, [safeMode]) {
+        Navigator.pop(context);
+        Navigator.pop(context);
+
         tagManager.onTagPressed(
-          context,
+          OriginalGridContext.maybeOf(context) ?? context,
           Tag.string(tag: t),
           Booru.fromPrefix(prefix)!,
           true,
           overrideSafeMode: safeMode,
+          generateGlue: OriginalGridContext.generateOf(context),
         );
       },
     );

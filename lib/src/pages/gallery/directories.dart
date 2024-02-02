@@ -47,7 +47,6 @@ class GalleryDirectories extends StatefulWidget {
   final bool? noDrawer;
   final bool showBackButton;
   final void Function(bool) procPop;
-  final double bottomPadding;
   final EdgeInsets? viewPadding;
 
   const GalleryDirectories(
@@ -57,7 +56,6 @@ class GalleryDirectories extends StatefulWidget {
       this.noDrawer,
       this.viewPadding,
       required this.procPop,
-      this.bottomPadding = 0,
       this.showBackButton = false})
       : assert(!(callback != null && nestedCallback != null));
 
@@ -272,8 +270,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                     label,
                     children,
                     extra,
-                    widget.viewPadding ??
-                        EdgeInsets.only(bottom: widget.bottomPadding),
+                    widget.viewPadding ?? EdgeInsets.zero,
                     widget.nestedCallback),
       );
 
@@ -290,17 +287,12 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
             scaffoldKey: state.scaffoldKey,
             onBack: widget.showBackButton ? () => Navigator.pop(context) : null,
             systemNavigationInsets: EdgeInsets.only(
-                bottom: (widget.viewPadding?.bottom ??
-                        MediaQuery.systemGestureInsetsOf(context).bottom) +
-                    (glue.isOpen() && !glue.keyboardVisible()
-                        ? 80
-                        : widget.bottomPadding)),
+              bottom: (widget.viewPadding?.bottom ??
+                  MediaQuery.systemGestureInsetsOf(context).bottom),
+            ),
             hasReachedEnd: () => true,
             showCount: true,
             selectionGlue: glue,
-            addFabPadding: widget.callback != null ||
-                widget.nestedCallback != null ||
-                !glue.isOpen(),
             inlineMenuButtonItems: true,
             menuButtonItems: [
               if (widget.callback != null)
@@ -372,34 +364,37 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
 
                 final glue = generate<SystemGalleryDirectoryFile>();
 
+                final apiFiles = switch (cell.bucketId) {
+                  "trash" => extra.trash(),
+                  "favorites" => extra.favorites(),
+                  String() => api.files(d),
+                };
+
                 Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => switch (cell.bucketId) {
                         "favorites" => GalleryFiles(
-                            viewPadding: widget.viewPadding ??
-                                EdgeInsets.only(bottom: widget.bottomPadding),
+                            viewPadding: widget.viewPadding,
                             glue: glue,
                             generateGlue: generate,
-                            api: extra.favorites(),
+                            api: apiFiles,
                             callback: widget.nestedCallback,
                             dirName: "favorites",
                             bucketId: "favorites"),
                         "trash" => GalleryFiles(
-                            viewPadding: widget.viewPadding ??
-                                EdgeInsets.only(bottom: widget.bottomPadding),
+                            viewPadding: widget.viewPadding,
                             glue: glue,
-                            api: extra.trash(),
+                            api: apiFiles,
                             generateGlue: generate,
                             callback: widget.nestedCallback,
                             dirName: "trash",
                             bucketId: "trash"),
                         String() => GalleryFiles(
-                            viewPadding: widget.viewPadding ??
-                                EdgeInsets.only(bottom: widget.bottomPadding),
+                            viewPadding: widget.viewPadding,
                             generateGlue: generate,
                             glue: glue,
-                            api: api.files(d),
+                            api: apiFiles,
                             dirName: d.name,
                             callback: widget.nestedCallback,
                             bucketId: d.bucketId)
@@ -416,8 +411,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                           SystemGalleryDirectoriesActions.joinedDirectories(
                               context,
                               extra,
-                              widget.viewPadding ??
-                                  EdgeInsets.only(bottom: widget.bottomPadding),
+                              widget.viewPadding ?? EdgeInsets.zero,
                               widget.nestedCallback)
                       ]
                     : [
@@ -430,26 +424,29 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                           }
 
                           return t;
-                        }, (selected, value) {
+                        }, (selected, value, toPin) {
                           if (value.isEmpty) {
                             PostTags.g.removeDirectoriesTag(
                                 selected.map((e) => e.bucketId));
                           } else {
                             PostTags.g.setDirectoriesTag(
                                 selected.map((e) => e.bucketId), value);
+
+                            if (toPin) {
+                              PinnedDirectories.add(value, true);
+                            }
                           }
 
                           _refresh();
 
-                          Navigator.pop(context);
+                          Navigator.of(context, rootNavigator: true).pop();
                         }),
                         SystemGalleryDirectoriesActions.blacklist(
                             context, extra),
                         SystemGalleryDirectoriesActions.joinedDirectories(
                             context,
                             extra,
-                            widget.viewPadding ??
-                                EdgeInsets.only(bottom: widget.bottomPadding),
+                            widget.viewPadding ?? EdgeInsets.zero,
                             widget.nestedCallback)
                       ],
                 bottomWidget:
