@@ -12,8 +12,8 @@ import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru_tagging.dart';
 import 'package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart';
-import 'package:gallery/src/widgets/radio_dialog.dart';
-import 'package:gallery/src/widgets/settings_label.dart';
+import 'package:gallery/src/pages/more/settings/radio_dialog.dart';
+import 'package:gallery/src/pages/more/settings/settings_label.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../db/tags/post_tags.dart';

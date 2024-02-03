@@ -11,7 +11,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_booru.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
-import 'package:gallery/src/logging/logging.dart';
+import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
 import 'package:gallery/src/plugs/notifications.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';

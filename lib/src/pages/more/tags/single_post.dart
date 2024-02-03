@@ -21,12 +21,12 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:qrscan/qrscan.dart';
 
-import '../db/schemas/booru/post.dart';
-import 'grid/actions/booru_grid.dart';
-import '../interfaces/booru/booru_api_state.dart';
-import '../db/state_restoration.dart';
-import '../db/schemas/downloader/download_file.dart';
-import '../db/schemas/settings/settings.dart';
+import '../../../db/schemas/booru/post.dart';
+import '../../../widgets/grid/actions/booru_grid.dart';
+import '../../../interfaces/booru/booru_api_state.dart';
+import '../../../db/state_restoration.dart';
+import '../../../db/schemas/downloader/download_file.dart';
+import '../../../db/schemas/settings/settings.dart';
 
 class SinglePost extends StatefulWidget {
   final FocusNode focus;

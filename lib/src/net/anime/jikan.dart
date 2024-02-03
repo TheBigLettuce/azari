@@ -10,7 +10,7 @@ import 'package:gallery/src/db/schemas/anime/saved_anime_characters.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/logging/logging.dart';
+import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:jikan_api/jikan_api.dart' as api;
 
 class Jikan implements AnimeAPI {

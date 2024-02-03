@@ -8,7 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'settings_label.dart';
+import '../pages/more/settings/settings_label.dart';
 
 class MenuWrapper extends StatefulWidget {
   final String title;

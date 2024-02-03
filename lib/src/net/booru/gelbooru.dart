@@ -12,7 +12,7 @@ import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru/strip_html.dart';
-import 'package:gallery/src/logging/logging.dart';
+import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 import 'package:path/path.dart' as path;
 import 'package:xml/xml.dart';

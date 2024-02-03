@@ -22,8 +22,8 @@ import 'package:gallery/src/widgets/menu_wrapper.dart';
 
 import '../../../db/tags/post_tags.dart';
 import '../../../db/schemas/settings/settings.dart';
-import '../../../widgets/radio_dialog.dart';
-import '../../../widgets/settings_label.dart';
+import 'radio_dialog.dart';
+import 'settings_label.dart';
 import 'settings_widget.dart';
 
 class SettingsList extends StatefulWidget {

@@ -20,10 +20,10 @@ import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
-import 'package:gallery/src/logging/logging.dart';
+import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/pages/booru/open_menu_button.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
-import 'package:gallery/src/widgets/bookmark_button.dart';
+import 'package:gallery/src/pages/booru/bookmark_button.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:isar/isar.dart';
 

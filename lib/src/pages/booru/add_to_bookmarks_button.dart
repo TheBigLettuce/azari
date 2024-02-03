@@ -9,15 +9,19 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import 'skeletons/grid_skeleton_state.dart';
+import '../../widgets/skeletons/grid_skeleton_state.dart';
 
 class AddToBookmarksButton extends StatelessWidget {
   final GridSkeletonState state;
   final SelectionGlue glue;
   final void Function() f;
 
-  const AddToBookmarksButton(
-      {super.key, required this.state, required this.glue, required this.f});
+  const AddToBookmarksButton({
+    super.key,
+    required this.state,
+    required this.glue,
+    required this.f,
+  });
 
   @override
   Widget build(BuildContext context) {

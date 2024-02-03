@@ -11,7 +11,7 @@ import 'package:gallery/src/db/schemas/booru/post.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru/strip_html.dart';
-import 'package:gallery/src/logging/logging.dart';
+import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 
 import '../../db/schemas/settings/settings.dart';

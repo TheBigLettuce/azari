@@ -9,7 +9,7 @@ import 'dart:developer';
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:gallery/src/logging/logging.dart';
+import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;

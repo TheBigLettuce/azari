@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/settings/video_settings.dart';
 import 'package:gallery/src/widgets/loading_error_widget.dart';
 import 'package:gallery/src/widgets/notifiers/pause_video.dart';
-import 'package:gallery/src/widgets/video/video_controls.dart';
+import 'package:gallery/src/widgets/grid/video/video_controls.dart';
 import 'package:video_player/video_player.dart';
 
 class PhotoGalleryPageVideo extends StatefulWidget {

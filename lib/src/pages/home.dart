@@ -43,15 +43,15 @@ import 'gallery/directories.dart';
 import 'more/more_page.dart';
 import 'more/settings/settings_widget.dart';
 
-part '../widgets/home/icons/anime_icon.dart';
-part '../widgets/home/icons/gallery_icon.dart';
-part '../widgets/home/icons/booru_icon.dart';
-part '../widgets/home/icons/favorites_icon.dart';
-part '../widgets/home/navigator_shell.dart';
-part '../widgets/home/main_grid_refreshing_interface.dart';
-part '../widgets/home/change_page_mixin.dart';
-part '../widgets/home/animated_icons_mixin.dart';
-part '../widgets/home/before_you_continue_dialog_mixin.dart';
+part 'home/icons/anime_icon.dart';
+part 'home/icons/gallery_icon.dart';
+part 'home/icons/booru_icon.dart';
+part 'home/icons/favorites_icon.dart';
+part 'home/navigator_shell.dart';
+part 'home/main_grid_refreshing_interface.dart';
+part 'home/change_page_mixin.dart';
+part 'home/animated_icons_mixin.dart';
+part 'home/before_you_continue_dialog_mixin.dart';
 
 class Home extends StatefulWidget {
   final CallbackDescriptionNested? callback;

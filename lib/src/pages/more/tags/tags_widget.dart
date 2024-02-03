@@ -10,9 +10,9 @@ import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/widgets/make_tags.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
 
-import '../db/schemas/tags/tags.dart';
-import 'empty_widget.dart';
-import 'time_label.dart';
+import '../../../db/schemas/tags/tags.dart';
+import '../../../widgets/empty_widget.dart';
+import '../../../widgets/time_label.dart';
 
 class TagsWidget extends StatelessWidget {
   final void Function(Tag tag) deleteTag;

@@ -11,7 +11,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/widgets/dashboard_card.dart';
+import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'card_shell.dart';

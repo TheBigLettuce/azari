@@ -13,7 +13,7 @@ import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/widgets/radio_dialog.dart';
+import 'package:gallery/src/pages/more/settings/radio_dialog.dart';
 
 class GridSettingsButton extends StatelessWidget {
   final GridSettingsBase gridSettings;

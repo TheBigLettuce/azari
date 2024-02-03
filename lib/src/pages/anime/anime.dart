@@ -25,7 +25,7 @@ import 'package:gallery/src/pages/anime/info_pages/finished_anime_info_page.dart
 import 'package:gallery/src/pages/anime/info_pages/discover_anime_info_page.dart';
 import 'package:gallery/src/pages/anime/info_pages/watching_anime_info_page.dart';
 import 'package:gallery/src/pages/more/notes/tab_with_count.dart';
-import 'package:gallery/src/widgets/dashboard_card.dart';
+import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/grid/grid_cell.dart';

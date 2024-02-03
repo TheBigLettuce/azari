@@ -7,7 +7,7 @@
 
 import 'package:flutter/material.dart';
 
-import 'settings_label.dart';
+import '../pages/more/settings/settings_label.dart';
 
 class TimeLabel extends StatelessWidget {
   final (int, int, int) time;

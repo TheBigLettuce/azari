@@ -34,7 +34,7 @@ import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
 import 'package:gallery/src/db/schemas/settings/video_settings.dart';
 import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/logging/logging.dart';
+import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'schemas/gallery/system_gallery_directory.dart';

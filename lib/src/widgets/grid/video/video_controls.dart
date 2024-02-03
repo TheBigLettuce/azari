@@ -11,7 +11,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/settings/video_settings.dart';
 import 'package:video_player/video_player.dart';
 
-import '../notifiers/app_bar_visibility.dart';
+import '../../notifiers/app_bar_visibility.dart';
 
 class VideoControls extends StatelessWidget {
   final VideoPlayerController controller;

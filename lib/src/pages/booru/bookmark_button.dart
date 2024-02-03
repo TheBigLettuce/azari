@@ -21,7 +21,7 @@ import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:isar/isar.dart';
 
-import 'time_label.dart';
+import '../../widgets/time_label.dart';
 
 class BookmarkButton extends StatefulWidget {
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;
