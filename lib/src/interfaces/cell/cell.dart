@@ -8,10 +8,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:gallery/src/db/base/system_gallery_thumbnail_provider.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:isar/isar.dart';
 
-import '../../db/schemas/gallery/system_gallery_directory_file.dart';
 import 'contentable.dart';
 import 'sticker.dart';
 
@@ -130,7 +130,7 @@ mixin CachedCellValuesFilesMixin on Cell {
   late final (int id, bool tryLoad) _thumbInit;
   late final Contentable Function() _contentInit;
 
-  ThumbnailProvider? _thumb;
+  SystemGalleryThumbnailProvider? _thumb;
   Contentable? _content;
 
   void initValues(
@@ -160,7 +160,7 @@ mixin CachedCellValuesFilesMixin on Cell {
       return _thumb!;
     }
 
-    _thumb = ThumbnailProvider(_thumbInit.$1, _thumbInit.$2);
+    _thumb = SystemGalleryThumbnailProvider(_thumbInit.$1, _thumbInit.$2);
 
     return _thumb;
   }

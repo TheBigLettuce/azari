@@ -9,42 +9,33 @@ import 'dart:io';
 
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/base/booru_post_functionality_mixin.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
-import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
-import 'package:gallery/src/db/tags/post_tags.dart';
-import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/db/schemas/booru/note_booru.dart';
+import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/interfaces/booru_tagging.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/db/state_restoration.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
-import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/image_view/wrap_image_view_notifiers.dart';
-import 'package:gallery/src/widgets/make_tags.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
-import 'package:gallery/src/widgets/notifiers/filter.dart';
 import 'package:gallery/src/widgets/notifiers/tag_manager.dart';
-import 'package:gallery/src/widgets/search_bar/search_text_field.dart';
 import 'package:gallery/src/widgets/translation_notes.dart';
 import 'package:isar/isar.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path_util;
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../interfaces/booru/booru_api_state.dart';
 import '../../interfaces/cell/contentable.dart';
-import '../../interfaces/filtering/filtering_mode.dart';
-import '../../plugs/platform_functions.dart';
 import '../../interfaces/booru/display_quality.dart';
 import '../schemas/tags/tags.dart';
 
-class PostBase extends Cell with CachedCellValuesMixin {
+class PostBase extends Cell
+    with CachedCellValuesMixin, BooruPostFunctionalityMixin {
   PostBase({
     required this.id,
     required this.height,
@@ -62,18 +53,6 @@ class PostBase extends Cell with CachedCellValuesMixin {
     required this.createdAt,
     this.isarId,
   }) {
-    // if (isHidden) {
-    //   provider = MemoryImage(kTransparentImage);
-    // } else {
-    //   try {
-    //     provider = CachedNetworkImageProvider(
-    //       previewUrl,
-    //     );
-    //   } catch (_) {
-    //     provider = MemoryImage(kTransparentImage);
-    //   }
-    // }
-
     initValues(
         ValueKey(fileUrl),
         HiddenBooruPost.isHidden(id, Booru.fromPrefix(prefix)!)
@@ -111,6 +90,7 @@ class PostBase extends Cell with CachedCellValuesMixin {
       }
     });
   }
+
   @override
   Id? isarId;
 
@@ -141,50 +121,6 @@ class PostBase extends Cell with CachedCellValuesMixin {
   String filename() =>
       "${prefix.isNotEmpty ? '${prefix}_' : ''}$id - $md5${ext != '.zip' ? ext : path_util.extension(sampleUrl)}";
 
-  static void showQr(BuildContext context, String prefix, int id) {
-    Navigator.push(
-        context,
-        DialogRoute(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              content: Container(
-                decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(10))),
-                width: 320,
-                height: 320,
-                clipBehavior: Clip.antiAlias,
-                child: QrImageView(
-                  data: "${prefix}_$id",
-                  backgroundColor: Theme.of(context).colorScheme.onSurface,
-                  version: QrVersions.auto,
-                  size: 320,
-                ),
-              ),
-            );
-          },
-        ));
-  }
-
-  static Widget openInBrowserButton(Uri uri,
-          [void Function()? overrideOnPressed]) =>
-      IconButton(
-        icon: const Icon(Icons.public),
-        onPressed: overrideOnPressed ??
-            () => launchUrl(uri, mode: LaunchMode.externalApplication),
-      );
-
-  static Widget shareButton(BuildContext context, String url,
-          [void Function()? onLongPress]) =>
-      GestureDetector(
-        onLongPress: onLongPress,
-        child: IconButton(
-            onPressed: () {
-              PlatformFunctions.shareMedia(url, url: true);
-            },
-            icon: const Icon(Icons.share)),
-      );
-
   @override
   List<Widget>? addButtons(BuildContext context) {
     return [
@@ -209,39 +145,15 @@ class PostBase extends Cell with CachedCellValuesMixin {
     ];
   }
 
-  List<(IconData, void Function()?)> _stickers(
-      Contentable content, BuildContext? context) {
-    return [
-      if (content is NetVideo) (FilteringMode.video.icon, null),
-      if (content is NetGif) (FilteringMode.gif.icon, null),
-      if (tags.contains("original")) (FilteringMode.original.icon, null),
-      if (tags.contains("translated"))
-        (
-          Icons.translate_outlined,
-          context == null
-              ? null
-              : () {
-                  Navigator.push(
-                    context,
-                    DialogRoute(
-                      context: context,
-                      builder: (context) {
-                        return TranslationNotes(
-                          postId: id,
-                          api: BooruAPIState.fromEnum(Booru.fromPrefix(prefix)!,
-                              page: null),
-                        );
-                      },
-                    ),
-                  );
-                }
-        )
-    ];
-  }
-
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) {
-    final icons = _stickers(content(), context);
+    final icons = defaultStickers(
+      content(),
+      context,
+      tags,
+      id,
+      Booru.fromPrefix(prefix)!,
+    );
 
     return icons.isEmpty ? null : icons;
   }
@@ -253,7 +165,7 @@ class PostBase extends Cell with CachedCellValuesMixin {
     final tagManager = TagManagerNotifier.maybeOfRestorable(context) ??
         TagManager.fromEnum(Booru.fromPrefix(prefix)!);
 
-    return wrapTagsSearch(
+    return wrapTagsList(
       context,
       extra,
       colors,
@@ -346,20 +258,7 @@ class PostBase extends Cell with CachedCellValuesMixin {
 
   @override
   List<Sticker> stickers(BuildContext context) {
-    // ImageProvider provider;
     final isHidden = HiddenBooruPost.isHidden(id, Booru.fromPrefix(prefix)!);
-
-    // if (isHidden) {
-    //   provider = MemoryImage(kTransparentImage);
-    // } else {
-    //   try {
-    //     provider = CachedNetworkImageProvider(
-    //       previewUrl,
-    //     );
-    //   } catch (_) {
-    //     provider = MemoryImage(kTransparentImage);
-    //   }
-    // }
 
     return [
       if (isHidden) const Sticker(Icons.hide_image_rounded, right: true),
@@ -372,58 +271,13 @@ class PostBase extends Cell with CachedCellValuesMixin {
             right: true),
       if (NoteBooru.hasNotes(id, Booru.fromPrefix(prefix)!))
         const Sticker(Icons.sticky_note_2_outlined, right: true),
-      ..._stickers(content(), context).map((e) => Sticker(e.$1))
-    ];
-  }
-
-  static List<Widget> wrapTagsSearch(
-    BuildContext context,
-    dynamic extra,
-    AddInfoColorData colors,
-    List<Widget> lists,
-    String filename, {
-    bool temporary = false,
-    bool showDeleteButton = false,
-    List<String>? supplyTags,
-    void Function(BuildContext, String, [SafeMode?])? launchGrid,
-    BooruTagging? excluded,
-  }) {
-    final data = FilterNotifier.maybeOf(context);
-    final pinnedTags = <String>[];
-    final List<String> postTags;
-    if (supplyTags == null) {
-      postTags = PostTags.g.getTagsPost(filename);
-    } else {
-      postTags = supplyTags;
-    }
-
-    final tags = <String>[];
-
-    for (final e in postTags) {
-      if (PinnedTag.isPinned(e)) {
-        pinnedTags.add(e);
-      } else {
-        tags.add(e);
-      }
-    }
-
-    return [
-      if (!(data?.searchFocus.hasFocus ?? false))
-        ListBody(
-          children: lists,
-        ),
-      if (postTags.isNotEmpty && data != null)
-        SearchTextField(data, filename, showDeleteButton, colors),
-      ...makeTags(
+      ...defaultStickers(
+        content(),
         context,
-        extra,
-        colors,
         tags,
-        temporary ? "" : filename,
-        launchGrid: launchGrid,
-        excluded: excluded,
-        pinnedTags: pinnedTags,
-      )
+        id,
+        Booru.fromPrefix(prefix)!,
+      ).map((e) => Sticker(e.$1))
     ];
   }
 }

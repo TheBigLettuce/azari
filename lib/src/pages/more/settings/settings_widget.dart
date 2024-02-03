@@ -11,10 +11,10 @@ import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_booru.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 
-import '../../db/schemas/settings/settings.dart';
-import '../../widgets/restart_widget.dart';
-import '../../widgets/skeletons/skeleton_settings.dart';
-import '../../widgets/skeletons/skeleton_state.dart';
+import '../../../db/schemas/settings/settings.dart';
+import '../../../widgets/restart_widget.dart';
+import '../../../widgets/skeletons/skeleton_settings.dart';
+import '../../../widgets/skeletons/skeleton_state.dart';
 import 'settings_list.dart';
 
 part 'is_restart.dart';

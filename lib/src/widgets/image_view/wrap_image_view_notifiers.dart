@@ -7,10 +7,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
-import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/notifiers/app_bar_visibility.dart';
 import 'package:gallery/src/widgets/notifiers/current_cell.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/notifiers/loading_progress.dart';
 import 'package:gallery/src/widgets/notifiers/pause_video.dart';

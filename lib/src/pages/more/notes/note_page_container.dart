@@ -19,7 +19,7 @@ import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
 import 'package:isar/isar.dart';
 
-import '../image_view.dart';
+import '../../../widgets/image_view/image_view.dart';
 
 class NotePageContainer<T extends Cell> {
   final state = GridSkeletonState<T>();

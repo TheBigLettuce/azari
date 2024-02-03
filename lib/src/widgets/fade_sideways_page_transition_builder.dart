@@ -35,3 +35,23 @@ class FadeSidewaysPageTransitionBuilder implements PageTransitionsBuilder {
 
   const FadeSidewaysPageTransitionBuilder();
 }
+
+// class FadePageTransitionBuilder implements PageTransitionsBuilder {
+//   static final Animatable<double> _fastOutSlowInTween =
+//       CurveTween(curve: Easing.standard);
+
+//   @override
+//   Widget buildTransitions<T>(
+//       PageRoute<T> route,
+//       BuildContext context,
+//       Animation<double> animation,
+//       Animation<double> secondaryAnimation,
+//       Widget child) {
+//     return FadeTransition(
+//       opacity: animation.drive(_fastOutSlowInTween),
+//       child: child,
+//     );
+//   }
+
+//   const FadePageTransitionBuilder();
+// }

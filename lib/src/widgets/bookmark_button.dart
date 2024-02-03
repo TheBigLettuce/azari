@@ -16,6 +16,7 @@ import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/pages/booru/random.dart';
+import 'package:gallery/src/pages/more/settings/settings_widget.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:isar/isar.dart';
@@ -24,10 +25,14 @@ import 'time_label.dart';
 
 class BookmarkButton extends StatefulWidget {
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;
+  final void Function(String? e) saveSelectedPage;
+  final String? restoreSelectedPage;
 
   const BookmarkButton({
     super.key,
     required this.generateGlue,
+    required this.restoreSelectedPage,
+    required this.saveSelectedPage,
   });
 
   @override
@@ -35,6 +40,51 @@ class BookmarkButton extends StatefulWidget {
 }
 
 class _BookmarkButtonState extends State<BookmarkButton> {
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.restoreSelectedPage != null) {
+      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+        final e = Dbs.g.main.gridStateBoorus
+            .getByNameSync(widget.restoreSelectedPage!)!;
+
+        Dbs.g.main.writeTxnSync(() => Dbs.g.main.gridStateBoorus
+            .putByNameSync(e.copy(false, time: DateTime.now())));
+
+        widget.saveSelectedPage(widget.restoreSelectedPage);
+
+        Navigator.push(context, MaterialPageRoute(
+          builder: (context) {
+            final tagManager = TagManager.fromEnum(e.booru);
+
+            return RandomBooruGrid(
+              api: BooruAPIState.fromEnum(e.booru, page: e.page),
+              tagManager: tagManager,
+              onDispose: () {
+                if (!isRestart) {
+                  widget.saveSelectedPage(null);
+                }
+              },
+              tags: e.tags,
+              state: e,
+              generateGlue: widget.generateGlue,
+            );
+          },
+        ));
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    if (!isRestart) {
+      widget.saveSelectedPage(null);
+    }
+
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton(
@@ -45,6 +95,8 @@ class _BookmarkButtonState extends State<BookmarkButton> {
             padding: EdgeInsets.zero,
             child: _WrapEntries(
               generateGlue: widget.generateGlue,
+              saveSelectedPage: widget.saveSelectedPage,
+              restoreSelectedPage: widget.restoreSelectedPage,
             ),
           )
         ];
@@ -55,10 +107,14 @@ class _BookmarkButtonState extends State<BookmarkButton> {
 }
 
 class _WrapEntries extends StatefulWidget {
+  final void Function(String? e) saveSelectedPage;
+  final String? restoreSelectedPage;
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;
 
   const _WrapEntries({
     super.key,
+    required this.restoreSelectedPage,
+    required this.saveSelectedPage,
     required this.generateGlue,
   });
 
@@ -72,6 +128,13 @@ class __WrapEntriesState extends State<_WrapEntries> {
       Dbs.g.main.gridStateBoorus.where().sortByTimeDesc().findAllSync();
 
   @override
+  void dispose() {
+    watcher.cancel();
+
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
 
@@ -83,11 +146,30 @@ class __WrapEntriesState extends State<_WrapEntries> {
     });
   }
 
-  @override
-  void dispose() {
-    watcher.cancel();
+  void launchGrid(BuildContext context, GridStateBooru e) {
+    Dbs.g.main.writeTxnSync(() => Dbs.g.main.gridStateBoorus
+        .putByNameSync(e.copy(false, time: DateTime.now())));
 
-    super.dispose();
+    widget.saveSelectedPage(e.name);
+
+    Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        final tagManager = TagManager.fromEnum(e.booru);
+
+        return RandomBooruGrid(
+          api: BooruAPIState.fromEnum(e.booru, page: e.page),
+          tagManager: tagManager,
+          tags: e.tags,
+          state: e,
+          onDispose: () {
+            if (!isRestart) {
+              widget.saveSelectedPage(null);
+            }
+          },
+          generateGlue: widget.generateGlue,
+        );
+      },
+    ));
   }
 
   @override
@@ -162,24 +244,7 @@ class __WrapEntriesState extends State<_WrapEntries> {
               )
             ],
             menuTitle: e.tags,
-            onTap: () {
-              Dbs.g.main.writeTxnSync(() => Dbs.g.main.gridStateBoorus
-                  .putByNameSync(e.copy(false, time: DateTime.now())));
-
-              Navigator.push(context, MaterialPageRoute(
-                builder: (context) {
-                  final tagManager = TagManager.fromEnum(e.booru);
-
-                  return RandomBooruGrid(
-                    api: BooruAPIState.fromEnum(e.booru, page: e.page),
-                    tagManager: tagManager,
-                    tags: e.tags,
-                    state: e,
-                    generateGlue: widget.generateGlue,
-                  );
-                },
-              ));
-            },
+            onTap: () => launchGrid(context, e),
             // enabled: false,
             padding: const EdgeInsets.only(left: 16),
             child: Padding(

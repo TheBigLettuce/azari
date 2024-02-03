@@ -16,11 +16,11 @@ import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 
-import '../interfaces/booru/booru_api_state.dart';
-import '../db/state_restoration.dart';
-import '../widgets/search_bar/autocomplete/autocomplete_widget.dart';
-import '../widgets/single_post.dart';
-import '../widgets/tags_widget.dart';
+import '../../interfaces/booru/booru_api_state.dart';
+import '../../db/state_restoration.dart';
+import '../../widgets/search_bar/autocomplete/autocomplete_widget.dart';
+import '../../widgets/single_post.dart';
+import '../../widgets/tags_widget.dart';
 import 'notes/tab_with_count.dart';
 
 class TagsPage extends StatefulWidget {

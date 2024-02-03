@@ -8,7 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/pages/image_view.dart';
+import 'package:gallery/src/widgets/image_view/image_view.dart';
 
 class AnimeInfoAppBar extends StatefulWidget {
   final AnimeEntry entry;

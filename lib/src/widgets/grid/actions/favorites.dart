@@ -75,7 +75,7 @@ class __GroupDialogWidgetState<T> extends State<_GroupDialogWidget<T>> {
           ),
           SwitchListTile(
               // controlAffinity: ListTileControlAffinity.leading,
-              title: Text("Pin"),
+              title: const Text("Pin"), // TODO: change
               value: toPin,
               onChanged: (b) {
                 toPin = b;

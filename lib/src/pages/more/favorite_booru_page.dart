@@ -26,28 +26,31 @@ import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../db/loaders/linear_isar_loader.dart';
-import '../interfaces/filtering/filtering_mode.dart';
-import '../interfaces/filtering/sorting_mode.dart';
-import '../widgets/grid/actions/booru_grid.dart';
-import '../db/tags/post_tags.dart';
-import '../db/schemas/downloader/download_file.dart';
-import '../widgets/skeletons/grid_skeleton_state_filter.dart';
-import '../widgets/skeletons/grid_skeleton.dart';
-import 'booru/grid_settings_button.dart';
+import '../../db/loaders/linear_isar_loader.dart';
+import '../../interfaces/filtering/filtering_mode.dart';
+import '../../interfaces/filtering/sorting_mode.dart';
+import '../../widgets/grid/actions/booru_grid.dart';
+import '../../db/tags/post_tags.dart';
+import '../../db/schemas/downloader/download_file.dart';
+import '../../widgets/skeletons/grid_skeleton_state_filter.dart';
+import '../../widgets/skeletons/grid_skeleton.dart';
+import '../booru/grid_settings_button.dart';
 
-class FavoritesPage extends StatefulWidget {
+class FavoriteBooruPage extends StatefulWidget {
   final void Function(bool) procPop;
   final EdgeInsets viewPadding;
 
-  const FavoritesPage(
-      {super.key, required this.procPop, required this.viewPadding});
+  const FavoriteBooruPage({
+    super.key,
+    required this.procPop,
+    required this.viewPadding,
+  });
 
   @override
-  State<FavoritesPage> createState() => _FavoritesPageState();
+  State<FavoriteBooruPage> createState() => _FavoriteBooruPageState();
 }
 
-class _FavoritesPageState extends State<FavoritesPage>
+class _FavoriteBooruPageState extends State<FavoriteBooruPage>
     with SearchFilterGrid<FavoriteBooru> {
   late final StreamSubscription favoritesWatcher;
   late final StreamSubscription<MiscSettings?> miscSettingsWatcher;

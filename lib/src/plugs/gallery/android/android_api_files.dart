@@ -48,7 +48,7 @@ class _GalleryFilesExtra implements GalleryFilesExtra {
       }
 
       for (final file in elems) {
-        if (file.getThumbnail() == null) {
+        if (file.getThumbnail(file.id) == null) {
           count++;
 
           thumbnails.add(PlatformFunctions.getCachedThumb(file.id));
@@ -122,7 +122,7 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
         int offset = 0;
 
         while (true) {
-          final f = Dbs.g.blacklisted.favoriteMedias
+          final f = Dbs.g.blacklisted.favoriteBooruPosts
               .where()
               .offset(offset)
               .limit(200)
@@ -204,7 +204,7 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
         int offset = 0;
 
         while (true) {
-          final f = Dbs.g.blacklisted.favoriteMedias
+          final f = Dbs.g.blacklisted.favoriteBooruPosts
               .where()
               .offset(offset)
               .limit(200)

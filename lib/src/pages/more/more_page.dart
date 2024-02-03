@@ -11,10 +11,10 @@ import 'package:gallery/src/db/state_restoration.dart';
 import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
-import 'package:gallery/src/pages/blacklisted_posts.dart';
-import 'package:gallery/src/pages/tags_page.dart';
+import 'package:gallery/src/pages/more/blacklisted_posts.dart';
+import 'package:gallery/src/pages/more/tags_page.dart';
 
-import '../widgets/skeletons/drawer/azari_icon.dart';
+import '../../widgets/skeletons/drawer/azari_icon.dart';
 import 'dashboard.dart';
 import 'downloads.dart';
 import 'settings/blacklisted_directores.dart';

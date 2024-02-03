@@ -12,7 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/net/downloader.dart';
-import 'package:gallery/src/pages/image_view.dart';
+import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/widgets/notifiers/booru_api.dart';
 import 'package:gallery/src/widgets/notifiers/tag_manager.dart';

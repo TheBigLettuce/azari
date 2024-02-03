@@ -18,7 +18,7 @@ import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 
 import '../../interfaces/cell/cell.dart';
-import '../../pages/image_view.dart';
+import 'image_view.dart';
 
 mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
   ImageProvider? fakeProvider;

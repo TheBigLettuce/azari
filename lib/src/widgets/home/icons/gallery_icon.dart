@@ -5,18 +5,31 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
+part of '../../../pages/home.dart';
 
-class MangaPage extends StatefulWidget {
-  const MangaPage({super.key});
+class _GalleryIcon extends StatelessWidget {
+  final bool isSelected;
+  final AnimationController controller;
 
-  @override
-  State<MangaPage> createState() => _MangaPageState();
-}
+  const _GalleryIcon({
+    required this.controller,
+    required this.isSelected,
+  });
 
-class _MangaPageState extends State<MangaPage> {
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return NavigationDestination(
+      icon: Animate(
+        autoPlay: false,
+        target: 1,
+        controller: controller,
+        effects: [SlideEffect(duration: 150.ms, curve: Curves.bounceInOut)],
+        child: Icon(
+          Icons.collections,
+          color: isSelected ? Theme.of(context).colorScheme.primary : null,
+        ),
+      ),
+      label: AppLocalizations.of(context)!.galleryLabel,
+    );
   }
 }

@@ -128,7 +128,7 @@ abstract class Filters {
     Iterable<(int isarId, int? h)> getDifferenceHash(
         Iterable<SystemGalleryDirectoryFile> cells) sync* {
       for (final cell in cells) {
-        yield (cell.isarId!, cell.getThumbnail()?.differenceHash);
+        yield (cell.isarId!, cell.getThumbnail(cell.id)?.differenceHash);
       }
     }
 

@@ -40,7 +40,7 @@ import 'package:path_provider/path_provider.dart';
 import 'schemas/gallery/system_gallery_directory.dart';
 import 'schemas/gallery/system_gallery_directory_file.dart';
 import 'schemas/gallery/directory_tags.dart';
-import 'schemas/gallery/favorite_media.dart';
+import 'schemas/gallery/favorite_booru_post.dart';
 import 'schemas/grid_state/grid_state.dart';
 import 'schemas/grid_state/grid_state_booru.dart';
 import 'schemas/booru/post.dart';
@@ -109,7 +109,7 @@ Future initalizeDb(bool temporary) async {
   final blacklistedDirIsar = Isar.openSync([
     BlacklistedDirectorySchema,
     PinnedDirectoriesSchema,
-    FavoriteMediaSchema,
+    FavoriteBooruPostSchema,
     NoteBooruSchema
   ], directory: directoryPath, inspector: false, name: "androidBlacklistedDir");
 

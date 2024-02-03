@@ -11,8 +11,12 @@ import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 
 import 'grid_settings_button.dart';
 
-GridSettingsButton gridButton(Settings settings, GridSettingsBooru gridSettings,
-    {void Function(SafeMode?)? selectSafeMode, SafeMode? currentSafeMode}) {
+GridSettingsButton gridButton(
+  Settings settings,
+  GridSettingsBooru gridSettings, {
+  void Function(SafeMode?)? selectSafeMode,
+  SafeMode? currentSafeMode,
+}) {
   return GridSettingsButton(
     gridSettings,
     selectSafeMode: selectSafeMode,

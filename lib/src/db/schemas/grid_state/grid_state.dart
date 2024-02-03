@@ -13,26 +13,28 @@ part 'grid_state.g.dart';
 
 @collection
 class GridState extends GridStateBase {
-  GridState(
-      {required super.tags,
-      required super.scrollPositionTags,
-      required super.selectedPost,
-      required super.scrollPositionGrid,
-      required super.name,
-      required super.safeMode,
-      required super.time,
-      required super.page});
+  GridState({
+    required super.tags,
+    required super.scrollPositionTags,
+    required super.selectedPost,
+    required super.scrollPositionGrid,
+    required super.name,
+    required super.safeMode,
+    required super.time,
+    required super.page,
+  });
 
   GridState.empty(String name, String tags, SafeMode safeMode)
       : super(
-            tags: tags,
-            name: name,
-            safeMode: safeMode,
-            scrollPositionGrid: 0,
-            selectedPost: null,
-            scrollPositionTags: null,
-            page: null,
-            time: DateTime.now());
+          tags: tags,
+          name: name,
+          safeMode: safeMode,
+          scrollPositionGrid: 0,
+          selectedPost: null,
+          scrollPositionTags: null,
+          page: null,
+          time: DateTime.now(),
+        );
 
   GridState copy(bool replaceScrollTagsSelectedPost,
           {String? name,
@@ -44,18 +46,19 @@ class GridState extends GridStateBase {
           DateTime? time,
           int? page}) =>
       GridState(
-          tags: tags ?? this.tags,
-          safeMode: safeMode ?? this.safeMode,
-          scrollPositionTags: replaceScrollTagsSelectedPost
-              ? scrollPositionTags
-              : scrollPositionTags ?? this.scrollPositionTags,
-          selectedPost: replaceScrollTagsSelectedPost
-              ? selectedPost
-              : selectedPost ?? this.selectedPost,
-          scrollPositionGrid: scrollPositionGrid ?? this.scrollPositionGrid,
-          page: page ?? this.page,
-          time: time ?? this.time,
-          name: name ?? this.name);
+        tags: tags ?? this.tags,
+        safeMode: safeMode ?? this.safeMode,
+        scrollPositionTags: replaceScrollTagsSelectedPost
+            ? scrollPositionTags
+            : scrollPositionTags ?? this.scrollPositionTags,
+        selectedPost: replaceScrollTagsSelectedPost
+            ? selectedPost
+            : selectedPost ?? this.selectedPost,
+        scrollPositionGrid: scrollPositionGrid ?? this.scrollPositionGrid,
+        page: page ?? this.page,
+        time: time ?? this.time,
+        name: name ?? this.name,
+      );
 }
 
 class GridStateBase {
@@ -77,13 +80,14 @@ class GridStateBase {
   @enumerated
   final SafeMode safeMode;
 
-  GridStateBase(
-      {required this.tags,
-      required this.scrollPositionTags,
-      required this.selectedPost,
-      required this.safeMode,
-      required this.scrollPositionGrid,
-      required this.name,
-      required this.page,
-      required this.time});
+  GridStateBase({
+    required this.tags,
+    required this.scrollPositionTags,
+    required this.selectedPost,
+    required this.safeMode,
+    required this.scrollPositionGrid,
+    required this.name,
+    required this.page,
+    required this.time,
+  });
 }

@@ -13,14 +13,14 @@ part 'pinned_directories.g.dart';
 
 @collection
 class PinnedDirectories {
+  const PinnedDirectories(this.categoryName, this.time);
+
   Id get isarId => fastHash(categoryName);
 
   @Index(unique: true, replace: true)
   final String categoryName;
   @Index()
   final DateTime time;
-
-  const PinnedDirectories(this.categoryName, this.time);
 
   static void get(String id) =>
       Dbs.g.blacklisted.pinnedDirectories.getSync(fastHash(id));

@@ -5,15 +5,16 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-// import 'package:gallery/src/db/schemas/tags.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/base/booru_post_functionality_mixin.dart';
+import 'package:gallery/src/db/base/post_base.dart';
+import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/note_interface.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path_util;
-import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:isar/isar.dart';
 import 'package:transparent_image/transparent_image.dart';
@@ -24,13 +25,13 @@ import '../../../interfaces/cell/cell.dart';
 import '../../../plugs/platform_functions.dart';
 import '../../../interfaces/booru/display_quality.dart';
 import '../../base/note_base.dart';
-import '../../base/post_base.dart';
 import '../settings/settings.dart';
 
 part 'note_booru.g.dart';
 
 @collection
-class NoteBooru extends NoteBase with CachedCellValuesMixin {
+class NoteBooru extends NoteBase
+    with CachedCellValuesMixin, BooruPostFunctionalityMixin {
   NoteBooru(
     super.text,
     super.time, {
@@ -95,21 +96,19 @@ class NoteBooru extends NoteBase with CachedCellValuesMixin {
       ),
       if (Platform.isAndroid)
         GestureDetector(
-          onLongPress: () {
-            PostBase.showQr(context, booru.prefix, postId);
-          },
+          onLongPress: () => showQr(context, booru.prefix, postId),
           child: IconButton(
-              onPressed: () {
-                PlatformFunctions.shareMedia(fileUrl, url: true);
-              },
-              icon: const Icon(Icons.share)),
+            onPressed: () {
+              PlatformFunctions.shareMedia(fileUrl, url: true);
+            },
+            icon: const Icon(Icons.share),
+          ),
         )
       else
         IconButton(
-            onPressed: () {
-              PostBase.showQr(context, booru.prefix, postId);
-            },
-            icon: const Icon(Icons.qr_code_rounded))
+          onPressed: () => showQr(context, booru.prefix, postId),
+          icon: const Icon(Icons.qr_code_rounded),
+        )
     ];
   }
 

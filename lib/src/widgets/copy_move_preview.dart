@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 
 import '../interfaces/cell/cell.dart';
-import '../pages/image_view.dart';
+import 'image_view/image_view.dart';
 import '../db/schemas/gallery/system_gallery_directory_file.dart';
 import 'grid/grid_cell.dart';
 

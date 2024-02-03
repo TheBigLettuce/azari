@@ -21,14 +21,12 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
 import 'package:gallery/src/logging/logging.dart';
-import 'package:gallery/src/pages/image_view.dart';
+import 'package:gallery/src/pages/booru/open_menu_button.dart';
+import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/widgets/bookmark_button.dart';
-import 'package:gallery/src/widgets/make_tags.dart';
-import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:isar/isar.dart';
 
-import '../../interfaces/booru/booru.dart';
 import '../../widgets/grid/actions/booru_grid.dart';
 import '../../net/downloader.dart';
 import '../../db/tags/post_tags.dart';
@@ -61,6 +59,9 @@ class MainBooruGrid extends StatefulWidget {
 
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;
 
+  final void Function(String? e) saveSelectedPage;
+  final String? restoreSelectedPage;
+
   const MainBooruGrid({
     super.key,
     required this.mainGrid,
@@ -68,6 +69,8 @@ class MainBooruGrid extends StatefulWidget {
     required this.procPop,
     required this.viewPadding,
     required this.generateGlue,
+    required this.restoreSelectedPage,
+    required this.saveSelectedPage,
   });
 
   @override
@@ -296,6 +299,8 @@ class _MainBooruGridState extends State<MainBooruGrid>
               menuButtonItems: [
                 BookmarkButton(
                   generateGlue: widget.generateGlue,
+                  restoreSelectedPage: widget.restoreSelectedPage,
+                  saveSelectedPage: widget.saveSelectedPage,
                 ),
                 gridButton(state.settings, gridSettings),
               ],
@@ -410,51 +415,6 @@ class _MainBooruGridState extends State<MainBooruGrid>
               widget.procPop(pop);
             },
           )),
-    );
-  }
-}
-
-class OpenMenuButton extends StatefulWidget {
-  final TextEditingController controller;
-  final TagManager tagManager;
-  final Booru booru;
-  final BuildContext context;
-
-  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
-
-  const OpenMenuButton({
-    super.key,
-    required this.controller,
-    required this.tagManager,
-    required this.booru,
-    required this.context,
-    required this.generateGlue,
-  });
-
-  @override
-  State<OpenMenuButton> createState() => _OpenMenuButtonState();
-}
-
-class _OpenMenuButtonState extends State<OpenMenuButton> {
-  @override
-  Widget build(BuildContext __) {
-    return PopupMenuButton(
-      // icon: const Icon(Icons.search_rounded),
-      itemBuilder: (_) {
-        return MenuWrapper.menuItems(widget.controller.text, [
-          launchGridSafeModeItem(widget.context, widget.controller.text,
-              (_, text, [safeMode]) {
-            widget.tagManager.onTagPressed(
-              widget.context,
-              Tag.string(tag: text),
-              widget.booru,
-              false,
-              overrideSafeMode: safeMode,
-              generateGlue: widget.generateGlue,
-            );
-          })
-        ]);
-      },
     );
   }
 }

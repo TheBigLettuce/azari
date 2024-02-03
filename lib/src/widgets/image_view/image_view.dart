@@ -29,16 +29,16 @@ import 'package:transparent_image/transparent_image.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../widgets/keybinds/keybind_description.dart';
-import '../interfaces/cell/cell.dart';
-import '../interfaces/cell/contentable.dart';
-import '../widgets/keybinds/describe_keys.dart';
-import '../widgets/image_view/body.dart';
-import '../widgets/image_view/bottom_bar.dart';
-import '../widgets/image_view/end_drawer.dart';
-import '../widgets/image_view/page_type_mixin.dart';
-import '../widgets/image_view/palette_mixin.dart';
-import '../widgets/image_view/note_list.dart';
+import '../keybinds/keybind_description.dart';
+import '../../interfaces/cell/cell.dart';
+import '../../interfaces/cell/contentable.dart';
+import '../keybinds/describe_keys.dart';
+import 'body.dart';
+import 'bottom_bar.dart';
+import 'end_drawer.dart';
+import 'page_type_mixin.dart';
+import 'palette_mixin.dart';
+import 'note_list.dart';
 
 final Color kListTileColorInInfo = Colors.white60.withOpacity(0.8);
 

@@ -14,7 +14,7 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:logging/logging.dart';
 import 'package:palette_generator/palette_generator.dart';
 
-import '../../pages/image_view.dart';
+import 'image_view.dart';
 
 mixin ImageViewPaletteMixin<T extends Cell> on State<ImageView<T>> {
   PaletteGenerator? currentPalette;

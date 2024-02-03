@@ -14,8 +14,8 @@ import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../db/tags/post_tags.dart';
-import '../widgets/dashboard_card.dart';
+import '../../db/tags/post_tags.dart';
+import '../../widgets/dashboard_card.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});

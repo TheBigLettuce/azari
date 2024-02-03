@@ -269,20 +269,20 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     }
 
     if (toAdd.isNotEmpty) {
-      FavoriteMedia.addAll(toAdd);
+      FavoriteBooruPost.addAll(toAdd);
     }
 
     plug.notify(null);
 
     if (toDelete.isNotEmpty) {
-      FavoriteMedia.deleteAll(toDelete);
+      FavoriteBooruPost.deleteAll(toDelete);
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(AppLocalizations.of(context)!.deletedFromFavorites),
         action: SnackBarAction(
             label: AppLocalizations.of(context)!.undoLabel,
             onPressed: () {
-              FavoriteMedia.addAll(toDelete);
+              FavoriteBooruPost.addAll(toDelete);
 
               plug.notify(null);
             }),

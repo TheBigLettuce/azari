@@ -8,33 +8,34 @@
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:isar/isar.dart';
 
-part 'favorite_media.g.dart';
+part 'favorite_booru_post.g.dart';
 
 @collection
-class FavoriteMedia {
-  const FavoriteMedia(this.id, this.time);
+class FavoriteBooruPost {
+  const FavoriteBooruPost(this.id, this.time);
 
   final Id id;
   @Index()
   final DateTime time;
 
-  static int get thumbnail => Dbs.g.blacklisted.favoriteMedias
+  static int get thumbnail => Dbs.g.blacklisted.favoriteBooruPosts
       .where()
       .sortByTimeDesc()
       .findFirstSync()!
       .id;
 
   static void addAll(List<int> ids) {
-    Dbs.g.blacklisted.writeTxnSync(() => Dbs.g.blacklisted.favoriteMedias
-        .putAllSync(ids.map((e) => FavoriteMedia(e, DateTime.now())).toList()));
+    Dbs.g.blacklisted.writeTxnSync(() => Dbs.g.blacklisted.favoriteBooruPosts
+        .putAllSync(
+            ids.map((e) => FavoriteBooruPost(e, DateTime.now())).toList()));
   }
 
   static void deleteAll(List<int> ids) {
     Dbs.g.blacklisted.writeTxnSync(
-        () => Dbs.g.blacklisted.favoriteMedias.deleteAllSync(ids));
+        () => Dbs.g.blacklisted.favoriteBooruPosts.deleteAllSync(ids));
   }
 
-  static int get count => Dbs.g.blacklisted.favoriteMedias.countSync();
+  static int get count => Dbs.g.blacklisted.favoriteBooruPosts.countSync();
   static bool isEmpty() => count == 0;
   static bool isNotEmpty() => !isEmpty();
 }

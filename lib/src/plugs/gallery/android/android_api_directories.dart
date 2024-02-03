@@ -7,19 +7,19 @@
 
 import 'dart:developer';
 
+import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/gallery/note_gallery.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 import 'package:gallery/src/db/schemas/gallery/blacklisted_directory.dart';
-import 'package:gallery/src/db/schemas/gallery/favorite_media.dart';
-import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
+import 'package:gallery/src/db/schemas/gallery/favorite_booru_post.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_api_directories.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_api_files.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_files_extra.dart';
 import 'package:gallery/src/logging/logging.dart';
-import 'package:gallery/src/pages/settings/network_status.dart';
+import 'package:gallery/src/pages/more/settings/network_status.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
 import 'package:gallery/src/plugs/gallery/android/api.g.dart';

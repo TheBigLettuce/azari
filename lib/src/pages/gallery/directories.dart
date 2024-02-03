@@ -26,7 +26,7 @@ import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/pages/gallery/files.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
-import 'package:gallery/src/db/schemas/gallery/favorite_media.dart';
+import 'package:gallery/src/db/schemas/gallery/favorite_booru_post.dart';
 import 'package:gallery/src/db/schemas/gallery/pinned_directories.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/grid/layouts/segment_layout.dart';
@@ -241,7 +241,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
           return true;
         },
         injectedSegments: [
-          if (FavoriteMedia.isNotEmpty())
+          if (FavoriteBooruPost.isNotEmpty())
             SystemGalleryDirectory(
                 bucketId: "favorites",
                 name: "Favorites", // change
@@ -251,7 +251,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                 lastModified: 0,
                 thumbFileId: miscSettings.favoritesThumbId != 0
                     ? miscSettings.favoritesThumbId
-                    : FavoriteMedia.thumbnail),
+                    : FavoriteBooruPost.thumbnail),
           if (trashThumbId != null)
             SystemGalleryDirectory(
                 bucketId: "trash",

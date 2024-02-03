@@ -9,7 +9,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:palette_generator/palette_generator.dart';
 
-import '../../pages/image_view.dart';
+import 'image_view.dart';
 
 class WrapImageViewTheme extends StatefulWidget {
   final PaletteGenerator? currentPalette;

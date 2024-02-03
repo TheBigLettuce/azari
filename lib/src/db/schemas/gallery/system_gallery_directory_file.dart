@@ -6,38 +6,28 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:developer';
-import 'dart:io';
-import 'dart:ui';
 
 import 'package:dynamic_color/dynamic_color.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:gallery/src/db/base/post_base.dart';
-import 'package:gallery/src/db/schemas/gallery/favorite_media.dart';
-import 'package:gallery/src/db/schemas/gallery/note_gallery.dart';
-import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
-import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
-import 'package:gallery/src/logging/logging.dart';
+import 'package:gallery/src/db/base/booru_post_functionality_mixin.dart';
+import 'package:gallery/src/db/base/system_gallery_directory_file_functionality_mixin.dart';
+import 'package:gallery/src/db/base/system_gallery_thumbnail_provider.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/pages/settings/global_progress.dart';
 import 'package:gallery/src/plugs/gallery.dart';
-import 'package:gallery/src/plugs/notifications.dart';
-import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
+import 'package:gallery/src/widgets/set_wallpaper_tile.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
-import 'package:transparent_image/transparent_image.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../interfaces/cell/contentable.dart';
-import '../../../interfaces/filtering/filtering_mode.dart';
 import '../../../interfaces/cell/sticker.dart';
 import '../../state_restoration.dart';
 import '../../../widgets/translation_notes.dart';
@@ -46,7 +36,10 @@ import '../settings/settings.dart';
 part 'system_gallery_directory_file.g.dart';
 
 @collection
-class SystemGalleryDirectoryFile extends Cell with CachedCellValuesFilesMixin {
+class SystemGalleryDirectoryFile extends Cell
+    with
+        CachedCellValuesFilesMixin,
+        SystemGalleryDirectoryFileFunctionalityMixin {
   SystemGalleryDirectoryFile({
     required this.id,
     required this.bucketId,
@@ -112,47 +105,11 @@ class SystemGalleryDirectoryFile extends Cell with CachedCellValuesFilesMixin {
   @override
   String alias(bool isList) => name;
 
-  List<(IconData, void Function()?)> _stickers(BuildContext? context) {
-    return [
-      if (isVideo) (FilteringMode.video.icon, null),
-      if (isGif) (FilteringMode.gif.icon, null),
-      if (isOriginal) (FilteringMode.original.icon, null),
-      if (isDuplicate) (FilteringMode.duplicate.icon, null),
-      if (tagsFlat.contains("translated"))
-        (
-          Icons.translate_outlined,
-          context == null
-              ? null
-              : () {
-                  DisassembleResult? res;
-                  try {
-                    res = PostTags.g.dissassembleFilename(name);
-                  } catch (_) {
-                    return;
-                  }
-
-                  Navigator.push(
-                    context,
-                    DialogRoute(
-                      context: context,
-                      builder: (context) {
-                        return TranslationNotes(
-                          postId: res!.id,
-                          api: BooruAPIState.fromEnum(res.booru, page: null),
-                        );
-                      },
-                    ),
-                  );
-                }
-        )
-    ];
-  }
-
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) {
     final stickers = [
       ...injectedStickers.map((e) => e.icon).map((e) => (e, null)),
-      ..._stickers(context),
+      ...defaultStickers(context, this),
     ];
 
     return stickers.isEmpty ? null : stickers;
@@ -212,40 +169,6 @@ class SystemGalleryDirectoryFile extends Cell with CachedCellValuesFilesMixin {
     ];
   }
 
-  Sticker sizeSticker() {
-    if (size == 0) {
-      return const Sticker(IconData(0x4B));
-    }
-
-    final kb = (size / 1000);
-    if (kb < 1000) {
-      if (kb > 500) {
-        return const Sticker(IconData(0x4B));
-      } else {
-        return const Sticker(IconData(0x6B));
-      }
-    } else {
-      final mb = kb / 1000;
-      if (mb > 2) {
-        return const Sticker(IconData(0x4D));
-      } else {
-        return const Sticker(IconData(0x6D));
-      }
-    }
-  }
-
-  String kbMbSize(int bytes) {
-    if (bytes == 0) {
-      return "0";
-    }
-    final res = bytes / 1000;
-    if (res > 1000) {
-      return "${(res / 1000).toStringAsFixed(1)} MB";
-    }
-
-    return "${res.toStringAsFixed(1)} KB";
-  }
-
   @override
   List<Widget>? addInfo(
       BuildContext context, dynamic extra, AddInfoColorData colors) {
@@ -256,7 +179,7 @@ class SystemGalleryDirectoryFile extends Cell with CachedCellValuesFilesMixin {
 
     final plug = chooseGalleryPlug();
 
-    return PostBase.wrapTagsSearch(
+    return wrapTagsList(
       context,
       extra,
       colors,
@@ -326,7 +249,7 @@ class SystemGalleryDirectoryFile extends Cell with CachedCellValuesFilesMixin {
           TranslationNotes.tile(context, colors.foregroundColor, res.id,
               () => BooruAPIState.fromEnum(res!.booru, page: null)),
         if (!isVideo && !isGif)
-          _SetWallpaperTile(
+          SetWallpaperTile(
             colors: colors,
             id: id,
           ),
@@ -363,7 +286,7 @@ class SystemGalleryDirectoryFile extends Cell with CachedCellValuesFilesMixin {
   List<Sticker> stickers(BuildContext context) {
     return [
       ...injectedStickers,
-      ..._stickers(context).map((e) => Sticker(e.$1)),
+      ...defaultStickers(context, this).map((e) => Sticker(e.$1)),
       if (isFavorite)
         Sticker(Icons.star_rounded,
             right: true,
@@ -375,332 +298,4 @@ class SystemGalleryDirectoryFile extends Cell with CachedCellValuesFilesMixin {
         const Sticker(Icons.sticky_note_2_outlined, right: true)
     ];
   }
-
-  Thumbnail? getThumbnail() {
-    return Dbs.g.thumbnail!.thumbnails.getSync(id);
-  }
-
-  static SystemGalleryDirectoryFile decode(Object result) {
-    result as List<Object?>;
-
-    final id = result[0]! as int;
-    final name = result[2]! as String;
-
-    return SystemGalleryDirectoryFile(
-      isOriginal: PostTags.g.isOriginal(name),
-      isDuplicate: RegExp(r'[(][0-9].*[)][.][a-zA-Z0-9].*').hasMatch(name),
-      isFavorite: Dbs.g.blacklisted.favoriteMedias.getSync(id) != null,
-      tagsFlat: PostTags.g.getTagsPost(name).join(" "),
-      notesFlat:
-          Dbs.g.main.noteGallerys.getSync(id)?.text.join().toLowerCase() ?? "",
-      id: id,
-      bucketId: result[1]! as String,
-      name: name,
-      originalUri: result[3]! as String,
-      lastModified: result[4]! as int,
-      height: result[5]! as int,
-      width: result[6]! as int,
-      size: result[7]! as int,
-      isVideo: result[8]! as bool,
-      isGif: result[9]! as bool,
-    );
-  }
 }
-
-class _SetWallpaperTile extends StatefulWidget {
-  final AddInfoColorData colors;
-  final int id;
-
-  const _SetWallpaperTile({
-    super.key,
-    required this.colors,
-    required this.id,
-  });
-
-  @override
-  State<_SetWallpaperTile> createState() => __SetWallpaperTileState();
-}
-
-class __SetWallpaperTileState extends State<_SetWallpaperTile> {
-  Future? _status;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: FilledButton(
-        onPressed: _status != null
-            ? null
-            : () {
-                _status = PlatformFunctions.setWallpaper(widget.id)
-                    .onError((error, stackTrace) {
-                  LogTarget.unknown.logDefaultImportant(
-                      "setWallpaper".errorMessage(error), stackTrace);
-                }).whenComplete(() {
-                  _status = null;
-
-                  setState(() {});
-                });
-
-                setState(() {});
-              },
-        child: _status != null
-            ? const SizedBox(
-                height: 14,
-                width: 14,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Text("Set as wallpaper"), // TODO: change
-
-        // subtitle: subtitle != null ? Text(subtitle) : null,
-      ),
-    );
-  }
-}
-
-// class _WallpaperTargetDialog extends StatefulWidget {
-//   final int id;
-//   final void Function(Future) setProgress;
-
-//   const _WallpaperTargetDialog({
-//     super.key,
-//     required this.setProgress,
-//     required this.id,
-//   });
-
-//   @override
-//   State<_WallpaperTargetDialog> createState() => __WallpaperTargetDialogState();
-// }
-
-// class __WallpaperTargetDialogState extends State<_WallpaperTargetDialog> {
-//   bool asHome = true;
-//   bool asLockscreen = false;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return AlertDialog(
-//       content: Column(
-//         mainAxisSize: MainAxisSize.min,
-//         children: [
-//           CheckboxListTile(
-//               title: const Text("As Home"), // TODO: change
-//               value: asHome,
-//               onChanged: (value) {
-//                 if (value == null) {
-//                   return;
-//                 }
-
-//                 asHome = value;
-
-//                 setState(() {});
-//               }),
-//           CheckboxListTile(
-//               title: const Text("As Lockscreen"), // TODO: change
-//               value: asLockscreen,
-//               onChanged: (value) {
-//                 if (value == null) {
-//                   return;
-//                 }
-
-//                 asLockscreen = value;
-
-//                 setState(() {});
-//               })
-//         ],
-//       ),
-//       actions: [
-//         TextButton(
-//           onPressed: () {
-//             Navigator.pop(context);
-//           },
-//           child: Text(
-//             AppLocalizations.of(context)!.back,
-//           ),
-//         ),
-//         TextButton(
-//           onPressed: asHome == false && asLockscreen == false
-//               ? null
-//               : () {
-//                   widget.setProgress(;
-
-//                   Navigator.pop(context);
-//                 },
-//           child: Text(
-//             AppLocalizations.of(context)!.ok,
-//           ),
-//         ),
-//       ],
-//     );
-//   }
-// }
-
-Future<void> loadNetworkThumb(String filename, int id,
-    [bool addToPinned = true]) async {
-  if (GlobalProgress.isThumbLoadingLocked()) {
-    return;
-  }
-
-  GlobalProgress.lockThumbLoading();
-
-  if (Dbs.g.thumbnail!.pinnedThumbnails.getSync(id) != null) {
-    GlobalProgress.unlockThumbLoading();
-    return;
-  }
-  final plug = chooseNotificationPlug();
-
-  final notif = await plug.newProgress(
-      "", savingThumbNotifId, "Loading thumbnail", "Thumbnail loader");
-  notif.update(0, filename);
-
-  try {
-    final res = PostTags.g.dissassembleFilename(filename);
-    final api = BooruAPIState.fromEnum(res.booru, page: null);
-
-    try {
-      final post = await api.singlePost(res.id);
-
-      final t = await PlatformFunctions.saveThumbNetwork(post.previewUrl, id);
-
-      Dbs.g.thumbnail!
-          .writeTxnSync(() => Dbs.g.thumbnail!.thumbnails.deleteSync(id));
-
-      Dbs.g.thumbnail!.writeTxnSync(() => Dbs.g.thumbnail!.pinnedThumbnails
-          .putSync(PinnedThumbnail(id, t.differenceHash, t.path)));
-    } catch (e) {
-      log("video thumb 2", level: Level.WARNING.value, error: e);
-    }
-
-    api.close();
-  } catch (_) {}
-
-  notif.done();
-
-  GlobalProgress.unlockThumbLoading();
-}
-
-final _thumbLoadingStatus = <int, Future<ThumbId>>{};
-
-class ThumbnailProvider extends ImageProvider<ThumbnailProvider> {
-  final int id;
-  final bool tryPinned;
-
-  @override
-  Future<ThumbnailProvider> obtainKey(ImageConfiguration configuration) {
-    return SynchronousFuture(this);
-  }
-
-  @override
-  ImageStreamCompleter loadImage(
-      ThumbnailProvider key, ImageDecoderCallback decode) {
-    return MultiFrameImageStreamCompleter(
-      codec: _loadAsync(key, decode),
-      scale: 1,
-    );
-  }
-
-  Future<Codec> _loadAsync(
-      ThumbnailProvider key, ImageDecoderCallback decode) async {
-    Future<File?> setFile() async {
-      final future = _thumbLoadingStatus[id];
-      if (future != null) {
-        final cachedThumb = await future;
-
-        if (cachedThumb.path.isEmpty || cachedThumb.differenceHash == 0) {
-          return null;
-        }
-
-        return File(cachedThumb.path);
-      }
-
-      final thumb = Dbs.g.thumbnail!.thumbnails.getSync(id);
-      if (thumb != null) {
-        if (thumb.path.isEmpty || thumb.differenceHash == 0) {
-          return null;
-        }
-
-        return File(thumb.path);
-      }
-
-      if (tryPinned) {
-        final thumb = Dbs.g.thumbnail!.pinnedThumbnails.getSync(id);
-        if (thumb != null &&
-            thumb.differenceHash != 0 &&
-            thumb.path.isNotEmpty) {
-          return File(thumb.path);
-        }
-      }
-
-      final future2 = _thumbLoadingStatus[id];
-      if (future2 != null) {
-        final cachedThumb = await future2;
-
-        if (cachedThumb.path.isEmpty || cachedThumb.differenceHash == 0) {
-          return null;
-        }
-
-        return File(cachedThumb.path);
-      }
-
-      _thumbLoadingStatus[id] =
-          PlatformFunctions.getCachedThumb(id).whenComplete(() {
-        _thumbLoadingStatus.remove(id);
-      });
-
-      final cachedThumb = await _thumbLoadingStatus[id]!;
-      Thumbnail.addAll([cachedThumb]);
-
-      if (cachedThumb.path.isEmpty || cachedThumb.differenceHash == 0) {
-        return null;
-      }
-
-      return File(cachedThumb.path);
-    }
-
-    final file = await setFile();
-
-    if (file == null) {
-      return decode(await ImmutableBuffer.fromUint8List(kTransparentImage));
-    }
-
-    // TODO(jonahwilliams): making this sync caused test failures that seem to
-    // indicate that we can fail to call evict unless at least one await has
-    // occurred in the test.
-    // https://github.com/flutter/flutter/issues/113044
-    final int lengthInBytes = await file.length();
-    if (lengthInBytes == 0) {
-      // The file may become available later.
-      PaintingBinding.instance.imageCache.evict(key);
-      throw StateError('$file is empty and cannot be loaded as an image.');
-    }
-    return (file.runtimeType == File)
-        ? decode(await ImmutableBuffer.fromFilePath(file.path))
-        : decode(await ImmutableBuffer.fromUint8List(await file.readAsBytes()));
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType) {
-      return false;
-    }
-
-    return other is ThumbnailProvider && other.id == id;
-  }
-
-  @override
-  int get hashCode => id.hashCode;
-
-  ThumbnailProvider(this.id, this.tryPinned);
-}
-
-ListTile addInfoTile(
-        {required AddInfoColorData colors,
-        required String title,
-        required String? subtitle,
-        void Function()? onPressed,
-        Widget? trailing}) =>
-    ListTile(
-      textColor: colors.foregroundColor,
-      title: Text(title),
-      trailing: trailing,
-      onTap: onPressed,
-      subtitle: subtitle != null ? Text(subtitle) : null,
-    );

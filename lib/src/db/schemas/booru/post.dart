@@ -13,19 +13,20 @@ part 'post.g.dart';
 
 @collection
 class Post extends PostBase {
-  Post(
-      {required super.height,
-      required super.id,
-      required super.md5,
-      required super.tags,
-      required super.width,
-      required super.fileUrl,
-      required super.prefix,
-      required super.previewUrl,
-      required super.sampleUrl,
-      required super.ext,
-      required super.sourceUrl,
-      required super.rating,
-      required super.score,
-      required super.createdAt});
+  Post({
+    required super.height,
+    required super.id,
+    required super.md5,
+    required super.tags,
+    required super.width,
+    required super.fileUrl,
+    required super.prefix,
+    required super.previewUrl,
+    required super.sampleUrl,
+    required super.ext,
+    required super.sourceUrl,
+    required super.rating,
+    required super.score,
+    required super.createdAt,
+  });
 }

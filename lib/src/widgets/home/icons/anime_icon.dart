@@ -5,13 +5,13 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of 'home.dart';
+part of '../../../pages/home.dart';
 
-class _GalleryIcon extends StatelessWidget {
+class _AnimeIcon extends StatelessWidget {
   final bool isSelected;
   final AnimationController controller;
 
-  const _GalleryIcon({
+  const _AnimeIcon({
     required this.controller,
     required this.isSelected,
   });
@@ -20,16 +20,23 @@ class _GalleryIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return NavigationDestination(
       icon: Animate(
-        autoPlay: false,
-        target: 1,
-        controller: controller,
-        effects: [SlideEffect(duration: 150.ms, curve: Curves.bounceInOut)],
-        child: Icon(
-          Icons.collections,
-          color: isSelected ? Theme.of(context).colorScheme.primary : null,
-        ),
-      ),
-      label: AppLocalizations.of(context)!.galleryLabel,
+          controller: controller,
+          autoPlay: false,
+          target: 0,
+          effects: [
+            RotateEffect(
+              delay: 50.ms,
+              duration: 400.ms,
+              begin: 0,
+              end: 1,
+              curve: Easing.emphasizedDecelerate,
+            ),
+          ],
+          child: Icon(
+            Icons.video_library,
+            color: isSelected ? Theme.of(context).colorScheme.primary : null,
+          )),
+      label: "Anime", // TODO: change
     );
   }
 }

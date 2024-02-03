@@ -12,7 +12,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_characters.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
-import 'package:gallery/src/pages/image_view.dart';
+import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/widgets/grid/grid_cell.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 

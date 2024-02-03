@@ -9,12 +9,11 @@ import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/notifiers/pause_video.dart';
 import 'package:isar/isar.dart';
 
 import '../interfaces/booru_tagging.dart';
-import '../pages/settings/settings_widget.dart';
+import '../pages/more/settings/settings_widget.dart';
 import '../interfaces/booru/safe_mode.dart';
 import 'schemas/grid_state/grid_state.dart';
 import 'dart:async';

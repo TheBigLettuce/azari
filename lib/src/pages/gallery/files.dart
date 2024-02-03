@@ -10,6 +10,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/base/system_gallery_directory_file_functionality_mixin.dart';
 import 'package:gallery/src/db/schemas/grid_settings/files.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
@@ -22,12 +23,12 @@ import 'package:gallery/src/interfaces/gallery/gallery_files_extra.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/pages/booru/grid_settings_button.dart';
-import 'package:gallery/src/pages/image_view.dart';
+import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/pages/gallery/directories.dart';
 import 'package:gallery/src/plugs/notifications.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
-import 'package:gallery/src/db/schemas/gallery/favorite_media.dart';
+import 'package:gallery/src/db/schemas/gallery/favorite_booru_post.dart';
 import 'package:gallery/src/widgets/grid/callback_grid.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -160,7 +161,7 @@ class _GalleryFilesState extends State<GalleryFiles>
     transform: (cell, sorting) {
       if (sorting == SortingMode.size ||
           currentFilteringMode() == FilteringMode.same) {
-        cell.injectedStickers.add(cell.sizeSticker());
+        cell.injectedStickers.add(cell.sizeSticker(cell.size));
       }
 
       return cell;

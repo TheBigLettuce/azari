@@ -23,7 +23,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../db/schemas/booru/note_booru.dart';
 import '../../db/schemas/statistics/statistics_booru.dart';
 import '../../db/schemas/statistics/statistics_general.dart';
-import '../image_view.dart';
+import '../../widgets/image_view/image_view.dart';
 import 'grid_button.dart';
 
 import '../../widgets/grid/actions/booru_grid.dart';
@@ -42,7 +42,7 @@ import '../../widgets/skeletons/grid_skeleton.dart';
 import '../../widgets/notifiers/booru_api.dart';
 import '../../widgets/notifiers/tag_manager.dart';
 import '../../widgets/search_bar/search_launch_grid.dart';
-import '../settings/settings_widget.dart';
+import '../more/settings/settings_widget.dart';
 import 'main_grid_settings_mixin.dart';
 
 class SecondaryBooruGrid extends StatefulWidget {

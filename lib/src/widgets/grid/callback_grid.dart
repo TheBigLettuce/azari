@@ -18,7 +18,7 @@ import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
 import 'package:gallery/src/interfaces/note_interface.dart';
 import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
-import 'package:gallery/src/pages/image_view.dart';
+import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:logging/logging.dart';
 import '../../interfaces/cell/cell.dart';
@@ -337,9 +337,9 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
       widget.refreshInterface?.register(_refreshCallbackUpdate);
 
       controller.position.isScrollingNotifier.addListener(() {
-        if (!_state.isRefreshing) {
-          widget.updateScrollPosition?.call(controller.offset);
-        }
+        // if (!_state.isRefreshing) {
+        widget.updateScrollPosition?.call(controller.offset);
+        // }
 
         if (controller.offset == 0) {
           updateFab(fab: false, foreground: inImageView);

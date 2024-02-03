@@ -64,7 +64,7 @@ class _GalleryImpl implements GalleryApi {
               isDuplicate:
                   RegExp(r'[(][0-9].*[)][.][a-zA-Z0-9].*').hasMatch(e.name),
               isFavorite:
-                  Dbs.g.blacklisted.favoriteMedias.getSync(e.id) != null,
+                  Dbs.g.blacklisted.favoriteBooruPosts.getSync(e.id) != null,
               lastModified: e.lastModified,
               height: e.height,
               width: e.width,

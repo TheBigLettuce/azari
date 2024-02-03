@@ -9,8 +9,8 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/base/system_gallery_thumbnail_provider.dart';
 import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
@@ -26,6 +26,12 @@ final _futures = <(int, AnimeMetadata), Future>{};
 
 @collection
 class SavedAnimeCharacters {
+  SavedAnimeCharacters({
+    required this.characters,
+    required this.id,
+    required this.site,
+  });
+
   Id? isarId;
 
   @Index(replace: true, unique: true, composite: [CompositeIndex("site")])
@@ -33,12 +39,6 @@ class SavedAnimeCharacters {
   @enumerated
   final AnimeMetadata site;
   final List<AnimeCharacter> characters;
-
-  SavedAnimeCharacters({
-    required this.characters,
-    required this.id,
-    required this.site,
-  });
 
   static List<AnimeCharacter> load(int id, AnimeMetadata site) =>
       Dbs.g.anime.savedAnimeCharacters.getByIdSiteSync(id, site)?.characters ??

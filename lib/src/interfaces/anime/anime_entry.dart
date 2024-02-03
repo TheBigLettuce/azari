@@ -7,10 +7,10 @@
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:gallery/src/db/base/post_base.dart';
+import 'package:gallery/src/db/base/booru_post_functionality_mixin.dart';
+import 'package:gallery/src/db/base/system_gallery_thumbnail_provider.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
-import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
@@ -19,7 +19,8 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'anime_api.dart';
 
-class AnimeEntry extends Cell with CachedCellValuesMixin {
+class AnimeEntry extends Cell
+    with CachedCellValuesMixin, BooruPostFunctionalityMixin {
   AnimeEntry({
     required this.site,
     required this.type,
@@ -81,8 +82,8 @@ class AnimeEntry extends Cell with CachedCellValuesMixin {
   @override
   List<Widget>? addButtons(BuildContext context) {
     return [
-      PostBase.openInBrowserButton(Uri.parse(thumbUrl)),
-      PostBase.shareButton(context, thumbUrl),
+      openInBrowserButton(Uri.parse(thumbUrl)),
+      shareButton(context, thumbUrl),
     ];
   }
 

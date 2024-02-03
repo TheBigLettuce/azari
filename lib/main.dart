@@ -15,7 +15,7 @@ import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/logging/logging.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
-import 'package:gallery/src/pages/settings/network_status.dart';
+import 'package:gallery/src/pages/more/settings/network_status.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/db/initalize_db.dart';
@@ -27,7 +27,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import 'src/pages/home/home.dart';
+import 'src/pages/home.dart';
 
 late final String azariVersion;
 
