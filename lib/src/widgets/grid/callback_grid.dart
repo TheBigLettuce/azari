@@ -176,9 +176,9 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
 
   final void Function()? onDispose;
 
-  static CallbackGridState<T> of<T extends Cell>(BuildContext context) {
-    return context.findAncestorStateOfType<CallbackGridState<T>>()!;
-  }
+  // static CallbackGridState<T> of<T extends Cell>(BuildContext context) {
+  //   return context.findAncestorStateOfType<CallbackGridState<T>>()!;
+  // }
 
   const CallbackGrid({
     required super.key,
@@ -767,8 +767,18 @@ class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
-              padding:
-                  EdgeInsets.only(bottom: widget.systemNavigationInsets.bottom),
+              padding: EdgeInsets.only(
+                  bottom: (widget.selectionGlue.keyboardVisible()
+                          ? 0
+                          : widget.systemNavigationInsets.bottom +
+                              (widget.selectionGlue.isOpen()
+                                  ? widget.selectionGlue.barHeight()
+                                  : widget.selectionGlue.persistentBarHeight
+                                      ? widget.selectionGlue.barHeight()
+                                      : 0)) +
+                      (widget.footer != null
+                          ? widget.footer!.preferredSize.height
+                          : 0)),
               child: PreferredSize(
                 preferredSize: const Size.fromHeight(4),
                 child: !_state.isRefreshing
@@ -921,6 +931,8 @@ class _WrapPadding<T extends Cell> extends StatelessWidget {
   final PreferredSizeWidget? footer;
   final SelectionGlue<T> selectionGlue;
   final double systemNavigationInsets;
+  final bool sliver;
+
   final Widget? child;
 
   const _WrapPadding({
@@ -928,25 +940,32 @@ class _WrapPadding<T extends Cell> extends StatelessWidget {
     required this.footer,
     required this.selectionGlue,
     required this.systemNavigationInsets,
+    this.sliver = true,
     required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
-    FloatingActionButton;
-    return SliverPadding(
-      padding: EdgeInsets.only(
-          bottom: (kFloatingActionButtonMargin * 2 + 24 + 8) +
-              (selectionGlue.keyboardVisible()
-                  ? 0
-                  : systemNavigationInsets +
-                      (selectionGlue.isOpen() //&&
-                          ? selectionGlue.barHeight()
-                          : selectionGlue.persistentBarHeight
-                              ? selectionGlue.barHeight()
-                              : 0)) +
-              (footer != null ? footer!.preferredSize.height : 0)),
-      sliver: child,
-    );
+    final insets = EdgeInsets.only(
+        bottom: (kFloatingActionButtonMargin * 2 + 24 + 8) +
+            (selectionGlue.keyboardVisible()
+                ? 0
+                : systemNavigationInsets +
+                    (selectionGlue.isOpen() //&&
+                        ? selectionGlue.barHeight()
+                        : selectionGlue.persistentBarHeight
+                            ? selectionGlue.barHeight()
+                            : 0)) +
+            (footer != null ? footer!.preferredSize.height : 0));
+
+    return sliver
+        ? SliverPadding(
+            padding: insets,
+            sliver: child,
+          )
+        : Padding(
+            padding: insets,
+            child: child,
+          );
   }
 }

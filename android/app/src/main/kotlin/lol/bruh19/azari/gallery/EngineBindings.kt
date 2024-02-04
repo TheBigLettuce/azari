@@ -7,7 +7,7 @@
 
 package lol.bruh19.azari.gallery
 
-import android.R
+import android.R.style.Theme_DeviceDefault
 import android.app.Activity
 import android.app.WallpaperManager
 import android.content.ContentUris
@@ -616,7 +616,7 @@ class EngineBindings(
                         val value = TypedValue()
                         ContextThemeWrapper(
                             context,
-                            R.style.Theme_DeviceDefault
+                            Theme_DeviceDefault
                         ).theme.resolveAttribute(R.attr.colorAccent, value, true)
 
 

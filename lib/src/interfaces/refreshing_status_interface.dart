@@ -12,10 +12,11 @@ class RefreshingStatusInterface {
   final void Function(void Function(int?, bool)) unregister;
   final bool Function() isRefreshing;
 
-  const RefreshingStatusInterface(
-      {required this.save,
-      required this.register,
-      required this.isRefreshing,
-      required this.reset,
-      required this.unregister});
+  const RefreshingStatusInterface({
+    required this.save,
+    required this.register,
+    required this.isRefreshing,
+    required this.reset,
+    required this.unregister,
+  });
 }

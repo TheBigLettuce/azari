@@ -12,15 +12,6 @@
         android:name="android.hardware.camera"
         android:required="false" />
 
-    <!--    <queries>-->
-    <!--        <intent>-->
-    <!--            <category android:name=""-->
-    <!--&lt;!&ndash;            <action android:name="android.ser" />&ndash;&gt;-->
-    <!--            <data android:mimeType="image/jpeg" />-->
-    <!--        </intent>-->
-    <!--    </queries>-->
-
-
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
@@ -40,7 +31,7 @@
     <application
         android:name=".App"
         android:enableOnBackInvokedCallback="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/ic_launcher_2"
         android:label="${applicationLabel}">
         <activity
             android:name=".PickFileActivity"

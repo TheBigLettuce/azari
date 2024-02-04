@@ -81,13 +81,9 @@ class __DiscoverTabState extends State<_DiscoverTab> {
         },
         initalCellCount: widget.entries.length,
         scaffoldKey: state.scaffoldKey,
-        systemNavigationInsets: widget.viewInsets.copyWith(
-            bottom: widget.viewInsets.bottom +
-                (!GlueProvider.of<AnimeEntry>(context).keyboardVisible()
-                    ? 80
-                    : 0)),
+        systemNavigationInsets: widget.viewInsets,
         hasReachedEnd: () => _reachedEnd,
-        selectionGlue: GlueProvider.of<AnimeEntry>(context),
+        selectionGlue: GlueProvider.generateOf<AnimeEntry, AnimeEntry>(context),
         mainFocus: state.mainFocus,
         refresh: () async {
           widget.entries.clear();

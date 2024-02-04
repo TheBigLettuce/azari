@@ -130,7 +130,6 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
 
     if (addedToBookmarks) {
       widget.instance.close(deleteFromDisk: false);
-      widget.restore.moveToBookmarks(widget.api.booru, widget.api.currentPage);
     } else {
       if (!isRestart) {
         widget.instance.close(deleteFromDisk: true);
@@ -155,7 +154,7 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
       final list = await widget.api.page(
           0, widget.restore.copy.tags, widget.tagManager.excluded,
           overrideSafeMode: widget.restore.current.safeMode);
-      widget.restore.updateScrollPosition(0);
+      widget.restore.updateScrollPosition(0, page: widget.api.currentPage);
       currentSkipped = list.$2;
       await widget.instance.writeTxn(() {
         widget.instance.posts.clear();
@@ -208,6 +207,11 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
         reachedEnd = true;
       } else {
         currentSkipped = list.$2;
+
+        if (!widget.instance.isOpen) {
+          return 0;
+        }
+
         final oldCount = widget.instance.posts.countSync();
         widget.instance.writeTxnSync(
             () => widget.instance.posts.putAllByFileUrlSync(list.$1));
@@ -225,10 +229,16 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
           trace);
     }
 
-    return widget.instance.posts.count();
+    return !widget.instance.isOpen
+        ? Future.value(0)
+        : widget.instance.posts.count();
   }
 
   void _restore(BuildContext context) {
+    if (addedToBookmarks) {
+      widget.restore.moveToBookmarks(widget.api.booru, widget.api.currentPage);
+    }
+
     if (widget.noRestoreOnBack) {
       return;
     }

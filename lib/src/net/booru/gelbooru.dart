@@ -217,7 +217,7 @@ class Gelbooru implements BooruAPIState {
   Future<(List<Post>, int?)> fromPost(
           int _, String tags, BooruTagging excludedTags,
           {SafeMode? overrideSafeMode}) =>
-      _commonPosts(tags, _page, excludedTags,
+      _commonPosts(tags, _page + 1, excludedTags,
               overrideSafeMode: overrideSafeMode)
           .then((value) {
         if (value.$1.isNotEmpty) {

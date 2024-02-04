@@ -15,7 +15,6 @@ import com.bumptech.glide.load.engine.cache.LruResourceCache
 import com.bumptech.glide.load.engine.cache.MemorySizeCalculator
 import com.bumptech.glide.module.AppGlideModule
 
-
 @GlideModule
 class YourAppGlideModule : AppGlideModule() {
     override fun applyOptions(context: Context, builder: GlideBuilder) {

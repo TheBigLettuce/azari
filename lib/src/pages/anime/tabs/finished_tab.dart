@@ -93,8 +93,7 @@ class __FinishedTabState extends State<_FinishedTab> {
         getCell: (i) => _list[_list.length - 1 - i],
         initalScrollPosition: 0,
         scaffoldKey: state.scaffoldKey,
-        systemNavigationInsets:
-            widget.viewInsets.copyWith(bottom: widget.viewInsets.bottom + 80),
+        systemNavigationInsets: widget.viewInsets,
         hasReachedEnd: () => true,
         overrideOnPress: (context, cell) {
           Navigator.push(context, MaterialPageRoute(
@@ -103,7 +102,8 @@ class __FinishedTabState extends State<_FinishedTab> {
             },
           ));
         },
-        selectionGlue: SelectionGlue.empty(context),
+        selectionGlue:
+            GlueProvider.generateOf<AnimeEntry, WatchedAnimeEntry>(context),
         mainFocus: state.mainFocus,
         refresh: () => Future.value(_list.length),
         description: GridDescription([],

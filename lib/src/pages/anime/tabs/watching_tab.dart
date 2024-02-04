@@ -102,11 +102,7 @@ class __WatchingTabState extends State<_WatchingTab> {
         getCell: (i) => backlog[upward ? backlog.length - 1 - i : i],
         initalScrollPosition: 0,
         scaffoldKey: state.scaffoldKey,
-        systemNavigationInsets: widget.viewInsets.copyWith(
-            bottom: widget.viewInsets.bottom +
-                (!GlueProvider.of<AnimeEntry>(context).keyboardVisible()
-                    ? 80
-                    : 0)),
+        systemNavigationInsets: widget.viewInsets,
         hasReachedEnd: () => true,
         overrideOnPress: (context, cell) {
           Navigator.push(context, MaterialPageRoute(
@@ -115,7 +111,8 @@ class __WatchingTabState extends State<_WatchingTab> {
             },
           ));
         },
-        selectionGlue: SelectionGlue.empty(context),
+        selectionGlue:
+            GlueProvider.generateOf<AnimeEntry, SavedAnimeEntry>(context),
         mainFocus: state.mainFocus,
         refresh: () => Future.value(backlog.length),
         description: GridDescription([],
