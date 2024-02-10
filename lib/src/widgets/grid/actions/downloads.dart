@@ -6,7 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
-import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:flutter/material.dart';
 
 import '../../../net/downloader.dart';

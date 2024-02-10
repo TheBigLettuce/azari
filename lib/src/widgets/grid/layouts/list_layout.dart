@@ -10,14 +10,14 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
 
-import '../callback_grid.dart';
+import '../grid_frame.dart';
 
 class ListLayout<T extends Cell> implements GridLayouter<T> {
   final bool hideThumbnails;
   final bool unpressable;
 
   @override
-  List<Widget> call(BuildContext context, CallbackGridState<T> state) {
+  List<Widget> call(BuildContext context, GridFrameState<T> state) {
     return [
       GridLayouts.list<T>(context, state.mutationInterface, state.selection,
           state.widget.systemNavigationInsets.bottom,

@@ -12,7 +12,7 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/interfaces/note_interface.dart';
-import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/grid/layouts/note_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
@@ -80,7 +80,7 @@ class NotePageContainer<T extends Cell> {
       glue: SelectionGlue.empty(context),
       child: GridSkeleton<T>(
           state,
-          (context) => CallbackGrid<T>(
+          (context) => GridFrame<T>(
                 key: state.gridKey,
                 getCell: notes.get,
                 initalScrollPosition: 0,

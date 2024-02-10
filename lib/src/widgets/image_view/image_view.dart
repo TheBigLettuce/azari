@@ -21,7 +21,7 @@ import 'package:gallery/src/widgets/image_view/wrap_image_view_notifiers.dart';
 import 'package:gallery/src/widgets/image_view/wrap_image_view_skeleton.dart';
 import 'package:gallery/src/widgets/image_view/wrap_image_view_theme.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
-import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/notifiers/focus.dart';
 import 'package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart';
 import 'package:logging/logging.dart';

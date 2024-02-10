@@ -68,7 +68,7 @@ class __DiscoverTabState extends State<_DiscoverTab> {
   Widget build(BuildContext context) {
     return GridSkeleton<AnimeEntry>(
       state,
-      (context) => CallbackGrid<AnimeEntry>(
+      (context) => GridFrame<AnimeEntry>(
         key: state.gridKey,
         getCell: (i) => widget.entries[i],
         initalScrollPosition: widget.initalScrollOffset(),

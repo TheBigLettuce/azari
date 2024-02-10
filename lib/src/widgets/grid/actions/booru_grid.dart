@@ -16,7 +16,7 @@ import '../../../db/tags/post_tags.dart';
 import '../../../db/schemas/downloader/download_file.dart';
 import '../../../db/schemas/tags/local_tag_dictionary.dart';
 import '../../../db/schemas/settings/settings.dart';
-import '../callback_grid.dart';
+import '../grid_frame.dart';
 
 class BooruGridActions {
   static GridAction<T> hide<T extends PostBase>(

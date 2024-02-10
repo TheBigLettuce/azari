@@ -7,7 +7,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../callback_grid.dart';
+import '../grid_frame.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 abstract class FavoritesActions {

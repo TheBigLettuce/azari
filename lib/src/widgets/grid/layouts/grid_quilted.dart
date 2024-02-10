@@ -11,7 +11,7 @@ import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
 
-import '../callback_grid.dart';
+import '../grid_frame.dart';
 
 class GridQuiltedLayout<T extends Cell> implements GridLayouter<T> {
   final GridAspectRatio aspectRatio;
@@ -24,7 +24,7 @@ class GridQuiltedLayout<T extends Cell> implements GridLayouter<T> {
   final GridColumn columns;
 
   @override
-  List<Widget> call(BuildContext context, CallbackGridState<T> state) {
+  List<Widget> call(BuildContext context, GridFrameState<T> state) {
     return [
       GridLayouts.quiltedGrid<T>(
         context,

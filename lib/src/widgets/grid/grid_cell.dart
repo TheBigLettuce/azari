@@ -12,10 +12,10 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:transparent_image/transparent_image.dart';
 import '../loading_error_widget.dart';
 import '../shimmer_loading_indicator.dart';
-import 'callback_grid.dart';
+import 'grid_frame.dart';
 import 'sticker_widget.dart';
 
-/// The cell of [CallbackGrid].
+/// The cell of [GridFrame].
 class GridCell<T extends Cell> extends StatefulWidget {
   final T _data;
   final int indx;

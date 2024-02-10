@@ -5,16 +5,16 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of '../../widgets/grid/callback_grid.dart';
+part of '../../widgets/grid/grid_frame.dart';
 
 /// Metadata about the grid.
 class GridDescription<T extends Cell> {
   /// Displayed in the keybinds info page name.
   final String keybindsDescription;
 
-  /// If [pageName] is not null, and [CallbackGrid.searchWidget] is null,
+  /// If [pageName] is not null, and [GridFrame.searchWidget] is null,
   /// then a Text widget will be displayed in the app bar with this value.
-  /// If null and [CallbackGrid.searchWidget] is null, then [keybindsDescription] is used as the value.
+  /// If null and [GridFrame.searchWidget] is null, then [keybindsDescription] is used as the value.
   final String? pageName;
 
   /// Actions of the grid on selected cells.

@@ -29,7 +29,7 @@ import 'package:gallery/src/pages/gallery/directories.dart';
 import 'package:gallery/src/plugs/notifications.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 import 'package:gallery/src/db/schemas/gallery/favorite_booru_post.dart';
-import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -245,7 +245,7 @@ class _GalleryFilesState extends State<GalleryFiles>
         scaffoldKey: state.scaffoldKey,
         child: GridSkeleton<SystemGalleryDirectoryFile>(
           state,
-          (context) => CallbackGrid(
+          (context) => GridFrame(
             key: state.gridKey,
             getCell: (i) => widget.api.directCell(i),
             initalScrollPosition: 0,

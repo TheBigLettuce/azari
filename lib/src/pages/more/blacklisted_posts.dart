@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
-import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/grid/layouts/list_layout.dart';
 import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
@@ -49,7 +49,7 @@ class _BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
       provided: (widget.glue, widget.generateGlue),
       child: GridSkeleton<HiddenBooruPost>(
         state,
-        (context) => CallbackGrid(
+        (context) => GridFrame(
           key: state.gridKey,
           getCell: (i) => list[i],
           initalCellCount: list.length,

@@ -15,7 +15,7 @@ import 'package:gallery/src/widgets/grid/actions/downloads.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
-import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:gallery/src/widgets/grid/layouts/segment_list_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
@@ -123,7 +123,7 @@ class _DownloadsState extends State<Downloads>
         provided: (widget.glue, widget.generateGlue),
         child: GridSkeleton(
           state,
-          (context) => CallbackGrid<DownloadFile>(
+          (context) => GridFrame<DownloadFile>(
               key: state.gridKey,
               getCell: loader.getCell,
               initalScrollPosition: 0,

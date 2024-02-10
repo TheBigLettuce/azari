@@ -26,15 +26,15 @@ import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../db/loaders/linear_isar_loader.dart';
-import '../../interfaces/filtering/filtering_mode.dart';
-import '../../interfaces/filtering/sorting_mode.dart';
-import '../../widgets/grid/actions/booru_grid.dart';
-import '../../db/tags/post_tags.dart';
-import '../../db/schemas/downloader/download_file.dart';
-import '../../widgets/skeletons/grid_skeleton_state_filter.dart';
-import '../../widgets/skeletons/grid_skeleton.dart';
-import '../booru/grid_settings_button.dart';
+import '../db/loaders/linear_isar_loader.dart';
+import '../interfaces/filtering/filtering_mode.dart';
+import '../interfaces/filtering/sorting_mode.dart';
+import '../widgets/grid/actions/booru_grid.dart';
+import '../db/tags/post_tags.dart';
+import '../db/schemas/downloader/download_file.dart';
+import '../widgets/skeletons/grid_skeleton_state_filter.dart';
+import '../widgets/skeletons/grid_skeleton.dart';
+import 'booru/grid_settings_button.dart';
 
 class FavoriteBooruPage extends StatefulWidget {
   final void Function(bool) procPop;
@@ -288,13 +288,7 @@ class _FavoriteBooruPageState extends State<FavoriteBooruPage>
                 BooruGridActions.download(context, booru),
                 _groupButton(context)
               ],
-              systemNavigationInsets: EdgeInsets.only(
-                  bottom: widget.viewPadding.bottom +
-                      (Scaffold.of(context).widget.bottomNavigationBar !=
-                                  null &&
-                              !glue.keyboardVisible()
-                          ? 80
-                          : 0)),
+              systemNavigationInsets: widget.viewPadding,
               hasReachedEnd: () => true,
               menuButtonItems: [
                 GridSettingsButton(gridSettings,

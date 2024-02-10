@@ -54,7 +54,7 @@ class _SegSticky {
 }
 
 /// The grid of images.
-class CallbackGrid<T extends Cell> extends StatefulWidget {
+class GridFrame<T extends Cell> extends StatefulWidget {
   /// [loadNext] gets called when the grid is scrolled around the end of the viewport.
   /// If this is null, then the grid is assumed to be not able to incrementally add posts
   /// by scrolling at the near end of the viewport.
@@ -180,7 +180,7 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   //   return context.findAncestorStateOfType<CallbackGridState<T>>()!;
   // }
 
-  const CallbackGrid({
+  const GridFrame({
     required super.key,
     this.additionalKeybinds,
     required this.getCell,
@@ -223,10 +223,10 @@ class CallbackGrid<T extends Cell> extends StatefulWidget {
   });
 
   @override
-  State<CallbackGrid<T>> createState() => CallbackGridState<T>();
+  State<GridFrame<T>> createState() => GridFrameState<T>();
 }
 
-class CallbackGridState<T extends Cell> extends State<CallbackGrid<T>> {
+class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
   late final controller =
       ScrollController(initialScrollOffset: widget.initalScrollPosition);
   final fakeController = ScrollController();

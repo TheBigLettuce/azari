@@ -16,7 +16,7 @@ import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
-import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
@@ -137,7 +137,7 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
           scaffoldKey: state.scaffoldKey,
           child: GridSkeleton<AnimeEntry>(
             state,
-            (context) => CallbackGrid<AnimeEntry>(
+            (context) => GridFrame<AnimeEntry>(
               key: state.gridKey,
               menuButtonItems: [
                 TextButton(

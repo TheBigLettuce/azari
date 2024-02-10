@@ -14,7 +14,7 @@ import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:gallery/src/widgets/shimmer_loading_indicator.dart';
 
-import '../callback_grid.dart';
+import '../grid_frame.dart';
 
 enum NoteLayoutVariant {
   normal,
@@ -30,7 +30,7 @@ class NoteLayout<T extends Cell> implements GridLayouter<T> {
   final List<String> Function(T cell) getText;
 
   @override
-  List<Widget> call(BuildContext context, CallbackGridState<T> state) {
+  List<Widget> call(BuildContext context, GridFrameState<T> state) {
     return [
       SliverPadding(
         padding: const EdgeInsets.all(8),

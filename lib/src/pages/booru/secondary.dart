@@ -27,7 +27,7 @@ import '../../widgets/image_view/image_view.dart';
 import 'grid_button.dart';
 
 import '../../widgets/grid/actions/booru_grid.dart';
-import '../../widgets/grid/callback_grid.dart';
+import '../../widgets/grid/grid_frame.dart';
 import '../../net/downloader.dart';
 import '../../interfaces/booru/booru_api_state.dart';
 import '../../db/tags/post_tags.dart';
@@ -279,7 +279,7 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                 widget.tagManager,
                 GridSkeleton(
                   state,
-                  (context) => CallbackGrid<Post>(
+                  (context) => GridFrame<Post>(
                     key: state.gridKey,
                     selectionGlue: glue,
                     systemNavigationInsets: MediaQuery.of(context).viewPadding,

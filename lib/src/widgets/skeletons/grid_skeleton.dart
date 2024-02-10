@@ -11,7 +11,7 @@ import 'package:gallery/src/widgets/gesture_dead_zones.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 
 import '../../interfaces/cell/cell.dart';
-import '../grid/callback_grid.dart';
+import '../grid/grid_frame.dart';
 import 'grid_skeleton_state.dart';
 
 class GridSkeleton<T extends Cell> extends StatelessWidget {
@@ -20,7 +20,7 @@ class GridSkeleton<T extends Cell> extends StatelessWidget {
   final bool canPop;
   final void Function(bool, bool Function())? overrideOnPop;
   final GridSkeletonState<T> state;
-  final CallbackGrid<T> Function(BuildContext context) grid;
+  final GridFrame<T> Function(BuildContext context) grid;
 
   const GridSkeleton(
     this.state,

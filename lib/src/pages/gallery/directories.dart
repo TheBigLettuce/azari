@@ -28,7 +28,7 @@ import 'package:gallery/src/pages/gallery/files.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 import 'package:gallery/src/db/schemas/gallery/favorite_booru_post.dart';
 import 'package:gallery/src/db/schemas/gallery/pinned_directories.dart';
-import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/grid/layouts/segment_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
@@ -280,7 +280,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
 
     return GridSkeleton<SystemGalleryDirectory>(
         state,
-        (context) => CallbackGrid(
+        (context) => GridFrame(
             key: state.gridKey,
             getCell: (i) => api.directCell(i),
             initalScrollPosition: 0,

@@ -43,7 +43,7 @@ import '../../widgets/skeletons/grid_skeleton.dart';
 import '../../widgets/notifiers/booru_api.dart';
 import '../../widgets/notifiers/tag_manager.dart';
 import '../../widgets/search_bar/search_launch_grid.dart';
-import '../../widgets/grid/callback_grid.dart';
+import '../../widgets/grid/grid_frame.dart';
 import '../../widgets/image_view/image_view.dart';
 import 'grid_button.dart';
 
@@ -298,7 +298,7 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                 widget.tagManager,
                 GridSkeleton(
                   state,
-                  (context) => CallbackGrid<Post>(
+                  (context) => GridFrame<Post>(
                     key: state.gridKey,
                     selectionGlue: glue,
                     systemNavigationInsets: MediaQuery.of(context).viewPadding,

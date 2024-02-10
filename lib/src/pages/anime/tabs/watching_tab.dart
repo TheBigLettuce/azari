@@ -97,7 +97,7 @@ class __WatchingTabState extends State<_WatchingTab> {
   Widget build(BuildContext context) {
     return GridSkeleton<SavedAnimeEntry>(
       state,
-      (context) => CallbackGrid<SavedAnimeEntry>(
+      (context) => GridFrame<SavedAnimeEntry>(
         key: state.gridKey,
         getCell: (i) => backlog[upward ? backlog.length - 1 - i : i],
         initalScrollPosition: 0,
@@ -169,7 +169,7 @@ class _WatchingLayout implements GridLayouter<SavedAnimeEntry> {
 
   @override
   List<Widget> call(
-      BuildContext context, CallbackGridState<SavedAnimeEntry> state) {
+      BuildContext context, GridFrameState<SavedAnimeEntry> state) {
     return [
       SliverToBoxAdapter(
         child: SegmentLabel(

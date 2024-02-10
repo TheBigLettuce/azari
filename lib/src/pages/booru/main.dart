@@ -43,7 +43,7 @@ import '../../widgets/search_bar/search_launch_grid.dart';
 
 import '../../widgets/skeletons/grid_skeleton.dart';
 
-import 'package:gallery/src/widgets/grid/callback_grid.dart';
+import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'grid_button.dart';
@@ -289,7 +289,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
           tagManager,
           GridSkeleton(
             state,
-            (context) => CallbackGrid<Post>(
+            (context) => GridFrame<Post>(
               key: state.gridKey,
               systemNavigationInsets: widget.viewPadding,
               selectionGlue: glue,

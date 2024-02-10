@@ -8,7 +8,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 
-import '../../widgets/grid/callback_grid.dart';
+import '../../widgets/grid/grid_frame.dart';
 
 class SelectionGlue<T extends Cell> {
   final void Function(List<GridAction<T>> actions, GridSelection<T> selection)

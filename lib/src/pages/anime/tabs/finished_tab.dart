@@ -88,7 +88,7 @@ class __FinishedTabState extends State<_FinishedTab> {
   Widget build(BuildContext context) {
     return GridSkeleton<WatchedAnimeEntry>(
       state,
-      (context) => CallbackGrid<WatchedAnimeEntry>(
+      (context) => GridFrame<WatchedAnimeEntry>(
         key: state.gridKey,
         getCell: (i) => _list[_list.length - 1 - i],
         initalScrollPosition: 0,
