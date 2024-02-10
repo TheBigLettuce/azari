@@ -9,14 +9,15 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 
 class BackgroundImage extends StatelessWidget {
-  final AnimeEntry entry;
+  // final AnimeEntry entry;
+  final ImageProvider<Object> image;
 
-  const BackgroundImage({super.key, required this.entry});
+  const BackgroundImage({super.key, required this.image});
 
   @override
   Widget build(BuildContext context) {
     return BackgroundImageBase(
-      image: entry.thumbnail()!,
+      image: image,
       width: MediaQuery.sizeOf(context).width,
       height: MediaQuery.sizeOf(context).height * 0.3 +
           kToolbarHeight +

@@ -78,7 +78,7 @@ class _FinishedAnimeInfoPageState extends State<FinishedAnimeInfoPage>
           appBar: PreferredSize(
               preferredSize: const Size.fromHeight(kToolbarHeight),
               child: AnimeInfoAppBar(
-                entry: entry,
+                cell: entry,
                 scrollController: scrollController,
                 appBarActions: [
                   RefreshEntryIcon(entry, (e) => entry.copySuper(e).save())
@@ -90,9 +90,13 @@ class _FinishedAnimeInfoPageState extends State<FinishedAnimeInfoPage>
               padding: EdgeInsets.only(
                   bottom: MediaQuery.viewPaddingOf(context).bottom),
               child: Stack(children: [
-                BackgroundImage(entry: entry),
+                BackgroundImage(image: entry.thumbnail()!),
                 CardShell(
-                  entry: entry,
+                  title: widget.entry.title,
+                  titleEnglish: widget.entry.titleEnglish,
+                  titleJapanese: widget.entry.titleJapanese,
+                  titleSynonyms: widget.entry.titleSynonyms,
+                  safeMode: widget.entry.explicit,
                   viewPadding: MediaQuery.viewPaddingOf(context),
                   info: [
                     ...CardPanel.defaultInfo(context, entry),

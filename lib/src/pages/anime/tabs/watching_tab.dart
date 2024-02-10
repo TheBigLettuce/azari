@@ -11,8 +11,11 @@ class _WatchingTab extends StatefulWidget {
   final EdgeInsets viewInsets;
   final void Function() onDispose;
 
-  const _WatchingTab(this.viewInsets,
-      {required super.key, required this.onDispose});
+  const _WatchingTab(
+    this.viewInsets, {
+    required super.key,
+    required this.onDispose,
+  });
 
   @override
   State<_WatchingTab> createState() => __WatchingTabState();

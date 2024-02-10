@@ -14,6 +14,7 @@ import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
@@ -28,39 +29,78 @@ import '../info_pages/discover_anime_info_page.dart';
 
 part 'filtering_genres.dart';
 
-class SearchAnimePage extends StatefulWidget {
-  final int? initalGenreId;
+class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
+  final I? initalGenreId;
   final String? initalText;
-  final AnimeAPI api;
+  // final AnimeAPI api;
   final AnimeSafeMode explicit;
+  final Future<List<T>> Function(String, int, I?, AnimeSafeMode) search;
+  final Future<Map<I, G>> Function(AnimeSafeMode)? genres;
+  final (I, String) Function(G) idFromGenre;
+  final void Function(T) onPressed;
+
+  static void launchAnimeApi(
+    BuildContext context,
+    AnimeAPI api, {
+    String? search,
+    AnimeSafeMode safeMode = AnimeSafeMode.safe,
+    int? initalGenreId,
+  }) {
+    Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        return SearchAnimePage<AnimeEntry, int, AnimeGenre>(
+          initalText: search,
+          explicit: safeMode,
+          initalGenreId: initalGenreId,
+          idFromGenre: (genre) {
+            return (genre.id, genre.title);
+          },
+          onPressed: (cell) {
+            Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return DiscoverAnimeInfoPage(entry: cell);
+              },
+            ));
+          },
+          search: api.search,
+          genres: api.genres,
+        );
+      },
+    ));
+  }
 
   const SearchAnimePage({
     super.key,
-    required this.api,
+    required this.idFromGenre,
+    required this.onPressed,
+    required this.search,
+    required this.genres,
     this.initalGenreId,
     this.initalText,
     this.explicit = AnimeSafeMode.safe,
   });
 
   @override
-  State<SearchAnimePage> createState() => _SearchAnimePageState();
+  State<SearchAnimePage<T, I, G>> createState() =>
+      _SearchAnimePageState<T, I, G>();
 }
 
-class _SearchAnimePageState extends State<SearchAnimePage> {
-  final List<AnimeEntry> _results = [];
+class _SearchAnimePageState<T extends Cell, I, G>
+    extends State<SearchAnimePage<T, I, G>> {
+  final List<T> _results = [];
   late final StreamSubscription<void> watcher;
   final searchFocus = FocusNode();
-  final state = GridSkeletonState<AnimeEntry>();
+  final state = GridSkeletonState<T>();
   late AnimeSafeMode mode = widget.explicit;
 
-  Future<Map<int, AnimeGenre>>? _genreFuture;
+  Future<Map<I, G>>? _genreFuture;
 
   final gridSettings = GridSettingsAnimeDiscovery.current;
 
   int _page = 0;
 
   String currentSearch = "";
-  int? currentGenre;
+  I? currentGenre;
 
   bool _reachedEnd = false;
 
@@ -73,7 +113,7 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
     });
 
     if (widget.initalGenreId != null) {
-      _genreFuture = widget.api.genres(AnimeSafeMode.safe);
+      _genreFuture = widget.genres?.call(AnimeSafeMode.safe);
     }
 
     currentGenre = widget.initalGenreId;
@@ -107,8 +147,7 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
     _reachedEnd = false;
     currentSearch = value;
 
-    final result =
-        await widget.api.search(value, 0, genreId: currentGenre, mode: mode);
+    final result = await widget.search(value, 0, currentGenre, mode);
 
     _results.addAll(result);
 
@@ -119,8 +158,8 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
   }
 
   Future<int> _loadNext() async {
-    final result = await widget.api
-        .search(currentSearch, _page + 1, genreId: currentGenre, mode: mode);
+    final result =
+        await widget.search(currentSearch, _page + 1, currentGenre, mode);
     _page += 1;
     if (result.isEmpty) {
       _reachedEnd = true;
@@ -133,11 +172,19 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
 
   @override
   Widget build(BuildContext context) {
-    Widget body() => WrapGridPage<AnimeEntry>(
+    String title(G? genre) {
+      if (genre == null) {
+        return "";
+      }
+
+      return widget.idFromGenre(genre).$2;
+    }
+
+    Widget body() => WrapGridPage<T>(
           scaffoldKey: state.scaffoldKey,
-          child: GridSkeleton<AnimeEntry>(
+          child: GridSkeleton<T>(
             state,
-            (context) => GridFrame<AnimeEntry>(
+            (context) => GridFrame<T>(
               key: state.gridKey,
               menuButtonItems: [
                 TextButton(
@@ -172,32 +219,34 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
                     ),
                   ),
                 ),
-                PopupMenuButton(
-                  itemBuilder: (context) {
-                    _genreFuture ??= widget.api.genres(AnimeSafeMode.safe);
+                if (widget.genres != null)
+                  PopupMenuButton(
+                    itemBuilder: (context) {
+                      _genreFuture ??= widget.genres!(AnimeSafeMode.safe);
 
-                    return [
-                      PopupMenuItem(
-                        enabled: false,
-                        child: _FilteringGenres(
-                          future: _genreFuture!,
-                          currentGenre: currentGenre,
-                          setGenre: (genre) {
-                            currentGenre = genre;
+                      return [
+                        PopupMenuItem(
+                          enabled: false,
+                          child: _FilteringGenres<I, G>(
+                            future: _genreFuture!,
+                            currentGenre: currentGenre,
+                            setGenre: (genre) {
+                              currentGenre = genre;
 
-                            _load(currentSearch);
+                              _load(currentSearch);
 
-                            setState(() {});
-                          },
-                        ),
-                      )
-                    ];
-                  },
-                  icon: Icon(Icons.filter_list_outlined,
-                      color: currentGenre != null
-                          ? Theme.of(context).colorScheme.primary
-                          : null),
-                ),
+                              setState(() {});
+                            },
+                            idFromGenre: widget.idFromGenre,
+                          ),
+                        )
+                      ];
+                    },
+                    icon: Icon(Icons.filter_list_outlined,
+                        color: currentGenre != null
+                            ? Theme.of(context).colorScheme.primary
+                            : null),
+                  ),
               ],
               getCell: (i) => _results[i],
               searchWidget: SearchAndFocus(
@@ -208,7 +257,7 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
                         initialValue: currentSearch,
                         decoration: InputDecoration(
                             hintText:
-                                "${AppLocalizations.of(context)!.searchHint} ${currentGenre == null ? '' : !snapshot.hasData ? '...' : snapshot.data?[currentGenre!]?.title ?? ''}",
+                                "${AppLocalizations.of(context)!.searchHint} ${currentGenre == null ? '' : !snapshot.hasData ? '...' : title(snapshot.data?[currentGenre!])}",
                             border: InputBorder.none),
                         focusNode: searchFocus,
                         onFieldSubmitted: (value) {
@@ -226,11 +275,7 @@ class _SearchAnimePageState extends State<SearchAnimePage> {
                   searchFocus),
               initalScrollPosition: 0,
               overrideOnPress: (context, cell) {
-                Navigator.push(context, MaterialPageRoute(
-                  builder: (context) {
-                    return DiscoverAnimeInfoPage(entry: cell);
-                  },
-                ));
+                widget.onPressed(cell);
               },
               onBack: () {
                 Navigator.pop(context);

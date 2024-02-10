@@ -7,34 +7,42 @@
 
 part of "search_anime.dart";
 
-class _FilteringGenres extends StatefulWidget {
-  final Future<Map<int, AnimeGenre>> future;
-  final int? currentGenre;
-  final void Function(int?) setGenre;
+class _FilteringGenres<I, G> extends StatefulWidget {
+  final Future<Map<I, G>> future;
+  final I? currentGenre;
+  final void Function(I?) setGenre;
+  final (I, String) Function(G) idFromGenre;
 
   const _FilteringGenres({
     required this.future,
     required this.currentGenre,
     required this.setGenre,
+    required this.idFromGenre,
   });
 
   @override
-  State<_FilteringGenres> createState() => __FilteringGenresState();
+  State<_FilteringGenres<I, G>> createState() => __FilteringGenresState<I, G>();
 }
 
-class __FilteringGenresState extends State<_FilteringGenres> {
-  List<AnimeGenre>? _result;
+class __FilteringGenresState<I, G> extends State<_FilteringGenres<I, G>> {
+  List<G>? _result;
 
-  Widget _tile(AnimeGenre e) => ListTile(
+  Widget _tileG(G e) {
+    final (id, title) = widget.idFromGenre(e);
+
+    return _tile(id, title);
+  }
+
+  Widget _tile(I id, String title) => ListTile(
         titleTextStyle:
             TextStyle(color: Theme.of(context).colorScheme.onSurface),
         title: Text(
-          e.title,
-          style: TextStyle(color: e.explicit ? Colors.red : null),
+          title,
+          // style: TextStyle(color: e.explicit ? Colors.red : null),
         ),
-        selected: e.id == widget.currentGenre,
+        selected: id == widget.currentGenre,
         onTap: () {
-          widget.setGenre(e.id);
+          widget.setGenre(id);
 
           Navigator.pop(context);
         },
@@ -63,7 +71,9 @@ class __FilteringGenresState extends State<_FilteringGenres> {
                     hintText: AppLocalizations.of(context)!.filterHint),
                 onChanged: (value) {
                   _result = snapshot.data!.values
-                      .where((element) => element.title
+                      .where((element) => widget
+                          .idFromGenre(element)
+                          .$2
                           .toLowerCase()
                           .contains(value.toLowerCase()))
                       .toList();
@@ -72,18 +82,20 @@ class __FilteringGenresState extends State<_FilteringGenres> {
                 },
               ),
               if (widget.currentGenre != null)
-                _tile(snapshot.data![widget.currentGenre!]!),
+                _tileG(snapshot.data![widget.currentGenre!]!),
               if (_result != null)
                 if (_result == null)
                   const SizedBox.shrink()
                 else
                   ..._result!
-                      .where((element) => element.id != widget.currentGenre)
-                      .map((e) => _tile(e))
+                      .map((e) => widget.idFromGenre(e))
+                      .where((element) => element.$1 != widget.currentGenre)
+                      .map((e) => _tile(e.$1, e.$2))
               else
                 ...snapshot.data!.values
-                    .where((element) => element.id != widget.currentGenre)
-                    .map((e) => _tile(e)),
+                    .map((e) => widget.idFromGenre(e))
+                    .where((element) => element.$1 != widget.currentGenre)
+                    .map((e) => _tile(e.$1, e.$2)),
             ]).animate().fadeIn();
           } else {
             return const Center(

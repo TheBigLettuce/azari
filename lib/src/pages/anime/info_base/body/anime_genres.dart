@@ -6,13 +6,18 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/pages/anime/search/search_anime.dart';
 
-class AnimeGenres extends StatelessWidget {
-  final AnimeEntry entry;
+class AnimeGenres<T> extends StatelessWidget {
+  final List<(T, bool)> genres;
+  final String Function(T) title;
+  final void Function(T) onPressed;
 
-  const AnimeGenres({super.key, required this.entry});
+  const AnimeGenres({
+    super.key,
+    required this.genres,
+    required this.onPressed,
+    required this.title,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,26 +25,14 @@ class AnimeGenres extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       child: Wrap(
         spacing: 4,
-        children: entry.genres
+        children: genres
             .map((e) => ActionChip(
                   // backgroundColor: Theme.of(context).chipTheme.backgroundColor,
                   surfaceTintColor: Theme.of(context).colorScheme.surfaceTint,
                   elevation: 4,
                   visualDensity: VisualDensity.compact,
-                  label: Text(e.title),
-                  onPressed: e.unpressable
-                      ? null
-                      : () {
-                          Navigator.push(context, MaterialPageRoute(
-                            builder: (context) {
-                              return SearchAnimePage(
-                                api: entry.site.api,
-                                initalGenreId: e.id,
-                                explicit: entry.explicit,
-                              );
-                            },
-                          ));
-                        },
+                  label: Text(title(e.$1)),
+                  onPressed: e.$2 ? null : () => onPressed.call(e.$1),
                   side: BorderSide.none,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25)),

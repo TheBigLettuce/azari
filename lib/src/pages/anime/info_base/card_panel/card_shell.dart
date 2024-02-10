@@ -16,12 +16,21 @@ import 'right_arrow.dart';
 class CardShell extends StatefulWidget {
   final List<Widget> buttons;
   final List<Widget> info;
-  final AnimeEntry entry;
   final EdgeInsets viewPadding;
+
+  final String title;
+  final String titleEnglish;
+  final String titleJapanese;
+  final List<String> titleSynonyms;
+  final AnimeSafeMode safeMode;
 
   const CardShell({
     super.key,
-    required this.entry,
+    required this.title,
+    required this.titleEnglish,
+    required this.titleJapanese,
+    required this.titleSynonyms,
+    required this.safeMode,
     required this.viewPadding,
     required this.info,
     required this.buttons,
@@ -110,8 +119,8 @@ class _CardShellState extends State<CardShell> {
   Widget build(BuildContext context) {
     return DefaultTextStyle.merge(
       style: TextStyle(
-        color: widget.entry.explicit == AnimeSafeMode.h ||
-                widget.entry.explicit == AnimeSafeMode.ecchi
+        color: widget.safeMode == AnimeSafeMode.h ||
+                widget.safeMode == AnimeSafeMode.ecchi
             ? Colors.pink.withOpacity(0.8)
             : Theme.of(context).colorScheme.primary.withOpacity(0.8),
       ),
@@ -128,7 +137,13 @@ class _CardShellState extends State<CardShell> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AnimeNameWidget(entry: widget.entry),
+              AnimeNameWidget(
+                title: widget.title,
+                titleEnglish: widget.titleEnglish,
+                titleJapanese: widget.titleJapanese,
+                titleSynonyms: widget.titleSynonyms,
+                safeMode: widget.safeMode,
+              ),
               Theme(
                 data: Theme.of(context).copyWith(
                     iconTheme: IconThemeData(

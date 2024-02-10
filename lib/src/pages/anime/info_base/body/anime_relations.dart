@@ -45,15 +45,12 @@ class AnimeRelations extends StatelessWidget {
                         return;
                       }
 
-                      Navigator.push(context, MaterialPageRoute(
-                        builder: (context) {
-                          return SearchAnimePage(
-                            api: entry.site.api,
-                            initalText: e.title,
-                            explicit: entry.explicit,
-                          );
-                        },
-                      ));
+                      SearchAnimePage.launchAnimeApi(
+                        context,
+                        entry.site.api,
+                        search: e.title,
+                        safeMode: entry.explicit,
+                      );
                     },
                     child: Text(
                       e.type.isNotEmpty ? "${e.title} (${e.type})" : e.title,

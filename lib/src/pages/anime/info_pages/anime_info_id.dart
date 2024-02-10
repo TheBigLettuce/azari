@@ -112,7 +112,7 @@ class _AnimeInfoIdPageState extends State<AnimeInfoIdPage>
                     appBar: PreferredSize(
                         preferredSize: const Size.fromHeight(kToolbarHeight),
                         child: AnimeInfoAppBar(
-                            entry: snapshot.data!,
+                            cell: snapshot.data!,
                             scrollController: scrollController)),
                     extendBodyBehindAppBar: true,
                     child: SingleChildScrollView(
@@ -122,7 +122,7 @@ class _AnimeInfoIdPageState extends State<AnimeInfoIdPage>
                             bottom: MediaQuery.viewPaddingOf(context).bottom),
                         child: Stack(
                           children: [
-                            BackgroundImage(entry: snapshot.data!),
+                            BackgroundImage(image: snapshot.data!.thumbnail()!),
                             CardPanel(
                               viewPadding: MediaQuery.viewPaddingOf(context),
                               entry: snapshot.data!,

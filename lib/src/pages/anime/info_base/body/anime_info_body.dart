@@ -6,10 +6,12 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/pages/anime/info_base/body/body_segment_label.dart';
+import 'package:gallery/src/pages/anime/search/search_anime.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/widgets/grid/grid_cell.dart';
 
@@ -40,10 +42,29 @@ class AnimeInfoBody extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimeGenres(entry: entry),
+            AnimeGenres<AnimeGenre>(
+              genres: entry.genres.map((e) => (e, e.unpressable)).toList(),
+              title: (e) => e.title,
+              onPressed: (e) {
+                SearchAnimePage.launchAnimeApi(
+                  context,
+                  entry.site.api,
+                  safeMode: entry.explicit,
+                  initalGenreId: e.id,
+                );
+              },
+            ),
             const Padding(padding: EdgeInsets.only(top: 8)),
             SynopsisBackground(
-              entry: entry,
+              search: (s) {
+                SearchAnimePage.launchAnimeApi(
+                  context,
+                  entry.site.api,
+                  search: s,
+                );
+              },
+              background: entry.background,
+              synopsis: entry.synopsis,
               constraints: BoxConstraints(
                   maxWidth: MediaQuery.sizeOf(context).width - 16 - 16),
             ),
@@ -84,14 +105,14 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
           return Column(
             children: [
               const BodySegmentLabel(text: "Pictures"), // TODO: change
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Wrap(
+              SizedBox(
+                height: MediaQuery.sizeOf(context).longestSide *
+                    0.2 *
+                    GridAspectRatio.zeroSeven.value,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
                   children: snapshot.data!.indexed
                       .map((e) => SizedBox(
-                            height: MediaQuery.sizeOf(context).longestSide *
-                                0.2 *
-                                GridAspectRatio.zeroSeven.value,
                             width: MediaQuery.sizeOf(context).longestSide * 0.2,
                             child: GridCell(
                               cell: e.$2,

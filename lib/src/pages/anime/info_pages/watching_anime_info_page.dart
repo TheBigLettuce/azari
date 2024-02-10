@@ -92,7 +92,7 @@ class _WatchingAnimeInfoPageState extends State<WatchingAnimeInfoPage>
           appBar: PreferredSize(
               preferredSize: const Size.fromHeight(kToolbarHeight),
               child: AnimeInfoAppBar(
-                entry: entry,
+                cell: entry,
                 scrollController: scrollController,
                 appBarActions: [
                   RefreshEntryIcon(
@@ -107,9 +107,13 @@ class _WatchingAnimeInfoPageState extends State<WatchingAnimeInfoPage>
               padding: EdgeInsets.only(
                   bottom: MediaQuery.viewPaddingOf(context).bottom),
               child: Stack(children: [
-                BackgroundImage(entry: entry),
+                BackgroundImage(image: entry.thumbnail()!),
                 CardShell(
-                  entry: entry,
+                  title: entry.title,
+                  titleEnglish: entry.titleEnglish,
+                  titleJapanese: entry.titleJapanese,
+                  titleSynonyms: entry.titleSynonyms,
+                  safeMode: entry.explicit,
                   viewPadding: MediaQuery.viewPaddingOf(context),
                   buttons: [
                     ...CardPanel.defaultButtons(

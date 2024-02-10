@@ -18,8 +18,8 @@ import 'anime_entry.dart';
 abstract class AnimeAPI {
   Future<AnimeEntry?> info(int id);
   Future<List<AnimeCharacter>> characters(AnimeEntry entry);
-  Future<List<AnimeEntry>> search(String title, int page,
-      {int? genreId, AnimeSafeMode? mode});
+  Future<List<AnimeEntry>> search(
+      String title, int page, int? genreId, AnimeSafeMode? mode);
   Future<Map<int, AnimeGenre>> genres(AnimeSafeMode mode);
   Future<List<AnimeEntry>> top(int page);
   Future<List<AnimeNewsEntry>> animeNews(AnimeEntry entry, int page);

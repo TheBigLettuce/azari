@@ -68,6 +68,7 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         if (!_loading)
           BodySegmentLabel(text: AppLocalizations.of(context)!.charactersLabel),
@@ -77,13 +78,12 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
                 width: 18,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Wrap(
+            : SizedBox(
+                height: MediaQuery.sizeOf(context).longestSide * 0.2,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
                   children: list.indexed
                       .map((e) => SizedBox(
-                            height:
-                                MediaQuery.sizeOf(context).longestSide * 0.2,
                             width: MediaQuery.sizeOf(context).longestSide *
                                 0.2 *
                                 GridAspectRatio.zeroFive.value,

@@ -166,7 +166,11 @@ class _CardPanelState extends State<CardPanel> {
   Widget build(BuildContext context) {
     return CardShell(
       viewPadding: widget.viewPadding,
-      entry: widget.entry,
+      title: widget.entry.title,
+      titleEnglish: widget.entry.titleEnglish,
+      titleJapanese: widget.entry.titleJapanese,
+      titleSynonyms: widget.entry.titleSynonyms,
+      safeMode: widget.entry.explicit,
       info: CardPanel.defaultInfo(context, widget.entry),
       buttons: CardPanel.defaultButtons(
         context,

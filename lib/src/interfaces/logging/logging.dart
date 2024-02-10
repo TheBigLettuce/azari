@@ -29,7 +29,8 @@ enum LogTarget {
   unknown,
   booru,
   gallery,
-  anime;
+  anime,
+  manga;
 
   void logDefault(LogMessage message,
       [LogSeverity severity = LogSeverity.trace, StackTrace? stackTrace]) {

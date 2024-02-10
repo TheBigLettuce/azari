@@ -10,26 +10,36 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
-import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
 
 class AnimeNameWidget extends StatelessWidget {
-  final AnimeEntry entry;
+  final String title;
+  final String titleEnglish;
+  final String titleJapanese;
+  final List<String> titleSynonyms;
+  final AnimeSafeMode safeMode;
 
-  const AnimeNameWidget({super.key, required this.entry});
+  const AnimeNameWidget({
+    super.key,
+    required this.title,
+    required this.titleEnglish,
+    required this.titleJapanese,
+    required this.titleSynonyms,
+    required this.safeMode,
+  });
 
   @override
   Widget build(BuildContext context) {
     Widget title() => Column(
           children: [
             MenuWrapper(
-              title: entry.title,
+              title: this.title,
               child: Text(
-                entry.title,
+                this.title,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: entry.explicit == AnimeSafeMode.h ||
-                            entry.explicit == AnimeSafeMode.ecchi
+                    color: safeMode == AnimeSafeMode.h ||
+                            safeMode == AnimeSafeMode.ecchi
                         ? Colors.pink.withOpacity(0.8)
                         : Theme.of(context)
                             .colorScheme
@@ -38,7 +48,7 @@ class AnimeNameWidget extends StatelessWidget {
               ),
             ),
             Text(
-              "${entry.titleEnglish} / ${entry.titleJapanese}",
+              "$titleEnglish / $titleJapanese",
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: Theme.of(context)
                         .colorScheme
@@ -50,19 +60,19 @@ class AnimeNameWidget extends StatelessWidget {
         );
 
     return Center(
-      child: entry.titleSynonyms.isEmpty
+      child: titleSynonyms.isEmpty
           ? title()
           : Tooltip(
-              textStyle: entry.explicit == AnimeSafeMode.h ||
-                      entry.explicit == AnimeSafeMode.ecchi
-                  ? TextStyle(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onPrimary
-                          .withOpacity(0.8))
-                  : null,
-              decoration: entry.explicit == AnimeSafeMode.h ||
-                      entry.explicit == AnimeSafeMode.ecchi
+              textStyle:
+                  safeMode == AnimeSafeMode.h || safeMode == AnimeSafeMode.ecchi
+                      ? TextStyle(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onPrimary
+                              .withOpacity(0.8))
+                      : null,
+              decoration: safeMode == AnimeSafeMode.h ||
+                      safeMode == AnimeSafeMode.ecchi
                   ? BoxDecoration(
                       color: Theme.of(context)
                           .colorScheme
@@ -74,7 +84,7 @@ class AnimeNameWidget extends StatelessWidget {
               triggerMode: Platform.isAndroid ? TooltipTriggerMode.tap : null,
               showDuration: Platform.isAndroid ? 2.seconds : null,
               message: AppLocalizations.of(context)!
-                  .alsoKnownAs(entry.titleSynonyms.join('\n')),
+                  .alsoKnownAs(titleSynonyms.join('\n')),
               child: title(),
             ),
     );

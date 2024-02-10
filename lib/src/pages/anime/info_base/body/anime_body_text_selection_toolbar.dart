@@ -12,12 +12,13 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class AnimeBodyTextSelectionToolbar extends StatelessWidget {
   final EditableTextState editableTextState;
-  final AnimeEntry entry;
+  // final AnimeEntry entry;
+  final void Function(String selectedText) search;
 
   const AnimeBodyTextSelectionToolbar({
     super.key,
     required this.editableTextState,
-    required this.entry,
+    required this.search,
   });
 
   @override
@@ -29,17 +30,8 @@ class AnimeBodyTextSelectionToolbar extends StatelessWidget {
           onPressed: () {
             editableTextState.hideToolbar();
 
-            Navigator.push(context, MaterialPageRoute(
-              builder: (context) {
-                return SearchAnimePage(
-                  api: entry.site.api,
-                  initalText: editableTextState
-                      .currentTextEditingValue.selection
-                      .textInside(
-                          editableTextState.currentTextEditingValue.text),
-                );
-              },
-            ));
+            search(editableTextState.currentTextEditingValue.selection
+                .textInside(editableTextState.currentTextEditingValue.text));
           },
           label: AppLocalizations.of(context)!.searchHint,
         )

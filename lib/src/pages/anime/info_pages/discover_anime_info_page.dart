@@ -68,7 +68,7 @@ class _DiscoverAnimeInfoPageState extends State<DiscoverAnimeInfoPage>
         appBar: PreferredSize(
             preferredSize: const Size.fromHeight(kToolbarHeight),
             child: AnimeInfoAppBar(
-                entry: widget.entry, scrollController: scrollController)),
+                cell: widget.entry, scrollController: scrollController)),
         extendBodyBehindAppBar: true,
         child: SingleChildScrollView(
           controller: scrollController,
@@ -77,7 +77,7 @@ class _DiscoverAnimeInfoPageState extends State<DiscoverAnimeInfoPage>
                 bottom: MediaQuery.viewPaddingOf(context).bottom),
             child: Stack(
               children: [
-                BackgroundImage(entry: widget.entry),
+                BackgroundImage(image: widget.entry.thumbnail()!),
                 CardPanel(
                   viewPadding: MediaQuery.viewPaddingOf(context),
                   entry: widget.entry,

@@ -18,12 +18,12 @@ import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
-import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
 import 'package:gallery/src/net/anime/jikan.dart';
 import 'package:gallery/src/pages/anime/info_pages/finished_anime_info_page.dart';
 import 'package:gallery/src/pages/anime/info_pages/discover_anime_info_page.dart';
 import 'package:gallery/src/pages/anime/info_pages/watching_anime_info_page.dart';
+import 'package:gallery/src/pages/manga/manga_page.dart';
 import 'package:gallery/src/pages/more/notes/tab_with_count.dart';
 import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
@@ -158,11 +158,7 @@ class _AnimePageState extends State<AnimePage>
         (tabController.offset.isNegative
             ? offsetIndex <= 2.5 && offsetIndex > 1.5
             : offsetIndex >= 1.5 && offsetIndex < 2.5)) {
-      Navigator.push(context, MaterialPageRoute(
-        builder: (context) {
-          return SearchAnimePage(api: api);
-        },
-      ));
+      SearchAnimePage.launchAnimeApi(context, api);
 
       return true;
     }
@@ -237,7 +233,7 @@ class _AnimePageState extends State<AnimePage>
         child: TabBarView(
           controller: tabController,
           children: [
-            const EmptyWidget(),
+            MangaPage(),
             _WatchingTab(widget.viewPadding,
                 key: watchingKey, onDispose: _hideResetSelection),
             _DiscoverTab(

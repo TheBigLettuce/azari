@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
@@ -37,13 +38,12 @@ class _SimilarAnimeState extends State<SimilarAnime> {
           return Column(
             children: [
               const BodySegmentLabel(text: "Similar"), // TODO: change
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Wrap(
+              SizedBox(
+                height: MediaQuery.sizeOf(context).longestSide * 0.2,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
                   children: snapshot.data!.indexed
                       .map((e) => SizedBox(
-                            height:
-                                MediaQuery.sizeOf(context).longestSide * 0.2,
                             width: MediaQuery.sizeOf(context).longestSide *
                                 0.2 *
                                 GridAspectRatio.zeroFive.value,

@@ -46,8 +46,12 @@ class Jikan implements AnimeAPI {
   }
 
   @override
-  Future<List<AnimeEntry>> search(String title, int page,
-      {int? genreId, AnimeSafeMode? mode}) async {
+  Future<List<AnimeEntry>> search(
+    String title,
+    int page,
+    int? genreId,
+    AnimeSafeMode? mode,
+  ) async {
     final response = await api.Jikan(debug: kDebugMode).searchAnime(
       query: title,
       page: page + 1,

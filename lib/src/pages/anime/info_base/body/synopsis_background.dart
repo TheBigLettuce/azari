@@ -14,19 +14,24 @@ import 'anime_body_text_selection_toolbar.dart';
 import 'body_segment_label.dart';
 
 class SynopsisBackground extends StatelessWidget {
-  final AnimeEntry entry;
+  // final AnimeEntry entry;
+  final String background;
+  final String synopsis;
   final BoxConstraints constraints;
+  final void Function(String) search;
 
   const SynopsisBackground({
     super.key,
-    required this.entry,
+    required this.background,
+    required this.synopsis,
+    required this.search,
     this.constraints = const BoxConstraints(maxWidth: 200, maxHeight: 300),
   });
 
   Widget _textSelectionToolbar(
           BuildContext context, EditableTextState editableTextState) =>
       AnimeBodyTextSelectionToolbar(
-          editableTextState: editableTextState, entry: entry);
+          editableTextState: editableTextState, search: search);
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +47,7 @@ class SynopsisBackground extends StatelessWidget {
             duration: 200.ms,
             constraints: constraints,
             child: SelectableText(
-              entry.synopsis,
+              synopsis,
               contextMenuBuilder: _textSelectionToolbar,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   overflow: TextOverflow.fade,
@@ -51,16 +56,16 @@ class SynopsisBackground extends StatelessWidget {
             ),
           ),
         ),
-        if (entry.background.isNotEmpty)
+        if (background.isNotEmpty)
           BodySegmentLabel(text: AppLocalizations.of(context)!.backgroundLabel),
-        if (entry.background.isNotEmpty)
+        if (background.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 4, right: 4),
             child: AnimatedContainer(
               duration: 200.ms,
               constraints: constraints,
               child: SelectableText(
-                entry.background,
+                background,
                 contextMenuBuilder: _textSelectionToolbar,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     overflow: TextOverflow.fade,

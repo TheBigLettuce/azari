@@ -8,16 +8,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 
 class AnimeInfoAppBar extends StatefulWidget {
-  final AnimeEntry entry;
+  // final AnimeEntry entry;
+  final Cell cell;
   final ScrollController scrollController;
   final List<Widget> appBarActions;
 
   const AnimeInfoAppBar({
     super.key,
-    required this.entry,
+    required this.cell,
     required this.scrollController,
     this.appBarActions = const [],
   });
@@ -85,7 +87,7 @@ class _AnimeInfoAppBarState extends State<AnimeInfoAppBar>
                   scrollUntill: (_) {},
                   startingCell: 0,
                   onExit: () {},
-                  getCell: (_) => widget.entry,
+                  getCell: (_) => widget.cell,
                   onNearEnd: null,
                   focusMain: () {},
                   systemOverlayRestoreColor: overlayColor,
