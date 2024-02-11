@@ -21,17 +21,18 @@ class ImageViewBody extends StatelessWidget {
   final BoxDecoration decoration;
   final Widget Function(BuildContext, ImageChunkEvent?, int)? loadingBuilder;
 
-  const ImageViewBody(
-      {super.key,
-      required this.onPageChanged,
-      required this.pageController,
-      required this.builder,
-      required this.notes,
-      required this.loadingBuilder,
-      required this.decoration,
-      required this.itemCount,
-      required this.onLongPress,
-      required this.onTap});
+  const ImageViewBody({
+    super.key,
+    required this.onPageChanged,
+    required this.pageController,
+    required this.builder,
+    required this.notes,
+    required this.loadingBuilder,
+    required this.decoration,
+    required this.itemCount,
+    required this.onLongPress,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +44,9 @@ class ImageViewBody extends StatelessWidget {
           onLongPress: onLongPress,
           onTap: onTap,
           child: PhotoViewGallery.builder(
+            wantKeepAlive: true,
+            // scrollDirection:
+            //     verticalScrolling ? Axis.vertical : Axis.horizontal,
             loadingBuilder: loadingBuilder,
             enableRotation: true,
             backgroundDecoration: decoration,

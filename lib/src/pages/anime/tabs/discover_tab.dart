@@ -7,27 +7,63 @@
 
 part of '../anime.dart';
 
+class PagingContainer {
+  PagingContainer();
+
+  int page = 0;
+  double scrollPos = 0;
+
+  Future<int>? status;
+  final Map<void Function(int?, bool), Null> listeners = {};
+
+  late final RefreshingStatusInterface refreshingInterface =
+      RefreshingStatusInterface(
+    isRefreshing: () => status != null,
+    save: (s) {
+      status?.ignore();
+      status = s;
+
+      status?.then((value) {
+        for (final f in listeners.keys) {
+          f(value, false);
+        }
+      }).onError((error, stackTrace) {
+        for (final f in listeners.keys) {
+          f(null, false);
+        }
+      }).whenComplete(() => status = null);
+    },
+    register: (f) {
+      if (status != null) {
+        f(null, true);
+      }
+
+      listeners[f] = null;
+    },
+    unregister: (f) => listeners.remove(f),
+    reset: () {
+      status?.ignore();
+      status = null;
+    },
+  );
+
+  void updateScrollPos(double pos, {double? infoPos, int? selectedCell}) {
+    scrollPos = pos;
+  }
+}
+
 class _DiscoverTab extends StatefulWidget {
   final EdgeInsets viewInsets;
-  final RefreshingStatusInterface refreshingInterface;
   final void Function(bool) procPop;
   final List<AnimeEntry> entries;
-  final void Function(double, {double? infoPos, int? selectedCell})?
-      updateScrollPosition;
-  final double Function() initalScrollOffset;
-  final int Function() initalPage;
-  final void Function(int) savePage;
+  final PagingContainer pagingContainer;
   final AnimeAPI api;
 
   const _DiscoverTab({
     required this.procPop,
     required this.entries,
-    required this.initalPage,
+    required this.pagingContainer,
     required this.api,
-    required this.savePage,
-    required this.initalScrollOffset,
-    required this.updateScrollPosition,
-    required this.refreshingInterface,
     required this.viewInsets,
   });
 
@@ -42,7 +78,6 @@ class __DiscoverTabState extends State<_DiscoverTab> {
 
   GridSettingsAnimeDiscovery gridSettings = GridSettingsAnimeDiscovery.current;
 
-  late int _page = widget.initalPage();
   bool _reachedEnd = false;
 
   @override
@@ -71,7 +106,7 @@ class __DiscoverTabState extends State<_DiscoverTab> {
       (context) => GridFrame<AnimeEntry>(
         key: state.gridKey,
         getCell: (i) => widget.entries[i],
-        initalScrollPosition: widget.initalScrollOffset(),
+        initalScrollPosition: widget.pagingContainer.scrollPos,
         overrideOnPress: (context, cell) {
           Navigator.push(context, MaterialPageRoute(
             builder: (context) {
@@ -87,23 +122,21 @@ class __DiscoverTabState extends State<_DiscoverTab> {
         mainFocus: state.mainFocus,
         refresh: () async {
           widget.entries.clear();
-          widget.savePage(0);
-          _page = 0;
+          widget.pagingContainer.page = 0;
           _reachedEnd = false;
 
-          final p = await widget.api.top(_page);
+          final p = await widget.api.top(widget.pagingContainer.page);
 
           widget.entries.addAll(p);
 
           return widget.entries.length;
         },
-        updateScrollPosition: widget.updateScrollPosition,
-        refreshInterface: widget.refreshingInterface,
+        updateScrollPosition: widget.pagingContainer.updateScrollPos,
+        refreshInterface: widget.pagingContainer.refreshingInterface,
         loadNext: () async {
-          final p = await widget.api.top(_page + 1);
+          final p = await widget.api.top(widget.pagingContainer.page + 1);
 
-          _page += 1;
-          widget.savePage(_page);
+          widget.pagingContainer.page += 1;
 
           if (p.isEmpty) {
             _reachedEnd = true;

@@ -77,6 +77,8 @@ class ImageView<T extends Cell> extends StatefulWidget {
 
   final BuildContext? gridContext;
 
+  final bool ignoreLoadingBuilder;
+
   const ImageView({
     super.key,
     required this.updateTagScrollPos,
@@ -86,6 +88,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
     required this.onExit,
     this.predefinedIndexes,
     this.statistics,
+    this.ignoreLoadingBuilder = false,
     required this.getCell,
     required this.onNearEnd,
     required this.focusMain,
@@ -388,30 +391,33 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                               children: addInfo,
                             );
                     }),
-              bottomAppBar: ImageViewBottomAppBar(
-                  textController: noteTextController,
-                  addNote: () => noteListKey.currentState
-                      ?.addNote(drawCell(currentPage), currentPalette),
-                  showAddNoteButton: widget.noteInterface != null,
-                  children: widget.addIcons
-                          ?.call(drawCell(currentPage))
-                          .map(
-                            (e) => WrapGridActionButton(e.icon, () {
-                              e.onPress([drawCell(currentPage)]);
-                            }, false,
-                                followColorTheme: true,
-                                color: e.color,
-                                play: e.play,
-                                onLongPress: e.onLongPress == null
-                                    ? null
-                                    : () =>
-                                        e.onLongPress!([drawCell(currentPage)]),
-                                backgroundColor: e.backgroundColor,
-                                animate: e.animate,
-                                showOnlyWhenSingle: false),
-                          )
-                          .toList() ??
-                      const []),
+              bottomAppBar:
+                  widget.noteInterface == null || widget.addIcons == null
+                      ? null
+                      : ImageViewBottomAppBar(
+                          textController: noteTextController,
+                          addNote: () => noteListKey.currentState
+                              ?.addNote(drawCell(currentPage), currentPalette),
+                          showAddNoteButton: widget.noteInterface != null,
+                          children: widget.addIcons
+                                  ?.call(drawCell(currentPage))
+                                  .map(
+                                    (e) => WrapGridActionButton(e.icon, () {
+                                      e.onPress([drawCell(currentPage)]);
+                                    }, false,
+                                        followColorTheme: true,
+                                        color: e.color,
+                                        play: e.play,
+                                        onLongPress: e.onLongPress == null
+                                            ? null
+                                            : () => e.onLongPress!(
+                                                [drawCell(currentPage)]),
+                                        backgroundColor: e.backgroundColor,
+                                        animate: e.animate,
+                                        showOnlyWhenSingle: false),
+                                  )
+                                  .toList() ??
+                              const []),
               mainFocus: mainFocus,
               child: ImageViewBody(
                 onPageChanged: _onPageChanged,
@@ -428,14 +434,16 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                                     Theme.of(context).colorScheme.primary) ??
                             Colors.black,
                       ),
-                loadingBuilder: (context, event, idx) => loadingBuilder(
-                    context,
-                    event,
-                    idx,
-                    currentPage,
-                    wrapNotifiersKey,
-                    currentPalette,
-                    drawCell),
+                loadingBuilder: widget.ignoreLoadingBuilder
+                    ? null
+                    : (context, event, idx) => loadingBuilder(
+                        context,
+                        event,
+                        idx,
+                        currentPage,
+                        wrapNotifiersKey,
+                        currentPalette,
+                        drawCell),
                 itemCount: cellCount,
                 onTap: _onTap,
                 builder: galleryBuilder,

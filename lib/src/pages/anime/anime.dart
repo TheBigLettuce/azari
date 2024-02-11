@@ -8,6 +8,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
@@ -18,12 +19,14 @@ import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
+import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
 import 'package:gallery/src/net/anime/jikan.dart';
+import 'package:gallery/src/net/manga/manga_dex.dart';
 import 'package:gallery/src/pages/anime/info_pages/finished_anime_info_page.dart';
 import 'package:gallery/src/pages/anime/info_pages/discover_anime_info_page.dart';
 import 'package:gallery/src/pages/anime/info_pages/watching_anime_info_page.dart';
-import 'package:gallery/src/pages/manga/manga_page.dart';
+import 'package:gallery/src/pages/anime/tabs/manga_tab.dart';
 import 'package:gallery/src/pages/more/notes/tab_with_count.dart';
 import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
@@ -74,48 +77,16 @@ class _AnimePageState extends State<AnimePage>
       TabController(initialIndex: 1, length: 4, vsync: this);
 
   final List<AnimeEntry> _discoverEntries = [];
-
-  int _discoverPage = 0;
+  final List<MangaEntry> mangaEntries = [];
 
   int savedCount = 0;
 
-  double discoverScrollOffset = 0;
-
-  Future<int>? status;
-
-  final Map<void Function(int?, bool), Null> m = {};
-
+  final Dio client = Dio();
   final api = const Jikan();
+  late final mangaApi = MangaDex(client);
 
-  late final discoverInterface = RefreshingStatusInterface(
-    isRefreshing: () => status != null,
-    save: (s) {
-      status?.ignore();
-      status = s;
-
-      status?.then((value) {
-        for (final f in m.keys) {
-          f(value, false);
-        }
-      }).onError((error, stackTrace) {
-        for (final f in m.keys) {
-          f(null, false);
-        }
-      }).whenComplete(() => status = null);
-    },
-    register: (f) {
-      if (status != null) {
-        f(null, true);
-      }
-
-      m[f] = null;
-    },
-    unregister: (f) => m.remove(f),
-    reset: () {
-      status?.ignore();
-      status = null;
-    },
-  );
+  final discoverContainer = PagingContainer();
+  final mangaContainer = PagingContainer();
 
   @override
   void initState() {
@@ -147,6 +118,7 @@ class _AnimePageState extends State<AnimePage>
     watcherWatched.cancel();
     tabController.dispose();
     _textController.dispose();
+    client.close(force: true);
 
     super.dispose();
   }
@@ -164,6 +136,7 @@ class _AnimePageState extends State<AnimePage>
     }
 
     if (offsetIndex <= 0.5) {
+      SearchAnimePage.launchMangaApi(context, mangaApi);
       return true;
     }
 
@@ -201,7 +174,7 @@ class _AnimePageState extends State<AnimePage>
         isScrollable: true,
         controller: tabController,
         tabs: [
-          Tab(text: AppLocalizations.of(context)!.newsTab),
+          const Tab(text: "Manga"), // TODO: chane
           TabWithCount(AppLocalizations.of(context)!.watchingTab, savedCount),
           Tab(text: AppLocalizations.of(context)!.discoverTab),
           TabWithCount(AppLocalizations.of(context)!.finishedTab,
@@ -233,7 +206,12 @@ class _AnimePageState extends State<AnimePage>
         child: TabBarView(
           controller: tabController,
           children: [
-            MangaPage(),
+            MangaTab(
+              container: mangaContainer,
+              api: mangaApi,
+              elems: mangaEntries,
+              viewInsets: widget.viewPadding,
+            ),
             _WatchingTab(widget.viewPadding,
                 key: watchingKey, onDispose: _hideResetSelection),
             _DiscoverTab(
@@ -241,12 +219,7 @@ class _AnimePageState extends State<AnimePage>
               procPop: widget.procPop,
               entries: _discoverEntries,
               viewInsets: widget.viewPadding,
-              refreshingInterface: discoverInterface,
-              initalPage: () => _discoverPage,
-              initalScrollOffset: () => discoverScrollOffset,
-              updateScrollPosition: (offset, {infoPos, selectedCell}) =>
-                  discoverScrollOffset = offset,
-              savePage: (p) => _discoverPage = p,
+              pagingContainer: discoverContainer,
             ),
             _FinishedTab(widget.viewPadding,
                 key: finishedKey, onDispose: _hideResetSelection),

@@ -16,7 +16,9 @@ import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
+import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
+import 'package:gallery/src/pages/anime/manga/manga_inner.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
@@ -38,6 +40,54 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
   final Future<Map<I, G>> Function(AnimeSafeMode)? genres;
   final (I, String) Function(G) idFromGenre;
   final void Function(T) onPressed;
+
+  static void launchMangaApi(
+    BuildContext context,
+    MangaAPI api, {
+    String? search,
+    AnimeSafeMode safeMode = AnimeSafeMode.safe,
+    MangaId? initalGenreId,
+  }) {
+    Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        return SearchAnimePage<MangaEntry, MangaId, MangaGenre>(
+          initalText: search,
+          explicit: safeMode,
+          initalGenreId: initalGenreId,
+          idFromGenre: (genre) {
+            return (genre.id, genre.name);
+          },
+          onPressed: (cell) {
+            Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return MangaInnerPage(
+                  entry: Future.value(cell),
+                  api: api,
+                );
+              },
+            ));
+          },
+          search: (text, page, id, safeMode) {
+            return api.search(text,
+                page: page,
+                includesTag: id != null ? [id] : null,
+                safeMode: safeMode);
+          },
+          genres: (safeMode) {
+            return api.tags().then((value) {
+              final m = <MangaId, MangaGenre>{};
+
+              for (final e in value) {
+                m[e.id] = e;
+              }
+
+              return m;
+            });
+          },
+        );
+      },
+    ));
+  }
 
   static void launchAnimeApi(
     BuildContext context,

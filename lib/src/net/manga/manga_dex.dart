@@ -39,10 +39,12 @@ class MangaDex implements MangaAPI {
 
     final res = await client.getUriLog(
       Uri.https(site.url, "/manga", {
-        "includes[]": "cover_art",
-        // "order[rating]": "asc",
+        "includes[0]": "cover_art",
+        "includes[1]": "manga",
+        "order[followedCount]": "desc",
+        "order[relevance]": "desc",
         "limit": count.toString(),
-        "offset": (page * 10).toString(),
+        "offset": (page * count).toString(),
         "title": s,
         "contentRating[0]": switch (safeMode) {
           AnimeSafeMode.safe => "safe",
@@ -68,8 +70,8 @@ class MangaDex implements MangaAPI {
   }
 
   @override
-  Future<List<MangaEntry>> top(int page) {
-    return search("", page: page);
+  Future<List<MangaEntry>> top(int page, int count) {
+    return search("", page: page, count: count);
   }
 
   @override
@@ -97,10 +99,166 @@ class MangaDex implements MangaAPI {
       options: Options(responseType: ResponseType.json),
     );
 
-    return (res.data["statistics"] as Map<String, dynamic>)
+    final t = (res.data["statistics"] as Map<String, dynamic>)
         .values
         .first["rating"]["average"];
+
+    return t == null ? -1 : (t as num).toDouble();
   }
+
+  @override
+  Future<MangaEntry> single(MangaId id) async {
+    final res = await client.getUriLog(
+      Uri.https(site.url, "/manga/${id.toString()}", {
+        "includes[0]": "cover_art",
+        "includes[1]": "manga",
+      }),
+      const LogReq("Manga single", _log),
+      options: Options(responseType: ResponseType.json),
+    );
+
+    if (res.data == null || res.data["result"] != "ok") {
+      throw "empty result";
+    }
+
+    return _fromJson([res.data["data"]])[0];
+  }
+
+  @override
+  Future<List<(List<MangaChapter>, String)>> chapters(
+    MangaEntry e, {
+    int page = 0,
+    int count = 100,
+    MangaChapterOrder order = MangaChapterOrder.desc,
+  }) async {
+    final res = await client.getUriLog(
+        Uri.https(site.url, "/manga/${e.id}/feed", {
+          "limit": count.toString(),
+          "offset": (page * count).toString(),
+          "contentRating[0]": "safe",
+          "contentRating[1]": "suggestive",
+          "contentRating[2]": "erotica",
+          "contentRating[3]": "pornographic",
+          "includes[]": "scanlation_group",
+          "order[volume]": order == MangaChapterOrder.asc ? "asc" : "desc",
+          "order[chapter]": order == MangaChapterOrder.asc ? "asc" : "desc",
+          "translatedLanguage[]": "en",
+        }),
+        LogReq("Manga chapters page $page", _log));
+
+    return _fromJsonChapters("en", res.data["data"]);
+  }
+
+  @override
+  Future<List<MangaImage>> imagesForChapter(MangaId id) async {
+    try {
+      final res = await client.getUriLog(
+        Uri.https(site.url, "/at-home/server/$id"),
+        const LogReq("Manga single", _log),
+        options: Options(responseType: ResponseType.json),
+      );
+
+      if (res.data == null || res.data["result"] == null) {
+        throw "empty result";
+      }
+
+      final String baseUrl = res.data["baseUrl"];
+      final String hash = res.data["chapter"]["hash"];
+
+      final ret = _fromJsonImages(res.data["chapter"]["data"],
+          baseUrl: baseUrl, hash: hash);
+
+      return ret;
+    } catch (e, stackTrace) {
+      LogTarget.manga.logDefaultImportant(
+          "unwrapping manga chapter images json".errorMessage(e), stackTrace);
+
+      rethrow;
+    }
+  }
+
+  @override
+  String browserUrl(MangaEntry e) => "https://mangadex.org/title/${e.id}";
+}
+
+List<MangaImage> _fromJsonImages(
+  List<dynamic> l, {
+  required String baseUrl,
+  required String hash,
+}) {
+  final ret = <MangaImage>[];
+
+  for (final e in l.indexed) {
+    ret.add(MangaImage("$baseUrl/data/$hash/${e.$2}", e.$1));
+  }
+
+  return ret;
+}
+
+List<(List<MangaChapter>, String)> _fromJsonChapters(
+    String lang, List<dynamic> l) {
+  final ret = <String, List<MangaChapter>>{};
+
+  try {
+    for (final e in l) {
+      final attr = e["attributes"];
+      if (attr["translatedLanguage"] == lang) {
+        final String volume = attr["volume"] ?? "?";
+        final l = ret[volume];
+        if (l == null) {
+          ret[volume] = [];
+        }
+
+        final int pages = attr["pages"];
+        if (pages == 0) {
+          continue;
+        }
+
+        ret[volume]!.add(MangaChapter(
+            chapter: attr["chapter"] ?? "0",
+            pages: pages,
+            title: attr["title"] ?? "",
+            volume: volume,
+            translator: _getScanlationGroup(e["relationships"]) ?? "",
+            id: MangaStringId(e["id"])));
+      }
+    }
+  } catch (e, stackTrace) {
+    LogTarget.manga.logDefaultImportant(
+        "unwrapping manga chapter json".errorMessage(e), stackTrace);
+
+    rethrow;
+  }
+
+  final ret1 = ret.entries.map((e) => (e.value, e.key)).toList();
+  // ret1.sort((e1, e2) {
+  //   final r = e1.$2.compareTo(e2.$2);
+
+  //   return r;
+  //   // r == 0
+  //   //     ? 0
+  //   //     : r.isNegative
+  //   //         ? r.abs()
+  //   //         : -r;
+  // });
+
+  // for (final e in ret1) {
+  //   e.$1.sort((e1, e2) {
+  //     return e1.chapter.compareTo(e2.chapter);
+  //   });
+  // }
+
+  return ret1;
+}
+
+String? _getScanlationGroup(List<dynamic> l) {
+  for (final e in l) {
+    if (e["type"] == "scanlation_group") {
+      return e["attributes"]["name"];
+    }
+  }
+
+  return null;
 }
 
 List<MangaEntry> _fromJson(List<dynamic> l) {
@@ -131,6 +289,8 @@ List<MangaEntry> _fromJson(List<dynamic> l) {
             ? _tagFirstIndex("ja-ro", altTitles)
             : null;
 
+        final volumes = attr["lastVolume"];
+
         return MangaEntry(
           status: attr["status"],
           imageUrl:
@@ -139,7 +299,7 @@ List<MangaEntry> _fromJson(List<dynamic> l) {
           year: attr["year"] ?? 0,
           safety: safe,
           genres: _genres(attr["tags"]),
-          relations: const [],
+          relations: _mangaRelations(e["relationships"]),
           titleSynonyms:
               _tagEntries(originalLanguage, altTitles, titleJapanese?.$2) +
                   _tagEntries("en", altTitles, titleEnglish?.$2) +
@@ -152,6 +312,8 @@ List<MangaEntry> _fromJson(List<dynamic> l) {
           id: MangaStringId(id),
           animeIds: const [],
           description: _tagOrFirst("en", attr["description"]),
+          demographics: attr["publicationDemographic"] ?? "",
+          volumes: (volumes is String ? int.tryParse(volumes) : volumes) ?? -1,
         );
       },
     );
@@ -170,6 +332,26 @@ List<MangaEntry> _fromJson(List<dynamic> l) {
 //   print(t);
 //   return t;
 // }
+
+List<MangaRelation> _mangaRelations(List<dynamic> l) {
+  final ret = <MangaRelation>[];
+
+  for (final e in l) {
+    if (e["type"] == "manga") {
+      final attr = e["attributes"];
+      if (attr == null) {
+        continue;
+      }
+
+      ret.add(MangaRelation(
+        id: MangaStringId(e["id"]),
+        name: _tagOrFirst("en", attr["title"]),
+      ));
+    }
+  }
+
+  return ret;
+}
 
 Map<String, dynamic> _findType(String s, List<dynamic> l) {
   for (final e in l) {

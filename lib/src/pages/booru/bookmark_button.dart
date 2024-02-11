@@ -247,35 +247,9 @@ class __WrapEntriesState extends State<_WrapEntries> {
             onTap: () => launchGrid(context, e),
             // enabled: false,
             padding: const EdgeInsets.only(left: 16),
-            child: Padding(
-              padding: const EdgeInsets.only(top: 8, bottom: 8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    e.tags,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(0.9),
-                          letterSpacing: -0.4,
-                        ),
-                  ),
-                  Text(
-                    e.booru.string,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurfaceVariant
-                              .withOpacity(0.8),
-                          letterSpacing: 0.8,
-                        ),
-                  )
-                ],
-              ),
+            child: BookmarkListTile(
+              title: e.tags,
+              subtitle: e.booru.string,
             ),
           ),
         );
@@ -289,6 +263,48 @@ class __WrapEntriesState extends State<_WrapEntries> {
         : Column(
             children: makeList(),
           );
+  }
+}
+
+class BookmarkListTile extends StatelessWidget {
+  final String title;
+  final String subtitle;
+
+  const BookmarkListTile({
+    super.key,
+    required this.subtitle,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.9),
+                  letterSpacing: -0.4,
+                ),
+          ),
+          Text(
+            subtitle,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withOpacity(0.8),
+                  letterSpacing: 0.8,
+                ),
+          )
+        ],
+      ),
+    );
   }
 }
 

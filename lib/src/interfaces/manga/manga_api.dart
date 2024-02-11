@@ -27,12 +27,28 @@ enum MangaMeta {
   });
 }
 
+enum MangaChapterOrder {
+  desc,
+  asc;
+}
+
 abstract class MangaAPI {
   MangaMeta get site;
 
+  String browserUrl(MangaEntry e);
+
   Future<List<MangaGenre>> tags();
 
+  Future<List<MangaImage>> imagesForChapter(MangaId id);
+
   Future<double> score(MangaEntry e);
+  Future<MangaEntry> single(MangaId id);
+  Future<List<(List<MangaChapter>, String)>> chapters(
+    MangaEntry e, {
+    int page = 0,
+    int count = 10,
+    MangaChapterOrder order = MangaChapterOrder.desc,
+  });
 
   Future<List<MangaEntry>> search(
     String s, {
@@ -42,11 +58,73 @@ abstract class MangaAPI {
     List<MangaId>? includesTag,
   });
 
-  Future<List<MangaEntry>> top(int page);
+  Future<List<MangaEntry>> top(int page, int count);
+}
+
+class MangaImage implements Cell {
+  MangaImage(
+    this.url,
+    this.order,
+  );
+
+  final int order;
+  final String url;
+
+  @override
+  int? isarId;
+
+  @override
+  List<Widget>? addButtons(BuildContext context) => null;
+
+  @override
+  List<Widget>? addInfo(BuildContext context, extra, AddInfoColorData colors) =>
+      null;
+
+  @override
+  List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
+
+  @override
+  String alias(bool isList) => order.toString();
+
+  @override
+  Contentable content() => NetImage(CachedNetworkImageProvider(url));
+
+  @override
+  String? fileDownloadUrl() => null;
+
+  @override
+  List<Sticker> stickers(BuildContext context) => const [];
+
+  @override
+  ImageProvider<Object>? thumbnail() => null;
+
+  @override
+  Key uniqueKey() => ValueKey(url);
+}
+
+class MangaChapter {
+  const MangaChapter({
+    required this.chapter,
+    required this.pages,
+    required this.title,
+    required this.volume,
+    required this.id,
+    required this.translator,
+  });
+  final MangaId id;
+
+  final String title;
+  final String chapter;
+  final String volume;
+  final String translator;
+
+  final int pages;
 }
 
 class MangaEntry implements Cell {
   MangaEntry({
+    required this.demographics,
+    required this.volumes,
     required this.status,
     required this.imageUrl,
     required this.year,
@@ -72,8 +150,10 @@ class MangaEntry implements Cell {
   final String status;
   final String imageUrl;
   final String thumbUrl;
+  final String demographics;
 
   final int year;
+  final int volumes;
 
   final MangaMeta site;
   final MangaId id;

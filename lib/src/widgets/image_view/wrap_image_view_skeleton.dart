@@ -20,20 +20,21 @@ class WrapImageViewSkeleton<T extends Cell> extends StatelessWidget {
   final Map<ShortcutActivator, void Function()> bindings;
   final Widget child;
   final FocusNode mainFocus;
-  final Widget bottomAppBar;
+  final Widget? bottomAppBar;
   final Widget? endDrawer;
   final PaletteGenerator? currentPalette;
   final GlobalKey<ScaffoldState> scaffoldKey;
 
-  const WrapImageViewSkeleton(
-      {super.key,
-      required this.bindings,
-      required this.mainFocus,
-      required this.scaffoldKey,
-      required this.currentPalette,
-      required this.bottomAppBar,
-      required this.endDrawer,
-      required this.child});
+  const WrapImageViewSkeleton({
+    super.key,
+    required this.bindings,
+    required this.mainFocus,
+    required this.scaffoldKey,
+    required this.currentPalette,
+    required this.bottomAppBar,
+    required this.endDrawer,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
