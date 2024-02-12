@@ -126,7 +126,7 @@ mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
 
   PhotoViewGalleryPageOptions _makeNetImage(ImageProvider provider) {
     final options = PhotoViewGalleryPageOptions(
-      tightMode: true,
+      // tightMode: true,
       // gestureDetectorBehavior: HitTestBehavior.opaque,
       minScale: PhotoViewComputedScale.contained * 0.8,
       maxScale: PhotoViewComputedScale.covered * 1.8,

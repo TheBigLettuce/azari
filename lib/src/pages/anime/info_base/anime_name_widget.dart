@@ -37,6 +37,8 @@ class AnimeNameWidget extends StatelessWidget {
               title: this.title,
               child: Text(
                 this.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: safeMode == AnimeSafeMode.h ||
                             safeMode == AnimeSafeMode.ecchi
@@ -49,6 +51,8 @@ class AnimeNameWidget extends StatelessWidget {
             ),
             Text(
               "$titleEnglish / $titleJapanese",
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: Theme.of(context)
                         .colorScheme

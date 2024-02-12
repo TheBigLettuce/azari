@@ -11,22 +11,33 @@ class GestureDeadZones extends StatelessWidget {
   final bool left;
   final bool right;
 
+  final void Function()? onPressedLeft;
+  final void Function()? onPressedRight;
+
   final Widget child;
 
-  const GestureDeadZones(
-      {super.key, required this.child, this.left = false, this.right = false});
+  const GestureDeadZones({
+    super.key,
+    this.left = false,
+    this.right = false,
+    this.onPressedLeft,
+    this.onPressedRight,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
     final systemInsets = MediaQuery.systemGestureInsetsOf(context);
-    if (systemInsets == EdgeInsets.zero) {
+    if (systemInsets == EdgeInsets.zero &&
+        onPressedLeft == null &&
+        onPressedRight == null) {
       return child;
     }
 
     return Stack(
       children: [
         child,
-        if (left)
+        if (left || onPressedLeft != null)
           Align(
             alignment: Alignment.bottomLeft,
             child: Padding(
@@ -34,11 +45,23 @@ class GestureDeadZones extends StatelessWidget {
                   top: kToolbarHeight +
                       MediaQuery.systemGestureInsetsOf(context).top),
               child: AbsorbPointer(
-                child: SizedBox(width: systemInsets.left, child: Container()),
+                absorbing: onPressedRight == null,
+                child: SizedBox(
+                    width: systemInsets.left +
+                        (onPressedLeft != null
+                            ? MediaQuery.sizeOf(context).width * 0.18
+                            : 0),
+                    child: onPressedLeft != null
+                        ? GestureDetector(
+                            behavior: HitTestBehavior.translucent,
+                            onTap: onPressedLeft,
+                            child: const SizedBox.expand(),
+                          )
+                        : Container()),
               ),
             ),
           ),
-        if (right)
+        if (right || onPressedRight != null)
           Align(
             alignment: Alignment.bottomRight,
             child: Padding(
@@ -46,7 +69,19 @@ class GestureDeadZones extends StatelessWidget {
                   top: kToolbarHeight +
                       MediaQuery.systemGestureInsetsOf(context).top),
               child: AbsorbPointer(
-                child: SizedBox(width: systemInsets.left, child: Container()),
+                absorbing: onPressedRight == null,
+                child: SizedBox(
+                    width: systemInsets.right +
+                        (onPressedRight != null
+                            ? MediaQuery.sizeOf(context).width * 0.18
+                            : 0),
+                    child: onPressedRight != null
+                        ? GestureDetector(
+                            behavior: HitTestBehavior.translucent,
+                            onTap: onPressedRight,
+                            child: const SizedBox.expand(),
+                          )
+                        : Container()),
               ),
             ),
           ),

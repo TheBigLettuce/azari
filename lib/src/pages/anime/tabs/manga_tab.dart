@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
@@ -89,6 +90,15 @@ class _MangaTabState extends State<MangaTab> {
         selectionGlue: GlueProvider.generateOf<AnimeEntry, MangaEntry>(context),
         mainFocus: state.mainFocus,
         overrideOnPress: (context, cell) {
+          CompactMangaData.addAll([
+            CompactMangaData(
+              mangaId: cell.id.toString(),
+              site: cell.site,
+              thumbUrl: cell.thumbUrl,
+              title: cell.title,
+            )
+          ]);
+
           Navigator.push(context, MaterialPageRoute(
             builder: (context) {
               return MangaInnerPage(

@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:dio/dio.dart';
+import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
@@ -220,7 +221,7 @@ List<(List<MangaChapter>, String)> _fromJsonChapters(
             title: attr["title"] ?? "",
             volume: volume,
             translator: _getScanlationGroup(e["relationships"]) ?? "",
-            id: MangaStringId(e["id"])));
+            id: e["id"]));
       }
     }
   } catch (e, stackTrace) {
@@ -286,7 +287,7 @@ List<MangaEntry> _fromJson(List<dynamic> l) {
         final titleEnglish = _tagFirstIndex("en", altTitles);
         final titleJapanese = _tagFirstIndex(originalLanguage, altTitles);
         final titleJaJo = originalLanguage == "ja"
-            ? _tagFirstIndex("ja-ro", altTitles)
+            ? _tagFirstIndex("ja-ro", altTitles, true)
             : null;
 
         final volumes = attr["lastVolume"];
@@ -428,12 +429,43 @@ List<String> _tagEntries(String tag, List<dynamic> l, int? exclude) {
   return ret;
 }
 
-(String, int)? _tagFirstIndex(String tag, List<dynamic> l) {
-  for (final e in l.indexed) {
-    final e1 = e.$2[tag];
-    if (e1 != null) {
-      return (e1, e.$1);
+(String, int)? _tagFirstIndex(String tag, List<dynamic> l,
+    [bool longest = false]) {
+  if (!longest) {
+    for (final e in l.indexed) {
+      final e1 = e.$2[tag];
+      if (e1 != null) {
+        return (e1, e.$1);
+      }
     }
+  } else {
+    final ret = <(String, int)>[];
+
+    for (final e in l.indexed) {
+      final e1 = e.$2[tag];
+      if (e1 != null) {
+        ret.add((e1, e.$1));
+      }
+    }
+
+    if (ret.isEmpty) {
+      return null;
+    }
+
+    if (ret.length == 1) {
+      return ret.first;
+    }
+
+    late (String, int) ret2;
+    int longest = 0;
+    for (final e in ret) {
+      if (e.$1.length > longest) {
+        longest = e.$1.length;
+        ret2 = e;
+      }
+    }
+
+    return ret2;
   }
 
   return null;

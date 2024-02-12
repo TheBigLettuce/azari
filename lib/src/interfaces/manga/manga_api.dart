@@ -10,6 +10,7 @@ import 'package:flutter/src/foundation/key.dart';
 import 'package:flutter/src/painting/image_provider.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/icon_data.dart';
+import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
@@ -84,7 +85,7 @@ class MangaImage implements Cell {
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
 
   @override
-  String alias(bool isList) => order.toString();
+  String alias(bool isList) => (order + 1).toString();
 
   @override
   Contentable content() => NetImage(CachedNetworkImageProvider(url));
@@ -100,25 +101,6 @@ class MangaImage implements Cell {
 
   @override
   Key uniqueKey() => ValueKey(url);
-}
-
-class MangaChapter {
-  const MangaChapter({
-    required this.chapter,
-    required this.pages,
-    required this.title,
-    required this.volume,
-    required this.id,
-    required this.translator,
-  });
-  final MangaId id;
-
-  final String title;
-  final String chapter;
-  final String volume;
-  final String translator;
-
-  final int pages;
 }
 
 class MangaEntry implements Cell {

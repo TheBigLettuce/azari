@@ -51,6 +51,10 @@ class _MangaInnerPageState extends State<MangaInnerPage>
           score = value;
 
           setState(() {});
+        }).onError((error, stackTrace) {
+          score = -1;
+
+          setState(() {});
         }));
   }
 
