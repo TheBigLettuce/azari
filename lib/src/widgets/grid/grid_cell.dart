@@ -49,24 +49,24 @@ class GridCell<T extends Cell> extends StatefulWidget {
 
   final bool animate;
 
-  const GridCell(
-      {super.key,
-      required T cell,
-      required this.indx,
-      required this.onPressed,
-      required this.tight,
-      required this.download,
-      this.forceAlias,
-      bool? hidealias,
-      this.animate = false,
-      this.shadowOnTop = false,
-      this.circle = false,
-      this.labelAtBottom = false,
-      required this.isList,
-      this.lines,
-      this.ignoreStickers = false,
-      this.onLongPress})
-      : _data = cell,
+  const GridCell({
+    super.key,
+    required T cell,
+    required this.indx,
+    required this.onPressed,
+    required this.tight,
+    required this.download,
+    this.forceAlias,
+    bool? hidealias,
+    this.animate = false,
+    this.shadowOnTop = false,
+    this.circle = false,
+    this.labelAtBottom = false,
+    required this.isList,
+    this.lines,
+    this.ignoreStickers = false,
+    this.onLongPress,
+  })  : _data = cell,
         hideAlias = hidealias ?? false;
 
   @override

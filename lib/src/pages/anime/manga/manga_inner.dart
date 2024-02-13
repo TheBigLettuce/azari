@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_info_app_bar.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
@@ -26,11 +27,13 @@ import 'package:url_launcher/url_launcher.dart';
 class MangaInnerPage extends StatefulWidget {
   final Future<MangaEntry> entry;
   final MangaAPI api;
+  final void Function()? onDispose;
 
   const MangaInnerPage({
     super.key,
     required this.entry,
     required this.api,
+    this.onDispose,
   });
 
   @override
@@ -47,20 +50,32 @@ class _MangaInnerPageState extends State<MangaInnerPage>
   void initState() {
     super.initState();
 
-    widget.entry.then((value) => widget.api.score(value).then((value) {
-          score = value;
+    widget.entry.then((value) {
+      CompactMangaData.addAll([
+        CompactMangaData(
+          mangaId: value.id.toString(),
+          site: value.site,
+          thumbUrl: value.thumbUrl,
+          title: value.title,
+        ),
+      ]);
 
-          setState(() {});
-        }).onError((error, stackTrace) {
-          score = -1;
+      return widget.api.score(value).then((value) {
+        score = value;
 
-          setState(() {});
-        }));
+        setState(() {});
+      }).onError((error, stackTrace) {
+        score = -1;
+
+        setState(() {});
+      });
+    });
   }
 
   @override
   void dispose() {
     scrollController.dispose();
+    widget.onDispose?.call();
 
     state.dispose();
 

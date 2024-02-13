@@ -44,8 +44,8 @@ abstract class MangaAPI {
 
   Future<double> score(MangaEntry e);
   Future<MangaEntry> single(MangaId id);
-  Future<List<(List<MangaChapter>, String)>> chapters(
-    MangaEntry e, {
+  Future<List<MangaChapter>> chapters(
+    MangaId id, {
     int page = 0,
     int count = 10,
     MangaChapterOrder order = MangaChapterOrder.desc,
@@ -66,8 +66,10 @@ class MangaImage implements Cell {
   MangaImage(
     this.url,
     this.order,
+    this.maxPages,
   );
 
+  final int maxPages;
   final int order;
   final String url;
 
@@ -85,7 +87,7 @@ class MangaImage implements Cell {
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
 
   @override
-  String alias(bool isList) => (order + 1).toString();
+  String alias(bool isList) => "${order + 1} / $maxPages";
 
   @override
   Contentable content() => NetImage(CachedNetworkImageProvider(url));

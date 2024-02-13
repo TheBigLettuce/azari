@@ -44,20 +44,26 @@ class GestureDeadZones extends StatelessWidget {
               padding: EdgeInsets.only(
                   top: kToolbarHeight +
                       MediaQuery.systemGestureInsetsOf(context).top),
-              child: AbsorbPointer(
-                absorbing: onPressedRight == null,
-                child: SizedBox(
-                    width: systemInsets.left +
-                        (onPressedLeft != null
-                            ? MediaQuery.sizeOf(context).width * 0.18
-                            : 0),
-                    child: onPressedLeft != null
-                        ? GestureDetector(
-                            behavior: HitTestBehavior.translucent,
-                            onTap: onPressedLeft,
-                            child: const SizedBox.expand(),
-                          )
-                        : Container()),
+              child: Stack(
+                alignment: Alignment.centerLeft,
+                children: [
+                  if (left)
+                    AbsorbPointer(
+                      child: SizedBox(
+                        width: systemInsets.left,
+                        child: Container(),
+                      ),
+                    ),
+                  if (onPressedLeft != null)
+                    SizedBox(
+                      width: MediaQuery.sizeOf(context).width * 0.18,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: onPressedLeft,
+                        child: const SizedBox.expand(),
+                      ),
+                    )
+                ],
               ),
             ),
           ),
@@ -68,20 +74,26 @@ class GestureDeadZones extends StatelessWidget {
               padding: EdgeInsets.only(
                   top: kToolbarHeight +
                       MediaQuery.systemGestureInsetsOf(context).top),
-              child: AbsorbPointer(
-                absorbing: onPressedRight == null,
-                child: SizedBox(
-                    width: systemInsets.right +
-                        (onPressedRight != null
-                            ? MediaQuery.sizeOf(context).width * 0.18
-                            : 0),
-                    child: onPressedRight != null
-                        ? GestureDetector(
-                            behavior: HitTestBehavior.translucent,
-                            onTap: onPressedRight,
-                            child: const SizedBox.expand(),
-                          )
-                        : Container()),
+              child: Stack(
+                alignment: Alignment.centerRight,
+                children: [
+                  if (right)
+                    AbsorbPointer(
+                      child: SizedBox(
+                        width: systemInsets.right,
+                        child: Container(),
+                      ),
+                    ),
+                  if (onPressedRight != null)
+                    SizedBox(
+                      width: MediaQuery.sizeOf(context).width * 0.18,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: onPressedRight,
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),

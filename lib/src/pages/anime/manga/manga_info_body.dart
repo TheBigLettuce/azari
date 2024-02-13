@@ -141,7 +141,7 @@ class _MangaChaptersState extends State<MangaChapters> {
         }
 
         page = chpt.$2;
-        list.addAll(chpt.$1.splitVolumes());
+        list.addAll(chpt.$1.splitVolumes(widget.entry.id.toString(), settings));
 
         return list;
       }()
@@ -162,7 +162,7 @@ class _MangaChaptersState extends State<MangaChapters> {
 
     if (chpt != null) {
       list.clear();
-      list.addAll(chpt.$1.splitVolumes());
+      list.addAll(chpt.$1.splitVolumes(widget.entry.id.toString(), settings));
 
       page = chpt.$2;
     }
@@ -187,6 +187,21 @@ class _MangaChaptersState extends State<MangaChapters> {
                   },
                   child:
                       settings.hideRead ? Text("Show read") : Text("Hide read"),
+                ),
+                PopupMenuItem(
+                  onTap: () {
+                    SavedMangaChapters.clear(
+                      widget.entry.id.toString(),
+                      widget.entry.site,
+                    );
+
+                    list.clear();
+                    page = 0;
+                    reachedEnd = false;
+
+                    setState(() {});
+                  },
+                  child: Text("Clear"),
                 ),
               ];
             },
@@ -226,8 +241,6 @@ class _MangaChaptersState extends State<MangaChapters> {
                   return list;
                 }();
 
-                print("object");
-
                 setState(() {});
               }
             },
@@ -264,23 +277,23 @@ class _MangaChaptersState extends State<MangaChapters> {
 
   void _loadNextChapters() {
     _future2 = widget.api
-        .chapters(widget.entry, page: page, order: MangaChapterOrder.asc)
+        .chapters(widget.entry.id, page: page, order: MangaChapterOrder.asc)
         .then((value) {
-      list.addAll(value);
+      list.addAll(value.splitVolumes(widget.entry.id.toString(), settings));
 
       page += 1;
       if (value.isEmpty) {
         reachedEnd = true;
       } else {
-        SavedMangaChapters.add(widget.entry.id.toString(), widget.entry.site,
-            value.joinOrdered(), page);
+        SavedMangaChapters.add(
+            widget.entry.id.toString(), widget.entry.site, value, page);
       }
 
       _future2 = null;
 
       setState(() {});
 
-      return value;
+      return list;
     });
 
     setState(() {});
@@ -288,16 +301,19 @@ class _MangaChaptersState extends State<MangaChapters> {
 
   void _loadChapters() {
     _future = widget.api
-        .chapters(widget.entry, page: page, order: MangaChapterOrder.asc)
+        .chapters(widget.entry.id, page: page, order: MangaChapterOrder.asc)
         .then((value) {
-      list.addAll(value);
+      list.addAll(value.splitVolumes(widget.entry.id.toString(), settings));
       page += 1;
+
       if (value.isNotEmpty) {
-        SavedMangaChapters.add(widget.entry.id.toString(), widget.entry.site,
-            value.joinOrdered(), page);
+        SavedMangaChapters.add(
+            widget.entry.id.toString(), widget.entry.site, value, page);
+      } else {
+        reachedEnd = true;
       }
 
-      return value;
+      return list;
     }).whenComplete(() {
       _future = null;
 
@@ -312,7 +328,7 @@ class _MangaChaptersState extends State<MangaChapters> {
     return FutureBuilder(
       future: _future,
       builder: (context, snapshot) {
-        if (snapshot.hasData) {
+        if (snapshot.hasData && list.isNotEmpty) {
           return ConstrainedBox(
             constraints: BoxConstraints(
               maxHeight: MediaQuery.sizeOf(context).height * 0.4,
@@ -321,21 +337,28 @@ class _MangaChaptersState extends State<MangaChapters> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const BodySegmentLabel(text: "Chapters"), // TODO: change
-                if (list.isEmpty)
-                  const EmptyWidget(mini: true)
-                else
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 8),
-                      child: CustomScrollView(
-                        primary: false,
-                        scrollDirection: Axis.vertical,
-                        slivers: makeSlivers(context, list),
-                      ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: CustomScrollView(
+                      primary: false,
+                      scrollDirection: Axis.vertical,
+                      slivers: makeSlivers(context, list),
                     ),
                   ),
+                ),
               ],
             ),
+          );
+        } else if (reachedEnd && list.isEmpty) {
+          return const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              BodySegmentLabel(text: "Chapters"), // TODO: change
+              EmptyWidget(
+                mini: true,
+              )
+            ],
           );
         } else {
           return _future != null
@@ -398,60 +421,23 @@ class __TileState extends State<_Tile> {
                   widget.api.imagesForChapter(MangaStringId(widget.chapter.id));
               final overlayColor = Theme.of(context).colorScheme.background;
 
-              Navigator.push(context, MaterialPageRoute(
-                builder: (context) {
-                  return FutureBuilder(
-                    future: f,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        final chapters = snapshot.data!;
+              ReadMangaChapter.launchReader(
+                context,
+                f,
+                widget.overlayColor ?? overlayColor,
+                api: widget.api,
+                onNextPage: (currentPage) {
+                  setState(() {
+                    progress = currentPage + 1;
+                  });
 
-                        return ImageView<MangaImage>(
-                          ignoreLoadingBuilder: true,
-                          switchPageOnTapEdges: true,
-                          pageChange: (state) {
-                            ReadMangaChapter.setProgress(
-                              state.currentPage + 1,
-                              siteMangaId: widget.entry.id.toString(),
-                              chapterId: widget.chapter.id.toString(),
-                            );
-
-                            setState(() {
-                              progress = state.currentPage + 1;
-                            });
-
-                            if (state.currentPage + 1 == widget.chapter.pages) {
-                              widget.finishRead();
-                            }
-                          },
-                          ignoreEndDrawer: true,
-                          updateTagScrollPos: (_, __) {},
-                          cellCount: chapters.length,
-                          scrollUntill: (_) {},
-                          startingCell: progress != null ? progress! - 1 : 0,
-                          onExit: () {},
-                          getCell: (i) => chapters[i],
-                          onNearEnd: null,
-                          focusMain: () {},
-                          systemOverlayRestoreColor:
-                              widget.overlayColor ?? overlayColor,
-                        );
-                      } else {
-                        return Scaffold(
-                          appBar: snapshot.hasError
-                              ? AppBar(
-                                  leading: const BackButton(),
-                                )
-                              : null,
-                          body: const Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                        );
-                      }
-                    },
-                  );
+                  if (currentPage + 1 == widget.chapter.pages) {
+                    widget.finishRead();
+                  }
                 },
-              ));
+                mangaId: widget.entry.id,
+                chapterId: widget.chapter.id,
+              );
             },
       contentPadding: EdgeInsets.zero,
       subtitle: Text("${widget.chapter.title} (${widget.chapter.translator})"),
@@ -477,43 +463,3 @@ class __TileState extends State<_Tile> {
     );
   }
 }
-
-
-// class VolumePanel extends StatelessWidget {
-//   final List<MangaChapter> chapters;
-//   final String volume;
-
-//   const VolumePanel({
-//     super.key,
-//     required this.chapters,
-//     required this.volume,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Padding(
-//       padding: const EdgeInsets.only(left: 8),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         mainAxisSize: MainAxisSize.min,
-//         children: [
-//           Padding(
-//             padding: const EdgeInsets.only(bottom: 12, top: 16),
-//             child: Text(
-//               "Volume $volume",
-//               style: SettingsLabel.defaultStyle(context),
-//             ),
-//           ),
-//           Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             mainAxisSize: MainAxisSize.min,
-//             children: chapters
-//                 .map((e) => BookmarkListTile(
-//                     subtitle: "${e.title} (${e.translator})", title: e.chapter))
-//                 .toList(),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }

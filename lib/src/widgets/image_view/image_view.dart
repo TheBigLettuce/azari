@@ -80,6 +80,8 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final bool ignoreLoadingBuilder;
   final bool switchPageOnTapEdges;
 
+  final List<Widget> appBarItems;
+
   const ImageView({
     super.key,
     required this.updateTagScrollPos,
@@ -88,6 +90,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
     required this.startingCell,
     required this.onExit,
     this.predefinedIndexes,
+    this.appBarItems = const [],
     this.statistics,
     this.ignoreLoadingBuilder = false,
     required this.getCell,
@@ -359,6 +362,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
           previousPallete: previousPallete,
           child: WrapImageViewSkeleton<T>(
               scaffoldKey: key,
+              addAppBarActions: widget.appBarItems,
               bindings: bindings ?? {},
               currentPalette: currentPalette,
               endDrawer: widget.ignoreEndDrawer

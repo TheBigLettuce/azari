@@ -24,6 +24,7 @@ class WrapImageViewSkeleton<T extends Cell> extends StatelessWidget {
   final Widget? endDrawer;
   final PaletteGenerator? currentPalette;
   final GlobalKey<ScaffoldState> scaffoldKey;
+  final List<Widget> addAppBarActions;
 
   const WrapImageViewSkeleton({
     super.key,
@@ -34,6 +35,7 @@ class WrapImageViewSkeleton<T extends Cell> extends StatelessWidget {
     required this.bottomAppBar,
     required this.endDrawer,
     required this.child,
+    required this.addAppBarActions,
   });
 
   @override
@@ -76,7 +78,7 @@ class WrapImageViewSkeleton<T extends Cell> extends StatelessWidget {
                     : const Size.fromHeight(kToolbarHeight + 36 + 4),
                 child: ImageViewAppBar<T>(
                   stickers: currentStickers ?? const [],
-                  actions: b ?? const [],
+                  actions: addAppBarActions + (b ?? const []),
                 )),
             body: child,
           ),

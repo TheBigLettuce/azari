@@ -52,7 +52,7 @@ class MangaDex implements MangaAPI {
           AnimeSafeMode.ecchi => "erotica",
           AnimeSafeMode.h => "pornographic",
         },
-        if (safeMode == AnimeSafeMode.ecchi) "contentRating[1]": "suggestive",
+        if (safeMode == AnimeSafeMode.safe) "contentRating[1]": "suggestive",
         if (includesTag != null && includesTag.isNotEmpty) ...makeTags(),
       }),
       LogReq("Manga search page $page", _log),
@@ -126,14 +126,14 @@ class MangaDex implements MangaAPI {
   }
 
   @override
-  Future<List<(List<MangaChapter>, String)>> chapters(
-    MangaEntry e, {
+  Future<List<MangaChapter>> chapters(
+    MangaId id, {
     int page = 0,
     int count = 100,
     MangaChapterOrder order = MangaChapterOrder.desc,
   }) async {
     final res = await client.getUriLog(
-        Uri.https(site.url, "/manga/${e.id}/feed", {
+        Uri.https(site.url, "/manga/$id/feed", {
           "limit": count.toString(),
           "offset": (page * count).toString(),
           "contentRating[0]": "safe",
@@ -190,32 +190,31 @@ List<MangaImage> _fromJsonImages(
   final ret = <MangaImage>[];
 
   for (final e in l.indexed) {
-    ret.add(MangaImage("$baseUrl/data/$hash/${e.$2}", e.$1));
+    ret.add(MangaImage(
+      "$baseUrl/data/$hash/${e.$2}",
+      e.$1,
+      l.length,
+    ));
   }
 
   return ret;
 }
 
-List<(List<MangaChapter>, String)> _fromJsonChapters(
-    String lang, List<dynamic> l) {
-  final ret = <String, List<MangaChapter>>{};
+List<MangaChapter> _fromJsonChapters(String lang, List<dynamic> l) {
+  final ret = <MangaChapter>[];
 
   try {
     for (final e in l) {
       final attr = e["attributes"];
       if (attr["translatedLanguage"] == lang) {
         final String volume = attr["volume"] ?? "?";
-        final l = ret[volume];
-        if (l == null) {
-          ret[volume] = [];
-        }
 
         final int pages = attr["pages"];
         if (pages == 0) {
           continue;
         }
 
-        ret[volume]!.add(MangaChapter(
+        ret.add(MangaChapter(
             chapter: attr["chapter"] ?? "0",
             pages: pages,
             title: attr["title"] ?? "",
@@ -231,7 +230,7 @@ List<(List<MangaChapter>, String)> _fromJsonChapters(
     rethrow;
   }
 
-  final ret1 = ret.entries.map((e) => (e.value, e.key)).toList();
+  // final ret1 = ret.entries.map((e) => (e.value, e.key)).toList();
   // ret1.sort((e1, e2) {
   //   final r = e1.$2.compareTo(e2.$2);
 
@@ -249,7 +248,7 @@ List<(List<MangaChapter>, String)> _fromJsonChapters(
   //   });
   // }
 
-  return ret1;
+  return ret;
 }
 
 String? _getScanlationGroup(List<dynamic> l) {
@@ -278,8 +277,8 @@ List<MangaEntry> _fromJson(List<dynamic> l) {
         final altTitles = attr["altTitles"] as List<dynamic>;
 
         final safe = switch (attr["contentRating"] as String) {
-          "safe" => AnimeSafeMode.safe,
-          "erotica" || "suggestive" => AnimeSafeMode.ecchi,
+          "safe" || "suggestive" => AnimeSafeMode.safe,
+          "erotica" => AnimeSafeMode.ecchi,
           "pornographic" => AnimeSafeMode.h,
           String() => throw "invalid content rating",
         };

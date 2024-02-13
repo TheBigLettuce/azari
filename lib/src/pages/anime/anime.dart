@@ -14,6 +14,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
+import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
+import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
+import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
@@ -26,6 +29,7 @@ import 'package:gallery/src/net/manga/manga_dex.dart';
 import 'package:gallery/src/pages/anime/info_pages/finished_anime_info_page.dart';
 import 'package:gallery/src/pages/anime/info_pages/discover_anime_info_page.dart';
 import 'package:gallery/src/pages/anime/info_pages/watching_anime_info_page.dart';
+import 'package:gallery/src/pages/anime/manga/manga_inner.dart';
 import 'package:gallery/src/pages/anime/tabs/manga_tab.dart';
 import 'package:gallery/src/pages/more/notes/tab_with_count.dart';
 import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
@@ -47,7 +51,14 @@ import 'search/search_anime.dart';
 part 'tabs/discover_tab.dart';
 part 'tabs/watching_tab.dart';
 part 'tabs/finished_tab.dart';
+part 'tabs/reading_tab.dart';
 part 'tab_bar_wrapper.dart';
+
+const int kReadTabIndx = 0;
+const int kMangaTabIndx = 1;
+const int kWatchingTabIndx = 2;
+const int kDiscoverTabIndx = 3;
+const int kWatchedTabIndx = 4;
 
 class AnimePage extends StatefulWidget {
   final void Function(bool) procPop;
@@ -68,18 +79,22 @@ class _AnimePageState extends State<AnimePage>
   final watchingKey = GlobalKey<__WatchingTabState>();
   final tabKey = GlobalKey<__TabBarWrapperState>();
   final finishedKey = GlobalKey<__FinishedTabState>();
+  final readKey = GlobalKey<_ReadingTabState>();
 
   final _textController = TextEditingController();
   final state = SkeletonState();
   late final StreamSubscription<void> watcher;
   late final StreamSubscription<void> watcherWatched;
+  late final StreamSubscription<void> watcherReading;
   late final tabController =
-      TabController(initialIndex: 1, length: 4, vsync: this);
+      TabController(initialIndex: 2, length: 5, vsync: this);
 
   final List<AnimeEntry> _discoverEntries = [];
   final List<MangaEntry> mangaEntries = [];
 
   int savedCount = 0;
+
+  int readingCount = ReadMangaChapter.countDistinct();
 
   final Dio client = Dio();
   final api = const Jikan();
@@ -106,6 +121,12 @@ class _AnimePageState extends State<AnimePage>
       setState(() {});
     });
 
+    watcherReading = ReadMangaChapter.watch((_) {
+      readingCount = ReadMangaChapter.countDistinct();
+
+      setState(() {});
+    });
+
     watcherWatched = WatchedAnimeEntry.watchAll((_) {
       setState(() {});
     });
@@ -116,6 +137,7 @@ class _AnimePageState extends State<AnimePage>
     state.dispose();
     watcher.cancel();
     watcherWatched.cancel();
+    watcherReading.cancel();
     tabController.dispose();
     _textController.dispose();
     client.close(force: true);
@@ -128,15 +150,22 @@ class _AnimePageState extends State<AnimePage>
 
     if (force ||
         (tabController.offset.isNegative
-            ? offsetIndex <= 2.5 && offsetIndex > 1.5
-            : offsetIndex >= 1.5 && offsetIndex < 2.5)) {
+            ? offsetIndex <= 3.5 && offsetIndex > 2.5
+            : offsetIndex >= 2.5 && offsetIndex < 3.5)) {
       SearchAnimePage.launchAnimeApi(context, api);
 
       return true;
     }
 
-    if (offsetIndex <= 0.5) {
+    if (tabController.offset.isNegative
+        ? offsetIndex <= 1.5 && offsetIndex > 0.5
+        : offsetIndex >= 0.5 && offsetIndex < 1.5) {
       SearchAnimePage.launchMangaApi(context, mangaApi);
+
+      return true;
+    }
+
+    if (offsetIndex <= 0.5) {
       return true;
     }
 
@@ -174,6 +203,7 @@ class _AnimePageState extends State<AnimePage>
         isScrollable: true,
         controller: tabController,
         tabs: [
+          TabWithCount("Reading", readingCount), // TODO: chane
           const Tab(text: "Manga"), // TODO: chane
           TabWithCount(AppLocalizations.of(context)!.watchingTab, savedCount),
           Tab(text: AppLocalizations.of(context)!.discoverTab),
@@ -185,7 +215,7 @@ class _AnimePageState extends State<AnimePage>
       canPop: false,
       onPopInvoked: tabKey.currentState?._showSearchField == true
           ? _procHideTab
-          : tabController.index == 2
+          : tabController.index == kDiscoverTabIndx
               ? null
               : widget.procPop,
       child: SkeletonSettings(
@@ -206,14 +236,23 @@ class _AnimePageState extends State<AnimePage>
         child: TabBarView(
           controller: tabController,
           children: [
+            ReadingTab(
+              widget.viewPadding,
+              key: readKey,
+              api: mangaApi,
+              onDispose: _hideResetSelection,
+            ),
             MangaTab(
               container: mangaContainer,
               api: mangaApi,
               elems: mangaEntries,
               viewInsets: widget.viewPadding,
             ),
-            _WatchingTab(widget.viewPadding,
-                key: watchingKey, onDispose: _hideResetSelection),
+            _WatchingTab(
+              widget.viewPadding,
+              key: watchingKey,
+              onDispose: _hideResetSelection,
+            ),
             _DiscoverTab(
               api: api,
               procPop: widget.procPop,
@@ -221,8 +260,11 @@ class _AnimePageState extends State<AnimePage>
               viewInsets: widget.viewPadding,
               pagingContainer: discoverContainer,
             ),
-            _FinishedTab(widget.viewPadding,
-                key: finishedKey, onDispose: _hideResetSelection),
+            _FinishedTab(
+              widget.viewPadding,
+              key: finishedKey,
+              onDispose: _hideResetSelection,
+            ),
           ],
         ),
       ),

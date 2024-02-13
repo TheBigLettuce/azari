@@ -34,6 +34,11 @@ class SavedMangaChapters {
 
   final int page;
 
+  static void clear(String mangaId, MangaMeta site) {
+    Dbs.g.anime.writeTxnSync(() =>
+        Dbs.g.anime.savedMangaChapters.deleteByMangaIdSiteSync(mangaId, site));
+  }
+
   static void add(
       String mangaId, MangaMeta site, List<MangaChapter> chapters, int page) {
     final prev =
@@ -121,10 +126,24 @@ extension MangaChapterExt2 on List<(List<MangaChapter>, String)> {
 }
 
 extension MangaChapterExt on List<MangaChapter> {
-  List<(List<MangaChapter>, String)> splitVolumes() {
+  Iterable<MangaChapter> notRead(String mangaId) {
+    return where((element) {
+      final p = ReadMangaChapter.progress(
+          siteMangaId: mangaId, chapterId: element.id);
+
+      if (p == null) {
+        return true;
+      }
+
+      return p != element.pages;
+    });
+  }
+
+  List<(List<MangaChapter>, String)> splitVolumes(
+      String mangaId, ChapterSettings s) {
     final ret = <String, List<MangaChapter>>{};
 
-    for (final e in this) {
+    for (final e in (s.hideRead ? notRead(mangaId) : this)) {
       final l = ret[e.volume];
       if (l == null) {
         ret[e.volume] = [];

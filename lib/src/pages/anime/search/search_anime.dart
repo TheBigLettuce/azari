@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
+import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
@@ -68,10 +69,13 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
             ));
           },
           search: (text, page, id, safeMode) {
-            return api.search(text,
-                page: page,
-                includesTag: id != null ? [id] : null,
-                safeMode: safeMode);
+            return api.search(
+              text,
+              page: page,
+              includesTag: id != null ? [id] : null,
+              safeMode: safeMode,
+              count: 30,
+            );
           },
           genres: (safeMode) {
             return api.tags().then((value) {

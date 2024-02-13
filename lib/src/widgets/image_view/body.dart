@@ -60,9 +60,6 @@ class ImageViewBody extends StatelessWidget {
           onLongPress: onLongPress,
           onTap: onTap,
           child: PhotoViewGallery.builder(
-            // wantKeepAlive: true,
-            // scrollDirection:
-            //     verticalScrolling ? Axis.vertical : Axis.horizontal,
             loadingBuilder: loadingBuilder,
             enableRotation: true,
             backgroundDecoration: decoration,

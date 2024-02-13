@@ -25,12 +25,13 @@ class MangaTab extends StatefulWidget {
   final EdgeInsets viewInsets;
   final PagingContainer container;
 
-  const MangaTab(
-      {super.key,
-      required this.api,
-      required this.elems,
-      required this.viewInsets,
-      required this.container});
+  const MangaTab({
+    super.key,
+    required this.api,
+    required this.elems,
+    required this.viewInsets,
+    required this.container,
+  });
 
   @override
   State<MangaTab> createState() => _MangaTabState();
@@ -90,15 +91,6 @@ class _MangaTabState extends State<MangaTab> {
         selectionGlue: GlueProvider.generateOf<AnimeEntry, MangaEntry>(context),
         mainFocus: state.mainFocus,
         overrideOnPress: (context, cell) {
-          CompactMangaData.addAll([
-            CompactMangaData(
-              mangaId: cell.id.toString(),
-              site: cell.site,
-              thumbUrl: cell.thumbUrl,
-              title: cell.title,
-            )
-          ]);
-
           Navigator.push(context, MaterialPageRoute(
             builder: (context) {
               return MangaInnerPage(
@@ -111,12 +103,13 @@ class _MangaTabState extends State<MangaTab> {
         refresh: _refresh,
         loadNext: _loadNext,
         description: const GridDescription(
-          showAppBar: false,
           [],
+          ignoreSwipeSelectGesture: true,
+          showAppBar: false,
           keybindsDescription: "Manga page",
           layout: GridLayout(
             GridColumn.three,
-            GridAspectRatio.one,
+            GridAspectRatio.zeroSeven,
             hideAlias: false,
           ),
         ),
