@@ -16,20 +16,20 @@ import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
 import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
 import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
-import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
-import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
 import 'package:gallery/src/net/anime/jikan.dart';
 import 'package:gallery/src/net/manga/manga_dex.dart';
 import 'package:gallery/src/pages/anime/info_pages/finished_anime_info_page.dart';
 import 'package:gallery/src/pages/anime/info_pages/discover_anime_info_page.dart';
 import 'package:gallery/src/pages/anime/info_pages/watching_anime_info_page.dart';
-import 'package:gallery/src/pages/anime/manga/manga_inner.dart';
+import 'package:gallery/src/pages/anime/manga/manga_info_page.dart';
+import 'package:gallery/src/pages/anime/paging_container.dart';
+import 'package:gallery/src/pages/anime/tab_bar_count.dart';
 import 'package:gallery/src/pages/anime/tabs/manga_tab.dart';
 import 'package:gallery/src/pages/more/notes/tab_with_count.dart';
 import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
@@ -85,9 +85,9 @@ class _AnimePageState extends State<AnimePage>
   final state = SkeletonState();
   late final StreamSubscription<void> watcher;
   late final StreamSubscription<void> watcherWatched;
-  late final StreamSubscription<void> watcherReading;
+  // late final StreamSubscription<void> watcherReading;
   late final tabController =
-      TabController(initialIndex: 2, length: 5, vsync: this);
+      TabController(initialIndex: kReadTabIndx, length: 5, vsync: this);
 
   final List<AnimeEntry> _discoverEntries = [];
   final List<MangaEntry> mangaEntries = [];
@@ -121,12 +121,6 @@ class _AnimePageState extends State<AnimePage>
       setState(() {});
     });
 
-    watcherReading = ReadMangaChapter.watch((_) {
-      readingCount = ReadMangaChapter.countDistinct();
-
-      setState(() {});
-    });
-
     watcherWatched = WatchedAnimeEntry.watchAll((_) {
       setState(() {});
     });
@@ -137,7 +131,6 @@ class _AnimePageState extends State<AnimePage>
     state.dispose();
     watcher.cancel();
     watcherWatched.cancel();
-    watcherReading.cancel();
     tabController.dispose();
     _textController.dispose();
     client.close(force: true);
@@ -203,8 +196,11 @@ class _AnimePageState extends State<AnimePage>
         isScrollable: true,
         controller: tabController,
         tabs: [
-          TabWithCount("Reading", readingCount), // TODO: chane
-          const Tab(text: "Manga"), // TODO: chane
+          const WatchingTabCount(
+            "Reading",
+            createWatcher: ReadMangaChapter.watchReading, // TODO: change
+          ),
+          const Tab(text: "Manga"), // TODO: change
           TabWithCount(AppLocalizations.of(context)!.watchingTab, savedCount),
           Tab(text: AppLocalizations.of(context)!.discoverTab),
           TabWithCount(AppLocalizations.of(context)!.finishedTab,

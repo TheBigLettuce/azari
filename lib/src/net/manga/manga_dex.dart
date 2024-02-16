@@ -11,6 +11,8 @@ import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
 
+const Duration _defaultTimeout = Duration(seconds: 30);
+
 class MangaDex implements MangaAPI {
   const MangaDex(this.client);
 
@@ -57,6 +59,8 @@ class MangaDex implements MangaAPI {
       }),
       LogReq("Manga search page $page", _log),
       options: Options(
+        sendTimeout: _defaultTimeout,
+        receiveTimeout: _defaultTimeout,
         responseType: ResponseType.json,
       ),
     );
@@ -80,7 +84,11 @@ class MangaDex implements MangaAPI {
     final res = await client.getUriLog(
       Uri.https(site.url, "/manga/tag"),
       const LogReq("Manga tags", _log),
-      options: Options(responseType: ResponseType.json),
+      options: Options(
+        responseType: ResponseType.json,
+        sendTimeout: _defaultTimeout,
+        receiveTimeout: _defaultTimeout,
+      ),
     );
 
     if (res.data == null ||
@@ -97,7 +105,11 @@ class MangaDex implements MangaAPI {
     final res = await client.getUriLog(
       Uri.https(site.url, "/statistics/manga/${e.id.toString()}"),
       const LogReq("Manga score", _log),
-      options: Options(responseType: ResponseType.json),
+      options: Options(
+        responseType: ResponseType.json,
+        sendTimeout: _defaultTimeout,
+        receiveTimeout: _defaultTimeout,
+      ),
     );
 
     final t = (res.data["statistics"] as Map<String, dynamic>)
@@ -115,7 +127,11 @@ class MangaDex implements MangaAPI {
         "includes[1]": "manga",
       }),
       const LogReq("Manga single", _log),
-      options: Options(responseType: ResponseType.json),
+      options: Options(
+        responseType: ResponseType.json,
+        sendTimeout: _defaultTimeout,
+        receiveTimeout: _defaultTimeout,
+      ),
     );
 
     if (res.data == null || res.data["result"] != "ok") {
@@ -145,7 +161,12 @@ class MangaDex implements MangaAPI {
           "order[chapter]": order == MangaChapterOrder.asc ? "asc" : "desc",
           "translatedLanguage[]": "en",
         }),
-        LogReq("Manga chapters page $page", _log));
+        LogReq("Manga chapters page $page", _log),
+        options: Options(
+          responseType: ResponseType.json,
+          sendTimeout: _defaultTimeout,
+          receiveTimeout: _defaultTimeout,
+        ));
 
     return _fromJsonChapters("en", res.data["data"]);
   }
@@ -156,7 +177,11 @@ class MangaDex implements MangaAPI {
       final res = await client.getUriLog(
         Uri.https(site.url, "/at-home/server/$id"),
         const LogReq("Manga single", _log),
-        options: Options(responseType: ResponseType.json),
+        options: Options(
+          responseType: ResponseType.json,
+          sendTimeout: _defaultTimeout,
+          receiveTimeout: _defaultTimeout,
+        ),
       );
 
       if (res.data == null || res.data["result"] == null) {

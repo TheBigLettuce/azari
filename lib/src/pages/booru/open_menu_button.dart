@@ -41,7 +41,7 @@ class _OpenMenuButtonState extends State<OpenMenuButton> {
     return PopupMenuButton(
       // icon: const Icon(Icons.search_rounded),
       itemBuilder: (_) {
-        return MenuWrapper.menuItems(widget.controller.text, [
+        return MenuWrapper.menuItems(widget.controller.text, true, [
           launchGridSafeModeItem(widget.context, widget.controller.text,
               (_, text, [safeMode]) {
             widget.tagManager.onTagPressed(

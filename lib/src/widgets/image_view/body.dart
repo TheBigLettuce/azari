@@ -6,7 +6,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 
 import '../gesture_dead_zones.dart';
@@ -22,7 +21,8 @@ class ImageViewBody extends StatelessWidget {
   final BoxDecoration decoration;
   final Widget Function(BuildContext, ImageChunkEvent?, int)? loadingBuilder;
 
-  final bool switchPageOnTapEdges;
+  final void Function()? onPressedRight;
+  final void Function()? onPressedLeft;
 
   const ImageViewBody({
     super.key,
@@ -35,7 +35,8 @@ class ImageViewBody extends StatelessWidget {
     required this.itemCount,
     required this.onLongPress,
     required this.onTap,
-    required this.switchPageOnTapEdges,
+    required this.onPressedLeft,
+    required this.onPressedRight,
   });
 
   @override
@@ -44,18 +45,8 @@ class ImageViewBody extends StatelessWidget {
       GestureDeadZones(
         left: true,
         right: true,
-        onPressedRight: switchPageOnTapEdges
-            ? () {
-                pageController.nextPage(
-                    duration: 200.ms, curve: Easing.standard);
-              }
-            : null,
-        onPressedLeft: switchPageOnTapEdges
-            ? () {
-                pageController.previousPage(
-                    duration: 200.ms, curve: Easing.standard);
-              }
-            : null,
+        onPressedRight: onPressedRight,
+        onPressedLeft: onPressedLeft,
         child: GestureDetector(
           onLongPress: onLongPress,
           onTap: onTap,

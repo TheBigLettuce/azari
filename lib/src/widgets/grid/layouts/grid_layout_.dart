@@ -55,6 +55,7 @@ abstract class GridLayouts {
     final selected = selection.isSelected(index);
 
     return _WrapSelection(
+      actionsAreEmpty: selection.addActions.isEmpty,
       selectUntil: (i) => selection.selectUnselectUntil(i, state),
       thisIndx: index,
       isSelected: selected,
@@ -106,6 +107,7 @@ abstract class GridLayouts {
         final cell = state.getCell(indx);
 
         return _WrapSelection(
+          actionsAreEmpty: selection.addActions.isEmpty,
           selectionEnabled: selection.selected.isNotEmpty,
           thisIndx: indx,
           ignoreSwipeGesture: selection.ignoreSwipe,
@@ -172,6 +174,7 @@ abstract class GridLayouts {
                   (rem * (size * (0.037 + (columns / 100) - rem * 0.01)))
                       .toInt()),
           child: _WrapSelection(
+            actionsAreEmpty: selection.addActions.isEmpty,
             selectionEnabled: selection.selected.isNotEmpty,
             thisIndx: indx,
             ignoreSwipeGesture: selection.ignoreSwipe,
@@ -215,6 +218,7 @@ abstract class GridLayouts {
         final cell = state.getCell(indx);
 
         return _WrapSelection(
+          actionsAreEmpty: selection.addActions.isEmpty,
           selectionEnabled: selection.selected.isNotEmpty,
           thisIndx: indx,
           ignoreSwipeGesture: selection.ignoreSwipe,
@@ -264,6 +268,7 @@ abstract class GridLayouts {
                   child: material.AspectRatio(
                     aspectRatio: aspectRatio,
                     child: _WrapSelection(
+                      actionsAreEmpty: selection.addActions.isEmpty,
                       selectionEnabled: selection.selected.isNotEmpty,
                       thisIndx: indx,
                       ignoreSwipeGesture: selection.ignoreSwipe,
@@ -318,6 +323,7 @@ abstract class GridLayouts {
                   child: material.AspectRatio(
                     aspectRatio: aspectRatio,
                     child: _WrapSelection(
+                      actionsAreEmpty: selection.addActions.isEmpty,
                       selectionEnabled: selection.selected.isNotEmpty,
                       thisIndx: -1,
                       ignoreSwipeGesture: selection.ignoreSwipe,

@@ -6,13 +6,12 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
-import 'package:gallery/src/pages/anime/anime.dart';
-import 'package:gallery/src/pages/anime/manga/manga_inner.dart';
+import 'package:gallery/src/pages/anime/manga/manga_info_page.dart';
+import 'package:gallery/src/pages/anime/paging_container.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
@@ -93,7 +92,7 @@ class _MangaTabState extends State<MangaTab> {
         overrideOnPress: (context, cell) {
           Navigator.push(context, MaterialPageRoute(
             builder: (context) {
-              return MangaInnerPage(
+              return MangaInfoPage(
                 entry: Future.value(cell),
                 api: widget.api,
               );

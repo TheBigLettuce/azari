@@ -11,36 +11,29 @@ import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_info_app_bar.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
 import 'package:gallery/src/pages/anime/info_base/background_image/background_image.dart';
-import 'package:gallery/src/pages/anime/info_base/body/anime_relations.dart';
-import 'package:gallery/src/pages/anime/info_base/body/body_segment_label.dart';
 import 'package:gallery/src/pages/anime/info_base/card_panel/card_shell.dart';
-import 'package:gallery/src/pages/anime/info_pages/anime_info_id.dart';
-import 'package:gallery/src/pages/anime/manga/manga_info_body.dart';
-import 'package:gallery/src/pages/anime/search/search_anime.dart';
+import 'package:gallery/src/pages/anime/manga/body/manga_info_body.dart';
 import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
-import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class MangaInnerPage extends StatefulWidget {
+class MangaInfoPage extends StatefulWidget {
   final Future<MangaEntry> entry;
   final MangaAPI api;
-  final void Function()? onDispose;
 
-  const MangaInnerPage({
+  const MangaInfoPage({
     super.key,
     required this.entry,
     required this.api,
-    this.onDispose,
   });
 
   @override
-  State<MangaInnerPage> createState() => _MangaInnerPageState();
+  State<MangaInfoPage> createState() => _MangaInfoPageState();
 }
 
-class _MangaInnerPageState extends State<MangaInnerPage>
+class _MangaInfoPageState extends State<MangaInfoPage>
     with TickerProviderStateMixin {
   final state = SkeletonState();
   final scrollController = ScrollController();
@@ -75,7 +68,6 @@ class _MangaInnerPageState extends State<MangaInnerPage>
   @override
   void dispose() {
     scrollController.dispose();
-    widget.onDispose?.call();
 
     state.dispose();
 
@@ -109,6 +101,7 @@ class _MangaInnerPageState extends State<MangaInnerPage>
               extendBodyBehindAppBar: true,
               child: SingleChildScrollView(
                 controller: scrollController,
+                // primary: true,
                 child: Padding(
                   padding: EdgeInsets.only(
                       bottom: MediaQuery.viewPaddingOf(context).bottom),
@@ -193,6 +186,7 @@ class _MangaInnerPageState extends State<MangaInnerPage>
                         api: widget.api,
                         overlayColor: overlayColor,
                         entry: entry,
+                        scrollController: scrollController,
                         viewPadding: MediaQuery.viewPaddingOf(context),
                       ),
                     ],

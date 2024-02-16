@@ -208,7 +208,10 @@ class _WatchingLayout implements GridLayouter<SavedAnimeEntry> {
                   .toList(),
         )
       else
-        const SliverToBoxAdapter(child: EmptyWidget()),
+        SliverToBoxAdapter(
+            child: EmptyWidget(
+          gridSeed: randomNumber,
+        )),
       SliverToBoxAdapter(
         child: SegmentLabel(
           AppLocalizations.of(context)!.backlogLabel,
@@ -239,7 +242,10 @@ class _WatchingLayout implements GridLayouter<SavedAnimeEntry> {
           aspectRatio: GridAspectRatio.zeroSeven.value,
         )
       else
-        const SliverToBoxAdapter(child: EmptyWidget()),
+        SliverToBoxAdapter(
+            child: EmptyWidget(
+          gridSeed: randomNumber,
+        )),
     ];
   }
 

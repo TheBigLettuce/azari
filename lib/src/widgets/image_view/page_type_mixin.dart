@@ -50,6 +50,13 @@ mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
       if (c2 != null) {
         _previousCell = (c2, i - 1);
 
+        final content = c2.content();
+        if (content is NetImage) {
+          WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+            precacheImage(content.provider, context);
+          });
+        }
+
         // if (_previousCell!.$1 is SystemGalleryDirectoryFile) {
         //   PlatformFunctions.preloadImage(
         //       (_previousCell!.$1 as SystemGalleryDirectoryFile).originalUri);
@@ -62,6 +69,13 @@ mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
 
       if (c3 != null) {
         _nextCell = (c3, i + 1);
+
+        final content = c3.content();
+        if (content is NetImage) {
+          WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+            precacheImage(content.provider, context);
+          });
+        }
 
         // if (_nextCell!.$1 is SystemGalleryDirectoryFile) {
         //   PlatformFunctions.preloadImage(

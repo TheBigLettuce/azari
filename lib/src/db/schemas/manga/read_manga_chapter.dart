@@ -9,9 +9,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/db/schemas/manga/chapters_settings.dart';
-import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
+import 'package:gallery/src/pages/anime/manga/next_chapter_button.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:isar/isar.dart';
 
@@ -46,6 +45,18 @@ class ReadMangaChapter {
   }
 
   static List<ReadMangaChapter> lastRead(int limit) {
+    if (limit == 0) {
+      return const [];
+    }
+
+    if (limit.isNegative) {
+      return Dbs.g.anime.readMangaChapters
+          .where()
+          .sortByLastUpdatedDesc()
+          .distinctBySiteMangaId()
+          .findAllSync();
+    }
+
     return Dbs.g.anime.readMangaChapters
         .where()
         .sortByLastUpdatedDesc()
@@ -63,6 +74,31 @@ class ReadMangaChapter {
 
   static StreamSubscription<void> watch(void Function(void) f) {
     return Dbs.g.anime.readMangaChapters.watchLazy().listen(f);
+  }
+
+  static StreamSubscription<int> watchReading(void Function(int) f) {
+    return Dbs.g.anime.readMangaChapters
+        .watchLazy(fireImmediately: true)
+        .map((event) => countDistinct())
+        .listen(f);
+  }
+
+  static StreamSubscription<int?> watchChapter(
+    void Function(int?) f, {
+    required String siteMangaId,
+    required String chapterId,
+  }) {
+    return Dbs.g.anime.readMangaChapters
+        .where()
+        .siteMangaIdChapterIdEqualTo(siteMangaId, chapterId)
+        .watch()
+        .map((event) {
+      if (event.isEmpty) {
+        return null;
+      }
+
+      return event.first.chapterProgress;
+    }).listen(f);
   }
 
   static void touch({
@@ -99,9 +135,6 @@ class ReadMangaChapter {
         chapterProgress: progress,
         lastUpdated: DateTime.now(),
       )),
-      silent: Dbs.g.anime.readMangaChapters
-              .getBySiteMangaIdChapterIdSync(siteMangaId, chapterId) !=
-          null,
     );
   }
 
@@ -112,6 +145,16 @@ class ReadMangaChapter {
     Dbs.g.anime.writeTxnSync(
       () => Dbs.g.anime.readMangaChapters
           .deleteBySiteMangaIdChapterIdSync(siteMangaId, chapterId),
+    );
+  }
+
+  static void deleteAllId(String siteMangaId, bool silent) {
+    Dbs.g.anime.writeTxnSync(
+      () => Dbs.g.anime.readMangaChapters
+          .filter()
+          .siteMangaIdEqualTo(siteMangaId)
+          .deleteAllSync(),
+      silent: silent,
     );
   }
 
@@ -132,14 +175,15 @@ class ReadMangaChapter {
     return p;
   }
 
-  static void launchReader(
+  static Future launchReader(
     BuildContext context,
     Future<List<MangaImage>> f,
     Color overlayColor, {
     required MangaId mangaId,
     required String chapterId,
     required MangaAPI api,
-    required void Function(int page) onNextPage,
+    required void Function(int page, MangaImage cell) onNextPage,
+    required void Function() reloadChapters,
     bool addNextChapterButton = false,
     bool replace = false,
   }) {
@@ -153,6 +197,8 @@ class ReadMangaChapter {
       chapterId: chapterId,
     );
 
+    final nextChapterKey = GlobalKey<NextChapterButtonState>();
+
     final route = MaterialPageRoute(
       builder: (context) {
         return FutureBuilder(
@@ -165,14 +211,22 @@ class ReadMangaChapter {
                 ignoreLoadingBuilder: true,
                 appBarItems: [
                   if (addNextChapterButton)
-                    _NextChapterButton(
+                    NextChapterButton(
+                      key: nextChapterKey,
                       overlayColor: overlayColor,
                       mangaId: mangaId.toString(),
                       startingChapterId: chapterId,
                       api: api,
+                      reloadChapters: reloadChapters,
+                      onNextPage: onNextPage,
                     )
                 ],
                 switchPageOnTapEdges: true,
+                onRightSwitchPageEnd: addNextChapterButton
+                    ? () {
+                        nextChapterKey.currentState?.findAndLaunchNext();
+                      }
+                    : null,
                 pageChange: (state) {
                   ReadMangaChapter.setProgress(
                     state.currentPage + 1,
@@ -180,7 +234,8 @@ class ReadMangaChapter {
                     chapterId: chapterId,
                   );
 
-                  onNextPage(state.currentPage);
+                  onNextPage(state.currentPage,
+                      state.drawCell(state.currentPage, true));
                 },
                 ignoreEndDrawer: true,
                 updateTagScrollPos: (_, __) {},
@@ -211,129 +266,15 @@ class ReadMangaChapter {
     );
 
     if (replace) {
-      Navigator.pushReplacement(
+      return Navigator.pushReplacement(
         context,
         route,
       );
     } else {
-      Navigator.push(
+      return Navigator.push(
         context,
         route,
       );
     }
-  }
-}
-
-class _NextChapterButton extends StatefulWidget {
-  final String mangaId;
-  final MangaAPI api;
-  final String startingChapterId;
-  final Color overlayColor;
-
-  const _NextChapterButton({
-    super.key,
-    required this.mangaId,
-    required this.startingChapterId,
-    required this.api,
-    required this.overlayColor,
-  });
-
-  @override
-  State<_NextChapterButton> createState() => __NextChapterButtonState();
-}
-
-class __NextChapterButtonState extends State<_NextChapterButton> {
-  Future? progress;
-
-  final List<MangaChapter> chapters = [];
-  int page = 0;
-  late String currentChapter = widget.startingChapterId;
-  bool reachedEnd = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    final r = SavedMangaChapters.get(
-      widget.mangaId,
-      widget.api.site,
-      ChapterSettings.current,
-    );
-
-    if (r != null) {
-      chapters.addAll(r.$1);
-      page = r.$2;
-    }
-  }
-
-  @override
-  void dispose() {
-    progress?.ignore();
-
-    super.dispose();
-  }
-
-  Future _tryLoadNew() async {
-    return await widget.api
-        .chapters(
-      MangaStringId(widget.mangaId),
-      page: page + 1,
-      order: MangaChapterOrder.asc,
-    )
-        .then((value) {
-      if (value.isEmpty) {
-        reachedEnd = true;
-
-        setState(() {});
-      } else {
-        page += 1;
-        _launch(value.first.id);
-      }
-
-      return value;
-    }).whenComplete(() {
-      progress = null;
-
-      setState(() {});
-    });
-  }
-
-  void _launch(String id) {
-    final f = widget.api.imagesForChapter(MangaStringId(id));
-
-    ReadMangaChapter.launchReader(
-      context,
-      f,
-      widget.overlayColor,
-      mangaId: MangaStringId(widget.mangaId),
-      chapterId: id,
-      api: widget.api,
-      onNextPage: (p) {},
-      addNextChapterButton: true,
-      replace: true,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      onPressed: progress != null || reachedEnd
-          ? null
-          : () {
-              final idx = chapters
-                  .indexWhere((element) => element.id == currentChapter);
-              final e = chapters.elementAtOrNull(idx + 1);
-              if (e == null) {
-                progress = _tryLoadNew();
-
-                setState(() {});
-
-                return;
-              }
-
-              _launch(e.id);
-            },
-      icon: const Icon(Icons.navigate_next_rounded),
-    );
   }
 }

@@ -288,13 +288,7 @@ class _FavoriteBooruPageState extends State<FavoriteBooruPage>
                 BooruGridActions.download(context, booru),
                 _groupButton(context)
               ],
-              systemNavigationInsets: EdgeInsets.only(
-                  bottom: widget.viewPadding.bottom +
-                      (Scaffold.of(context).widget.bottomNavigationBar !=
-                                  null &&
-                              !glue.keyboardVisible()
-                          ? 80
-                          : 0)),
+              systemNavigationInsets: widget.viewPadding,
               hasReachedEnd: () => true,
               menuButtonItems: [
                 GridSettingsButton(gridSettings,

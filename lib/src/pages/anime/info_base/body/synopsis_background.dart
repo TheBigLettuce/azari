@@ -7,8 +7,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/interfaces/anime/anime_entry.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 import 'anime_body_text_selection_toolbar.dart';
 import 'body_segment_label.dart';
@@ -19,12 +20,14 @@ class SynopsisBackground extends StatelessWidget {
   final String synopsis;
   final BoxConstraints constraints;
   final void Function(String) search;
+  final bool markdown;
 
   const SynopsisBackground({
     super.key,
     required this.background,
     required this.synopsis,
     required this.search,
+    this.markdown = false,
     this.constraints = const BoxConstraints(maxWidth: 200, maxHeight: 300),
   });
 
@@ -35,6 +38,20 @@ class SynopsisBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.copyWith(
+        textTheme: theme.textTheme.copyWith(
+            bodyMedium: theme.textTheme.bodyMedium?.copyWith(
+      overflow: TextOverflow.fade,
+      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+    )));
+
+    void onTapLink(String text, String? href, String title) {
+      if (href != null) {
+        launchUrlString(href);
+      }
+    }
+
     return Wrap(
       alignment: WrapAlignment.center,
       crossAxisAlignment: WrapCrossAlignment.center,
@@ -46,14 +63,24 @@ class SynopsisBackground extends StatelessWidget {
           child: AnimatedContainer(
             duration: 200.ms,
             constraints: constraints,
-            child: SelectableText(
-              synopsis,
-              contextMenuBuilder: _textSelectionToolbar,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  overflow: TextOverflow.fade,
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
-            ),
+            child: markdown
+                ? MarkdownBody(
+                    onTapLink: onTapLink,
+                    selectable: true,
+                    styleSheetTheme: MarkdownStyleSheetBaseTheme.material,
+                    data: synopsis,
+                    styleSheet: MarkdownStyleSheet.fromTheme(
+                      textTheme,
+                    ).copyWith(
+                        a: TextStyle(
+                      color: theme.colorScheme.primary,
+                    )),
+                  )
+                : SelectableText(
+                    synopsis,
+                    contextMenuBuilder: _textSelectionToolbar,
+                    style: textTheme.textTheme.bodyMedium,
+                  ),
           ),
         ),
         if (background.isNotEmpty)
@@ -64,16 +91,24 @@ class SynopsisBackground extends StatelessWidget {
             child: AnimatedContainer(
               duration: 200.ms,
               constraints: constraints,
-              child: SelectableText(
-                background,
-                contextMenuBuilder: _textSelectionToolbar,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    overflow: TextOverflow.fade,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.8)),
-              ),
+              child: markdown
+                  ? MarkdownBody(
+                      onTapLink: onTapLink,
+                      selectable: true,
+                      styleSheetTheme: MarkdownStyleSheetBaseTheme.material,
+                      data: background,
+                      styleSheet: MarkdownStyleSheet.fromTheme(
+                        textTheme,
+                      ).copyWith(
+                          a: TextStyle(
+                        color: theme.colorScheme.primary,
+                      )),
+                    )
+                  : SelectableText(
+                      background,
+                      contextMenuBuilder: _textSelectionToolbar,
+                      style: textTheme.textTheme.bodyMedium,
+                    ),
             ),
           ),
       ],

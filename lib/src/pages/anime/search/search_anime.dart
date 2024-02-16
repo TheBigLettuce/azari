@@ -12,14 +12,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
-import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
-import 'package:gallery/src/pages/anime/manga/manga_inner.dart';
+import 'package:gallery/src/pages/anime/manga/manga_info_page.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
@@ -35,7 +34,6 @@ part 'filtering_genres.dart';
 class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
   final I? initalGenreId;
   final String? initalText;
-  // final AnimeAPI api;
   final AnimeSafeMode explicit;
   final Future<List<T>> Function(String, int, I?, AnimeSafeMode) search;
   final Future<Map<I, G>> Function(AnimeSafeMode)? genres;
@@ -61,7 +59,7 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
           onPressed: (cell) {
             Navigator.push(context, MaterialPageRoute(
               builder: (context) {
-                return MangaInnerPage(
+                return MangaInfoPage(
                   entry: Future.value(cell),
                   api: api,
                 );

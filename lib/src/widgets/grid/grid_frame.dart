@@ -556,7 +556,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
         tight: tightMode,
         labelAtBottom: widget.description.cellTitleAtBottom,
         onPressed: (context) => onPressed(context, cell, indx),
-        onLongPress: indx.isNegative
+        onLongPress: indx.isNegative || selection.addActions.isEmpty
             ? null
             : () {
                 selection.selectOrUnselect(
@@ -577,7 +577,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
         tight: tightMode,
         labelAtBottom: widget.description.cellTitleAtBottom,
         onPressed: (context) => onPressed(context, cell, indx),
-        onLongPress: indx.isNegative
+        onLongPress: indx.isNegative || selection.addActions.isEmpty
             ? null
             : () {
                 selection.selectOrUnselect(
@@ -730,6 +730,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           EmptyWidget(
+                            gridSeed: 0,
                             error: _state.refreshingError == null
                                 ? null
                                 : EmptyWidget.unwrapDioError(

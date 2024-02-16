@@ -132,7 +132,17 @@ class _HomeState extends State<Home>
               SwapEffect(
                 builder: (context, _) {
                   return glueState.actions != null
-                      ? GlueBottomAppBar(glueState.actions!)
+                      ? Animate(
+                          effects: [
+                            MoveEffect(
+                              duration: 100.ms,
+                              curve: Easing.emphasizedDecelerate,
+                              begin: Offset(0, 100 + edgeInsets.bottom),
+                              end: Offset.zero,
+                            ),
+                          ],
+                          child: GlueBottomAppBar(glueState.actions!),
+                        )
                       : Padding(
                           padding: EdgeInsets.only(bottom: edgeInsets.bottom));
                 },

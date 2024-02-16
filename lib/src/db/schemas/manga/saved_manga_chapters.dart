@@ -63,7 +63,7 @@ class SavedMangaChapters {
   }
 
   static (List<MangaChapter>, int)? get(
-      String mangaId, MangaMeta site, ChapterSettings settings) {
+      String mangaId, MangaMeta site, ChapterSettings? settings) {
     final prev =
         Dbs.g.anime.savedMangaChapters.getByMangaIdSiteSync(mangaId, site);
 
@@ -71,7 +71,7 @@ class SavedMangaChapters {
       return null;
     }
 
-    if (settings.hideRead) {
+    if (settings != null && settings.hideRead) {
       return (
         prev.chapters.where((element) {
           final p = ReadMangaChapter.progress(

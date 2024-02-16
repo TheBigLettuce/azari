@@ -33,16 +33,18 @@ class _ReadingTabState extends State<ReadingTab> {
 
   bool inInner = false;
 
-  void refresh() {
+  Future<int> refresh() async {
     data.clear();
 
-    final l = ReadMangaChapter.lastRead(10);
+    final l = ReadMangaChapter.lastRead(-1);
     for (final e in l) {
       final d = CompactMangaData.get(e.siteMangaId, widget.api.site);
       if (d != null) {
         data.add(d);
       }
     }
+
+    return data.length;
   }
 
   @override
@@ -50,12 +52,12 @@ class _ReadingTabState extends State<ReadingTab> {
     super.initState();
 
     watcher = ReadMangaChapter.watch((_) {
-      refresh();
-
-      setState(() {});
+      if (inInner) {
+        dirty = true;
+      } else {
+        refresh();
+      }
     });
-
-    refresh();
   }
 
   @override
@@ -70,16 +72,34 @@ class _ReadingTabState extends State<ReadingTab> {
     final f = widget.api.imagesForChapter(MangaStringId(c.chapterId));
     final e = data.first;
 
+    inInner = true;
+
     ReadMangaChapter.launchReader(
       context,
       f,
       Theme.of(context).colorScheme.background,
       mangaId: MangaStringId(e.mangaId),
       chapterId: c.chapterId,
-      onNextPage: (p) {},
+      onNextPage: (p, cell) {},
+      reloadChapters: () {},
       api: widget.api,
       addNextChapterButton: true,
-    );
+    ).then((value) {
+      _procReload();
+    });
+  }
+
+  void _procReload() {
+    inInner = false;
+
+    if (dirty) {
+      state.gridKey.currentState?.mutationInterface.tick(0);
+      state.gridKey.currentState?.mutationInterface.setIsRefreshing(true);
+      refresh().whenComplete(() {
+        state.gridKey.currentState?.mutationInterface.tick(data.length);
+        state.gridKey.currentState?.mutationInterface.setIsRefreshing(false);
+      });
+    }
   }
 
   @override
@@ -95,33 +115,42 @@ class _ReadingTabState extends State<ReadingTab> {
         hasReachedEnd: () => true,
         overrideOnPress: (context, cell) {
           final f = widget.api.single(MangaStringId(cell.mangaId));
+          inInner = true;
 
           Navigator.push(context, MaterialPageRoute(
             builder: (context) {
-              return MangaInnerPage(
+              return MangaInfoPage(
                 entry: f,
                 api: widget.api,
               );
             },
-          ));
+          )).then((value) {
+            _procReload();
+          });
         },
         selectionGlue:
             GlueProvider.generateOf<AnimeEntry, CompactMangaData>(context),
         mainFocus: state.mainFocus,
-        refresh: () {
-          return Future.value(data.length);
-        },
+        refresh: refresh,
         description: GridDescription(
-          [],
+          [
+            GridAction(
+              Icons.remove_circle_outline_rounded,
+              (selected) {
+                for (final e in selected.indexed) {
+                  ReadMangaChapter.deleteAllId(
+                      e.$2.mangaId, e.$1 != selected.length - 1);
+                }
+              },
+              true,
+            ),
+          ],
+          ignoreEmptyWidgetOnNoContent: true,
           ignoreSwipeSelectGesture: true,
           showAppBar: false,
           keybindsDescription: "Read tab",
           layout: _ReadingLayout(
-            startReadingLast: _startReadingLast,
-            // GridColumn.three,
-            // GridAspectRatio.one,
-            // hideAlias: false,
-          ),
+              startReadingLast: _startReadingLast, gridSeed: state.gridSeed),
         ),
       ),
       canPop: false,
@@ -131,9 +160,11 @@ class _ReadingTabState extends State<ReadingTab> {
 
 class _ReadingLayout implements GridLayouter<CompactMangaData> {
   final void Function() startReadingLast;
+  final int gridSeed;
 
   const _ReadingLayout({
     required this.startReadingLast,
+    required this.gridSeed,
   });
 
   @override
@@ -142,32 +173,37 @@ class _ReadingLayout implements GridLayouter<CompactMangaData> {
     return [
       SliverToBoxAdapter(
         child: SegmentLabel(
-          "Last 10",
+          "Reading",
           hidePinnedIcon: true,
           onPress: null,
           sticky: false,
-          overridePinnedIcon: IconButton(
+          overridePinnedIcon: TextButton(
             onPressed: state.mutationInterface.cellCount == 0
                 ? null
                 : startReadingLast,
-            icon: const Icon(
-              Icons.forward,
-            ),
+            child: Text("Read last"),
           ),
         ),
       ),
-      GridLayouts.grid<CompactMangaData>(
-        context,
-        state.mutationInterface,
-        state.selection,
-        columns.number,
-        false,
-        state.makeGridCell,
-        hideAlias: false,
-        tightMode: true,
-        systemNavigationInsets: 0,
-        aspectRatio: GridAspectRatio.zeroSeven.value,
-      ),
+      if (state.mutationInterface.cellCount == 0)
+        SliverToBoxAdapter(
+          child: EmptyWidget(
+            gridSeed: gridSeed,
+          ),
+        )
+      else
+        GridLayouts.grid<CompactMangaData>(
+          context,
+          state.mutationInterface,
+          state.selection,
+          columns.number,
+          false,
+          state.makeGridCell,
+          hideAlias: false,
+          tightMode: true,
+          systemNavigationInsets: 0,
+          aspectRatio: GridAspectRatio.zeroSeven.value,
+        ),
     ];
   }
 

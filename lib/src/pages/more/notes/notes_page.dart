@@ -206,7 +206,9 @@ class _NotesPageState extends State<NotesPage>
               final w = widgets.toList();
 
               if (w.isEmpty) {
-                return const EmptyWidget();
+                return EmptyWidget(
+                  gridSeed: state.gridSeed,
+                );
               }
 
               return Column(

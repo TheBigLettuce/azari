@@ -7,51 +7,6 @@
 
 part of '../anime.dart';
 
-class PagingContainer {
-  PagingContainer();
-
-  int page = 0;
-  double scrollPos = 0;
-
-  Future<int>? status;
-  final Map<void Function(int?, bool), Null> listeners = {};
-
-  late final RefreshingStatusInterface refreshingInterface =
-      RefreshingStatusInterface(
-    isRefreshing: () => status != null,
-    save: (s) {
-      status?.ignore();
-      status = s;
-
-      status?.then((value) {
-        for (final f in listeners.keys) {
-          f(value, false);
-        }
-      }).onError((error, stackTrace) {
-        for (final f in listeners.keys) {
-          f(null, false);
-        }
-      }).whenComplete(() => status = null);
-    },
-    register: (f) {
-      if (status != null) {
-        f(null, true);
-      }
-
-      listeners[f] = null;
-    },
-    unregister: (f) => listeners.remove(f),
-    reset: () {
-      status?.ignore();
-      status = null;
-    },
-  );
-
-  void updateScrollPos(double pos, {double? infoPos, int? selectedCell}) {
-    scrollPos = pos;
-  }
-}
-
 class _DiscoverTab extends StatefulWidget {
   final EdgeInsets viewInsets;
   final void Function(bool) procPop;

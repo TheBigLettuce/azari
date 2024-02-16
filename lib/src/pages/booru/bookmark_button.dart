@@ -259,7 +259,10 @@ class __WrapEntriesState extends State<_WrapEntries> {
     }
 
     return gridStates.isEmpty
-        ? const EmptyWidget(mini: true)
+        ? const EmptyWidget(
+            mini: true,
+            gridSeed: 0,
+          )
         : Column(
             children: makeList(),
           );

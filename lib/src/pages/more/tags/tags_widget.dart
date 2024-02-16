@@ -45,7 +45,11 @@ class TagsWidget extends StatelessWidget {
       return Column(
         children: [
           ...listWraps,
-          const Expanded(child: Center(child: EmptyWidget()))
+          const Expanded(
+              child: Center(
+                  child: EmptyWidget(
+            gridSeed: 0,
+          )))
         ],
       );
     }

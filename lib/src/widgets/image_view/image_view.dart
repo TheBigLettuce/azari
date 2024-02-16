@@ -81,6 +81,8 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final bool switchPageOnTapEdges;
 
   final List<Widget> appBarItems;
+  final void Function()? onRightSwitchPageEnd;
+  // final void Function()? onLeftSwitchPageEnd;
 
   const ImageView({
     super.key,
@@ -106,6 +108,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
     this.ignoreEndDrawer = false,
     this.registerNotifiers,
     this.addIcons,
+    this.onRightSwitchPageEnd,
     this.gridContext,
   });
 
@@ -343,6 +346,22 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     setState(() {});
   }
 
+  void _onPressedRight() {
+    if (currentPage + 1 != cellCount && cellCount != 1) {
+      controller.nextPage(duration: 200.ms, curve: Easing.standard);
+    } else {
+      widget.onRightSwitchPageEnd?.call();
+    }
+  }
+
+  void _onPressedLeft() {
+    if (currentPage != 0 && cellCount != 1) {
+      controller.previousPage(duration: 200.ms, curve: Easing.standard);
+    } else {
+      // widget.on?.call();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ImageViewInfoTilesRefreshNotifier(
@@ -391,7 +410,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                               ));
 
                       return addInfo == null || addInfo.isEmpty
-                          ? const Drawer(child: EmptyWidget())
+                          ? const Drawer(child: EmptyWidget(gridSeed: 0))
                           : ImageViewEndDrawer(
                               scrollController: scrollController,
                               children: addInfo,
@@ -426,7 +445,10 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                               const []),
               mainFocus: mainFocus,
               child: ImageViewBody(
-                switchPageOnTapEdges: widget.switchPageOnTapEdges,
+                onPressedLeft:
+                    widget.switchPageOnTapEdges ? _onPressedLeft : null,
+                onPressedRight:
+                    widget.switchPageOnTapEdges ? _onPressedRight : null,
                 onPageChanged: _onPageChanged,
                 onLongPress: _onLongPress,
                 pageController: controller,

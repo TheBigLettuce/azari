@@ -7,7 +7,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
-import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_name_widget.dart';
 
 import 'left_arrow.dart';

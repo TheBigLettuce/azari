@@ -8,7 +8,6 @@
 part of '../grid_frame.dart';
 
 class _WrapSelection extends StatelessWidget {
-  final Widget child;
   final bool isSelected;
   final bool selectionEnabled;
   final int thisIndx;
@@ -18,9 +17,11 @@ class _WrapSelection extends StatelessWidget {
   final void Function(int indx) selectUntil;
 
   final bool ignoreSwipeGesture;
+  final bool actionsAreEmpty;
+
+  final Widget child;
 
   const _WrapSelection({
-    required this.child,
     required this.isSelected,
     required this.ignoreSwipeGesture,
     required this.selectUnselect,
@@ -29,10 +30,16 @@ class _WrapSelection extends StatelessWidget {
     required this.scrollController,
     required this.selectionEnabled,
     required this.selectUntil,
+    required this.actionsAreEmpty,
+    required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (actionsAreEmpty) {
+      return child;
+    }
+
     return thisIndx.isNegative || ignoreSwipeGesture
         ? _WrappedSelectionCore(
             isSelected: isSelected,

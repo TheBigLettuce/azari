@@ -6,7 +6,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/widgets.dart';
-import 'dart:math' as math;
 
 import '../../db/schemas/settings/settings.dart';
 import '../../interfaces/cell/cell.dart';
@@ -16,7 +15,6 @@ import 'skeleton_state.dart';
 class GridSkeletonState<T extends Cell> extends SkeletonState {
   final GlobalKey<GridFrameState<T>> gridKey = GlobalKey();
   Settings settings = Settings.fromDb();
-  final gridSeed = math.Random().nextInt(948512342);
   // final Future<bool> Function() onWillPop;
 
   GridSkeletonState();

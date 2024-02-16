@@ -13,9 +13,11 @@ import '../pages/more/settings/settings_label.dart';
 class MenuWrapper extends StatefulWidget {
   final String title;
   final List<PopupMenuItem> items;
+  final bool includeCopy;
+
   final Widget child;
 
-  static List<PopupMenuItem> menuItems(String title,
+  static List<PopupMenuItem> menuItems(String title, bool includeCopy,
           [List<PopupMenuItem>? items]) =>
       [
         PopupMenuItem(
@@ -26,12 +28,13 @@ class MenuWrapper extends StatefulWidget {
           ),
         ),
         if (items != null) ...items,
-        PopupMenuItem(
-          onTap: () {
-            Clipboard.setData(ClipboardData(text: title));
-          },
-          child: const Text("Copy"), // TODO: change
-        )
+        if (includeCopy)
+          PopupMenuItem(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: title));
+            },
+            child: const Text("Copy"), // TODO: change
+          )
       ];
 
   const MenuWrapper({
@@ -40,6 +43,7 @@ class MenuWrapper extends StatefulWidget {
     this.items = const [],
     required this.title,
     required this.child,
+    this.includeCopy = true,
   });
 
   @override
@@ -81,7 +85,8 @@ class _MenuWrapperState extends State<MenuWrapper> {
             ),
             Offset.zero & overlay.size,
           ),
-          items: MenuWrapper.menuItems(widget.title, widget.items),
+          items: MenuWrapper.menuItems(
+              widget.title, widget.includeCopy, widget.items),
         );
       },
       child: widget.child,

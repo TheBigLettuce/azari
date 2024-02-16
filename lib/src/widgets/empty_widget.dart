@@ -14,8 +14,14 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 class EmptyWidget extends StatelessWidget {
   final String? error;
   final bool mini;
+  final int gridSeed;
 
-  const EmptyWidget({super.key, this.error, this.mini = false});
+  const EmptyWidget({
+    super.key,
+    this.error,
+    required this.gridSeed,
+    this.mini = false,
+  });
 
   static String unwrapDioError(Object? error) {
     if (error == null) {
@@ -44,7 +50,7 @@ class EmptyWidget extends StatelessWidget {
       child: Text.rich(
         TextSpan(children: [
           TextSpan(
-            text: "${chooseKaomoji()}\n",
+            text: "${chooseKaomoji(gridSeed)}\n",
             style: TextStyle(
               fontSize: mini ? 14 : 14 * 2,
             ),
@@ -72,7 +78,7 @@ class EmptyWidget extends StatelessWidget {
   }
 }
 
-String chooseKaomoji() => emojis[Random().nextInt(emojis.length)];
+String chooseKaomoji(int seed) => emojis[Random(seed).nextInt(emojis.length)];
 
 const List<String> emojis = [
   r"щ(゜ロ゜щ)",
