@@ -173,6 +173,14 @@ class _WatchingLayout implements GridLayouter<SavedAnimeEntry> {
   @override
   List<Widget> call(
       BuildContext context, GridFrameState<SavedAnimeEntry> state) {
+    void onPressed(SavedAnimeEntry e, int _) {
+      Navigator.push(context, MaterialPageRoute(
+        builder: (context) {
+          return WatchingAnimeInfoPage(entry: e);
+        },
+      ));
+    }
+
     return [
       SliverToBoxAdapter(
         child: SegmentLabel(
@@ -195,15 +203,19 @@ class _WatchingLayout implements GridLayouter<SavedAnimeEntry> {
           crossAxisCount: 3,
           children: watchingRight
               ? currentlyWatching.reversed.indexed
-                  .map((e) => _CurrentlyWatchingEntry(entry: e.$2)
-                      .animate(key: ValueKey(e))
-                      .fadeIn())
+                  .map((e) => ImportantCard(
+                        cell: e.$2,
+                        idx: e.$1,
+                        onPressed: onPressed,
+                      ).animate(key: ValueKey(e)).fadeIn())
                   .toList()
               : currentlyWatching.indexed
                   .map(
-                    (e) => _CurrentlyWatchingEntry(entry: e.$2)
-                        .animate(key: ValueKey(e))
-                        .fadeIn(),
+                    (e) => ImportantCard(
+                      idx: e.$1,
+                      cell: e.$2,
+                      onPressed: onPressed,
+                    ).animate(key: ValueKey(e)).fadeIn(),
                   )
                   .toList(),
         )
@@ -253,20 +265,29 @@ class _WatchingLayout implements GridLayouter<SavedAnimeEntry> {
   bool get isList => false;
 }
 
-class _CurrentlyWatchingEntry extends StatelessWidget {
-  final SavedAnimeEntry entry;
+class ImportantCard<T extends Cell> extends StatelessWidget {
+  final T cell;
+  final int idx;
+  final void Function(T cell, int idx) onPressed;
+  final void Function(T cell, int idx)? onLongPressed;
 
-  const _CurrentlyWatchingEntry({required this.entry});
+  const ImportantCard({
+    super.key,
+    required this.cell,
+    required this.onPressed,
+    required this.idx,
+    this.onLongPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
     return UnsizedCard(
-      subtitle: Text(entry.title),
+      subtitle: Text(cell.alias(false)),
       title: SizedBox(
         height: 40,
         width: 40,
         child: GridCell(
-          cell: entry,
+          cell: cell,
           indx: 0,
           onPressed: null,
           tight: true,
@@ -276,14 +297,15 @@ class _CurrentlyWatchingEntry extends StatelessWidget {
           circle: true,
         ),
       ),
-      backgroundImage: entry.thumbnail(),
-      tooltip: entry.title,
+      backgroundImage: cell.thumbnail(),
+      tooltip: cell.alias(false),
+      onLongPressed: onLongPressed == null
+          ? null
+          : () {
+              onLongPressed!(cell, idx);
+            },
       onPressed: () {
-        Navigator.push(context, MaterialPageRoute(
-          builder: (context) {
-            return WatchingAnimeInfoPage(entry: entry);
-          },
-        ));
+        onPressed(cell, idx);
       },
     );
   }

@@ -16,11 +16,12 @@ class WrapImageViewTheme extends StatefulWidget {
   final PaletteGenerator? previousPallete;
   final Widget child;
 
-  const WrapImageViewTheme(
-      {super.key,
-      required this.currentPalette,
-      required this.previousPallete,
-      required this.child});
+  const WrapImageViewTheme({
+    super.key,
+    required this.currentPalette,
+    required this.previousPallete,
+    required this.child,
+  });
 
   @override
   State<WrapImageViewTheme> createState() => WrapImageViewThemeState();
@@ -54,96 +55,78 @@ class WrapImageViewThemeState extends State<WrapImageViewTheme>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final tweenMutedTextColor = ColorTween(
+      begin: widget.previousPallete?.mutedColor?.bodyTextColor
+              .harmonizeWith(theme.colorScheme.primary) ??
+          kListTileColorInInfo,
+      end: widget.currentPalette?.mutedColor?.bodyTextColor
+              .harmonizeWith(theme.colorScheme.primary) ??
+          kListTileColorInInfo,
+    );
+
+    final tweenMutedColor = ColorTween(
+      begin: widget.previousPallete?.mutedColor?.color
+              .harmonizeWith(theme.colorScheme.primary) ??
+          theme.colorScheme.surface,
+      end: widget.currentPalette?.mutedColor?.color
+              .harmonizeWith(theme.colorScheme.primary) ??
+          theme.colorScheme.surface,
+    );
+
+    final tweenDominantTextColor = ColorTween(
+      begin: widget.previousPallete?.dominantColor?.bodyTextColor
+              .harmonizeWith(theme.colorScheme.primary) ??
+          kListTileColorInInfo,
+      end: widget.currentPalette?.dominantColor?.bodyTextColor
+              .harmonizeWith(theme.colorScheme.primary) ??
+          kListTileColorInInfo,
+    );
+
+    final tweenDominantColor = ColorTween(
+      begin: widget.previousPallete?.dominantColor?.color
+              .harmonizeWith(theme.colorScheme.primary) ??
+          Colors.black,
+      end: widget.currentPalette?.dominantColor?.color
+              .harmonizeWith(theme.colorScheme.primary) ??
+          Colors.black,
+    );
+
     return Theme(
-      data: Theme.of(context).copyWith(
-          hintColor: ColorTween(
-            begin: widget.previousPallete?.mutedColor?.bodyTextColor
-                    .harmonizeWith(Theme.of(context).colorScheme.primary) ??
-                kListTileColorInInfo,
-            end: widget.currentPalette?.mutedColor?.bodyTextColor
-                    .harmonizeWith(Theme.of(context).colorScheme.primary) ??
-                kListTileColorInInfo,
-          ).transform(_animationController.value),
+      data: theme.copyWith(
+          hintColor: tweenMutedTextColor.transform(_animationController.value),
           drawerTheme: DrawerThemeData(
-            backgroundColor: ColorTween(
-                    begin: widget.previousPallete?.mutedColor?.color
-                            .harmonizeWith(
-                                Theme.of(context).colorScheme.primary)
-                            .withOpacity(0.85) ??
-                        Theme.of(context).colorScheme.surface.withOpacity(0.5),
-                    end: widget.currentPalette?.mutedColor?.color
-                            .harmonizeWith(
-                                Theme.of(context).colorScheme.primary)
-                            .withOpacity(0.85) ??
-                        Theme.of(context).colorScheme.surface.withOpacity(0.5))
-                .transform(_animationController.value),
+            backgroundColor: tweenMutedColor
+                .transform(_animationController.value)
+                ?.withOpacity(0.85),
           ),
           progressIndicatorTheme: ProgressIndicatorThemeData(
               color: widget.currentPalette?.dominantColor?.bodyTextColor
-                  .harmonizeWith(Theme.of(context).colorScheme.primary)
+                  .harmonizeWith(theme.colorScheme.primary)
                   .withOpacity(0.8)),
           appBarTheme: AppBarTheme(
-              foregroundColor: ColorTween(
-                begin: widget.previousPallete?.dominantColor?.bodyTextColor
-                        .harmonizeWith(Theme.of(context).colorScheme.primary)
-                        .withOpacity(0.8) ??
-                    kListTileColorInInfo,
-                end: widget.currentPalette?.dominantColor?.bodyTextColor
-                        .harmonizeWith(Theme.of(context).colorScheme.primary)
-                        .withOpacity(0.8) ??
-                    kListTileColorInInfo,
-              ).transform(_animationController.value),
-              backgroundColor: ColorTween(
-                begin: widget.previousPallete?.dominantColor?.color
-                        .harmonizeWith(Theme.of(context).colorScheme.primary)
-                        .withOpacity(0.5) ??
-                    Colors.black.withOpacity(0.5),
-                end: widget.currentPalette?.dominantColor?.color
-                        .harmonizeWith(Theme.of(context).colorScheme.primary)
-                        .withOpacity(0.5) ??
-                    Colors.black.withOpacity(0.5),
-              ).transform(_animationController.value)),
+            foregroundColor: tweenDominantTextColor
+                .transform(_animationController.value)
+                ?.withOpacity(0.8),
+            backgroundColor: tweenDominantColor
+                .transform(_animationController.value)
+                ?.withOpacity(0.5),
+          ),
           listTileTheme: ListTileThemeData(
-            textColor: ColorTween(
-                    begin: widget.previousPallete?.dominantColor?.bodyTextColor
-                            .harmonizeWith(
-                                Theme.of(context).colorScheme.primary)
-                            .withOpacity(0.8) ??
-                        kListTileColorInInfo,
-                    end: widget.currentPalette?.dominantColor?.bodyTextColor
-                            .harmonizeWith(
-                                Theme.of(context).colorScheme.primary)
-                            .withOpacity(0.8) ??
-                        kListTileColorInInfo)
-                .transform(_animationController.value),
+            textColor: tweenDominantTextColor
+                .transform(_animationController.value)
+                ?.withOpacity(0.8),
           ),
           iconTheme: IconThemeData(
-              color: ColorTween(
-                      begin: widget
-                              .previousPallete?.dominantColor?.bodyTextColor
-                              .harmonizeWith(
-                                  Theme.of(context).colorScheme.primary)
-                              .withOpacity(0.8) ??
-                          kListTileColorInInfo,
-                      end: widget.currentPalette?.dominantColor?.bodyTextColor
-                              .harmonizeWith(
-                                  Theme.of(context).colorScheme.primary)
-                              .withOpacity(0.8) ??
-                          kListTileColorInInfo)
-                  .transform(_animationController.value)),
+            color: tweenDominantTextColor
+                .transform(_animationController.value)
+                ?.withOpacity(0.8),
+          ),
           bottomAppBarTheme: BottomAppBarTheme(
-            color: ColorTween(
-                    begin: widget.previousPallete?.dominantColor?.color
-                            .harmonizeWith(
-                                Theme.of(context).colorScheme.primary)
-                            .withOpacity(0.5) ??
-                        Colors.black.withOpacity(0.5),
-                    end: widget.currentPalette?.dominantColor?.color
-                            .harmonizeWith(
-                                Theme.of(context).colorScheme.primary)
-                            .withOpacity(0.5) ??
-                        Colors.black.withOpacity(0.5))
-                .transform(_animationController.value),
+            color: tweenDominantColor
+                .transform(_animationController.value)
+                ?.withOpacity(0.5),
           )),
       child: widget.child,
     );

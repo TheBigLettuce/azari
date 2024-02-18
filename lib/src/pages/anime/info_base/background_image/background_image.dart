@@ -44,6 +44,7 @@ class BackgroundImageBase extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      clipBehavior: Clip.antiAlias,
       width: width,
       height: height,
       foregroundDecoration: BoxDecoration(

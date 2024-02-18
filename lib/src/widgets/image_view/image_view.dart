@@ -82,7 +82,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
 
   final List<Widget> appBarItems;
   final void Function()? onRightSwitchPageEnd;
-  // final void Function()? onLeftSwitchPageEnd;
+  final void Function()? onLeftSwitchPageEnd;
 
   const ImageView({
     super.key,
@@ -109,6 +109,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
     this.registerNotifiers,
     this.addIcons,
     this.onRightSwitchPageEnd,
+    this.onLeftSwitchPageEnd,
     this.gridContext,
   });
 
@@ -358,7 +359,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     if (currentPage != 0 && cellCount != 1) {
       controller.previousPage(duration: 200.ms, curve: Easing.standard);
     } else {
-      // widget.on?.call();
+      widget.onLeftSwitchPageEnd?.call();
     }
   }
 

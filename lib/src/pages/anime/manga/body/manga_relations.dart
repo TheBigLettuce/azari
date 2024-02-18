@@ -38,7 +38,7 @@ class MangaRelations extends StatelessWidget {
                       Navigator.push(context, MaterialPageRoute(
                         builder: (context) {
                           return MangaInfoPage(
-                            entry: api.single(e.id),
+                            id: e.id,
                             api: api,
                           );
                         },

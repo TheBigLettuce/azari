@@ -90,8 +90,6 @@ class _ChapterTileState extends State<ChapterTile> {
         onTap: widget.chapter.pages == 0
             ? null
             : () {
-                final f = widget.api
-                    .imagesForChapter(MangaStringId(widget.chapter.id));
                 final overlayColor = Theme.of(context).colorScheme.background;
 
                 if (progress == null) {
@@ -104,7 +102,7 @@ class _ChapterTileState extends State<ChapterTile> {
 
                 ReadMangaChapter.launchReader(
                   context,
-                  f,
+                  mangaTitle: widget.entry.title,
                   reloadChapters: widget.finishRead,
                   widget.overlayColor ?? overlayColor,
                   api: widget.api,
@@ -124,7 +122,7 @@ class _ChapterTileState extends State<ChapterTile> {
           children: [
             Transform.rotate(
               transformHitTests: false,
-              angle: 10 * (-pi / 180),
+              angle: 5 * (-pi / 180),
               child: Text(
                 widget.chapter.chapter.toString(),
                 style: TextStyle(

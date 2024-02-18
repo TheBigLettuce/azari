@@ -10,6 +10,76 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 
+class WrapFutureRestartable<T> extends StatefulWidget {
+  final Future<T> Function() newStatus;
+  final Widget Function(BuildContext context, T value) builder;
+
+  const WrapFutureRestartable({
+    super.key,
+    required this.builder,
+    required this.newStatus,
+  });
+
+  @override
+  State<WrapFutureRestartable<T>> createState() =>
+      _WrapFutureRestartableState<T>();
+}
+
+class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
+  late Future<T> f;
+  int count = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    f = widget.newStatus();
+  }
+
+  @override
+  void dispose() {
+    f.ignore();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      key: ValueKey(count),
+      future: f,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData && !snapshot.hasError) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        } else if (snapshot.hasError) {
+          return Scaffold(
+            appBar: AppBar(),
+            body: Center(
+              child: FilledButton(
+                  onPressed: () {
+                    f = widget.newStatus();
+                    count += 1;
+
+                    setState(() {});
+                  },
+                  child: Text("Try again")),
+            ),
+          );
+        } else {
+          return Container(
+            color: Theme.of(context).colorScheme.background,
+            child: widget.builder(context, snapshot.data!).animate().fadeIn(),
+          );
+        }
+      },
+    );
+  }
+}
+
 mixin AlwaysLoadingAnimeMixin {
   final alwaysLoading = MiscSettings.current.animeAlwaysLoadFromNet;
   Future? loadingFuture;

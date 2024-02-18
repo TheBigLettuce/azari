@@ -135,8 +135,8 @@ class DownloadFile extends Cell with CachedCellValuesMixin {
     return Dbs.g.main.downloadFiles
         .filter()
         .inProgressEqualTo(false)
-        .or()
-        .isFailedEqualTo(true)
+        // .or()
+        // .isFailedEqualTo(true)
         .findFirstSync();
   }
 

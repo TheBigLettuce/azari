@@ -15,6 +15,7 @@ class UnsizedCard extends StatelessWidget {
   final ImageProvider? backgroundImage;
   final bool transparentBackground;
   final void Function()? onPressed;
+  final void Function()? onLongPressed;
 
   const UnsizedCard({
     super.key,
@@ -24,11 +25,13 @@ class UnsizedCard extends StatelessWidget {
     required this.tooltip,
     this.transparentBackground = false,
     this.onPressed,
+    this.onLongPressed,
   });
 
   @override
   Widget build(BuildContext context) {
     return BaseCard(
+      onLongPressed: onLongPressed,
       subtitle: subtitle,
       title: title,
       backgroundImage: backgroundImage,
@@ -51,6 +54,7 @@ class BaseCard extends StatelessWidget {
   final double? width;
   final double? height;
   final bool expandTitle;
+  final void Function()? onLongPressed;
 
   const BaseCard({
     super.key,
@@ -63,6 +67,7 @@ class BaseCard extends StatelessWidget {
     this.expandTitle = false,
     this.transparentBackground = false,
     this.onPressed,
+    this.onLongPressed,
   });
 
   @override
@@ -111,12 +116,13 @@ class BaseCard extends StatelessWidget {
         Widget card() => InkWell(
               borderRadius: BorderRadius.circular(15),
               onTap: onPressed,
+              onLongPress: onLongPressed,
               splashColor:
                   Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
               child: Card.filled(
                 clipBehavior: Clip.antiAlias,
                 color: transparentBackground || backgroundImage != null
-                    ? Colors.transparent
+                    ? Theme.of(context).colorScheme.onSurface.withOpacity(0)
                     : null,
                 child: SizedBox(
                   width: width,

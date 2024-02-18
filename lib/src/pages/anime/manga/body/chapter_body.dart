@@ -104,14 +104,28 @@ class __ChapterBodyState extends State<_ChapterBody> {
         return;
       }
 
-      final r =
-          ReadMangaChapter.firstForId(widget.entry.id.toString())?.chapterId ??
-              widget.list.first.$1.first.id;
-      final f = widget.api.imagesForChapter(MangaStringId(r));
+      final firstForId =
+          ReadMangaChapter.firstForId(widget.entry.id.toString());
+
+      final r = firstForId?.chapterId ?? widget.list.first.$1.first.id;
+
+      if (firstForId == null) {
+        ReadMangaChapter.setProgress(
+          1,
+          siteMangaId: widget.entry.id.toString(),
+          chapterId: widget.list.first.$1.first.id,
+        );
+      }
+
+      if (_chapterStale == null) {
+        _chapterStale = ReadMangaChapter.firstForId(widget.entry.id.toString());
+
+        setState(() {});
+      }
 
       ReadMangaChapter.launchReader(
         context,
-        f,
+        mangaTitle: widget.entry.title,
         reloadChapters: widget.onFinishRead,
         widget.overlayColor ?? Theme.of(context).colorScheme.background,
         mangaId: widget.entry.id,
@@ -119,13 +133,6 @@ class __ChapterBodyState extends State<_ChapterBody> {
         api: widget.api,
         addNextChapterButton: true,
         onNextPage: (p, cell) {
-          if (_chapterStale == null) {
-            _chapterStale =
-                ReadMangaChapter.firstForId(widget.entry.id.toString());
-
-            setState(() {});
-          }
-
           if (p + 1 == cell.maxPages) {
             widget.onFinishRead();
           }

@@ -7,7 +7,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
+import 'package:gallery/src/db/schemas/manga/pinned_manga.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
+import 'package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_info_app_bar.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
 import 'package:gallery/src/pages/anime/info_base/background_image/background_image.dart';
@@ -20,13 +22,15 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MangaInfoPage extends StatefulWidget {
-  final Future<MangaEntry> entry;
+  final MangaId id;
   final MangaAPI api;
+  final MangaEntry? entry;
 
   const MangaInfoPage({
     super.key,
-    required this.entry,
+    required this.id,
     required this.api,
+    this.entry,
   });
 
   @override
@@ -39,30 +43,11 @@ class _MangaInfoPageState extends State<MangaInfoPage>
   final scrollController = ScrollController();
   double? score;
 
+  bool isPinned = false;
+
   @override
   void initState() {
     super.initState();
-
-    widget.entry.then((value) {
-      CompactMangaData.addAll([
-        CompactMangaData(
-          mangaId: value.id.toString(),
-          site: value.site,
-          thumbUrl: value.thumbUrl,
-          title: value.title,
-        ),
-      ]);
-
-      return widget.api.score(value).then((value) {
-        score = value;
-
-        setState(() {});
-      }).onError((error, stackTrace) {
-        score = -1;
-
-        setState(() {});
-      });
-    });
   }
 
   @override
@@ -74,17 +59,46 @@ class _MangaInfoPageState extends State<MangaInfoPage>
     super.dispose();
   }
 
+  Future<MangaEntry> newFuture() {
+    if (widget.entry != null) {
+      return Future.value(widget.entry!);
+    }
+
+    return widget.api.single(widget.id).then((value) {
+      isPinned = PinnedManga.exist(value.id.toString(), value.site);
+      CompactMangaData.addAll([
+        CompactMangaData(
+          mangaId: value.id.toString(),
+          site: value.site,
+          thumbUrl: value.thumbUrl,
+          title: value.title,
+        ),
+      ]);
+
+      if (score == null || score!.isNegative) {
+        widget.api.score(value).then((value) {
+          score = value;
+
+          setState(() {});
+        }).onError((error, stackTrace) {
+          score = -1;
+
+          setState(() {});
+        });
+      }
+
+      return value;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final overlayColor = Theme.of(context).colorScheme.background;
     final cardUnknownValue = AppLocalizations.of(context)!.cardUnknownValue;
 
-    return FutureBuilder(
-      future: widget.entry,
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          final entry = snapshot.data!;
-
+    return WrapFutureRestartable(
+        newStatus: newFuture,
+        builder: (context, entry) {
           return AnimeInfoTheme(
             mode: entry.safety,
             overlayColor: overlayColor,
@@ -180,6 +194,38 @@ class _MangaInfoPageState extends State<MangaInfoPage>
                                   Uri.parse(widget.api.browserUrl(entry)));
                             },
                           ),
+                          UnsizedCard(
+                            subtitle: Text(
+                                isPinned ? "Unpin" : "Pin"), // TODO: change
+                            tooltip: isPinned ? "Unpin" : "Pin",
+                            title: Icon(
+                              Icons.push_pin_rounded,
+                              color: isPinned
+                                  ? Theme.of(context).colorScheme.primary
+                                  : null,
+                            ),
+                            transparentBackground: true,
+                            onPressed: () {
+                              if (isPinned) {
+                                PinnedManga.deleteSingle(
+                                    entry.id.toString(), entry.site);
+                              } else {
+                                PinnedManga.addAll([
+                                  PinnedManga(
+                                    mangaId: entry.id.toString(),
+                                    site: entry.site,
+                                    thumbUrl: entry.thumbUrl,
+                                    title: entry.title,
+                                  )
+                                ]);
+                              }
+
+                              isPinned = PinnedManga.exist(
+                                  entry.id.toString(), entry.site);
+
+                              setState(() {});
+                            },
+                          ),
                         ],
                       ),
                       MangaInfoBody(
@@ -195,19 +241,6 @@ class _MangaInfoPageState extends State<MangaInfoPage>
               ),
             ),
           );
-        } else {
-          return Scaffold(
-            appBar: snapshot.hasError
-                ? AppBar(
-                    leading: const BackButton(),
-                  )
-                : null,
-            body: const Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-      },
-    );
+        });
   }
 }

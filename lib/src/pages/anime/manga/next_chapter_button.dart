@@ -10,15 +10,22 @@ import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
 import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
 
-class NextChapterButton extends StatefulWidget {
+enum SkipDirection {
+  right,
+  left;
+}
+
+class SkipChapterButton extends StatefulWidget {
   final String mangaId;
+  final String mangaTitle;
   final MangaAPI api;
   final String startingChapterId;
   final Color overlayColor;
   final void Function(int page, MangaImage cell) onNextPage;
   final void Function() reloadChapters;
+  final SkipDirection direction;
 
-  const NextChapterButton({
+  const SkipChapterButton({
     super.key,
     required this.mangaId,
     required this.startingChapterId,
@@ -26,19 +33,22 @@ class NextChapterButton extends StatefulWidget {
     required this.overlayColor,
     required this.onNextPage,
     required this.reloadChapters,
+    required this.direction,
+    required this.mangaTitle,
   });
 
   @override
-  State<NextChapterButton> createState() => NextChapterButtonState();
+  State<SkipChapterButton> createState() => SkipChapterButtonState();
 }
 
-class NextChapterButtonState extends State<NextChapterButton> {
+class SkipChapterButtonState extends State<SkipChapterButton> {
   Future? progress;
 
   final List<MangaChapter> chapters = [];
   int page = 0;
   late String currentChapter = widget.startingChapterId;
   bool reachedEnd = false;
+  bool cantSeekBack = false;
 
   @override
   void initState() {
@@ -106,8 +116,6 @@ class NextChapterButtonState extends State<NextChapterButton> {
   void _launch(String id) {
     currentChapter = id;
 
-    final f = widget.api.imagesForChapter(MangaStringId(id));
-
     ReadMangaChapter.setProgress(
       1,
       siteMangaId: widget.mangaId,
@@ -118,8 +126,8 @@ class NextChapterButtonState extends State<NextChapterButton> {
 
     ReadMangaChapter.launchReader(
       context,
-      f,
       widget.overlayColor,
+      mangaTitle: widget.mangaTitle,
       mangaId: MangaStringId(widget.mangaId),
       chapterId: id,
       api: widget.api,
@@ -131,11 +139,24 @@ class NextChapterButtonState extends State<NextChapterButton> {
   }
 
   void findAndLaunchNext() {
+    if (cantSeekBack) {
+      return;
+    }
+
     final idx = chapters.indexWhere((element) => element.id == currentChapter);
     if (idx == -1) {
       return;
     }
-    final e = chapters.elementAtOrNull(idx + 1);
+
+    if (widget.direction == SkipDirection.left && idx == 0) {
+      cantSeekBack = true;
+
+      setState(() {});
+      return;
+    }
+
+    final e = chapters.elementAtOrNull(
+        widget.direction == SkipDirection.right ? idx + 1 : idx - 1);
     if (e == null) {
       progress = _tryLoadNew(chapters[idx]);
 
@@ -158,8 +179,12 @@ class NextChapterButtonState extends State<NextChapterButton> {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      onPressed: progress != null || reachedEnd ? null : findAndLaunchNext,
-      icon: const Icon(Icons.navigate_next_rounded),
+      onPressed: progress != null || reachedEnd || cantSeekBack
+          ? null
+          : findAndLaunchNext,
+      icon: widget.direction == SkipDirection.right
+          ? const Icon(Icons.navigate_next_rounded)
+          : const Icon(Icons.navigate_before_rounded),
     );
   }
 }

@@ -9,7 +9,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
+import 'package:gallery/src/db/schemas/downloader/download_file.dart';
+import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
+import 'package:gallery/src/net/downloader.dart';
+import 'package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart';
 import 'package:gallery/src/pages/anime/manga/next_chapter_button.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:isar/isar.dart';
@@ -177,9 +181,9 @@ class ReadMangaChapter {
 
   static Future launchReader(
     BuildContext context,
-    Future<List<MangaImage>> f,
     Color overlayColor, {
     required MangaId mangaId,
+    required String mangaTitle,
     required String chapterId,
     required MangaAPI api,
     required void Function(int page, MangaImage cell) onNextPage,
@@ -197,69 +201,90 @@ class ReadMangaChapter {
       chapterId: chapterId,
     );
 
-    final nextChapterKey = GlobalKey<NextChapterButtonState>();
+    final nextChapterKey = GlobalKey<SkipChapterButtonState>();
+    final prevChaterKey = GlobalKey<SkipChapterButtonState>();
 
     final route = MaterialPageRoute(
       builder: (context) {
-        return FutureBuilder(
-          future: f,
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              final chapters = snapshot.data!;
+        return WrapFutureRestartable(
+          newStatus: () {
+            return api.imagesForChapter(MangaStringId(chapterId));
+          },
+          builder: (context, chapters) {
+            return ImageView<MangaImage>(
+              ignoreLoadingBuilder: true,
+              download: (i) {
+                final image = chapters[i];
 
-              return ImageView<MangaImage>(
-                ignoreLoadingBuilder: true,
-                appBarItems: [
-                  if (addNextChapterButton)
-                    NextChapterButton(
-                      key: nextChapterKey,
-                      overlayColor: overlayColor,
-                      mangaId: mangaId.toString(),
-                      startingChapterId: chapterId,
-                      api: api,
-                      reloadChapters: reloadChapters,
-                      onNextPage: onNextPage,
-                    )
+                Downloader.g.add(
+                  DownloadFile.d(
+                    name:
+                        "${i.toString()} / ${image.maxPages} - $chapterId.${image.url.split(".").last}",
+                    url: image.url,
+                    thumbUrl: image.url,
+                    site: mangaTitle,
+                  ),
+                  Settings.fromDb(),
+                );
+              },
+              appBarItems: [
+                if (addNextChapterButton) ...[
+                  SkipChapterButton(
+                    mangaTitle: mangaTitle,
+                    key: prevChaterKey,
+                    overlayColor: overlayColor,
+                    mangaId: mangaId.toString(),
+                    startingChapterId: chapterId,
+                    api: api,
+                    reloadChapters: reloadChapters,
+                    onNextPage: onNextPage,
+                    direction: SkipDirection.left,
+                  ),
+                  SkipChapterButton(
+                    mangaTitle: mangaTitle,
+                    key: nextChapterKey,
+                    overlayColor: overlayColor,
+                    mangaId: mangaId.toString(),
+                    startingChapterId: chapterId,
+                    api: api,
+                    reloadChapters: reloadChapters,
+                    onNextPage: onNextPage,
+                    direction: SkipDirection.right,
+                  )
                 ],
-                switchPageOnTapEdges: true,
-                onRightSwitchPageEnd: addNextChapterButton
-                    ? () {
-                        nextChapterKey.currentState?.findAndLaunchNext();
-                      }
-                    : null,
-                pageChange: (state) {
-                  ReadMangaChapter.setProgress(
-                    state.currentPage + 1,
-                    siteMangaId: mangaId.toString(),
-                    chapterId: chapterId,
-                  );
+              ],
+              switchPageOnTapEdges: true,
+              onRightSwitchPageEnd: addNextChapterButton
+                  ? () {
+                      nextChapterKey.currentState?.findAndLaunchNext();
+                    }
+                  : null,
+              onLeftSwitchPageEnd: addNextChapterButton
+                  ? () {
+                      prevChaterKey.currentState?.findAndLaunchNext();
+                    }
+                  : null,
+              pageChange: (state) {
+                ReadMangaChapter.setProgress(
+                  state.currentPage + 1,
+                  siteMangaId: mangaId.toString(),
+                  chapterId: chapterId,
+                );
 
-                  onNextPage(state.currentPage,
-                      state.drawCell(state.currentPage, true));
-                },
-                ignoreEndDrawer: true,
-                updateTagScrollPos: (_, __) {},
-                cellCount: chapters.length,
-                scrollUntill: (_) {},
-                startingCell: p != null ? p - 1 : 0,
-                onExit: () {},
-                getCell: (i) => chapters[i],
-                onNearEnd: null,
-                focusMain: () {},
-                systemOverlayRestoreColor: overlayColor,
-              );
-            } else {
-              return Scaffold(
-                appBar: snapshot.hasError
-                    ? AppBar(
-                        leading: const BackButton(),
-                      )
-                    : null,
-                body: const Center(
-                  child: CircularProgressIndicator(),
-                ),
-              );
-            }
+                onNextPage(
+                    state.currentPage, state.drawCell(state.currentPage, true));
+              },
+              ignoreEndDrawer: true,
+              updateTagScrollPos: (_, __) {},
+              cellCount: chapters.length,
+              scrollUntill: (_) {},
+              startingCell: p != null ? p - 1 : 0,
+              onExit: () {},
+              getCell: (i) => chapters[i],
+              onNearEnd: null,
+              focusMain: () {},
+              systemOverlayRestoreColor: overlayColor,
+            );
           },
         );
       },

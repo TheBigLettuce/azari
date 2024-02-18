@@ -93,7 +93,8 @@ class _MangaTabState extends State<MangaTab> {
           Navigator.push(context, MaterialPageRoute(
             builder: (context) {
               return MangaInfoPage(
-                entry: Future.value(cell),
+                id: cell.id,
+                entry: cell,
                 api: widget.api,
               );
             },

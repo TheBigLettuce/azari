@@ -27,7 +27,7 @@ class _ReadingTabState extends State<ReadingTab> {
   late final StreamSubscription<void> watcher;
 
   final data = <CompactMangaData>[];
-  final state = GridSkeletonState<CompactMangaData>();
+  final state = GridSkeletonState<CompactMangaDataBase>();
 
   bool dirty = false;
 
@@ -36,7 +36,7 @@ class _ReadingTabState extends State<ReadingTab> {
   Future<int> refresh() async {
     data.clear();
 
-    final l = ReadMangaChapter.lastRead(-1);
+    final l = ReadMangaChapter.lastRead(50);
     for (final e in l) {
       final d = CompactMangaData.get(e.siteMangaId, widget.api.site);
       if (d != null) {
@@ -55,7 +55,7 @@ class _ReadingTabState extends State<ReadingTab> {
       if (inInner) {
         dirty = true;
       } else {
-        refresh();
+        _refreshGrid();
       }
     });
   }
@@ -67,17 +67,21 @@ class _ReadingTabState extends State<ReadingTab> {
     super.dispose();
   }
 
-  void _startReadingLast() {
-    final c = ReadMangaChapter.lastRead(1).first;
-    final f = widget.api.imagesForChapter(MangaStringId(c.chapterId));
-    final e = data.first;
+  void _startReading(int i) {
+    final c = ReadMangaChapter.firstForId(data[i].mangaId);
+    assert(c != null);
+    if (c == null) {
+      return;
+    }
+
+    final e = data[i];
 
     inInner = true;
 
     ReadMangaChapter.launchReader(
       context,
-      f,
       Theme.of(context).colorScheme.background,
+      mangaTitle: e.title,
       mangaId: MangaStringId(e.mangaId),
       chapterId: c.chapterId,
       onNextPage: (p, cell) {},
@@ -93,20 +97,24 @@ class _ReadingTabState extends State<ReadingTab> {
     inInner = false;
 
     if (dirty) {
-      state.gridKey.currentState?.mutationInterface.tick(0);
-      state.gridKey.currentState?.mutationInterface.setIsRefreshing(true);
-      refresh().whenComplete(() {
-        state.gridKey.currentState?.mutationInterface.tick(data.length);
-        state.gridKey.currentState?.mutationInterface.setIsRefreshing(false);
-      });
+      _refreshGrid();
     }
+  }
+
+  void _refreshGrid() {
+    state.gridKey.currentState?.mutationInterface.tick(0);
+    state.gridKey.currentState?.mutationInterface.setIsRefreshing(true);
+    refresh().whenComplete(() {
+      state.gridKey.currentState?.mutationInterface.tick(data.length);
+      state.gridKey.currentState?.mutationInterface.setIsRefreshing(false);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return GridSkeleton<CompactMangaData>(
+    return GridSkeleton<CompactMangaDataBase>(
       state,
-      (context) => GridFrame<CompactMangaData>(
+      (context) => GridFrame<CompactMangaDataBase>(
         key: state.gridKey,
         getCell: (i) => data[i],
         initalScrollPosition: 0,
@@ -114,13 +122,12 @@ class _ReadingTabState extends State<ReadingTab> {
         systemNavigationInsets: widget.viewInsets,
         hasReachedEnd: () => true,
         overrideOnPress: (context, cell) {
-          final f = widget.api.single(MangaStringId(cell.mangaId));
           inInner = true;
 
           Navigator.push(context, MaterialPageRoute(
             builder: (context) {
               return MangaInfoPage(
-                entry: f,
+                id: MangaStringId(cell.mangaId),
                 api: widget.api,
               );
             },
@@ -129,28 +136,19 @@ class _ReadingTabState extends State<ReadingTab> {
           });
         },
         selectionGlue:
-            GlueProvider.generateOf<AnimeEntry, CompactMangaData>(context),
+            GlueProvider.generateOf<AnimeEntry, CompactMangaDataBase>(context),
         mainFocus: state.mainFocus,
         refresh: refresh,
         description: GridDescription(
-          [
-            GridAction(
-              Icons.remove_circle_outline_rounded,
-              (selected) {
-                for (final e in selected.indexed) {
-                  ReadMangaChapter.deleteAllId(
-                      e.$2.mangaId, e.$1 != selected.length - 1);
-                }
-              },
-              true,
-            ),
-          ],
+          const [],
           ignoreEmptyWidgetOnNoContent: true,
           ignoreSwipeSelectGesture: true,
           showAppBar: false,
           keybindsDescription: "Read tab",
           layout: _ReadingLayout(
-              startReadingLast: _startReadingLast, gridSeed: state.gridSeed),
+            startReading: _startReading,
+            gridSeed: state.gridSeed,
+          ),
         ),
       ),
       canPop: false,
@@ -158,30 +156,38 @@ class _ReadingTabState extends State<ReadingTab> {
   }
 }
 
-class _ReadingLayout implements GridLayouter<CompactMangaData> {
-  final void Function() startReadingLast;
+class _ReadingLayout implements GridLayouter<CompactMangaDataBase> {
+  final void Function(int idx) startReading;
   final int gridSeed;
 
   const _ReadingLayout({
-    required this.startReadingLast,
+    required this.startReading,
     required this.gridSeed,
   });
 
   @override
   List<Widget> call(
-      BuildContext context, GridFrameState<CompactMangaData> state) {
+      BuildContext context, GridFrameState<CompactMangaDataBase> state) {
+    void onPressed(CompactMangaDataBase e, int idx) {
+      state.onPressed(context, e, idx);
+    }
+
+    void onLongPressed(CompactMangaDataBase e, int idx) {
+      startReading(idx);
+    }
+
     return [
       SliverToBoxAdapter(
         child: SegmentLabel(
-          "Reading",
+          "Reading", // TODO: change
           hidePinnedIcon: true,
           onPress: null,
           sticky: false,
           overridePinnedIcon: TextButton(
             onPressed: state.mutationInterface.cellCount == 0
                 ? null
-                : startReadingLast,
-            child: Text("Read last"),
+                : () => startReading(0),
+            child: Text("Read last"), // TODO: change
           ),
         ),
       ),
@@ -192,18 +198,42 @@ class _ReadingLayout implements GridLayouter<CompactMangaData> {
           ),
         )
       else
-        GridLayouts.grid<CompactMangaData>(
-          context,
-          state.mutationInterface,
-          state.selection,
-          columns.number,
-          false,
-          state.makeGridCell,
-          hideAlias: false,
-          tightMode: true,
-          systemNavigationInsets: 0,
-          aspectRatio: GridAspectRatio.zeroSeven.value,
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: (MediaQuery.sizeOf(context).shortestSide / 3),
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: state.mutationInterface.cellCount,
+              itemBuilder: (context, index) {
+                final cell = state.mutationInterface.getCell(index);
+
+                return SizedBox(
+                  width: (MediaQuery.sizeOf(context).shortestSide / 3) *
+                      GridAspectRatio.oneTwo.value,
+                  child: ImportantCard(
+                    cell: cell,
+                    idx: index,
+                    onLongPressed: onLongPressed,
+                    onPressed: onPressed,
+                  ),
+                );
+              },
+            ),
+          ),
         ),
+      const SliverToBoxAdapter(
+        child: SegmentLabel(
+          "Pinned", // TODO: change
+          hidePinnedIcon: false,
+          onPress: null,
+          sticky: false,
+        ),
+      ),
+      _PinnedMangaWidget(
+        controller: state.controller,
+        onPress: (context, cell) => state.onPressed(context, cell, 0),
+        glue: GlueProvider.generateOf<AnimeEntry, PinnedManga>(context),
+      )
     ];
   }
 
@@ -212,4 +242,129 @@ class _ReadingLayout implements GridLayouter<CompactMangaData> {
 
   @override
   bool get isList => false;
+}
+
+class _PinnedMangaWidget extends StatefulWidget {
+  final SelectionGlue<PinnedManga> glue;
+  final ScrollController controller;
+  final void Function(BuildContext context, CompactMangaDataBase cell) onPress;
+
+  const _PinnedMangaWidget({
+    super.key,
+    required this.glue,
+    required this.controller,
+    required this.onPress,
+  });
+
+  @override
+  State<_PinnedMangaWidget> createState() => _PinnedMangaWidgetState();
+}
+
+class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
+  late final StreamSubscription<void> watcher;
+  final data = PinnedManga.getAll(-1);
+
+  late final GridMutationInterface<PinnedManga> mutationInterface =
+      _DummyMutationInterface(data);
+  late final GridSelection<PinnedManga> selection = GridSelection(
+    setState,
+    const [],
+    widget.glue,
+    widget.controller,
+    noAppBar: true,
+    ignoreSwipe: true,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+
+    watcher = PinnedManga.watch((_) {
+      data.clear();
+      data.addAll(PinnedManga.getAll(-1));
+
+      mutationInterface.tick(data.length);
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    watcher.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return data.isEmpty
+        ? SliverToBoxAdapter(
+            child: EmptyWidget(gridSeed: 0),
+          )
+        : GridLayouts.grid<PinnedManga>(
+            context,
+            mutationInterface,
+            selection,
+            GridColumn.three.number,
+            false,
+            (context, cell, idx, {required hideAlias, required tightMode}) =>
+                GridCell(
+              cell: cell,
+              indx: idx,
+              onPressed: (context) {
+                widget.onPress(context, cell);
+              },
+              tight: tightMode,
+              download: null,
+              isList: false,
+              hidealias: hideAlias,
+            ),
+            hideAlias: false,
+            tightMode: false,
+            systemNavigationInsets: 0,
+            aspectRatio: GridAspectRatio.one.value,
+          );
+  }
+}
+
+class _DummyMutationInterface implements GridMutationInterface<PinnedManga> {
+  _DummyMutationInterface(this.data) : cellCount = data.length;
+
+  final List<PinnedManga> data;
+
+  @override
+  int cellCount = 0;
+
+  @override
+  PinnedManga getCell(int i) {
+    return data[i];
+  }
+
+  @override
+  bool get isRefreshing => false;
+
+  @override
+  bool get mutated => false;
+
+  @override
+  Future onRefresh() {
+    return Future.value();
+  }
+
+  @override
+  void restore() {}
+
+  @override
+  void setIsRefreshing(bool isRefreshing) {}
+
+  @override
+  void setSource(int cellCount, PinnedManga Function(int i) getCell) {}
+
+  @override
+  void tick(int i) {
+    cellCount = i;
+  }
+
+  @override
+  void unselectAll() {}
 }

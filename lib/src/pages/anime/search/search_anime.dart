@@ -60,7 +60,8 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
             Navigator.push(context, MaterialPageRoute(
               builder: (context) {
                 return MangaInfoPage(
-                  entry: Future.value(cell),
+                  id: cell.id,
+                  entry: cell,
                   api: api,
                 );
               },

@@ -21,6 +21,7 @@ import 'package:gallery/src/db/schemas/grid_settings/favorites.dart';
 import 'package:gallery/src/db/schemas/grid_settings/files.dart';
 import 'package:gallery/src/db/schemas/manga/chapters_settings.dart';
 import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
+import 'package:gallery/src/db/schemas/manga/pinned_manga.dart';
 import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
 import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
@@ -92,6 +93,7 @@ Future initalizeDb(bool temporary) async {
     CompactMangaDataSchema,
     SavedMangaChaptersSchema,
     ChapterSettingsSchema,
+    PinnedMangaSchema,
   ], name: "anime", directory: directoryPath, inspector: false);
 
   final main = Isar.openSync([
