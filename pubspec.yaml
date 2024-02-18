@@ -34,7 +34,7 @@ dependencies:
 
   photo_view:
     git:
-      url: git@github.com:TheBigLettuce/photo_view.git
+      url: https://github.com/TheBigLettuce/photo_view.git
       ref: 0685380243233f9aa2e4b0d3c7b6534f7554f583
 
   path: ^1.8.3
