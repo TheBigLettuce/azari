@@ -1,3 +1,7 @@
+1.7.0+14:
+— Manga pages,
+— Update icon.
+
 1.6.3+13:
 — Set as wallpaper button,
 — App wide themes.
