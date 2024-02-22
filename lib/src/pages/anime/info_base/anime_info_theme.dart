@@ -23,17 +23,21 @@ class AnimeInfoTheme extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (mode == AnimeSafeMode.safe) {
+      return child;
+    }
+
+    final theme = Theme.of(context);
     Color bgColor = const Color.fromARGB(255, 52, 26, 27);
 
     return Theme(
-      data: Theme.of(context).copyWith(
-        colorScheme: mode == AnimeSafeMode.h || mode == AnimeSafeMode.ecchi
-            ? ColorScheme.fromSeed(
-                seedColor: Colors.pink,
-                brightness: Brightness.dark,
-                background: mode == AnimeSafeMode.h ? bgColor : null,
-              )
-            : null,
+      data: ThemeData.from(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.pink,
+          brightness:
+              mode == AnimeSafeMode.h ? Brightness.dark : theme.brightness,
+          background: mode == AnimeSafeMode.h ? bgColor : null,
+        ),
       ),
       child: _ButtonsThemes(
         mode: mode,
@@ -48,52 +52,47 @@ class AnimeInfoTheme extends StatelessWidget {
 
 class _ButtonsThemes extends StatelessWidget {
   final AnimeSafeMode mode;
-  // final AnimeEntry entry;
   final Widget child;
 
   const _ButtonsThemes({
     super.key,
     required this.mode,
-    // required this.entry,
     required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Theme(
-      data: Theme.of(context).copyWith(
-        scaffoldBackgroundColor: Theme.of(context).colorScheme.background,
+      data: theme.copyWith(
+        scaffoldBackgroundColor: theme.colorScheme.background,
         chipTheme: mode == AnimeSafeMode.h
             ? ChipThemeData(
-                backgroundColor:
-                    Theme.of(context).colorScheme.primary.withOpacity(0.8),
-                disabledColor:
-                    Theme.of(context).colorScheme.primary.withOpacity(0.4),
-                labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onPrimary
-                          .withOpacity(0.8),
-                    ),
+                backgroundColor: theme.colorScheme.primary.withOpacity(0.8),
+                disabledColor: theme.colorScheme.primary.withOpacity(0.4),
+                labelStyle: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.onPrimary.withOpacity(0.8),
+                ),
               )
             : null,
         filledButtonTheme: FilledButtonThemeData(
             style: ButtonStyle(
           foregroundColor: MaterialStatePropertyAll(
-              Theme.of(context).colorScheme.onPrimary.withOpacity(0.8)),
+              theme.colorScheme.onPrimary.withOpacity(0.8)),
           visualDensity: VisualDensity.compact,
           backgroundColor: MaterialStatePropertyAll(
-            Theme.of(context).colorScheme.primary.withOpacity(0.8),
+            theme.colorScheme.primary.withOpacity(0.8),
           ),
         )),
         // buttonTheme: const ButtonThemeData(),
         textButtonTheme: TextButtonThemeData(
           style: ButtonStyle(
               textStyle: MaterialStatePropertyAll(
-                Theme.of(context).textTheme.bodyMedium,
+                theme.textTheme.bodyMedium,
               ),
               foregroundColor: MaterialStatePropertyAll(
-                Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                theme.colorScheme.primary.withOpacity(0.8),
               )),
         ),
       ),

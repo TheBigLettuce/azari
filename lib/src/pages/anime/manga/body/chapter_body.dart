@@ -161,12 +161,17 @@ class __ChapterBodyState extends State<_ChapterBody> {
                   end: const Offset(1, 1),
                 ),
               ],
-              child: CustomScrollView(
-                primary: false,
-                scrollDirection: Axis.vertical,
-                slivers: makeSlivers(
-                  context,
-                  widget.list,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.all(Radius.elliptical(10, 10)),
+                clipBehavior: Clip.antiAlias,
+                child: CustomScrollView(
+                  clipBehavior: Clip.none,
+                  primary: false,
+                  scrollDirection: Axis.vertical,
+                  slivers: makeSlivers(
+                    context,
+                    widget.list,
+                  ),
                 ),
               ),
             ),

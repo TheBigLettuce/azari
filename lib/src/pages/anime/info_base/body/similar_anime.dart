@@ -6,7 +6,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
@@ -36,35 +35,41 @@ class _SimilarAnimeState extends State<SimilarAnime> {
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const BodySegmentLabel(text: "Similar"), // TODO: change
               SizedBox(
                 height: MediaQuery.sizeOf(context).longestSide * 0.2,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: snapshot.data!.indexed
-                      .map((e) => SizedBox(
-                            width: MediaQuery.sizeOf(context).longestSide *
-                                0.2 *
-                                GridAspectRatio.zeroFive.value,
-                            child: GridCell(
-                              cell: e.$2,
-                              indx: e.$1,
-                              onPressed: (context) {
-                                Navigator.push(context, MaterialPageRoute(
-                                  builder: (context) {
-                                    return AnimeInfoIdPage(
-                                        id: e.$2.id, site: widget.entry.site);
-                                  },
-                                ));
-                              },
-                              tight: false,
-                              download: null,
-                              isList: false,
-                              labelAtBottom: true,
-                            ),
-                          ))
-                      .toList(),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(15),
+                  clipBehavior: Clip.antiAlias,
+                  child: ListView(
+                    clipBehavior: Clip.none,
+                    scrollDirection: Axis.horizontal,
+                    children: snapshot.data!.indexed
+                        .map((e) => SizedBox(
+                              width: MediaQuery.sizeOf(context).longestSide *
+                                  0.2 *
+                                  GridAspectRatio.zeroFive.value,
+                              child: GridCell(
+                                cell: e.$2,
+                                indx: e.$1,
+                                onPressed: (context) {
+                                  Navigator.push(context, MaterialPageRoute(
+                                    builder: (context) {
+                                      return AnimeInfoIdPage(
+                                          id: e.$2.id, site: widget.entry.site);
+                                    },
+                                  ));
+                                },
+                                tight: false,
+                                download: null,
+                                isList: false,
+                                labelAtBottom: true,
+                              ),
+                            ))
+                        .toList(),
+                  ),
                 ),
               ),
             ],
@@ -76,14 +81,16 @@ class _SimilarAnimeState extends State<SimilarAnime> {
                   width: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : FilledButton(
-                  onPressed: () {
-                    _future =
-                        widget.entry.site.api.recommendations(widget.entry);
+              : Center(
+                  child: FilledButton(
+                    onPressed: () {
+                      _future =
+                          widget.entry.site.api.recommendations(widget.entry);
 
-                    setState(() {});
-                  },
-                  child: const Text("Load similar"), // TODO: change
+                      setState(() {});
+                    },
+                    child: const Text("Load similar"), // TODO: change
+                  ),
                 );
         }
       },

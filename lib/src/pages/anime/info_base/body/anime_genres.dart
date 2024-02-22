@@ -21,23 +21,28 @@ class AnimeGenres<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Wrap(
-        spacing: 4,
-        children: genres
-            .map((e) => ActionChip(
-                  // backgroundColor: Theme.of(context).chipTheme.backgroundColor,
-                  surfaceTintColor: Theme.of(context).colorScheme.surfaceTint,
-                  elevation: 4,
-                  visualDensity: VisualDensity.compact,
-                  label: Text(title(e.$1)),
-                  onPressed: e.$2 ? null : () => onPressed.call(e.$1),
-                  side: BorderSide.none,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(25)),
-                ))
-            .toList(),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(25),
+      clipBehavior: Clip.antiAlias,
+      child: SingleChildScrollView(
+        clipBehavior: Clip.none,
+        scrollDirection: Axis.horizontal,
+        child: Wrap(
+          spacing: 4,
+          children: genres
+              .map((e) => ActionChip(
+                    // backgroundColor: Theme.of(context).chipTheme.backgroundColor,
+                    surfaceTintColor: Theme.of(context).colorScheme.surfaceTint,
+                    elevation: 4,
+                    visualDensity: VisualDensity.compact,
+                    label: Text(title(e.$1)),
+                    onPressed: e.$2 ? null : () => onPressed.call(e.$1),
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25)),
+                  ))
+              .toList(),
+        ),
       ),
     );
   }

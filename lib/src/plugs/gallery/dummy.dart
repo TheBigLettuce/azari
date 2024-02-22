@@ -83,6 +83,9 @@ class _DummyDirectoriesExtra implements GalleryDirectoriesExtra {
   void addBlacklisted(List<BlacklistedDirectory> bucketIds) {}
 
   @override
+  bool get currentlyHostingFiles => false;
+
+  @override
   Isar get db => throw UnimplementedError();
 
   @override

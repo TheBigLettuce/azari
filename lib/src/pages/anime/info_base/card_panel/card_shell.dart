@@ -130,9 +130,10 @@ class _CardShellState extends State<CardShell> {
             MediaQuery.sizeOf(context).height * 0.3,
         child: Padding(
           padding: EdgeInsets.only(
-              top: 2 + kToolbarHeight + widget.viewPadding.top,
-              left: 22,
-              right: 22),
+            top: 2 + kToolbarHeight + widget.viewPadding.top,
+            left: 22,
+            right: 22,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -153,13 +154,19 @@ class _CardShellState extends State<CardShell> {
                 child: Expanded(
                     child: Stack(
                   children: [
-                    GridView(
-                      controller: cardsController,
-                      scrollDirection: Axis.horizontal,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2),
-                      children: _merge(),
+                    ClipRRect(
+                      borderRadius:
+                          const BorderRadius.all(Radius.elliptical(40, 40)),
+                      clipBehavior: Clip.antiAlias,
+                      child: GridView(
+                        clipBehavior: Clip.none,
+                        controller: cardsController,
+                        scrollDirection: Axis.horizontal,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2),
+                        children: _merge(),
+                      ),
                     ),
                     LeftArrow(show: _showArrorLeft),
                     RightArrow(show: _showArrowRight),

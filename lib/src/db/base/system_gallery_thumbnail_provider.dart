@@ -118,6 +118,8 @@ class SystemGalleryThumbnailProvider
       return decode(await ImmutableBuffer.fromUint8List(kTransparentImage));
     }
 
+    // copied from Flutter source of FileImage
+
     // TODO(jonahwilliams): making this sync caused test failures that seem to
     // indicate that we can fail to call evict unless at least one await has
     // occurred in the test.

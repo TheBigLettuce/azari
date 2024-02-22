@@ -8,8 +8,6 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -206,7 +204,7 @@ void main() async {
       key: restartKey,
       child: (d, l) => MaterialApp(
         themeAnimationCurve: Easing.emphasizedAccelerate,
-        title: 'Ācārya',
+        title: 'Azari',
         darkTheme: d,
         theme: l,
         home: const Home(),
@@ -229,6 +227,10 @@ void changeSystemUiOverlay(BuildContext? context, [Color? override]) {
   SystemChrome.setSystemUIOverlayStyle(
     SystemUiOverlayStyle(
       systemNavigationBarColor: override?.withOpacity(0.5) ??
+          Theme.of(context!)
+              .navigationBarTheme
+              .backgroundColor
+              ?.withOpacity(0.5) ??
           Theme.of(context!).colorScheme.background.withOpacity(0.5),
     ),
   );

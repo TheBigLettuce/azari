@@ -374,7 +374,7 @@ class _RandomBooruGridState extends State<RandomBooruGrid>
                     getCell: (i) => instance.posts.getSync(i + 1)!,
                     loadNext: _addLast,
                     refresh: _clearAndRefresh,
-                    noteInterface: NoteBooru.interface(setState),
+                    // noteInterface: NoteBooru.interface(setState),
                     onBack: () => Navigator.pop(context),
                     download: _download,
                     initalCell: widget.state?.selectedPost,

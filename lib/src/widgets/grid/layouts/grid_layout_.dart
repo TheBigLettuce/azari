@@ -7,7 +7,7 @@
 
 part of '../grid_frame.dart';
 
-typedef MakeCellFunc<T extends Cell> = GridCell Function(
+typedef MakeCellFunc<T extends Cell> = GridCell<T> Function(
   BuildContext,
   T,
   int, {
@@ -54,14 +54,14 @@ abstract class GridLayouts {
       required void Function(BuildContext, T, int)? onPressed}) {
     final selected = selection.isSelected(index);
 
-    return _WrapSelection(
+    return WrapSelection(
       actionsAreEmpty: selection.addActions.isEmpty,
       selectUntil: (i) => selection.selectUnselectUntil(i, state),
       thisIndx: index,
       isSelected: selected,
       ignoreSwipeGesture: selection.ignoreSwipe,
       selectionEnabled: selection.selected.isNotEmpty,
-      scrollController: selection.controller,
+      currentScroll: selection.controller,
       bottomPadding: systemNavigationInsets,
       selectUnselect: () => selection.selectOrUnselect(
           context, index, cell, systemNavigationInsets),
@@ -106,13 +106,13 @@ abstract class GridLayouts {
       itemBuilder: (context, indx) {
         final cell = state.getCell(indx);
 
-        return _WrapSelection(
+        return WrapSelection(
           actionsAreEmpty: selection.addActions.isEmpty,
           selectionEnabled: selection.selected.isNotEmpty,
           thisIndx: indx,
           ignoreSwipeGesture: selection.ignoreSwipe,
           bottomPadding: systemNavigationInsets,
-          scrollController: selection.controller,
+          currentScroll: selection.controller,
           selectUntil: (i) => selection.selectUnselectUntil(i, state),
           selectUnselect: () => selection.selectOrUnselect(
               context, indx, cell, systemNavigationInsets),
@@ -173,13 +173,13 @@ abstract class GridLayouts {
               maxHeight: (size / aspectRatio) +
                   (rem * (size * (0.037 + (columns / 100) - rem * 0.01)))
                       .toInt()),
-          child: _WrapSelection(
+          child: WrapSelection(
             actionsAreEmpty: selection.addActions.isEmpty,
             selectionEnabled: selection.selected.isNotEmpty,
             thisIndx: indx,
             ignoreSwipeGesture: selection.ignoreSwipe,
             bottomPadding: systemNavigationInsets,
-            scrollController: selection.controller,
+            currentScroll: selection.controller,
             selectUntil: (i) => selection.selectUnselectUntil(i, state),
             selectUnselect: () => selection.selectOrUnselect(
                 context, indx, cell, systemNavigationInsets),
@@ -217,13 +217,13 @@ abstract class GridLayouts {
       itemBuilder: (context, indx) {
         final cell = state.getCell(indx);
 
-        return _WrapSelection(
+        return WrapSelection(
           actionsAreEmpty: selection.addActions.isEmpty,
           selectionEnabled: selection.selected.isNotEmpty,
           thisIndx: indx,
           ignoreSwipeGesture: selection.ignoreSwipe,
           bottomPadding: systemNavigationInsets,
-          scrollController: selection.controller,
+          currentScroll: selection.controller,
           selectUntil: (i) => selection.selectUnselectUntil(i, state),
           selectUnselect: () => selection.selectOrUnselect(
               context, indx, cell, systemNavigationInsets),
@@ -267,13 +267,13 @@ abstract class GridLayouts {
                   constraints: BoxConstraints(maxWidth: constraints),
                   child: material.AspectRatio(
                     aspectRatio: aspectRatio,
-                    child: _WrapSelection(
+                    child: WrapSelection(
                       actionsAreEmpty: selection.addActions.isEmpty,
                       selectionEnabled: selection.selected.isNotEmpty,
                       thisIndx: indx,
                       ignoreSwipeGesture: selection.ignoreSwipe,
                       bottomPadding: systemNavigationInsets,
-                      scrollController: selection.controller,
+                      currentScroll: selection.controller,
                       selectUntil: (i) {
                         if (predefined != null) {
                           selection.selectUnselectUntil(indx, state,
@@ -322,13 +322,13 @@ abstract class GridLayouts {
                   constraints: BoxConstraints(maxWidth: constraints),
                   child: material.AspectRatio(
                     aspectRatio: aspectRatio,
-                    child: _WrapSelection(
+                    child: WrapSelection(
                       actionsAreEmpty: selection.addActions.isEmpty,
                       selectionEnabled: selection.selected.isNotEmpty,
                       thisIndx: -1,
                       ignoreSwipeGesture: selection.ignoreSwipe,
                       bottomPadding: systemNavigationInsets,
-                      scrollController: selection.controller,
+                      currentScroll: selection.controller,
                       selectUntil: (i) =>
                           selection.selectUnselectUntil(i, state),
                       selectUnselect: () => selection.selectOrUnselect(

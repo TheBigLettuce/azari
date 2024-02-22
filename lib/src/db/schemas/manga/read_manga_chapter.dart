@@ -291,13 +291,11 @@ class ReadMangaChapter {
     );
 
     if (replace) {
-      return Navigator.pushReplacement(
-        context,
+      return Navigator.of(context, rootNavigator: true).pushReplacement(
         route,
       );
     } else {
-      return Navigator.push(
-        context,
+      return Navigator.of(context, rootNavigator: true).push(
         route,
       );
     }

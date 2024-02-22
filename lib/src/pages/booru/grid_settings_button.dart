@@ -112,7 +112,7 @@ PopupMenuItem _columns(BuildContext context, GridColumn columns,
 PopupMenuItem _gridLayout(BuildContext context, GridLayoutType selectGridLayout,
     void Function(GridLayoutType?) select) {
   return PopupMenuItem(
-    child: const Text("Layout"), // TODO: layout
+    child: const Text("Layout"), // TODO: change
     onTap: () => radioDialog(
       context,
       GridLayoutType.values.map((e) => (e, e.text)),

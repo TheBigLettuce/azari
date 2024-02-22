@@ -21,12 +21,17 @@ class TimeLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (time == (now.day, now.month, now.year)) {
-      return SettingsLabel("Today", titleStyle, removePadding: removePadding);
+      return SettingsLabel(
+        "Today",
+        titleStyle,
+        removePadding: removePadding,
+      );
     } else {
       return SettingsLabel(
-          "${time.$1}/${time.$2}/${time.$3.toString().substring(2)}",
-          titleStyle,
-          removePadding: removePadding);
+        "${time.$1}/${time.$2}/${time.$3.toString().substring(2)}",
+        titleStyle,
+        removePadding: removePadding,
+      );
     }
   }
 }

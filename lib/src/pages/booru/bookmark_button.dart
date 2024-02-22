@@ -7,111 +7,32 @@
 
 import 'dart:async';
 
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
+import 'package:gallery/src/db/schemas/booru/post.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/db/state_restoration.dart';
 import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/pages/booru/random.dart';
 import 'package:gallery/src/pages/more/settings/settings_widget.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
+import 'package:gallery/src/widgets/shimmer_loading_indicator.dart';
 import 'package:isar/isar.dart';
 
 import '../../widgets/time_label.dart';
 
-class BookmarkButton extends StatefulWidget {
-  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
-  final void Function(String? e) saveSelectedPage;
-  final String? restoreSelectedPage;
-
-  const BookmarkButton({
-    super.key,
-    required this.generateGlue,
-    required this.restoreSelectedPage,
-    required this.saveSelectedPage,
-  });
-
-  @override
-  State<BookmarkButton> createState() => _BookmarkButtonState();
-}
-
-class _BookmarkButtonState extends State<BookmarkButton> {
-  @override
-  void initState() {
-    super.initState();
-
-    if (widget.restoreSelectedPage != null) {
-      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        final e = Dbs.g.main.gridStateBoorus
-            .getByNameSync(widget.restoreSelectedPage!)!;
-
-        Dbs.g.main.writeTxnSync(() => Dbs.g.main.gridStateBoorus
-            .putByNameSync(e.copy(false, time: DateTime.now())));
-
-        widget.saveSelectedPage(widget.restoreSelectedPage);
-
-        Navigator.push(context, MaterialPageRoute(
-          builder: (context) {
-            final tagManager = TagManager.fromEnum(e.booru);
-
-            return RandomBooruGrid(
-              api: BooruAPIState.fromEnum(e.booru, page: e.page),
-              tagManager: tagManager,
-              onDispose: () {
-                if (!isRestart) {
-                  widget.saveSelectedPage(null);
-                }
-              },
-              tags: e.tags,
-              state: e,
-              generateGlue: widget.generateGlue,
-            );
-          },
-        ));
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    if (!isRestart) {
-      widget.saveSelectedPage(null);
-    }
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton(
-      itemBuilder: (context) {
-        return [
-          PopupMenuItem(
-            enabled: false,
-            padding: EdgeInsets.zero,
-            child: _WrapEntries(
-              generateGlue: widget.generateGlue,
-              saveSelectedPage: widget.saveSelectedPage,
-              restoreSelectedPage: widget.restoreSelectedPage,
-            ),
-          )
-        ];
-      },
-      icon: const Icon(Icons.bookmarks_outlined),
-    );
-  }
-}
-
-class _WrapEntries extends StatefulWidget {
+class BookmarkPage extends StatefulWidget {
   final void Function(String? e) saveSelectedPage;
   final String? restoreSelectedPage;
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;
 
-  const _WrapEntries({
+  const BookmarkPage({
     super.key,
     required this.restoreSelectedPage,
     required this.saveSelectedPage,
@@ -119,13 +40,17 @@ class _WrapEntries extends StatefulWidget {
   });
 
   @override
-  State<_WrapEntries> createState() => __WrapEntriesState();
+  State<BookmarkPage> createState() => _BookmarkPageState();
 }
 
-class __WrapEntriesState extends State<_WrapEntries> {
+class _BookmarkPageState extends State<BookmarkPage> {
   late final StreamSubscription<void> watcher;
-  List<GridStateBooru> gridStates =
-      Dbs.g.main.gridStateBoorus.where().sortByTimeDesc().findAllSync();
+  final List<GridStateBooru> gridStates = [];
+
+  final m = <String, List<Post>>{};
+
+  bool dirty = false;
+  bool inInner = false;
 
   @override
   void dispose() {
@@ -138,12 +63,50 @@ class __WrapEntriesState extends State<_WrapEntries> {
   void initState() {
     super.initState();
 
-    watcher = Dbs.g.main.gridStateBoorus.watchLazy().listen((event) {
-      gridStates =
-          Dbs.g.main.gridStateBoorus.where().sortByTimeDesc().findAllSync();
-
-      setState(() {});
+    watcher = Dbs.g.main.gridStateBoorus
+        .watchLazy(fireImmediately: true)
+        .listen((event) {
+      if (inInner) {
+        dirty = true;
+      } else {
+        _updateDirectly();
+      }
     });
+  }
+
+  void _updateDirectly() async {
+    gridStates.clear();
+
+    gridStates.addAll(
+        Dbs.g.main.gridStateBoorus.where().sortByTimeDesc().findAllSync());
+
+    if (m.isEmpty) {
+      for (final e in gridStates) {
+        final db = DbsOpen.secondaryGridName(e.name);
+
+        final p = db.posts.where().limit(5).findAllSync();
+
+        List<Post>? l = m[e.name];
+        if (l == null) {
+          l = [];
+          m[e.name] = l;
+        }
+
+        l.addAll(p);
+
+        await db.close();
+      }
+    }
+
+    setState(() {});
+  }
+
+  void _procUpdate() {
+    inInner = false;
+
+    if (dirty) {
+      _updateDirectly();
+    }
   }
 
   void launchGrid(BuildContext context, GridStateBooru e) {
@@ -151,6 +114,8 @@ class __WrapEntriesState extends State<_WrapEntries> {
         .putByNameSync(e.copy(false, time: DateTime.now())));
 
     widget.saveSelectedPage(e.name);
+
+    inInner = true;
 
     Navigator.push(context, MaterialPageRoute(
       builder: (context) {
@@ -169,14 +134,14 @@ class __WrapEntriesState extends State<_WrapEntries> {
           generateGlue: widget.generateGlue,
         );
       },
-    ));
+    )).whenComplete(_procUpdate);
   }
 
   @override
   Widget build(BuildContext context) {
     List<Widget> makeList() {
       final timeNow = DateTime.now();
-      final list = <PopupMenuEntry>[];
+      final list = <Widget>[];
 
       final titleStyle = Theme.of(context)
           .textTheme
@@ -186,70 +151,25 @@ class __WrapEntriesState extends State<_WrapEntries> {
       (int, int, int)? time;
 
       for (final e in gridStates) {
-        if (time == null || time != (e.time.day, e.time.month, e.time.year)) {
+        final addTime =
+            time == null || time != (e.time.day, e.time.month, e.time.year);
+        if (addTime) {
           time = (e.time.day, e.time.month, e.time.year);
 
-          list.add(PopupMenuItem(
-            enabled: false,
-            padding: const EdgeInsets.all(0),
-            child: TimeLabel(time, titleStyle, timeNow),
-          ));
+          list.add(TimeLabel(time, titleStyle, timeNow));
         }
 
         list.add(
-          _LongPressPopupItem(
-            menuItems: [
-              PopupMenuItem(
-                onTap: () {
-                  Navigator.push(
-                      context,
-                      DialogRoute(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: Text(
-                              AppLocalizations.of(context)!.delete,
-                            ),
-                            content: ListTile(
-                              title: Text(e.tags),
-                              subtitle: Text(e.time.toString()),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  DbsOpen.secondaryGridName(e.name)
-                                      .close(deleteFromDisk: true)
-                                      .then((value) {
-                                    if (value) {
-                                      Dbs.g.main.writeTxnSync(() => Dbs
-                                          .g.main.gridStateBoorus
-                                          .deleteByNameSync(e.name));
-                                    }
-
-                                    Navigator.pop(context);
-                                  });
-                                },
-                                child: Text(AppLocalizations.of(context)!.yes),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: Text(AppLocalizations.of(context)!.no),
-                              ),
-                            ],
-                          );
-                        },
-                      ));
-                },
-                child: Text(AppLocalizations.of(context)!.delete),
-              )
-            ],
-            menuTitle: e.tags,
-            onTap: () => launchGrid(context, e),
-            // enabled: false,
-            padding: const EdgeInsets.only(left: 16),
-            child: BookmarkListTile(
+          Padding(
+            padding:
+                EdgeInsets.only(top: addTime ? 0 : 12, left: 12, right: 16),
+            child: _BookmarkListTile(
+              onPressed: launchGrid,
+              key: ValueKey(e.name),
+              state: e,
               title: e.tags,
               subtitle: e.booru.string,
+              posts: m[e.name]!,
             ),
           ),
         );
@@ -259,11 +179,12 @@ class __WrapEntriesState extends State<_WrapEntries> {
     }
 
     return gridStates.isEmpty
-        ? const EmptyWidget(
-            mini: true,
-            gridSeed: 0,
+        ? const SliverToBoxAdapter(
+            child: EmptyWidget(
+              gridSeed: 0,
+            ),
           )
-        : Column(
+        : SliverList.list(
             children: makeList(),
           );
   }
@@ -272,11 +193,13 @@ class __WrapEntriesState extends State<_WrapEntries> {
 class BookmarkListTile extends StatelessWidget {
   final String title;
   final String subtitle;
+  final GridStateBooru state;
 
   const BookmarkListTile({
     super.key,
     required this.subtitle,
     required this.title,
+    required this.state,
   });
 
   @override
@@ -311,32 +234,216 @@ class BookmarkListTile extends StatelessWidget {
   }
 }
 
-class _LongPressPopupItem extends PopupMenuItem {
-  final String menuTitle;
-  final List<PopupMenuItem<dynamic>> menuItems;
+class _BookmarkListTile extends StatefulWidget {
+  final String title;
+  final String subtitle;
+  final GridStateBooru state;
+  final void Function(BuildContext context, GridStateBooru e) onPressed;
+  final List<Post> posts;
 
-  const _LongPressPopupItem({
-    required this.menuItems,
-    required this.menuTitle,
-    super.padding,
-    super.onTap,
-    required super.child,
+  const _BookmarkListTile({
+    super.key,
+    required this.subtitle,
+    required this.title,
+    required this.state,
+    required this.onPressed,
+    required this.posts,
   });
 
   @override
-  PopupMenuItemState<dynamic, PopupMenuItem> createState() =>
-      _LongPressPopupItemState();
+  State<_BookmarkListTile> createState() => __BookmarkListTileState();
 }
 
-class _LongPressPopupItemState extends PopupMenuItemState {
+class __BookmarkListTileState extends State<_BookmarkListTile> {
   @override
   Widget build(BuildContext context) {
-    final widget = this.widget as _LongPressPopupItem;
+    final size = MediaQuery.sizeOf(context);
+    final singleHeight = (size.width / 5) - (12 / 5) - (18 / 5) - (12 / 5);
+    // final colorPrimary = Theme.of(context).colorScheme.primaryContainer;
 
-    return MenuWrapper(
-      title: widget.menuTitle,
-      items: widget.menuItems,
-      child: super.build(context),
+    Iterable<Widget> addDividers(
+        Iterable<Widget> l, double height, int len, Color? dividerColor) sync* {
+      for (final e in l.indexed) {
+        yield e.$2;
+        if (e.$1 != len - 1) {
+          yield VerticalDivider(
+            width: 1,
+            color: dividerColor,
+          );
+        }
+      }
+    }
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: () {
+        widget.onPressed(context, widget.state);
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color:
+              Theme.of(context).colorScheme.primaryContainer.withOpacity(0.25),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding:
+                  const EdgeInsets.only(left: 6, right: 6, top: 6, bottom: 3),
+              child: Container(
+                clipBehavior: Clip.antiAlias,
+                decoration:
+                    BoxDecoration(borderRadius: BorderRadius.circular(20)),
+                foregroundDecoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Wrap(
+                  children: addDividers(
+                    widget.posts.indexed.map((e) => SizedBox(
+                          height:
+                              singleHeight / GridAspectRatio.zeroSeven.value,
+                          width: e.$1 != widget.posts.length - 1
+                              ? singleHeight - 0.5
+                              : singleHeight,
+                          child: Image(
+                            frameBuilder: (
+                              context,
+                              child,
+                              frame,
+                              wasSynchronouslyLoaded,
+                            ) {
+                              if (wasSynchronouslyLoaded) {
+                                return child;
+                              }
+
+                              return frame == null
+                                  ? const ShimmerLoadingIndicator()
+                                  : child.animate().fadeIn();
+                            },
+                            colorBlendMode: BlendMode.hue,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primaryContainer
+                                .withOpacity(0.5),
+                            image: e.$2.thumbnail()!,
+                            fit: BoxFit.cover,
+                          ),
+                        )),
+                    singleHeight,
+                    widget.posts.length,
+                    Theme.of(context).colorScheme.background,
+                  ).toList(),
+                ),
+              ),
+            ),
+            const Padding(padding: EdgeInsets.only(top: 3)),
+            Divider(
+              height: 0,
+              color: Theme.of(context)
+                  .colorScheme
+                  .primaryContainer
+                  .withOpacity(0.8),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .primaryContainer
+                    .withOpacity(0.25),
+              ),
+              width: double.infinity,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                    top: 8, bottom: 8, left: 12, right: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.title,
+                          style:
+                              Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primary
+                                        .withOpacity(0.9),
+                                    letterSpacing: -0.4,
+                                  ),
+                        ),
+                        Text(
+                          widget.subtitle,
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant
+                                        .withOpacity(0.8),
+                                    letterSpacing: 0.8,
+                                  ),
+                        )
+                      ],
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        Navigator.push(
+                            context,
+                            DialogRoute(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: Text(
+                                    AppLocalizations.of(context)!.delete,
+                                  ),
+                                  content: ListTile(
+                                    title: Text(widget.state.tags),
+                                    subtitle:
+                                        Text(widget.state.time.toString()),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        DbsOpen.secondaryGridName(
+                                                widget.state.name)
+                                            .close(deleteFromDisk: true)
+                                            .then((value) {
+                                          if (value) {
+                                            Dbs.g.main.writeTxnSync(() => Dbs
+                                                .g.main.gridStateBoorus
+                                                .deleteByNameSync(
+                                                    widget.state.name));
+                                          }
+
+                                          Navigator.pop(context);
+                                        });
+                                      },
+                                      child: Text(
+                                          AppLocalizations.of(context)!.yes),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text(
+                                          AppLocalizations.of(context)!.no),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ));
+                      },
+                      icon: const Icon(Icons.delete_outline_rounded),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          ],
+        ),
+      ),
     );
   }
 }

@@ -53,13 +53,13 @@ class SynopsisBackground extends StatelessWidget {
     }
 
     return Wrap(
-      alignment: WrapAlignment.center,
-      crossAxisAlignment: WrapCrossAlignment.center,
+      // alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.start,
       direction: Axis.vertical,
       children: [
         BodySegmentLabel(text: AppLocalizations.of(context)!.synopsisLabel),
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 4, right: 4),
+          padding: const EdgeInsets.only(bottom: 4, right: 4),
           child: AnimatedContainer(
             duration: 200.ms,
             constraints: constraints,
@@ -87,7 +87,7 @@ class SynopsisBackground extends StatelessWidget {
           BodySegmentLabel(text: AppLocalizations.of(context)!.backgroundLabel),
         if (background.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(left: 4, bottom: 4, right: 4),
+            padding: const EdgeInsets.only(bottom: 4, right: 4),
             child: AnimatedContainer(
               duration: 200.ms,
               constraints: constraints,

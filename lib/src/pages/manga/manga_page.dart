@@ -5,26 +5,43 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery/src/net/manga/manga_dex.dart';
+import 'package:gallery/src/pages/anime/anime.dart';
+import 'package:gallery/src/widgets/grid/segment_label.dart';
 
-class BodySegmentLabel extends StatelessWidget {
-  final String text;
+class MangaPage extends StatefulWidget {
+  final void Function(bool) procPop;
+  final EdgeInsets viewPadding;
 
-  const BodySegmentLabel({super.key, required this.text});
+  const MangaPage({
+    super.key,
+    required this.procPop,
+    required this.viewPadding,
+  });
+
+  @override
+  State<MangaPage> createState() => _MangaPageState();
+}
+
+class _MangaPageState extends State<MangaPage> {
+  final dio = Dio();
+  late final api = MangaDex(dio);
+
+  @override
+  void dispose() {
+    dio.close();
+
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8, top: 12),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.titleLarge!.copyWith(
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.5,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.75),
-            ),
-      ),
+    return ReadingTab(
+      widget.viewPadding,
+      api: api,
+      onDispose: () {},
     );
   }
 }

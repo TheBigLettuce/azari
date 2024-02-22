@@ -375,15 +375,15 @@ class _GalleryFilesState extends State<GalleryFiles>
                       gridSettings.copy(columns: columns).save()),
             ],
             inlineMenuButtonItems: true,
-            noteInterface: NoteGallery.interface((
-                {int? replaceIndx, bool addNote = false, int? removeNote}) {
-              if (state.gridKey.currentState?.mutationInterface.isRefreshing ==
-                  true) {
-                return;
-              }
+            // noteInterface: NoteGallery.interface((
+            //     {int? replaceIndx, bool addNote = false, int? removeNote}) {
+            //   if (state.gridKey.currentState?.mutationInterface.isRefreshing ==
+            //       true) {
+            //     return;
+            //   }
 
-              _refresh();
-            }),
+            //   _refresh();
+            // }),
             onBack: () {
               final filterMode = currentFilteringMode();
               if (filterMode != FilteringMode.noFilter) {

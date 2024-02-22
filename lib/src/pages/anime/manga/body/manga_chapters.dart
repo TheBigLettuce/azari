@@ -6,7 +6,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -178,54 +177,49 @@ class _MangaChaptersState extends State<MangaChapters> {
 
   @override
   Widget build(BuildContext context) {
-    Widget chapterWidget() => Stack(
-          fit: StackFit.passthrough,
-          alignment: Alignment.center,
+    Widget chapterWidget() => Row(
+          textBaseline: TextBaseline.alphabetic,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const BodySegmentLabel(text: "Chapters"), // TODO: change
-            Align(
-              alignment: Alignment.centerRight,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: PopupMenuButton(
-                  position: PopupMenuPosition.under,
-                  shape: const BeveledRectangleBorder(),
-                  clipBehavior: Clip.antiAlias,
-                  // splashRadius: 15,
-                  itemBuilder: (context) {
-                    return [
-                      PopupMenuItem(
-                        onTap: () {
-                          ChapterSettings.setHideRead(!settings.hideRead);
-                        },
-                        child: settings.hideRead
-                            ? Text("Show read") // TODO: change
-                            : Text("Hide read"), // TODO: change
-                      ),
-                      PopupMenuItem(
-                        onTap: () {
-                          SavedMangaChapters.clear(
-                            widget.entry.id.toString(),
-                            widget.entry.site,
-                          );
-
-                          list.clear();
-                          page = 0;
-                          reachedEnd = false;
-
-                          setState(() {});
-                        },
-                        child: Text("Clear"), // TODO: change
-                      ),
-                    ];
-                  },
-                  child: const TextButton(
-                    onPressed: null,
-                    child: Text("Settings"), // TODO: change
+            PopupMenuButton(
+              position: PopupMenuPosition.under,
+              shape: const BeveledRectangleBorder(),
+              clipBehavior: Clip.antiAlias,
+              // splashRadius: 15,
+              itemBuilder: (context) {
+                return [
+                  PopupMenuItem(
+                    onTap: () {
+                      ChapterSettings.setHideRead(!settings.hideRead);
+                    },
+                    child: settings.hideRead
+                        ? const Text("Show read") // TODO: change
+                        : const Text("Hide read"), // TODO: change
                   ),
-                ),
+                  PopupMenuItem(
+                    onTap: () {
+                      SavedMangaChapters.clear(
+                        widget.entry.id.toString(),
+                        widget.entry.site,
+                      );
+
+                      list.clear();
+                      page = 0;
+                      reachedEnd = false;
+
+                      setState(() {});
+                    },
+                    child: const Text("Clear"), // TODO: change
+                  ),
+                ];
+              },
+              child: const TextButton(
+                onPressed: null,
+                child: Text("Settings"), // TODO: change
               ),
-            )
+            ),
           ],
         );
 
@@ -238,12 +232,13 @@ class _MangaChaptersState extends State<MangaChapters> {
               maxHeight: MediaQuery.sizeOf(context).height * 0.4,
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 chapterWidget(),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 8),
+                    padding: const EdgeInsets.only(left: 0),
                     child: _ChapterBody(
                       scrollController: widget.scrollController,
                       list: list,

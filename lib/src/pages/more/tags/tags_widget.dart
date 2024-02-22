@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
+import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/make_tags.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
 
@@ -21,13 +22,14 @@ class TagsWidget extends StatelessWidget {
   final List<Tag> tags;
   final Widget searchBar;
 
-  const TagsWidget(
-      {super.key,
-      required this.tags,
-      required this.searchBar,
-      this.redBackground = false,
-      required this.deleteTag,
-      required this.onPress});
+  const TagsWidget({
+    super.key,
+    required this.tags,
+    required this.searchBar,
+    this.redBackground = false,
+    required this.deleteTag,
+    required this.onPress,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -42,14 +44,13 @@ class TagsWidget extends StatelessWidget {
     final timeNow = DateTime.now();
 
     if (tags.isEmpty) {
-      return Column(
+      return SliverList.list(
         children: [
           ...listWraps,
-          const Expanded(
-              child: Center(
-                  child: EmptyWidget(
+          const Center(
+              child: EmptyWidget(
             gridSeed: 0,
-          )))
+          ))
         ],
       );
     }
@@ -78,39 +79,11 @@ class TagsWidget extends StatelessWidget {
         list.clear();
       }
 
-      list.add(MenuWrapper(
-        title: e.tag,
-        items: [
-          if (onPress != null)
-            launchGridSafeModeItem(
-              context,
-              e.tag,
-              (context, _, [safeMode]) {
-                onPress!(e, safeMode);
-              },
-            ),
-          PopupMenuItem(
-            onTap: () {
-              deleteTag(e);
-            },
-            child: const Text("Delete"), // TODO: change
-          )
-        ],
-        child: RawChip(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-          side: redBackground ? BorderSide(color: Colors.pink.shade200) : null,
-          backgroundColor: redBackground ? Colors.pink : null,
-          label: Text(e.tag,
-              style: redBackground
-                  ? TextStyle(color: Colors.white.withOpacity(0.8))
-                  : null),
-          onPressed: onPress == null
-              ? null
-              : () {
-                  onPress!(e, null);
-                },
-        ),
+      list.add(SingleTagWidget(
+        onPress: onPress,
+        tag: e,
+        redBackground: redBackground,
+        deleteTag: deleteTag,
       ));
     }
 
@@ -125,6 +98,59 @@ class TagsWidget extends StatelessWidget {
       ));
     }
 
-    return ListView(children: listWraps);
+    return SliverList.list(children: listWraps);
+  }
+}
+
+class SingleTagWidget extends StatelessWidget {
+  final Tag tag;
+  final void Function(Tag tag) deleteTag;
+  final bool redBackground;
+  final void Function(Tag tag, SafeMode? safeMode)? onPress;
+
+  const SingleTagWidget({
+    super.key,
+    required this.tag,
+    required this.deleteTag,
+    required this.onPress,
+    required this.redBackground,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    WrapSelection;
+    return MenuWrapper(
+      title: tag.tag,
+      items: [
+        if (onPress != null)
+          launchGridSafeModeItem(
+            context,
+            tag.tag,
+            (context, _, [safeMode]) {
+              onPress!(tag, safeMode);
+            },
+          ),
+        PopupMenuItem(
+          onTap: () {
+            deleteTag(tag);
+          },
+          child: const Text("Delete"), // TODO: change
+        )
+      ],
+      child: RawChip(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+        side: redBackground ? BorderSide(color: Colors.pink.shade200) : null,
+        backgroundColor: redBackground ? Colors.pink : null,
+        label: Text(tag.tag,
+            style: redBackground
+                ? TextStyle(color: Colors.white.withOpacity(0.8))
+                : null),
+        onPressed: onPress == null
+            ? null
+            : () {
+                onPress!(tag, null);
+              },
+      ),
+    );
   }
 }

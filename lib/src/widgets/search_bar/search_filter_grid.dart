@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
+import 'package:gallery/src/interfaces/grid/grid_mutation_interface.dart';
 import 'package:gallery/src/interfaces/search_mixin.dart';
 import 'package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -74,9 +75,30 @@ mixin SearchFilterGrid<T extends Cell>
     }
   }
 
-  void performSearch(String s) {
+  void performSearch(String s, [bool orDirectly = false]) {
+    if (orDirectly) {
+      if (_key.currentState == null) {
+        prewarmResults();
+
+        return;
+      }
+    }
+
     searchTextController.text = s;
     _onChanged(s, true);
+  }
+
+  void prewarmResults() {
+    final sorting = _state.hook(_currentFilterMode);
+
+    _state.filter.setSortingMode(sorting);
+
+    var res = _state.filter.filter("", _currentFilterMode);
+
+    // mutation.setSource(res.count, (i) {
+    //   final cell = res.cell(i);
+    //   return _state.transform(cell, sorting);
+    // });
   }
 
   FilteringMode currentFilteringMode() {

@@ -340,7 +340,7 @@ class _SecondaryBooruGridState extends State<SecondaryBooruGrid>
                             Text(AppLocalizations.of(context)!.openInBrowser),
                       );
                     },
-                    noteInterface: NoteBooru.interface(setState),
+                    // noteInterface: NoteBooru.interface(setState),
                     backButtonBadge: widget.restore.secondaryCount(),
                     getCell: (i) => widget.instance.posts.getSync(i + 1)!,
                     loadNext: _addLast,

@@ -274,9 +274,18 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                     widget.nestedCallback),
       );
 
+  void _closeIfNotInner(SelectionGlue<SystemGalleryDirectory> g) {
+    if (extra.currentlyHostingFiles) {
+      return;
+    }
+
+    g.close();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final glue = GlueProvider.of<SystemGalleryDirectory>(context);
+    final glue = GlueProvider.of<SystemGalleryDirectory>(context)
+        .chain(close: _closeIfNotInner);
 
     return GridSkeleton<SystemGalleryDirectory>(
         state,
@@ -286,10 +295,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
             initalScrollPosition: 0,
             scaffoldKey: state.scaffoldKey,
             onBack: widget.showBackButton ? () => Navigator.pop(context) : null,
-            systemNavigationInsets: EdgeInsets.only(
-              bottom: (widget.viewPadding?.bottom ??
-                  MediaQuery.systemGestureInsetsOf(context).bottom),
-            ),
+            systemNavigationInsets: widget.viewPadding ?? EdgeInsets.zero,
             hasReachedEnd: () => true,
             showCount: true,
             selectionGlue: glue,

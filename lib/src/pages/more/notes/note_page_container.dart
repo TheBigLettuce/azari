@@ -50,7 +50,7 @@ class NotePageContainer<T extends Cell> {
                         Navigator.pop(context);
                       });
                     },
-                    noteInterface: noteInterface,
+                    // noteInterface: noteInterface,
                     getCell: (idx) => e1,
                     onNearEnd: null,
                     focusMain: () => state.mainFocus,
@@ -96,7 +96,7 @@ class NotePageContainer<T extends Cell> {
                 selectionGlue: SelectionGlue.empty(context),
                 mainFocus: state.mainFocus,
                 refresh: notes.refresh,
-                noteInterface: noteInterface,
+                // noteInterface: noteInterface,
                 addIconsImage: (_) => addActions,
                 initalCellCount: notes.count(),
                 loadNext: notes.next,

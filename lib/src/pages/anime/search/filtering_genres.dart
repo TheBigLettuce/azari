@@ -82,7 +82,7 @@ class __FilteringGenresState<I, G> extends State<_FilteringGenres<I, G>> {
                 },
               ),
               if (widget.currentGenre != null)
-                _tileG(snapshot.data![widget.currentGenre!]!),
+                _tileG(snapshot.data![widget.currentGenre!] as G),
               if (_result != null)
                 if (_result == null)
                   const SizedBox.shrink()

@@ -11,8 +11,11 @@ class BodyPadding extends StatelessWidget {
   final Widget child;
   final EdgeInsets viewPadding;
 
-  const BodyPadding(
-      {super.key, required this.viewPadding, required this.child});
+  const BodyPadding({
+    super.key,
+    required this.viewPadding,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,9 +23,10 @@ class BodyPadding extends StatelessWidget {
       padding: EdgeInsets.only(
         top: MediaQuery.sizeOf(context).height * 0.3 +
             kToolbarHeight +
-            viewPadding.top,
-        left: 8,
-        right: 8,
+            viewPadding.top +
+            8,
+        left: 22,
+        right: 22,
       ),
       child: child,
     );

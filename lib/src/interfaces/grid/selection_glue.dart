@@ -33,6 +33,25 @@ class SelectionGlue<T extends Cell> {
         keyboardVisible: () => MediaQuery.viewInsetsOf(context).bottom != 0,
       );
 
+  SelectionGlue<T> chain({
+    void Function(SelectionGlue<T> parent)? close,
+  }) {
+    return SelectionGlue(
+      close: close != null
+          ? () {
+              close(this);
+            }
+          : this.close,
+      updateCount: updateCount,
+      open: open,
+      barHeight: barHeight,
+      isOpen: isOpen,
+      keyboardVisible: keyboardVisible,
+      hideNavBar: hideNavBar,
+      persistentBarHeight: persistentBarHeight,
+    );
+  }
+
   const SelectionGlue({
     required this.close,
     required this.updateCount,

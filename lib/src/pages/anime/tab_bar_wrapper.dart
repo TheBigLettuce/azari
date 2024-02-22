@@ -7,14 +7,14 @@
 
 part of 'anime.dart';
 
-class _TabBarWrapper extends StatefulWidget {
+class TabBarWrapper extends StatefulWidget {
   final TextEditingController controller;
   final EdgeInsets viewPadding;
   final TabBar tabBar;
   final void Function(String? value) filter;
   final bool Function(bool forceSearchPage) onPressed;
 
-  const _TabBarWrapper({
+  const TabBarWrapper({
     required super.key,
     required this.tabBar,
     required this.controller,
@@ -24,10 +24,10 @@ class _TabBarWrapper extends StatefulWidget {
   });
 
   @override
-  State<_TabBarWrapper> createState() => __TabBarWrapperState();
+  State<TabBarWrapper> createState() => _TabBarWrapperState();
 }
 
-class __TabBarWrapperState extends State<_TabBarWrapper> {
+class _TabBarWrapperState extends State<TabBarWrapper> {
   bool _showSearchField = false;
 
   bool clearOrHide() {

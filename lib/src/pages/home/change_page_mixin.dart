@@ -14,6 +14,7 @@ mixin _ChangePageMixin on State<Home> {
   final mainKey = GlobalKey<NavigatorState>();
   final galleryKey = GlobalKey<NavigatorState>();
   final moreKey = GlobalKey<NavigatorState>();
+  final mangaKey = GlobalKey<NavigatorState>();
 
   int currentRoute = 0;
 
@@ -85,6 +86,7 @@ mixin _ChangePageMixin on State<Home> {
       kBooruPageRoute => mainKey.currentState,
       kGalleryPageRoute => galleryKey.currentState,
       kMorePageRoute => moreKey.currentState,
+      kMangaPageRoute => mangaKey.currentState,
       int() => null,
     };
     if (state == null) {
@@ -104,7 +106,7 @@ mixin _ChangePageMixin on State<Home> {
         icons.galleryIconController
             .reverse()
             .then((value) => icons.galleryIconController.forward());
-      case kFavoriteBooruPageRoute:
+      case kMangaPageRoute:
         icons.favoritesIconController
             .reverse()
             .then((value) => icons.favoritesIconController.forward());
@@ -187,12 +189,16 @@ mixin _ChangePageMixin on State<Home> {
                 ),
               ),
             ),
-          kFavoriteBooruPageRoute => GlueProvider<FavoriteBooru>(
-              generate: _generateGlue,
-              glue: _generateGlue(),
-              child: FavoriteBooruPage(
-                procPop: (pop) => _procPop(icons, pop),
-                viewPadding: padding,
+          kMangaPageRoute => _NavigatorShell(
+              navigatorKey: mangaKey,
+              pop: _popGallery,
+              child: GlueProvider<CompactMangaDataBase>(
+                generate: _generateGlue,
+                glue: _generateGlue(),
+                child: MangaPage(
+                  procPop: (pop) => _procPop(icons, pop),
+                  viewPadding: padding,
+                ),
               ),
             ),
           kAnimePageRoute => GlueProvider<AnimeEntry>(
@@ -224,7 +230,7 @@ mixin _ChangePageMixin on State<Home> {
 
   static const int kBooruPageRoute = 0;
   static const int kGalleryPageRoute = 1;
-  static const int kFavoriteBooruPageRoute = 2;
+  static const int kMangaPageRoute = 2;
   static const int kAnimePageRoute = 3;
   static const int kMorePageRoute = 4;
 }

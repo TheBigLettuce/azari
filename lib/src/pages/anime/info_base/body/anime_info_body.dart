@@ -40,6 +40,7 @@ class AnimeInfoBody extends StatelessWidget {
       viewPadding: viewPadding,
       child: Center(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
             AnimeGenres<AnimeGenre>(
@@ -103,6 +104,7 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const BodySegmentLabel(text: "Pictures"), // TODO: change
               SizedBox(
@@ -156,13 +158,15 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
                   width: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : FilledButton(
-                  onPressed: () {
-                    _future = widget.entry.site.api.pictures(widget.entry);
+              : Center(
+                  child: FilledButton(
+                    onPressed: () {
+                      _future = widget.entry.site.api.pictures(widget.entry);
 
-                    setState(() {});
-                  },
-                  child: const Text("Load pictures"), // TODO: change
+                      setState(() {});
+                    },
+                    child: const Text("Load pictures"), // TODO: change
+                  ),
                 );
         }
       },

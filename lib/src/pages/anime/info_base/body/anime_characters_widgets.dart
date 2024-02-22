@@ -68,6 +68,7 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         if (!_loading)
@@ -80,46 +81,51 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
               )
             : SizedBox(
                 height: MediaQuery.sizeOf(context).longestSide * 0.2,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: list.indexed
-                      .map((e) => SizedBox(
-                            width: MediaQuery.sizeOf(context).longestSide *
-                                0.2 *
-                                GridAspectRatio.zeroFive.value,
-                            child: GridCell(
-                              cell: e.$2,
-                              indx: e.$1,
-                              forceAlias: e.$2.role,
-                              onPressed: (context) {
-                                Navigator.push(context, MaterialPageRoute(
-                                  builder: (context) {
-                                    return ImageView(
-                                      updateTagScrollPos:
-                                          (pos, selectedCell) {},
-                                      cellCount: list.length,
-                                      scrollUntill: (_) {},
-                                      startingCell: e.$1,
-                                      onExit: () {},
-                                      getCell: (i) => list[i],
-                                      onNearEnd: null,
-                                      focusMain: () {},
-                                      systemOverlayRestoreColor:
-                                          widget.overlayColor ??
-                                              Theme.of(context)
-                                                  .colorScheme
-                                                  .background,
-                                    );
-                                  },
-                                ));
-                              },
-                              tight: false,
-                              download: null,
-                              isList: false,
-                              labelAtBottom: true,
-                            ),
-                          ))
-                      .toList(),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(15),
+                  clipBehavior: Clip.antiAlias,
+                  child: ListView(
+                    clipBehavior: Clip.none,
+                    scrollDirection: Axis.horizontal,
+                    children: list.indexed
+                        .map((e) => SizedBox(
+                              width: MediaQuery.sizeOf(context).longestSide *
+                                  0.2 *
+                                  GridAspectRatio.zeroFive.value,
+                              child: GridCell(
+                                cell: e.$2,
+                                indx: e.$1,
+                                forceAlias: e.$2.role,
+                                onPressed: (context) {
+                                  Navigator.push(context, MaterialPageRoute(
+                                    builder: (context) {
+                                      return ImageView(
+                                        updateTagScrollPos:
+                                            (pos, selectedCell) {},
+                                        cellCount: list.length,
+                                        scrollUntill: (_) {},
+                                        startingCell: e.$1,
+                                        onExit: () {},
+                                        getCell: (i) => list[i],
+                                        onNearEnd: null,
+                                        focusMain: () {},
+                                        systemOverlayRestoreColor:
+                                            widget.overlayColor ??
+                                                Theme.of(context)
+                                                    .colorScheme
+                                                    .background,
+                                      );
+                                    },
+                                  ));
+                                },
+                                tight: false,
+                                download: null,
+                                isList: false,
+                                labelAtBottom: true,
+                              ),
+                            ))
+                        .toList(),
+                  ),
                 ),
               ),
       ],

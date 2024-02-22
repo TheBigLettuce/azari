@@ -24,6 +24,7 @@ class AnimeRelations extends StatelessWidget {
     return entry.relations.isEmpty
         ? const SizedBox.shrink()
         : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               BodySegmentLabel(
                   text: AppLocalizations.of(context)!.relationsLabel),

@@ -68,7 +68,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
 
   final InheritedWidget Function(Widget child)? registerNotifiers;
 
-  final NoteInterface<T>? noteInterface;
+  // final NoteInterface<T>? noteInterface;
   final void Function()? onEmptyNotes;
 
   final ImageViewStatistics? statistics;
@@ -98,7 +98,6 @@ class ImageView<T extends Cell> extends StatefulWidget {
     required this.getCell,
     required this.onNearEnd,
     required this.focusMain,
-    this.noteInterface,
     required this.systemOverlayRestoreColor,
     this.pageChange,
     this.onEmptyNotes,
@@ -417,33 +416,32 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                               children: addInfo,
                             );
                     }),
-              bottomAppBar:
-                  widget.noteInterface == null || widget.addIcons == null
-                      ? null
-                      : ImageViewBottomAppBar(
-                          textController: noteTextController,
-                          addNote: () => noteListKey.currentState
-                              ?.addNote(drawCell(currentPage), currentPalette),
-                          showAddNoteButton: widget.noteInterface != null,
-                          children: widget.addIcons
-                                  ?.call(drawCell(currentPage))
-                                  .map(
-                                    (e) => WrapGridActionButton(e.icon, () {
-                                      e.onPress([drawCell(currentPage)]);
-                                    }, false,
-                                        followColorTheme: true,
-                                        color: e.color,
-                                        play: e.play,
-                                        onLongPress: e.onLongPress == null
-                                            ? null
-                                            : () => e.onLongPress!(
-                                                [drawCell(currentPage)]),
-                                        backgroundColor: e.backgroundColor,
-                                        animate: e.animate,
-                                        showOnlyWhenSingle: false),
-                                  )
-                                  .toList() ??
-                              const []),
+              bottomAppBar: widget.addIcons == null
+                  ? null
+                  : ImageViewBottomAppBar(
+                      textController: noteTextController,
+                      addNote: () => noteListKey.currentState
+                          ?.addNote(drawCell(currentPage), currentPalette),
+                      showAddNoteButton: false,
+                      children: widget.addIcons
+                              ?.call(drawCell(currentPage))
+                              .map(
+                                (e) => WrapGridActionButton(e.icon, () {
+                                  e.onPress([drawCell(currentPage)]);
+                                }, false,
+                                    followColorTheme: true,
+                                    color: e.color,
+                                    play: e.play,
+                                    onLongPress: e.onLongPress == null
+                                        ? null
+                                        : () => e.onLongPress!(
+                                            [drawCell(currentPage)]),
+                                    backgroundColor: e.backgroundColor,
+                                    animate: e.animate,
+                                    showOnlyWhenSingle: false),
+                              )
+                              .toList() ??
+                          const []),
               mainFocus: mainFocus,
               child: ImageViewBody(
                 onPressedLeft:
@@ -453,17 +451,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                 onPageChanged: _onPageChanged,
                 onLongPress: _onLongPress,
                 pageController: controller,
-                notes: widget.noteInterface == null
-                    ? null
-                    : NoteList<T>(
-                        key: noteListKey,
-                        noteInterface: widget.noteInterface!,
-                        onEmptyNotes: widget.onEmptyNotes,
-                        backgroundColor: currentPalette?.dominantColor?.color
-                                .harmonizeWith(
-                                    Theme.of(context).colorScheme.primary) ??
-                            Colors.black,
-                      ),
+                notes: null,
                 loadingBuilder: widget.ignoreLoadingBuilder
                     ? null
                     : (context, event, idx) => loadingBuilder(

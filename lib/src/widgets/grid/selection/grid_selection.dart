@@ -22,7 +22,7 @@ class GridSelection<T extends Cell> {
 
   final void Function(Function()) _setState;
   final SelectionGlue<T> glue;
-  final ScrollController controller;
+  final ScrollController Function() controller;
 
   void reset() {
     selected.clear();

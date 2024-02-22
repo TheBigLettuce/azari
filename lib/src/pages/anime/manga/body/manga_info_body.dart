@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:gallery/src/pages/anime/info_base/body/anime_genres.dart';
 import 'package:gallery/src/pages/anime/info_base/body/body_padding.dart';
@@ -34,44 +35,43 @@ class MangaInfoBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return BodyPadding(
       viewPadding: viewPadding,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimeGenres<MangaGenre>(
-              genres: entry.genres.map((e) => (e, false)).toList(),
-              title: (e) => e.name,
-              onPressed: (e) {
-                SearchAnimePage.launchMangaApi(
-                  context,
-                  api,
-                  safeMode: entry.safety,
-                  initalGenreId: e.id,
-                );
-              },
-            ),
-            const Padding(padding: EdgeInsets.only(top: 8)),
-            SynopsisBackground(
-              markdown: true,
-              background: "",
-              synopsis: entry.description,
-              search: (_) {},
-              constraints: BoxConstraints(
-                  minWidth: MediaQuery.sizeOf(context).width - 16 - 16,
-                  maxWidth: MediaQuery.sizeOf(context).width - 16 - 16),
-            ),
-            MangaChapters(
-              entry: entry,
-              api: api,
-              overlayColor: overlayColor,
-              scrollController: scrollController,
-            ),
-            MangaRelations(
-              entry: entry,
-              api: api,
-            ),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimeGenres<MangaGenre>(
+            genres: entry.genres.map((e) => (e, false)).toList(),
+            title: (e) => e.name,
+            onPressed: (e) {
+              SearchAnimePage.launchMangaApi(
+                context,
+                api,
+                safeMode: entry.safety,
+                initalGenreId: e.id,
+              );
+            },
+          ),
+          const Padding(padding: EdgeInsets.only(top: 8)),
+          SynopsisBackground(
+            markdown: true,
+            background: "",
+            synopsis: entry.description,
+            search: (_) {},
+            constraints: BoxConstraints(
+                minWidth: MediaQuery.sizeOf(context).width - 16 - 16,
+                maxWidth: MediaQuery.sizeOf(context).width - 16 - 16),
+          ),
+          MangaChapters(
+            entry: entry,
+            api: api,
+            overlayColor: overlayColor,
+            scrollController: scrollController,
+          ),
+          MangaRelations(
+            entry: entry,
+            api: api,
+          ),
+        ],
       ),
     );
   }

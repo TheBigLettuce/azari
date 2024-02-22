@@ -7,7 +7,8 @@
 
 part of 'grid_frame.dart';
 
-class _Mutation<T extends Cell> implements GridMutationInterface<T> {
+class DefaultMutationInterface<T extends Cell>
+    implements GridMutationInterface<T> {
   final void Function() scrollUp;
   final void Function() unselectall;
   final void Function() updateImageView;
@@ -235,7 +236,7 @@ class _Mutation<T extends Cell> implements GridMutationInterface<T> {
     return;
   }
 
-  _Mutation(
+  DefaultMutationInterface(
       {required this.widget,
       required this.update,
       required this.saveStatus,

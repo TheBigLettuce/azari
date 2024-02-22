@@ -42,7 +42,10 @@ class SegmentLabel extends StatelessWidget {
             size: Size.fromHeight(
                 (Theme.of(context).textTheme.headlineLarge?.fontSize ?? 24) +
                     8),
-            child: Stack(
+            child: Row(
+              textBaseline: TextBaseline.alphabetic,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
               children: [
                 Text(
                   text,

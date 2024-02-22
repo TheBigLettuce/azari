@@ -45,6 +45,9 @@ class _GalleryExtra implements GalleryDirectoriesExtra {
   Isar get db => _impl.db;
 
   @override
+  bool get currentlyHostingFiles => _impl.currentImages != null;
+
+  @override
   GalleryAPIFiles joinedDir(List<String> directoriesId) {
     final db = DbsOpen.androidGalleryFiles();
 

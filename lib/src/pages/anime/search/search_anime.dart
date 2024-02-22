@@ -9,13 +9,16 @@ import 'dart:async';
 
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/main.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
+import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
 import 'package:gallery/src/pages/anime/manga/manga_info_page.dart';
@@ -39,10 +42,14 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
   final Future<Map<I, G>> Function(AnimeSafeMode)? genres;
   final (I, String) Function(G) idFromGenre;
   final void Function(T) onPressed;
+  final SelectionGlue<J> Function<J extends Cell>()? generateGlue;
+  final EdgeInsets? viewInsets;
 
   static void launchMangaApi(
     BuildContext context,
     MangaAPI api, {
+    EdgeInsets? viewInsets,
+    SelectionGlue<J> Function<J extends Cell>()? generateGlue,
     String? search,
     AnimeSafeMode safeMode = AnimeSafeMode.safe,
     MangaId? initalGenreId,
@@ -50,6 +57,8 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
     Navigator.push(context, MaterialPageRoute(
       builder: (context) {
         return SearchAnimePage<MangaEntry, MangaId, MangaGenre>(
+          generateGlue: generateGlue,
+          viewInsets: viewInsets,
           initalText: search,
           explicit: safeMode,
           initalGenreId: initalGenreId,
@@ -130,6 +139,8 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
     required this.genres,
     this.initalGenreId,
     this.initalText,
+    this.generateGlue,
+    this.viewInsets,
     this.explicit = AnimeSafeMode.safe,
   });
 
@@ -223,6 +234,8 @@ class _SearchAnimePageState<T extends Cell, I, G>
     return _results.length;
   }
 
+  late final SelectionGlue<T>? _glue = widget.generateGlue?.call();
+
   @override
   Widget build(BuildContext context) {
     String title(G? genre) {
@@ -233,7 +246,10 @@ class _SearchAnimePageState<T extends Cell, I, G>
       return widget.idFromGenre(genre).$2;
     }
 
-    Widget body() => WrapGridPage<T>(
+    Widget body(BuildContext context) => WrapGridPage<T>(
+          provided: widget.generateGlue != null
+              ? (_glue!, widget.generateGlue!)
+              : null,
           scaffoldKey: state.scaffoldKey,
           child: GridSkeleton<T>(
             state,
@@ -251,6 +267,10 @@ class _SearchAnimePageState<T extends Cell, I, G>
                     if (_results.isNotEmpty) {
                       _load(currentSearch);
                     }
+
+                    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+                      changeSystemUiOverlay(context);
+                    });
 
                     setState(() {});
                   },
@@ -335,8 +355,9 @@ class _SearchAnimePageState<T extends Cell, I, G>
               },
               inlineMenuButtonItems: true,
               scaffoldKey: state.scaffoldKey,
-              systemNavigationInsets: MediaQuery.viewPaddingOf(context) +
-                  const EdgeInsets.only(bottom: 4),
+              systemNavigationInsets: widget.viewInsets ??
+                  (MediaQuery.viewPaddingOf(context) +
+                      const EdgeInsets.only(bottom: 4)),
               hasReachedEnd: () => _reachedEnd,
               selectionGlue: GlueProvider.of(context),
               mainFocus: state.mainFocus,
@@ -367,7 +388,11 @@ class _SearchAnimePageState<T extends Cell, I, G>
     return AnimeInfoTheme(
       mode: mode,
       overlayColor: Theme.of(context).colorScheme.background,
-      child: body(),
+      child: Builder(
+        builder: (context) {
+          return body(context);
+        },
+      ),
     );
   }
 }

@@ -16,6 +16,8 @@ abstract class GalleryDirectoriesExtra {
   FilterInterface<SystemGalleryDirectory> get filter;
   Isar get db;
 
+  bool get currentlyHostingFiles;
+
   GalleryAPIFiles joinedDir(List<String> bucketIds);
   GalleryAPIFiles trash();
   GalleryAPIFiles favorites();

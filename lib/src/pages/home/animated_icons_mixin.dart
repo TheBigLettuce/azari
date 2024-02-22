@@ -15,11 +15,7 @@ mixin _AnimatedIconsMixin on State<Home> {
   late final AnimationController favoritesIconController;
   late final AnimationController animeIconController;
 
-  late final StreamSubscription<void> favoriteBooruWatcher;
-
   final menuController = MenuController();
-
-  int favoriteBooruCount = FavoriteBooru.count;
 
   void initIcons(TickerProviderStateMixin ticker) {
     controllerNavBar = AnimationController(vsync: ticker);
@@ -29,17 +25,9 @@ mixin _AnimatedIconsMixin on State<Home> {
     galleryIconController = AnimationController(vsync: ticker);
     favoritesIconController = AnimationController(vsync: ticker);
     animeIconController = AnimationController(vsync: ticker);
-
-    favoriteBooruWatcher = FavoriteBooru.watch((_) {
-      favoriteBooruCount = FavoriteBooru.count;
-
-      setState(() {});
-    });
   }
 
   void disposeIcons() {
-    favoriteBooruWatcher.cancel();
-
     controllerNavBar.dispose();
     controller.dispose();
     booruIconController.dispose();
@@ -59,10 +47,9 @@ mixin _AnimatedIconsMixin on State<Home> {
           isSelected: currentRoute == _ChangePageMixin.kGalleryPageRoute,
           controller: galleryIconController,
         ),
-        _FavoritesIcon(
-          isSelected: currentRoute == _ChangePageMixin.kFavoriteBooruPageRoute,
+        _MangaIcon(
+          isSelected: currentRoute == _ChangePageMixin.kMangaPageRoute,
           controller: favoritesIconController,
-          count: favoriteBooruCount,
         ),
         _AnimeIcon(
           isSelected: currentRoute == _ChangePageMixin.kAnimePageRoute,

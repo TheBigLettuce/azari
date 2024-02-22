@@ -7,12 +7,12 @@
 
 part of '../grid_frame.dart';
 
-class _WrapSelection extends StatelessWidget {
+class WrapSelection extends StatelessWidget {
   final bool isSelected;
   final bool selectionEnabled;
   final int thisIndx;
   final double bottomPadding;
-  final ScrollController scrollController;
+  final ScrollController Function() currentScroll;
   final void Function() selectUnselect;
   final void Function(int indx) selectUntil;
 
@@ -21,13 +21,14 @@ class _WrapSelection extends StatelessWidget {
 
   final Widget child;
 
-  const _WrapSelection({
+  const WrapSelection({
+    super.key,
     required this.isSelected,
     required this.ignoreSwipeGesture,
     required this.selectUnselect,
     required this.thisIndx,
     required this.bottomPadding,
-    required this.scrollController,
+    required this.currentScroll,
     required this.selectionEnabled,
     required this.selectUntil,
     required this.actionsAreEmpty,
@@ -54,13 +55,15 @@ class _WrapSelection extends StatelessWidget {
               selectUnselect();
             },
             onLeave: (data) {
-              if (scrollController.position.isScrollingNotifier.value &&
+              if (currentScroll().position.isScrollingNotifier.value &&
                   isSelected) {
                 return;
               }
               selectUnselect();
             },
             onMove: (details) {
+              final scrollController = currentScroll();
+
               if (scrollController.position.isScrollingNotifier.value) {
                 return;
               }

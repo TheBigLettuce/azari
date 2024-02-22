@@ -32,6 +32,7 @@ class AnimeNameWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget title() => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             MenuWrapper(
               title: this.title,
@@ -39,7 +40,8 @@ class AnimeNameWidget extends StatelessWidget {
                 this.title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    // fontWeight: FontWeight.w400,
                     color: safeMode == AnimeSafeMode.h ||
                             safeMode == AnimeSafeMode.ecchi
                         ? Colors.pink.withOpacity(0.8)
@@ -53,7 +55,9 @@ class AnimeNameWidget extends StatelessWidget {
               "$titleEnglish / $titleJapanese",
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w300,
                     color: Theme.of(context)
                         .colorScheme
                         .onSurface
@@ -63,7 +67,8 @@ class AnimeNameWidget extends StatelessWidget {
           ],
         );
 
-    return Center(
+    return Align(
+      alignment: Alignment.topLeft,
       child: titleSynonyms.isEmpty
           ? title()
           : Tooltip(

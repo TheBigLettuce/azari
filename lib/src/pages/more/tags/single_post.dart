@@ -101,7 +101,7 @@ class _SinglePostState extends State<SinglePost> {
       });
 
       // ignore: use_build_context_synchronously
-      Navigator.push(context, MaterialPageRoute(
+      Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
         builder: (context) {
           return ImageView(
             key: key,

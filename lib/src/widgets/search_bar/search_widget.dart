@@ -12,18 +12,25 @@ class _SearchWidget<T extends Cell> extends StatefulWidget {
   final String? hint;
   final int? count;
 
-  const _SearchWidget(
-      {super.key,
-      required this.instance,
-      required this.count,
-      required this.hint});
+  const _SearchWidget({
+    super.key,
+    required this.instance,
+    required this.count,
+    required this.hint,
+  });
 
   @override
   State<_SearchWidget<T>> createState() => __SearchWidgetState();
 }
 
 class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
+  late int count = widget.count ?? 0;
+
   void update() {
+    count = widget.instance._state.gridKey.currentState?.mutationInterface
+            .cellCount ??
+        0;
+
     setState(() {});
   }
 
@@ -68,8 +75,7 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
         swapSearchIcon: true,
 
         // ignoreFocusNotifier: Platform.isAndroid,
-        searchCount: widget
-            .instance._state.gridKey.currentState?.mutationInterface.cellCount,
+        searchCount: count,
         addItems: _addItems(),
         onChanged: () {
           widget.instance
@@ -90,8 +96,7 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
           swapSearchIcon: true,
           focusNode: widget.instance.searchFocus,
           addItems: _addItems(),
-          count: widget.instance._state.gridKey.currentState?.mutationInterface
-              .cellCount,
+          count: count,
           textController: widget.instance.searchTextController,
           onChanged: () => widget.instance
               ._onChanged(widget.instance.searchTextController.text, false),

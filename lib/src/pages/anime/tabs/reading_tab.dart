@@ -110,48 +110,67 @@ class _ReadingTabState extends State<ReadingTab> {
     });
   }
 
+  SelectionGlue<J> _generateGlue<J extends Cell>() {
+    return GlueProvider.generateOf<CompactMangaDataBase, J>(context);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return GridSkeleton<CompactMangaDataBase>(
-      state,
-      (context) => GridFrame<CompactMangaDataBase>(
-        key: state.gridKey,
-        getCell: (i) => data[i],
-        initalScrollPosition: 0,
-        scaffoldKey: state.scaffoldKey,
-        systemNavigationInsets: widget.viewInsets,
-        hasReachedEnd: () => true,
-        overrideOnPress: (context, cell) {
-          inInner = true;
-
-          Navigator.push(context, MaterialPageRoute(
-            builder: (context) {
-              return MangaInfoPage(
-                id: MangaStringId(cell.mangaId),
-                api: widget.api,
+    return SafeArea(
+      bottom: false,
+      child: GridSkeleton<CompactMangaDataBase>(
+        state,
+        (context) => GridFrame<CompactMangaDataBase>(
+          key: state.gridKey,
+          overrideFab: FloatingActionButton.extended(
+            onPressed: () {
+              SearchAnimePage.launchMangaApi(
+                context,
+                widget.api,
+                search: "",
+                viewInsets: widget.viewInsets,
+                generateGlue: _generateGlue,
               );
             },
-          )).then((value) {
-            _procReload();
-          });
-        },
-        selectionGlue:
-            GlueProvider.generateOf<AnimeEntry, CompactMangaDataBase>(context),
-        mainFocus: state.mainFocus,
-        refresh: refresh,
-        description: GridDescription(
-          const [],
-          ignoreEmptyWidgetOnNoContent: true,
-          ignoreSwipeSelectGesture: true,
-          showAppBar: false,
-          keybindsDescription: "Read tab",
-          layout: _ReadingLayout(
-            startReading: _startReading,
-            gridSeed: state.gridSeed,
+            label: Text("Search"),
+            icon: const Icon(Icons.search),
+          ),
+          getCell: (i) => data[i],
+          initalScrollPosition: 0,
+          scaffoldKey: state.scaffoldKey,
+          systemNavigationInsets: widget.viewInsets,
+          hasReachedEnd: () => true,
+          overrideOnPress: (context, cell) {
+            inInner = true;
+
+            Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+              builder: (context) {
+                return MangaInfoPage(
+                  id: MangaStringId(cell.mangaId),
+                  api: widget.api,
+                );
+              },
+            )).then((value) {
+              _procReload();
+            });
+          },
+          selectionGlue: GlueProvider.of(context),
+          mainFocus: state.mainFocus,
+          refresh: refresh,
+          description: GridDescription(
+            const [],
+            ignoreEmptyWidgetOnNoContent: true,
+            ignoreSwipeSelectGesture: true,
+            showAppBar: false,
+            keybindsDescription: "Read tab",
+            layout: _ReadingLayout(
+              startReading: _startReading,
+              gridSeed: state.gridSeed,
+            ),
           ),
         ),
+        canPop: true,
       ),
-      canPop: false,
     );
   }
 }
@@ -187,7 +206,7 @@ class _ReadingLayout implements GridLayouter<CompactMangaDataBase> {
             onPressed: state.mutationInterface.cellCount == 0
                 ? null
                 : () => startReading(0),
-            child: Text("Read last"), // TODO: change
+            child: const Text("Read last"), // TODO: change
           ),
         ),
       ),
@@ -232,7 +251,8 @@ class _ReadingLayout implements GridLayouter<CompactMangaDataBase> {
       _PinnedMangaWidget(
         controller: state.controller,
         onPress: (context, cell) => state.onPressed(context, cell, 0),
-        glue: GlueProvider.generateOf<AnimeEntry, PinnedManga>(context),
+        glue:
+            GlueProvider.generateOf<CompactMangaDataBase, PinnedManga>(context),
       )
     ];
   }
@@ -270,7 +290,7 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
     setState,
     const [],
     widget.glue,
-    widget.controller,
+    () => widget.controller,
     noAppBar: true,
     ignoreSwipe: true,
   );
@@ -298,7 +318,7 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
   @override
   Widget build(BuildContext context) {
     return data.isEmpty
-        ? SliverToBoxAdapter(
+        ? const SliverToBoxAdapter(
             child: EmptyWidget(gridSeed: 0),
           )
         : GridLayouts.grid<PinnedManga>(

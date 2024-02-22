@@ -10,7 +10,6 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart' as material show AspectRatio;
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -52,6 +51,28 @@ class _SegSticky {
 
   const _SegSticky(this.seg, this.sticky, this.onLabelPressed,
       {this.unstickable = true});
+}
+
+class PageDescription {
+  const PageDescription({
+    required this.slivers,
+    this.search,
+    this.appIcons = const [],
+  });
+
+  final List<Widget> slivers;
+  final List<Widget> appIcons;
+  final SearchAndFocus? search;
+}
+
+class PageSwitcher {
+  const PageSwitcher(
+    this.pages,
+    this.buildPage,
+  );
+
+  final List<Widget> pages;
+  final PageDescription Function(int i) buildPage;
 }
 
 /// The grid of images.
@@ -167,7 +188,7 @@ class GridFrame<T extends Cell> extends StatefulWidget {
   final SelectionGlue<T> selectionGlue;
   final Widget? overrideBackButton;
 
-  final NoteInterface<T>? noteInterface;
+  // final NoteInterface<T>? noteInterface;
 
   final ImageViewStatistics? statistics;
 
@@ -177,9 +198,11 @@ class GridFrame<T extends Cell> extends StatefulWidget {
 
   final void Function()? onDispose;
 
-  // static CallbackGridState<T> of<T extends Cell>(BuildContext context) {
-  //   return context.findAncestorStateOfType<CallbackGridState<T>>()!;
-  // }
+  final PageSwitcher? pages;
+
+  final bool asSliver;
+  final ScrollController? overrideController;
+  final Widget? overrideFab;
 
   const GridFrame({
     required super.key,
@@ -211,15 +234,19 @@ class GridFrame<T extends Cell> extends StatefulWidget {
     this.ignoreImageViewEndDrawer = false,
     this.searchWidget,
     this.initalCell,
+    this.overrideController,
     this.pageViewScrollingOffset,
     this.loadNext,
-    this.noteInterface,
+    // this.noteInterface,
     required this.refresh,
     this.updateScrollPosition,
     this.download,
     this.onBack,
     this.initalCellCount = 0,
     this.overrideOnPress,
+    this.asSliver = false,
+    this.pages,
+    this.overrideFab,
     required this.description,
   });
 
@@ -228,14 +255,12 @@ class GridFrame<T extends Cell> extends StatefulWidget {
 }
 
 class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
-  late final controller =
-      ScrollController(initialScrollOffset: widget.initalScrollPosition);
-  final fakeController = ScrollController();
+  late ScrollController controller;
 
   final GlobalKey<ImageViewState<T>> imageViewKey = GlobalKey();
 
-  late final selection = GridSelection<T>._(
-      setState, widget.description.actions, widget.selectionGlue, controller,
+  late final selection = GridSelection<T>._(setState,
+      widget.description.actions, widget.selectionGlue, () => controller,
       noAppBar: !widget.description.showAppBar,
       ignoreSwipe: widget.description.ignoreSwipeSelectGesture);
 
@@ -261,7 +286,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
     }
   }
 
-  late final _Mutation<T> _state = _Mutation(
+  late final DefaultMutationInterface<T> _state = DefaultMutationInterface(
     updateImageView: () {
       imageViewKey.currentState?.update(context, _state.cellCount);
     },
@@ -304,6 +329,11 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
   void initState() {
     super.initState();
 
+    controller = widget.asSliver
+        ? widget.overrideController ??
+            ScrollController(initialScrollOffset: widget.initalScrollPosition)
+        : ScrollController(initialScrollOffset: widget.initalScrollPosition);
+
     ticker = widget.progressTicker?.listen((event) {
       setState(() {
         _state._cellCount = event;
@@ -336,20 +366,6 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       widget.refreshInterface?.register(_refreshCallbackUpdate);
-
-      controller.position.isScrollingNotifier.addListener(() {
-        // if (!_state.isRefreshing) {
-        widget.updateScrollPosition?.call(controller.offset);
-        // }
-
-        if (controller.offset == 0) {
-          updateFab(fab: false, foreground: inImageView);
-        } else {
-          updateFab(
-              fab: !controller.position.isScrollingNotifier.value,
-              foreground: inImageView);
-        }
-      });
     });
 
     if (widget.initalCellCount != 0) {
@@ -361,24 +377,54 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
       _state._refreshing = true;
     }
 
+    if (!widget.asSliver) {
+      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+        controller = widget.overrideController ?? ScrollController();
+        controller.addListener(() {
+          if (widget.hasReachedEnd() || currentPage != 0) {
+            return;
+          }
+
+          final h = MediaQuery.sizeOf(context).height;
+
+          final height = h - h * 0.80;
+
+          if (!_state.isRefreshing &&
+              _state.cellCount != 0 &&
+              (controller.offset /
+                      controller.positions.first.maxScrollExtent) >=
+                  1 - (height / controller.positions.first.maxScrollExtent)) {
+            _state._loadNext(context);
+          }
+        });
+
+        setState(() {});
+      });
+
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        _addFabListener();
+      });
+    }
+
     if (widget.loadNext == null) {
       return;
     }
+  }
 
-    controller.addListener(() {
-      if (widget.hasReachedEnd()) {
-        return;
+  void _addFabListener() {
+    controller.position.isScrollingNotifier.addListener(() {
+      // if (!_state.isRefreshing) {
+      if (currentPage == 0) {
+        widget.updateScrollPosition?.call(controller.offset);
       }
+      // }
 
-      final h = MediaQuery.sizeOf(context).height;
-
-      final height = h - h * 0.80;
-
-      if (!_state.isRefreshing &&
-          _state.cellCount != 0 &&
-          (controller.offset / controller.positions.first.maxScrollExtent) >=
-              1 - (height / controller.positions.first.maxScrollExtent)) {
-        _state._loadNext(context);
+      if (controller.offset == 0) {
+        updateFab(fab: false, foreground: inImageView);
+      } else {
+        updateFab(
+            fab: !controller.position.isScrollingNotifier.value,
+            foreground: inImageView);
       }
     });
   }
@@ -387,9 +433,11 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
   void dispose() {
     ticker?.cancel();
 
-    controller.dispose();
+    if (widget.overrideController == null) {
+      controller.dispose();
+    }
+
     widget.belowMainFocus?.requestFocus();
-    fakeController.dispose();
 
     WidgetsBinding.instance.scheduleFrameCallback((_) {
       if (!_state.isRefreshing) {
@@ -459,7 +507,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
 
     widget.mainFocus.requestFocus();
 
-    final offsetGrid = controller.offset;
+    final offsetGrid = controller.hasClients ? controller.offset : 0.0;
     final overlayColor =
         Theme.of(gridContext).colorScheme.background.withOpacity(0.5);
 
@@ -489,7 +537,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
           infoScrollOffset: offset,
           predefinedIndexes: segTranslation,
           getCell: _state.getCell,
-          noteInterface: widget.noteInterface,
+          // noteInterface: widget.noteInterface,
           cellCount: _state.cellCount,
           download: widget.download,
           startingCell: segTranslation != null
@@ -586,7 +634,12 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
               }, //extend: maxExtend,
       );
 
-  Widget? _makeTitle(BuildContext context) {
+  Widget? _makeTitle(BuildContext context, Widget? overrideSearchWidget) {
+    if (currentPage != 0) {
+      return overrideSearchWidget ??
+          _pageSwitchWidget(context, EdgeInsets.zero);
+    }
+
     return widget.searchWidget?.search ??
         Badge.count(
           count: _state.cellCount,
@@ -679,82 +732,184 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
     return null;
   }
 
+  int currentPage = 0;
+  double savedOffset = 0;
+
+  Widget _pageSwitchWidget(BuildContext context, EdgeInsets padding) => Padding(
+        padding: padding,
+        child: SegmentedButton<int>(
+          emptySelectionAllowed: true,
+          style: const ButtonStyle(
+              side: MaterialStatePropertyAll(BorderSide.none),
+              visualDensity: VisualDensity.compact),
+          showSelectedIcon: false,
+          onSelectionChanged: (set) {
+            if (set.isEmpty) {
+              return;
+            }
+
+            selection.reset();
+
+            if (currentPage == 0) {
+              savedOffset = controller.offset;
+            }
+
+            updateFab(
+              fab: false,
+              foreground: false,
+            );
+
+            currentPage = set.first;
+            WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+              _addFabListener();
+
+              if (currentPage == 0 &&
+                  controller.offset == 0 &&
+                  savedOffset != 0) {
+                controller.position.animateTo(savedOffset,
+                    duration: 200.ms, curve: Easing.standard);
+                savedOffset = 0;
+              }
+            });
+
+            setState(() {});
+          },
+          segments: [
+            const ButtonSegment(
+              icon: Icon(Icons.home_rounded),
+              value: 0,
+            ),
+            ...widget.pages!.pages.indexed.map((e) => ButtonSegment(
+                  icon: e.$2,
+                  // label: Text(e.$2),
+                  value: e.$1 + 1,
+                )),
+          ],
+          selected: {currentPage},
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final bindings = _makeBindings(context);
     segTranslation = null;
+
+    final PageDescription? page = widget.pages != null && currentPage != 0
+        ? widget.pages!.buildPage(currentPage - 1)
+        : null;
+
+    List<Widget> bodySlivers(PageDescription? page) => [
+          if (widget.description.showAppBar)
+            _AppBar(
+              leading: _makeLeading(context),
+              title: _makeTitle(context, page?.search?.search),
+              actions: page != null ? page.appIcons : _makeActions(context),
+              isSelecting: selection.selected.isNotEmpty,
+              bottomWidget: widget.description.bottomWidget != null
+                  ? widget.description.bottomWidget!
+                  : _BottomWidget<T>(
+                      routeChanger: page != null && page.search == null
+                          ? const SizedBox.shrink()
+                          : widget.pages != null
+                              ? _pageSwitchWidget(
+                                  context,
+                                  EdgeInsets.only(
+                                      top: Platform.isAndroid ? 8 : 12,
+                                      bottom: Platform.isAndroid ? 8 : 12))
+                              : null,
+                      preferredSize: Size.fromHeight((widget.pages == null
+                          ? 4
+                          : page != null && page.search == null
+                              ? 0
+                              : (Platform.isAndroid ? 40 + 16 : 32 + 24))),
+                      child: Padding(
+                        padding:
+                            EdgeInsets.only(top: widget.pages == null ? 4 : 0),
+                        child: const SizedBox.shrink(),
+                      ),
+                    ),
+            ),
+          if (page != null) ...[
+            ...page.slivers,
+            _WrapPadding<T>(
+              systemNavigationInsets: widget.systemNavigationInsets.bottom,
+              footer: widget.footer,
+              selectionGlue: widget.selectionGlue,
+              child: null,
+            ),
+          ] else ...[
+            if (!_state.isRefreshing &&
+                _state.cellCount == 0 &&
+                !widget.description.ignoreEmptyWidgetOnNoContent)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      EmptyWidget(
+                        gridSeed: 0,
+                        error: _state.refreshingError == null
+                            ? null
+                            : EmptyWidget.unwrapDioError(
+                                _state.refreshingError),
+                      ),
+                      if (widget.onError != null &&
+                          _state.refreshingError != null)
+                        widget.onError!(_state.refreshingError!),
+                    ],
+                  ),
+                ),
+              ),
+            ...widget.description.layout(context, this),
+            _WrapPadding<T>(
+              systemNavigationInsets: widget.systemNavigationInsets.bottom,
+              footer: widget.footer,
+              selectionGlue: widget.selectionGlue,
+              child: null,
+            ),
+          ]
+        ];
+
+    if (widget.asSliver) {
+      return FocusNotifier(
+        notifier: page?.search?.focus ?? widget.searchWidget?.focus,
+        focusMain: () {
+          widget.mainFocus.requestFocus();
+        },
+        child: _MutationInterfaceProvider<T>(
+          state: mutationInterface,
+          child: SliverMainAxisGroup(slivers: bodySlivers(page)),
+        ),
+      );
+    }
+
+    Widget mainBody() => Scrollbar(
+          interactive: false,
+          thumbVisibility: Platform.isAndroid || Platform.isIOS ? false : true,
+          controller: controller,
+          child: CustomScrollView(
+            key: currentPage == 0 && widget.pages != null
+                ? const PageStorageKey(0)
+                : null,
+            controller: controller,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: bodySlivers(page),
+          ),
+        );
 
     final child = _BodyWrapping(
       bindings: bindings,
       mainFocus: widget.mainFocus,
       pageName: widget.description.keybindsDescription,
       children: [
-        RefreshIndicator(
-          onRefresh: _state.onRefresh,
-          child: Scrollbar(
-            interactive: false,
-            thumbVisibility:
-                Platform.isAndroid || Platform.isIOS ? false : true,
-            controller: controller,
-            child: CustomScrollView(
-              controller: controller,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                if (widget.description.showAppBar)
-                  FocusNotifier(
-                    notifier: widget.searchWidget?.focus,
-                    focusMain: () {
-                      widget.mainFocus.requestFocus();
-                    },
-                    child: _AppBar(
-                      leading: _makeLeading(context),
-                      title: _makeTitle(context),
-                      actions: _makeActions(context),
-                      isSelecting: selection.selected.isNotEmpty,
-                      bottomWidget: widget.description.bottomWidget != null
-                          ? widget.description.bottomWidget!
-                          : _BottomWidget<T>(
-                              preferredSize: const Size.fromHeight(4),
-                              child: const Padding(
-                                padding: EdgeInsets.only(top: 4),
-                                child: SizedBox(),
-                              ),
-                            ),
-                    ),
-                  ),
-                if (!_state.isRefreshing &&
-                    _state.cellCount == 0 &&
-                    !widget.description.ignoreEmptyWidgetOnNoContent)
-                  SliverFillRemaining(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          EmptyWidget(
-                            gridSeed: 0,
-                            error: _state.refreshingError == null
-                                ? null
-                                : EmptyWidget.unwrapDioError(
-                                    _state.refreshingError),
-                          ),
-                          if (widget.onError != null &&
-                              _state.refreshingError != null)
-                            widget.onError!(_state.refreshingError!),
-                        ],
-                      ),
-                    ),
-                  ),
-                ...widget.description.layout(context, this),
-                _WrapPadding<T>(
-                  systemNavigationInsets: widget.systemNavigationInsets.bottom,
-                  footer: widget.footer,
-                  selectionGlue: widget.selectionGlue,
-                  child: null,
-                )
-              ],
-            ),
-          ),
-        ),
+        if (currentPage == 0)
+          RefreshIndicator(
+            onRefresh: _state.onRefresh,
+            child: mainBody(),
+          )
+        else
+          mainBody(),
         if (widget.footer != null)
           Align(
             alignment: Alignment.bottomLeft,
@@ -765,7 +920,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
               child: widget.footer!,
             ),
           ),
-        if (!widget.description.showAppBar)
+        if (!widget.description.showAppBar || widget.pages != null)
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
@@ -794,23 +949,47 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
           ),
         Align(
           alignment: Alignment.bottomRight,
-          child: _Fab(
-            key: _fabKey,
-            scrollPos: widget.updateScrollPosition,
-            controller: controller,
-            selectionGlue: widget.selectionGlue,
-            systemNavigationInsets: widget.systemNavigationInsets,
-            footer: widget.footer,
-          ),
+          child: widget.overrideFab != null
+              ? Padding(
+                  padding: EdgeInsets.only(
+                      right: 4,
+                      bottom: 4 +
+                          (widget.selectionGlue.keyboardVisible()
+                              ? 0
+                              : widget.systemNavigationInsets.bottom +
+                                  (widget.selectionGlue.isOpen()
+                                      ? widget.selectionGlue.barHeight()
+                                      : widget.selectionGlue.persistentBarHeight
+                                          ? widget.selectionGlue.barHeight()
+                                          : 0)) +
+                          (widget.footer != null
+                              ? widget.footer!.preferredSize.height
+                              : 0)),
+                  child: widget.overrideFab,
+                )
+              : _Fab(
+                  key: _fabKey,
+                  scrollPos: widget.updateScrollPosition,
+                  controller: controller,
+                  selectionGlue: widget.selectionGlue,
+                  systemNavigationInsets: widget.systemNavigationInsets,
+                  footer: widget.footer,
+                ),
         ),
       ],
     );
 
-    return _MutationInterfaceProvider(
-      state: mutationInterface,
-      child: widget.registerNotifiers == null
-          ? child
-          : widget.registerNotifiers!(child),
+    return FocusNotifier(
+      notifier: page?.search?.focus ?? widget.searchWidget?.focus,
+      focusMain: () {
+        widget.mainFocus.requestFocus();
+      },
+      child: _MutationInterfaceProvider(
+        state: mutationInterface,
+        child: widget.registerNotifiers == null
+            ? child
+            : widget.registerNotifiers!(child),
+      ),
     );
   }
 }
@@ -851,16 +1030,26 @@ class _AppBar<T extends Cell> extends StatelessWidget {
 }
 
 class _BottomWidget<T extends Cell> extends PreferredSize {
+  final Widget? routeChanger;
+
   const _BottomWidget({
     required super.preferredSize,
+    this.routeChanger,
     required super.child,
   });
 
   @override
   Widget build(BuildContext context) {
-    return !_MutationInterfaceProvider.of<T>(context).isRefreshing
-        ? super.build(context)
-        : const LinearProgressIndicator();
+    return routeChanger != null
+        ? Column(
+            children: [
+              routeChanger!,
+              super.build(context),
+            ],
+          )
+        : !_MutationInterfaceProvider.of<T>(context).isRefreshing
+            ? super.build(context)
+            : const LinearProgressIndicator();
   }
 }
 
@@ -934,6 +1123,7 @@ class _WrapPadding<T extends Cell> extends StatelessWidget {
   final SelectionGlue<T> selectionGlue;
   final double systemNavigationInsets;
   final bool sliver;
+  final bool addFabPadding;
 
   final Widget? child;
 
@@ -943,13 +1133,14 @@ class _WrapPadding<T extends Cell> extends StatelessWidget {
     required this.selectionGlue,
     required this.systemNavigationInsets,
     this.sliver = true,
+    this.addFabPadding = true,
     required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
     final insets = EdgeInsets.only(
-        bottom: (kFloatingActionButtonMargin * 2 + 24 + 8) +
+        bottom: (addFabPadding ? kFloatingActionButtonMargin * 2 + 24 + 8 : 0) +
             (selectionGlue.keyboardVisible()
                 ? 0
                 : systemNavigationInsets +

@@ -42,25 +42,25 @@ class MorePage extends StatelessWidget {
       ),
       body: ListView(
         children: [
-          ListTile(
-            style: ListTileStyle.drawer,
-            leading: Icon(
-              Icons.tag,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            title: Text(AppLocalizations.of(context)!.tagsLabel),
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(
-                builder: (context) {
-                  return TagsPage(
-                    tagManager: tagManager,
-                    booru: api,
-                    generateGlue: generateGlue,
-                  );
-                },
-              ));
-            },
-          ),
+          // ListTile(
+          //   style: ListTileStyle.drawer,
+          //   leading: Icon(
+          //     Icons.tag,
+          //     color: Theme.of(context).colorScheme.primary,
+          //   ),
+          //   title: Text(AppLocalizations.of(context)!.tagsLabel),
+          //   onTap: () {
+          //     Navigator.push(context, MaterialPageRoute(
+          //       builder: (context) {
+          //         return TagsPage(
+          //           tagManager: tagManager,
+          //           booru: api,
+          //           generateGlue: generateGlue,
+          //         );
+          //       },
+          //     ));
+          //   },
+          // ),
           ListTile(
             style: ListTileStyle.drawer,
             leading: Icon(

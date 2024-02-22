@@ -44,12 +44,11 @@ class _RestartWidgetState extends State<RestartWidget> {
 
     return KeyedSubtree(
       key: key,
-      child: Stack(
-        alignment: Alignment.topCenter,
-        children: [
-          widget.child(d, l).animate(effects: [const FadeEffect()]),
-          // const NotificationsArea()
-        ],
+      child: Container(
+        color: MediaQuery.platformBrightnessOf(context) == Brightness.dark
+            ? d.colorScheme.background
+            : l.colorScheme.background,
+        child: widget.child(d, l).animate(effects: [const FadeEffect()]),
       ),
     );
   }

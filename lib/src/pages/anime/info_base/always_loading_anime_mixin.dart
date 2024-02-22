@@ -60,19 +60,21 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
             appBar: AppBar(),
             body: Center(
               child: FilledButton(
-                  onPressed: () {
-                    f = widget.newStatus();
-                    count += 1;
+                onPressed: () {
+                  f = widget.newStatus();
+                  count += 1;
 
-                    setState(() {});
-                  },
-                  child: Text("Try again")),
+                  setState(() {});
+                },
+                child: const Text("Try again"), // TODO: change
+              ),
             ),
           );
         } else {
           return Container(
             color: Theme.of(context).colorScheme.background,
-            child: widget.builder(context, snapshot.data!).animate().fadeIn(),
+            child:
+                widget.builder(context, snapshot.data as T).animate().fadeIn(),
           );
         }
       },

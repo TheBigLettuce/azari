@@ -42,6 +42,7 @@ class _MangaInfoPageState extends State<MangaInfoPage>
   final state = SkeletonState();
   final scrollController = ScrollController();
   double? score;
+  Future? scoreFuture;
 
   bool isPinned = false;
 
@@ -53,6 +54,7 @@ class _MangaInfoPageState extends State<MangaInfoPage>
   @override
   void dispose() {
     scrollController.dispose();
+    scoreFuture?.ignore();
 
     state.dispose();
 
@@ -61,6 +63,15 @@ class _MangaInfoPageState extends State<MangaInfoPage>
 
   Future<MangaEntry> newFuture() {
     if (widget.entry != null) {
+      scoreFuture = widget.api.score(widget.entry!).then((value) {
+        score = value;
+
+        setState(() {});
+      }).onError((error, stackTrace) {
+        score = -1;
+
+        setState(() {});
+      });
       return Future.value(widget.entry!);
     }
 
@@ -76,7 +87,7 @@ class _MangaInfoPageState extends State<MangaInfoPage>
       ]);
 
       if (score == null || score!.isNegative) {
-        widget.api.score(value).then((value) {
+        scoreFuture = widget.api.score(value).then((value) {
           score = value;
 
           setState(() {});

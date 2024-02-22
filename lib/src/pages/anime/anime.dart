@@ -58,11 +58,11 @@ part 'tabs/finished_tab.dart';
 part 'tabs/reading_tab.dart';
 part 'tab_bar_wrapper.dart';
 
-const int kReadTabIndx = 0;
-const int kMangaTabIndx = 1;
-const int kWatchingTabIndx = 2;
-const int kDiscoverTabIndx = 3;
-const int kWatchedTabIndx = 4;
+// const int kReadTabIndx = 0;
+// const int kMangaTabIndx = 1;
+const int kWatchingTabIndx = 0;
+const int kDiscoverTabIndx = 1;
+const int kWatchedTabIndx = 2;
 
 class AnimePage extends StatefulWidget {
   final void Function(bool) procPop;
@@ -81,9 +81,9 @@ class AnimePage extends StatefulWidget {
 class _AnimePageState extends State<AnimePage>
     with SingleTickerProviderStateMixin {
   final watchingKey = GlobalKey<__WatchingTabState>();
-  final tabKey = GlobalKey<__TabBarWrapperState>();
+  final tabKey = GlobalKey<_TabBarWrapperState>();
   final finishedKey = GlobalKey<__FinishedTabState>();
-  final readKey = GlobalKey<_ReadingTabState>();
+  // final readKey = GlobalKey<_ReadingTabState>();
 
   final _textController = TextEditingController();
   final state = SkeletonState();
@@ -91,21 +91,21 @@ class _AnimePageState extends State<AnimePage>
   late final StreamSubscription<void> watcherWatched;
   // late final StreamSubscription<void> watcherReading;
   late final tabController =
-      TabController(initialIndex: kReadTabIndx, length: 5, vsync: this);
+      TabController(initialIndex: kWatchingTabIndx, length: 3, vsync: this);
 
   final List<AnimeEntry> _discoverEntries = [];
-  final List<MangaEntry> mangaEntries = [];
+  // final List<MangaEntry> mangaEntries = [];
 
   int savedCount = 0;
 
   int readingCount = ReadMangaChapter.countDistinct();
 
-  final Dio client = Dio();
+  // final Dio client = Dio();
   final api = const Jikan();
-  late final mangaApi = MangaDex(client);
+  // late final mangaApi = MangaDex(client);
 
   final discoverContainer = PagingContainer();
-  final mangaContainer = PagingContainer();
+  // final mangaContainer = PagingContainer();
 
   @override
   void initState() {
@@ -137,7 +137,7 @@ class _AnimePageState extends State<AnimePage>
     watcherWatched.cancel();
     tabController.dispose();
     _textController.dispose();
-    client.close(force: true);
+    // client.close(force: true);
 
     super.dispose();
   }
@@ -145,25 +145,26 @@ class _AnimePageState extends State<AnimePage>
   bool _launchSearch(bool force) {
     final offsetIndex = tabController.index + tabController.offset;
 
-    if (force ||
-        (tabController.offset.isNegative
-            ? offsetIndex <= 3.5 && offsetIndex > 2.5
-            : offsetIndex >= 2.5 && offsetIndex < 3.5)) {
-      SearchAnimePage.launchAnimeApi(context, api);
+    // if (force ||
+    //     (tabController.offset.isNegative
+    //         ? offsetIndex <= 3.5 && offsetIndex > 2.5
+    //         : offsetIndex >= 2.5 && offsetIndex < 3.5)) {
 
-      return true;
-    }
+    //   return true;
+    // }
 
     if (tabController.offset.isNegative
         ? offsetIndex <= 1.5 && offsetIndex > 0.5
         : offsetIndex >= 0.5 && offsetIndex < 1.5) {
-      SearchAnimePage.launchMangaApi(context, mangaApi);
+      SearchAnimePage.launchAnimeApi(context, api);
+
+      // SearchAnimePage.launchMangaApi(context, mangaApi);
 
       return true;
     }
 
     if (offsetIndex <= 0.5) {
-      return true;
+      return false;
     }
 
     return false;
@@ -200,11 +201,11 @@ class _AnimePageState extends State<AnimePage>
         isScrollable: true,
         controller: tabController,
         tabs: [
-          const WatchingTabCount(
-            "Reading",
-            createWatcher: ReadMangaChapter.watchReading, // TODO: change
-          ),
-          const Tab(text: "Manga"), // TODO: change
+          // const WatchingTabCount(
+          //   "Reading",
+          //   createWatcher: ReadMangaChapter.watchReading, // TODO: change
+          // ),
+          // const Tab(text: "Manga"), // TODO: change
           TabWithCount(AppLocalizations.of(context)!.watchingTab, savedCount),
           Tab(text: AppLocalizations.of(context)!.discoverTab),
           TabWithCount(AppLocalizations.of(context)!.finishedTab,
@@ -224,7 +225,7 @@ class _AnimePageState extends State<AnimePage>
         appBar: PreferredSize(
           preferredSize:
               tabBar.preferredSize + Offset(0, widget.viewPadding.top),
-          child: _TabBarWrapper(
+          child: TabBarWrapper(
             key: tabKey,
             tabBar: tabBar,
             viewPadding: widget.viewPadding,
@@ -236,18 +237,18 @@ class _AnimePageState extends State<AnimePage>
         child: TabBarView(
           controller: tabController,
           children: [
-            ReadingTab(
-              widget.viewPadding,
-              key: readKey,
-              api: mangaApi,
-              onDispose: _hideResetSelection,
-            ),
-            MangaTab(
-              container: mangaContainer,
-              api: mangaApi,
-              elems: mangaEntries,
-              viewInsets: widget.viewPadding,
-            ),
+            // ReadingTab(
+            //   widget.viewPadding,
+            //   key: readKey,
+            //   api: mangaApi,
+            //   onDispose: _hideResetSelection,
+            // ),
+            // MangaTab(
+            //   container: mangaContainer,
+            //   api: mangaApi,
+            //   elems: mangaEntries,
+            //   viewInsets: widget.viewPadding,
+            // ),
             _WatchingTab(
               widget.viewPadding,
               key: watchingKey,

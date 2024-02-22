@@ -7,51 +7,45 @@
 
 part of '../../home.dart';
 
-class _FavoritesIcon extends StatelessWidget {
+class _MangaIcon extends StatelessWidget {
   final bool isSelected;
   final AnimationController controller;
-  final int count;
 
-  const _FavoritesIcon({
+  const _MangaIcon({
     required this.controller,
     required this.isSelected,
-    required this.count,
   });
 
   @override
   Widget build(BuildContext context) {
     return NavigationDestination(
-      icon: Badge.count(
-        alignment: Alignment.topRight,
-        count: count,
-        child: Animate(
-          controller: controller,
-          autoPlay: false,
-          target: 1,
-          effects: [
-            ShimmerEffect(angle: pi / -5, duration: 440.ms, colors: [
-              Theme.of(context)
-                  .colorScheme
-                  .primary
-                  .withOpacity(isSelected ? 1 : 0),
-              Colors.red,
-              Colors.orange,
-              Colors.yellow,
-              Colors.green,
-              Colors.blue,
-              Colors.indigo,
-              Colors.purple,
-              Colors.red
-              // Theme.of(context).colorScheme.primary,
-            ])
-          ],
-          child: Icon(
-            Icons.favorite,
-            color: isSelected ? Theme.of(context).colorScheme.primary : null,
-          ),
+      icon: Animate(
+        controller: controller,
+        autoPlay: false,
+        target: 1,
+        effects: [
+          ShimmerEffect(angle: pi / -5, duration: 440.ms, colors: [
+            Theme.of(context)
+                .colorScheme
+                .primary
+                .withOpacity(isSelected ? 1 : 0),
+            Colors.red,
+            Colors.orange,
+            Colors.yellow,
+            Colors.green,
+            Colors.blue,
+            Colors.indigo,
+            Colors.purple,
+            Colors.red
+            // Theme.of(context).colorScheme.primary,
+          ])
+        ],
+        child: Icon(
+          Icons.book_rounded,
+          color: isSelected ? Theme.of(context).colorScheme.primary : null,
         ),
       ),
-      label: AppLocalizations.of(context)!.favoritesLabel,
+      label: "Manga", // TODO: change
     );
   }
 }
