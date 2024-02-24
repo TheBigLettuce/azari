@@ -24,7 +24,7 @@ import 'package:palette_generator/palette_generator.dart';
 
 import '../../../db/schemas/gallery/system_gallery_directory.dart';
 import '../../../db/schemas/gallery/system_gallery_directory_file.dart';
-import '../../../widgets/grid/wrap_grid_page.dart';
+import '../../../widgets/grid/wrappers/wrap_grid_page.dart';
 import 'note_page_container.dart';
 import 'tab_with_count.dart';
 

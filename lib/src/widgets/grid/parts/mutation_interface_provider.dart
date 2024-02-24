@@ -5,19 +5,25 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import '../cell/cell.dart';
+part of '../grid_frame.dart';
 
-abstract class GridMutationInterface<T extends Cell> {
-  int get cellCount;
-  set cellCount(int c);
+class MutationInterfaceProvider<T extends Cell> extends InheritedWidget {
+  final GridMutationInterface<T> state;
 
-  bool get isRefreshing;
-  set isRefreshing(bool b);
+  const MutationInterfaceProvider({
+    super.key,
+    required this.state,
+    required super.child,
+  });
 
-  bool get mutated;
+  static GridMutationInterface<T> of<T extends Cell>(BuildContext context) {
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<MutationInterfaceProvider<T>>();
 
-  void setSource(int cellCount, T Function(int i) getCell);
-  T getCell(int i);
+    return widget!.state;
+  }
 
-  void reset();
+  @override
+  bool updateShouldNotify(MutationInterfaceProvider<T> oldWidget) =>
+      state != oldWidget.state;
 }

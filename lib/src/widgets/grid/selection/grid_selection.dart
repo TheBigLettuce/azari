@@ -8,7 +8,7 @@
 part of '../grid_frame.dart';
 
 class GridSelection<T extends Cell> {
-  final selected = <int, T>{};
+  final _selected = <int, T>{};
   final List<GridAction<T>> addActions;
   final bool noAppBar;
   final bool ignoreSwipe;
@@ -16,7 +16,7 @@ class GridSelection<T extends Cell> {
   int? lastSelected;
 
   void use(void Function(List<T> l) f) {
-    f(selected.values.toList());
+    f(_selected.values.toList());
     reset();
   }
 
@@ -24,46 +24,48 @@ class GridSelection<T extends Cell> {
   final SelectionGlue<T> glue;
   final ScrollController Function() controller;
 
+  bool get isEmpty => _selected.isEmpty;
+  bool get isNotEmpty => _selected.isNotEmpty;
+
   void reset() {
-    selected.clear();
+    _selected.clear();
     glue.close();
     lastSelected = null;
 
     _setState(() {});
-    glue.updateCount(selected.length);
+    glue.updateCount(_selected.length);
   }
 
   bool isSelected(int indx) =>
-      indx.isNegative ? false : selected.containsKey(indx);
+      indx.isNegative ? false : _selected.containsKey(indx);
 
-  void add(BuildContext context, int id, T selection,
-      double systemNavigationInsets) {
+  void add(BuildContext context, int id, T selection) {
     if (id.isNegative) {
       return;
     }
 
-    if (selected.isEmpty) {
+    if (_selected.isEmpty) {
       glue.open(addActions, this);
     }
 
     _setState(() {
-      selected[id] = selection;
+      _selected[id] = selection;
       lastSelected = id;
     });
 
-    glue.updateCount(selected.length);
+    glue.updateCount(_selected.length);
   }
 
   void remove(int id) {
     _setState(() {
-      selected.remove(id);
-      if (selected.isEmpty) {
+      _selected.remove(id);
+      if (_selected.isEmpty) {
         glue.close();
         lastSelected = null;
       }
     });
 
-    glue.updateCount(selected.length);
+    glue.updateCount(_selected.length);
   }
 
   void selectUnselectUntil(int indx, GridMutationInterface<T> state,
@@ -80,7 +82,7 @@ class GridSelection<T extends Cell> {
       if (indx < last) {
         for (var i = last; i >= indx; i--) {
           if (selection) {
-            selected[selectFrom?[i] ?? i] = state.getCell(selectFrom?[i] ?? i);
+            _selected[selectFrom?[i] ?? i] = state.getCell(selectFrom?[i] ?? i);
           } else {
             remove(selectFrom?[i] ?? i);
           }
@@ -90,7 +92,7 @@ class GridSelection<T extends Cell> {
       } else if (indx > last) {
         for (var i = last; i <= indx; i++) {
           if (selection) {
-            selected[selectFrom?[i] ?? i] = state.getCell(selectFrom?[i] ?? i);
+            _selected[selectFrom?[i] ?? i] = state.getCell(selectFrom?[i] ?? i);
           } else {
             remove(selectFrom?[i] ?? i);
           }
@@ -99,18 +101,19 @@ class GridSelection<T extends Cell> {
         _setState(() {});
       }
 
-      glue.updateCount(selected.length);
+      glue.updateCount(_selected.length);
     }
   }
 
-  void selectOrUnselect(BuildContext context, int index, T selection,
-      double systemNavigationInsets) {
+  void selectOrUnselect(BuildContext context, int index) {
     if (addActions.isEmpty) {
       return;
     }
 
     if (!isSelected(index)) {
-      add(context, index, selection, systemNavigationInsets);
+      final cell = MutationInterfaceProvider.of<T>(context).getCell(index);
+
+      add(context, index, cell);
     } else {
       remove(index);
     }
@@ -118,8 +121,12 @@ class GridSelection<T extends Cell> {
     HapticFeedback.selectionClick();
   }
 
-  GridSelection._(this._setState, this.addActions, this.glue, this.controller,
-      {required this.noAppBar, required this.ignoreSwipe});
-  GridSelection(this._setState, this.addActions, this.glue, this.controller,
-      {required this.noAppBar, required this.ignoreSwipe});
+  GridSelection(
+    this._setState,
+    this.addActions,
+    this.glue,
+    this.controller, {
+    required this.noAppBar,
+    required this.ignoreSwipe,
+  });
 }

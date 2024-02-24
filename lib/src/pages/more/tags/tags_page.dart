@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
-import 'package:gallery/src/widgets/grid/segment_label.dart';
+import 'package:gallery/src/widgets/grid/parts/segment_label.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 
 import '../../../interfaces/booru/booru_api_state.dart';

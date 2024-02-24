@@ -39,7 +39,7 @@ import '../../interfaces/filtering/filtering_mode.dart';
 import '../../interfaces/filtering/sorting_mode.dart';
 import '../../plugs/gallery.dart';
 import '../../widgets/copy_move_preview.dart';
-import '../../widgets/grid/wrap_grid_page.dart';
+import '../../widgets/grid/wrappers/wrap_grid_page.dart';
 import '../../widgets/search_bar/search_filter_grid.dart';
 import '../../interfaces/filtering/filters.dart';
 import '../../widgets/skeletons/grid_skeleton_state_filter.dart';

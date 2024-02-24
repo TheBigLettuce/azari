@@ -5,19 +5,30 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import '../cell/cell.dart';
+import 'package:flutter/material.dart';
 
-abstract class GridMutationInterface<T extends Cell> {
-  int get cellCount;
-  set cellCount(int c);
+sealed class GridBackButtonBehaviour {
+  const GridBackButtonBehaviour();
+}
 
-  bool get isRefreshing;
-  set isRefreshing(bool b);
+class DefaultGridBackButton implements GridBackButtonBehaviour {
+  const DefaultGridBackButton({
+    this.onPressed = _doNothing,
+  });
 
-  bool get mutated;
+  static void _doNothing() {}
 
-  void setSource(int cellCount, T Function(int i) getCell);
-  T getCell(int i);
+  final void Function() onPressed;
+}
 
-  void reset();
+class CountGridBackButton implements GridBackButtonBehaviour {
+  const CountGridBackButton(this.count);
+
+  final int count;
+}
+
+class OverrideGridBackButton implements GridBackButtonBehaviour {
+  const OverrideGridBackButton(this.child);
+
+  final Widget child;
 }

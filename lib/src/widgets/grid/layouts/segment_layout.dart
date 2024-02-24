@@ -16,8 +16,6 @@ import '../grid_frame.dart';
 class SegmentLayout<T extends Cell> implements GridLayouter<T> {
   final Segments<T> segments;
   final GridAspectRatio aspectRatio;
-  final bool tightMode;
-  final bool hideAlias;
 
   @override
   final GridColumn columns;

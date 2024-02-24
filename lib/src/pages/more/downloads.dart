@@ -24,7 +24,7 @@ import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../db/loaders/linear_isar_loader.dart';
-import '../../widgets/grid/wrap_grid_page.dart';
+import '../../widgets/grid/wrappers/wrap_grid_page.dart';
 import '../../widgets/skeletons/grid_skeleton_state_filter.dart';
 import '../../widgets/skeletons/grid_skeleton.dart';
 

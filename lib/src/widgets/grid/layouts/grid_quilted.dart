@@ -10,13 +10,12 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
+import 'package:gallery/src/widgets/grid/grid_cell.dart';
 
 import '../grid_frame.dart';
 
 class GridQuiltedLayout<T extends Cell> implements GridLayouter<T> {
   final GridAspectRatio aspectRatio;
-  final bool tightMode;
-  final bool hideAlias;
 
   final int gridSeed;
 
@@ -28,17 +27,19 @@ class GridQuiltedLayout<T extends Cell> implements GridLayouter<T> {
     return [
       GridLayouts.quiltedGrid<T>(
         context,
-        state.mutationInterface,
+        state.mutation,
         state.selection,
-        columns,
-        false,
-        state.makeGridCell,
         randomNumber: gridSeed,
         systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
-        aspectRatio: aspectRatio.value,
-        hideAlias: hideAlias,
-        tightMode: tightMode,
-        // randomNumber: gridSeed,
+        gridCell: (BuildContext context, int idx) => GridCell.frameDefault(
+          context,
+          idx,
+          functionality: state.widget.functionality,
+          description: state.widget.description,
+          imageViewDescription: state.widget.imageViewDescription,
+          selection: state.selection,
+        ),
+        columns: columns,
       )
     ];
   }
@@ -50,7 +51,5 @@ class GridQuiltedLayout<T extends Cell> implements GridLayouter<T> {
     this.columns,
     this.aspectRatio, {
     required this.gridSeed,
-    required this.hideAlias,
-    this.tightMode = false,
   });
 }

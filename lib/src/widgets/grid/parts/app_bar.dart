@@ -5,43 +5,39 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:gallery/src/net/manga/manga_dex.dart';
-import 'package:gallery/src/pages/anime/anime.dart';
-import 'package:gallery/src/widgets/grid/parts/segment_label.dart';
+part of '../grid_frame.dart';
 
-class MangaPage extends StatefulWidget {
-  final void Function(bool) procPop;
-  final EdgeInsets viewPadding;
+class _AppBar<T extends Cell> extends StatelessWidget {
+  final bool isSelecting;
+  final Widget? title;
+  final Widget? leading;
+  final List<Widget> actions;
+  final PreferredSizeWidget? bottomWidget;
 
-  const MangaPage({
+  const _AppBar({
     super.key,
-    required this.procPop,
-    required this.viewPadding,
+    required this.actions,
+    required this.bottomWidget,
+    required this.isSelecting,
+    required this.leading,
+    required this.title,
   });
 
   @override
-  State<MangaPage> createState() => _MangaPageState();
-}
-
-class _MangaPageState extends State<MangaPage> {
-  final dio = Dio();
-  late final api = MangaDex(dio);
-
-  @override
-  void dispose() {
-    dio.close();
-
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return ReadingTab(
-      widget.viewPadding,
-      api: api,
-      onDispose: () {},
+    return SliverAppBar(
+      backgroundColor:
+          Theme.of(context).colorScheme.background.withOpacity(0.95),
+      automaticallyImplyLeading: false,
+      actions: actions,
+      centerTitle: true,
+      title: title,
+      leading: leading,
+      pinned: true,
+      stretch: true,
+      snap: !isSelecting,
+      floating: !isSelecting,
+      bottom: bottomWidget,
     );
   }
 }

@@ -5,19 +5,18 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import '../cell/cell.dart';
+part of '../grid_frame.dart';
 
-abstract class GridMutationInterface<T extends Cell> {
-  int get cellCount;
-  set cellCount(int c);
+class _SegSticky {
+  final String seg;
+  final bool sticky;
+  final void Function()? onLabelPressed;
+  final bool unstickable;
 
-  bool get isRefreshing;
-  set isRefreshing(bool b);
-
-  bool get mutated;
-
-  void setSource(int cellCount, T Function(int i) getCell);
-  T getCell(int i);
-
-  void reset();
+  const _SegSticky(
+    this.seg,
+    this.sticky,
+    this.onLabelPressed, {
+    this.unstickable = true,
+  });
 }

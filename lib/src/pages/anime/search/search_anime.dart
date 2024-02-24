@@ -24,7 +24,7 @@ import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
 import 'package:gallery/src/pages/anime/manga/manga_info_page.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
-import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
+import 'package:gallery/src/widgets/grid/wrappers/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';

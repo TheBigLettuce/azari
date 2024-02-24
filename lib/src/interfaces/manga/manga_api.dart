@@ -213,4 +213,16 @@ class MangaStringId implements MangaId {
 
   @override
   String toString() => id;
+
+  @override
+  bool operator ==(Object other) {
+    if (other is MangaStringId) {
+      return other.id == id;
+    }
+
+    return false;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }

@@ -5,19 +5,18 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import '../cell/cell.dart';
+import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
 
-abstract class GridMutationInterface<T extends Cell> {
-  int get cellCount;
-  set cellCount(int c);
+sealed class GridRefreshBehaviour {
+  const GridRefreshBehaviour();
+}
 
-  bool get isRefreshing;
-  set isRefreshing(bool b);
+class DefaultGridRefreshBehaviour implements GridRefreshBehaviour {
+  const DefaultGridRefreshBehaviour();
+}
 
-  bool get mutated;
+class RetainedGridRefreshBehaviour implements GridRefreshBehaviour {
+  const RetainedGridRefreshBehaviour(this.interface);
 
-  void setSource(int cellCount, T Function(int i) getCell);
-  T getCell(int i);
-
-  void reset();
+  final RefreshingStatusInterface interface;
 }

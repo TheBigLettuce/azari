@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 
 import '../../../interfaces/cell/cell.dart';
 import '../../../interfaces/grid/selection_glue.dart';
-import '../wrap_grid_action_button.dart';
+import '../wrappers/wrap_grid_action_button.dart';
 
 // class _CountWidget extends StatelessWidget {
 //   const _CountWidget({super.key});

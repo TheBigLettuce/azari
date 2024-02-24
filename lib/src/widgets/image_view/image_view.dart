@@ -14,7 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/interfaces/note_interface.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
-import 'package:gallery/src/widgets/grid/wrap_grid_action_button.dart';
+import 'package:gallery/src/widgets/grid/wrappers/wrap_grid_action_button.dart';
 import 'package:gallery/src/widgets/image_view/loading_builder.dart';
 import 'package:gallery/src/widgets/image_view/make_image_view_bindings.dart';
 import 'package:gallery/src/widgets/image_view/wrap_image_view_notifiers.dart';

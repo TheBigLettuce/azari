@@ -42,7 +42,7 @@ import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/grid/grid_cell.dart';
 import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/grid/layouts/grid_quilted.dart';
-import 'package:gallery/src/widgets/grid/segment_label.dart';
+import 'package:gallery/src/widgets/grid/parts/segment_label.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';

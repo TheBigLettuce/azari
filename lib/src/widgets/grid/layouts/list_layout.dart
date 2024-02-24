@@ -19,10 +19,24 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
   @override
   List<Widget> call(BuildContext context, GridFrameState<T> state) {
     return [
-      GridLayouts.list<T>(context, state.mutationInterface, state.selection,
-          state.widget.systemNavigationInsets.bottom,
-          hideThumbnails: hideThumbnails,
-          onPressed: unpressable ? null : state.onPressed)
+      GridLayouts.list<T>(
+        context,
+        state.mutation,
+        state.selection,
+        state.widget.systemNavigationInsets.bottom,
+        hideThumbnails: hideThumbnails,
+        onPressed: unpressable
+            ? null
+            : (context, cell, idx) {
+                state.widget.functionality.onPressed.launch(
+                  context,
+                  functionality: state.widget.functionality,
+                  imageViewDescription: state.widget.imageViewDescription,
+                  gridDescription: state.widget.description,
+                  startingCell: idx,
+                );
+              },
+      )
     ];
   }
 
@@ -32,5 +46,8 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
   @override
   bool get isList => true;
 
-  const ListLayout({this.hideThumbnails = false, this.unpressable = false});
+  const ListLayout({
+    this.hideThumbnails = false,
+    this.unpressable = false,
+  });
 }

@@ -10,10 +10,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 
-import '../../interfaces/cell/cell.dart';
-import 'glue_bottom_app_bar.dart';
-import '../../interfaces/grid/selection_glue.dart';
-import 'selection/selection_glue_state.dart';
+import '../../../interfaces/cell/cell.dart';
+import '../glue_bottom_app_bar.dart';
+import '../../../interfaces/grid/selection_glue.dart';
+import '../selection/selection_glue_state.dart';
 
 class WrapGridPage<T extends Cell> extends StatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;

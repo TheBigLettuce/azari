@@ -10,13 +10,12 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
+import 'package:gallery/src/widgets/grid/grid_cell.dart';
 
 import '../grid_frame.dart';
 
 class GridLayout<T extends Cell> implements GridLayouter<T> {
   final GridAspectRatio aspectRatio;
-  final bool tightMode;
-  final bool hideAlias;
 
   @override
   final GridColumn columns;
@@ -26,15 +25,21 @@ class GridLayout<T extends Cell> implements GridLayouter<T> {
     return [
       GridLayouts.grid<T>(
         context,
-        state.mutationInterface,
+        state.mutation,
         state.selection,
-        columns.number,
-        false,
-        state.makeGridCell,
         systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
         aspectRatio: aspectRatio.value,
-        hideAlias: hideAlias,
-        tightMode: tightMode,
+        columns: columns.number,
+        gridCell: (context, idx) {
+          return GridCell.frameDefault(
+            context,
+            idx,
+            functionality: state.widget.functionality,
+            description: state.widget.description,
+            imageViewDescription: state.widget.imageViewDescription,
+            selection: state.selection,
+          );
+        },
       )
     ];
   }
@@ -42,10 +47,5 @@ class GridLayout<T extends Cell> implements GridLayouter<T> {
   @override
   bool get isList => false;
 
-  const GridLayout(
-    this.columns,
-    this.aspectRatio, {
-    required this.hideAlias,
-    this.tightMode = false,
-  });
+  const GridLayout(this.columns, this.aspectRatio);
 }

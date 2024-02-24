@@ -5,19 +5,28 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import '../cell/cell.dart';
+part of '../grid_frame.dart';
 
-abstract class GridMutationInterface<T extends Cell> {
-  int get cellCount;
-  set cellCount(int c);
+class _BottomWidget<T extends Cell> extends PreferredSize {
+  final Widget? routeChanger;
 
-  bool get isRefreshing;
-  set isRefreshing(bool b);
+  const _BottomWidget({
+    required super.preferredSize,
+    this.routeChanger,
+    required super.child,
+  });
 
-  bool get mutated;
-
-  void setSource(int cellCount, T Function(int i) getCell);
-  T getCell(int i);
-
-  void reset();
+  @override
+  Widget build(BuildContext context) {
+    return routeChanger != null
+        ? Column(
+            children: [
+              routeChanger!,
+              super.build(context),
+            ],
+          )
+        : !MutationInterfaceProvider.of<T>(context).isRefreshing
+            ? super.build(context)
+            : const LinearProgressIndicator();
+  }
 }

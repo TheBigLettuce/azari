@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:transparent_image/transparent_image.dart';
 import '../loading_error_widget.dart';
 import '../shimmer_loading_indicator.dart';
@@ -57,7 +59,7 @@ class GridCell<T extends Cell> extends StatefulWidget {
     required this.tight,
     required this.download,
     this.forceAlias,
-    bool? hidealias,
+    this.hideAlias = false,
     this.animate = false,
     this.shadowOnTop = false,
     this.circle = false,
@@ -66,8 +68,44 @@ class GridCell<T extends Cell> extends StatefulWidget {
     this.lines,
     this.ignoreStickers = false,
     this.onLongPress,
-  })  : _data = cell,
-        hideAlias = hidealias ?? false;
+  }) : _data = cell;
+
+  static GridCell<T> frameDefault<T extends Cell>(
+    BuildContext context,
+    int idx, {
+    required GridFunctionality<T> functionality,
+    required GridDescription<T> description,
+    required ImageViewDescription<T> imageViewDescription,
+    required GridSelection<T> selection,
+    bool animated = false,
+  }) {
+    final mutation = MutationInterfaceProvider.of<T>(context);
+    final cell = mutation.getCell(idx);
+
+    return GridCell(
+      cell: cell,
+      hideAlias: description.hideTitle,
+      isList: description.layout.isList,
+      indx: idx,
+      download: functionality.download,
+      lines: description.titleLines,
+      tight: description.tightMode,
+      animate: animated,
+      labelAtBottom: description.cellTitleAtBottom,
+      onPressed: (context) => functionality.onPressed.launch(
+        context,
+        functionality: functionality,
+        imageViewDescription: imageViewDescription,
+        gridDescription: description,
+        startingCell: idx,
+      ),
+      onLongPress: idx.isNegative || selection.addActions.isEmpty
+          ? null
+          : () {
+              selection.selectOrUnselect(context, idx);
+            }, //extend: maxExtend,
+    );
+  }
 
   @override
   State<GridCell> createState() => _GridCellState();

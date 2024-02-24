@@ -15,7 +15,7 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/pages/booru/add_to_bookmarks_button.dart';
-import 'package:gallery/src/widgets/grid/wrap_grid_page.dart';
+import 'package:gallery/src/widgets/grid/wrappers/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:isar/isar.dart';
 import 'package:url_launcher/url_launcher.dart';

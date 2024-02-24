@@ -25,6 +25,8 @@ class GridDescription<T extends Cell> {
   /// Displayed in the app bar bottom widget.
   final PreferredSizeWidget? bottomWidget;
 
+  final int titleLines;
+
   final bool showAppBar;
 
   final bool ignoreSwipeSelectGesture;
@@ -33,18 +35,45 @@ class GridDescription<T extends Cell> {
 
   final bool cellTitleAtBottom;
 
-  final int titleLines;
+  /// Makes [menuButtonItems] appear as app bar items.
+  final bool inlineMenuButtonItems;
+
+  final bool showCount;
+
+  final bool asSliver;
+
+  final bool hideTitle;
+
+  final bool tightMode;
+
+  final PageSwitcher? pages;
+
+  final PreferredSizeWidget? footer;
+
+  /// Items added in the menu button's children, after the [searchWidget], or the page name
+  /// if [searchWidget] is null. If [menuButtonItems] includes only one widget,
+  /// it is displayed directly.
+  final List<Widget>? menuButtonItems;
 
   const GridDescription(
     this.actions, {
+    required this.keybindsDescription,
+    required this.layout,
     this.showAppBar = true,
     this.ignoreEmptyWidgetOnNoContent = false,
-    required this.keybindsDescription,
     this.bottomWidget,
     this.ignoreSwipeSelectGesture = false,
     this.cellTitleAtBottom = false,
+    // this.ignoreImageViewEndDrawer = false,
+    this.asSliver = false,
+    this.inlineMenuButtonItems = false,
+    this.tightMode = false,
+    this.showCount = false,
     this.titleLines = 1,
+    this.hideTitle = false,
+    this.menuButtonItems,
+    this.footer,
+    this.pages,
     this.pageName,
-    required this.layout,
   });
 }

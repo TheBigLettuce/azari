@@ -16,9 +16,17 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
-import 'package:gallery/src/interfaces/note_interface.dart';
-import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
-import 'package:gallery/src/widgets/image_view/image_view.dart';
+import 'package:gallery/src/plugs/download_movers/dart.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_fab_type.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_refresh_behaviour.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_search_widget.dart';
+import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
+import 'package:gallery/src/widgets/grid/configuration/page_description.dart';
+import 'package:gallery/src/widgets/grid/configuration/page_switcher.dart';
+import 'package:gallery/src/widgets/grid/parts/grid_app_bar_leading.dart';
+import 'package:gallery/src/widgets/grid/parts/grid_app_bar_title.dart';
+import 'package:gallery/src/widgets/grid/parts/page_switching_widget.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:logging/logging.dart';
 import '../../interfaces/cell/cell.dart';
@@ -28,9 +36,9 @@ import '../keybinds/keybind_description.dart';
 import '../keybinds/single_activator_description.dart';
 import '../notifiers/focus.dart';
 import 'grid_cell.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import 'segment_label.dart';
+import 'parts/segment_label.dart';
 import '../../interfaces/grid/selection_glue.dart';
 
 part 'selection/grid_selection.dart';
@@ -41,111 +49,36 @@ part '../../interfaces/grid/grid_action.dart';
 part '../../interfaces/grid/grid_description.dart';
 part '../../interfaces/grid/search_and_focus.dart';
 part 'layouts/grid_layout_.dart';
-part 'fab.dart';
-
-class _SegSticky {
-  final String seg;
-  final bool sticky;
-  final void Function()? onLabelPressed;
-  final bool unstickable;
-
-  const _SegSticky(this.seg, this.sticky, this.onLabelPressed,
-      {this.unstickable = true});
-}
-
-class PageDescription {
-  const PageDescription({
-    required this.slivers,
-    this.search,
-    this.appIcons = const [],
-  });
-
-  final List<Widget> slivers;
-  final List<Widget> appIcons;
-  final SearchAndFocus? search;
-}
-
-class PageSwitcher {
-  const PageSwitcher(
-    this.pages,
-    this.buildPage,
-  );
-
-  final List<Widget> pages;
-  final PageDescription Function(int i) buildPage;
-}
+part 'configuration/seg_sticky.dart';
+part 'parts/app_bar.dart';
+part 'wrappers/wrap_padding.dart';
+part 'parts/body_padding.dart';
+part 'parts/bottom_widget.dart';
+part 'parts/mutation_interface_provider.dart';
 
 /// The grid of images.
 class GridFrame<T extends Cell> extends StatefulWidget {
-  /// [loadNext] gets called when the grid is scrolled around the end of the viewport.
-  /// If this is null, then the grid is assumed to be not able to incrementally add posts
-  /// by scrolling at the near end of the viewport.
-  final Future<int> Function()? loadNext;
-
-  /// In case if the cell represents an online resource which can be downloaded,
-  /// setting [download] enables buttons to download the resource.
-  final Future<void> Function(int indx)? download;
-
-  /// Refresh the grid.
-  /// If [refresh] returns null, it means no posts can be loaded more,
-  /// which means that if [loadNext] is not null it wont be called more.
-  final Future<int>? Function() refresh;
-
-  /// [updateScrollPosition] gets called when grid first builds and then when scrolling stops,
-  ///  if not null. Useful when it is desirable to persist the scroll position of the grid.
-  /// [infoPos] represents the scroll position in the "Info" of the image view,
-  ///  and [selectedCell] represents the inital page of the image view.
-  /// State restoration takes this info into the account.
-  final void Function(double pos, {double? infoPos, int? selectedCell})?
-      updateScrollPosition;
-
-  /// If [onBack] is not null, then a back button will be displayed in the appbar,
-  /// which would call this callback when pressed.
-  final void Function()? onBack;
-
-  final int? backButtonBadge;
-
-  /// Overrides the default behaviour of launching the image view on cell pressed.
-  /// [overrideOnPress] can, for example, include calls to [Navigator.push] of routes.
-  final void Function(BuildContext context, T cell)? overrideOnPress;
-
-  // final bool unpressable;
-
   /// Grid gets the cell from [getCell].
   final T Function(int) getCell;
 
   /// [hasReachedEnd] should return true when the cell loading cannot load more.
   final bool Function() hasReachedEnd;
 
+  // final int? backButtonBadge;
+
   /// The cell includes some keybinds by default.
   /// If [additionalKeybinds] is not null, they are added together.
   final Map<SingleActivatorDescription, Null Function()>? additionalKeybinds;
 
   /// If not null, [searchWidget] is displayed in the appbar.
-  final SearchAndFocus? searchWidget;
+  // final SearchAndFocus? searchWidget;
 
   /// If [initalCellCount] is not 0, then the grid won't call [refresh].
   final int initalCellCount;
 
-  /// [initalCell] is needed for the state restoration.
-  /// If [initalCell] is not null the grid will launch image view setting [ImageView.startingCell] as this value.
-  final int? initalCell;
-
   /// [initalScrollPosition] is needed for the state restoration.
   /// If [initalScrollPosition] is not 0, then it is set as the starting scrolling position.
   final double initalScrollPosition;
-
-  /// [pageViewScrollingOffset] is needed for the state restoration.
-  /// If not null, [pageViewScrollingOffset] gets supplied to the [ImageView.infoScrollOffset].
-  final double? pageViewScrollingOffset;
-
-  /// Used for enabling bottom sheets and the drawer.
-  final GlobalKey<ScaffoldState> scaffoldKey;
-
-  /// Items added in the menu button's children, after the [searchWidget], or the page name
-  /// if [searchWidget] is null. If [menuButtonItems] includes only one widget,
-  /// it is displayed directly.
-  final List<Widget>? menuButtonItems;
 
   /// Padding of the system navigation, like the system bottom navigation bar.
   final EdgeInsets systemNavigationInsets;
@@ -153,100 +86,35 @@ class GridFrame<T extends Cell> extends StatefulWidget {
   /// The main focus node of the grid.
   final FocusNode mainFocus;
 
-  /// If the elemnts of the grid arrive in batches [progressTicker] can be set to not null,
-  /// grid will subscribe to it and set the cell count from this ticker's events.
-  final Stream<int>? progressTicker;
+  final GridFunctionality<T> functionality;
 
   /// Some additional metadata about the grid.
   final GridDescription<T> description;
+
+  final ImageViewDescription<T> imageViewDescription;
 
   /// If [belowMainFocus] is not null, then when the grid gets disposed
   /// [belowMainFocus.requestFocus] get called.
   final FocusNode? belowMainFocus;
 
-  /// Supplied to [ImageView.addIcons].
-  final List<GridAction<T>> Function(T)? addIconsImage;
-
-  /// Supplied to [ImageView.pageChange].
-  final void Function(ImageViewState<T> state)? pageChangeImage;
-
-  /// Makes [menuButtonItems] appear as app bar items.
-  final bool inlineMenuButtonItems;
-
-  final PreferredSizeWidget? footer;
-
-  final Widget Function(Object error)? onError;
-
-  final InheritedWidget Function(Widget child)? registerNotifiers;
-
-  final void Function()? onExitImageView;
-
-  final void Function()? beforeImageViewRestore;
-
-  final bool showCount;
-
-  final SelectionGlue<T> selectionGlue;
-  final Widget? overrideBackButton;
-
-  // final NoteInterface<T>? noteInterface;
-
-  final ImageViewStatistics? statistics;
-
-  final bool ignoreImageViewEndDrawer;
-
-  final RefreshingStatusInterface? refreshInterface;
-
   final void Function()? onDispose;
 
-  final PageSwitcher? pages;
-
-  final bool asSliver;
   final ScrollController? overrideController;
-  final Widget? overrideFab;
 
   const GridFrame({
     required super.key,
     this.additionalKeybinds,
     required this.getCell,
     required this.initalScrollPosition,
-    required this.scaffoldKey,
+    required this.functionality,
+    required this.imageViewDescription,
     required this.systemNavigationInsets,
     required this.hasReachedEnd,
-    this.pageChangeImage,
-    this.onError,
     this.onDispose,
-    this.statistics,
-    required this.selectionGlue,
-    this.showCount = false,
-    this.overrideBackButton,
-    this.beforeImageViewRestore,
     required this.mainFocus,
-    this.addIconsImage,
-    this.onExitImageView,
-    this.refreshInterface,
-    this.footer,
-    this.registerNotifiers,
-    this.backButtonBadge,
     this.belowMainFocus,
-    this.inlineMenuButtonItems = false,
-    this.progressTicker,
-    this.menuButtonItems,
-    this.ignoreImageViewEndDrawer = false,
-    this.searchWidget,
-    this.initalCell,
     this.overrideController,
-    this.pageViewScrollingOffset,
-    this.loadNext,
-    // this.noteInterface,
-    required this.refresh,
-    this.updateScrollPosition,
-    this.download,
-    this.onBack,
     this.initalCellCount = 0,
-    this.overrideOnPress,
-    this.asSliver = false,
-    this.pages,
-    this.overrideFab,
     required this.description,
   });
 
@@ -254,105 +122,73 @@ class GridFrame<T extends Cell> extends StatefulWidget {
   State<GridFrame<T>> createState() => GridFrameState<T>();
 }
 
-class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
+class GridFrameState<T extends Cell> extends State<GridFrame<T>>
+    with GridSubpageState<T> {
+  late final _GridRefreshingStatus<T> _refreshingStatus;
   late ScrollController controller;
 
-  final GlobalKey<ImageViewState<T>> imageViewKey = GlobalKey();
-
-  late final selection = GridSelection<T>._(setState,
-      widget.description.actions, widget.selectionGlue, () => controller,
-      noAppBar: !widget.description.showAppBar,
-      ignoreSwipe: widget.description.ignoreSwipeSelectGesture);
+  late final selection = GridSelection<T>(
+    setState,
+    widget.description.actions,
+    widget.functionality.selectionGlue,
+    () => controller,
+    noAppBar: !widget.description.showAppBar,
+    ignoreSwipe: widget.description.ignoreSwipeSelectGesture,
+  );
 
   StreamSubscription<int>? ticker;
 
-  GridMutationInterface<T> get mutationInterface => _state;
-
-  bool inImageView = false;
-
-  List<int>? segTranslation;
-
-  final _fabKey = GlobalKey<__FabState>();
-
-  void updateFab({required bool fab, required bool foreground}) {
-    if (fab != _fabKey.currentState?.showFab) {
-      _fabKey.currentState?.showFab = fab;
-      if (!foreground) {
-        try {
-          // widget.hideShowNavBar(!showFab);
-          _fabKey.currentState?.setState(() {});
-        } catch (_) {}
+  late final GridMutationInterface<T> mutation = DefaultMutationInterface(
+    initalCellCount: widget.initalCellCount,
+    originalCell: widget.getCell,
+    update: ({
+      required bool imageView,
+      required bool unselectAll,
+    }) {
+      if (imageView) {
+        // imageViewKey.currentState?.update(context, _state.cellCount);
       }
-    }
-  }
 
-  late final DefaultMutationInterface<T> _state = DefaultMutationInterface(
-    updateImageView: () {
-      imageViewKey.currentState?.update(context, _state.cellCount);
-    },
-    scrollUp: () {
-      updateFab(fab: false, foreground: inImageView);
-    },
-    unselectall: () {
-      selection.selected.clear();
-      selection.glue.close();
-    },
-    saveStatus: widget.refreshInterface == null
-        ? null
-        : (status) {
-            widget.refreshInterface?.save(status);
-          },
-    widget: () => widget,
-    update: (f) {
+      if (unselectAll) {
+        selection.reset();
+      }
+
       try {
         if (context.mounted) {
-          f?.call();
-
           setState(() {});
         }
       } catch (_) {}
     },
   );
 
+  bool inImageView = false;
+
+  // List<int>? segTranslation;
+
+  // final _fabKey = GlobalKey<__FabState>();
+
   void _refreshCallbackUpdate(int? i, bool refreshing) {
-    _state._refreshing = refreshing;
+    mutation.isRefreshing = refreshing;
     if (i != null) {
-      _state.tick(i);
+      mutation.cellCount = i;
     }
-
-    _state.updateImageView();
-
-    setState(() {});
   }
 
-  @override
-  void initState() {
-    super.initState();
-
-    controller = widget.asSliver
-        ? widget.overrideController ??
-            ScrollController(initialScrollOffset: widget.initalScrollPosition)
-        : ScrollController(initialScrollOffset: widget.initalScrollPosition);
-
-    ticker = widget.progressTicker?.listen((event) {
-      setState(() {
-        _state._cellCount = event;
-      });
-    });
-
+  void _restoreState(ImageViewDescription<T> imageViewDescription) {
     if (widget.initalCellCount != 0 &&
-        widget.pageViewScrollingOffset != null &&
-        widget.initalCell != null) {
+        imageViewDescription.pageViewScrollingOffset != null &&
+        imageViewDescription.initalCell != null) {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        widget.beforeImageViewRestore?.call();
+        imageViewDescription.beforeImageViewRestore?.call();
 
         // onPressed(
         //     context, _state.getCell(widget.initalCell!), widget.initalCell!,
         //     offset: widget.pageViewScrollingOffset);
       });
-    } else if (widget.initalCellCount != 0 && widget.initalCell != null) {
+    } else if (widget.initalCellCount != 0 &&
+        imageViewDescription.initalCell != null) {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        widget.beforeImageViewRestore?.call();
+        imageViewDescription.beforeImageViewRestore?.call();
 
         // onPressed(
         //   context,
@@ -361,27 +197,57 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
         // );
       });
     } else {
-      widget.beforeImageViewRestore?.call();
+      imageViewDescription.beforeImageViewRestore?.call();
     }
+  }
 
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      widget.refreshInterface?.register(_refreshCallbackUpdate);
+  @override
+  void initState() {
+    super.initState();
+
+    final description = widget.description;
+    final functionality = widget.functionality;
+
+    controller = description.asSliver && widget.overrideController != null
+        ? widget.overrideController!
+        : ScrollController(initialScrollOffset: widget.initalScrollPosition);
+
+    ticker = functionality.progressTicker?.listen((event) {
+      mutation.cellCount = event;
     });
 
-    if (widget.initalCellCount != 0) {
-      _state._cellCount = widget.initalCellCount;
-    } else if (widget.refreshInterface == null ||
-        !widget.refreshInterface!.isRefreshing()) {
-      refresh();
-    } else {
-      _state._refreshing = true;
+    _restoreState(widget.imageViewDescription);
+
+    _refreshingStatus = _GridRefreshingStatus(mutation, functionality);
+
+    final refreshBehaviour = functionality.refreshBehaviour;
+
+    switch (refreshBehaviour) {
+      case DefaultGridRefreshBehaviour():
+        refresh();
+        break;
+      case RetainedGridRefreshBehaviour():
+        WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+          refreshBehaviour.interface.register(_refreshCallbackUpdate);
+        });
+
+        mutation.isRefreshing = refreshBehaviour.interface.isRefreshing();
     }
 
-    if (!widget.asSliver) {
+    if (!description.asSliver) {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
         controller = widget.overrideController ?? ScrollController();
+
+        WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+          // _addFabListener();
+        });
+
+        if (functionality.loadNext == null) {
+          return;
+        }
+
         controller.addListener(() {
-          if (widget.hasReachedEnd() || currentPage != 0) {
+          if (widget.hasReachedEnd() || atNotHomePage) {
             return;
           }
 
@@ -389,44 +255,19 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
 
           final height = h - h * 0.80;
 
-          if (!_state.isRefreshing &&
-              _state.cellCount != 0 &&
+          if (!mutation.isRefreshing &&
+              mutation.cellCount != 0 &&
               (controller.offset /
                       controller.positions.first.maxScrollExtent) >=
                   1 - (height / controller.positions.first.maxScrollExtent)) {
-            _state._loadNext(context);
+            _refreshingStatus.onNearEnd();
+            // _state._loadNext(context);
           }
         });
 
         setState(() {});
       });
-
-      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-        _addFabListener();
-      });
     }
-
-    if (widget.loadNext == null) {
-      return;
-    }
-  }
-
-  void _addFabListener() {
-    controller.position.isScrollingNotifier.addListener(() {
-      // if (!_state.isRefreshing) {
-      if (currentPage == 0) {
-        widget.updateScrollPosition?.call(controller.offset);
-      }
-      // }
-
-      if (controller.offset == 0) {
-        updateFab(fab: false, foreground: inImageView);
-      } else {
-        updateFab(
-            fab: !controller.position.isScrollingNotifier.value,
-            foreground: inImageView);
-      }
-    });
   }
 
   @override
@@ -439,13 +280,19 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
 
     widget.belowMainFocus?.requestFocus();
 
-    WidgetsBinding.instance.scheduleFrameCallback((_) {
-      if (!_state.isRefreshing) {
-        widget.refreshInterface?.reset();
-      }
+    final refreshBehaviour = widget.functionality.refreshBehaviour;
+    switch (refreshBehaviour) {
+      case DefaultGridRefreshBehaviour():
+        break;
+      case RetainedGridRefreshBehaviour():
+        WidgetsBinding.instance.scheduleFrameCallback((_) {
+          if (!mutation.isRefreshing) {
+            refreshBehaviour.interface.reset();
+          }
 
-      widget.refreshInterface?.unregister(_refreshCallbackUpdate);
-    });
+          refreshBehaviour.interface.unregister(_refreshCallbackUpdate);
+        });
+    }
 
     widget.onDispose?.call();
 
@@ -453,219 +300,98 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
   }
 
   Future refresh([Future<int> Function()? overrideRefresh]) {
-    selection.selected.clear();
-    selection.glue.close();
-    updateFab(fab: false, foreground: inImageView);
+    selection.reset();
+    mutation.reset();
+    // updateFab(fab: false, foreground: inImageView);
 
-    _state._cellCount = 0;
-
-    return _state._refresh(overrideRefresh);
+    return _refreshingStatus.refresh(overrideRefresh);
   }
 
-  void _scrollUntill(int p) {
-    if (controller.position.maxScrollExtent.isInfinite) {
-      return;
-    }
+  // void _scrollUntill(int p) {
+  //   if (controller.position.maxScrollExtent.isInfinite) {
+  //     return;
+  //   }
 
-    final picPerRow = widget.description.layout.columns;
-    // Get the full content height.
-    final contentSize = controller.position.viewportDimension +
-        controller.position.maxScrollExtent;
-    // Estimate the target scroll position.
-    double target;
-    if (widget.description.layout.isList) {
-      target = contentSize * p / _state.cellCount;
-    } else {
-      target = contentSize *
-          (p / picPerRow!.number - 1) /
-          (_state.cellCount / picPerRow.number);
-    }
+  //   final picPerRow = widget.description.layout.columns;
+  //   // Get the full content height.
+  //   final contentSize = controller.position.viewportDimension +
+  //       controller.position.maxScrollExtent;
+  //   // Estimate the target scroll position.
+  //   double target;
+  //   if (widget.description.layout.isList) {
+  //     target = contentSize * p / _state.cellCount;
+  //   } else {
+  //     target = contentSize *
+  //         (p / picPerRow!.number - 1) /
+  //         (_state.cellCount / picPerRow.number);
+  //   }
 
-    if (target < controller.position.minScrollExtent) {
-      widget.updateScrollPosition?.call(controller.position.minScrollExtent);
-      return;
-    } else if (target > controller.position.maxScrollExtent) {
-      if (widget.hasReachedEnd()) {
-        widget.updateScrollPosition?.call(controller.position.maxScrollExtent);
-        return;
-      }
-    }
+  //   if (target < controller.position.minScrollExtent) {
+  //     widget.updateScrollPosition?.call(controller.position.minScrollExtent);
+  //     return;
+  //   } else if (target > controller.position.maxScrollExtent) {
+  //     if (widget.hasReachedEnd()) {
+  //       widget.updateScrollPosition?.call(controller.position.maxScrollExtent);
+  //       return;
+  //     }
+  //   }
 
-    widget.updateScrollPosition?.call(target);
+  //   widget.updateScrollPosition?.call(target);
 
-    controller.jumpTo(target);
-  }
+  //   controller.jumpTo(target);
+  // }
 
-  void onPressed(BuildContext gridContext, T cell, int startingCell,
-      {double? offset}) {
-    if (widget.overrideOnPress != null) {
-      widget.mainFocus.requestFocus();
-      widget.overrideOnPress!(gridContext, cell);
-      return;
-    }
-    inImageView = true;
+  // Map<SingleActivatorDescription, void Function()> _makeBindings(
+  //         BuildContext context) =>
+  //     {
+  //       SingleActivatorDescription(AppLocalizations.of(context)!.refresh,
+  //           const SingleActivator(LogicalKeyboardKey.f5)): _state._f5,
+  //       if (widget.searchWidget != null &&
+  //           widget.searchWidget!.onPressed != null)
+  //         SingleActivatorDescription(
+  //                 AppLocalizations.of(context)!.selectSuggestion,
+  //                 const SingleActivator(LogicalKeyboardKey.enter, shift: true)):
+  //             () {
+  //           widget.searchWidget?.onPressed!();
+  //         },
+  //       if (widget.searchWidget != null)
+  //         SingleActivatorDescription(
+  //             AppLocalizations.of(context)!.focusSearch,
+  //             const SingleActivator(LogicalKeyboardKey.keyF,
+  //                 control: true)): () {
+  //           if (widget.searchWidget == null) {
+  //             return;
+  //           }
 
-    widget.mainFocus.requestFocus();
+  //           if (widget.searchWidget!.focus.hasFocus) {
+  //             widget.mainFocus.requestFocus();
+  //           } else {
+  //             widget.searchWidget!.focus.requestFocus();
+  //           }
+  //         },
+  //       if (widget.onBack != null)
+  //         SingleActivatorDescription(AppLocalizations.of(context)!.back,
+  //             const SingleActivator(LogicalKeyboardKey.escape)): () {
+  //           selection.selected.clear();
+  //           selection.glue.close();
+  //           widget.onBack!();
+  //         },
+  //       if (widget.additionalKeybinds != null) ...widget.additionalKeybinds!,
+  //     };
 
-    final offsetGrid = controller.hasClients ? controller.offset : 0.0;
-    final overlayColor =
-        Theme.of(gridContext).colorScheme.background.withOpacity(0.5);
-
-    widget.selectionGlue.hideNavBar(true);
-
-    Navigator.of(context, rootNavigator: true)
-        .push(MaterialPageRoute(builder: (context) {
-      return ImageView<T>(
-          key: imageViewKey,
-          gridContext: gridContext,
-          statistics: widget.statistics,
-          registerNotifiers: widget.registerNotifiers,
-          systemOverlayRestoreColor: overlayColor,
-          updateTagScrollPos: (pos, selectedCell) => widget.updateScrollPosition
-              ?.call(offsetGrid, infoPos: pos, selectedCell: selectedCell),
-          scrollUntill: _scrollUntill,
-          pageChange: widget.pageChangeImage,
-          onExit: () {
-            inImageView = false;
-            widget.onExitImageView?.call();
-          },
-          ignoreEndDrawer: widget.ignoreImageViewEndDrawer,
-          addIcons: widget.addIconsImage,
-          focusMain: () {
-            widget.mainFocus.requestFocus();
-          },
-          infoScrollOffset: offset,
-          predefinedIndexes: segTranslation,
-          getCell: _state.getCell,
-          // noteInterface: widget.noteInterface,
-          cellCount: _state.cellCount,
-          download: widget.download,
-          startingCell: segTranslation != null
-              ? () {
-                  for (final (i, e) in segTranslation!.indexed) {
-                    if (e == startingCell) {
-                      return i;
-                    }
-                  }
-
-                  return 0;
-                }()
-              : startingCell,
-          onNearEnd: widget.loadNext == null ? null : _state._onNearEnd);
-    })).then((value) => widget.selectionGlue.hideNavBar(false));
-  }
-
-  Map<SingleActivatorDescription, void Function()> _makeBindings(
-          BuildContext context) =>
-      {
-        SingleActivatorDescription(AppLocalizations.of(context)!.refresh,
-            const SingleActivator(LogicalKeyboardKey.f5)): _state._f5,
-        if (widget.searchWidget != null &&
-            widget.searchWidget!.onPressed != null)
-          SingleActivatorDescription(
-                  AppLocalizations.of(context)!.selectSuggestion,
-                  const SingleActivator(LogicalKeyboardKey.enter, shift: true)):
-              () {
-            widget.searchWidget?.onPressed!();
-          },
-        if (widget.searchWidget != null)
-          SingleActivatorDescription(
-              AppLocalizations.of(context)!.focusSearch,
-              const SingleActivator(LogicalKeyboardKey.keyF,
-                  control: true)): () {
-            if (widget.searchWidget == null) {
-              return;
-            }
-
-            if (widget.searchWidget!.focus.hasFocus) {
-              widget.mainFocus.requestFocus();
-            } else {
-              widget.searchWidget!.focus.requestFocus();
-            }
-          },
-        if (widget.onBack != null)
-          SingleActivatorDescription(AppLocalizations.of(context)!.back,
-              const SingleActivator(LogicalKeyboardKey.escape)): () {
-            selection.selected.clear();
-            selection.glue.close();
-            widget.onBack!();
-          },
-        if (widget.additionalKeybinds != null) ...widget.additionalKeybinds!,
-      };
-
-  GridCell<T> makeGridCell(BuildContext context, T cell, int indx,
-          {required bool hideAlias, required bool tightMode}) =>
-      GridCell(
-        cell: cell,
-        hidealias: hideAlias,
-        isList: widget.description.layout.isList,
-        indx: indx,
-        download: widget.download,
-        lines: widget.description.titleLines,
-        tight: tightMode,
-        labelAtBottom: widget.description.cellTitleAtBottom,
-        onPressed: (context) => onPressed(context, cell, indx),
-        onLongPress: indx.isNegative || selection.addActions.isEmpty
-            ? null
-            : () {
-                selection.selectOrUnselect(
-                    context, indx, cell, widget.systemNavigationInsets.bottom);
-              }, //extend: maxExtend,
-      );
-
-  GridCell<T> makeGridCellAnimate(BuildContext context, T cell, int indx,
-          {required bool hideAlias, required bool tightMode}) =>
-      GridCell(
-        cell: cell,
-        animate: true,
-        hidealias: hideAlias,
-        isList: widget.description.layout.isList,
-        indx: indx,
-        download: widget.download,
-        lines: widget.description.titleLines,
-        tight: tightMode,
-        labelAtBottom: widget.description.cellTitleAtBottom,
-        onPressed: (context) => onPressed(context, cell, indx),
-        onLongPress: indx.isNegative || selection.addActions.isEmpty
-            ? null
-            : () {
-                selection.selectOrUnselect(
-                    context, indx, cell, widget.systemNavigationInsets.bottom);
-              }, //extend: maxExtend,
-      );
-
-  Widget? _makeTitle(BuildContext context, Widget? overrideSearchWidget) {
-    if (currentPage != 0) {
-      return overrideSearchWidget ??
-          _pageSwitchWidget(context, EdgeInsets.zero);
-    }
-
-    return widget.searchWidget?.search ??
-        Badge.count(
-          count: _state.cellCount,
-          isLabelVisible: widget.showCount,
-          child: Text(
-            widget.description.pageName ?? "探",
-            style: widget.description.pageName != null
-                ? null
-                : TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontFamily: "ZenKurenaido"),
-          ),
-        );
-  }
-
-  List<Widget> _makeActions(BuildContext context) {
-    if (widget.menuButtonItems == null) {
+  List<Widget> _makeActions(
+      BuildContext context, GridDescription<T> description) {
+    if (description.menuButtonItems == null) {
       return [];
     }
 
-    return (!widget.inlineMenuButtonItems && widget.menuButtonItems!.length > 1)
+    return (!description.inlineMenuButtonItems &&
+            description.menuButtonItems!.length > 1)
         ? [
             PopupMenuButton(
                 position: PopupMenuPosition.under,
                 itemBuilder: (context) {
-                  return widget.menuButtonItems!
+                  return description.menuButtonItems!
                       .map(
                         (e) => PopupMenuItem(
                           enabled: false,
@@ -676,269 +402,190 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
                 })
           ]
         : [
-            ...widget.menuButtonItems!,
+            ...description.menuButtonItems!,
           ];
   }
 
-  Widget? _makeLeading(BuildContext context) {
-    if (selection.selected.isNotEmpty) {
-      return IconButton(
-          onPressed: () {
-            selection.selected.clear();
-            selection.glue.close();
-            setState(() {});
-          },
-          icon: Badge.count(
-              count: selection.selected.length,
-              child: const Icon(
-                Icons.close_rounded,
-              )));
-    }
+  List<Widget> bodySlivers(BuildContext context, PageDescription? page) {
+    final description = widget.description;
+    final functionality = widget.functionality;
 
-    if (widget.onBack != null) {
-      return IconButton(
-          onPressed: () {
-            setState(() {
-              selection.selected.clear();
-              selection.glue.close();
-            });
-            if (widget.onBack != null) {
-              widget.onBack!();
-            }
-          },
-          icon: widget.backButtonBadge != null
-              ? Badge.count(
-                  count: widget.backButtonBadge!,
-                  child: const Icon(Icons.arrow_back))
-              : const Icon(Icons.arrow_back));
-    } else if (widget.overrideBackButton != null) {
-      return widget.overrideBackButton;
-    } else if (widget.scaffoldKey.currentState?.hasDrawer ?? false) {
-      return GestureDetector(
-        onLongPress: () {
-          setState(() {
-            selection.selected.clear();
-            selection.glue.close();
-          });
-        },
-        child: IconButton(
-            onPressed: () {
-              widget.scaffoldKey.currentState!.openDrawer();
-            },
-            icon: const Icon(Icons.menu)),
-      );
-    }
+    Widget? appBar;
+    if (description.showAppBar) {
+      final appBarActions =
+          page != null ? page.appIcons : _makeActions(context, description);
 
-    return null;
-  }
-
-  int currentPage = 0;
-  double savedOffset = 0;
-
-  Widget _pageSwitchWidget(BuildContext context, EdgeInsets padding) => Padding(
-        padding: padding,
-        child: SegmentedButton<int>(
-          emptySelectionAllowed: true,
-          style: const ButtonStyle(
-              side: MaterialStatePropertyAll(BorderSide.none),
-              visualDensity: VisualDensity.compact),
-          showSelectedIcon: false,
-          onSelectionChanged: (set) {
-            if (set.isEmpty) {
-              return;
-            }
-
-            selection.reset();
-
-            if (currentPage == 0) {
-              savedOffset = controller.offset;
-            }
-
-            updateFab(
-              fab: false,
-              foreground: false,
+      final bottomWidget = description.bottomWidget != null
+          ? description.bottomWidget!
+          : _BottomWidget<T>(
+              routeChanger: page != null && page.search == null
+                  ? const SizedBox.shrink()
+                  : page != null
+                      ? PageSwitchingWidget(
+                          controller: controller,
+                          selection: selection,
+                          padding: EdgeInsets.only(
+                              top: Platform.isAndroid ? 8 : 12,
+                              bottom: Platform.isAndroid ? 8 : 12),
+                          state: this,
+                          pageSwitcher: widget.description.pages!,
+                        )
+                      : null,
+              preferredSize: Size.fromHeight((page == null
+                  ? 4
+                  : page.search == null
+                      ? 0
+                      : (Platform.isAndroid ? 40 + 16 : 32 + 24))),
+              child: Padding(
+                padding: EdgeInsets.only(top: page == null ? 4 : 0),
+                child: const SizedBox.shrink(),
+              ),
             );
 
-            currentPage = set.first;
-            WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-              _addFabListener();
+      appBar = _AppBar(
+        leading: GridAppBarLeading(state: this),
+        title: GridAppBarTitle(state: this),
+        actions: appBarActions,
+        isSelecting: selection.selected.isNotEmpty,
+        bottomWidget: bottomWidget,
+      );
+    }
 
-              if (currentPage == 0 &&
-                  controller.offset == 0 &&
-                  savedOffset != 0) {
-                controller.position.animateTo(savedOffset,
-                    duration: 200.ms, curve: Easing.standard);
-                savedOffset = 0;
-              }
-            });
-
-            setState(() {});
-          },
-          segments: [
-            const ButtonSegment(
-              icon: Icon(Icons.home_rounded),
-              value: 0,
+    return [
+      if (appBar != null) appBar,
+      if (page != null)
+        ...page.slivers
+      else ...[
+        if (!mutation.isRefreshing &&
+            mutation.cellCount == 0 &&
+            !description.ignoreEmptyWidgetOnNoContent)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  EmptyWidget(
+                    gridSeed: 0,
+                    error: _refreshingStatus.refreshingError == null
+                        ? null
+                        : EmptyWidget.unwrapDioError(
+                            _refreshingStatus.refreshingError),
+                  ),
+                  if (functionality.onError != null &&
+                      _refreshingStatus.refreshingError != null)
+                    functionality.onError!(_refreshingStatus.refreshingError!),
+                ],
+              ),
             ),
-            ...widget.pages!.pages.indexed.map((e) => ButtonSegment(
-                  icon: e.$2,
-                  // label: Text(e.$2),
-                  value: e.$1 + 1,
-                )),
-          ],
-          selected: {currentPage},
+          ),
+        ...description.layout(context, this),
+      ],
+      _WrapPadding<T>(
+        systemNavigationInsets: widget.systemNavigationInsets.bottom,
+        footer: description.footer,
+        selectionGlue: functionality.selectionGlue,
+        child: null,
+      )
+    ];
+  }
+
+  Widget mainBody(BuildContext context, PageDescription? page) => Scrollbar(
+        interactive: false,
+        thumbVisibility: Platform.isAndroid || Platform.isIOS ? false : true,
+        controller: controller,
+        child: CustomScrollView(
+          key: atHomePage && page != null ? const PageStorageKey(0) : null,
+          controller: controller,
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: bodySlivers(context, page),
         ),
       );
+
+  double _calculateBottomPadding() {
+    final functionality = widget.functionality;
+    final selectionGlue = functionality.selectionGlue;
+    final description = widget.description;
+
+    return (functionality.selectionGlue.keyboardVisible()
+            ? 0
+            : widget.systemNavigationInsets.bottom +
+                (selectionGlue.isOpen()
+                    ? selectionGlue.barHeight()
+                    : selectionGlue.persistentBarHeight
+                        ? selectionGlue.barHeight()
+                        : 0)) +
+        (description.footer != null
+            ? description.footer!.preferredSize.height
+            : 0);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bindings = _makeBindings(context);
-    segTranslation = null;
+    // segTranslation = null;
 
-    final PageDescription? page = widget.pages != null && currentPage != 0
-        ? widget.pages!.buildPage(currentPage - 1)
+    final functionality = widget.functionality;
+    final description = widget.description;
+    final pageSwitcher = description.pages;
+
+    final PageDescription? page = pageSwitcher != null && atNotHomePage
+        ? pageSwitcher.buildPage(currentPage - 1)
         : null;
 
-    List<Widget> bodySlivers(PageDescription? page) => [
-          if (widget.description.showAppBar)
-            _AppBar(
-              leading: _makeLeading(context),
-              title: _makeTitle(context, page?.search?.search),
-              actions: page != null ? page.appIcons : _makeActions(context),
-              isSelecting: selection.selected.isNotEmpty,
-              bottomWidget: widget.description.bottomWidget != null
-                  ? widget.description.bottomWidget!
-                  : _BottomWidget<T>(
-                      routeChanger: page != null && page.search == null
-                          ? const SizedBox.shrink()
-                          : widget.pages != null
-                              ? _pageSwitchWidget(
-                                  context,
-                                  EdgeInsets.only(
-                                      top: Platform.isAndroid ? 8 : 12,
-                                      bottom: Platform.isAndroid ? 8 : 12))
-                              : null,
-                      preferredSize: Size.fromHeight((widget.pages == null
-                          ? 4
-                          : page != null && page.search == null
-                              ? 0
-                              : (Platform.isAndroid ? 40 + 16 : 32 + 24))),
-                      child: Padding(
-                        padding:
-                            EdgeInsets.only(top: widget.pages == null ? 4 : 0),
-                        child: const SizedBox.shrink(),
-                      ),
-                    ),
-            ),
-          if (page != null) ...[
-            ...page.slivers,
-            _WrapPadding<T>(
-              systemNavigationInsets: widget.systemNavigationInsets.bottom,
-              footer: widget.footer,
-              selectionGlue: widget.selectionGlue,
-              child: null,
-            ),
-          ] else ...[
-            if (!_state.isRefreshing &&
-                _state.cellCount == 0 &&
-                !widget.description.ignoreEmptyWidgetOnNoContent)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      EmptyWidget(
-                        gridSeed: 0,
-                        error: _state.refreshingError == null
-                            ? null
-                            : EmptyWidget.unwrapDioError(
-                                _state.refreshingError),
-                      ),
-                      if (widget.onError != null &&
-                          _state.refreshingError != null)
-                        widget.onError!(_state.refreshingError!),
-                    ],
-                  ),
-                ),
-              ),
-            ...widget.description.layout(context, this),
-            _WrapPadding<T>(
-              systemNavigationInsets: widget.systemNavigationInsets.bottom,
-              footer: widget.footer,
-              selectionGlue: widget.selectionGlue,
-              child: null,
-            ),
-          ]
-        ];
+    final search = functionality.search;
+    final FocusNode? searchFocus = page?.search?.focus ??
+        (search is OverrideGridSearchWidget ? search.widget.focus : null);
 
-    if (widget.asSliver) {
-      return FocusNotifier(
-        notifier: page?.search?.focus ?? widget.searchWidget?.focus,
-        focusMain: () {
-          widget.mainFocus.requestFocus();
-        },
-        child: _MutationInterfaceProvider<T>(
-          state: mutationInterface,
-          child: SliverMainAxisGroup(slivers: bodySlivers(page)),
+    if (description.asSliver) {
+      return GridBottomPaddingProvider(
+        padding: _calculateBottomPadding(),
+        child: FocusNotifier(
+          notifier: searchFocus,
+          focusMain: widget.mainFocus.requestFocus,
+          child: MutationInterfaceProvider<T>(
+            state: mutation,
+            child: SliverMainAxisGroup(
+              slivers: bodySlivers(context, page),
+            ),
+          ),
         ),
       );
     }
 
-    Widget mainBody() => Scrollbar(
-          interactive: false,
-          thumbVisibility: Platform.isAndroid || Platform.isIOS ? false : true,
-          controller: controller,
-          child: CustomScrollView(
-            key: currentPage == 0 && widget.pages != null
-                ? const PageStorageKey(0)
-                : null,
-            controller: controller,
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: bodySlivers(page),
-          ),
-        );
+    final fab = functionality.fab;
 
-    final child = _BodyWrapping(
-      bindings: bindings,
+    Widget child = _BodyWrapping(
+      bindings: const {},
       mainFocus: widget.mainFocus,
       pageName: widget.description.keybindsDescription,
       children: [
-        if (currentPage == 0)
+        if (atHomePage)
           RefreshIndicator(
-            onRefresh: _state.onRefresh,
-            child: mainBody(),
+            onRefresh: _refreshingStatus.refresh,
+            child: mainBody(context, page),
           )
         else
-          mainBody(),
-        if (widget.footer != null)
+          mainBody(context, page),
+        if (description.footer != null)
           Align(
             alignment: Alignment.bottomLeft,
             child: Padding(
               padding: EdgeInsets.only(
                 bottom: widget.systemNavigationInsets.bottom,
               ),
-              child: widget.footer!,
+              child: description.footer!,
             ),
           ),
-        if (!widget.description.showAppBar || widget.pages != null)
+        if (!widget.description.showAppBar || page != null)
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
               padding: EdgeInsets.only(
-                  bottom: (widget.selectionGlue.keyboardVisible()
-                          ? 0
-                          : widget.systemNavigationInsets.bottom +
-                              (widget.selectionGlue.isOpen()
-                                  ? widget.selectionGlue.barHeight()
-                                  : widget.selectionGlue.persistentBarHeight
-                                      ? widget.selectionGlue.barHeight()
-                                      : 0)) +
-                      (widget.footer != null
-                          ? widget.footer!.preferredSize.height
-                          : 0)),
+                bottom: _calculateBottomPadding(),
+              ),
               child: PreferredSize(
                 preferredSize: const Size.fromHeight(4),
-                child: !_state.isRefreshing
+                child: !mutation.isRefreshing
                     ? const Padding(
                         padding: EdgeInsets.only(top: 4),
                         child: SizedBox(),
@@ -949,216 +596,226 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>> {
           ),
         Align(
           alignment: Alignment.bottomRight,
-          child: widget.overrideFab != null
-              ? Padding(
-                  padding: EdgeInsets.only(
-                      right: 4,
-                      bottom: 4 +
-                          (widget.selectionGlue.keyboardVisible()
-                              ? 0
-                              : widget.systemNavigationInsets.bottom +
-                                  (widget.selectionGlue.isOpen()
-                                      ? widget.selectionGlue.barHeight()
-                                      : widget.selectionGlue.persistentBarHeight
-                                          ? widget.selectionGlue.barHeight()
-                                          : 0)) +
-                          (widget.footer != null
-                              ? widget.footer!.preferredSize.height
-                              : 0)),
-                  child: widget.overrideFab,
-                )
-              : _Fab(
-                  key: _fabKey,
-                  scrollPos: widget.updateScrollPosition,
-                  controller: controller,
-                  selectionGlue: widget.selectionGlue,
-                  systemNavigationInsets: widget.systemNavigationInsets,
-                  footer: widget.footer,
-                ),
+          child: fab.widget(context),
         ),
       ],
     );
 
-    return FocusNotifier(
-      notifier: page?.search?.focus ?? widget.searchWidget?.focus,
-      focusMain: () {
-        widget.mainFocus.requestFocus();
-      },
-      child: _MutationInterfaceProvider(
-        state: mutationInterface,
-        child: widget.registerNotifiers == null
-            ? child
-            : widget.registerNotifiers!(child),
-      ),
-    );
-  }
-}
+    if (functionality.registerNotifiers != null) {
+      child = functionality.registerNotifiers!(child);
+    }
 
-class _AppBar<T extends Cell> extends StatelessWidget {
-  final bool isSelecting;
-  final Widget? title;
-  final Widget? leading;
-  final List<Widget> actions;
-  final PreferredSizeWidget? bottomWidget;
-
-  const _AppBar({
-    super.key,
-    required this.actions,
-    required this.bottomWidget,
-    required this.isSelecting,
-    required this.leading,
-    required this.title,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SliverAppBar(
-      backgroundColor:
-          Theme.of(context).colorScheme.background.withOpacity(0.95),
-      automaticallyImplyLeading: false,
-      actions: actions,
-      centerTitle: true,
-      title: title,
-      leading: leading,
-      pinned: true,
-      stretch: true,
-      snap: !isSelecting,
-      floating: !isSelecting,
-      bottom: bottomWidget,
-    );
-  }
-}
-
-class _BottomWidget<T extends Cell> extends PreferredSize {
-  final Widget? routeChanger;
-
-  const _BottomWidget({
-    required super.preferredSize,
-    this.routeChanger,
-    required super.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return routeChanger != null
-        ? Column(
-            children: [
-              routeChanger!,
-              super.build(context),
-            ],
-          )
-        : !_MutationInterfaceProvider.of<T>(context).isRefreshing
-            ? super.build(context)
-            : const LinearProgressIndicator();
-  }
-}
-
-class _MutationInterfaceProvider<T extends Cell> extends InheritedWidget {
-  final GridMutationInterface<T> state;
-
-  const _MutationInterfaceProvider({
-    super.key,
-    required this.state,
-    required super.child,
-  });
-
-  static GridMutationInterface<T> of<T extends Cell>(BuildContext context) {
-    final widget = context
-        .dependOnInheritedWidgetOfExactType<_MutationInterfaceProvider<T>>();
-
-    return widget!.state;
-  }
-
-  @override
-  bool updateShouldNotify(_MutationInterfaceProvider<T> oldWidget) =>
-      state != oldWidget.state;
-}
-
-class _BodyWrapping extends StatelessWidget {
-  final FocusNode mainFocus;
-  final String pageName;
-  final Map<SingleActivatorDescription, void Function()> bindings;
-  final List<Widget> children;
-
-  const _BodyWrapping({
-    super.key,
-    required this.bindings,
-    required this.mainFocus,
-    required this.pageName,
-    required this.children,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return CallbackShortcuts(
-      bindings: {
-        ...bindings,
-        ...keybindDescription(
-          context,
-          describeKeys(bindings),
-          pageName,
-          () {
-            mainFocus.requestFocus();
-          },
-        )
-      },
-      child: Focus(
-        autofocus: true,
-        focusNode: mainFocus,
-        child: Column(
-          children: [
-            Expanded(
-                child: Stack(
-              children: children,
-            ))
-          ],
+    return GridBottomPaddingProvider(
+      padding: _calculateBottomPadding(),
+      child: FocusNotifier(
+        notifier: searchFocus,
+        focusMain: widget.mainFocus.requestFocus,
+        child: MutationInterfaceProvider(
+          state: mutation,
+          child: child,
         ),
       ),
     );
   }
 }
 
-class _WrapPadding<T extends Cell> extends StatelessWidget {
-  final PreferredSizeWidget? footer;
-  final SelectionGlue<T> selectionGlue;
-  final double systemNavigationInsets;
-  final bool sliver;
-  final bool addFabPadding;
+mixin GridSubpageState<T extends Cell> on State<GridFrame<T>> {
+  int currentPage = 0;
+  double savedOffset = 0;
 
-  final Widget? child;
+  bool get atHomePage => currentPage == 0;
+  bool get atNotHomePage => !atHomePage;
 
-  const _WrapPadding({
-    super.key,
-    required this.footer,
-    required this.selectionGlue,
-    required this.systemNavigationInsets,
-    this.sliver = true,
-    this.addFabPadding = true,
-    required this.child,
-  });
+  void onSubpageSwitched(
+      int next, GridSelection<T> selection, ScrollController controller) {
+    selection.reset();
 
-  @override
-  Widget build(BuildContext context) {
-    final insets = EdgeInsets.only(
-        bottom: (addFabPadding ? kFloatingActionButtonMargin * 2 + 24 + 8 : 0) +
-            (selectionGlue.keyboardVisible()
-                ? 0
-                : systemNavigationInsets +
-                    (selectionGlue.isOpen() //&&
-                        ? selectionGlue.barHeight()
-                        : selectionGlue.persistentBarHeight
-                            ? selectionGlue.barHeight()
-                            : 0)) +
-            (footer != null ? footer!.preferredSize.height : 0));
+    if (atHomePage) {
+      savedOffset = controller.offset;
+    }
 
-    return sliver
-        ? SliverPadding(
-            padding: insets,
-            sliver: child,
-          )
-        : Padding(
-            padding: insets,
-            child: child,
-          );
+    // updateFab(
+    //   fab: false,
+    //   foreground: false,
+    // );
+
+    currentPage = next;
+
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      // _addFabListener();
+
+      if (atHomePage && controller.offset == 0 && savedOffset != 0) {
+        controller.position
+            .animateTo(savedOffset, duration: 200.ms, curve: Easing.standard);
+
+        savedOffset = 0;
+      }
+    });
+
+    setState(() {});
   }
 }
+
+class GridBottomPaddingProvider extends InheritedWidget {
+  final double padding;
+
+  const GridBottomPaddingProvider({
+    super.key,
+    required this.padding,
+    required super.child,
+  });
+
+  static double of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<GridBottomPaddingProvider>();
+
+    return widget!.padding;
+  }
+
+  @override
+  bool updateShouldNotify(GridBottomPaddingProvider oldWidget) =>
+      padding != oldWidget.padding;
+}
+
+class _GridRefreshingStatus<T extends Cell> {
+  _GridRefreshingStatus(
+    this.mutation,
+    this.functionality,
+  );
+
+  final GridMutationInterface<T> mutation;
+  final GridFunctionality<T> functionality;
+
+  final _locked = false;
+
+  Object? refreshingError;
+
+  Future<int> refresh([Future<int> Function()? overrideRefresh]) async {
+    if (_locked) {
+      return Future.value(mutation.cellCount);
+    }
+
+    final f =
+        overrideRefresh != null ? overrideRefresh() : functionality.refresh();
+
+    refreshingError = null;
+    mutation.isRefreshing = true;
+    mutation.cellCount = 0;
+
+    try {
+      return _saveOrWait(f);
+    } catch (e, stackTrace) {
+      refreshingError = e;
+
+      log("refreshing cells in the grid",
+          level: Level.WARNING.value, error: e, stackTrace: stackTrace);
+    } finally {
+      mutation.isRefreshing = false;
+    }
+
+    return Future.value(mutation.cellCount);
+  }
+
+  Future<int> onNearEnd() async {
+    if (_locked || functionality.loadNext == null || mutation.isRefreshing) {
+      return Future.value(mutation.cellCount);
+    }
+
+    try {
+      final f = functionality.loadNext!();
+      mutation.isRefreshing = true;
+
+      _saveOrWait(f);
+    } catch (e) {
+      refreshingError = e;
+
+      // update(null);
+    } finally {
+      mutation.isRefreshing = false;
+    }
+
+    return mutation.cellCount;
+  }
+
+  Future<int> _saveOrWait(Future<int> f) async {
+    final refreshBehaviour = functionality.refreshBehaviour;
+    switch (refreshBehaviour) {
+      case DefaultGridRefreshBehaviour():
+        mutation.cellCount = await f;
+
+        return mutation.cellCount;
+      case RetainedGridRefreshBehaviour():
+        refreshBehaviour.interface.save(f);
+        return mutation.cellCount;
+    }
+  }
+}
+
+
+
+  // void _loadNext(BuildContext context) {
+  //   if (_locked || functionality.loadNext == null) {
+  //     return;
+  //   }
+
+  //   refreshingError = null;
+  //   mutation.isRefreshing = true;
+
+  //   final f = functionality.loadNext!();
+  //   _saveOrWait(f);
+  //   if (saveStatus != null) {
+  //     saveStatus!(f);
+  //     return;
+  //   }
+
+  //   f.then((value) {
+  //     _cellCount = value;
+  //     _refreshing = false;
+
+  //     update(null);
+  //   }).onError((error, stackTrace) {
+  //     refreshingError = error;
+
+  //     update(null);
+
+  //     log("loading next cells in the grid",
+  //         level: Level.WARNING.value, error: error, stackTrace: stackTrace);
+  //   });
+  // }
+
+  // void _f5() {
+  //   if (_locked) {
+  //     return;
+  //   }
+
+  //   if (!_refreshing) {
+  //     scrollUp();
+
+  //     _cellCount = 0;
+  //     _refreshing = true;
+  //     refreshingError = null;
+
+  //     update(null);
+
+  //     _refresh();
+  //   }
+  // }
+
+  // @override
+  // Future onRefresh() {
+  //   if (_locked) {
+  //     return Future.value();
+  //   }
+
+  //   if (!_refreshing) {
+  //     _cellCount = 0;
+  //     _refreshing = true;
+  //     refreshingError = null;
+
+  //     update(null);
+
+  //     return _refresh();
+  //   }
+
+  //   return Future.value();
+  // }
