@@ -22,6 +22,10 @@ import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
 import 'package:gallery/src/pages/anime/manga/manga_info_page.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_on_cell_press_behaviour.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_search_widget.dart';
+import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/grid/wrappers/wrap_grid_page.dart';
@@ -203,8 +207,10 @@ class _SearchAnimePageState<T extends Cell, I, G>
   }
 
   Future<int> _load(String value) async {
-    state.gridKey.currentState?.mutationInterface.setIsRefreshing(true);
-    state.gridKey.currentState?.mutationInterface.tick(0);
+    final mutation = state.gridKey.currentState?.mutation;
+
+    mutation?.isRefreshing = true;
+    mutation?.cellCount = 0;
 
     _results.clear();
     _page = 0;
@@ -215,8 +221,8 @@ class _SearchAnimePageState<T extends Cell, I, G>
 
     _results.addAll(result);
 
-    state.gridKey.currentState?.mutationInterface.setIsRefreshing(false);
-    state.gridKey.currentState?.mutationInterface.tick(_results.length);
+    mutation?.isRefreshing = false;
+    mutation?.cellCount = _results.length;
 
     return _results.length;
   }
@@ -255,129 +261,132 @@ class _SearchAnimePageState<T extends Cell, I, G>
             state,
             (context) => GridFrame<T>(
               key: state.gridKey,
-              menuButtonItems: [
-                TextButton(
-                  onPressed: () {
-                    mode = switch (mode) {
-                      AnimeSafeMode.safe => AnimeSafeMode.ecchi,
-                      AnimeSafeMode.h => AnimeSafeMode.safe,
-                      AnimeSafeMode.ecchi => AnimeSafeMode.h,
-                    };
-
-                    if (_results.isNotEmpty) {
-                      _load(currentSearch);
+              getCell: (i) => _results[i],
+              imageViewDescription:
+                  ImageViewDescription(imageViewKey: state.imageViewKey),
+              functionality: GridFunctionality(
+                  loadNext: _loadNext,
+                  selectionGlue: GlueProvider.of(context),
+                  refresh: AsyncGridRefresh(() {
+                    if (_results.isEmpty) {
+                      return Future.value(0);
                     }
 
-                    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-                      changeSystemUiOverlay(context);
-                    });
-
-                    setState(() {});
-                  },
-                  child: Text(
-                    mode == AnimeSafeMode.ecchi
-                        ? "E"
-                        : mode == AnimeSafeMode.h
-                            ? "H"
-                            : "S",
-                    style: TextStyle(
-                      color: mode == AnimeSafeMode.h
-                          ? Colors.red
-                              .harmonizeWith(Theme.of(context).primaryColor)
-                          : mode == AnimeSafeMode.ecchi
-                              ? Colors.red
-                                  .harmonizeWith(Theme.of(context).primaryColor)
-                                  .withOpacity(0.5)
-                              : null,
-                    ),
-                  ),
-                ),
-                if (widget.genres != null)
-                  PopupMenuButton(
-                    itemBuilder: (context) {
-                      _genreFuture ??= widget.genres!(AnimeSafeMode.safe);
-
-                      return [
-                        PopupMenuItem(
-                          enabled: false,
-                          child: _FilteringGenres<I, G>(
-                            future: _genreFuture!,
-                            currentGenre: currentGenre,
-                            setGenre: (genre) {
-                              currentGenre = genre;
-
-                              _load(currentSearch);
-
-                              setState(() {});
-                            },
-                            idFromGenre: widget.idFromGenre,
-                          ),
-                        )
-                      ];
-                    },
-                    icon: Icon(Icons.filter_list_outlined,
-                        color: currentGenre != null
-                            ? Theme.of(context).colorScheme.primary
-                            : null),
-                  ),
-              ],
-              getCell: (i) => _results[i],
-              searchWidget: SearchAndFocus(
-                  FutureBuilder(
-                    future: _genreFuture,
-                    builder: (context, snapshot) {
-                      return TextFormField(
-                        initialValue: currentSearch,
-                        decoration: InputDecoration(
-                            hintText:
-                                "${AppLocalizations.of(context)!.searchHint} ${currentGenre == null ? '' : !snapshot.hasData ? '...' : title(snapshot.data?[currentGenre!])}",
-                            border: InputBorder.none),
-                        focusNode: searchFocus,
-                        onFieldSubmitted: (value) {
-                          final grid = state.gridKey.currentState;
-                          if (grid == null ||
-                              grid.mutationInterface.isRefreshing) {
-                            return;
-                          }
-
-                          _load(value);
-                        },
-                      );
+                    return _load(currentSearch);
+                  }),
+                  onPressed: OverrideGridOnCellPressBehaviour(
+                    onPressed: (context, idx) {
+                      widget.onPressed(
+                          state.gridKey.currentState!.mutation.getCell(idx));
                     },
                   ),
-                  searchFocus),
-              initalScrollPosition: 0,
-              overrideOnPress: (context, cell) {
-                widget.onPressed(cell);
-              },
-              onBack: () {
-                Navigator.pop(context);
-              },
-              inlineMenuButtonItems: true,
-              scaffoldKey: state.scaffoldKey,
+                  search: OverrideGridSearchWidget(
+                    SearchAndFocus(
+                        FutureBuilder(
+                          future: _genreFuture,
+                          builder: (context, snapshot) {
+                            return TextFormField(
+                              initialValue: currentSearch,
+                              decoration: InputDecoration(
+                                  hintText:
+                                      "${AppLocalizations.of(context)!.searchHint} ${currentGenre == null ? '' : !snapshot.hasData ? '...' : title(snapshot.data?[currentGenre!])}",
+                                  border: InputBorder.none),
+                              focusNode: searchFocus,
+                              onFieldSubmitted: (value) {
+                                final grid = state.gridKey.currentState;
+                                if (grid == null ||
+                                    grid.mutation.isRefreshing) {
+                                  return;
+                                }
+
+                                _load(value);
+                              },
+                            );
+                          },
+                        ),
+                        searchFocus),
+                  )),
               systemNavigationInsets: widget.viewInsets ??
                   (MediaQuery.viewPaddingOf(context) +
                       const EdgeInsets.only(bottom: 4)),
               hasReachedEnd: () => _reachedEnd,
-              selectionGlue: GlueProvider.of(context),
               mainFocus: state.mainFocus,
-              refresh: () {
-                if (_results.isEmpty) {
-                  return Future.value(0);
-                }
-
-                return _load(currentSearch);
-              },
-              loadNext: _loadNext,
               description: GridDescription(
                 const [],
+                inlineMenuButtonItems: true,
+                menuButtonItems: [
+                  TextButton(
+                    onPressed: () {
+                      mode = switch (mode) {
+                        AnimeSafeMode.safe => AnimeSafeMode.ecchi,
+                        AnimeSafeMode.h => AnimeSafeMode.safe,
+                        AnimeSafeMode.ecchi => AnimeSafeMode.h,
+                      };
+
+                      if (_results.isNotEmpty) {
+                        _load(currentSearch);
+                      }
+
+                      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+                        changeSystemUiOverlay(context);
+                      });
+
+                      setState(() {});
+                    },
+                    child: Text(
+                      mode == AnimeSafeMode.ecchi
+                          ? "E"
+                          : mode == AnimeSafeMode.h
+                              ? "H"
+                              : "S",
+                      style: TextStyle(
+                        color: mode == AnimeSafeMode.h
+                            ? Colors.red
+                                .harmonizeWith(Theme.of(context).primaryColor)
+                            : mode == AnimeSafeMode.ecchi
+                                ? Colors.red
+                                    .harmonizeWith(
+                                        Theme.of(context).primaryColor)
+                                    .withOpacity(0.5)
+                                : null,
+                      ),
+                    ),
+                  ),
+                  if (widget.genres != null)
+                    PopupMenuButton(
+                      itemBuilder: (context) {
+                        _genreFuture ??= widget.genres!(AnimeSafeMode.safe);
+
+                        return [
+                          PopupMenuItem(
+                            enabled: false,
+                            child: _FilteringGenres<I, G>(
+                              future: _genreFuture!,
+                              currentGenre: currentGenre,
+                              setGenre: (genre) {
+                                currentGenre = genre;
+
+                                _load(currentSearch);
+
+                                setState(() {});
+                              },
+                              idFromGenre: widget.idFromGenre,
+                            ),
+                          )
+                        ];
+                      },
+                      icon: Icon(Icons.filter_list_outlined,
+                          color: currentGenre != null
+                              ? Theme.of(context).colorScheme.primary
+                              : null),
+                    ),
+                ],
                 titleLines: 2,
                 keybindsDescription:
                     AppLocalizations.of(context)!.searchAnimePage,
                 layout: GridLayout(
                   gridSettings.columns,
                   GridAspectRatio.zeroSeven,
-                  hideAlias: false,
                 ),
               ),
             ),

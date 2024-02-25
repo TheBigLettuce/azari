@@ -7,17 +7,20 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 
 class ImageViewDescription<T extends Cell> {
   const ImageViewDescription({
+    required this.imageViewKey,
+    this.addIconsImage,
+    this.pageChangeImage,
     this.beforeImageViewRestore,
     this.onExitImageView,
     this.pageViewScrollingOffset,
     this.statistics,
     this.initalCell,
     this.ignoreImageViewEndDrawer = false,
-    required this.imageViewKey,
   });
 
   /// [initalCell] is needed for the state restoration.
@@ -37,4 +40,14 @@ class ImageViewDescription<T extends Cell> {
   final bool ignoreImageViewEndDrawer;
 
   final GlobalKey<ImageViewState<T>> imageViewKey;
+
+  /// Overrides the default behaviour of launching the image view on cell pressed.
+  /// [overrideOnPress] can, for example, include calls to [Navigator.push] of routes.
+  // final void Function(BuildContext context, T cell)? overrideOnPress;
+
+  /// Supplied to [ImageView.addIcons].
+  final List<GridAction<T>> Function(T)? addIconsImage;
+
+  /// Supplied to [ImageView.pageChange].
+  final void Function(ImageViewState<T> state)? pageChangeImage;
 }

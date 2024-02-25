@@ -19,6 +19,8 @@ import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/tags/local_tag_dictionary.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/grid/layouts/segment_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
@@ -51,41 +53,44 @@ class FavoriteBooruPage extends StatelessWidget {
     return GridFrame<FavoriteBooru>(
       key: state.state.gridKey,
       overrideController: conroller,
-      asSliver: true,
+      imageViewDescription: ImageViewDescription(
+        addIconsImage: (p) => state.iconsImage(p),
+        imageViewKey: state.state.imageViewKey,
+      ),
+      functionality: GridFunctionality(
+        selectionGlue: glue,
+        download: state.download,
+        refresh: SynchronousGridRefresh(() => state.loader.count()),
+      ),
       getCell: state.loader.getCell,
-      initalScrollPosition: 0,
-      showCount: true,
-      selectionGlue: glue,
-      scaffoldKey: state.state.scaffoldKey,
-      addIconsImage: (p) => state.iconsImage(p),
       systemNavigationInsets: EdgeInsets.zero,
       hasReachedEnd: () => true,
-      download: state.download,
-      // noteInterface: NoteBooru.interface<FavoriteBooru>(setState),
       mainFocus: state.state.mainFocus,
-      // searchWidget: SearchAndFocus(searchWidget(context), searchFocus),
-      refresh: () => Future.value(state.loader.count()),
       description: GridDescription(
         state.gridActions(),
         showAppBar: false,
+        asSliver: true,
+        hideTitle: true,
         ignoreEmptyWidgetOnNoContent: false,
         ignoreSwipeSelectGesture: false,
         keybindsDescription: AppLocalizations.of(context)!.favoritesLabel,
-        layout: state.segmented
-            ? SegmentLayout(
-                Segments(
-                  "Ungrouped", // TODO: change
-                  hidePinnedIcon: true,
-                  prebuiltSegments: state.segments,
-                ),
-                state.gridSettings.columns,
-                state.gridSettings.aspectRatio,
-                hideAlias: state.gridSettings.hideName,
-              )
-            : state.gridSettings.layoutType.layout(
-                state.gridSettings,
-                gridSeed: state.state.gridSeed,
-              ),
+        layout:
+            // state.segmented
+            //     ? SegmentLayout(
+            //         Segments(
+            //           "Ungrouped", // TODO: change
+            //           hidePinnedIcon: true,
+            //           prebuiltSegments: state.segments,
+            //         ),
+            //         state.gridSettings.columns,
+            //         state.gridSettings.aspectRatio,
+            //         hideAlias: state.gridSettings.hideName,
+            //       )
+            //     :
+            state.gridSettings.layoutType.layout(
+          state.gridSettings,
+          gridSeed: state.state.gridSeed,
+        ),
       ),
     );
   }

@@ -9,8 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_on_cell_press_behaviour.dart';
-import 'package:gallery/src/widgets/grid/grid_frame.dart';
-import 'package:gallery/src/widgets/image_view/image_view.dart';
 
 import 'grid_back_button_behaviour.dart';
 import 'grid_fab_type.dart';
@@ -21,17 +19,15 @@ class GridFunctionality<T extends Cell> {
   const GridFunctionality({
     required this.selectionGlue,
     required this.refresh,
-    this.pageChangeImage,
     this.onError,
     this.loadNext,
     this.registerNotifiers,
-    this.addIconsImage,
     this.updateScrollPosition,
     this.download,
     this.progressTicker,
     this.onPressed = const DefaultGridOnCellPressBehaviour(),
     this.fab = const DefaultGridFab(),
-    this.backButton = const DefaultGridBackButton(),
+    this.backButton = const EmptyGridBackButton(inherit: true),
     this.refreshBehaviour = const DefaultGridRefreshBehaviour(),
     this.search = const EmptyGridSearchWidget(),
   });
@@ -45,9 +41,6 @@ class GridFunctionality<T extends Cell> {
   /// setting [download] enables buttons to download the resource.
   final Future<void> Function(int indx)? download;
 
-  /// Refresh the grid.
-  final Future<int> Function() refresh;
-
   /// [updateScrollPosition] gets called when grid first builds and then when scrolling stops,
   ///  if not null. Useful when it is desirable to persist the scroll position of the grid.
   /// [infoPos] represents the scroll position in the "Info" of the image view,
@@ -55,16 +48,6 @@ class GridFunctionality<T extends Cell> {
   /// State restoration takes this info into the account.
   final void Function(double pos, {double? infoPos, int? selectedCell})?
       updateScrollPosition;
-
-  /// Overrides the default behaviour of launching the image view on cell pressed.
-  /// [overrideOnPress] can, for example, include calls to [Navigator.push] of routes.
-  // final void Function(BuildContext context, T cell)? overrideOnPress;
-
-  /// Supplied to [ImageView.addIcons].
-  final List<GridAction<T>> Function(T)? addIconsImage;
-
-  /// Supplied to [ImageView.pageChange].
-  final void Function(ImageViewState<T> state)? pageChangeImage;
 
   /// If the elemnts of the grid arrive in batches [progressTicker] can be set to not null,
   /// grid will subscribe to it and set the cell count from this ticker's events.
@@ -80,4 +63,31 @@ class GridFunctionality<T extends Cell> {
   final GridRefreshBehaviour refreshBehaviour;
   final GridSearchWidget search;
   final GridOnCellPressedBehaviour onPressed;
+  final GridRefreshType refresh;
+}
+
+sealed class GridRefreshType {
+  const GridRefreshType();
+}
+
+class MutationInterfaceSourcedGridRefresh implements GridRefreshType {
+  const MutationInterfaceSourcedGridRefresh();
+}
+
+class SynchronousGridRefresh implements GridRefreshType {
+  const SynchronousGridRefresh(this.refresh);
+
+  final int Function() refresh;
+}
+
+class AsyncGridRefresh implements GridRefreshType {
+  const AsyncGridRefresh(this.refresh);
+
+  final Future<int> Function() refresh;
+}
+
+class RetainedGridRefresh implements GridRefreshType {
+  const RetainedGridRefresh(this.refresh);
+
+  final void Function() refresh;
 }

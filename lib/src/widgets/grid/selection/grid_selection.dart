@@ -27,6 +27,8 @@ class GridSelection<T extends Cell> {
   bool get isEmpty => _selected.isEmpty;
   bool get isNotEmpty => _selected.isNotEmpty;
 
+  int get count => _selected.length;
+
   void reset() {
     _selected.clear();
     glue.close();

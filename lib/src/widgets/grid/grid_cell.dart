@@ -9,8 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:transparent_image/transparent_image.dart';
 import '../loading_error_widget.dart';
 import '../shimmer_loading_indicator.dart';
@@ -50,6 +48,7 @@ class GridCell<T extends Cell> extends StatefulWidget {
   final String? forceAlias;
 
   final bool animate;
+  final GridSelection<T>? selection;
 
   const GridCell({
     super.key,
@@ -66,6 +65,7 @@ class GridCell<T extends Cell> extends StatefulWidget {
     this.labelAtBottom = false,
     required this.isList,
     this.lines,
+    this.selection,
     this.ignoreStickers = false,
     this.onLongPress,
   }) : _data = cell;
@@ -73,12 +73,13 @@ class GridCell<T extends Cell> extends StatefulWidget {
   static GridCell<T> frameDefault<T extends Cell>(
     BuildContext context,
     int idx, {
-    required GridFunctionality<T> functionality,
-    required GridDescription<T> description,
-    required ImageViewDescription<T> imageViewDescription,
-    required GridSelection<T> selection,
+    required GridFrameState<T> state,
     bool animated = false,
   }) {
+    final functionality = state.widget.functionality;
+    final description = state.widget.description;
+    final selection = state.selection;
+
     final mutation = MutationInterfaceProvider.of<T>(context);
     final cell = mutation.getCell(idx);
 
@@ -87,6 +88,7 @@ class GridCell<T extends Cell> extends StatefulWidget {
       hideAlias: description.hideTitle,
       isList: description.layout.isList,
       indx: idx,
+      selection: state.selection,
       download: functionality.download,
       lines: description.titleLines,
       tight: description.tightMode,
@@ -94,10 +96,8 @@ class GridCell<T extends Cell> extends StatefulWidget {
       labelAtBottom: description.cellTitleAtBottom,
       onPressed: (context) => functionality.onPressed.launch(
         context,
-        functionality: functionality,
-        imageViewDescription: imageViewDescription,
-        gridDescription: description,
-        startingCell: idx,
+        idx,
+        state,
       ),
       onLongPress: idx.isNegative || selection.addActions.isEmpty
           ? null
@@ -133,6 +133,7 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
   @override
   Widget build(BuildContext context) {
     final stickers = widget._data.stickers(context);
+    final isSelected = widget.selection?.isSelected(widget.indx) ?? false;
 
     Widget alias() => Container(
           alignment: Alignment.bottomCenter,
@@ -216,10 +217,16 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                         image: widget._data.thumbnail() ??
                             MemoryImage(kTransparentImage),
                         alignment: Alignment.center,
-                        color: widget.shadowOnTop
-                            ? Colors.black.withOpacity(0.5)
-                            : null,
-                        colorBlendMode: BlendMode.darken,
+                        color: isSelected
+                            ? Theme.of(context)
+                                .colorScheme
+                                .onPrimary
+                                .withOpacity(0.2)
+                            : widget.shadowOnTop
+                                ? Colors.black.withOpacity(0.5)
+                                : null,
+                        colorBlendMode:
+                            isSelected ? BlendMode.srcATop : BlendMode.darken,
                         fit: BoxFit.cover,
                         filterQuality: FilterQuality.low,
                         width: constraints.maxWidth,

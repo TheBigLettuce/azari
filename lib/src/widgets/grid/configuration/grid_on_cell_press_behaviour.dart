@@ -10,20 +10,30 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 
-import 'grid_functionality.dart';
-import 'image_view_description.dart';
-
 abstract class GridOnCellPressedBehaviour {
   const GridOnCellPressedBehaviour();
 
   void launch<T extends Cell>(
-    BuildContext gridContext, {
-    required GridFunctionality<T> functionality,
-    required ImageViewDescription<T> imageViewDescription,
-    required GridDescription<T> gridDescription,
-    required int startingCell,
-    double? startingOffset,
+      BuildContext gridContext, int startingCell, GridFrameState<T> state,
+      [double? startingOffset]);
+}
+
+class OverrideGridOnCellPressBehaviour implements GridOnCellPressedBehaviour {
+  const OverrideGridOnCellPressBehaviour({
+    this.onPressed = _doNothing,
   });
+
+  static void _doNothing(BuildContext context, int idx) {}
+
+  final void Function(BuildContext context, int idx) onPressed;
+
+  @override
+  void launch<T extends Cell>(
+      BuildContext gridContext, int startingCell, GridFrameState<T> state,
+      [double? startingOffset]) {
+    state.widget.mainFocus.requestFocus();
+    onPressed(gridContext, startingCell);
+  }
 }
 
 class DefaultGridOnCellPressBehaviour implements GridOnCellPressedBehaviour {
@@ -31,68 +41,64 @@ class DefaultGridOnCellPressBehaviour implements GridOnCellPressedBehaviour {
 
   @override
   void launch<T extends Cell>(
-    BuildContext gridContext, {
-    required GridFunctionality<T> functionality,
-    required ImageViewDescription<T> imageViewDescription,
-    required GridDescription<T> gridDescription,
-    required int startingCell,
-    double? startingOffset,
-  }) {
-    if (widget.overrideOnPress != null) {
-      widget.mainFocus.requestFocus();
-      widget.overrideOnPress!(gridContext, cell);
-      return;
-    }
-    inImageView = true;
+      BuildContext gridContext, int startingCell, GridFrameState<T> state,
+      [double? startingOffset]) {
+    final functionality = state.widget.functionality;
+    final imageDesctipion = state.widget.imageViewDescription;
+    final mutation = state.mutation;
 
-    widget.mainFocus.requestFocus();
+    state.inImageView = true;
 
-    final offsetGrid = controller.hasClients ? controller.offset : 0.0;
+    state.widget.mainFocus.requestFocus();
+
+    final offsetGrid =
+        state.controller.hasClients ? state.controller.offset : 0.0;
     final overlayColor =
         Theme.of(gridContext).colorScheme.background.withOpacity(0.5);
 
-    widget.selectionGlue.hideNavBar(true);
+    functionality.selectionGlue.hideNavBar(true);
 
     Navigator.of(gridContext, rootNavigator: true)
         .push(MaterialPageRoute(builder: (context) {
       return ImageView<T>(
-          key: imageViewKey,
-          gridContext: gridContext,
-          statistics: imageViewDescription.statistics,
-          registerNotifiers: functionality.registerNotifiers,
-          systemOverlayRestoreColor: overlayColor,
-          updateTagScrollPos: (pos, selectedCell) => functionality
-              .updateScrollPosition
-              ?.call(offsetGrid, infoPos: pos, selectedCell: selectedCell),
-          scrollUntill: _scrollUntill,
-          pageChange: widget.pageChangeImage,
-          onExit: () {
-            inImageView = false;
-            widget.onExitImageView?.call();
-          },
-          ignoreEndDrawer: imageViewDescription.ignoreImageViewEndDrawer,
-          addIcons: widget.addIconsImage,
-          focusMain: () {
-            grd.mainFocus.requestFocus();
-          },
-          infoScrollOffset: startingOffset,
-          predefinedIndexes: segTranslation,
-          getCell: _state.getCell,
-          // noteInterface: widget.noteInterface,
-          cellCount: _state.cellCount,
-          download: widget.download,
-          startingCell: segTranslation != null
-              ? () {
-                  for (final (i, e) in segTranslation!.indexed) {
-                    if (e == startingCell) {
-                      return i;
-                    }
-                  }
+        key: imageDesctipion.imageViewKey,
+        gridContext: gridContext,
+        statistics: imageDesctipion.statistics,
+        registerNotifiers: functionality.registerNotifiers,
+        systemOverlayRestoreColor: overlayColor,
+        updateTagScrollPos: (pos, selectedCell) => functionality
+            .updateScrollPosition
+            ?.call(offsetGrid, infoPos: pos, selectedCell: selectedCell),
+        scrollUntill: state.tryScrollUntil,
+        pageChange: imageDesctipion.pageChangeImage,
+        onExit: () {
+          state.inImageView = false;
+          imageDesctipion.onExitImageView?.call();
+        },
+        ignoreEndDrawer: imageDesctipion.ignoreImageViewEndDrawer,
+        addIcons: imageDesctipion.addIconsImage,
+        focusMain: state.widget.mainFocus.requestFocus,
+        infoScrollOffset: startingOffset,
+        // predefinedIndexes: segTranslation,
+        getCell: mutation.getCell,
+        // noteInterface: widget.noteInterface,
+        cellCount: mutation.cellCount,
+        download: functionality.download,
+        startingCell:
+            // segTranslation != null
+            //     ? () {
+            //         for (final (i, e) in segTranslation!.indexed) {
+            //           if (e == startingCell) {
+            //             return i;
+            //           }
+            //         }
 
-                  return 0;
-                }()
-              : startingCell,
-          onNearEnd: widget.loadNext == null ? null : _state._onNearEnd);
-    })).then((value) => widget.selectionGlue.hideNavBar(false));
+            //         return 0;
+            //       }()
+            //     :
+            startingCell,
+        onNearEnd: state.refreshingStatus.onNearEnd,
+      );
+    })).then((value) => functionality.selectionGlue.hideNavBar(false));
   }
 }

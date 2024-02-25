@@ -102,11 +102,13 @@ class _ReadingTabState extends State<ReadingTab> {
   }
 
   void _refreshGrid() {
-    state.gridKey.currentState?.mutationInterface.tick(0);
-    state.gridKey.currentState?.mutationInterface.setIsRefreshing(true);
+    final mutation = state.gridKey.currentState?.mutation;
+
+    mutation?.cellCount = 0;
+    mutation?.isRefreshing = true;
     refresh().whenComplete(() {
-      state.gridKey.currentState?.mutationInterface.tick(data.length);
-      state.gridKey.currentState?.mutationInterface.setIsRefreshing(false);
+      mutation?.cellCount = data.length;
+      mutation?.isRefreshing = false;
     });
   }
 
@@ -122,41 +124,53 @@ class _ReadingTabState extends State<ReadingTab> {
         state,
         (context) => GridFrame<CompactMangaDataBase>(
           key: state.gridKey,
-          overrideFab: FloatingActionButton.extended(
-            onPressed: () {
-              SearchAnimePage.launchMangaApi(
-                context,
-                widget.api,
-                search: "",
-                viewInsets: widget.viewInsets,
-                generateGlue: _generateGlue,
-              );
-            },
-            label: Text("Search"),
-            icon: const Icon(Icons.search),
+          imageViewDescription: ImageViewDescription(
+            imageViewKey: state.imageViewKey,
           ),
+          functionality: GridFunctionality(
+              onPressed: OverrideGridOnCellPressBehaviour(
+                onPressed: (context, idx) {
+                  final cell =
+                      MutationInterfaceProvider.of<CompactMangaDataBase>(
+                              context)
+                          .getCell(idx);
+                  inInner = true;
+
+                  Navigator.of(context, rootNavigator: true)
+                      .push(MaterialPageRoute(
+                    builder: (context) {
+                      return MangaInfoPage(
+                        id: MangaStringId(cell.mangaId),
+                        api: widget.api,
+                      );
+                    },
+                  )).then((value) {
+                    _procReload();
+                  });
+                },
+              ),
+              selectionGlue: GlueProvider.of(context),
+              refresh: AsyncGridRefresh(refresh),
+              fab: OverrideGridFab(
+                FloatingActionButton.extended(
+                  onPressed: () {
+                    SearchAnimePage.launchMangaApi(
+                      context,
+                      widget.api,
+                      search: "",
+                      viewInsets: widget.viewInsets,
+                      generateGlue: _generateGlue,
+                    );
+                  },
+                  label: Text("Search"),
+                  icon: const Icon(Icons.search),
+                ),
+              )),
           getCell: (i) => data[i],
           initalScrollPosition: 0,
-          scaffoldKey: state.scaffoldKey,
           systemNavigationInsets: widget.viewInsets,
           hasReachedEnd: () => true,
-          overrideOnPress: (context, cell) {
-            inInner = true;
-
-            Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
-              builder: (context) {
-                return MangaInfoPage(
-                  id: MangaStringId(cell.mangaId),
-                  api: widget.api,
-                );
-              },
-            )).then((value) {
-              _procReload();
-            });
-          },
-          selectionGlue: GlueProvider.of(context),
           mainFocus: state.mainFocus,
-          refresh: refresh,
           description: GridDescription(
             const [],
             ignoreEmptyWidgetOnNoContent: true,
@@ -188,7 +202,7 @@ class _ReadingLayout implements GridLayouter<CompactMangaDataBase> {
   List<Widget> call(
       BuildContext context, GridFrameState<CompactMangaDataBase> state) {
     void onPressed(CompactMangaDataBase e, int idx) {
-      state.onPressed(context, e, idx);
+      state.widget.functionality.onPressed.launch(context, idx, state);
     }
 
     void onLongPressed(CompactMangaDataBase e, int idx) {
@@ -203,14 +217,13 @@ class _ReadingLayout implements GridLayouter<CompactMangaDataBase> {
           onPress: null,
           sticky: false,
           overridePinnedIcon: TextButton(
-            onPressed: state.mutationInterface.cellCount == 0
-                ? null
-                : () => startReading(0),
+            onPressed:
+                state.mutation.cellCount == 0 ? null : () => startReading(0),
             child: const Text("Read last"), // TODO: change
           ),
         ),
       ),
-      if (state.mutationInterface.cellCount == 0)
+      if (state.mutation.cellCount == 0)
         SliverToBoxAdapter(
           child: EmptyWidget(
             gridSeed: gridSeed,
@@ -222,9 +235,9 @@ class _ReadingLayout implements GridLayouter<CompactMangaDataBase> {
             height: (MediaQuery.sizeOf(context).shortestSide / 3),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              itemCount: state.mutationInterface.cellCount,
+              itemCount: state.mutation.cellCount,
               itemBuilder: (context, index) {
-                final cell = state.mutationInterface.getCell(index);
+                final cell = state.mutation.getCell(index);
 
                 return SizedBox(
                   width: (MediaQuery.sizeOf(context).shortestSide / 3) *
@@ -250,7 +263,6 @@ class _ReadingLayout implements GridLayouter<CompactMangaDataBase> {
       ),
       _PinnedMangaWidget(
         controller: state.controller,
-        onPress: (context, cell) => state.onPressed(context, cell, 0),
         glue:
             GlueProvider.generateOf<CompactMangaDataBase, PinnedManga>(context),
       )
@@ -267,13 +279,11 @@ class _ReadingLayout implements GridLayouter<CompactMangaDataBase> {
 class _PinnedMangaWidget extends StatefulWidget {
   final SelectionGlue<PinnedManga> glue;
   final ScrollController controller;
-  final void Function(BuildContext context, CompactMangaDataBase cell) onPress;
 
   const _PinnedMangaWidget({
     super.key,
     required this.glue,
     required this.controller,
-    required this.onPress,
   });
 
   @override
@@ -303,7 +313,7 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
       data.clear();
       data.addAll(PinnedManga.getAll(-1));
 
-      mutationInterface.tick(data.length);
+      mutationInterface.cellCount = data.length;
       setState(() {});
     });
   }
@@ -321,26 +331,26 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
         ? const SliverToBoxAdapter(
             child: EmptyWidget(gridSeed: 0),
           )
-        : GridLayouts.grid<PinnedManga>(
+        : GridLayout.blueprint<PinnedManga>(
             context,
             mutationInterface,
             selection,
-            GridColumn.three.number,
-            false,
-            (context, cell, idx, {required hideAlias, required tightMode}) =>
-                GridCell(
-              cell: cell,
-              indx: idx,
-              onPressed: (context) {
-                widget.onPress(context, cell);
-              },
-              tight: tightMode,
-              download: null,
-              isList: false,
-              hidealias: hideAlias,
-            ),
-            hideAlias: false,
-            tightMode: false,
+            gridCell: (context, idx) {
+              final cell = data[idx];
+
+              return GridCell(
+                cell: cell,
+                indx: idx,
+                onPressed: (context) {
+                  // widget.onPress(context, cell);
+                },
+                tight: false,
+                download: null,
+                isList: false,
+                hideAlias: false,
+              );
+            },
+            columns: GridColumn.three.number,
             systemNavigationInsets: 0,
             aspectRatio: GridAspectRatio.one.value,
           );
@@ -361,30 +371,14 @@ class _DummyMutationInterface implements GridMutationInterface<PinnedManga> {
   }
 
   @override
-  bool get isRefreshing => false;
+  bool isRefreshing = false;
 
   @override
   bool get mutated => false;
 
   @override
-  Future onRefresh() {
-    return Future.value();
-  }
-
-  @override
-  void restore() {}
-
-  @override
-  void setIsRefreshing(bool isRefreshing) {}
-
-  @override
   void setSource(int cellCount, PinnedManga Function(int i) getCell) {}
 
   @override
-  void tick(int i) {
-    cellCount = i;
-  }
-
-  @override
-  void unselectAll() {}
+  void reset() {}
 }

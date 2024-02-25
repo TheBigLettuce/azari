@@ -10,14 +10,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/widgets/grid/actions/downloads.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_search_widget.dart';
+import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
-import 'package:gallery/src/widgets/grid/layouts/segment_list_layout.dart';
+import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:isar/isar.dart';
@@ -85,36 +89,36 @@ class _DownloadsState extends State<Downloads>
     super.dispose();
   }
 
-  Segments<DownloadFile> _makeSegments(BuildContext context) => Segments(
-        AppLocalizations.of(context)!.unknownSegmentsPlaceholder,
-        hidePinnedIcon: true,
-        limitLabelChildren: 6,
-        segment: (cell) {
-          return (Downloader.g.downloadDescription(cell), true);
-        },
-        onLabelPressed: (label, children) {
-          if (children.isEmpty) {
-            return;
-          }
+  // Segments<DownloadFile> _makeSegments(BuildContext context) => Segments(
+  //       AppLocalizations.of(context)!.unknownSegmentsPlaceholder,
+  //       hidePinnedIcon: true,
+  //       limitLabelChildren: 6,
+  //       segment: (cell) {
+  //         return (Downloader.g.downloadDescription(cell), true);
+  //       },
+  //       onLabelPressed: (label, children) {
+  //         if (children.isEmpty) {
+  //           return;
+  //         }
 
-          if (label == kDownloadInProgress) {
-            Downloader.g.markStale(override: children);
-          } else if (label == kDownloadOnHold) {
-            Downloader.g.addAll(children, state.settings);
-          } else if (label == kDownloadFailed) {
-            final n = (6 - children.length);
+  //         if (label == kDownloadInProgress) {
+  //           Downloader.g.markStale(override: children);
+  //         } else if (label == kDownloadOnHold) {
+  //           Downloader.g.addAll(children, state.settings);
+  //         } else if (label == kDownloadFailed) {
+  //           final n = (6 - children.length);
 
-            if (!n.isNegative && n != 0) {
-              Downloader.g.addAll([
-                ...children,
-                ...DownloadFile.nextNumber(children.length),
-              ], state.settings);
-            } else {
-              Downloader.g.addAll(children, state.settings);
-            }
-          }
-        },
-      );
+  //           if (!n.isNegative && n != 0) {
+  //             Downloader.g.addAll([
+  //               ...children,
+  //               ...DownloadFile.nextNumber(children.length),
+  //             ], state.settings);
+  //           } else {
+  //             Downloader.g.addAll(children, state.settings);
+  //           }
+  //         }
+  //       },
+  //     );
 
   @override
   Widget build(BuildContext context) {
@@ -124,45 +128,51 @@ class _DownloadsState extends State<Downloads>
         child: GridSkeleton(
           state,
           (context) => GridFrame<DownloadFile>(
-              key: state.gridKey,
-              getCell: loader.getCell,
-              initalScrollPosition: 0,
-              scaffoldKey: state.scaffoldKey,
-              systemNavigationInsets: MediaQuery.viewPaddingOf(context),
-              hasReachedEnd: () => true,
-              selectionGlue: GlueProvider.of(context),
-              showCount: true,
-              onBack: () => Navigator.pop(context),
-              menuButtonItems: [
-                IconButton(
-                    onPressed: () {
-                      if (deleteController != null) {
-                        deleteController!.forward(from: 0);
-                      }
-                      Downloader.g.removeAll();
-                    },
-                    icon: const Icon(Icons.close).animate(
-                        onInit: (controller) => deleteController = controller,
-                        effects: const [FlipEffect(begin: 1, end: 0)],
-                        autoPlay: false)),
-              ],
-              inlineMenuButtonItems: true,
-              // unpressable: true,
-              searchWidget: SearchAndFocus(
+            key: state.gridKey,
+            getCell: loader.getCell,
+            initalScrollPosition: 0,
+            systemNavigationInsets: MediaQuery.viewPaddingOf(context),
+            hasReachedEnd: () => true,
+            imageViewDescription: ImageViewDescription(
+              imageViewKey: state.imageViewKey,
+            ),
+            functionality: GridFunctionality(
+              search: OverrideGridSearchWidget(
+                SearchAndFocus(
                   searchWidget(context,
                       hint: AppLocalizations.of(context)!.downloadsPageName),
-                  searchFocus),
-              mainFocus: state.mainFocus,
-              refresh: () => Future.value(loader.count()),
-              description: GridDescription([
-                DownloadsActions.delete(context),
-              ],
-                  keybindsDescription:
-                      AppLocalizations.of(context)!.downloadsPageName,
-                  layout: SegmentListLayout(
-                    _makeSegments(context),
-                    GridColumn.two,
-                  ))),
+                  searchFocus,
+                ),
+              ),
+              // onBack: () => Navigator.pop(context),
+              selectionGlue: GlueProvider.of(context),
+              refresh: SynchronousGridRefresh(() => loader.count()),
+            ),
+            mainFocus: state.mainFocus,
+            description: GridDescription([
+              DownloadsActions.delete(context),
+            ],
+                menuButtonItems: [
+                  IconButton(
+                      onPressed: () {
+                        if (deleteController != null) {
+                          deleteController!.forward(from: 0);
+                        }
+                        Downloader.g.removeAll();
+                      },
+                      icon: const Icon(Icons.close).animate(
+                          onInit: (controller) => deleteController = controller,
+                          effects: const [FlipEffect(begin: 1, end: 0)],
+                          autoPlay: false)),
+                ],
+                keybindsDescription:
+                    AppLocalizations.of(context)!.downloadsPageName,
+                inlineMenuButtonItems: true,
+                layout: const GridLayout(
+                  // _makeSegments(context),
+                  GridColumn.two, GridAspectRatio.one,
+                )),
+          ),
           canPop: true,
           overrideOnPop: (pop, hideAppBar) {
             if (hideAppBar()) {

@@ -7,7 +7,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
-import 'package:gallery/src/interfaces/grid/grid_mutation_interface.dart';
 import 'package:gallery/src/interfaces/search_mixin.dart';
 import 'package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -49,7 +48,7 @@ mixin SearchFilterGrid<T extends Cell>
       PostTags.g.completeLocalTag;
 
   void _onChanged(String value, bool direct) {
-    var interf = _state.gridKey.currentState?.mutationInterface;
+    var interf = _state.gridKey.currentState?.mutation;
     if (interf != null) {
       final sorting = _state.hook(_currentFilterMode);
       // if (!direct) {
@@ -117,7 +116,7 @@ mixin SearchFilterGrid<T extends Cell>
 
   void _reset(bool resetFilterMode) {
     searchTextController.clear();
-    _state.gridKey.currentState?.mutationInterface.restore();
+    _state.gridKey.currentState?.mutation.reset();
     if (_state.filteringModes.isNotEmpty) {
       _searchVirtual = false;
       if (resetFilterMode) {

@@ -38,7 +38,7 @@ class __WatchingTabState extends State<_WatchingTab> {
   String _filteringValue = "";
 
   void filter(String value) {
-    final m = state.gridKey.currentState?.mutationInterface;
+    final m = state.gridKey.currentState?.mutation;
     if (m == null) {
       return;
     }
@@ -51,7 +51,7 @@ class __WatchingTabState extends State<_WatchingTab> {
     _watchingFilter.clear();
 
     if (value.isEmpty) {
-      m.restore();
+      m.reset();
 
       return;
     }
@@ -75,7 +75,7 @@ class __WatchingTabState extends State<_WatchingTab> {
       backlog.addAll(newB);
 
       if (_filteringValue.isEmpty) {
-        state.gridKey.currentState?.mutationInterface.tick(newB.length);
+        state.gridKey.currentState?.mutation.cellCount = newB.length;
       } else {
         filter(_filteringValue);
       }
@@ -103,21 +103,28 @@ class __WatchingTabState extends State<_WatchingTab> {
       (context) => GridFrame<SavedAnimeEntry>(
         key: state.gridKey,
         getCell: (i) => backlog[upward ? backlog.length - 1 - i : i],
-        initalScrollPosition: 0,
-        scaffoldKey: state.scaffoldKey,
+        imageViewDescription: ImageViewDescription(
+          imageViewKey: state.imageViewKey,
+        ),
+        functionality: GridFunctionality(
+          selectionGlue:
+              GlueProvider.generateOf<AnimeEntry, SavedAnimeEntry>(context),
+          refresh: SynchronousGridRefresh(() => backlog.length),
+          onPressed:
+              OverrideGridOnCellPressBehaviour(onPressed: (context, idx) {
+            final cell = MutationInterfaceProvider.of<SavedAnimeEntry>(context)
+                .getCell(idx);
+
+            Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return WatchingAnimeInfoPage(entry: cell);
+              },
+            ));
+          }),
+        ),
         systemNavigationInsets: widget.viewInsets,
         hasReachedEnd: () => true,
-        overrideOnPress: (context, cell) {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (context) {
-              return WatchingAnimeInfoPage(entry: cell);
-            },
-          ));
-        },
-        selectionGlue:
-            GlueProvider.generateOf<AnimeEntry, SavedAnimeEntry>(context),
         mainFocus: state.mainFocus,
-        refresh: () => Future.value(backlog.length),
         description: GridDescription([],
             keybindsDescription: AppLocalizations.of(context)!.watchingTab,
             showAppBar: false,
@@ -240,18 +247,22 @@ class _WatchingLayout implements GridLayouter<SavedAnimeEntry> {
           ),
         ),
       ),
-      if (state.mutationInterface.cellCount > 0)
-        GridLayouts.grid<SavedAnimeEntry>(
+      if (state.mutation.cellCount > 0)
+        GridLayout.blueprint<SavedAnimeEntry>(
           context,
-          state.mutationInterface,
+          state.mutation,
           state.selection,
-          columns.number,
-          isList,
-          state.makeGridCellAnimate,
-          hideAlias: false,
-          tightMode: false,
           systemNavigationInsets: 0,
           aspectRatio: GridAspectRatio.zeroSeven.value,
+          columns: columns.number,
+          gridCell: (context, idx) {
+            return GridCell.frameDefault(
+              context,
+              idx,
+              state: state,
+              animated: true,
+            );
+          },
         )
       else
         SliverToBoxAdapter(
@@ -291,7 +302,7 @@ class ImportantCard<T extends Cell> extends StatelessWidget {
           indx: 0,
           onPressed: null,
           tight: true,
-          hidealias: true,
+          hideAlias: true,
           download: null,
           isList: false,
           circle: true,

@@ -9,6 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_on_cell_press_behaviour.dart';
+import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/grid/layouts/list_layout.dart';
 import 'package:gallery/src/widgets/grid/wrappers/wrap_grid_page.dart';
@@ -53,31 +56,21 @@ class _BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
           key: state.gridKey,
           getCell: (i) => list[i],
           initalCellCount: list.length,
-          initalScrollPosition: 0,
-          menuButtonItems: [
-            IconButton(
-                onPressed: () {
-                  hideImages = !hideImages;
+          functionality: GridFunctionality(
+            selectionGlue: GlueProvider.of(context),
+            onPressed: const OverrideGridOnCellPressBehaviour(),
+            refresh: SynchronousGridRefresh(() {
+              list = HiddenBooruPost.getAll();
 
-                  setState(() {});
-                },
-                icon: hideImages
-                    ? const Icon(Icons.image_rounded)
-                    : const Icon(Icons.hide_image_rounded))
-          ],
-          scaffoldKey: state.scaffoldKey,
+              return list.length;
+            }),
+          ),
+          imageViewDescription: ImageViewDescription(
+            imageViewKey: state.imageViewKey,
+          ),
           systemNavigationInsets: MediaQuery.viewPaddingOf(context),
           hasReachedEnd: () => true,
-          selectionGlue: GlueProvider.of(context),
-          showCount: true,
-          onBack: () => Navigator.of(context).pop(),
-          overrideOnPress: (context, _) {},
           mainFocus: state.mainFocus,
-          refresh: () {
-            list = HiddenBooruPost.getAll();
-
-            return Future.value(list.length);
-          },
           description: GridDescription([
             GridAction(Icons.photo, (selected) {
               HiddenBooruPost.removeAll(
@@ -86,6 +79,17 @@ class _BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
               state.gridKey.currentState?.refresh();
             }, true)
           ],
+              menuButtonItems: [
+                IconButton(
+                    onPressed: () {
+                      hideImages = !hideImages;
+
+                      setState(() {});
+                    },
+                    icon: hideImages
+                        ? const Icon(Icons.image_rounded)
+                        : const Icon(Icons.hide_image_rounded))
+              ],
               keybindsDescription: "Blacklisted posts",
               layout: ListLayout(hideThumbnails: hideImages)),
         ),

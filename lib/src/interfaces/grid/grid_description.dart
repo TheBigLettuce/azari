@@ -38,8 +38,6 @@ class GridDescription<T extends Cell> {
   /// Makes [menuButtonItems] appear as app bar items.
   final bool inlineMenuButtonItems;
 
-  final bool showCount;
-
   final bool asSliver;
 
   final bool hideTitle;
@@ -68,7 +66,6 @@ class GridDescription<T extends Cell> {
     this.asSliver = false,
     this.inlineMenuButtonItems = false,
     this.tightMode = false,
-    this.showCount = false,
     this.titleLines = 1,
     this.hideTitle = false,
     this.menuButtonItems,

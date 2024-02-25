@@ -129,26 +129,19 @@ mixin _ChangePageMixin on State<Home> {
     }
 
     if (widget.callback != null) {
-      if (currentRoute == kBooruPageRoute) {
-        return _NavigatorShell(
-          pop: _popGallery,
-          navigatorKey: mainKey,
-          child: GlueProvider<SystemGalleryDirectory>(
-            generate: _generateGlue,
-            glue: _generateGlue(),
-            child: GalleryDirectories(
-              viewPadding: padding,
-              nestedCallback: widget.callback,
-              procPop: (pop) => _procPop(icons, pop),
-            ),
+      return _NavigatorShell(
+        pop: _popGallery,
+        navigatorKey: mainKey,
+        child: GlueProvider<SystemGalleryDirectory>(
+          generate: _generateGlue,
+          glue: _generateGlue(),
+          child: GalleryDirectories(
+            viewPadding: padding,
+            nestedCallback: widget.callback,
+            procPop: (pop) => _procPop(icons, pop),
           ),
-        );
-      } else {
-        return NotesPage(
-          callback: widget.callback,
-          bottomPadding: 80,
-        );
-      }
+        ),
+      );
     }
 
     _animateIcons(icons);

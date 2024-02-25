@@ -6,10 +6,9 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
 
 part '../parts/fab.dart';
@@ -17,22 +16,19 @@ part '../parts/fab.dart';
 sealed class GridFabType {
   const GridFabType();
 
-  Widget widget(BuildContext context);
+  Widget widget(BuildContext context, Key key);
 }
 
 class DefaultGridFab implements GridFabType {
   const DefaultGridFab();
 
   @override
-  Widget widget(BuildContext context) {
+  Widget widget(BuildContext context, Key key) {
     final controller = PrimaryScrollController.of(context);
 
     return _Fab(
+      key: key,
       controller: controller,
-      // selectionGlue: selectionGlue,
-      // systemNavigationInsets: systemNavigationInsets,
-      // scrollPos: scrollPos,
-      // footer: footer,
     );
   }
 }
@@ -43,7 +39,7 @@ class OverrideGridFab implements GridFabType {
   final Widget child;
 
   @override
-  Widget widget(BuildContext context) {
+  Widget widget(BuildContext context, _) {
     return child;
   }
 }

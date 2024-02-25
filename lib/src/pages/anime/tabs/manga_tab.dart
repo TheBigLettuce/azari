@@ -12,6 +12,10 @@ import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:gallery/src/pages/anime/manga/manga_info_page.dart';
 import 'package:gallery/src/pages/anime/paging_container.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_on_cell_press_behaviour.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_refresh_behaviour.dart';
+import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
@@ -82,26 +86,38 @@ class _MangaTabState extends State<MangaTab> {
         getCell: (i) => widget.elems[i],
         initalCellCount: widget.elems.length,
         initalScrollPosition: widget.container.scrollPos,
-        scaffoldKey: state.scaffoldKey,
+        imageViewDescription: ImageViewDescription(
+          imageViewKey: state.imageViewKey,
+        ),
+        functionality: GridFunctionality(
+          updateScrollPosition: widget.container.updateScrollPos,
+          selectionGlue:
+              GlueProvider.generateOf<AnimeEntry, MangaEntry>(context),
+          refresh: AsyncGridRefresh(_refresh),
+          loadNext: _loadNext,
+          refreshBehaviour: RetainedGridRefreshBehaviour(
+            widget.container.refreshingInterface,
+          ),
+          onPressed: OverrideGridOnCellPressBehaviour(
+            onPressed: (context, idx) {
+              final cell = MutationInterfaceProvider.of<MangaEntry>(context)
+                  .getCell(idx);
+
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) {
+                  return MangaInfoPage(
+                    id: cell.id,
+                    entry: cell,
+                    api: widget.api,
+                  );
+                },
+              ));
+            },
+          ),
+        ),
         systemNavigationInsets: widget.viewInsets,
         hasReachedEnd: () => reachedEnd,
-        refreshInterface: widget.container.refreshingInterface,
-        updateScrollPosition: widget.container.updateScrollPos,
-        selectionGlue: GlueProvider.generateOf<AnimeEntry, MangaEntry>(context),
         mainFocus: state.mainFocus,
-        overrideOnPress: (context, cell) {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (context) {
-              return MangaInfoPage(
-                id: cell.id,
-                entry: cell,
-                api: widget.api,
-              );
-            },
-          ));
-        },
-        refresh: _refresh,
-        loadNext: _loadNext,
         description: const GridDescription(
           [],
           ignoreSwipeSelectGesture: true,
@@ -110,7 +126,6 @@ class _MangaTabState extends State<MangaTab> {
           layout: GridLayout(
             GridColumn.three,
             GridAspectRatio.zeroSeven,
-            hideAlias: false,
           ),
         ),
       ),

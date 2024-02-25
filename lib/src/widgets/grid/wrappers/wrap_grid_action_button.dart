@@ -15,22 +15,26 @@ class WrapGridActionButton extends StatefulWidget {
   final void Function()? onPressed;
   final void Function()? onLongPress;
   final bool addBadge;
-  final bool? followColorTheme;
+  // final bool? followColorTheme;
   final Color? backgroundColor;
   final Color? color;
   final bool animate;
   final bool play;
   final bool showOnlyWhenSingle;
 
-  const WrapGridActionButton(this.icon, this.onPressed, this.addBadge,
-      {super.key,
-      this.followColorTheme,
-      this.backgroundColor,
-      this.color,
-      required this.onLongPress,
-      required this.showOnlyWhenSingle,
-      required this.play,
-      required this.animate});
+  const WrapGridActionButton(
+    this.icon,
+    this.onPressed,
+    this.addBadge, {
+    super.key,
+    // this.followColorTheme,
+    this.backgroundColor,
+    this.color,
+    required this.onLongPress,
+    required this.showOnlyWhenSingle,
+    required this.play,
+    required this.animate,
+  });
 
   @override
   State<WrapGridActionButton> createState() => _WrapGridActionButtonState();
@@ -41,11 +45,7 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
 
   @override
   Widget build(BuildContext context) {
-    final icn = Icon(widget.icon,
-        color: widget.color ??
-            (widget.followColorTheme == true
-                ? null
-                : Theme.of(context).colorScheme.inversePrimary));
+    final icn = Icon(widget.icon, color: widget.color);
 
     Widget iconBtn(BuildContext context) {
       return Padding(
@@ -59,19 +59,12 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
                 },
           child: IconButton(
             style: ButtonStyle(
-                shape: const MaterialStatePropertyAll(RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.elliptical(10, 10)))),
-                backgroundColor: widget.backgroundColor != null
-                    ? MaterialStatePropertyAll(widget.backgroundColor)
-                    : widget.followColorTheme == true
-                        ? null
-                        : MaterialStatePropertyAll(widget.showOnlyWhenSingle &&
-                                SelectionCountNotifier.countOf(context) != 1
-                            ? Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withOpacity(0.5)
-                            : Theme.of(context).colorScheme.primary)),
+              shape: const MaterialStatePropertyAll(RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.elliptical(10, 10)))),
+              backgroundColor: widget.backgroundColor != null
+                  ? MaterialStatePropertyAll(widget.backgroundColor)
+                  : null,
+            ),
             onPressed: widget.showOnlyWhenSingle &&
                     SelectionCountNotifier.countOf(context) != 1
                 ? null

@@ -143,7 +143,7 @@ class _HomeState extends State<Home>
                               end: Offset.zero,
                             ),
                           ],
-                          child: GlueBottomAppBar(glueState.actions!),
+                          child: GlueBottomAppBar(glueState),
                         )
                       : Padding(
                           padding: EdgeInsets.only(bottom: edgeInsets.bottom));

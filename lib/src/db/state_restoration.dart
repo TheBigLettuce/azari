@@ -43,6 +43,8 @@ class StateRestoration {
       return;
     }
 
+    print("page update: $page");
+
     _mainGrid.writeTxnSync(
         () => _mainGrid.gridStates.putSync(prev.copy(false, page: page)));
   }
@@ -69,11 +71,21 @@ class StateRestoration {
       {double? infoPos, int? selectedCell, int? page}) {
     final prev = current;
 
-    _mainGrid.writeTxnSync(() => _mainGrid.gridStates.putSync(prev.copy(false,
-        scrollPositionGrid: pos,
-        scrollPositionTags: infoPos,
-        page: page,
-        selectedPost: selectedCell)));
+    if (page != null) {
+      assert(prev.page! >= page);
+    }
+
+    print("pos update: $pos, page: ${prev.page}");
+
+    _mainGrid.writeTxnSync(
+      () => _mainGrid.gridStates.putSync(
+        prev.copy(false,
+            scrollPositionGrid: pos,
+            scrollPositionTags: infoPos,
+            page: page,
+            selectedPost: selectedCell),
+      ),
+    );
   }
 
   int secondaryCount() => _mainGrid.gridStates.countSync() - 1;

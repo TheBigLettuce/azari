@@ -6,11 +6,12 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/widgets/grid/selection/selection_glue_state.dart';
 
 class GlueBottomAppBar extends StatelessWidget {
-  final List<Widget> actions;
+  final SelectionGlueState glue;
 
-  const GlueBottomAppBar(this.actions, {super.key});
+  const GlueBottomAppBar(this.glue, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +25,74 @@ class GlueBottomAppBar extends StatelessWidget {
             )),
         BottomAppBar(
           color: Theme.of(context).colorScheme.surface.withOpacity(0.95),
-          child: Wrap(
-            spacing: 4,
-            children: actions,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Wrap(
+                spacing: 4,
+                children: glue.actions!.$1,
+              ),
+              Row(
+                // textBaseline: TextBaseline.alphabetic,
+                // crossAxisAlignment: CrossAxisAlignment.baseline,
+                children: [
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxHeight: 28,
+                      minWidth: 28,
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.8),
+                      ),
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 8, right: 8),
+                          child: Text(
+                            glue.count.toString(),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimary
+                                      .withOpacity(0.8),
+                                ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Padding(padding: EdgeInsets.only(right: 4)),
+                  const Text(
+                    "・",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Padding(padding: EdgeInsets.only(right: 4)),
+                  IconButton.filledTonal(
+                    onPressed: () {
+                      glue.actions?.$2();
+                    },
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+
+              // FloatingActionButton(
+              //   elevation: 0,
+              //   onPressed: () {},
+              //   heroTag: null,
+              //   child: ,
+              // )
+            ],
           ),
         )
       ],

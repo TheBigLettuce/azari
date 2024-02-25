@@ -17,6 +17,7 @@ import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
 import 'package:gallery/src/plugs/download_movers/dart.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_back_button_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_fab_type.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_refresh_behaviour.dart';
@@ -105,7 +106,7 @@ class GridFrame<T extends Cell> extends StatefulWidget {
     required super.key,
     this.additionalKeybinds,
     required this.getCell,
-    required this.initalScrollPosition,
+    this.initalScrollPosition = 0,
     required this.functionality,
     required this.imageViewDescription,
     required this.systemNavigationInsets,
@@ -124,7 +125,7 @@ class GridFrame<T extends Cell> extends StatefulWidget {
 
 class GridFrameState<T extends Cell> extends State<GridFrame<T>>
     with GridSubpageState<T> {
-  late final _GridRefreshingStatus<T> _refreshingStatus;
+  late final GridRefreshingStatus<T> refreshingStatus;
   late ScrollController controller;
 
   late final selection = GridSelection<T>(
@@ -163,7 +164,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
 
   bool inImageView = false;
 
-  // List<int>? segTranslation;
+  List<int>? segTranslation;
 
   // final _fabKey = GlobalKey<__FabState>();
 
@@ -201,6 +202,8 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
     }
   }
 
+  double lastOffset = 0;
+
   @override
   void initState() {
     super.initState();
@@ -218,20 +221,23 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
 
     _restoreState(widget.imageViewDescription);
 
-    _refreshingStatus = _GridRefreshingStatus(mutation, functionality);
+    refreshingStatus = GridRefreshingStatus._(mutation, functionality);
 
     final refreshBehaviour = functionality.refreshBehaviour;
-
     switch (refreshBehaviour) {
       case DefaultGridRefreshBehaviour():
-        refresh();
         break;
       case RetainedGridRefreshBehaviour():
         WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
           refreshBehaviour.interface.register(_refreshCallbackUpdate);
-        });
 
-        mutation.isRefreshing = refreshBehaviour.interface.isRefreshing();
+          final isRefreshing = refreshBehaviour.interface.isRefreshing();
+          mutation.isRefreshing = isRefreshing;
+        });
+    }
+
+    if (widget.initalCellCount == 0) {
+      refreshingStatus.refresh();
     }
 
     if (!description.asSliver) {
@@ -240,6 +246,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
 
         WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
           // _addFabListener();
+          _registerOffsetSaver(controller);
         });
 
         if (functionality.loadNext == null) {
@@ -247,6 +254,8 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
         }
 
         controller.addListener(() {
+          lastOffset = controller.offset;
+
           if (widget.hasReachedEnd() || atNotHomePage) {
             return;
           }
@@ -260,7 +269,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
               (controller.offset /
                       controller.positions.first.maxScrollExtent) >=
                   1 - (height / controller.positions.first.maxScrollExtent)) {
-            _refreshingStatus.onNearEnd();
+            refreshingStatus.onNearEnd();
             // _state._loadNext(context);
           }
         });
@@ -296,6 +305,8 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
 
     widget.onDispose?.call();
 
+    widget.functionality.updateScrollPosition?.call(lastOffset);
+
     super.dispose();
   }
 
@@ -304,42 +315,44 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
     mutation.reset();
     // updateFab(fab: false, foreground: inImageView);
 
-    return _refreshingStatus.refresh(overrideRefresh);
+    return refreshingStatus.refresh(overrideRefresh);
   }
 
-  // void _scrollUntill(int p) {
-  //   if (controller.position.maxScrollExtent.isInfinite) {
-  //     return;
-  //   }
+  void tryScrollUntil(int p) {
+    if (controller.position.maxScrollExtent.isInfinite) {
+      return;
+    }
 
-  //   final picPerRow = widget.description.layout.columns;
-  //   // Get the full content height.
-  //   final contentSize = controller.position.viewportDimension +
-  //       controller.position.maxScrollExtent;
-  //   // Estimate the target scroll position.
-  //   double target;
-  //   if (widget.description.layout.isList) {
-  //     target = contentSize * p / _state.cellCount;
-  //   } else {
-  //     target = contentSize *
-  //         (p / picPerRow!.number - 1) /
-  //         (_state.cellCount / picPerRow.number);
-  //   }
+    final picPerRow = widget.description.layout.columns;
+    // Get the full content height.
+    final contentSize = controller.position.viewportDimension +
+        controller.position.maxScrollExtent;
+    // Estimate the target scroll position.
+    double target;
+    if (widget.description.layout.isList) {
+      target = contentSize * p / mutation.cellCount;
+    } else {
+      target = contentSize *
+          (p / picPerRow!.number - 1) /
+          (mutation.cellCount / picPerRow.number);
+    }
 
-  //   if (target < controller.position.minScrollExtent) {
-  //     widget.updateScrollPosition?.call(controller.position.minScrollExtent);
-  //     return;
-  //   } else if (target > controller.position.maxScrollExtent) {
-  //     if (widget.hasReachedEnd()) {
-  //       widget.updateScrollPosition?.call(controller.position.maxScrollExtent);
-  //       return;
-  //     }
-  //   }
+    if (target < controller.position.minScrollExtent) {
+      widget.functionality.updateScrollPosition
+          ?.call(controller.position.minScrollExtent);
+      return;
+    } else if (target > controller.position.maxScrollExtent) {
+      if (widget.hasReachedEnd()) {
+        widget.functionality.updateScrollPosition
+            ?.call(controller.position.maxScrollExtent);
+        return;
+      }
+    }
 
-  //   widget.updateScrollPosition?.call(target);
+    widget.functionality.updateScrollPosition?.call(target);
 
-  //   controller.jumpTo(target);
-  // }
+    controller.jumpTo(target);
+  }
 
   // Map<SingleActivatorDescription, void Function()> _makeBindings(
   //         BuildContext context) =>
@@ -420,33 +433,39 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
           : _BottomWidget<T>(
               routeChanger: page != null && page.search == null
                   ? const SizedBox.shrink()
-                  : page != null
+                  : widget.description.pages != null
                       ? PageSwitchingWidget(
                           controller: controller,
                           selection: selection,
                           padding: EdgeInsets.only(
-                              top: Platform.isAndroid ? 8 : 12,
-                              bottom: Platform.isAndroid ? 8 : 12),
+                            top: Platform.isAndroid ? 8 : 12,
+                            bottom: Platform.isAndroid ? 8 : 12,
+                          ),
                           state: this,
                           pageSwitcher: widget.description.pages!,
                         )
                       : null,
-              preferredSize: Size.fromHeight((page == null
-                  ? 4
-                  : page.search == null
-                      ? 0
-                      : (Platform.isAndroid ? 40 + 16 : 32 + 24))),
+              preferredSize: Size.fromHeight(
+                ((page?.search == null && !atHomePage) ||
+                            widget.description.pages == null
+                        ? 0
+                        : (Platform.isAndroid ? 40 + 16 : 32 + 24)) +
+                    (page == null ? 4 : 0),
+              ),
               child: Padding(
                 padding: EdgeInsets.only(top: page == null ? 4 : 0),
                 child: const SizedBox.shrink(),
               ),
             );
 
+      final backButton = widget.functionality.backButton;
+
       appBar = _AppBar(
-        leading: GridAppBarLeading(state: this),
-        title: GridAppBarTitle(state: this),
+        leading: backButton is EmptyGridBackButton && backButton.inherit
+            ? null
+            : GridAppBarLeading(state: this),
+        title: GridAppBarTitle(state: this, page: page),
         actions: appBarActions,
-        isSelecting: selection.selected.isNotEmpty,
         bottomWidget: bottomWidget,
       );
     }
@@ -467,14 +486,14 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
                 children: [
                   EmptyWidget(
                     gridSeed: 0,
-                    error: _refreshingStatus.refreshingError == null
+                    error: refreshingStatus.refreshingError == null
                         ? null
                         : EmptyWidget.unwrapDioError(
-                            _refreshingStatus.refreshingError),
+                            refreshingStatus.refreshingError),
                   ),
                   if (functionality.onError != null &&
-                      _refreshingStatus.refreshingError != null)
-                    functionality.onError!(_refreshingStatus.refreshingError!),
+                      refreshingStatus.refreshingError != null)
+                    functionality.onError!(refreshingStatus.refreshingError!),
                 ],
               ),
             ),
@@ -522,7 +541,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
 
   @override
   Widget build(BuildContext context) {
-    // segTranslation = null;
+    segTranslation = null;
 
     final functionality = widget.functionality;
     final description = widget.description;
@@ -561,7 +580,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
       children: [
         if (atHomePage)
           RefreshIndicator(
-            onRefresh: _refreshingStatus.refresh,
+            onRefresh: refreshingStatus.refresh,
             child: mainBody(context, page),
           )
         else
@@ -576,7 +595,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
               child: description.footer!,
             ),
           ),
-        if (!widget.description.showAppBar || page != null)
+        if (!widget.description.showAppBar || widget.description.pages != null)
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
@@ -596,7 +615,18 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
           ),
         Align(
           alignment: Alignment.bottomRight,
-          child: fab.widget(context),
+          child: Padding(
+            padding: EdgeInsets.only(
+                right: 4, bottom: _calculateBottomPadding() + 4),
+            child: PrimaryScrollController(
+              controller: controller,
+              child: Builder(
+                builder: (context) {
+                  return fab.widget(context, ValueKey(currentPage));
+                },
+              ),
+            ),
+          ),
         ),
       ],
     );
@@ -626,6 +656,17 @@ mixin GridSubpageState<T extends Cell> on State<GridFrame<T>> {
   bool get atHomePage => currentPage == 0;
   bool get atNotHomePage => !atHomePage;
 
+  void _registerOffsetSaver(ScrollController controller) {
+    final f = widget.functionality.updateScrollPosition;
+    if (f == null) {
+      return;
+    }
+
+    controller.position.isScrollingNotifier.addListener(() {
+      f(controller.offset);
+    });
+  }
+
   void onSubpageSwitched(
       int next, GridSelection<T> selection, ScrollController controller) {
     selection.reset();
@@ -643,6 +684,9 @@ mixin GridSubpageState<T extends Cell> on State<GridFrame<T>> {
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       // _addFabListener();
+      if (next == 0) {
+        _registerOffsetSaver(controller);
+      }
 
       if (atHomePage && controller.offset == 0 && savedOffset != 0) {
         controller.position
@@ -677,8 +721,8 @@ class GridBottomPaddingProvider extends InheritedWidget {
       padding != oldWidget.padding;
 }
 
-class _GridRefreshingStatus<T extends Cell> {
-  _GridRefreshingStatus(
+class GridRefreshingStatus<T extends Cell> {
+  GridRefreshingStatus._(
     this.mutation,
     this.functionality,
   );
@@ -686,34 +730,41 @@ class _GridRefreshingStatus<T extends Cell> {
   final GridMutationInterface<T> mutation;
   final GridFunctionality<T> functionality;
 
-  final _locked = false;
+  bool _locked = false;
 
   Object? refreshingError;
 
-  Future<int> refresh([Future<int> Function()? overrideRefresh]) async {
+  void unlock() {
+    _locked = false;
+  }
+
+  Future<int> refresh([Future<int> Function()? overrideRefresh]) {
     if (_locked) {
       return Future.value(mutation.cellCount);
     }
+    _locked = true;
 
-    final f =
-        overrideRefresh != null ? overrideRefresh() : functionality.refresh();
+    final refresh = functionality.refresh;
+    switch (refresh) {
+      case SynchronousGridRefresh():
+        mutation.cellCount = refresh.refresh();
 
-    refreshingError = null;
-    mutation.isRefreshing = true;
-    mutation.cellCount = 0;
+        return Future.value(mutation.cellCount);
+      case AsyncGridRefresh():
+        final f =
+            overrideRefresh != null ? overrideRefresh() : refresh.refresh();
 
-    try {
-      return _saveOrWait(f);
-    } catch (e, stackTrace) {
-      refreshingError = e;
+        refreshingError = null;
+        mutation.isRefreshing = true;
+        mutation.cellCount = 0;
 
-      log("refreshing cells in the grid",
-          level: Level.WARNING.value, error: e, stackTrace: stackTrace);
-    } finally {
-      mutation.isRefreshing = false;
+        return _saveOrWait(f);
+      case RetainedGridRefresh():
+        refresh.refresh();
+        return Future.value(0);
+      case MutationInterfaceSourcedGridRefresh():
+        return Future.value(mutation.cellCount);
     }
-
-    return Future.value(mutation.cellCount);
   }
 
   Future<int> onNearEnd() async {
@@ -721,101 +772,37 @@ class _GridRefreshingStatus<T extends Cell> {
       return Future.value(mutation.cellCount);
     }
 
-    try {
-      final f = functionality.loadNext!();
-      mutation.isRefreshing = true;
+    _locked = true;
 
-      _saveOrWait(f);
-    } catch (e) {
-      refreshingError = e;
+    final f = functionality.loadNext!();
+    mutation.isRefreshing = true;
 
-      // update(null);
-    } finally {
-      mutation.isRefreshing = false;
-    }
-
-    return mutation.cellCount;
+    return _saveOrWait(f);
   }
 
   Future<int> _saveOrWait(Future<int> f) async {
     final refreshBehaviour = functionality.refreshBehaviour;
     switch (refreshBehaviour) {
       case DefaultGridRefreshBehaviour():
-        mutation.cellCount = await f;
+        try {
+          mutation.cellCount = await f;
+        } catch (e) {
+          refreshingError = e;
+        }
+
+        mutation.isRefreshing = false;
+        _locked = false;
 
         return mutation.cellCount;
       case RetainedGridRefreshBehaviour():
-        refreshBehaviour.interface.save(f);
+        refreshBehaviour.interface.save(f.then((value) {
+          mutation.cellCount = value;
+          mutation.isRefreshing = false;
+          _locked = false;
+
+          return value;
+        }));
         return mutation.cellCount;
     }
   }
 }
-
-
-
-  // void _loadNext(BuildContext context) {
-  //   if (_locked || functionality.loadNext == null) {
-  //     return;
-  //   }
-
-  //   refreshingError = null;
-  //   mutation.isRefreshing = true;
-
-  //   final f = functionality.loadNext!();
-  //   _saveOrWait(f);
-  //   if (saveStatus != null) {
-  //     saveStatus!(f);
-  //     return;
-  //   }
-
-  //   f.then((value) {
-  //     _cellCount = value;
-  //     _refreshing = false;
-
-  //     update(null);
-  //   }).onError((error, stackTrace) {
-  //     refreshingError = error;
-
-  //     update(null);
-
-  //     log("loading next cells in the grid",
-  //         level: Level.WARNING.value, error: error, stackTrace: stackTrace);
-  //   });
-  // }
-
-  // void _f5() {
-  //   if (_locked) {
-  //     return;
-  //   }
-
-  //   if (!_refreshing) {
-  //     scrollUp();
-
-  //     _cellCount = 0;
-  //     _refreshing = true;
-  //     refreshingError = null;
-
-  //     update(null);
-
-  //     _refresh();
-  //   }
-  // }
-
-  // @override
-  // Future onRefresh() {
-  //   if (_locked) {
-  //     return Future.value();
-  //   }
-
-  //   if (!_refreshing) {
-  //     _cellCount = 0;
-  //     _refreshing = true;
-  //     refreshingError = null;
-
-  //     update(null);
-
-  //     return _refresh();
-  //   }
-
-  //   return Future.value();
-  // }

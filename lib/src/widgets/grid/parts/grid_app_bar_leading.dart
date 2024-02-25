@@ -21,11 +21,11 @@ class GridAppBarLeading extends StatelessWidget {
   Widget build(BuildContext context) {
     final selection = state.selection;
 
-    if (selection.selected.isNotEmpty) {
+    if (selection.isNotEmpty) {
       return IconButton(
         onPressed: selection.reset,
         icon: Badge.count(
-          count: selection.selected.length,
+          count: selection.count,
           child: const Icon(
             Icons.close_rounded,
           ),
@@ -36,10 +36,6 @@ class GridAppBarLeading extends StatelessWidget {
     final backBehaviour = state.widget.functionality.backButton;
 
     return switch (backBehaviour) {
-      DefaultGridBackButton() => IconButton(
-          onPressed: selection.reset,
-          icon: const Icon(Icons.arrow_back),
-        ),
       CountGridBackButton() => IconButton(
           onPressed: selection.reset,
           icon: Badge.count(
@@ -48,6 +44,11 @@ class GridAppBarLeading extends StatelessWidget {
           ),
         ),
       OverrideGridBackButton() => backBehaviour.child,
+      EmptyGridBackButton() => const SizedBox.shrink(),
+      CallbackGridBackButton() => IconButton(
+          onPressed: selection.reset,
+          icon: const Icon(Icons.arrow_back),
+        ),
     };
   }
 }

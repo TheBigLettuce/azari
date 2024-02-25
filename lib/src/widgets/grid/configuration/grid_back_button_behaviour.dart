@@ -11,8 +11,14 @@ sealed class GridBackButtonBehaviour {
   const GridBackButtonBehaviour();
 }
 
-class DefaultGridBackButton implements GridBackButtonBehaviour {
-  const DefaultGridBackButton({
+class EmptyGridBackButton implements GridBackButtonBehaviour {
+  const EmptyGridBackButton({required this.inherit});
+
+  final bool inherit;
+}
+
+class CallbackGridBackButton implements GridBackButtonBehaviour {
+  const CallbackGridBackButton({
     this.onPressed = _doNothing,
   });
 

@@ -27,9 +27,8 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
   late int count = widget.count ?? 0;
 
   void update() {
-    count = widget.instance._state.gridKey.currentState?.mutationInterface
-            .cellCount ??
-        0;
+    count =
+        widget.instance._state.gridKey.currentState?.mutation.cellCount ?? 0;
 
     setState(() {});
   }

@@ -29,6 +29,12 @@ import 'package:gallery/src/pages/booru/random.dart';
 import 'package:gallery/src/pages/more/favorite_booru_page.dart';
 import 'package:gallery/src/pages/more/settings/settings_widget.dart';
 import 'package:gallery/src/pages/more/tags/tags_page.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_refresh_behaviour.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_search_widget.dart';
+import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
+import 'package:gallery/src/widgets/grid/configuration/page_description.dart';
+import 'package:gallery/src/widgets/grid/configuration/page_switcher.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/pages/booru/bookmark_button.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
@@ -182,7 +188,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
     favoritesWatcher = Dbs.g.main.favoriteBoorus
         .watchLazy(fireImmediately: false)
         .listen((event) {
-      state.gridKey.currentState?.imageViewKey.currentState?.setState(() {});
+      state.imageViewKey.currentState?.setState(() {});
       setState(() {});
     });
 
@@ -315,6 +321,7 @@ class _MainBooruGridState extends State<MainBooruGrid>
                     !HiddenBooruPost.isHidden(element.id, api.booru))
                 .toList()));
         restore.updateTime();
+        restore.updatePage(api.currentPage);
         if (widget.mainGrid.posts.countSync() - oldCount < 3) {
           return await _addLast();
         }
@@ -346,91 +353,163 @@ class _MainBooruGridState extends State<MainBooruGrid>
                 (context) => GridFrame<Post>(
                   key: state.gridKey,
                   overrideController: scrollController,
-                  pages: PageSwitcher(
-                      [
-                        _IconWithCount(
-                          count: FavoriteBooru.count,
-                          icon: const Icon(Icons.favorite_rounded),
-                        ),
-                        _IconWithCount(
-                          count: Dbs.g.main.gridStateBoorus.countSync(),
-                          icon: const Icon(Icons.bookmarks_rounded),
-                        ),
-                        const Icon(Icons.tag_rounded),
-                      ],
-                      (i) => switch (i) {
-                            0 => PageDescription(
-                                  search: SearchAndFocus(
-                                    favoriteBooruState.searchWidget(
-                                        favoriteBooruState.context,
-                                        count:
-                                            favoriteBooruState.loader.count()),
-                                    favoriteBooruState.searchFocus,
-                                  ),
-                                  appIcons: favoriteBooruState.appBarButtons(),
-                                  slivers: [
-                                    GlueProvider<FavoriteBooru>(
-                                      glue: widget.generateGlue(),
-                                      generate: widget.generateGlue,
-                                      child: FavoriteBooruPage(
-                                        conroller: scrollController,
-                                        state: favoriteBooruState,
-                                      ),
-                                    ),
-                                  ]),
-                            2 => PageDescription(slivers: [
-                                TagsPage(
-                                  tagManager: TagManager.unrestorable(
-                                      restore, tagManager.watch),
-                                  booru: api,
-                                  generateGlue: widget.generateGlue,
-                                )
-                              ]),
-                            1 => PageDescription(slivers: [
-                                BookmarkPage(
-                                  generateGlue: widget.generateGlue,
-                                  restoreSelectedPage:
-                                      widget.restoreSelectedPage,
-                                  saveSelectedPage: widget.saveSelectedPage,
-                                ),
-                              ]),
-                            int() => const PageDescription(slivers: []),
-                          }),
-                  systemNavigationInsets: widget.viewPadding,
-                  selectionGlue: glue,
-                  registerNotifiers: (child) => TagManagerNotifier.restorable(
-                      tagManager, BooruAPINotifier(api: api, child: child)),
-                  inlineMenuButtonItems: true,
-                  menuButtonItems: [
-                    gridButton(state.settings, gridSettings),
-                  ],
-                  addIconsImage: (post) => [
-                    BooruGridActions.favorites(context, post),
-                    BooruGridActions.download(context, api),
-                    BooruGridActions.hide(context, () {
-                      setState(() {});
+                  imageViewDescription: ImageViewDescription(
+                    pageViewScrollingOffset: restore.copy.scrollPositionTags,
+                    initalCell: restore.copy.selectedPost,
+                    imageViewKey: state.imageViewKey,
+                    beforeImageViewRestore: () {
+                      final last = restore.last();
 
-                      final imgState =
-                          state.gridKey.currentState?.imageViewKey.currentState;
-                      if (imgState == null) {
-                        return;
+                      if (last != null) {
+                        final db = DbsOpen.secondaryGridName(last.copy.name);
+
+                        WidgetsBinding.instance
+                            .scheduleFrameCallback((timeStamp) {
+                          Navigator.of(context, rootNavigator: false)
+                              .push(MaterialPageRoute(
+                            builder: (context) {
+                              return SecondaryBooruGrid(
+                                restore: last,
+                                noRestoreOnBack: false,
+                                api: BooruAPIState.fromEnum(api.booru,
+                                    page: last.copy.page),
+                                tagManager: tagManager,
+                                instance: db,
+                                generateGlue: widget.generateGlue,
+                              );
+                            },
+                          ));
+                        });
                       }
-
-                      imgState.loadCells(
-                          imgState.currentPage, imgState.cellCount);
-                      imgState.setState(() {});
-                    }, post: post),
-                  ],
-                  statistics: const ImageViewStatistics(
+                    },
+                    statistics: const ImageViewStatistics(
                       swiped: StatisticsBooru.addSwiped,
-                      viewed: StatisticsBooru.addViewed),
-                  onExitImageView: () => restore.removeScrollTagsSelectedPost(),
+                      viewed: StatisticsBooru.addViewed,
+                    ),
+                    onExitImageView: () =>
+                        restore.removeScrollTagsSelectedPost(),
+                    addIconsImage: (post) => [
+                      BooruGridActions.favorites(context, post),
+                      BooruGridActions.download(context, api),
+                      BooruGridActions.hide(context, () {
+                        setState(() {});
+
+                        final imgState = state.imageViewKey.currentState;
+                        if (imgState == null) {
+                          return;
+                        }
+
+                        imgState.loadCells(
+                            imgState.currentPage, imgState.cellCount);
+                        imgState.setState(() {});
+                      }, post: post),
+                    ],
+                  ),
+                  functionality: GridFunctionality(
+                    selectionGlue: glue,
+                    loadNext: _addLast,
+                    refresh: AsyncGridRefresh(_clearAndRefresh),
+                    download: _download,
+                    search: OverrideGridSearchWidget(
+                      SearchAndFocus(
+                          searchWidget(context, hint: api.booru.name),
+                          searchFocus, onPressed: () {
+                        if (currentlyHighlightedTag != "") {
+                          state.mainFocus.unfocus();
+                          tagManager.onTagPressed(
+                            context,
+                            Tag.string(tag: currentlyHighlightedTag),
+                            api.booru,
+                            true,
+                            generateGlue: widget.generateGlue,
+                          );
+                        }
+                      }),
+                    ),
+                    refreshBehaviour: RetainedGridRefreshBehaviour(
+                      widget.refreshingInterface,
+                    ),
+                    updateScrollPosition: (pos, {infoPos, selectedCell}) =>
+                        restore.updateScrollPosition(pos,
+                            infoPos: infoPos,
+                            selectedCell: selectedCell,
+                            page: api.currentPage),
+                    onError: (error) {
+                      return OutlinedButton(
+                        onPressed: () {
+                          launchUrl(Uri.https(api.booru.url),
+                              mode: LaunchMode.externalApplication);
+                        },
+                        child:
+                            Text(AppLocalizations.of(context)!.openInBrowser),
+                      );
+                    },
+                    registerNotifiers: (child) => TagManagerNotifier.restorable(
+                        tagManager, BooruAPINotifier(api: api, child: child)),
+                  ),
+                  systemNavigationInsets: widget.viewPadding,
                   description: GridDescription(
                     [
                       BooruGridActions.download(context, api),
                       BooruGridActions.favorites(context, null,
                           showDeleteSnackbar: true),
                       BooruGridActions.hide(context, () => setState(() {})),
+                    ],
+                    hideTitle: true,
+                    pages: PageSwitcher(
+                        [
+                          _IconWithCount(
+                            count: FavoriteBooru.count,
+                            icon: const Icon(Icons.favorite_rounded),
+                          ),
+                          _IconWithCount(
+                            count: Dbs.g.main.gridStateBoorus.countSync(),
+                            icon: const Icon(Icons.bookmarks_rounded),
+                          ),
+                          const Icon(Icons.tag_rounded),
+                        ],
+                        (i) => switch (i) {
+                              0 => PageDescription(
+                                    search: SearchAndFocus(
+                                      favoriteBooruState.searchWidget(
+                                          favoriteBooruState.context,
+                                          count: favoriteBooruState.loader
+                                              .count()),
+                                      favoriteBooruState.searchFocus,
+                                    ),
+                                    appIcons:
+                                        favoriteBooruState.appBarButtons(),
+                                    slivers: [
+                                      GlueProvider<FavoriteBooru>(
+                                        glue: widget.generateGlue(),
+                                        generate: widget.generateGlue,
+                                        child: FavoriteBooruPage(
+                                          conroller: scrollController,
+                                          state: favoriteBooruState,
+                                        ),
+                                      ),
+                                    ]),
+                              2 => PageDescription(slivers: [
+                                  TagsPage(
+                                    tagManager: TagManager.unrestorable(
+                                        restore, tagManager.watch),
+                                    booru: api,
+                                    generateGlue: widget.generateGlue,
+                                  )
+                                ]),
+                              1 => PageDescription(slivers: [
+                                  BookmarkPage(
+                                    generateGlue: widget.generateGlue,
+                                    restoreSelectedPage:
+                                        widget.restoreSelectedPage,
+                                    saveSelectedPage: widget.saveSelectedPage,
+                                  ),
+                                ]),
+                              int() => const PageDescription(slivers: []),
+                            }),
+                    inlineMenuButtonItems: true,
+                    menuButtonItems: [
+                      gridButton(state.settings, gridSettings),
                     ],
                     pageName: AppLocalizations.of(context)!.booruLabel,
                     keybindsDescription:
@@ -442,70 +521,9 @@ class _MainBooruGridState extends State<MainBooruGrid>
                   ),
                   hasReachedEnd: () => reachedEnd,
                   mainFocus: state.mainFocus,
-                  scaffoldKey: state.scaffoldKey,
-                  // noteInterface: NoteBooru.interface(setState),
-                  onError: (error) {
-                    return OutlinedButton(
-                      onPressed: () {
-                        launchUrl(Uri.https(api.booru.url),
-                            mode: LaunchMode.externalApplication);
-                      },
-                      child: Text(AppLocalizations.of(context)!.openInBrowser),
-                    );
-                  },
                   getCell: (i) => widget.mainGrid.posts.getSync(i + 1)!,
-                  loadNext: _addLast,
-                  refresh: _clearAndRefresh,
-                  refreshInterface: widget.refreshingInterface,
-                  download: _download,
-                  updateScrollPosition: (pos, {infoPos, selectedCell}) =>
-                      restore.updateScrollPosition(pos,
-                          infoPos: infoPos,
-                          selectedCell: selectedCell,
-                          page: api.currentPage),
                   initalScrollPosition: restore.copy.scrollPositionGrid,
                   initalCellCount: widget.mainGrid.posts.countSync(),
-                  beforeImageViewRestore: () {
-                    final last = restore.last();
-
-                    if (last != null) {
-                      final db = DbsOpen.secondaryGridName(last.copy.name);
-
-                      WidgetsBinding.instance
-                          .scheduleFrameCallback((timeStamp) {
-                        Navigator.of(context, rootNavigator: false)
-                            .push(MaterialPageRoute(
-                          builder: (context) {
-                            return SecondaryBooruGrid(
-                              restore: last,
-                              noRestoreOnBack: false,
-                              api: BooruAPIState.fromEnum(api.booru,
-                                  page: last.copy.page),
-                              tagManager: tagManager,
-                              instance: db,
-                              generateGlue: widget.generateGlue,
-                            );
-                          },
-                        ));
-                      });
-                    }
-                  },
-                  searchWidget: SearchAndFocus(
-                      searchWidget(context, hint: api.booru.name), searchFocus,
-                      onPressed: () {
-                    if (currentlyHighlightedTag != "") {
-                      state.mainFocus.unfocus();
-                      tagManager.onTagPressed(
-                        context,
-                        Tag.string(tag: currentlyHighlightedTag),
-                        api.booru,
-                        true,
-                        generateGlue: widget.generateGlue,
-                      );
-                    }
-                  }),
-                  pageViewScrollingOffset: restore.copy.scrollPositionTags,
-                  initalCell: restore.copy.selectedPost,
                 ),
                 overrideBooru: api.booru,
                 canPop: false,

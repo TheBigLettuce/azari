@@ -43,22 +43,16 @@ enum GridLayoutType {
         GridLayoutType.grid => GridLayout<T>(
             base.columns,
             base.aspectRatio,
-            hideAlias: base.hideName,
-            tightMode: tightMode,
           ),
         GridLayoutType.gridQuilted => GridQuiltedLayout<T>(
             base.columns,
             base.aspectRatio,
             gridSeed: gridSeed,
-            hideAlias: base.hideName,
-            tightMode: tightMode,
           ),
         GridLayoutType.gridMasonry => GridMasonryLayout<T>(
             base.columns,
             base.aspectRatio,
             gridSeed: gridSeed,
-            hideAlias: base.hideName,
-            tightMode: tightMode,
           ),
       };
 }

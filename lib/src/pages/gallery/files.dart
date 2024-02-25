@@ -14,7 +14,6 @@ import 'package:gallery/src/db/base/system_gallery_directory_file_functionality_
 import 'package:gallery/src/db/schemas/grid_settings/files.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
-import 'package:gallery/src/db/schemas/gallery/note_gallery.dart';
 import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
@@ -23,6 +22,10 @@ import 'package:gallery/src/interfaces/gallery/gallery_files_extra.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/pages/booru/grid_settings_button.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_back_button_behaviour.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_search_widget.dart';
+import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/pages/gallery/directories.dart';
@@ -92,10 +95,8 @@ class _GalleryFilesState extends State<GalleryFiles>
     ..setRefreshingStatusCallback((i, inRefresh, empty) {
       if (empty) {
         // state.gridKey.currentState?.selection.currentBottomSheet?.close();
-        state.gridKey.currentState?.imageViewKey.currentState?.key.currentState
-            ?.closeEndDrawer();
-        final imageViewContext =
-            state.gridKey.currentState?.imageViewKey.currentContext;
+        state.imageViewKey.currentState?.key.currentState?.closeEndDrawer();
+        final imageViewContext = state.imageViewKey.currentContext;
         if (imageViewContext != null) {
           Navigator.of(imageViewContext).pop();
         }
@@ -105,22 +106,23 @@ class _GalleryFilesState extends State<GalleryFiles>
         return;
       }
 
-      state.gridKey.currentState?.mutationInterface.unselectAll();
+      state.gridKey.currentState?.selection.reset();
 
       stream.add(i);
 
       if (!inRefresh) {
-        state.gridKey.currentState?.mutationInterface.setIsRefreshing(false);
+        state.gridKey.currentState?.mutation.isRefreshing = false;
+        state.gridKey.currentState?.refreshingStatus.unlock();
 
         performSearch(searchTextController.text);
         if (i == 1) {
-          state.gridKey.currentState?.imageViewKey.currentState?.hardRefresh();
+          state.imageViewKey.currentState?.hardRefresh();
         }
         setState(() {});
       }
     })
     ..setRefreshGridCallback(() {
-      if (state.gridKey.currentState?.mutationInterface.isRefreshing == false) {
+      if (state.gridKey.currentState?.mutation.isRefreshing == false) {
         _refresh();
       }
     })
@@ -234,7 +236,7 @@ class _GalleryFilesState extends State<GalleryFiles>
 
   void _refresh() {
     stream.add(0);
-    state.gridKey.currentState?.mutationInterface.setIsRefreshing(true);
+    state.gridKey.currentState?.mutation.isRefreshing = true;
     widget.api.refresh();
   }
 
@@ -248,133 +250,65 @@ class _GalleryFilesState extends State<GalleryFiles>
           (context) => GridFrame(
             key: state.gridKey,
             getCell: (i) => widget.api.directCell(i),
-            initalScrollPosition: 0,
-            scaffoldKey: state.scaffoldKey,
+            functionality: GridFunctionality(
+                backButton: CallbackGridBackButton(
+                  onPressed: () {
+                    final filterMode = currentFilteringMode();
+                    if (filterMode != FilteringMode.noFilter) {
+                      resetSearch();
+                      return;
+                    }
+                    Navigator.pop(context);
+                  },
+                ),
+                progressTicker: stream.stream,
+                selectionGlue: GlueProvider.of(context),
+                refresh: extra.supportsDirectRefresh
+                    ? AsyncGridRefresh(() async {
+                        final i = await widget.api.refresh();
+
+                        performSearch(searchTextController.text);
+
+                        return i;
+                      })
+                    : RetainedGridRefresh(_refresh),
+                search: OverrideGridSearchWidget(
+                  SearchAndFocus(
+                    searchWidget(context, hint: widget.dirName),
+                    searchFocus,
+                  ),
+                )),
             systemNavigationInsets: widget.viewPadding ?? EdgeInsets.zero,
             hasReachedEnd: () => true,
-            selectionGlue: GlueProvider.of(context),
-            statistics: const ImageViewStatistics(
+            imageViewDescription: ImageViewDescription(
+              imageViewKey: state.imageViewKey,
+              statistics: const ImageViewStatistics(
                 swiped: StatisticsGallery.addFilesSwiped,
-                viewed: StatisticsGallery.addViewedFiles),
-            addIconsImage: (cell) {
-              return widget.callback != null
-                  ? [
-                      _chooseAction(),
-                    ]
-                  : extra.isTrash
-                      ? [
-                          _restoreFromTrash(),
-                        ]
-                      : [
-                          if (MiscSettings.current.filesExtendedActions &&
-                              cell.isVideo)
-                            _loadVideoThumbnailAction(state),
-                          _addToFavoritesAction(cell, plug),
-                          _deleteAction(),
-                          _copyAction(state, plug),
-                          _moveAction(state, plug)
-                        ];
-            },
-            showCount: true,
-            searchWidget: SearchAndFocus(
-                searchWidget(context, hint: widget.dirName), searchFocus),
+                viewed: StatisticsGallery.addViewedFiles,
+              ),
+              addIconsImage: (cell) {
+                return widget.callback != null
+                    ? [
+                        _chooseAction(),
+                      ]
+                    : extra.isTrash
+                        ? [
+                            _restoreFromTrash(),
+                          ]
+                        : [
+                            if (MiscSettings.current.filesExtendedActions &&
+                                cell.isVideo)
+                              _loadVideoThumbnailAction(state),
+                            _addToFavoritesAction(cell, plug),
+                            _deleteAction(),
+                            _copyAction(state, plug),
+                            _moveAction(state, plug)
+                          ];
+              },
+            ),
+
             mainFocus: state.mainFocus,
-            refresh: extra.supportsDirectRefresh
-                ? () async {
-                    final i = await widget.api.refresh();
 
-                    performSearch(searchTextController.text);
-
-                    return i;
-                  }
-                : () {
-                    _refresh();
-                    return null;
-                  },
-            menuButtonItems: [
-              if (widget.callback == null && extra.isTrash)
-                IconButton(
-                    onPressed: () {
-                      Navigator.of(context, rootNavigator: true)
-                          .push(DialogRoute(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: Text(AppLocalizations.of(context)!
-                                      .emptyTrashTitle),
-                                  content: Text(
-                                    AppLocalizations.of(context)!
-                                        .thisIsPermanent,
-                                    style: TextStyle(
-                                        color: Colors.red.harmonizeWith(
-                                            Theme.of(context)
-                                                .colorScheme
-                                                .primary)),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                        onPressed: () {
-                                          PlatformFunctions.emptyTrash();
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(
-                                            AppLocalizations.of(context)!.yes)),
-                                    TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(
-                                            AppLocalizations.of(context)!.no))
-                                  ],
-                                );
-                              }));
-                    },
-                    icon: const Icon(Icons.delete_sweep_outlined)),
-              if (widget.callback != null)
-                IconButton(
-                    onPressed: () {
-                      if (state.gridKey.currentState?.mutationInterface
-                              .isRefreshing !=
-                          false) {
-                        return;
-                      }
-
-                      final upTo = state
-                          .gridKey.currentState?.mutationInterface.cellCount;
-                      if (upTo == null) {
-                        return;
-                      }
-
-                      try {
-                        final n = math.Random.secure().nextInt(upTo);
-
-                        widget.callback?.call(state
-                            .gridKey.currentState!.mutationInterface
-                            .getCell(n));
-                      } catch (e, trace) {
-                        _log.logDefaultImportant(
-                            "getting random number".errorMessage(e), trace);
-
-                        return;
-                      }
-
-                      if (widget.callback!.returnBack) {
-                        Navigator.pop(context);
-                        Navigator.pop(context);
-                      }
-                    },
-                    icon: const Icon(Icons.casino_outlined)),
-              GridSettingsButton(gridSettings,
-                  selectRatio: (ratio) =>
-                      gridSettings.copy(aspectRatio: ratio).save(),
-                  selectHideName: (hideNames) =>
-                      gridSettings.copy(hideName: hideNames).save(),
-                  selectGridLayout: (layoutType) =>
-                      gridSettings.copy(layoutType: layoutType).save(),
-                  selectGridColumn: (columns) =>
-                      gridSettings.copy(columns: columns).save()),
-            ],
-            inlineMenuButtonItems: true,
             // noteInterface: NoteGallery.interface((
             //     {int? replaceIndx, bool addNote = false, int? removeNote}) {
             //   if (state.gridKey.currentState?.mutationInterface.isRefreshing ==
@@ -384,15 +318,7 @@ class _GalleryFilesState extends State<GalleryFiles>
 
             //   _refresh();
             // }),
-            onBack: () {
-              final filterMode = currentFilteringMode();
-              if (filterMode != FilteringMode.noFilter) {
-                resetSearch();
-                return;
-              }
-              Navigator.pop(context);
-            },
-            progressTicker: stream.stream,
+
             description: GridDescription(
               widget.callback != null
                   ? []
@@ -411,6 +337,91 @@ class _GalleryFilesState extends State<GalleryFiles>
                           _copyAction(state, plug),
                           _moveAction(state, plug),
                         ],
+              menuButtonItems: [
+                if (widget.callback == null && extra.isTrash)
+                  IconButton(
+                      onPressed: () {
+                        Navigator.of(context, rootNavigator: true)
+                            .push(DialogRoute(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: Text(AppLocalizations.of(context)!
+                                        .emptyTrashTitle),
+                                    content: Text(
+                                      AppLocalizations.of(context)!
+                                          .thisIsPermanent,
+                                      style: TextStyle(
+                                          color: Colors.red.harmonizeWith(
+                                              Theme.of(context)
+                                                  .colorScheme
+                                                  .primary)),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () {
+                                            PlatformFunctions.emptyTrash();
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text(
+                                              AppLocalizations.of(context)!
+                                                  .yes)),
+                                      TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text(
+                                              AppLocalizations.of(context)!.no))
+                                    ],
+                                  );
+                                }));
+                      },
+                      icon: const Icon(Icons.delete_sweep_outlined)),
+                if (widget.callback != null)
+                  IconButton(
+                      onPressed: () {
+                        if (state.gridKey.currentState?.mutation.isRefreshing !=
+                            false) {
+                          return;
+                        }
+
+                        final upTo =
+                            state.gridKey.currentState?.mutation.cellCount;
+                        if (upTo == null) {
+                          return;
+                        }
+
+                        try {
+                          final n = math.Random.secure().nextInt(upTo);
+
+                          widget.callback?.call(
+                              state.gridKey.currentState!.mutation.getCell(n));
+                        } catch (e, trace) {
+                          _log.logDefaultImportant(
+                              "getting random number".errorMessage(e), trace);
+
+                          return;
+                        }
+
+                        if (widget.callback!.returnBack) {
+                          Navigator.pop(context);
+                          Navigator.pop(context);
+                        }
+                      },
+                      icon: const Icon(Icons.casino_outlined)),
+                GridSettingsButton(gridSettings,
+                    selectRatio: (ratio) =>
+                        gridSettings.copy(aspectRatio: ratio).save(),
+                    selectHideName: (hideNames) =>
+                        gridSettings.copy(hideName: hideNames).save(),
+                    selectGridLayout: (layoutType) =>
+                        gridSettings.copy(layoutType: layoutType).save(),
+                    selectGridColumn: (columns) =>
+                        gridSettings.copy(columns: columns).save()),
+              ],
+              tightMode: true,
+              hideTitle: gridSettings.hideName,
+              inlineMenuButtonItems: true,
               bottomWidget: widget.callback != null
                   ? CopyMovePreview.hintWidget(
                       context, AppLocalizations.of(context)!.chooseFileNotice)

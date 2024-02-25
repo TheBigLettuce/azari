@@ -102,8 +102,7 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
             setState(() {});
           } catch (_) {}
 
-          state.gridKey.currentState?.imageViewKey.currentState
-              ?.refreshPalette();
+          state.imageViewKey.currentState?.refreshPalette();
         });
       },
       true,
@@ -125,8 +124,7 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
             setState(() {});
           } catch (_) {}
 
-          state.gridKey.currentState?.imageViewKey.currentState
-              ?.refreshPalette();
+          state.imageViewKey.currentState?.refreshPalette();
         }
       },
     );
@@ -187,8 +185,7 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
       bool move,
       GridSkeletonStateFilter<SystemGalleryDirectoryFile> state,
       GalleryPlug plug) {
-    state.gridKey.currentState?.imageViewKey.currentState?.wrapNotifiersKey
-        .currentState
+    state.imageViewKey.currentState?.wrapNotifiersKey.currentState
         ?.pauseVideo();
     Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
       builder: (context) {
@@ -250,8 +247,8 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
                   joinable: false),
             ));
       },
-    )).then((value) => state.gridKey.currentState?.imageViewKey.currentState
-        ?.wrapNotifiersKey.currentState
+    )).then((value) => state
+        .imageViewKey.currentState?.wrapNotifiersKey.currentState
         ?.unpauseVideo());
   }
 

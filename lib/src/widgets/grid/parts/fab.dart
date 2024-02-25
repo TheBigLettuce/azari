@@ -9,18 +9,10 @@ part of '../configuration/grid_fab_type.dart';
 
 class _Fab extends StatefulWidget {
   final ScrollController controller;
-  // final void Function(double, {double? infoPos, int? selectedCell})? scrollPos;
-  // final SelectionGlue selectionGlue;
-  // final EdgeInsets systemNavigationInsets;
-  // final PreferredSizeWidget? footer;
 
   const _Fab({
     super.key,
     required this.controller,
-    // required this.selectionGlue,
-    // required this.systemNavigationInsets,
-    // required this.scrollPos,
-    // required this.footer,
   });
 
   @override
@@ -34,35 +26,37 @@ class __FabState extends State<_Fab> {
   void initState() {
     super.initState();
 
-    final pos = widget.controller.positions.toList();
-    if (pos.isEmpty) {
-      return;
-    }
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      final pos = widget.controller.positions.toList();
+      if (pos.isEmpty) {
+        return;
+      }
 
-    pos.first.isScrollingNotifier.addListener(_listener);
+      pos.first.isScrollingNotifier.addListener(_listener);
+    });
   }
 
   @override
   void dispose() {
+    super.dispose();
+
     final pos = widget.controller.positions.toList();
     if (pos.isEmpty) {
       return;
     }
 
-    pos.first.isScrollingNotifier.removeListener(_listener);
-
-    super.dispose();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      pos.first.isScrollingNotifier.removeListener(_listener);
+    });
   }
 
-  void _updateFab({required bool fab, required bool foreground}) {
+  void _updateFab({required bool fab}) {
     if (fab != showFab) {
       showFab = fab;
-      if (!foreground) {
-        try {
-          // widget.hideShowNavBar(!showFab);
-          setState(() {});
-        } catch (_) {}
-      }
+      try {
+        // widget.hideShowNavBar(!showFab);
+        setState(() {});
+      } catch (_) {}
     }
   }
 
@@ -79,13 +73,13 @@ class __FabState extends State<_Fab> {
       _updateFab(
         fab: false,
         // foreground: inImageView,
-        foreground: true,
+        // foreground: true,
       );
     } else {
       _updateFab(
         fab: !controller.position.isScrollingNotifier.value,
         // foreground: inImageView,
-        foreground: true,
+        // foreground: true,
       );
     }
   }
@@ -105,24 +99,18 @@ class __FabState extends State<_Fab> {
                   duration: 200.ms, curve: Easing.emphasizedAccelerate);
               // widget.scrollPos?.call(scroll);
             },
-            child: Padding(
-              padding: EdgeInsets.only(
-                right: 4,
-                bottom: 4 + GridBottomPaddingProvider.of(context),
-              ),
-              child: FloatingActionButton(
-                elevation: 2,
-                onPressed: () {
-                  widget.controller.animateTo(
-                    0,
-                    duration: const Duration(milliseconds: 200),
-                    curve: Easing.emphasizedAccelerate,
-                  );
+            child: FloatingActionButton(
+              elevation: 2,
+              onPressed: () {
+                widget.controller.animateTo(
+                  0,
+                  duration: const Duration(milliseconds: 200),
+                  curve: Easing.emphasizedAccelerate,
+                );
 
-                  StatisticsGeneral.addScrolledUp();
-                },
-                child: const Icon(Icons.arrow_upward),
-              ),
+                StatisticsGeneral.addScrolledUp();
+              },
+              child: const Icon(Icons.arrow_upward),
             ),
           ).animate().fadeIn(curve: Easing.standard);
   }

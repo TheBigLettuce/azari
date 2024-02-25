@@ -12,7 +12,6 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/interfaces/note_interface.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid/wrappers/wrap_grid_action_button.dart';
 import 'package:gallery/src/widgets/image_view/loading_builder.dart';
@@ -429,7 +428,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                                 (e) => WrapGridActionButton(e.icon, () {
                                   e.onPress([drawCell(currentPage)]);
                                 }, false,
-                                    followColorTheme: true,
                                     color: e.color,
                                     play: e.play,
                                     onLongPress: e.onLongPress == null

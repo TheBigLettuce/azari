@@ -27,8 +27,8 @@ import '../wrappers/wrap_grid_action_button.dart';
 // }
 
 class SelectionGlueState {
-  List<Widget>? actions;
-  int? count;
+  (List<Widget> actions, void Function() reset)? actions;
+  int count = 0;
   final void Function(bool) hide;
   final Future Function(bool backward)? _playAnimation;
 
@@ -60,62 +60,62 @@ class SelectionGlueState {
         persistentBarHeight: persistentBarHeight,
         barHeight: barHeight,
         updateCount: (c) {
-          count = c;
+          if (c != count) {
+            count = c;
 
-          setState(() {});
+            setState(() {});
+          }
         },
         close: () => _close(setState),
         open: (addActions, selection) {
           if (actions != null || addActions.isEmpty) {
             return;
           }
-          final a = [
-            if (selection.noAppBar)
-              WrapGridActionButton(Icons.close, selection.reset, true,
-                  onLongPress: null,
-                  showOnlyWhenSingle: false,
-                  play: false,
-                  animate: false),
-            ...addActions.map((e) => WrapGridActionButton(
-                  e.icon,
-                  () {
-                    e.onPress(selection.selected.values.toList());
+          final a = addActions
+              .map((e) => WrapGridActionButton(
+                    e.icon,
+                    () {
+                      selection.use(e.onPress);
 
-                    if (e.closeOnPress) {
-                      selection.selected.clear();
-                      actions = null;
+                      if (e.closeOnPress) {
+                        selection.reset();
+                      }
+                    },
+                    false,
+                    animate: e.animate,
+                    color: e.color,
+                    onLongPress: e.onLongPress == null
+                        ? null
+                        : () {
+                            selection.use(e.onLongPress!);
 
-                      setState(() {});
-                    }
-                  },
-                  false,
-                  animate: e.animate,
-                  color: e.color,
-                  onLongPress: e.onLongPress == null
-                      ? null
-                      : () {
-                          e.onLongPress!(selection.selected.values.toList());
-
-                          if (e.closeOnPress) {
-                            selection.selected.clear();
-                            actions = null;
-
-                            setState(() {});
-                          }
-                        },
-                  play: e.play,
-                  backgroundColor: e.backgroundColor,
-                  showOnlyWhenSingle: e.showOnlyWhenSingle,
-                ))
-          ];
+                            if (e.closeOnPress) {
+                              selection.reset();
+                            }
+                          },
+                    play: e.play,
+                    // backgroundColor: e.backgroundColor,
+                    showOnlyWhenSingle: e.showOnlyWhenSingle,
+                  ))
+              .toList();
 
           if (_playAnimation != null) {
             _playAnimation!(false).then((value) => setState(() {
-                  actions = a;
+                  actions = (
+                    a,
+                    () {
+                      selection.reset();
+                    }
+                  );
                 }));
           } else {
             setState(() {
-              actions = a;
+              actions = (
+                a,
+                () {
+                  selection.reset();
+                }
+              );
             });
           }
         },

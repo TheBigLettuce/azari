@@ -120,7 +120,7 @@ class Gelbooru implements BooruAPIState {
   @override
   Future<(List<Post>, int?)> page(int p, String tags, BooruTagging excludedTags,
       {SafeMode? overrideSafeMode}) {
-    _page = p + 1;
+    _page = p;
     return _commonPosts(tags, p, excludedTags,
         overrideSafeMode: overrideSafeMode);
   }
@@ -221,7 +221,7 @@ class Gelbooru implements BooruAPIState {
               overrideSafeMode: overrideSafeMode)
           .then((value) {
         if (value.$1.isNotEmpty) {
-          _page++;
+          _page += 1;
         }
         return Future.value(value);
       });

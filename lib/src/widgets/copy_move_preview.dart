@@ -95,7 +95,7 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
           },
           tight: true,
           download: null,
-          hidealias: true,
+          hideAlias: true,
           shadowOnTop: shadow,
           circle: true,
         ),

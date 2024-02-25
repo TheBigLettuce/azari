@@ -62,44 +62,54 @@ class __DiscoverTabState extends State<_DiscoverTab> {
         key: state.gridKey,
         getCell: (i) => widget.entries[i],
         initalScrollPosition: widget.pagingContainer.scrollPos,
-        overrideOnPress: (context, cell) {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (context) {
-              return DiscoverAnimeInfoPage(entry: cell);
-            },
-          ));
-        },
+        functionality: GridFunctionality(
+          loadNext: () async {
+            final p = await widget.api.top(widget.pagingContainer.page + 1);
+
+            widget.pagingContainer.page += 1;
+
+            if (p.isEmpty) {
+              _reachedEnd = true;
+            }
+            widget.entries.addAll(p);
+
+            return widget.entries.length;
+          },
+          refreshBehaviour: RetainedGridRefreshBehaviour(
+            widget.pagingContainer.refreshingInterface,
+          ),
+          updateScrollPosition: widget.pagingContainer.updateScrollPos,
+          selectionGlue:
+              GlueProvider.generateOf<AnimeEntry, AnimeEntry>(context),
+          refresh: AsyncGridRefresh(() async {
+            widget.entries.clear();
+            widget.pagingContainer.page = 0;
+            _reachedEnd = false;
+
+            final p = await widget.api.top(widget.pagingContainer.page);
+
+            widget.entries.addAll(p);
+
+            return widget.entries.length;
+          }),
+          onPressed:
+              OverrideGridOnCellPressBehaviour(onPressed: (context, idx) {
+            final cell =
+                MutationInterfaceProvider.of<AnimeEntry>(context).getCell(idx);
+
+            Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return DiscoverAnimeInfoPage(
+                  entry: cell,
+                );
+              },
+            ));
+          }),
+        ),
         initalCellCount: widget.entries.length,
-        scaffoldKey: state.scaffoldKey,
         systemNavigationInsets: widget.viewInsets,
         hasReachedEnd: () => _reachedEnd,
-        selectionGlue: GlueProvider.generateOf<AnimeEntry, AnimeEntry>(context),
         mainFocus: state.mainFocus,
-        refresh: () async {
-          widget.entries.clear();
-          widget.pagingContainer.page = 0;
-          _reachedEnd = false;
-
-          final p = await widget.api.top(widget.pagingContainer.page);
-
-          widget.entries.addAll(p);
-
-          return widget.entries.length;
-        },
-        updateScrollPosition: widget.pagingContainer.updateScrollPos,
-        refreshInterface: widget.pagingContainer.refreshingInterface,
-        loadNext: () async {
-          final p = await widget.api.top(widget.pagingContainer.page + 1);
-
-          widget.pagingContainer.page += 1;
-
-          if (p.isEmpty) {
-            _reachedEnd = true;
-          }
-          widget.entries.addAll(p);
-
-          return widget.entries.length;
-        },
         description: GridDescription(
           [
             GridAction(Icons.add, (selected) {
@@ -112,8 +122,10 @@ class __DiscoverTabState extends State<_DiscoverTab> {
           layout: GridLayout(
             gridSettings.columns,
             GridAspectRatio.zeroSeven,
-            hideAlias: false,
           ),
+        ),
+        imageViewDescription: ImageViewDescription(
+          imageViewKey: state.imageViewKey,
         ),
       ),
       canPop: false,

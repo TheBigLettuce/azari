@@ -8,7 +8,6 @@
 part of '../grid_frame.dart';
 
 class _AppBar<T extends Cell> extends StatelessWidget {
-  final bool isSelecting;
   final Widget? title;
   final Widget? leading;
   final List<Widget> actions;
@@ -18,7 +17,6 @@ class _AppBar<T extends Cell> extends StatelessWidget {
     super.key,
     required this.actions,
     required this.bottomWidget,
-    required this.isSelecting,
     required this.leading,
     required this.title,
   });
@@ -28,15 +26,15 @@ class _AppBar<T extends Cell> extends StatelessWidget {
     return SliverAppBar(
       backgroundColor:
           Theme.of(context).colorScheme.background.withOpacity(0.95),
-      automaticallyImplyLeading: false,
+      automaticallyImplyLeading: true,
       actions: actions,
       centerTitle: true,
       title: title,
       leading: leading,
       pinned: true,
       stretch: true,
-      snap: !isSelecting,
-      floating: !isSelecting,
+      snap: true,
+      floating: true,
       bottom: bottomWidget,
     );
   }

@@ -35,7 +35,7 @@ class __FinishedTabState extends State<_FinishedTab> {
     _list.addAll(WatchedAnimeEntry.all);
 
     watcher = WatchedAnimeEntry.watchAll((_) {
-      state.gridKey.currentState?.mutationInterface.tick(0);
+      state.gridKey.currentState?.mutation.cellCount = 0;
       _list.clear();
       _list.addAll(WatchedAnimeEntry.all);
 
@@ -44,7 +44,7 @@ class __FinishedTabState extends State<_FinishedTab> {
       if (_filteringValue.isNotEmpty) {
         filter(_filteringValue);
       } else {
-        state.gridKey.currentState?.mutationInterface.tick(_list.length);
+        state.gridKey.currentState?.mutation.cellCount = _list.length;
       }
     });
   }
@@ -61,7 +61,7 @@ class __FinishedTabState extends State<_FinishedTab> {
   }
 
   void filter(String value) {
-    final m = state.gridKey.currentState?.mutationInterface;
+    final m = state.gridKey.currentState?.mutation;
     if (m == null) {
       return;
     }
@@ -73,7 +73,7 @@ class __FinishedTabState extends State<_FinishedTab> {
     _filter.clear();
 
     if (value.isEmpty) {
-      m.restore();
+      m.reset();
 
       return;
     }
@@ -91,32 +91,40 @@ class __FinishedTabState extends State<_FinishedTab> {
       (context) => GridFrame<WatchedAnimeEntry>(
         key: state.gridKey,
         getCell: (i) => _list[_list.length - 1 - i],
-        initalScrollPosition: 0,
-        scaffoldKey: state.scaffoldKey,
+        imageViewDescription: ImageViewDescription(
+          imageViewKey: state.imageViewKey,
+        ),
+        functionality: GridFunctionality(
+            selectionGlue:
+                GlueProvider.generateOf<AnimeEntry, WatchedAnimeEntry>(context),
+            refresh: SynchronousGridRefresh(() => _list.length),
+            onPressed: OverrideGridOnCellPressBehaviour(
+              onPressed: (context, idx) {
+                final cell =
+                    MutationInterfaceProvider.of<WatchedAnimeEntry>(context)
+                        .getCell(idx);
+
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (context) {
+                    return FinishedAnimeInfoPage(entry: cell);
+                  },
+                ));
+              },
+            )),
         systemNavigationInsets: widget.viewInsets,
         hasReachedEnd: () => true,
-        overrideOnPress: (context, cell) {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (context) {
-              return FinishedAnimeInfoPage(entry: cell);
-            },
-          ));
-        },
-        selectionGlue:
-            GlueProvider.generateOf<AnimeEntry, WatchedAnimeEntry>(context),
         mainFocus: state.mainFocus,
-        refresh: () => Future.value(_list.length),
-        description: GridDescription([],
-            keybindsDescription: AppLocalizations.of(context)!.finishedTab,
-            showAppBar: false,
-            ignoreSwipeSelectGesture: true,
-            layout: GridQuiltedLayout(
-              GridColumn.three,
-              GridAspectRatio.one,
-              hideAlias: false,
-              tightMode: true,
-              gridSeed: state.gridSeed,
-            )),
+        description: GridDescription(
+          [],
+          keybindsDescription: AppLocalizations.of(context)!.finishedTab,
+          showAppBar: false,
+          ignoreSwipeSelectGesture: true,
+          layout: GridQuiltedLayout(
+            GridColumn.three,
+            GridAspectRatio.one,
+            gridSeed: state.gridSeed,
+          ),
+        ),
       ),
       canPop: false,
     );

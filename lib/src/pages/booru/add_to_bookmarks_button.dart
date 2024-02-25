@@ -6,20 +6,17 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../widgets/skeletons/grid_skeleton_state.dart';
 
 class AddToBookmarksButton extends StatelessWidget {
   final GridSkeletonState state;
-  final SelectionGlue glue;
   final void Function() f;
 
   const AddToBookmarksButton({
     super.key,
     required this.state,
-    required this.glue,
     required this.f,
   });
 
@@ -33,8 +30,7 @@ class AddToBookmarksButton extends StatelessWidget {
                   content: Text(
             AppLocalizations.of(context)!.bookmarked,
           )));
-          glue.close();
-          state.gridKey.currentState?.selection.selected.clear();
+          state.gridKey.currentState?.selection.reset();
           Navigator.pop(context);
         },
         icon: const Icon(Icons.bookmark_add));

@@ -54,7 +54,7 @@ class _WrapGridPageState<T extends Cell> extends State<WrapGridPage<T>>
   @override
   Widget build(BuildContext context) {
     return SelectionCountNotifier(
-      count: glueState.count ?? 0,
+      count: glueState.count,
       child: GlueProvider<T>(
         generate: _generate,
         glue: glue,
@@ -70,8 +70,8 @@ class _WrapGridPageState<T extends Cell> extends State<WrapGridPage<T>>
                           end: Offset.zero,
                           begin: Offset(0, kBottomNavigationBarHeight)),
                     ],
-                  child: glueState.actions?.isNotEmpty ?? false
-                      ? GlueBottomAppBar(glueState.actions!)
+                  child: glueState.actions?.$1.isNotEmpty ?? false
+                      ? GlueBottomAppBar(glueState)
                       : const SizedBox.shrink()),
           body: widget.child,
         ),

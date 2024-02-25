@@ -12,7 +12,6 @@ import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/pages/more/blacklisted_posts.dart';
-import 'package:gallery/src/pages/more/tags/tags_page.dart';
 
 import '../../widgets/skeletons/drawer/azari_icon.dart';
 import 'dashboard/dashboard.dart';
