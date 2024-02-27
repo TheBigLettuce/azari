@@ -88,7 +88,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
           state,
           (context) => GridFrame<BlacklistedDirectory>(
             key: state.gridKey,
-            layout: const GridSettingsLayoutBehaviour(GridSettingsBase.list()),
+            layout: const GridSettingsLayoutBehaviour(GridSettingsBase.list),
             refreshingStatus: state.refreshingStatus,
             getCell: loader.getCell,
             systemNavigationInsets: MediaQuery.viewPaddingOf(context),

@@ -243,6 +243,13 @@ class _SearchAnimePageState<T extends Cell, I, G>
 
   late final SelectionGlue<T>? _glue = widget.generateGlue?.call();
 
+  GridSettingsBase _settings() => GridSettingsBase(
+        aspectRatio: GridAspectRatio.zeroSeven,
+        columns: gridSettings.columns,
+        layoutType: GridLayoutType.grid,
+        hideName: false,
+      );
+
   @override
   Widget build(BuildContext context) {
     String title(G? genre) {
@@ -262,12 +269,7 @@ class _SearchAnimePageState<T extends Cell, I, G>
             state,
             (context) => GridFrame<T>(
               key: state.gridKey,
-              layout: GridSettingsLayoutBehaviour(GridSettingsBase(
-                aspectRatio: GridAspectRatio.zeroSeven,
-                columns: gridSettings.columns,
-                layoutType: GridLayoutType.grid,
-                hideName: false,
-              )),
+              layout: GridSettingsLayoutBehaviour(_settings),
               refreshingStatus: state.refreshingStatus,
               getCell: (i) => _results[i],
               imageViewDescription:

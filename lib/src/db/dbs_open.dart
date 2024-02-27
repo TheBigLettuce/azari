@@ -13,6 +13,7 @@ const kPrimaryGridSchemas = [
   GridStateSchema,
   TagSchema,
   PostSchema,
+  GridBooruPagingSchema,
 ];
 
 abstract class DbsOpen {
@@ -27,14 +28,14 @@ abstract class DbsOpen {
   }
 
   static Isar secondaryGrid({bool temporary = true}) {
-    return Isar.openSync([PostSchema],
+    return Isar.openSync([PostSchema, GridBooruPagingSchema],
         directory: temporary ? _dbs.temporaryDbDir : _dbs.directory,
         inspector: false,
         name: _microsecSinceEpoch());
   }
 
   static Isar secondaryGridName(String name) {
-    return Isar.openSync([PostSchema],
+    return Isar.openSync([PostSchema, GridBooruPagingSchema],
         directory: _dbs.directory, inspector: false, name: name);
   }
 

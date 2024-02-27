@@ -46,6 +46,8 @@ class GridDescription<T extends Cell> {
 
   final PreferredSizeWidget? footer;
 
+  final GridFrameSettingsButton? settingsButton;
+
   /// Items added in the menu button's children, after the [searchWidget], or the page name
   /// if [searchWidget] is null. If [menuButtonItems] includes only one widget,
   /// it is displayed directly.
@@ -62,6 +64,7 @@ class GridDescription<T extends Cell> {
     this.cellTitleAtBottom = false,
     // this.ignoreImageViewEndDrawer = false,
     this.asSliver = false,
+    this.settingsButton,
     this.inlineMenuButtonItems = false,
     this.tightMode = false,
     this.titleLines = 1,

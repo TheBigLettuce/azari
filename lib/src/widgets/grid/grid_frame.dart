@@ -11,7 +11,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
+import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
+import 'package:gallery/src/db/schemas/settings/settings.dart';
+import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
+import 'package:gallery/src/pages/booru/grid_button.dart';
+import 'package:gallery/src/pages/booru/grid_settings_button.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_back_button_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_refresh_behaviour.dart';
@@ -48,6 +53,25 @@ part 'wrappers/wrap_padding.dart';
 part 'parts/body_padding.dart';
 part 'parts/bottom_widget.dart';
 part 'parts/mutation_interface_provider.dart';
+
+abstract class GridLayoutBehaviour {
+  const GridLayoutBehaviour();
+
+  GridSettingsBase Function() get defaultSettings;
+
+  GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings);
+}
+
+class GridSettingsLayoutBehaviour implements GridLayoutBehaviour {
+  const GridSettingsLayoutBehaviour(this.defaultSettings);
+
+  @override
+  final GridSettingsBase Function() defaultSettings;
+
+  @override
+  GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings) =>
+      settings.layoutType.layout();
+}
 
 /// The grid of images.
 class GridFrame<T extends Cell> extends StatefulWidget {
@@ -113,32 +137,14 @@ class GridFrame<T extends Cell> extends StatefulWidget {
   State<GridFrame<T>> createState() => GridFrameState<T>();
 }
 
-abstract class GridLayoutBehaviour {
-  const GridLayoutBehaviour();
-
-  GridSettingsBase get defaultSettings;
-
-  GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings);
-}
-
-class GridSettingsLayoutBehaviour implements GridLayoutBehaviour {
-  const GridSettingsLayoutBehaviour(this.defaultSettings);
-
-  @override
-  final GridSettingsBase defaultSettings;
-
-  @override
-  GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings) =>
-      settings.layoutType.layout();
-}
-
 class GridFrameState<T extends Cell> extends State<GridFrame<T>>
     with GridSubpageState<T> {
   StreamSubscription<void>? _gridSettingsWatcher;
+  late final StreamSubscription<void> _mutationEvents;
 
   late ScrollController controller;
 
-  late GridSettingsBase _layoutSettings = widget.layout.defaultSettings;
+  late GridSettingsBase _layoutSettings = widget.layout.defaultSettings();
 
   late final selection = GridSelection<T>(
     setState,
@@ -191,6 +197,10 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
   void initState() {
     super.initState();
 
+    _mutationEvents =
+        widget.refreshingStatus.mutation.registerStatusUpdate((_) {
+      setState(() {});
+    });
     _gridSettingsWatcher =
         widget.functionality.watchLayoutSettings?.call((newSettings) {
       _layoutSettings = newSettings;
@@ -256,6 +266,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
 
   @override
   void dispose() {
+    _mutationEvents.cancel();
     _gridSettingsWatcher?.cancel();
     ticker?.cancel();
 
@@ -270,14 +281,6 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
     widget.functionality.updateScrollPosition?.call(lastOffset);
 
     super.dispose();
-  }
-
-  Future refresh() {
-    selection.reset();
-    mutation.reset();
-    // updateFab(fab: false, foreground: inImageView);
-
-    return refreshingStatus.refresh(widget.functionality);
   }
 
   void tryScrollUntil(int p) {
@@ -356,29 +359,46 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
 
   List<Widget> _makeActions(
       BuildContext context, GridDescription<T> description) {
+    final button = widget.description.settingsButton;
+
+    final ret = <Widget>[
+      if (button != null)
+        GridSettingsButton(
+          () => _layoutSettings,
+          watch: widget.functionality.watchLayoutSettings,
+          selectRatio: button.selectRatio,
+          selectHideName: button.selectHideName,
+          selectGridLayout: button.selectGridLayout,
+          selectGridColumn: button.selectGridColumn,
+          safeMode: button.safeMode,
+          selectSafeMode: button.selectSafeMode,
+        )
+    ];
+
     if (description.menuButtonItems == null) {
-      return [];
+      return ret;
     }
 
-    return (!description.inlineMenuButtonItems &&
-            description.menuButtonItems!.length > 1)
-        ? [
-            PopupMenuButton(
-                position: PopupMenuPosition.under,
-                itemBuilder: (context) {
-                  return description.menuButtonItems!
-                      .map(
-                        (e) => PopupMenuItem(
-                          enabled: false,
-                          child: e,
-                        ),
-                      )
-                      .toList();
-                })
-          ]
-        : [
-            ...description.menuButtonItems!,
-          ];
+    return ret +
+        ((!description.inlineMenuButtonItems &&
+                description.menuButtonItems!.length > 1)
+            ? [
+                PopupMenuButton(
+                    position: PopupMenuPosition.under,
+                    itemBuilder: (context) {
+                      return description.menuButtonItems!
+                          .map(
+                            (e) => PopupMenuItem(
+                              enabled: false,
+                              child: e,
+                            ),
+                          )
+                          .toList();
+                    })
+              ]
+            : [
+                ...description.menuButtonItems!,
+              ]);
   }
 
   List<Widget> bodySlivers(BuildContext context, PageDescription? page) {
@@ -387,8 +407,24 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
 
     Widget? appBar;
     if (description.showAppBar) {
-      final appBarActions =
-          page != null ? page.appIcons : _makeActions(context, description);
+      final pageSettingsButton = page?.settingsButton;
+
+      final List<Widget> appBarActions = page != null
+          ? [
+              if (pageSettingsButton != null)
+                GridSettingsButton(
+                  pageSettingsButton.overrideDefault!,
+                  watch: pageSettingsButton.watchExplicitly,
+                  selectRatio: pageSettingsButton.selectRatio,
+                  selectHideName: pageSettingsButton.selectHideName,
+                  selectGridLayout: pageSettingsButton.selectGridLayout,
+                  selectGridColumn: pageSettingsButton.selectGridColumn,
+                  safeMode: pageSettingsButton.safeMode,
+                  selectSafeMode: pageSettingsButton.selectSafeMode,
+                ),
+              ...page.appIcons
+            ]
+          : _makeActions(context, description);
 
       final bottomWidget = description.bottomWidget != null
           ? description.bottomWidget!

@@ -110,7 +110,6 @@ class __WatchingTabState extends State<_WatchingTab> {
       (context) => GridFrame<SavedAnimeEntry>(
         key: state.gridKey,
         layout: _WatchingLayout(
-          GridColumn.three,
           currentlyWatching,
           flipBacklogUpward: () {
             upward = !upward;
@@ -164,7 +163,6 @@ class __WatchingTabState extends State<_WatchingTab> {
 class _WatchingLayout
     implements GridLayouter<SavedAnimeEntry>, GridLayoutBehaviour {
   const _WatchingLayout(
-    this.columns,
     this.currentlyWatching, {
     required this.backlogUpward,
     required this.flipBacklogUpward,
@@ -180,7 +178,7 @@ class _WatchingLayout
 
   final List<SavedAnimeEntry> currentlyWatching;
 
-  final GridColumn columns;
+  // final GridColumn columns;
 
   @override
   GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings) {
@@ -190,13 +188,15 @@ class _WatchingLayout
   @override
   bool get isList => false;
 
-  @override
-  GridSettingsBase get defaultSettings => GridSettingsBase(
+  static GridSettingsBase _defaultSettings() => const GridSettingsBase(
         aspectRatio: GridAspectRatio.zeroSeven,
-        columns: columns,
+        columns: GridColumn.three,
         layoutType: GridLayoutType.grid,
         hideName: false,
       );
+
+  @override
+  GridSettingsBase Function() get defaultSettings => _defaultSettings;
 
   @override
   List<Widget> call(BuildContext context, GridSettingsBase gridSettings,
@@ -275,7 +275,7 @@ class _WatchingLayout
           state.selection,
           systemNavigationInsets: 0,
           aspectRatio: gridSettings.aspectRatio.value,
-          columns: columns.number,
+          columns: gridSettings.columns.number,
           gridCell: (context, idx) {
             return GridCell.frameDefault(
               context,

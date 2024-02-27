@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
+import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_booru_paging.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
@@ -20,6 +21,7 @@ import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
+import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
@@ -59,7 +61,6 @@ import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'grid_button.dart';
-import 'main_grid_settings_mixin.dart';
 
 class _MainGridPagingState implements PagingEntry, PageSaver {
   _MainGridPagingState(this._restore, int initalCellCount, this.booru)
@@ -93,6 +94,8 @@ class _MainGridPagingState implements PagingEntry, PageSaver {
 
     return offset;
   }
+
+  void updateTime() => _restore.updateTime();
 
   @override
   int get page => _restore.mainGrid.gridBooruPagings.getSync(0)!.page;
@@ -157,7 +160,7 @@ class BooruPage extends StatefulWidget {
   State<BooruPage> createState() => _BooruPageState();
 }
 
-class _BooruPageState extends State<BooruPage> with MainGridSettingsMixin {
+class _BooruPageState extends State<BooruPage> {
   static const _log = LogTarget.booru;
 
   late final StreamSubscription<Settings?> settingsWatcher;
@@ -168,6 +171,8 @@ class _BooruPageState extends State<BooruPage> with MainGridSettingsMixin {
   bool inForeground = true;
 
   late final AppLifecycleListener lifecycleListener;
+
+  late final SearchLaunchGrid<Post> search;
 
   int? currentSkipped;
 
@@ -185,8 +190,6 @@ class _BooruPageState extends State<BooruPage> with MainGridSettingsMixin {
       state.settings.selectedBooru.string,
       _MainGridPagingState.prototype,
     ) as _MainGridPagingState;
-
-    gridSettingsHook();
 
     bookmarksWatcher = Dbs.g.main.gridStateBoorus.watchLazy().listen((_) {
       setState(() {});
@@ -217,27 +220,29 @@ class _BooruPageState extends State<BooruPage> with MainGridSettingsMixin {
     //   });
     // });
 
-    // searchHook(SearchLaunchGridData(
-    //   mainFocus: state.mainFocus,
-    //   searchText: "",
-    //   swapSearchIconWithAddItems: false,
-    //   addItems: [
-    //     OpenMenuButton(
-    //         generateGlue: widget.generateGlue,
-    //         context: context,
-    //         controller: searchTextController,
-    //         tagManager: tagManager,
-    //         booru: api.booru)
-    //   ],
-    //   onSubmit: (context, tag) =>
-    //       TagManagerNotifier.ofRestorable(context).onTagPressed(
-    //     context,
-    //     tag,
-    //     BooruAPINotifier.of(context).booru,
-    //     true,
-    //     generateGlue: widget.generateGlue,
-    //   ),
-    // ));
+    search = SearchLaunchGrid(SearchLaunchGridData(
+      mainFocus: state.mainFocus,
+      searchText: "",
+      swapSearchIconWithAddItems: false,
+      addItems: (context) => [
+        OpenMenuButton(
+          generateGlue: widget.generateGlue,
+          context: context,
+          controller: search.searchTextController,
+          tagManager: pagingState.tagManager,
+          booru: pagingState.api.booru,
+        )
+      ],
+      onSubmit: (context, tag) {
+        // TagManagerNotifier.ofRestorable(context).onTagPressed(
+        //   context,
+        //   tag,
+        //   BooruAPINotifier.of(context).booru,
+        //   true,
+        //   generateGlue: widget.generateGlue,
+        // );
+      },
+    ));
 
     // if (api.wouldBecomeStale &&
     //     state.settings.autoRefresh &&
@@ -303,7 +308,7 @@ class _BooruPageState extends State<BooruPage> with MainGridSettingsMixin {
     // widget.saveSelectedPage(null);
     // }
 
-    disposeGridSettings();
+    search.dispose();
     // disposeSearch();
 
     state.dispose();
@@ -319,7 +324,6 @@ class _BooruPageState extends State<BooruPage> with MainGridSettingsMixin {
   Future<int> _clearAndRefresh() async {
     final mainGrid = pagingState.mainGrid;
     final api = pagingState.api;
-    // final restore = pagingState.restore;
 
     try {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
@@ -329,7 +333,7 @@ class _BooruPageState extends State<BooruPage> with MainGridSettingsMixin {
 
       StatisticsGeneral.addRefreshes();
 
-      // restore.updateTime();
+      pagingState.updateTime();
 
       final list = await api.page(0, "", pagingState.tagManager.excluded);
       pagingState.setOffset(0);
@@ -372,7 +376,6 @@ class _BooruPageState extends State<BooruPage> with MainGridSettingsMixin {
   Future<int> _addLast() async {
     final mainGrid = pagingState.mainGrid;
     final api = pagingState.api;
-    // final restore = pagingState.restore;
 
     if (reachedEnd) {
       return mainGrid.posts.countSync();
@@ -403,7 +406,8 @@ class _BooruPageState extends State<BooruPage> with MainGridSettingsMixin {
                   .toList(),
             ));
 
-        // restore.updateTime();
+        pagingState.updateTime();
+
         if (mainGrid.posts.countSync() - oldCount < 3) {
           return await _addLast();
         }
@@ -420,6 +424,11 @@ class _BooruPageState extends State<BooruPage> with MainGridSettingsMixin {
 
   final scrollController = ScrollController();
 
+  void _onBooruTagPressed(
+      BuildContext context, String tag, SafeMode? safeMode) {
+    print("object");
+  }
+
   @override
   Widget build(BuildContext context) {
     final glue = GlueProvider.of<Post>(context);
@@ -433,42 +442,15 @@ class _BooruPageState extends State<BooruPage> with MainGridSettingsMixin {
             (context) => GridFrame<Post>(
               key: state.gridKey,
               refreshingStatus: pagingState.refreshingStatus,
-              layout: GridSettingsLayoutBehaviour(gridSettings),
+              layout:
+                  const GridSettingsLayoutBehaviour(GridSettingsBooru.current),
               overrideController: scrollController,
               imageViewDescription: ImageViewDescription(
-                // pageViewScrollingOffset: restore.copy.scrollPositionTags,
-                // initalCell: restore.copy.selectedPost,
                 imageViewKey: state.imageViewKey,
-                // beforeImageViewRestore: () {
-                // final last = restore.last();
-
-                // if (last != null) {
-                // final db = DbsOpen.secondaryGridName(last.copy.name);
-
-                // WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-                //   Navigator.of(context, rootNavigator: false)
-                //       .push(MaterialPageRoute(
-                //     builder: (context) {
-                //       return SecondaryBooruGrid(
-                //         restore: last,
-                //         noRestoreOnBack: false,
-                //         api: BooruAPI.fromEnum(api.booru,
-                //             page: last.copy.page),
-                //         tagManager: tagManager,
-                //         instance: db,
-                //         generateGlue: widget.generateGlue,
-                //       );
-                //     },
-                //   ));
-                // });
-                // }
-                // },
                 statistics: const ImageViewStatistics(
                   swiped: StatisticsBooru.addSwiped,
                   viewed: StatisticsBooru.addViewed,
                 ),
-                // onExitImageView: () =>
-                //     restore.removeScrollTagsSelectedPost(),
                 addIconsImage: (post) => [
                   BooruGridActions.favorites(context, post),
                   BooruGridActions.download(context, pagingState.api.booru),
@@ -489,24 +471,26 @@ class _BooruPageState extends State<BooruPage> with MainGridSettingsMixin {
               functionality: GridFunctionality(
                 selectionGlue: glue,
                 loadNext: _addLast,
+                watchLayoutSettings: GridSettingsBooru.watch,
                 refresh: AsyncGridRefresh(_clearAndRefresh),
                 download: _download,
-                // search: OverrideGridSearchWidget(
-                //   SearchAndFocus(
-                //       searchWidget(context, hint: api.booru.name), searchFocus,
-                //       onPressed: () {
-                //     if (currentlyHighlightedTag != "") {
-                //       state.mainFocus.unfocus();
-                //       // tagManager.onTagPressed(
-                //       //   context,
-                //       //   Tag.string(tag: currentlyHighlightedTag),
-                //       //   api.booru,
-                //       //   true,
-                //       //   generateGlue: widget.generateGlue,
-                //       // );
-                //     }
-                //   }),
-                // ),
+                search: OverrideGridSearchWidget(
+                  SearchAndFocus(
+                      search.searchWidget(context,
+                          hint: pagingState.api.booru.name),
+                      search.searchFocus, onPressed: () {
+                    if (search.currentlyHighlightedTag != "") {
+                      state.mainFocus.unfocus();
+                      // tagManager.onTagPressed(
+                      //   context,
+                      //   Tag.string(tag: currentlyHighlightedTag),
+                      //   api.booru,
+                      //   true,
+                      //   generateGlue: widget.generateGlue,
+                      // );
+                    }
+                  }),
+                ),
                 updateScrollPosition: pagingState.setOffset,
                 onError: (error) {
                   return OutlinedButton(
@@ -517,8 +501,13 @@ class _BooruPageState extends State<BooruPage> with MainGridSettingsMixin {
                     child: Text(AppLocalizations.of(context)!.openInBrowser),
                   );
                 },
-                registerNotifiers: (child) =>
-                    BooruAPINotifier(api: pagingState.api, child: child),
+                registerNotifiers: (child) => OnBooruTagPressed(
+                  onPressed: _onBooruTagPressed,
+                  child: BooruAPINotifier(
+                    api: pagingState.api,
+                    child: child,
+                  ),
+                ),
               ),
               systemNavigationInsets: widget.viewPadding,
               description: GridDescription(
@@ -548,7 +537,8 @@ class _BooruPageState extends State<BooruPage> with MainGridSettingsMixin {
                                       count: favoriteBooruState.loader.count()),
                                   favoriteBooruState.searchFocus,
                                 ),
-                                appIcons: favoriteBooruState.appBarButtons(),
+                                settingsButton:
+                                    favoriteBooruState.gridSettingsButton(),
                                 slivers: [
                                   GlueProvider<FavoriteBooru>(
                                     glue: widget.generateGlue(),
@@ -577,9 +567,23 @@ class _BooruPageState extends State<BooruPage> with MainGridSettingsMixin {
                           int() => const PageDescription(slivers: []),
                         }),
                 inlineMenuButtonItems: true,
-                menuButtonItems: [
-                  gridButton(state.settings, gridSettings),
-                ],
+                settingsButton: GridFrameSettingsButton(
+                  selectSafeMode: (safeMode, _) =>
+                      state.settings.copy(safeMode: safeMode).save(),
+                  safeMode: state.settings.safeMode,
+                  selectGridColumn: (columns, settings) =>
+                      (settings as GridSettingsBooru)
+                          .copy(columns: columns)
+                          .save(),
+                  selectGridLayout: (layoutType, settings) =>
+                      (settings as GridSettingsBooru)
+                          .copy(layoutType: layoutType)
+                          .save(),
+                  selectRatio: (ratio, settings) =>
+                      (settings as GridSettingsBooru)
+                          .copy(aspectRatio: ratio)
+                          .save(),
+                ),
                 pageName: AppLocalizations.of(context)!.booruLabel,
                 keybindsDescription:
                     AppLocalizations.of(context)!.booruGridPageName,
@@ -610,6 +614,34 @@ class _BooruPageState extends State<BooruPage> with MainGridSettingsMixin {
       },
     );
   }
+}
+
+typedef OnBooruTagPressedFunc = void Function(
+    BuildContext context, String tag, SafeMode? overrideSafeMode);
+
+class OnBooruTagPressed extends InheritedWidget {
+  final OnBooruTagPressedFunc onPressed;
+
+  const OnBooruTagPressed({
+    super.key,
+    required this.onPressed,
+    required super.child,
+  });
+
+  static void pressOf(
+    BuildContext context,
+    String tag, {
+    SafeMode? overrideSafeMode,
+  }) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<OnBooruTagPressed>();
+
+    widget!.onPressed(context, tag, overrideSafeMode);
+  }
+
+  @override
+  bool updateShouldNotify(OnBooruTagPressed oldWidget) =>
+      oldWidget.onPressed != onPressed;
 }
 
 class _IconWithCount extends StatelessWidget {

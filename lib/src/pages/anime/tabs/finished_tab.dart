@@ -95,18 +95,20 @@ class __FinishedTabState extends State<_FinishedTab> {
     return _list[_list.length - 1 - i];
   }
 
+  static GridSettingsBase _settings() => const GridSettingsBase(
+        aspectRatio: GridAspectRatio.one,
+        columns: GridColumn.three,
+        layoutType: GridLayoutType.gridQuilted,
+        hideName: false,
+      );
+
   @override
   Widget build(BuildContext context) {
     return GridSkeleton<WatchedAnimeEntry>(
       state,
       (context) => GridFrame<WatchedAnimeEntry>(
         key: state.gridKey,
-        layout: const GridSettingsLayoutBehaviour(GridSettingsBase(
-          aspectRatio: GridAspectRatio.one,
-          columns: GridColumn.three,
-          layoutType: GridLayoutType.gridQuilted,
-          hideName: false,
-        )),
+        layout: const GridSettingsLayoutBehaviour(_settings),
         refreshingStatus: state.refreshingStatus,
         getCell: _getCell,
         imageViewDescription: ImageViewDescription(

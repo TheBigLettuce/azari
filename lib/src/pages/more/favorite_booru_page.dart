@@ -12,7 +12,7 @@ import 'package:gallery/src/db/schemas/grid_settings/favorites.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/filtering/filters.dart';
-import 'package:gallery/src/pages/booru/grid_settings_button.dart';
+import 'package:gallery/src/pages/booru/grid_button.dart';
 import 'package:gallery/src/widgets/grid/actions/favorites.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
@@ -51,7 +51,7 @@ class FavoriteBooruPage extends StatelessWidget {
 
     return GridFrame<FavoriteBooru>(
       key: state.state.gridKey,
-      layout: GridSettingsLayoutBehaviour(state.gridSettings),
+      layout: const GridSettingsLayoutBehaviour(GridSettingsFavorites.current),
       refreshingStatus: state.state.refreshingStatus,
       overrideController: conroller,
       imageViewDescription: ImageViewDescription(
@@ -124,7 +124,6 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T>
   final booru = Settings.fromDb().selectedBooru;
 
   MiscSettings miscSettings = MiscSettings.current;
-  GridSettingsFavorites gridSettings = GridSettingsFavorites.current;
 
   Map<String, int>? segments;
 
@@ -342,17 +341,19 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T>
     ];
   }
 
-  List<Widget> appBarButtons() {
-    return [
-      GridSettingsButton(
-        gridSettings,
-        selectHideName: null,
-        selectRatio: (ratio) => gridSettings.copy(aspectRatio: ratio).save(),
-        selectGridLayout: (layoutType) =>
-            gridSettings.copy(layoutType: layoutType).save(),
-        selectGridColumn: (columns) =>
-            gridSettings.copy(columns: columns).save(),
-      )
-    ];
+  GridFrameSettingsButton gridSettingsButton() {
+    return GridFrameSettingsButton(
+      selectHideName: null,
+      overrideDefault: GridSettingsFavorites.current,
+      watchExplicitly: GridSettingsFavorites.watch,
+      selectRatio: (ratio, settings) =>
+          (settings as GridSettingsFavorites).copy(aspectRatio: ratio).save(),
+      selectGridLayout: (layoutType, settings) =>
+          (settings as GridSettingsFavorites)
+              .copy(layoutType: layoutType)
+              .save(),
+      selectGridColumn: (columns, settings) =>
+          (settings as GridSettingsFavorites).copy(columns: columns).save(),
+    );
   }
 }

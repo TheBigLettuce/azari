@@ -19,6 +19,7 @@ import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/grid_settings/directories.dart';
 import 'package:gallery/src/db/schemas/grid_settings/favorites.dart';
 import 'package:gallery/src/db/schemas/grid_settings/files.dart';
+import 'package:gallery/src/db/schemas/grid_state/grid_booru_paging.dart';
 import 'package:gallery/src/db/schemas/manga/chapters_settings.dart';
 import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
 import 'package:gallery/src/db/schemas/manga/pinned_manga.dart';

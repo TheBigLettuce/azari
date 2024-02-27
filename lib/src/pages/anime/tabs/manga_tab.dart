@@ -78,18 +78,20 @@ class _MangaTabState extends State<MangaTab> {
     return widget.elems.length;
   }
 
+  static GridSettingsBase _settings() => const GridSettingsBase(
+        columns: GridColumn.three,
+        aspectRatio: GridAspectRatio.zeroSeven,
+        hideName: false,
+        layoutType: GridLayoutType.grid,
+      );
+
   @override
   Widget build(BuildContext context) {
     return GridSkeleton<MangaEntry>(
       state,
       (context) => GridFrame(
         key: state.gridKey,
-        layout: const GridSettingsLayoutBehaviour(GridSettingsBase(
-          columns: GridColumn.three,
-          aspectRatio: GridAspectRatio.zeroSeven,
-          hideName: false,
-          layoutType: GridLayoutType.grid,
-        )),
+        layout: const GridSettingsLayoutBehaviour(_settings),
         refreshingStatus: state.refreshingStatus,
         getCell: (i) => widget.elems[i],
         initalScrollPosition: widget.container.scrollPos,

@@ -18,8 +18,7 @@ import '../skeletons/grid_skeleton_state_filter.dart';
 part 'search_widget.dart';
 
 /// Search mixin which filters the elements on a grid.
-mixin SearchFilterGrid<T extends Cell>
-    implements SearchMixin<GridSkeletonStateFilter<T>> {
+mixin SearchFilterGrid<T extends Cell> implements SearchMixin {
   @override
   final TextEditingController searchTextController = TextEditingController();
   @override

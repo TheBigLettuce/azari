@@ -55,7 +55,7 @@ class GridSettingsFiles extends GridSettingsBase {
         .listen(f);
   }
 
-  static GridSettingsFiles get current =>
+  static GridSettingsFiles current() =>
       Dbs.g.main.gridSettingsFiles.getSync(0) ??
       GridSettingsFiles(
         aspectRatio: GridAspectRatio.one,

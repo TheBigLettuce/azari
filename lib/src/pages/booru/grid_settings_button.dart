@@ -5,6 +5,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
@@ -15,15 +17,7 @@ import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/pages/more/settings/radio_dialog.dart';
 
-class GridSettingsButton extends StatelessWidget {
-  final GridSettingsBase gridSettings;
-  final void Function(GridAspectRatio?)? selectRatio;
-  final void Function(bool)? selectHideName;
-  final void Function(GridLayoutType?)? selectGridLayout;
-  final void Function(GridColumn?) selectGridColumn;
-  final SafeMode? safeMode;
-  final void Function(SafeMode?)? selectSafeMode;
-
+class GridSettingsButton extends StatefulWidget {
   const GridSettingsButton(
     this.gridSettings, {
     super.key,
@@ -31,24 +25,67 @@ class GridSettingsButton extends StatelessWidget {
     required this.selectHideName,
     required this.selectGridLayout,
     required this.selectGridColumn,
+    this.watch,
     this.safeMode,
     this.selectSafeMode,
   });
+
+  final GridSettingsBase Function() gridSettings;
+  final void Function(GridAspectRatio?, GridSettingsBase)? selectRatio;
+  final void Function(bool, GridSettingsBase)? selectHideName;
+  final void Function(GridLayoutType?, GridSettingsBase)? selectGridLayout;
+  final void Function(GridColumn?, GridSettingsBase) selectGridColumn;
+  final SafeMode? safeMode;
+  final void Function(SafeMode?, GridSettingsBase)? selectSafeMode;
+  final StreamSubscription<GridSettingsBase> Function(
+      void Function(GridSettingsBase) f)? watch;
+
+  @override
+  State<GridSettingsButton> createState() => _GridSettingsButtonState();
+}
+
+class _GridSettingsButtonState extends State<GridSettingsButton> {
+  StreamSubscription<GridSettingsBase>? watcher;
+
+  late GridSettingsBase gridSettings = widget.gridSettings();
+
+  @override
+  void initState() {
+    super.initState();
+
+    watcher = widget.watch?.call((newSettings) {
+      gridSettings = newSettings;
+
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    watcher?.cancel();
+
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton(
       icon: const Icon(Icons.more_horiz_outlined),
       itemBuilder: (context) => [
-        if (safeMode != null)
-          _safeMode(context, safeMode!, selectSafeMode: selectSafeMode),
-        if (selectGridLayout != null)
-          _gridLayout(context, gridSettings.layoutType, selectGridLayout!),
-        if (selectHideName != null)
-          _hideName(context, gridSettings.hideName, selectHideName!),
-        if (selectRatio != null)
-          _ratio(context, gridSettings.aspectRatio, selectRatio!),
-        _columns(context, gridSettings.columns, selectGridColumn)
+        if (widget.safeMode != null)
+          _safeMode(context, widget.safeMode!,
+              selectSafeMode: (s) => widget.selectSafeMode!(s, gridSettings)),
+        if (widget.selectGridLayout != null)
+          _gridLayout(context, gridSettings.layoutType,
+              (t) => widget.selectGridLayout!(t, gridSettings)),
+        if (widget.selectHideName != null)
+          _hideName(context, gridSettings.hideName,
+              (n) => widget.selectHideName!(n, gridSettings)),
+        if (widget.selectRatio != null)
+          _ratio(context, gridSettings.aspectRatio,
+              (r) => widget.selectRatio!(r, gridSettings)),
+        _columns(context, gridSettings.columns,
+            (c) => widget.selectGridColumn(c, gridSettings))
       ],
     );
   }

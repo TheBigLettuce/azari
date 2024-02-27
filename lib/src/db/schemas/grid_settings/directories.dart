@@ -52,7 +52,7 @@ class GridSettingsDirectories extends GridSettingsBase {
         .listen(f);
   }
 
-  static GridSettingsDirectories get current =>
+  static GridSettingsDirectories current() =>
       Dbs.g.main.gridSettingsDirectories.getSync(0) ??
       GridSettingsDirectories(
         aspectRatio: GridAspectRatio.oneTwo,

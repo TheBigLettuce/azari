@@ -58,18 +58,20 @@ class __DiscoverTabState extends State<_DiscoverTab> {
     super.dispose();
   }
 
+  GridSettingsBase _settings() => GridSettingsBase(
+        aspectRatio: GridAspectRatio.zeroSeven,
+        columns: gridSettings.columns,
+        layoutType: GridLayoutType.grid,
+        hideName: false,
+      );
+
   @override
   Widget build(BuildContext context) {
     return GridSkeleton<AnimeEntry>(
       state,
       (context) => GridFrame<AnimeEntry>(
         key: state.gridKey,
-        layout: GridSettingsLayoutBehaviour(GridSettingsBase(
-          aspectRatio: GridAspectRatio.zeroSeven,
-          columns: gridSettings.columns,
-          layoutType: GridLayoutType.grid,
-          hideName: false,
-        )),
+        layout: GridSettingsLayoutBehaviour(_settings),
         refreshingStatus: state.refreshingStatus,
         getCell: (i) => widget.entries[i],
         initalScrollPosition: widget.pagingContainer.scrollPos,

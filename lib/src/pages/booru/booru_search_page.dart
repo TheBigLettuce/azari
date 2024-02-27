@@ -53,14 +53,14 @@
 // class BooruSearchPage extends StatefulWidget {
 //   final Booru booru;
 //   final String tags;
-//   final GridStateBooru? state;
+//   // final GridStateBooru? state;
 //   // final SafeMode? overrideSafeMode;
 //   final SelectionGlue<J> Function<J extends Cell>()? generateGlue;
 
 //   const BooruSearchPage({
 //     super.key,
 //     required this.booru,
-//     this.state,
+//     // this.state,
 //     required this.tags,
 //     this.generateGlue,
 //   });
@@ -70,7 +70,7 @@
 // }
 
 // class _BooruSearchPageState extends State<BooruSearchPage>
-//     with SearchLaunchGrid<Post>, MainGridSettingsMixin {
+//     with  MainGridSettingsMixin {
 //   static const _log = LogTarget.booru;
 
 //   late final StreamSubscription<Settings?> settingsWatcher;

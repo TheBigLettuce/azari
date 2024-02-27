@@ -49,6 +49,13 @@ class _BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
     super.dispose();
   }
 
+  GridSettingsBase _gridSettingsBase() => const GridSettingsBase(
+        aspectRatio: GridAspectRatio.one,
+        columns: GridColumn.two,
+        layoutType: GridLayoutType.list,
+        hideName: false,
+      );
+
   @override
   Widget build(BuildContext context) {
     return WrapGridPage<HiddenBooruPost>(
@@ -59,12 +66,7 @@ class _BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
         (context) => GridFrame(
           key: state.gridKey,
           getCell: (i) => list[i],
-          layout: const GridSettingsLayoutBehaviour(GridSettingsBase(
-            aspectRatio: GridAspectRatio.one,
-            columns: GridColumn.two,
-            layoutType: GridLayoutType.list,
-            hideName: false,
-          )),
+          layout: GridSettingsLayoutBehaviour(_gridSettingsBase),
           refreshingStatus: state.refreshingStatus,
           functionality: GridFunctionality(
             selectionGlue: GlueProvider.of(context),
@@ -86,7 +88,9 @@ class _BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
                 HiddenBooruPost.removeAll(
                     selected.map((e) => (e.postId, e.booru)).toList());
 
-                state.gridKey.currentState?.refresh();
+                list = HiddenBooruPost.getAll();
+
+                state.refreshingStatus.mutation.cellCount = list.length;
               }, true)
             ],
             menuButtonItems: [

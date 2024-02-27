@@ -108,7 +108,7 @@ abstract class BooruAPI {
   }
 
   static int numberOfElementsPerRefresh() {
-    final settings = GridSettingsBooru.current;
+    final settings = GridSettingsBooru.current();
     if (settings.layoutType == GridLayoutType.list) {
       return 20;
     }

@@ -16,6 +16,7 @@ import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
+import 'package:gallery/src/pages/booru/grid_button.dart';
 import 'package:gallery/src/pages/booru/grid_settings_button.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/widgets/copy_move_preview.dart';
@@ -74,7 +75,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
   late final StreamSubscription<MiscSettings?> miscSettingsWatcher;
   late final AppLifecycleListener lifecycleListener;
 
-  GridSettingsDirectories gridSettings = GridSettingsDirectories.current;
   MiscSettings miscSettings = MiscSettings.current;
 
   int galleryVersion = 0;
@@ -288,7 +288,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
         state,
         (context) => GridFrame(
               key: state.gridKey,
-              layout: GridSettingsLayoutBehaviour(gridSettings),
+              layout: const GridSettingsLayoutBehaviour(
+                  GridSettingsDirectories.current),
               refreshingStatus: state.refreshingStatus,
               getCell: (i) => api.directCell(i),
               functionality: GridFunctionality(
@@ -447,14 +448,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                           }
                         },
                         icon: const Icon(Icons.create_new_folder_outlined)),
-                  GridSettingsButton(gridSettings,
-                      selectRatio: (ratio) =>
-                          gridSettings.copy(aspectRatio: ratio).save(),
-                      selectHideName: (hideNames) =>
-                          gridSettings.copy(hideName: hideNames).save(),
-                      selectGridLayout: null,
-                      selectGridColumn: (columns) =>
-                          gridSettings.copy(columns: columns).save()),
                 ],
                 bottomWidget:
                     widget.callback != null || widget.nestedCallback != null
@@ -464,6 +457,21 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                                 ? widget.callback!.description
                                 : widget.nestedCallback!.description)
                         : null,
+                settingsButton: GridFrameSettingsButton(
+                  selectRatio: (ratio, settings) =>
+                      (settings as GridSettingsDirectories)
+                          .copy(aspectRatio: ratio)
+                          .save(),
+                  selectHideName: (hideNames, settings) =>
+                      (settings as GridSettingsDirectories)
+                          .copy(hideName: hideNames)
+                          .save(),
+                  selectGridLayout: null,
+                  selectGridColumn: (columns, settings) =>
+                      (settings as GridSettingsDirectories)
+                          .copy(columns: columns)
+                          .save(),
+                ),
                 inlineMenuButtonItems: true,
                 keybindsDescription:
                     AppLocalizations.of(context)!.androidGKeybindsDescription,

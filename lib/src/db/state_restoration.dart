@@ -20,7 +20,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../interfaces/booru/booru_api.dart';
-import '../pages/booru/random.dart';
+import '../pages/booru/booru_search_page.dart';
 import '../pages/booru/secondary.dart';
 import 'schemas/settings/settings.dart';
 import 'schemas/tags/tags.dart';

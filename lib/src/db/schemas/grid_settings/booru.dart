@@ -69,12 +69,15 @@ class GridSettingsBooru extends GridSettingsBase {
     Dbs.g.main.writeTxnSync(() => Dbs.g.main.gridSettingsBoorus.putSync(this));
   }
 
-  static StreamSubscription<GridSettingsBooru?> watch(
-      void Function(GridSettingsBooru?) f) {
-    return Dbs.g.main.gridSettingsBoorus.watchObject(0).listen(f);
+  static StreamSubscription<GridSettingsBooru> watch(
+      void Function(GridSettingsBooru) f) {
+    return Dbs.g.main.gridSettingsBoorus
+        .watchObject(0)
+        .map((event) => event!)
+        .listen(f);
   }
 
-  static GridSettingsBooru get current =>
+  static GridSettingsBooru current() =>
       Dbs.g.main.gridSettingsBoorus.getSync(0) ??
       GridSettingsBooru(
           aspectRatio: GridAspectRatio.one,

@@ -193,13 +193,15 @@ class _ReadingLayout
     required this.startReading,
   });
 
+  static GridSettingsBase _defaultSettings() => const GridSettingsBase(
+        aspectRatio: GridAspectRatio.oneTwo,
+        columns: GridColumn.three,
+        layoutType: GridLayoutType.grid,
+        hideName: false,
+      );
+
   @override
-  final GridSettingsBase defaultSettings = const GridSettingsBase(
-    aspectRatio: GridAspectRatio.oneTwo,
-    columns: GridColumn.three,
-    layoutType: GridLayoutType.grid,
-    hideName: false,
-  );
+  final GridSettingsBase Function() defaultSettings = _defaultSettings;
 
   @override
   GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings) {

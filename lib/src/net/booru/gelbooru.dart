@@ -39,7 +39,9 @@ class GelbooruRespDecoder implements BooruRespDecoder {
       return const [];
     }
 
-    return l.map((e) => HtmlUnescape().convert(e["name"] as String)).toList();
+    return (l as List<dynamic>)
+        .map((e) => HtmlUnescape().convert(e["name"] as String))
+        .toList();
   }
 
   @override

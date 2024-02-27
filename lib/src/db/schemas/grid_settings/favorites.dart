@@ -54,7 +54,7 @@ class GridSettingsFavorites extends GridSettingsBase {
         .listen(f);
   }
 
-  static GridSettingsFavorites get current =>
+  static GridSettingsFavorites current() =>
       Dbs.g.main.gridSettingsFavorites.getSync(0) ??
       const GridSettingsFavorites(
         aspectRatio: GridAspectRatio.one,

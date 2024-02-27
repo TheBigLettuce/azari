@@ -14,8 +14,18 @@ import '../notifiers/booru_api.dart';
 import 'search_launch_grid_data.dart';
 
 /// Search mixin which launches a new page with a grid.
-class SearchLaunchGrid<T extends Cell>
-    implements SearchMixin<SearchLaunchGridData> {
+class SearchLaunchGrid<T extends Cell> implements SearchMixin {
+  SearchLaunchGrid(this._state) {
+    searchTextController.text = _state.searchText;
+
+    searchFocus.addListener(() {
+      if (!searchFocus.hasFocus) {
+        currentlyHighlightedTag = "";
+        _state.mainFocus.requestFocus();
+      }
+    });
+  }
+
   @override
   final TextEditingController searchTextController = TextEditingController();
   @override
@@ -24,23 +34,10 @@ class SearchLaunchGrid<T extends Cell>
   String currentlyHighlightedTag = "";
   final _ScrollHack _scrollHack = _ScrollHack();
   // late final BooruAPI booru;
-  late final SearchLaunchGridData _state;
+  final SearchLaunchGridData _state;
 
   @override
-  void searchHook(SearchLaunchGridData data, [List<Widget>? items]) {
-    _state = data;
-    searchTextController.text = data.searchText;
-
-    searchFocus.addListener(() {
-      if (!searchFocus.hasFocus) {
-        currentlyHighlightedTag = "";
-        data.mainFocus.requestFocus();
-      }
-    });
-  }
-
-  @override
-  void disposeSearch() {
+  void dispose() {
     searchTextController.dispose();
     searchFocus.dispose();
     _scrollHack.dispose();
@@ -62,7 +59,7 @@ class SearchLaunchGrid<T extends Cell>
         roundBorders: false,
         swapSearchIcon: _state.swapSearchIconWithAddItems,
         // ignoreFocusNotifier: Platform.isAndroid,
-        addItems: _state.addItems,
+        addItems: _state.addItems(context),
       );
 }
 

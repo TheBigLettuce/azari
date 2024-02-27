@@ -10,7 +10,7 @@ import 'package:gallery/src/db/schemas/tags/tags.dart';
 
 class SearchLaunchGridData {
   final FocusNode mainFocus;
-  final List<Widget>? addItems;
+  final List<Widget> Function(BuildContext) addItems;
   final String searchText;
   final void Function(BuildContext, Tag) onSubmit;
   final bool swapSearchIconWithAddItems;

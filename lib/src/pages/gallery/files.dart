@@ -21,6 +21,7 @@ import 'package:gallery/src/interfaces/gallery/gallery_api_files.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_files_extra.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
+import 'package:gallery/src/pages/booru/grid_button.dart';
 import 'package:gallery/src/pages/booru/grid_settings_button.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_back_button_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
@@ -87,8 +88,6 @@ class _GalleryFilesState extends State<GalleryFiles>
   final plug = chooseGalleryPlug();
 
   late final StreamSubscription<Settings?> settingsWatcher;
-
-  GridSettingsFiles gridSettings = GridSettingsFiles.current;
 
   late final GalleryFilesExtra extra = widget.api.getExtra()
     ..setRefreshingStatusCallback((i, inRefresh, empty) {
@@ -240,7 +239,8 @@ class _GalleryFilesState extends State<GalleryFiles>
           state,
           (context) => GridFrame(
             key: state.gridKey,
-            layout: GridSettingsLayoutBehaviour(gridSettings),
+            layout:
+                const GridSettingsLayoutBehaviour(GridSettingsFiles.current),
             refreshingStatus: state.refreshingStatus,
             getCell: (i) => widget.api.directCell(i),
             functionality: GridFunctionality(
@@ -402,16 +402,25 @@ class _GalleryFilesState extends State<GalleryFiles>
                         }
                       },
                       icon: const Icon(Icons.casino_outlined)),
-                GridSettingsButton(gridSettings,
-                    selectRatio: (ratio) =>
-                        gridSettings.copy(aspectRatio: ratio).save(),
-                    selectHideName: (hideNames) =>
-                        gridSettings.copy(hideName: hideNames).save(),
-                    selectGridLayout: (layoutType) =>
-                        gridSettings.copy(layoutType: layoutType).save(),
-                    selectGridColumn: (columns) =>
-                        gridSettings.copy(columns: columns).save()),
               ],
+              settingsButton: GridFrameSettingsButton(
+                selectRatio: (ratio, settings) =>
+                    (settings as GridSettingsFiles)
+                        .copy(aspectRatio: ratio)
+                        .save(),
+                selectHideName: (hideNames, settings) =>
+                    (settings as GridSettingsFiles)
+                        .copy(hideName: hideNames)
+                        .save(),
+                selectGridLayout: (layoutType, settings) =>
+                    (settings as GridSettingsFiles)
+                        .copy(layoutType: layoutType)
+                        .save(),
+                selectGridColumn: (columns, settings) =>
+                    (settings as GridSettingsFiles)
+                        .copy(columns: columns)
+                        .save(),
+              ),
               tightMode: true,
               inlineMenuButtonItems: true,
               bottomWidget: widget.callback != null

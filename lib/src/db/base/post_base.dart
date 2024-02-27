@@ -18,6 +18,7 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/db/state_restoration.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
+import 'package:gallery/src/pages/booru/booru_page.dart';
 import 'package:gallery/src/widgets/image_view/wrap_image_view_notifiers.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:gallery/src/widgets/translation_notes.dart';
@@ -223,6 +224,7 @@ class PostBase extends Cell
         Navigator.pop(context);
         Navigator.pop(context);
 
+        OnBooruTagPressed.pressOf(context, t, overrideSafeMode: safeMode);
         // tagManager.onTagPressed(
         //   OriginalGridContext.maybeOf(context) ?? context,
         //   Tag.string(tag: t),

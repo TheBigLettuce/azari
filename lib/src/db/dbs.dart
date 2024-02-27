@@ -8,6 +8,16 @@
 part of 'initalize_db.dart';
 
 class Dbs {
+  const Dbs._({
+    required this.blacklisted,
+    required this.directory,
+    required this.main,
+    required this.anime,
+    required this.temporaryDbDir,
+    required this.temporaryImagesDir,
+    required this.thumbnail,
+  });
+
   final Isar main;
   final Isar anime;
   final Isar? thumbnail;
@@ -26,14 +36,7 @@ class Dbs {
       ..createSync();
   }
 
-  const Dbs._(
-      {required this.blacklisted,
-      required this.directory,
-      required this.main,
-      required this.anime,
-      required this.temporaryDbDir,
-      required this.temporaryImagesDir,
-      required this.thumbnail});
+ 
 
   static Dbs get g => _dbs;
 }

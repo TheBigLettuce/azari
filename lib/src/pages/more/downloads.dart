@@ -121,6 +121,13 @@ class _DownloadsState extends State<Downloads>
   //       },
   //     );
 
+  GridSettingsBase _gridSettingsBase() => const GridSettingsBase(
+        aspectRatio: GridAspectRatio.one,
+        columns: GridColumn.two,
+        layoutType: GridLayoutType.grid,
+        hideName: false,
+      );
+
   @override
   Widget build(BuildContext context) {
     return WrapGridPage<DownloadFile>(
@@ -130,12 +137,7 @@ class _DownloadsState extends State<Downloads>
           state,
           (context) => GridFrame<DownloadFile>(
             key: state.gridKey,
-            layout: const GridSettingsLayoutBehaviour(GridSettingsBase(
-              aspectRatio: GridAspectRatio.one,
-              columns: GridColumn.two,
-              layoutType: GridLayoutType.grid,
-              hideName: false,
-            )),
+            layout: GridSettingsLayoutBehaviour(_gridSettingsBase),
             refreshingStatus: state.refreshingStatus,
             getCell: loader.getCell,
             initalScrollPosition: 0,

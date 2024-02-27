@@ -16,7 +16,7 @@ import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
-import 'package:gallery/src/pages/booru/random.dart';
+import 'package:gallery/src/pages/booru/booru_search_page.dart';
 import 'package:gallery/src/pages/more/settings/settings_widget.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/shimmer_loading_indicator.dart';

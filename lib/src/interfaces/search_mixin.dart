@@ -7,11 +7,13 @@
 
 import 'package:flutter/widgets.dart';
 
-abstract class SearchMixin<T> {
+abstract class SearchMixin {
+  const SearchMixin();
+
   TextEditingController get searchTextController;
   FocusNode get searchFocus;
 
-  void searchHook(T data, [List<Widget>? addButtons]);
-  void disposeSearch();
+  // void searchHook(T data, [List<Widget>? addButtons]);
+  void dispose();
   Widget searchWidget(BuildContext context, {String? hint, int? count});
 }
