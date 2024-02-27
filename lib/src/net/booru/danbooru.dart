@@ -5,7 +5,6 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:gallery/src/db/schemas/booru/post.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
@@ -15,25 +14,18 @@ import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:html_unescape/html_unescape_small.dart';
 
 import '../../db/schemas/settings/settings.dart';
-import '../../interfaces/booru/booru_api_state.dart';
+import '../../interfaces/booru/booru_api.dart';
 import '../../interfaces/booru_tagging.dart';
 import '../cloudflare_exception.dart';
-import '../unsaveable_cookie_jar.dart';
 
 List<String> _fromDanbooruTags(List<dynamic> l) =>
     l.map((e) => e["name"] as String).toList();
 
-class Danbooru implements BooruAPIState {
+class Danbooru implements BooruAPI {
+  const Danbooru(this.client, {this.booru = Booru.danbooru});
+
   static const _log = LogTarget.booru;
 
-  final UnsaveableCookieJar cookieJar;
-
-  @override
-  void setCookies(List<Cookie> cookies) {
-    cookieJar.replaceDirectly(Uri.parse(booru.url), cookies);
-  }
-
-  @override
   final Dio client;
 
   @override
@@ -44,13 +36,6 @@ class Danbooru implements BooruAPIState {
 
   @override
   final bool wouldBecomeStale = false;
-
-  @override
-  Uri browserLink(int id) => Uri.https(booru.url, "/posts/$id");
-
-  @override
-  Uri browserLinkSearch(String tags) =>
-      Uri.https(booru.url, "/posts?tags=$tags");
 
   @override
   Future<Iterable<String>> notes(int postId) async {
@@ -148,7 +133,7 @@ class Danbooru implements BooruAPIState {
         };
 
     final query = <String, dynamic>{
-      "limit": BooruAPIState.numberOfElementsPerRefresh().toString(),
+      "limit": BooruAPI.numberOfElementsPerRefresh().toString(),
       "format": "json",
       "post[tags]": "${safeModeS()} $tags",
     };
@@ -231,9 +216,4 @@ class Danbooru implements BooruAPIState {
 
     return (list, currentSkipped);
   }
-
-  @override
-  void close() => client.close(force: true);
-
-  Danbooru(this.client, this.cookieJar, {this.booru = Booru.danbooru});
 }

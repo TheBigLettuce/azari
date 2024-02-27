@@ -11,8 +11,11 @@ class _FinishedTab extends StatefulWidget {
   final void Function() onDispose;
   final EdgeInsets viewInsets;
 
-  const _FinishedTab(this.viewInsets,
-      {required super.key, required this.onDispose});
+  const _FinishedTab(
+    this.viewInsets, {
+    required super.key,
+    required this.onDispose,
+  });
 
   @override
   State<_FinishedTab> createState() => __FinishedTabState();
@@ -81,7 +84,15 @@ class __FinishedTabState extends State<_FinishedTab> {
     _filter.addAll(
         _list.where((element) => element.title.toLowerCase().contains(l)));
 
-    m.setSource(_filter.length, (i) => _filter[_filter.length - 1 - i]);
+    m.cellCount = _filter.length;
+  }
+
+  WatchedAnimeEntry _getCell(int i) {
+    if (_filter.isNotEmpty) {
+      return _filter[_filter.length - 1 - i];
+    }
+
+    return _list[_list.length - 1 - i];
   }
 
   @override
@@ -90,7 +101,14 @@ class __FinishedTabState extends State<_FinishedTab> {
       state,
       (context) => GridFrame<WatchedAnimeEntry>(
         key: state.gridKey,
-        getCell: (i) => _list[_list.length - 1 - i],
+        layout: const GridSettingsLayoutBehaviour(GridSettingsBase(
+          aspectRatio: GridAspectRatio.one,
+          columns: GridColumn.three,
+          layoutType: GridLayoutType.gridQuilted,
+          hideName: false,
+        )),
+        refreshingStatus: state.refreshingStatus,
+        getCell: _getCell,
         imageViewDescription: ImageViewDescription(
           imageViewKey: state.imageViewKey,
         ),
@@ -101,8 +119,7 @@ class __FinishedTabState extends State<_FinishedTab> {
             onPressed: OverrideGridOnCellPressBehaviour(
               onPressed: (context, idx) {
                 final cell =
-                    MutationInterfaceProvider.of<WatchedAnimeEntry>(context)
-                        .getCell(idx);
+                    CellProvider.getOf<WatchedAnimeEntry>(context, idx);
 
                 Navigator.push(context, MaterialPageRoute(
                   builder: (context) {
@@ -112,18 +129,13 @@ class __FinishedTabState extends State<_FinishedTab> {
               },
             )),
         systemNavigationInsets: widget.viewInsets,
-        hasReachedEnd: () => true,
         mainFocus: state.mainFocus,
         description: GridDescription(
-          [],
+          actions: const [],
           keybindsDescription: AppLocalizations.of(context)!.finishedTab,
           showAppBar: false,
           ignoreSwipeSelectGesture: true,
-          layout: GridQuiltedLayout(
-            GridColumn.three,
-            GridAspectRatio.one,
-            gridSeed: state.gridSeed,
-          ),
+          gridSeed: state.gridSeed,
         ),
       ),
       canPop: false,

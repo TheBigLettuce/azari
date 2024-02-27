@@ -17,7 +17,22 @@ class GridSkeletonState<T extends Cell> extends SkeletonState {
   final GlobalKey<GridFrameState<T>> gridKey = GlobalKey();
   final GlobalKey<ImageViewState<T>> imageViewKey = GlobalKey();
   Settings settings = Settings.fromDb();
+  final GridRefreshingStatus<T> refreshingStatus;
+
   // final Future<bool> Function() onWillPop;
 
-  GridSkeletonState();
+  @override
+  void dispose() {
+    super.dispose();
+    refreshingStatus.dispose();
+  }
+
+  static bool _alwaysTrue() => true;
+
+  GridSkeletonState({
+    int initalCellCount = 0,
+    bool Function() reachedEnd = _alwaysTrue,
+    GridRefreshingStatus<T>? overrideRefreshStatus,
+  }) : refreshingStatus = overrideRefreshStatus ??
+            GridRefreshingStatus<T>(initalCellCount, reachedEnd);
 }

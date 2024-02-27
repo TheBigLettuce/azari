@@ -13,7 +13,7 @@ import 'package:gallery/src/db/base/booru_post_functionality_mixin.dart';
 import 'package:gallery/src/db/base/system_gallery_directory_file_functionality_mixin.dart';
 import 'package:gallery/src/db/base/system_gallery_thumbnail_provider.dart';
 import 'package:gallery/src/net/downloader.dart';
-import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
+import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/plugs/gallery.dart';
@@ -126,7 +126,9 @@ class SystemGalleryDirectoryFile extends Cell
       if (size == 0 && res != null)
         IconButton(
             onPressed: () {
-              final api = BooruAPIState.fromEnum(res!.booru, page: null);
+              final dio = BooruAPI.defaultClientForBooru(res!.booru);
+              final api =
+                  BooruAPI.fromEnum(res.booru, dio, const EmptyPageSaver());
 
               api.singlePost(res.id).then((post) {
                 PlatformFunctions.deleteFiles([this]);
@@ -146,19 +148,17 @@ class SystemGalleryDirectoryFile extends Cell
                     error: error,
                     stackTrace: stackTrace);
               }).whenComplete(() {
-                api.close();
+                dio.close(force: true);
               });
             },
             icon: const Icon(Icons.download_outlined)),
       if (res != null)
         IconButton(
             onPressed: () {
-              final api = BooruAPIState.fromEnum(res!.booru, page: null);
-
-              launchUrl(api.browserLink(res.id),
-                  mode: LaunchMode.externalApplication);
-
-              api.close();
+              launchUrl(
+                res!.booru.browserLink(res.id),
+                mode: LaunchMode.externalApplication,
+              );
             },
             icon: const Icon(Icons.public)),
       IconButton(
@@ -246,8 +246,8 @@ class SystemGalleryDirectoryFile extends Cell
             subtitle: "${height}px"),
         addInfoTile(colors: colors, title: "Size", subtitle: kbMbSize(size)),
         if (res != null && tagsFlat.contains("translated"))
-          TranslationNotes.tile(context, colors.foregroundColor, res.id,
-              () => BooruAPIState.fromEnum(res!.booru, page: null)),
+          TranslationNotes.tile(
+              context, colors.foregroundColor, res.id, res.booru),
         if (!isVideo && !isGif)
           SetWallpaperTile(
             colors: colors,
@@ -261,16 +261,16 @@ class SystemGalleryDirectoryFile extends Cell
           ? null
           : (context, t, [safeMode]) {
               try {
-                final res = PostTags.g.dissassembleFilename(name);
-                final tagManager = TagManager.fromEnum(res.booru);
+                // final res = PostTags.g.dissassembleFilename(name);
+                // final tagManager = TagManager.fromEnum(res.booru);
 
-                tagManager.onTagPressed(
-                  context,
-                  Tag(tag: t, isExcluded: false, time: DateTime.now()),
-                  res.booru,
-                  false,
-                  overrideSafeMode: safeMode,
-                );
+                // tagManager.onTagPressed(
+                //   context,
+                //   Tag(tag: t, isExcluded: false, time: DateTime.now()),
+                //   res.booru,
+                //   false,
+                //   overrideSafeMode: safeMode,
+                // );
               } catch (e) {
                 log("launching local tag random booru",
                     level: Level.SEVERE.value, error: e);

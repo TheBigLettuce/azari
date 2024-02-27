@@ -11,6 +11,8 @@ mixin _ChangePageMixin on State<Home> {
   late final SelectionGlueState glueState;
   late final Isar mainGrid;
 
+  final pagingRegistry = PagingStateRegistry();
+
   final mainKey = GlobalKey<NavigatorState>();
   final galleryKey = GlobalKey<NavigatorState>();
   final moreKey = GlobalKey<NavigatorState>();
@@ -37,6 +39,7 @@ mixin _ChangePageMixin on State<Home> {
   void disposeChangePage() {
     if (!themeIsChanging) {
       mainGrid.close().then((value) => restartOver());
+      pagingRegistry.dispose();
     } else {
       themeChangeOver();
     }
@@ -117,8 +120,8 @@ mixin _ChangePageMixin on State<Home> {
     }
   }
 
-  Widget _currentPage(BuildContext context, _AnimatedIconsMixin icons,
-      _MainGridRefreshingInterfaceMixin refresh, EdgeInsets padding) {
+  Widget _currentPage(
+      BuildContext context, _AnimatedIconsMixin icons, EdgeInsets padding) {
     SelectionGlue<T> generateGluePadding<T extends Cell>() {
       return glueState.glue(
         keyboardVisible,
@@ -157,15 +160,10 @@ mixin _ChangePageMixin on State<Home> {
               child: GlueProvider<Post>(
                 generate: generateGluePadding,
                 glue: _generateGlue(),
-                child: MainBooruGrid(
-                  restoreSelectedPage: restoreBookmarksPage,
-                  saveSelectedPage: (e) {
-                    restoreBookmarksPage = e;
-                  },
+                child: BooruPage(
+                  pagingRegistry: pagingRegistry,
                   generateGlue: generateGluePadding,
-                  mainGrid: mainGrid,
                   viewPadding: padding,
-                  refreshingInterface: refresh.refreshInterface,
                   procPop: (pop) => _procPopA(icons, pop),
                 ),
               ),
@@ -210,10 +208,6 @@ mixin _ChangePageMixin on State<Home> {
                 onPopInvoked: (pop) => _procPop(icons, pop),
                 child: MorePage(
                   generateGlue: _generateGlueB,
-                  tagManager:
-                      TagManager.fromEnum(Settings.fromDb().selectedBooru),
-                  api: BooruAPIState.fromEnum(Settings.fromDb().selectedBooru,
-                      page: null),
                 ).animate(),
               ),
             ),
@@ -226,4 +220,35 @@ mixin _ChangePageMixin on State<Home> {
   static const int kMangaPageRoute = 2;
   static const int kAnimePageRoute = 3;
   static const int kMorePageRoute = 4;
+}
+
+class PagingStateRegistry {
+  final Map<String, PagingEntry> _map = {};
+
+  PagingEntry getOrRegister(String key, PagingEntry Function() prototype) {
+    final e = _map[key];
+    if (e != null) {
+      return e;
+    }
+
+    _map[key] = prototype();
+
+    return _map[key]!;
+  }
+
+  void dispose() {
+    for (final e in _map.entries) {
+      e.value.dispose();
+    }
+  }
+}
+
+abstract class PagingEntry {
+  double get offset;
+  void setOffset(double o);
+
+  int get page;
+  void setPage(int p);
+
+  void dispose();
 }

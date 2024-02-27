@@ -5,24 +5,19 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
-import 'package:gallery/src/interfaces/manga/manga_api.dart';
-import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
 import 'package:gallery/src/pages/anime/anime.dart';
 import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
 import 'package:gallery/src/pages/manga/manga_page.dart';
-import 'package:gallery/src/pages/more/notes/notes_page.dart';
 import 'package:gallery/src/pages/more/settings/network_status.dart';
 import 'package:gallery/src/widgets/grid/glue_bottom_app_bar.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
@@ -35,12 +30,10 @@ import '../db/initalize_db.dart';
 import '../db/tags/post_tags.dart';
 import '../db/schemas/booru/post.dart';
 import '../db/schemas/settings/settings.dart';
-import '../db/state_restoration.dart';
-import '../interfaces/booru/booru_api_state.dart';
 import '../widgets/grid/selection/selection_glue_state.dart';
 import '../widgets/skeletons/home_skeleton.dart';
 import '../widgets/skeletons/skeleton_state.dart';
-import 'booru/main.dart';
+import 'booru/booru_page.dart';
 import 'gallery/directories.dart';
 import 'more/more_page.dart';
 import 'more/settings/settings_widget.dart';
@@ -50,7 +43,6 @@ part 'home/icons/gallery_icon.dart';
 part 'home/icons/booru_icon.dart';
 part 'home/icons/favorites_icon.dart';
 part 'home/navigator_shell.dart';
-part 'home/main_grid_refreshing_interface.dart';
 part 'home/change_page_mixin.dart';
 part 'home/animated_icons_mixin.dart';
 part 'home/before_you_continue_dialog_mixin.dart';
@@ -67,7 +59,6 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home>
     with
         TickerProviderStateMixin,
-        _MainGridRefreshingInterfaceMixin,
         _ChangePageMixin,
         _AnimatedIconsMixin,
         _BeforeYouContinueDialogMixin {
@@ -117,11 +108,11 @@ class _HomeState extends State<Home>
     final edgeInsets = MediaQuery.viewPaddingOf(context);
 
     return SelectionCountNotifier(
-      count: glueState.count ?? 0,
+      count: glueState.count,
       child: HomeSkeleton(
         "Home",
         state,
-        (context) => _currentPage(context, this, this, edgeInsets),
+        (context) => _currentPage(context, this, edgeInsets),
         navBar: Animate(
             controller: controllerNavBar,
             target: glueState.actions != null ? 1 : 0,

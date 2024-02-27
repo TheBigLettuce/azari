@@ -11,6 +11,19 @@ import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:isar/isar.dart';
 
 class GridSettingsBase {
+  const GridSettingsBase({
+    required this.aspectRatio,
+    required this.columns,
+    required this.layoutType,
+    required this.hideName,
+  });
+
+  const GridSettingsBase.list({
+    this.hideName = false,
+  })  : aspectRatio = GridAspectRatio.one,
+        columns = GridColumn.two,
+        layoutType = GridLayoutType.list;
+
   final bool hideName;
   @enumerated
   final GridAspectRatio aspectRatio;
@@ -19,11 +32,4 @@ class GridSettingsBase {
 
   @enumerated
   final GridLayoutType layoutType;
-
-  const GridSettingsBase({
-    required this.aspectRatio,
-    required this.columns,
-    required this.layoutType,
-    required this.hideName,
-  });
 }

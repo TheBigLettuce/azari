@@ -10,7 +10,7 @@ import 'dart:io' as io;
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
+import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
@@ -61,7 +61,9 @@ class PostTags {
   /// Resolves to an empty list in case of any error.
   Future<List<String>> loadFromDissassemble(
       String filename, DisassembleResult dissassembled) async {
-    final api = BooruAPIState.fromEnum(dissassembled.booru, page: null);
+    final client = BooruAPI.defaultClientForBooru(dissassembled.booru);
+    final api =
+        BooruAPI.fromEnum(dissassembled.booru, client, const EmptyPageSaver());
 
     try {
       final post = await api.singlePost(dissassembled.id);
@@ -72,14 +74,13 @@ class PostTags {
       tagsDb.writeTxnSync(
           () => tagsDb.localTags.putSync(LocalTags(filename, post.tags)));
 
-      api.close();
-
       return post.tags;
     } catch (e, trace) {
       log("fetching post for tags",
           level: Level.SEVERE.value, error: e, stackTrace: trace);
-      api.close();
       return [];
+    } finally {
+      client.close();
     }
   }
 

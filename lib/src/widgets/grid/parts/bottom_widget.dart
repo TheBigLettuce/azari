@@ -8,11 +8,13 @@
 part of '../grid_frame.dart';
 
 class _BottomWidget<T extends Cell> extends PreferredSize {
+  final bool isRefreshing;
   final Widget? routeChanger;
 
   const _BottomWidget({
     required super.preferredSize,
     this.routeChanger,
+    required this.isRefreshing,
     required super.child,
   });
 
@@ -25,7 +27,7 @@ class _BottomWidget<T extends Cell> extends PreferredSize {
               super.build(context),
             ],
           )
-        : !MutationInterfaceProvider.of<T>(context).isRefreshing
+        : !isRefreshing
             ? super.build(context)
             : const LinearProgressIndicator();
   }

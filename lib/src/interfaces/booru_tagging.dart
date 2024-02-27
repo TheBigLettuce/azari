@@ -5,11 +5,15 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:async';
+
 import '../db/schemas/tags/tags.dart';
 
 /// Tag search history.
 /// Used for both for the recent tags and the excluded.
 abstract class BooruTagging {
+  const BooruTagging();
+
   bool exists(Tag tag);
 
   /// Get the current tags.
@@ -26,5 +30,5 @@ abstract class BooruTagging {
   /// Delete all the tags from the DB.
   void clear();
 
-  const BooruTagging();
+  StreamSubscription<void> watch(void Function(void) f, [bool fire = false]);
 }

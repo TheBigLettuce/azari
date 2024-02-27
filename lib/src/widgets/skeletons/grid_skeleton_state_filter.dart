@@ -30,5 +30,6 @@ class GridSkeletonStateFilter<T extends Cell> extends GridSkeletonState<T> {
     this.defaultMode = FilteringMode.noFilter,
     this.hook = _doNothing,
     this.unsetFilteringModeOnReset = true,
+    super.initalCellCount = 0,
   });
 }

@@ -74,19 +74,20 @@ class GridCell<T extends Cell> extends StatefulWidget {
     BuildContext context,
     int idx, {
     required GridFrameState<T> state,
+    required bool isList,
+    required bool hideTitle,
     bool animated = false,
   }) {
     final functionality = state.widget.functionality;
     final description = state.widget.description;
     final selection = state.selection;
 
-    final mutation = MutationInterfaceProvider.of<T>(context);
-    final cell = mutation.getCell(idx);
+    final cell = CellProvider.getOf<T>(context, idx);
 
     return GridCell(
       cell: cell,
-      hideAlias: description.hideTitle,
-      isList: description.layout.isList,
+      hideAlias: hideTitle,
+      isList: isList,
       indx: idx,
       selection: state.selection,
       download: functionality.download,

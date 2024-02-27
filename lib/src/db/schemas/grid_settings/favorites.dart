@@ -46,9 +46,12 @@ class GridSettingsFavorites extends GridSettingsBase {
         .writeTxnSync(() => Dbs.g.main.gridSettingsFavorites.putSync(this));
   }
 
-  static StreamSubscription<GridSettingsFavorites?> watch(
-      void Function(GridSettingsFavorites?) f) {
-    return Dbs.g.main.gridSettingsFavorites.watchObject(0).listen(f);
+  static StreamSubscription<GridSettingsFavorites> watch(
+      void Function(GridSettingsFavorites) f) {
+    return Dbs.g.main.gridSettingsFavorites
+        .watchObject(0)
+        .map((event) => event!)
+        .listen(f);
   }
 
   static GridSettingsFavorites get current =>

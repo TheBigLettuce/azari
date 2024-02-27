@@ -9,38 +9,20 @@ part of 'grid_frame.dart';
 
 class DefaultMutationInterface<T extends Cell>
     implements GridMutationInterface<T> {
-  DefaultMutationInterface({
-    required this.update,
-    required this.originalCell,
-    int initalCellCount = 0,
-  }) : _cellCount = initalCellCount;
-
-  final void Function({
-    required bool imageView,
-    required bool unselectAll,
-  }) update;
-
-  final T Function(int i) originalCell;
-
-  T Function(int i)? _filterGetCell;
-
-  int? _cellCountFilter;
+  DefaultMutationInterface(this._cellCount);
+  final _updates = StreamController<void>.broadcast();
 
   int _cellCount = 0;
   bool _refreshing = false;
 
   @override
-  int get cellCount => _cellCountFilter ?? _cellCount;
+  int get cellCount => _cellCount;
 
   @override
   set cellCount(int c) {
-    if (_filterGetCell != null) {
-      _cellCountFilter = c;
-    } else {
-      _cellCount = c;
-    }
+    _cellCount = c;
 
-    update(imageView: false, unselectAll: false);
+    _updates.add(null);
   }
 
   @override
@@ -50,34 +32,24 @@ class DefaultMutationInterface<T extends Cell>
   set isRefreshing(bool b) {
     _refreshing = b;
 
-    update(imageView: false, unselectAll: false);
+    _updates.add(null);
   }
-
-  @override
-  bool get mutated => _filterGetCell != null;
 
   @override
   void reset() {
-    _cellCountFilter = null;
-    _filterGetCell = null;
+    cellCount = 0;
+    isRefreshing = false;
 
-    update(imageView: true, unselectAll: false);
+    _updates.add(null);
   }
 
   @override
-  T getCell(int i) {
-    if (_filterGetCell != null) {
-      return _filterGetCell!(i);
-    }
-
-    return originalCell(i);
+  StreamSubscription<void> registerStatusUpdate(void Function(void) f) {
+    return _updates.stream.listen(f);
   }
 
   @override
-  void setSource(int cellCount, T Function(int i) getCell) {
-    _filterGetCell = getCell;
-    _cellCountFilter = cellCount;
-
-    update(imageView: true, unselectAll: true);
+  void dispose() {
+    _updates.close();
   }
 }

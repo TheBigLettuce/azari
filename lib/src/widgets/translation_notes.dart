@@ -5,17 +5,19 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/interfaces/booru/booru.dart';
 
-import '../interfaces/booru/booru_api_state.dart';
+import '../interfaces/booru/booru_api.dart';
 
 class TranslationNotes extends StatefulWidget {
   final int postId;
-  final BooruAPIState api;
+  final Booru booru;
 
-  static Widget tile(BuildContext context, Color foregroundColor, int postId,
-      BooruAPIState Function() api) {
+  static Widget tile(
+      BuildContext context, Color foregroundColor, int postId, Booru booru) {
     return ListTile(
       textColor: foregroundColor,
       title: Text(AppLocalizations.of(context)!.hasTranslations),
@@ -28,7 +30,7 @@ class TranslationNotes extends StatefulWidget {
               builder: (context) {
                 return TranslationNotes(
                   postId: postId,
-                  api: api(),
+                  booru: booru,
                 );
               },
             ));
@@ -36,18 +38,33 @@ class TranslationNotes extends StatefulWidget {
     );
   }
 
-  const TranslationNotes({super.key, required this.api, required this.postId});
+  const TranslationNotes({
+    super.key,
+    required this.booru,
+    required this.postId,
+  });
 
   @override
   State<TranslationNotes> createState() => _TranslationNotesState();
 }
 
 class _TranslationNotesState extends State<TranslationNotes> {
-  late final future = widget.api.notes(widget.postId);
+  late final Dio dio;
+  late Future<Iterable<String>> f;
+
+  @override
+  void initState() {
+    super.initState();
+
+    dio = BooruAPI.defaultClientForBooru(widget.booru);
+    f = BooruAPI.fromEnum(widget.booru, dio, const EmptyPageSaver())
+        .notes(widget.postId);
+  }
 
   @override
   void dispose() {
-    widget.api.close();
+    dio.close(force: true);
+
     super.dispose();
   }
 
@@ -56,7 +73,7 @@ class _TranslationNotesState extends State<TranslationNotes> {
     return AlertDialog(
       title: Text(AppLocalizations.of(context)!.translationTitle),
       content: FutureBuilder(
-          future: future,
+          future: f,
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               return SingleChildScrollView(

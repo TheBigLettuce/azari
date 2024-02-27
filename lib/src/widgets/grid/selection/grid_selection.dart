@@ -70,7 +70,7 @@ class GridSelection<T extends Cell> {
     glue.updateCount(_selected.length);
   }
 
-  void selectUnselectUntil(int indx, GridMutationInterface<T> state,
+  void selectUnselectUntil(BuildContext context, int indx,
       {List<int>? selectFrom}) {
     if (lastSelected != null) {
       final last = selectFrom?.indexOf(lastSelected!) ?? lastSelected!;
@@ -80,11 +80,12 @@ class GridSelection<T extends Cell> {
       }
 
       final selection = !isSelected(indx);
+      final getCell = CellProvider.of<T>(context);
 
       if (indx < last) {
         for (var i = last; i >= indx; i--) {
           if (selection) {
-            _selected[selectFrom?[i] ?? i] = state.getCell(selectFrom?[i] ?? i);
+            _selected[selectFrom?[i] ?? i] = getCell(selectFrom?[i] ?? i);
           } else {
             remove(selectFrom?[i] ?? i);
           }
@@ -94,7 +95,7 @@ class GridSelection<T extends Cell> {
       } else if (indx > last) {
         for (var i = last; i <= indx; i++) {
           if (selection) {
-            _selected[selectFrom?[i] ?? i] = state.getCell(selectFrom?[i] ?? i);
+            _selected[selectFrom?[i] ?? i] = getCell(selectFrom?[i] ?? i);
           } else {
             remove(selectFrom?[i] ?? i);
           }
@@ -113,7 +114,7 @@ class GridSelection<T extends Cell> {
     }
 
     if (!isSelected(index)) {
-      final cell = MutationInterfaceProvider.of<T>(context).getCell(index);
+      final cell = CellProvider.getOf<T>(context, index);
 
       add(context, index, cell);
     } else {

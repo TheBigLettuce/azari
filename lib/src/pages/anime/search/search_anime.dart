@@ -12,8 +12,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/main.dart';
+import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
+import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
@@ -27,7 +29,6 @@ import 'package:gallery/src/widgets/grid/configuration/grid_on_cell_press_behavi
 import 'package:gallery/src/widgets/grid/configuration/grid_search_widget.dart';
 import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
-import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/grid/wrappers/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
@@ -158,7 +159,7 @@ class _SearchAnimePageState<T extends Cell, I, G>
   final List<T> _results = [];
   late final StreamSubscription<void> watcher;
   final searchFocus = FocusNode();
-  final state = GridSkeletonState<T>();
+  late final state = GridSkeletonState<T>(reachedEnd: () => _reachedEnd);
   late AnimeSafeMode mode = widget.explicit;
 
   Future<Map<I, G>>? _genreFuture;
@@ -261,6 +262,13 @@ class _SearchAnimePageState<T extends Cell, I, G>
             state,
             (context) => GridFrame<T>(
               key: state.gridKey,
+              layout: GridSettingsLayoutBehaviour(GridSettingsBase(
+                aspectRatio: GridAspectRatio.zeroSeven,
+                columns: gridSettings.columns,
+                layoutType: GridLayoutType.grid,
+                hideName: false,
+              )),
+              refreshingStatus: state.refreshingStatus,
               getCell: (i) => _results[i],
               imageViewDescription:
                   ImageViewDescription(imageViewKey: state.imageViewKey),
@@ -276,8 +284,7 @@ class _SearchAnimePageState<T extends Cell, I, G>
                   }),
                   onPressed: OverrideGridOnCellPressBehaviour(
                     onPressed: (context, idx) {
-                      widget.onPressed(
-                          state.gridKey.currentState!.mutation.getCell(idx));
+                      widget.onPressed(_results[idx]);
                     },
                   ),
                   search: OverrideGridSearchWidget(
@@ -309,10 +316,9 @@ class _SearchAnimePageState<T extends Cell, I, G>
               systemNavigationInsets: widget.viewInsets ??
                   (MediaQuery.viewPaddingOf(context) +
                       const EdgeInsets.only(bottom: 4)),
-              hasReachedEnd: () => _reachedEnd,
               mainFocus: state.mainFocus,
               description: GridDescription(
-                const [],
+                actions: const [],
                 inlineMenuButtonItems: true,
                 menuButtonItems: [
                   TextButton(
@@ -384,10 +390,7 @@ class _SearchAnimePageState<T extends Cell, I, G>
                 titleLines: 2,
                 keybindsDescription:
                     AppLocalizations.of(context)!.searchAnimePage,
-                layout: GridLayout(
-                  gridSettings.columns,
-                  GridAspectRatio.zeroSeven,
-                ),
+                gridSeed: state.gridSeed,
               ),
             ),
             canPop: true,

@@ -23,6 +23,29 @@ enum Booru {
   /// Scheme is always assumed to be https.
   final String url;
 
+  /// Constructs a link to the post to be loaded in the browser, outside the app.
+  Uri browserLink(int id) {
+    return switch (this) {
+      Booru.gelbooru => Uri.https(url, "/index.php", {
+          "page": "post",
+          "s": "view",
+          "id": id.toString(),
+        }),
+      Booru.danbooru => Uri.https(url, "/posts/$id"),
+    };
+  }
+
+  Uri browserLinkSearch(String tags) {
+    return switch (this) {
+      Booru.gelbooru => Uri.https(url, "/index.php", {
+          "page": "post",
+          "s": "list",
+          "tags": tags,
+        }),
+      Booru.danbooru => Uri.https(url, "/posts?tags=$tags"),
+    };
+  }
+
   static Booru? fromPrefix(String prefix) {
     for (var b in Booru.values) {
       if (b.prefix == prefix) {
@@ -33,5 +56,9 @@ enum Booru {
     return null;
   }
 
-  const Booru({required this.string, required this.prefix, required this.url});
+  const Booru({
+    required this.string,
+    required this.prefix,
+    required this.url,
+  });
 }

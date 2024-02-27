@@ -49,20 +49,18 @@ import 'callback_description_nested.dart';
 class GalleryDirectories extends StatefulWidget {
   final CallbackDescription? callback;
   final CallbackDescriptionNested? nestedCallback;
-  final bool? noDrawer;
   final bool showBackButton;
   final void Function(bool) procPop;
   final EdgeInsets? viewPadding;
 
-  const GalleryDirectories(
-      {super.key,
-      this.callback,
-      this.nestedCallback,
-      this.noDrawer,
-      this.viewPadding,
-      required this.procPop,
-      this.showBackButton = false})
-      : assert(!(callback != null && nestedCallback != null));
+  const GalleryDirectories({
+    super.key,
+    this.callback,
+    this.nestedCallback,
+    this.viewPadding,
+    required this.procPop,
+    this.showBackButton = false,
+  }) : assert(!(callback != null && nestedCallback != null));
 
   @override
   State<GalleryDirectories> createState() => _GalleryDirectoriesState();
@@ -74,7 +72,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
 
   late final StreamSubscription<Settings?> settingsWatcher;
   late final StreamSubscription<MiscSettings?> miscSettingsWatcher;
-  late final StreamSubscription<GridSettingsDirectories?> gridSettingsWatcher;
   late final AppLifecycleListener lifecycleListener;
 
   GridSettingsDirectories gridSettings = GridSettingsDirectories.current;
@@ -99,6 +96,9 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
       GridSkeletonStateFilter(
     transform: (cell, _) => cell,
     filter: extra.filter,
+    initalCellCount: widget.callback != null
+        ? extra.db.systemGalleryDirectorys.countSync()
+        : 0,
   );
 
   late final galleryPlug = chooseGalleryPlug();
@@ -115,12 +115,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
   @override
   void initState() {
     super.initState();
-
-    gridSettingsWatcher = GridSettingsDirectories.watch((newSettings) {
-      gridSettings = newSettings!;
-
-      setState(() {});
-    });
 
     galleryPlug.version.then((value) => galleryVersion = value);
 
@@ -175,7 +169,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
 
       if (!inRefresh || empty) {
         state.gridKey.currentState?.mutation.isRefreshing = false;
-        state.gridKey.currentState?.refreshingStatus.unlock();
         performSearch(searchTextController.text);
         setState(() {});
       }
@@ -186,7 +179,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
   void dispose() {
     settingsWatcher.cancel();
     miscSettingsWatcher.cancel();
-    gridSettingsWatcher.cancel();
 
     api.close();
     stream.close();
@@ -296,14 +288,14 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
         state,
         (context) => GridFrame(
               key: state.gridKey,
+              layout: GridSettingsLayoutBehaviour(gridSettings),
+              refreshingStatus: state.refreshingStatus,
               getCell: (i) => api.directCell(i),
               functionality: GridFunctionality(
                   onPressed: OverrideGridOnCellPressBehaviour(
                       onPressed: (context, idx) {
-                    final cell =
-                        MutationInterfaceProvider.of<SystemGalleryDirectory>(
-                                context)
-                            .getCell(idx);
+                    final cell = CellProvider.getOf<SystemGalleryDirectory>(
+                        context, idx);
 
                     if (widget.callback != null) {
                       widget.callback!.c(cell, null).then((_) {
@@ -359,6 +351,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                   }),
                   progressTicker: stream.stream,
                   selectionGlue: glue,
+                  watchLayoutSettings: GridSettingsDirectories.watch,
                   refresh: widget.callback != null
                       ? SynchronousGridRefresh(() {
                           PlatformFunctions.trashThumbId().then((value) {
@@ -383,57 +376,54 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                 imageViewKey: state.imageViewKey,
               ),
               systemNavigationInsets: widget.viewPadding ?? EdgeInsets.zero,
-              hasReachedEnd: () => true,
               mainFocus: state.mainFocus,
-              initalCellCount: widget.callback != null
-                  ? extra.db.systemGalleryDirectorys.countSync()
-                  : 0,
               description: GridDescription(
-                widget.callback != null || widget.nestedCallback != null
-                    ? [
-                        if (widget.callback == null ||
-                            widget.callback!.joinable)
-                          SystemGalleryDirectoriesActions.joinedDirectories(
-                              context,
-                              extra,
-                              widget.viewPadding ?? EdgeInsets.zero,
-                              widget.nestedCallback)
-                      ]
-                    : [
-                        FavoritesActions.addToGroup(context, (selected) {
-                          final t = selected.first.tag;
-                          for (final e in selected.skip(1)) {
-                            if (t != e.tag) {
-                              return null;
-                            }
-                          }
+                actions:
+                    widget.callback != null || widget.nestedCallback != null
+                        ? [
+                            if (widget.callback == null ||
+                                widget.callback!.joinable)
+                              SystemGalleryDirectoriesActions.joinedDirectories(
+                                  context,
+                                  extra,
+                                  widget.viewPadding ?? EdgeInsets.zero,
+                                  widget.nestedCallback)
+                          ]
+                        : [
+                            FavoritesActions.addToGroup(context, (selected) {
+                              final t = selected.first.tag;
+                              for (final e in selected.skip(1)) {
+                                if (t != e.tag) {
+                                  return null;
+                                }
+                              }
 
-                          return t;
-                        }, (selected, value, toPin) {
-                          if (value.isEmpty) {
-                            PostTags.g.removeDirectoriesTag(
-                                selected.map((e) => e.bucketId));
-                          } else {
-                            PostTags.g.setDirectoriesTag(
-                                selected.map((e) => e.bucketId), value);
+                              return t;
+                            }, (selected, value, toPin) {
+                              if (value.isEmpty) {
+                                PostTags.g.removeDirectoriesTag(
+                                    selected.map((e) => e.bucketId));
+                              } else {
+                                PostTags.g.setDirectoriesTag(
+                                    selected.map((e) => e.bucketId), value);
 
-                            if (toPin) {
-                              PinnedDirectories.add(value, true);
-                            }
-                          }
+                                if (toPin) {
+                                  PinnedDirectories.add(value, true);
+                                }
+                              }
 
-                          _refresh();
+                              _refresh();
 
-                          Navigator.of(context, rootNavigator: true).pop();
-                        }),
-                        SystemGalleryDirectoriesActions.blacklist(
-                            context, extra),
-                        SystemGalleryDirectoriesActions.joinedDirectories(
-                            context,
-                            extra,
-                            widget.viewPadding ?? EdgeInsets.zero,
-                            widget.nestedCallback)
-                      ],
+                              Navigator.of(context, rootNavigator: true).pop();
+                            }),
+                            SystemGalleryDirectoriesActions.blacklist(
+                                context, extra),
+                            SystemGalleryDirectoriesActions.joinedDirectories(
+                                context,
+                                extra,
+                                widget.viewPadding ?? EdgeInsets.zero,
+                                widget.nestedCallback)
+                          ],
                 footer: widget.callback?.preview,
                 menuButtonItems: [
                   if (widget.callback != null)
@@ -466,7 +456,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                       selectGridColumn: (columns) =>
                           gridSettings.copy(columns: columns).save()),
                 ],
-                hideTitle: gridSettings.hideName,
                 bottomWidget:
                     widget.callback != null || widget.nestedCallback != null
                         ? CopyMovePreview.hintWidget(
@@ -478,15 +467,9 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                 inlineMenuButtonItems: true,
                 keybindsDescription:
                     AppLocalizations.of(context)!.androidGKeybindsDescription,
-                layout: SegmentLayout(
-                  _makeSegments(context),
-                  gridSettings.columns,
-                  gridSettings.aspectRatio,
-                  // hideAlias: gridSettings.hideName,
-                ),
+                gridSeed: state.gridSeed,
               ),
             ),
-        noDrawer: widget.noDrawer ?? false,
         canPop: widget.callback != null || widget.nestedCallback != null
             ? currentFilteringMode() == FilteringMode.noFilter &&
                 searchTextController.text.isEmpty

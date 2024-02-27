@@ -15,7 +15,7 @@ import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
-import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
+import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:gallery/src/interfaces/filtering/filtering_mode.dart';
 import 'package:gallery/src/pages/more/settings/global_progress.dart';
@@ -82,7 +82,7 @@ mixin SystemGalleryDirectoryFileFunctionalityMixin {
                       builder: (context) {
                         return TranslationNotes(
                           postId: res!.id,
-                          api: BooruAPIState.fromEnum(res.booru, page: null),
+                          booru: res.booru,
                         );
                       },
                     ),
@@ -125,8 +125,6 @@ mixin SystemGalleryDirectoryFileFunctionalityMixin {
 
     return "${res.toStringAsFixed(1)} KB";
   }
-
-  
 }
 
 Future<void> loadNetworkThumb(String filename, int id,
@@ -149,7 +147,8 @@ Future<void> loadNetworkThumb(String filename, int id,
 
   try {
     final res = PostTags.g.dissassembleFilename(filename);
-    final api = BooruAPIState.fromEnum(res.booru, page: null);
+    final client = BooruAPI.defaultClientForBooru(res.booru);
+    final api = BooruAPI.fromEnum(res.booru, client, const EmptyPageSaver());
 
     try {
       final post = await api.singlePost(res.id);
@@ -165,7 +164,7 @@ Future<void> loadNetworkThumb(String filename, int id,
       log("video thumb 2", level: Level.WARNING.value, error: e);
     }
 
-    api.close();
+    client.close(force: true);
   } catch (_) {}
 
   notif.done();

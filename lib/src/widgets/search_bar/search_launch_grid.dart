@@ -14,7 +14,7 @@ import '../notifiers/booru_api.dart';
 import 'search_launch_grid_data.dart';
 
 /// Search mixin which launches a new page with a grid.
-mixin SearchLaunchGrid<T extends Cell>
+class SearchLaunchGrid<T extends Cell>
     implements SearchMixin<SearchLaunchGridData> {
   @override
   final TextEditingController searchTextController = TextEditingController();

@@ -33,27 +33,11 @@ enum GridLayoutType {
 
   final String text;
 
-  GridLayouter<T> layout<T extends Cell>(
-    GridSettingsBase base, {
-    required int gridSeed,
-    bool tightMode = false,
-  }) =>
-      switch (this) {
+  GridLayouter<T> layout<T extends Cell>() => switch (this) {
         GridLayoutType.list => ListLayout<T>(),
-        GridLayoutType.grid => GridLayout<T>(
-            base.columns,
-            base.aspectRatio,
-          ),
-        GridLayoutType.gridQuilted => GridQuiltedLayout<T>(
-            base.columns,
-            base.aspectRatio,
-            gridSeed: gridSeed,
-          ),
-        GridLayoutType.gridMasonry => GridMasonryLayout<T>(
-            base.columns,
-            base.aspectRatio,
-            gridSeed: gridSeed,
-          ),
+        GridLayoutType.grid => GridLayout<T>(),
+        GridLayoutType.gridQuilted => GridQuiltedLayout<T>(),
+        GridLayoutType.gridMasonry => GridMasonryLayout<T>(),
       };
 }
 

@@ -66,9 +66,8 @@ class DefaultGridOnCellPressBehaviour implements GridOnCellPressedBehaviour {
         statistics: imageDesctipion.statistics,
         registerNotifiers: functionality.registerNotifiers,
         systemOverlayRestoreColor: overlayColor,
-        updateTagScrollPos: (pos, selectedCell) => functionality
-            .updateScrollPosition
-            ?.call(offsetGrid, infoPos: pos, selectedCell: selectedCell),
+        updateTagScrollPos: (pos, selectedCell) =>
+            functionality.updateScrollPosition?.call(offsetGrid),
         scrollUntill: state.tryScrollUntil,
         pageChange: imageDesctipion.pageChangeImage,
         onExit: () {
@@ -80,7 +79,7 @@ class DefaultGridOnCellPressBehaviour implements GridOnCellPressedBehaviour {
         focusMain: state.widget.mainFocus.requestFocus,
         infoScrollOffset: startingOffset,
         // predefinedIndexes: segTranslation,
-        getCell: mutation.getCell,
+        getCell: state.widget.getCell,
         // noteInterface: widget.noteInterface,
         cellCount: mutation.cellCount,
         download: functionality.download,
@@ -97,7 +96,8 @@ class DefaultGridOnCellPressBehaviour implements GridOnCellPressedBehaviour {
             //       }()
             //     :
             startingCell,
-        onNearEnd: state.refreshingStatus.onNearEnd,
+        onNearEnd: () =>
+            state.refreshingStatus.onNearEnd(state.widget.functionality),
       );
     })).then((value) => functionality.selectionGlue.hideNavBar(false));
   }

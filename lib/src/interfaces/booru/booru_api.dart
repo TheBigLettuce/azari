@@ -19,6 +19,24 @@ import '../../net/booru/gelbooru.dart';
 import '../booru_tagging.dart';
 import 'booru.dart';
 
+abstract class PageSaver {
+  const PageSaver();
+
+  void save(int page);
+
+  int get current;
+}
+
+class EmptyPageSaver implements PageSaver {
+  const EmptyPageSaver();
+
+  @override
+  int get current => 0;
+
+  @override
+  void save(int page) {}
+}
+
 /// The interface to interact with the various booru APIs.
 ///
 /// Implemenations of this interface should hold no state, other than the [client].
@@ -26,9 +44,8 @@ import 'booru.dart';
 /// it should keep the page number and increase it after calls to [fromPost],
 /// return the current page in [currentPage], return true in [wouldBecomeStale]
 /// and reset page number after calls to [page].
-abstract class BooruAPIState {
-  // The client with which all the requests are made to the booru API.
-  Dio get client;
+abstract class BooruAPI {
+  const BooruAPI(Dio client, PageSaver pageSaver);
 
   /// Some booru do not support pulling posts down a certain post number,
   /// this flag reflects this.
@@ -36,11 +53,6 @@ abstract class BooruAPIState {
 
   /// Booru enum of this API. All the boorus should be added to this enum.
   Booru get booru;
-
-  /// Some boorus do not support pulling posts down a certain post number,
-  /// and instead API implementations use paging to make it work.
-  /// This should be not null if [wouldBecomeStale] is true.
-  int? get currentPage;
 
   /// Get a single post by it's id.
   /// This is used in many places, like tags and single post loading in the "Tags" page.
@@ -67,46 +79,40 @@ abstract class BooruAPIState {
   /// Tag completition, this shouldn't present more than 10 at a time.
   Future<List<String>> completeTag(String tag);
 
-  /// Constructs a link to the post to be loaded in the browser, outside the app.
-  Uri browserLink(int id);
-
-  Uri browserLinkSearch(String tags);
-
   /// Sets the cookies for all the requests done with the [client].
   /// This is useful with Cloudlfare, but currently is usesless.
-  void setCookies(List<Cookie> cookies);
-
-  /// After the call to [close], [client] should not work.
-  void close();
+  // void setCookies(List<Cookie> cookies);
 
   /// [fromSettings] returns a selected *booru API, consulting the settings.
   /// Some *booru have no way to retreive posts down
   /// of a post number, in this case [page] comes in handy:
   /// that is, it makes refreshes on restore few.
-  static BooruAPIState fromSettings({int? page}) {
-    return BooruAPIState.fromEnum(Settings.fromDb().selectedBooru, page: page);
+  static BooruAPI fromSettings(Dio client, PageSaver pageSaver) {
+    return BooruAPI.fromEnum(
+        Settings.fromDb().selectedBooru, client, pageSaver);
   }
 
-  static BooruAPIState fromEnum(Booru booru, {required int? page}) {
-    final dio = Dio(BaseOptions(
-      responseType: ResponseType.json,
-    ));
-
+  static Dio defaultClientForBooru(Booru booru) {
     final jar = UnsaveableCookieJar(CookieJarTab().get(booru));
+    final Dio dio = Dio();
     dio.interceptors.add(CookieManager(jar));
 
+    return dio;
+  }
+
+  static BooruAPI fromEnum(Booru booru, Dio client, PageSaver pageSaver) {
     return switch (booru) {
-      Booru.danbooru => Danbooru(dio, jar),
-      Booru.gelbooru => Gelbooru(page ?? 0, dio, jar),
+      Booru.danbooru => Danbooru(client),
+      Booru.gelbooru => Gelbooru(client, pageSaver),
     };
   }
 
-  static numberOfElementsPerRefresh() {
+  static int numberOfElementsPerRefresh() {
     final settings = GridSettingsBooru.current;
     if (settings.layoutType == GridLayoutType.list) {
       return 20;
     }
 
-    return 10 * settings.columns.number;
+    return 15 * settings.columns.number;
   }
 }

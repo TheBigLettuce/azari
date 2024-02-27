@@ -8,12 +8,14 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
+import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
+import 'package:gallery/src/db/schemas/grid_settings/directories.dart';
 import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
 import 'package:gallery/src/db/schemas/manga/pinned_manga.dart';
 import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
@@ -27,21 +29,17 @@ import 'package:gallery/src/interfaces/grid/grid_mutation_interface.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:gallery/src/net/anime/jikan.dart';
-import 'package:gallery/src/net/manga/manga_dex.dart';
 import 'package:gallery/src/pages/anime/info_pages/finished_anime_info_page.dart';
 import 'package:gallery/src/pages/anime/info_pages/discover_anime_info_page.dart';
 import 'package:gallery/src/pages/anime/info_pages/watching_anime_info_page.dart';
 import 'package:gallery/src/pages/anime/manga/manga_info_page.dart';
 import 'package:gallery/src/pages/anime/paging_container.dart';
-import 'package:gallery/src/pages/anime/tab_bar_count.dart';
-import 'package:gallery/src/pages/anime/tabs/manga_tab.dart';
 import 'package:gallery/src/pages/more/notes/tab_with_count.dart';
 import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_fab_type.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_on_cell_press_behaviour.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_refresh_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/grid/grid_cell.dart';
@@ -88,29 +86,24 @@ class _AnimePageState extends State<AnimePage>
   final watchingKey = GlobalKey<__WatchingTabState>();
   final tabKey = GlobalKey<_TabBarWrapperState>();
   final finishedKey = GlobalKey<__FinishedTabState>();
-  // final readKey = GlobalKey<_ReadingTabState>();
 
   final _textController = TextEditingController();
   final state = SkeletonState();
   late final StreamSubscription<void> watcher;
   late final StreamSubscription<void> watcherWatched;
-  // late final StreamSubscription<void> watcherReading;
+
   late final tabController =
       TabController(initialIndex: kWatchingTabIndx, length: 3, vsync: this);
 
   final List<AnimeEntry> _discoverEntries = [];
-  // final List<MangaEntry> mangaEntries = [];
 
   int savedCount = 0;
 
   int readingCount = ReadMangaChapter.countDistinct();
 
-  // final Dio client = Dio();
   final api = const Jikan();
-  // late final mangaApi = MangaDex(client);
 
-  final discoverContainer = PagingContainer();
-  // final mangaContainer = PagingContainer();
+  final discoverContainer = PagingContainer<AnimeEntry>();
 
   @override
   void initState() {
@@ -137,12 +130,13 @@ class _AnimePageState extends State<AnimePage>
 
   @override
   void dispose() {
+    discoverContainer.dispose();
+
     state.dispose();
     watcher.cancel();
     watcherWatched.cancel();
     tabController.dispose();
     _textController.dispose();
-    // client.close(force: true);
 
     super.dispose();
   }

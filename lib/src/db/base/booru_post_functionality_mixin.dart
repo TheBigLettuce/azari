@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru_tagging.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
@@ -91,7 +90,7 @@ mixin BooruPostFunctionalityMixin {
                       builder: (context) {
                         return TranslationNotes(
                           postId: postId,
-                          api: BooruAPIState.fromEnum(booru, page: null),
+                          booru: booru,
                         );
                       },
                     ),

@@ -5,7 +5,10 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_on_cell_press_behaviour.dart';
@@ -25,6 +28,7 @@ class GridFunctionality<T extends Cell> {
     this.updateScrollPosition,
     this.download,
     this.progressTicker,
+    this.watchLayoutSettings,
     this.onPressed = const DefaultGridOnCellPressBehaviour(),
     this.fab = const DefaultGridFab(),
     this.backButton = const EmptyGridBackButton(inherit: true),
@@ -46,8 +50,7 @@ class GridFunctionality<T extends Cell> {
   /// [infoPos] represents the scroll position in the "Info" of the image view,
   ///  and [selectedCell] represents the inital page of the image view.
   /// State restoration takes this info into the account.
-  final void Function(double pos, {double? infoPos, int? selectedCell})?
-      updateScrollPosition;
+  final void Function(double pos)? updateScrollPosition;
 
   /// If the elemnts of the grid arrive in batches [progressTicker] can be set to not null,
   /// grid will subscribe to it and set the cell count from this ticker's events.
@@ -56,6 +59,9 @@ class GridFunctionality<T extends Cell> {
   final Widget Function(Object error)? onError;
 
   final InheritedWidget Function(Widget child)? registerNotifiers;
+
+  final StreamSubscription<GridSettingsBase> Function(
+      void Function(GridSettingsBase s) f)? watchLayoutSettings;
 
   final GridFabType fab;
   final SelectionGlue<T> selectionGlue;
@@ -68,10 +74,6 @@ class GridFunctionality<T extends Cell> {
 
 sealed class GridRefreshType {
   const GridRefreshType();
-}
-
-class MutationInterfaceSourcedGridRefresh implements GridRefreshType {
-  const MutationInterfaceSourcedGridRefresh();
 }
 
 class SynchronousGridRefresh implements GridRefreshType {

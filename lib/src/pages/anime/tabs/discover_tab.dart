@@ -11,7 +11,7 @@ class _DiscoverTab extends StatefulWidget {
   final EdgeInsets viewInsets;
   final void Function(bool) procPop;
   final List<AnimeEntry> entries;
-  final PagingContainer pagingContainer;
+  final PagingContainer<AnimeEntry> pagingContainer;
   final AnimeAPI api;
 
   const _DiscoverTab({
@@ -29,15 +29,19 @@ class _DiscoverTab extends StatefulWidget {
 class __DiscoverTabState extends State<_DiscoverTab> {
   late final StreamSubscription<GridSettingsAnimeDiscovery?>
       gridSettingsWatcher;
-  final state = GridSkeletonState<AnimeEntry>();
+  late final GridSkeletonState<AnimeEntry> state;
 
   GridSettingsAnimeDiscovery gridSettings = GridSettingsAnimeDiscovery.current;
-
-  bool _reachedEnd = false;
 
   @override
   void initState() {
     super.initState();
+
+    state = GridSkeletonState<AnimeEntry>(
+      initalCellCount: widget.entries.length,
+      // reachedEnd: () => _reachedEnd,
+      overrideRefreshStatus: widget.pagingContainer.refreshingStatus,
+    );
 
     gridSettingsWatcher = GridSettingsAnimeDiscovery.watch((e) {
       gridSettings = e!;
@@ -60,6 +64,13 @@ class __DiscoverTabState extends State<_DiscoverTab> {
       state,
       (context) => GridFrame<AnimeEntry>(
         key: state.gridKey,
+        layout: GridSettingsLayoutBehaviour(GridSettingsBase(
+          aspectRatio: GridAspectRatio.zeroSeven,
+          columns: gridSettings.columns,
+          layoutType: GridLayoutType.grid,
+          hideName: false,
+        )),
+        refreshingStatus: state.refreshingStatus,
         getCell: (i) => widget.entries[i],
         initalScrollPosition: widget.pagingContainer.scrollPos,
         functionality: GridFunctionality(
@@ -69,22 +80,19 @@ class __DiscoverTabState extends State<_DiscoverTab> {
             widget.pagingContainer.page += 1;
 
             if (p.isEmpty) {
-              _reachedEnd = true;
+              widget.pagingContainer.reachedEnd = true;
             }
             widget.entries.addAll(p);
 
             return widget.entries.length;
           },
-          refreshBehaviour: RetainedGridRefreshBehaviour(
-            widget.pagingContainer.refreshingInterface,
-          ),
           updateScrollPosition: widget.pagingContainer.updateScrollPos,
           selectionGlue:
               GlueProvider.generateOf<AnimeEntry, AnimeEntry>(context),
           refresh: AsyncGridRefresh(() async {
             widget.entries.clear();
             widget.pagingContainer.page = 0;
-            _reachedEnd = false;
+            widget.pagingContainer.reachedEnd = false;
 
             final p = await widget.api.top(widget.pagingContainer.page);
 
@@ -94,8 +102,7 @@ class __DiscoverTabState extends State<_DiscoverTab> {
           }),
           onPressed:
               OverrideGridOnCellPressBehaviour(onPressed: (context, idx) {
-            final cell =
-                MutationInterfaceProvider.of<AnimeEntry>(context).getCell(idx);
+            final cell = CellProvider.getOf<AnimeEntry>(context, idx);
 
             Navigator.push(context, MaterialPageRoute(
               builder: (context) {
@@ -106,12 +113,10 @@ class __DiscoverTabState extends State<_DiscoverTab> {
             ));
           }),
         ),
-        initalCellCount: widget.entries.length,
         systemNavigationInsets: widget.viewInsets,
-        hasReachedEnd: () => _reachedEnd,
         mainFocus: state.mainFocus,
         description: GridDescription(
-          [
+          actions: [
             GridAction(Icons.add, (selected) {
               SavedAnimeEntry.addAll(selected, widget.api.site);
             }, true),
@@ -119,10 +124,7 @@ class __DiscoverTabState extends State<_DiscoverTab> {
           showAppBar: false,
           keybindsDescription: AppLocalizations.of(context)!.discoverTab,
           ignoreSwipeSelectGesture: true,
-          layout: GridLayout(
-            gridSettings.columns,
-            GridAspectRatio.zeroSeven,
-          ),
+          gridSeed: state.gridSeed,
         ),
         imageViewDescription: ImageViewDescription(
           imageViewKey: state.imageViewKey,

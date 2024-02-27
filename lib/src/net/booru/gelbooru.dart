@@ -5,10 +5,9 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
+import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru/strip_html.dart';
@@ -21,219 +20,51 @@ import '../../db/schemas/booru/post.dart';
 import 'package:intl/intl.dart';
 
 import '../../interfaces/booru_tagging.dart';
-import '../cloudflare_exception.dart';
-import '../unsaveable_cookie_jar.dart';
 
-List<String> _fromGelbooruTags(List<dynamic> l) {
-  return l.map((e) => HtmlUnescape().convert(e["name"] as String)).toList();
+abstract class BooruRespDecoder {
+  const BooruRespDecoder();
+
+  (List<Post>, int?) posts(dynamic m, Booru booru);
+  Iterable<String> notes(dynamic data);
+  List<String> tags(dynamic l);
 }
 
-class Gelbooru implements BooruAPIState {
-  static const _log = LogTarget.booru;
-
-  final UnsaveableCookieJar cookieJar;
+class GelbooruRespDecoder implements BooruRespDecoder {
+  const GelbooruRespDecoder();
 
   @override
-  final Dio client;
-
-  @override
-  final Booru booru;
-
-  @override
-  int? get currentPage => _page;
-
-  @override
-  final bool wouldBecomeStale = true;
-
-  int _page = 0;
-
-  @override
-  void setCookies(List<Cookie> cookies) {
-    cookieJar.replaceDirectly(Uri.parse(booru.url), cookies);
-  }
-
-  @override
-  Uri browserLink(int id) => Uri.https(booru.url, "/index.php", {
-        "page": "post",
-        "s": "view",
-        "id": id.toString(),
-      });
-
-  @override
-  Uri browserLinkSearch(String tags) => Uri.https(booru.url, "/index.php", {
-        "page": "post",
-        "s": "list",
-        "tags": tags,
-      });
-
-  @override
-  Future<Iterable<String>> notes(int postId) async {
-    final resp = await client.getUriLog(
-        Uri.https(booru.url, "/index.php", {
-          "page": "dapi",
-          "s": "note",
-          "q": "index",
-          "post_id": postId.toString(),
-        }),
-        LogReq(LogReq.notes(booru, postId), _log),
-        options: Options(
-          responseType: ResponseType.plain,
-        ));
-
-    if (resp.statusCode != 200) {
-      throw "status code not 200";
-    }
-
-    final doc = XmlDocument.parse(resp.data);
-
-    return doc.children.first.children
-        .map((e) => stripHtml(e.getAttribute("body")!));
-  }
-
-  @override
-  Future<List<String>> completeTag(String t) async {
-    if (t.isEmpty) {
+  List<String> tags(dynamic data) {
+    final l = data["tag"];
+    if (l == null) {
       return const [];
     }
 
-    final resp = await client.getUriLog(
-        Uri.https(booru.url, "/index.php", {
-          "page": "dapi",
-          "s": "tag",
-          "q": "index",
-          "limit": "10",
-          "json": "1",
-          "name_pattern": "$t%",
-          "orderby": "count"
-        }),
-        LogReq(LogReq.completeTag(booru, t), _log));
-
-    if (resp.statusCode != 200) {
-      throw "status code not 200";
-    }
-
-    final tags = resp.data["tag"];
-
-    return tags == null ? const [] : _fromGelbooruTags(tags);
+    return l.map((e) => HtmlUnescape().convert(e["name"] as String)).toList();
   }
 
   @override
-  Future<(List<Post>, int?)> page(int p, String tags, BooruTagging excludedTags,
-      {SafeMode? overrideSafeMode}) {
-    _page = p;
-    return _commonPosts(tags, p, excludedTags,
-        overrideSafeMode: overrideSafeMode);
-  }
+  Iterable<String> notes(dynamic data) {
+    final doc = XmlDocument.parse(data);
 
-  Future<(List<Post>, int?)> _commonPosts(
-      String tags, int p, BooruTagging excludedTags,
-      {required SafeMode? overrideSafeMode}) async {
-    late final String excludedTagsString;
-
-    final excluded = excludedTags.get().map((e) => "-${e.tag} ").toList();
-    if (excluded.isNotEmpty) {
-      excludedTagsString = excluded.reduce((value, element) => value + element);
-    } else {
-      excludedTagsString = "";
-    }
-
-    String safeModeS() =>
-        switch (overrideSafeMode ?? Settings.fromDb().safeMode) {
-          SafeMode.none => "",
-          SafeMode.normal => 'rating:general',
-          SafeMode.relaxed => '-rating:explicit -rating:questionable',
-        };
-
-    final query = <String, dynamic>{
-      "page": "dapi",
-      "s": "post",
-      "q": "index",
-      "pid": p.toString(),
-      "json": "1",
-      "tags": "${safeModeS()} $excludedTagsString $tags",
-      "limit": BooruAPIState.numberOfElementsPerRefresh().toString()
-    };
-
-    try {
-      final resp = await client.getUriLog(
-          Uri.https(booru.url, "/index.php", query),
-          LogReq(LogReq.page(booru, p), _log));
-
-      if (resp.statusCode != 200) {
-        throw "status not 200";
-      }
-
-      final json = resp.data["post"];
-      if (json == null) {
-        return Future.value((<Post>[], null));
-      }
-
-      return _fromJson(json);
-    } catch (e) {
-      if (e is DioException) {
-        if (e.response?.statusCode == 403) {
-          return Future.error(CloudflareException());
-        }
-      }
-      return Future.error(e);
-    }
+    return doc.children.first.children.map(
+      (e) => stripHtml(e.getAttribute("body")!),
+    );
   }
 
   @override
-  Future<Post> singlePost(int id) async {
-    try {
-      final resp = await client.getUriLog(
-          Uri.https(booru.url, "/index.php", {
-            "page": "dapi",
-            "s": "post",
-            "q": "index",
-            "id": id.toString(),
-            "json": "1"
-          }),
-          LogReq(LogReq.singlePost(booru, id), _log));
-
-      if (resp.statusCode != 200) {
-        throw "status is not 200";
-      }
-
-      final json = resp.data["post"];
-      if (json == null) {
-        throw "The post has been not found.";
-      }
-
-      return _fromJson([json[0]]).$1[0];
-    } catch (e) {
-      if (e is DioException) {
-        if (e.response?.statusCode == 403) {
-          return Future.error(CloudflareException());
-        }
-      }
-
-      return Future.error(e);
+  (List<Post>, int?) posts(dynamic data, Booru booru) {
+    final json = data["post"];
+    if (json == null) {
+      return (<Post>[], null);
     }
-  }
 
-  @override
-  Future<(List<Post>, int?)> fromPost(
-          int _, String tags, BooruTagging excludedTags,
-          {SafeMode? overrideSafeMode}) =>
-      _commonPosts(tags, _page + 1, excludedTags,
-              overrideSafeMode: overrideSafeMode)
-          .then((value) {
-        if (value.$1.isNotEmpty) {
-          _page += 1;
-        }
-        return Future.value(value);
-      });
-
-  (List<Post>, int?) _fromJson(List<dynamic> m) {
     final List<Post> list = [];
 
     final dateFormatter = DateFormat("EEE MMM dd HH:mm:ss");
 
     final escaper = HtmlUnescape();
 
-    for (final post in m) {
+    for (final post in json as List<dynamic>) {
       String createdAt = post["created_at"];
       DateTime date = dateFormatter.parse(createdAt).copyWith(
           year: int.tryParse(createdAt.substring(createdAt.length - 4)));
@@ -261,10 +92,160 @@ class Gelbooru implements BooruAPIState {
 
     return (list, null);
   }
+}
+
+class Gelbooru implements BooruAPI {
+  const Gelbooru(
+    this.client,
+    this.pageSaver, {
+    this.booru = Booru.gelbooru,
+  });
+
+  static const _log = LogTarget.booru;
+  static const _decoder = GelbooruRespDecoder();
+
+  final Dio client;
+  final PageSaver pageSaver;
 
   @override
-  void close() => client.close(force: true);
+  final Booru booru;
 
-  Gelbooru(int page, this.client, this.cookieJar, {this.booru = Booru.gelbooru})
-      : _page = page;
+  @override
+  final bool wouldBecomeStale = true;
+
+  @override
+  Future<Iterable<String>> notes(int postId) async {
+    final resp = await client.getUriLog(
+      Uri.https(booru.url, "/index.php", {
+        "page": "dapi",
+        "s": "note",
+        "q": "index",
+        "post_id": postId.toString(),
+      }),
+      LogReq(LogReq.notes(booru, postId), _log),
+      options: Options(
+        responseType: ResponseType.plain,
+      ),
+    );
+
+    return _decoder.notes(resp.data);
+  }
+
+  @override
+  Future<List<String>> completeTag(String t) async {
+    if (t.isEmpty) {
+      return const [];
+    }
+
+    final resp = await client.getUriLog(
+      Uri.https(booru.url, "/index.php", {
+        "page": "dapi",
+        "s": "tag",
+        "q": "index",
+        "limit": "10",
+        "json": "1",
+        "name_pattern": "$t%",
+        "orderby": "count"
+      }),
+      options: Options(responseType: ResponseType.json),
+      LogReq(LogReq.completeTag(booru, t), _log),
+    );
+
+    return _decoder.tags(resp.data);
+  }
+
+  @override
+  Future<(List<Post>, int?)> page(
+    int p,
+    String tags,
+    BooruTagging excludedTags, {
+    SafeMode? overrideSafeMode,
+  }) {
+    pageSaver.save(p);
+
+    return _commonPosts(
+      tags,
+      p,
+      excludedTags,
+      overrideSafeMode: overrideSafeMode,
+    );
+  }
+
+  Future<(List<Post>, int?)> _commonPosts(
+    String tags,
+    int p,
+    BooruTagging excludedTags, {
+    required SafeMode? overrideSafeMode,
+  }) async {
+    final excluded = excludedTags.get().map((e) => "-${e.tag} ").toList();
+
+    final String excludedTagsString = switch (excluded.isNotEmpty) {
+      true => excluded.reduce((value, element) => value + element),
+      false => "",
+    };
+
+    final String safeMode =
+        switch (overrideSafeMode ?? Settings.fromDb().safeMode) {
+      SafeMode.none => "",
+      SafeMode.normal => 'rating:general',
+      SafeMode.relaxed => '-rating:explicit -rating:questionable',
+    };
+
+    final query = <String, dynamic>{
+      "page": "dapi",
+      "s": "post",
+      "q": "index",
+      "pid": p.toString(),
+      "json": "1",
+      "tags": "$safeMode $excludedTagsString $tags",
+      "limit": BooruAPI.numberOfElementsPerRefresh().toString()
+    };
+
+    final resp = await client.getUriLog(
+      Uri.https(booru.url, "/index.php", query),
+      options: Options(responseType: ResponseType.json),
+      LogReq(LogReq.page(booru, p), _log),
+    );
+
+    return _decoder.posts(resp.data, booru);
+  }
+
+  @override
+  Future<Post> singlePost(int id) async {
+    final resp = await client.getUriLog(
+      Uri.https(booru.url, "/index.php", {
+        "page": "dapi",
+        "s": "post",
+        "q": "index",
+        "id": id.toString(),
+        "json": "1"
+      }),
+      options: Options(responseType: ResponseType.json),
+      LogReq(LogReq.singlePost(booru, id), _log),
+    );
+
+    return _decoder.posts(resp.data, booru).$1.first;
+  }
+
+  @override
+  Future<(List<Post>, int?)> fromPost(
+    int _,
+    String tags,
+    BooruTagging excludedTags, {
+    SafeMode? overrideSafeMode,
+  }) {
+    final f = _commonPosts(
+      tags,
+      pageSaver.current + 1,
+      excludedTags,
+      overrideSafeMode: overrideSafeMode,
+    );
+
+    return f.then((value) {
+      if (value.$1.isNotEmpty) {
+        pageSaver.save(pageSaver.current + 1);
+      }
+      return Future.value(value);
+    });
+  }
 }

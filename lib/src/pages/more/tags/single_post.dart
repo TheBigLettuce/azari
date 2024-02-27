@@ -7,6 +7,7 @@
 
 import 'dart:developer';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -14,8 +15,6 @@ import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
-import 'package:gallery/src/widgets/notifiers/booru_api.dart';
-import 'package:gallery/src/widgets/notifiers/tag_manager.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -23,14 +22,14 @@ import 'package:qrscan/qrscan.dart';
 
 import '../../../db/schemas/booru/post.dart';
 import '../../../widgets/grid/actions/booru_grid.dart';
-import '../../../interfaces/booru/booru_api_state.dart';
+import '../../../interfaces/booru/booru_api.dart';
 import '../../../db/state_restoration.dart';
 import '../../../db/schemas/downloader/download_file.dart';
 import '../../../db/schemas/settings/settings.dart';
 
 class SinglePost extends StatefulWidget {
   final FocusNode focus;
-  final TagManager<Unrestorable> tagManager;
+  final TagManager tagManager;
   final Widget? overrideLeading;
 
   const SinglePost({
@@ -45,7 +44,9 @@ class SinglePost extends StatefulWidget {
 }
 
 class _SinglePostState extends State<SinglePost> {
-  final defaultBooru = BooruAPIState.fromSettings();
+  late final Dio client;
+  late final BooruAPI booruApi;
+
   final controller = TextEditingController();
   final menuController = MenuController();
 
@@ -55,10 +56,19 @@ class _SinglePostState extends State<SinglePost> {
   AnimationController? arrowSpinningController;
 
   @override
+  void initState() {
+    super.initState();
+
+    final booru = Settings.fromDb().selectedBooru;
+    client = BooruAPI.defaultClientForBooru(booru);
+    booruApi = BooruAPI.fromEnum(booru, client, const EmptyPageSaver());
+  }
+
+  @override
   void dispose() {
     arrowSpinningController = null;
     controller.dispose();
-    defaultBooru.close();
+    client.close(force: true);
 
     super.dispose();
   }
@@ -71,11 +81,11 @@ class _SinglePostState extends State<SinglePost> {
 
     inProcessLoading = true;
 
-    BooruAPIState booru;
+    BooruAPI booru;
     if (replaceBooru != null) {
-      booru = BooruAPIState.fromEnum(replaceBooru, page: null);
+      booru = BooruAPI.fromEnum(replaceBooru, client, const EmptyPageSaver());
     } else {
-      booru = defaultBooru;
+      booru = booruApi;
     }
 
     try {
@@ -105,8 +115,6 @@ class _SinglePostState extends State<SinglePost> {
         builder: (context) {
           return ImageView(
             key: key,
-            registerNotifiers: (child) => TagManagerNotifier.unrestorable(
-                widget.tagManager, BooruAPINotifier(api: booru, child: child)),
             updateTagScrollPos: (_, __) {},
             download: (_) {
               Downloader.g.add(
@@ -120,7 +128,7 @@ class _SinglePostState extends State<SinglePost> {
             cellCount: 1,
             addIcons: (p) => [
               BooruGridActions.favorites(context, p),
-              BooruGridActions.download(context, booru)
+              BooruGridActions.download(context, booru.booru)
             ],
             scrollUntill: (_) {},
             onExit: () {},
@@ -152,9 +160,6 @@ class _SinglePostState extends State<SinglePost> {
       arrowSpinningController!.reverse();
     }
 
-    if (replaceBooru != null) {
-      booru.close();
-    }
     inProcessLoading = false;
   }
 

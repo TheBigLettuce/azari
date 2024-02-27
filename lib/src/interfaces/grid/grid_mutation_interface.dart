@@ -5,6 +5,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:async';
+
 import '../cell/cell.dart';
 
 abstract class GridMutationInterface<T extends Cell> {
@@ -14,10 +16,8 @@ abstract class GridMutationInterface<T extends Cell> {
   bool get isRefreshing;
   set isRefreshing(bool b);
 
-  bool get mutated;
+  StreamSubscription<void> registerStatusUpdate(void Function(void) f);
 
-  void setSource(int cellCount, T Function(int i) getCell);
-  T getCell(int i);
-
+  void dispose();
   void reset();
 }

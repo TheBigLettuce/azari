@@ -14,16 +14,16 @@ import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/widgets/grid/parts/segment_label.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 
-import '../../../interfaces/booru/booru_api_state.dart';
+import '../../../interfaces/booru/booru_api.dart';
 import '../../../db/state_restoration.dart';
 import '../../../widgets/search_bar/autocomplete/autocomplete_widget.dart';
 import 'single_post.dart';
 import 'tags_widget.dart';
 
 class TagsPage extends StatefulWidget {
-  final TagManager<Unrestorable> tagManager;
+  final TagManager tagManager;
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;
-  final BooruAPIState booru;
+  final BooruAPI booru;
 
   const TagsPage({
     super.key,
@@ -79,12 +79,12 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
       }
     });
 
-    _lastTagsWatcher = widget.tagManager.watch(true, () {
+    _lastTagsWatcher = widget.tagManager.latest.watch((_) {
       _lastTags = widget.tagManager.latest.get();
       _excludedTags = widget.tagManager.excluded.get();
 
       setState(() {});
-    });
+    }, true);
   }
 
   @override
@@ -114,14 +114,16 @@ class _TagsPageState extends State<TagsPage> with TickerProviderStateMixin {
         deleteTag: (t) {
           widget.tagManager.latest.delete(t);
         },
-        onPress: (t, safeMode) => widget.tagManager.onTagPressed(
-          context,
-          t,
-          widget.booru.booru,
-          true,
-          overrideSafeMode: safeMode,
-          generateGlue: widget.generateGlue,
-        ),
+        onPress: (t, safeMode) {
+          //   widget.tagManager.onTagPressed(
+          //   context,
+          //   t,
+          //   widget.booru.booru,
+          //   true,
+          //   overrideSafeMode: safeMode,
+          //   generateGlue: widget.generateGlue,
+          // )
+        },
       ),
       const SliverToBoxAdapter(
         child: SegmentLabel("Excluded",

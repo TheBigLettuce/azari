@@ -44,9 +44,12 @@ class GridSettingsDirectories extends GridSettingsBase {
         .writeTxnSync(() => Dbs.g.main.gridSettingsDirectories.putSync(this));
   }
 
-  static StreamSubscription<GridSettingsDirectories?> watch(
-      void Function(GridSettingsDirectories?) f) {
-    return Dbs.g.main.gridSettingsDirectories.watchObject(0).listen(f);
+  static StreamSubscription<GridSettingsDirectories> watch(
+      void Function(GridSettingsDirectories) f) {
+    return Dbs.g.main.gridSettingsDirectories
+        .watchObject(0)
+        .map((event) => event!)
+        .listen(f);
   }
 
   static GridSettingsDirectories get current =>

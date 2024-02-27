@@ -44,14 +44,14 @@ class _OpenMenuButtonState extends State<OpenMenuButton> {
         return MenuWrapper.menuItems(widget.controller.text, true, [
           launchGridSafeModeItem(widget.context, widget.controller.text,
               (_, text, [safeMode]) {
-            widget.tagManager.onTagPressed(
-              widget.context,
-              Tag.string(tag: text),
-              widget.booru,
-              false,
-              overrideSafeMode: safeMode,
-              generateGlue: widget.generateGlue,
-            );
+            // widget.tagManager.onTagPressed(
+            //   widget.context,
+            //   Tag.string(tag: text),
+            //   widget.booru,
+            //   false,
+            //   overrideSafeMode: safeMode,
+            //   generateGlue: widget.generateGlue,
+            // );
           })
         ]);
       },

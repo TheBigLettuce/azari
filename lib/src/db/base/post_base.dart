@@ -20,7 +20,6 @@ import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:gallery/src/widgets/image_view/wrap_image_view_notifiers.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
-import 'package:gallery/src/widgets/notifiers/tag_manager.dart';
 import 'package:gallery/src/widgets/translation_notes.dart';
 import 'package:isar/isar.dart';
 import 'package:mime/mime.dart';
@@ -29,7 +28,6 @@ import 'package:transparent_image/transparent_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../interfaces/booru/booru_api_state.dart';
 import '../../interfaces/cell/contentable.dart';
 import '../../interfaces/booru/display_quality.dart';
 import '../schemas/tags/tags.dart';
@@ -125,12 +123,10 @@ class PostBase extends Cell
   List<Widget>? addButtons(BuildContext context) {
     return [
       openInBrowserButton(Uri.base, () {
-        final booru =
-            BooruAPIState.fromEnum(Booru.fromPrefix(prefix)!, page: null);
-
-        launchUrl(booru.browserLink(id), mode: LaunchMode.externalApplication);
-
-        booru.close();
+        launchUrl(
+          Booru.fromPrefix(prefix)!.browserLink(id),
+          mode: LaunchMode.externalApplication,
+        );
       }),
       if (Platform.isAndroid)
         shareButton(context, fileUrl, () {
@@ -162,8 +158,7 @@ class PostBase extends Cell
   List<Widget>? addInfo(
       BuildContext context, dynamic extra, AddInfoColorData colors) {
     final dUrl = fileDownloadUrl();
-    final tagManager = TagManagerNotifier.maybeOfRestorable(context) ??
-        TagManager.fromEnum(Booru.fromPrefix(prefix)!);
+    final tagManager = TagManager.fromEnum(Booru.fromPrefix(prefix)!);
 
     return wrapTagsList(
       context,
@@ -219,11 +214,7 @@ class PostBase extends Cell
         ),
         if (tags.contains("translated"))
           TranslationNotes.tile(
-              context,
-              colors.foregroundColor,
-              id,
-              () => BooruAPIState.fromEnum(Booru.fromPrefix(prefix)!,
-                  page: null)),
+              context, colors.foregroundColor, id, Booru.fromPrefix(prefix)!),
       ],
       filename(),
       supplyTags: tags,
@@ -232,14 +223,14 @@ class PostBase extends Cell
         Navigator.pop(context);
         Navigator.pop(context);
 
-        tagManager.onTagPressed(
-          OriginalGridContext.maybeOf(context) ?? context,
-          Tag.string(tag: t),
-          Booru.fromPrefix(prefix)!,
-          true,
-          overrideSafeMode: safeMode,
-          generateGlue: OriginalGridContext.generateOf(context),
-        );
+        // tagManager.onTagPressed(
+        //   OriginalGridContext.maybeOf(context) ?? context,
+        //   Tag.string(tag: t),
+        //   Booru.fromPrefix(prefix)!,
+        //   true,
+        //   overrideSafeMode: safeMode,
+        //   generateGlue: OriginalGridContext.generateOf(context),
+        // );
       },
     );
   }

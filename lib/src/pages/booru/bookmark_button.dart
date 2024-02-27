@@ -13,15 +13,12 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/booru/post.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
-import 'package:gallery/src/db/state_restoration.dart';
-import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/pages/booru/random.dart';
 import 'package:gallery/src/pages/more/settings/settings_widget.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
-import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:gallery/src/widgets/shimmer_loading_indicator.dart';
 import 'package:isar/isar.dart';
 
@@ -29,12 +26,10 @@ import '../../widgets/time_label.dart';
 
 class BookmarkPage extends StatefulWidget {
   final void Function(String? e) saveSelectedPage;
-  final String? restoreSelectedPage;
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;
 
   const BookmarkPage({
     super.key,
-    required this.restoreSelectedPage,
     required this.saveSelectedPage,
     required this.generateGlue,
   });
@@ -110,31 +105,27 @@ class _BookmarkPageState extends State<BookmarkPage> {
   }
 
   void launchGrid(BuildContext context, GridStateBooru e) {
-    Dbs.g.main.writeTxnSync(() => Dbs.g.main.gridStateBoorus
-        .putByNameSync(e.copy(false, time: DateTime.now())));
+    Dbs.g.main.writeTxnSync(() =>
+        Dbs.g.main.gridStateBoorus.putByNameSync(e.copy(time: DateTime.now())));
 
     widget.saveSelectedPage(e.name);
 
-    inInner = true;
+    // inInner = true;
 
-    Navigator.push(context, MaterialPageRoute(
-      builder: (context) {
-        final tagManager = TagManager.fromEnum(e.booru);
-
-        return RandomBooruGrid(
-          api: BooruAPIState.fromEnum(e.booru, page: e.page),
-          tagManager: tagManager,
-          tags: e.tags,
-          state: e,
-          onDispose: () {
-            if (!isRestart) {
-              widget.saveSelectedPage(null);
-            }
-          },
-          generateGlue: widget.generateGlue,
-        );
-      },
-    )).whenComplete(_procUpdate);
+    // Navigator.push(context, MaterialPageRoute(
+    //   builder: (context) {
+    //     return RandomBooruGrid(
+    //       tags: e.tags,
+    //       onDispose: () {
+    //         if (!isRestart) {
+    //           widget.saveSelectedPage(null);
+    //         }
+    //       },
+    //       generateGlue: widget.generateGlue,
+    //       booru: e.booru,
+    //     );
+    //   },
+    // )).whenComplete(_procUpdate);
   }
 
   @override

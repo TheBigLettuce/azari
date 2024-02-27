@@ -18,48 +18,38 @@ class GridStateBooru extends GridStateBase {
   @enumerated
   final Booru booru;
 
-  GridStateBooru(this.booru,
-      {required super.tags,
-      required super.scrollPositionTags,
-      required super.selectedPost,
-      required super.safeMode,
-      required super.scrollPositionGrid,
-      required super.name,
-      required super.time,
-      required super.page});
+  GridStateBooru(
+    this.booru, {
+    required super.tags,
+    required super.safeMode,
+    required super.scrollOffset,
+    required super.name,
+    required super.time,
+  });
 
   GridStateBooru.empty(this.booru, String name, String tags, SafeMode safeMode)
       : super(
-            tags: tags,
-            name: name,
-            safeMode: safeMode,
-            scrollPositionGrid: 0,
-            selectedPost: null,
-            scrollPositionTags: null,
-            page: null,
-            time: DateTime.now());
+          tags: tags,
+          name: name,
+          safeMode: safeMode,
+          scrollOffset: 0,
+          time: DateTime.now(),
+        );
 
-  GridStateBooru copy(bool replaceScrollTagsSelectedPost,
-          {String? name,
-          Booru? booru,
-          String? tags,
-          double? scrollPositionGrid,
-          int? selectedPost,
-          SafeMode? safeMode,
-          double? scrollPositionTags,
-          DateTime? time,
-          int? page}) =>
-      GridStateBooru(booru ?? this.booru,
-          tags: tags ?? this.tags,
-          safeMode: safeMode ?? this.safeMode,
-          scrollPositionTags: replaceScrollTagsSelectedPost
-              ? scrollPositionTags
-              : scrollPositionTags ?? this.scrollPositionTags,
-          selectedPost: replaceScrollTagsSelectedPost
-              ? selectedPost
-              : selectedPost ?? this.selectedPost,
-          scrollPositionGrid: scrollPositionGrid ?? this.scrollPositionGrid,
-          page: page ?? this.page,
-          time: time ?? this.time,
-          name: name ?? this.name);
+  GridStateBooru copy({
+    String? name,
+    Booru? booru,
+    String? tags,
+    double? scrollOffset,
+    SafeMode? safeMode,
+    DateTime? time,
+  }) =>
+      GridStateBooru(
+        booru ?? this.booru,
+        tags: tags ?? this.tags,
+        safeMode: safeMode ?? this.safeMode,
+        scrollOffset: scrollOffset ?? this.scrollOffset,
+        time: time ?? this.time,
+        name: name ?? this.name,
+      );
 }

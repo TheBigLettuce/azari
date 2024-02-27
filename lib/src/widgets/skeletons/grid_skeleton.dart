@@ -6,7 +6,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/widgets/gesture_dead_zones.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 
@@ -15,8 +14,6 @@ import '../grid/grid_frame.dart';
 import 'grid_skeleton_state.dart';
 
 class GridSkeleton<T extends Cell> extends StatelessWidget {
-  final bool noDrawer;
-  final Booru? overrideBooru;
   final bool canPop;
   final void Function(bool, bool Function())? overrideOnPop;
   final GridSkeletonState<T> state;
@@ -26,8 +23,6 @@ class GridSkeleton<T extends Cell> extends StatelessWidget {
     this.state,
     this.grid, {
     super.key,
-    this.noDrawer = false,
-    this.overrideBooru,
     required this.canPop,
     this.overrideOnPop,
   });

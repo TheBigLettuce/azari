@@ -5,49 +5,25 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:gallery/src/interfaces/refreshing_status_interface.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/widgets/grid/grid_frame.dart';
 
-class PagingContainer {
+class PagingContainer<T extends Cell> {
   PagingContainer();
 
   int page = 0;
   double scrollPos = 0;
 
-  Future<int>? status;
-  final Map<void Function(int?, bool), Null> listeners = {};
+  bool reachedEnd = false;
 
-  late final RefreshingStatusInterface refreshingInterface =
-      RefreshingStatusInterface(
-    isRefreshing: () => status != null,
-    save: (s) {
-      status?.ignore();
-      status = s;
+  late final GridRefreshingStatus<T> refreshingStatus =
+      GridRefreshingStatus<T>(0, () => reachedEnd);
 
-      status?.then((value) {
-        for (final f in listeners.keys) {
-          f(value, false);
-        }
-      }).onError((error, stackTrace) {
-        for (final f in listeners.keys) {
-          f(null, false);
-        }
-      }).whenComplete(() => status = null);
-    },
-    register: (f) {
-      if (status != null) {
-        f(null, true);
-      }
+  void dispose() {
+    refreshingStatus.dispose();
+  }
 
-      listeners[f] = null;
-    },
-    unregister: (f) => listeners.remove(f),
-    reset: () {
-      status?.ignore();
-      status = null;
-    },
-  );
-
-  void updateScrollPos(double pos, {double? infoPos, int? selectedCell}) {
+  void updateScrollPos(double pos) {
     scrollPos = pos;
   }
 }

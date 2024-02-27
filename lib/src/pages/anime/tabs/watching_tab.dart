@@ -61,8 +61,7 @@ class __WatchingTabState extends State<_WatchingTab> {
     _watchingFilter.addAll(currentlyWatching
         .where((element) => element.title.toLowerCase().contains(l)));
 
-    m.setSource(_backlogFilter.length,
-        (i) => _backlogFilter[upward ? _backlogFilter.length - 1 - i : i]);
+    m.cellCount = _backlogFilter.length;
   }
 
   @override
@@ -96,13 +95,38 @@ class __WatchingTabState extends State<_WatchingTab> {
     super.dispose();
   }
 
+  SavedAnimeEntry _getCell(int i) {
+    if (_backlogFilter.isNotEmpty) {
+      return _backlogFilter[upward ? _backlogFilter.length - 1 - i : i];
+    }
+
+    return backlog[upward ? backlog.length - 1 - i : i];
+  }
+
   @override
   Widget build(BuildContext context) {
     return GridSkeleton<SavedAnimeEntry>(
       state,
       (context) => GridFrame<SavedAnimeEntry>(
         key: state.gridKey,
-        getCell: (i) => backlog[upward ? backlog.length - 1 - i : i],
+        layout: _WatchingLayout(
+          GridColumn.three,
+          currentlyWatching,
+          flipBacklogUpward: () {
+            upward = !upward;
+
+            setState(() {});
+          },
+          backlogUpward: upward,
+          watchingRight: right,
+          flipWatchingRight: () {
+            right = !right;
+
+            setState(() {});
+          },
+        ),
+        refreshingStatus: state.refreshingStatus,
+        getCell: _getCell,
         imageViewDescription: ImageViewDescription(
           imageViewKey: state.imageViewKey,
         ),
@@ -112,8 +136,7 @@ class __WatchingTabState extends State<_WatchingTab> {
           refresh: SynchronousGridRefresh(() => backlog.length),
           onPressed:
               OverrideGridOnCellPressBehaviour(onPressed: (context, idx) {
-            final cell = MutationInterfaceProvider.of<SavedAnimeEntry>(context)
-                .getCell(idx);
+            final cell = CellProvider.getOf<SavedAnimeEntry>(context, idx);
 
             Navigator.push(context, MaterialPageRoute(
               builder: (context) {
@@ -123,37 +146,23 @@ class __WatchingTabState extends State<_WatchingTab> {
           }),
         ),
         systemNavigationInsets: widget.viewInsets,
-        hasReachedEnd: () => true,
         mainFocus: state.mainFocus,
-        description: GridDescription([],
-            keybindsDescription: AppLocalizations.of(context)!.watchingTab,
-            showAppBar: false,
-            ignoreSwipeSelectGesture: true,
-            ignoreEmptyWidgetOnNoContent: true,
-            layout: _WatchingLayout(
-              GridColumn.three,
-              currentlyWatching,
-              randomNumber: gridSeed,
-              flipBacklogUpward: () {
-                upward = !upward;
-
-                setState(() {});
-              },
-              backlogUpward: upward,
-              watchingRight: right,
-              flipWatchingRight: () {
-                right = !right;
-
-                setState(() {});
-              },
-            )),
+        description: GridDescription(
+          actions: const [],
+          keybindsDescription: AppLocalizations.of(context)!.watchingTab,
+          showAppBar: false,
+          ignoreSwipeSelectGesture: true,
+          ignoreEmptyWidgetOnNoContent: true,
+          gridSeed: state.gridSeed,
+        ),
       ),
       canPop: false,
     );
   }
 }
 
-class _WatchingLayout implements GridLayouter<SavedAnimeEntry> {
+class _WatchingLayout
+    implements GridLayouter<SavedAnimeEntry>, GridLayoutBehaviour {
   const _WatchingLayout(
     this.columns,
     this.currentlyWatching, {
@@ -161,7 +170,6 @@ class _WatchingLayout implements GridLayouter<SavedAnimeEntry> {
     required this.flipBacklogUpward,
     required this.flipWatchingRight,
     required this.watchingRight,
-    required this.randomNumber,
   });
 
   final bool backlogUpward;
@@ -172,14 +180,27 @@ class _WatchingLayout implements GridLayouter<SavedAnimeEntry> {
 
   final List<SavedAnimeEntry> currentlyWatching;
 
-  final int randomNumber;
-
-  @override
   final GridColumn columns;
 
   @override
-  List<Widget> call(
-      BuildContext context, GridFrameState<SavedAnimeEntry> state) {
+  GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings) {
+    return this as GridLayouter<T>;
+  }
+
+  @override
+  bool get isList => false;
+
+  @override
+  GridSettingsBase get defaultSettings => GridSettingsBase(
+        aspectRatio: GridAspectRatio.zeroSeven,
+        columns: columns,
+        layoutType: GridLayoutType.grid,
+        hideName: false,
+      );
+
+  @override
+  List<Widget> call(BuildContext context, GridSettingsBase gridSettings,
+      GridFrameState<SavedAnimeEntry> state) {
     void onPressed(SavedAnimeEntry e, int _) {
       Navigator.push(context, MaterialPageRoute(
         builder: (context) {
@@ -229,7 +250,7 @@ class _WatchingLayout implements GridLayouter<SavedAnimeEntry> {
       else
         SliverToBoxAdapter(
             child: EmptyWidget(
-          gridSeed: randomNumber,
+          gridSeed: state.widget.description.gridSeed,
         )),
       SliverToBoxAdapter(
         child: SegmentLabel(
@@ -253,12 +274,14 @@ class _WatchingLayout implements GridLayouter<SavedAnimeEntry> {
           state.mutation,
           state.selection,
           systemNavigationInsets: 0,
-          aspectRatio: GridAspectRatio.zeroSeven.value,
+          aspectRatio: gridSettings.aspectRatio.value,
           columns: columns.number,
           gridCell: (context, idx) {
             return GridCell.frameDefault(
               context,
               idx,
+              hideTitle: gridSettings.hideName,
+              isList: isList,
               state: state,
               animated: true,
             );
@@ -267,13 +290,10 @@ class _WatchingLayout implements GridLayouter<SavedAnimeEntry> {
       else
         SliverToBoxAdapter(
             child: EmptyWidget(
-          gridSeed: randomNumber,
+          gridSeed: state.widget.description.gridSeed,
         )),
     ];
   }
-
-  @override
-  bool get isList => false;
 }
 
 class ImportantCard<T extends Cell> extends StatelessWidget {

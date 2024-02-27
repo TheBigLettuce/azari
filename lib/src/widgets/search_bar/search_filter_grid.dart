@@ -63,13 +63,13 @@ mixin SearchFilterGrid<T extends Cell>
 
       _state.filter.setSortingMode(sorting);
 
-      var res =
-          _state.filter.filter(_searchVirtual ? "" : value, _currentFilterMode);
+      // var res =
+      // _state.filter.filter(_searchVirtual ? "" : value, _currentFilterMode);
 
-      interf.setSource(res.count, (i) {
-        final cell = res.cell(i);
-        return _state.transform(cell, sorting);
-      });
+      // interf.setSource(res.count, (i) {
+      //   final cell = res.cell(i);
+      //   return _state.transform(cell, sorting);
+      // });
       _key.currentState?.update();
     }
   }

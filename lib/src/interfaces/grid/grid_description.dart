@@ -20,8 +20,6 @@ class GridDescription<T extends Cell> {
   /// Actions of the grid on selected cells.
   final List<GridAction<T>> actions;
 
-  final GridLayouter<T> layout;
-
   /// Displayed in the app bar bottom widget.
   final PreferredSizeWidget? bottomWidget;
 
@@ -40,9 +38,9 @@ class GridDescription<T extends Cell> {
 
   final bool asSliver;
 
-  final bool hideTitle;
-
   final bool tightMode;
+
+  final int gridSeed;
 
   final PageSwitcher? pages;
 
@@ -53,10 +51,10 @@ class GridDescription<T extends Cell> {
   /// it is displayed directly.
   final List<Widget>? menuButtonItems;
 
-  const GridDescription(
-    this.actions, {
+  const GridDescription({
+    required this.actions,
+    required this.gridSeed,
     required this.keybindsDescription,
-    required this.layout,
     this.showAppBar = true,
     this.ignoreEmptyWidgetOnNoContent = false,
     this.bottomWidget,
@@ -67,7 +65,6 @@ class GridDescription<T extends Cell> {
     this.inlineMenuButtonItems = false,
     this.tightMode = false,
     this.titleLines = 1,
-    this.hideTitle = false,
     this.menuButtonItems,
     this.footer,
     this.pages,

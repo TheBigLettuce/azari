@@ -6,19 +6,13 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'dart:async';
-import 'dart:developer';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart' as material show AspectRatio;
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
-import 'package:gallery/src/interfaces/grid/grid_column.dart';
+import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
-import 'package:gallery/src/plugs/download_movers/dart.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_back_button_behaviour.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_fab_type.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_refresh_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_search_widget.dart';
@@ -29,7 +23,6 @@ import 'package:gallery/src/widgets/grid/parts/grid_app_bar_leading.dart';
 import 'package:gallery/src/widgets/grid/parts/grid_app_bar_title.dart';
 import 'package:gallery/src/widgets/grid/parts/page_switching_widget.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
-import 'package:logging/logging.dart';
 import '../../interfaces/cell/cell.dart';
 import '../../interfaces/grid/grid_mutation_interface.dart';
 import '../keybinds/describe_keys.dart';
@@ -39,7 +32,6 @@ import '../notifiers/focus.dart';
 import 'grid_cell.dart';
 // import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import 'parts/segment_label.dart';
 import '../../interfaces/grid/selection_glue.dart';
 
 part 'selection/grid_selection.dart';
@@ -62,9 +54,6 @@ class GridFrame<T extends Cell> extends StatefulWidget {
   /// Grid gets the cell from [getCell].
   final T Function(int) getCell;
 
-  /// [hasReachedEnd] should return true when the cell loading cannot load more.
-  final bool Function() hasReachedEnd;
-
   // final int? backButtonBadge;
 
   /// The cell includes some keybinds by default.
@@ -73,9 +62,6 @@ class GridFrame<T extends Cell> extends StatefulWidget {
 
   /// If not null, [searchWidget] is displayed in the appbar.
   // final SearchAndFocus? searchWidget;
-
-  /// If [initalCellCount] is not 0, then the grid won't call [refresh].
-  final int initalCellCount;
 
   /// [initalScrollPosition] is needed for the state restoration.
   /// If [initalScrollPosition] is not 0, then it is set as the starting scrolling position.
@@ -100,7 +86,11 @@ class GridFrame<T extends Cell> extends StatefulWidget {
 
   final void Function()? onDispose;
 
+  final GridRefreshingStatus<T> refreshingStatus;
+
   final ScrollController? overrideController;
+
+  final GridLayoutBehaviour layout;
 
   const GridFrame({
     required super.key,
@@ -110,12 +100,12 @@ class GridFrame<T extends Cell> extends StatefulWidget {
     required this.functionality,
     required this.imageViewDescription,
     required this.systemNavigationInsets,
-    required this.hasReachedEnd,
     this.onDispose,
+    required this.layout,
     required this.mainFocus,
     this.belowMainFocus,
+    required this.refreshingStatus,
     this.overrideController,
-    this.initalCellCount = 0,
     required this.description,
   });
 
@@ -123,10 +113,32 @@ class GridFrame<T extends Cell> extends StatefulWidget {
   State<GridFrame<T>> createState() => GridFrameState<T>();
 }
 
+abstract class GridLayoutBehaviour {
+  const GridLayoutBehaviour();
+
+  GridSettingsBase get defaultSettings;
+
+  GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings);
+}
+
+class GridSettingsLayoutBehaviour implements GridLayoutBehaviour {
+  const GridSettingsLayoutBehaviour(this.defaultSettings);
+
+  @override
+  final GridSettingsBase defaultSettings;
+
+  @override
+  GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings) =>
+      settings.layoutType.layout();
+}
+
 class GridFrameState<T extends Cell> extends State<GridFrame<T>>
     with GridSubpageState<T> {
-  late final GridRefreshingStatus<T> refreshingStatus;
+  StreamSubscription<void>? _gridSettingsWatcher;
+
   late ScrollController controller;
+
+  late GridSettingsBase _layoutSettings = widget.layout.defaultSettings;
 
   late final selection = GridSelection<T>(
     setState,
@@ -139,44 +151,15 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
 
   StreamSubscription<int>? ticker;
 
-  late final GridMutationInterface<T> mutation = DefaultMutationInterface(
-    initalCellCount: widget.initalCellCount,
-    originalCell: widget.getCell,
-    update: ({
-      required bool imageView,
-      required bool unselectAll,
-    }) {
-      if (imageView) {
-        // imageViewKey.currentState?.update(context, _state.cellCount);
-      }
-
-      if (unselectAll) {
-        selection.reset();
-      }
-
-      try {
-        if (context.mounted) {
-          setState(() {});
-        }
-      } catch (_) {}
-    },
-  );
+  GridRefreshingStatus<T> get refreshingStatus => widget.refreshingStatus;
+  GridMutationInterface<T> get mutation => refreshingStatus.mutation;
 
   bool inImageView = false;
 
   List<int>? segTranslation;
 
-  // final _fabKey = GlobalKey<__FabState>();
-
-  void _refreshCallbackUpdate(int? i, bool refreshing) {
-    mutation.isRefreshing = refreshing;
-    if (i != null) {
-      mutation.cellCount = i;
-    }
-  }
-
   void _restoreState(ImageViewDescription<T> imageViewDescription) {
-    if (widget.initalCellCount != 0 &&
+    if (mutation.cellCount != 0 &&
         imageViewDescription.pageViewScrollingOffset != null &&
         imageViewDescription.initalCell != null) {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
@@ -186,7 +169,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
         //     context, _state.getCell(widget.initalCell!), widget.initalCell!,
         //     offset: widget.pageViewScrollingOffset);
       });
-    } else if (widget.initalCellCount != 0 &&
+    } else if (mutation.cellCount != 0 &&
         imageViewDescription.initalCell != null) {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
         imageViewDescription.beforeImageViewRestore?.call();
@@ -202,11 +185,18 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
     }
   }
 
-  double lastOffset = 0;
+  late double lastOffset = widget.initalScrollPosition;
 
   @override
   void initState() {
     super.initState();
+
+    _gridSettingsWatcher =
+        widget.functionality.watchLayoutSettings?.call((newSettings) {
+      _layoutSettings = newSettings;
+
+      setState(() {});
+    });
 
     final description = widget.description;
     final functionality = widget.functionality;
@@ -221,23 +211,8 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
 
     _restoreState(widget.imageViewDescription);
 
-    refreshingStatus = GridRefreshingStatus._(mutation, functionality);
-
-    final refreshBehaviour = functionality.refreshBehaviour;
-    switch (refreshBehaviour) {
-      case DefaultGridRefreshBehaviour():
-        break;
-      case RetainedGridRefreshBehaviour():
-        WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-          refreshBehaviour.interface.register(_refreshCallbackUpdate);
-
-          final isRefreshing = refreshBehaviour.interface.isRefreshing();
-          mutation.isRefreshing = isRefreshing;
-        });
-    }
-
-    if (widget.initalCellCount == 0) {
-      refreshingStatus.refresh();
+    if (mutation.cellCount == 0) {
+      refreshingStatus.refresh(widget.functionality);
     }
 
     if (!description.asSliver) {
@@ -256,7 +231,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
         controller.addListener(() {
           lastOffset = controller.offset;
 
-          if (widget.hasReachedEnd() || atNotHomePage) {
+          if (refreshingStatus.reachedEnd || atNotHomePage) {
             return;
           }
 
@@ -269,7 +244,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
               (controller.offset /
                       controller.positions.first.maxScrollExtent) >=
                   1 - (height / controller.positions.first.maxScrollExtent)) {
-            refreshingStatus.onNearEnd();
+            refreshingStatus.onNearEnd(widget.functionality);
             // _state._loadNext(context);
           }
         });
@@ -281,6 +256,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
 
   @override
   void dispose() {
+    _gridSettingsWatcher?.cancel();
     ticker?.cancel();
 
     if (widget.overrideController == null) {
@@ -289,20 +265,6 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
 
     widget.belowMainFocus?.requestFocus();
 
-    final refreshBehaviour = widget.functionality.refreshBehaviour;
-    switch (refreshBehaviour) {
-      case DefaultGridRefreshBehaviour():
-        break;
-      case RetainedGridRefreshBehaviour():
-        WidgetsBinding.instance.scheduleFrameCallback((_) {
-          if (!mutation.isRefreshing) {
-            refreshBehaviour.interface.reset();
-          }
-
-          refreshBehaviour.interface.unregister(_refreshCallbackUpdate);
-        });
-    }
-
     widget.onDispose?.call();
 
     widget.functionality.updateScrollPosition?.call(lastOffset);
@@ -310,12 +272,12 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
     super.dispose();
   }
 
-  Future refresh([Future<int> Function()? overrideRefresh]) {
+  Future refresh() {
     selection.reset();
     mutation.reset();
     // updateFab(fab: false, foreground: inImageView);
 
-    return refreshingStatus.refresh(overrideRefresh);
+    return refreshingStatus.refresh(widget.functionality);
   }
 
   void tryScrollUntil(int p) {
@@ -323,17 +285,17 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
       return;
     }
 
-    final picPerRow = widget.description.layout.columns;
+    final picPerRow = _layoutSettings.columns;
     // Get the full content height.
     final contentSize = controller.position.viewportDimension +
         controller.position.maxScrollExtent;
     // Estimate the target scroll position.
     double target;
-    if (widget.description.layout.isList) {
+    if (_layoutSettings.layoutType.layout().isList) {
       target = contentSize * p / mutation.cellCount;
     } else {
       target = contentSize *
-          (p / picPerRow!.number - 1) /
+          (p / picPerRow.number - 1) /
           (mutation.cellCount / picPerRow.number);
     }
 
@@ -342,7 +304,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
           ?.call(controller.position.minScrollExtent);
       return;
     } else if (target > controller.position.maxScrollExtent) {
-      if (widget.hasReachedEnd()) {
+      if (refreshingStatus.reachedEnd) {
         widget.functionality.updateScrollPosition
             ?.call(controller.position.maxScrollExtent);
         return;
@@ -431,6 +393,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
       final bottomWidget = description.bottomWidget != null
           ? description.bottomWidget!
           : _BottomWidget<T>(
+              isRefreshing: mutation.isRefreshing,
               routeChanger: page != null && page.search == null
                   ? const SizedBox.shrink()
                   : widget.description.pages != null
@@ -498,7 +461,8 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
               ),
             ),
           ),
-        ...description.layout(context, this),
+        ...widget.layout.makeFor<T>(_layoutSettings)(
+            context, _layoutSettings, this),
       ],
       _WrapPadding<T>(
         systemNavigationInsets: widget.systemNavigationInsets.bottom,
@@ -561,8 +525,8 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
         child: FocusNotifier(
           notifier: searchFocus,
           focusMain: widget.mainFocus.requestFocus,
-          child: MutationInterfaceProvider<T>(
-            state: mutation,
+          child: CellProvider<T>(
+            getCell: widget.getCell,
             child: SliverMainAxisGroup(
               slivers: bodySlivers(context, page),
             ),
@@ -580,7 +544,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
       children: [
         if (atHomePage)
           RefreshIndicator(
-            onRefresh: refreshingStatus.refresh,
+            onRefresh: () => refreshingStatus.refresh(widget.functionality),
             child: mainBody(context, page),
           )
         else
@@ -640,8 +604,8 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
       child: FocusNotifier(
         notifier: searchFocus,
         focusMain: widget.mainFocus.requestFocus,
-        child: MutationInterfaceProvider(
-          state: mutation,
+        child: CellProvider<T>(
+          getCell: widget.getCell,
           child: child,
         ),
       ),
@@ -722,27 +686,31 @@ class GridBottomPaddingProvider extends InheritedWidget {
 }
 
 class GridRefreshingStatus<T extends Cell> {
-  GridRefreshingStatus._(
-    this.mutation,
-    this.functionality,
-  );
+  GridRefreshingStatus(
+    int initalCellCount,
+    this._reachedEnd,
+  ) : mutation = DefaultMutationInterface(initalCellCount);
+
+  void dispose() {
+    mutation.dispose();
+    updateProgress?.ignore();
+  }
 
   final GridMutationInterface<T> mutation;
-  final GridFunctionality<T> functionality;
 
-  bool _locked = false;
+  // final GridFunctionality<T> functionality;
+
+  final bool Function() _reachedEnd;
+
+  bool get reachedEnd => _reachedEnd();
+  Future<int>? updateProgress;
 
   Object? refreshingError;
 
-  void unlock() {
-    _locked = false;
-  }
-
-  Future<int> refresh([Future<int> Function()? overrideRefresh]) {
-    if (_locked) {
+  Future<int> refresh(GridFunctionality<T> functionality) {
+    if (updateProgress != null) {
       return Future.value(mutation.cellCount);
     }
-    _locked = true;
 
     final refresh = functionality.refresh;
     switch (refresh) {
@@ -751,36 +719,36 @@ class GridRefreshingStatus<T extends Cell> {
 
         return Future.value(mutation.cellCount);
       case AsyncGridRefresh():
-        final f =
-            overrideRefresh != null ? overrideRefresh() : refresh.refresh();
+        updateProgress = refresh.refresh();
 
         refreshingError = null;
         mutation.isRefreshing = true;
         mutation.cellCount = 0;
 
-        return _saveOrWait(f);
+        return _saveOrWait(updateProgress!, functionality);
       case RetainedGridRefresh():
         refresh.refresh();
+
         return Future.value(0);
-      case MutationInterfaceSourcedGridRefresh():
-        return Future.value(mutation.cellCount);
     }
   }
 
-  Future<int> onNearEnd() async {
-    if (_locked || functionality.loadNext == null || mutation.isRefreshing) {
+  Future<int> onNearEnd(GridFunctionality<T> functionality) async {
+    if (updateProgress != null ||
+        functionality.loadNext == null ||
+        mutation.isRefreshing ||
+        reachedEnd) {
       return Future.value(mutation.cellCount);
     }
 
-    _locked = true;
-
-    final f = functionality.loadNext!();
+    updateProgress = functionality.loadNext!();
     mutation.isRefreshing = true;
 
-    return _saveOrWait(f);
+    return _saveOrWait(updateProgress!, functionality);
   }
 
-  Future<int> _saveOrWait(Future<int> f) async {
+  Future<int> _saveOrWait(
+      Future<int> f, GridFunctionality<T> functionality) async {
     final refreshBehaviour = functionality.refreshBehaviour;
     switch (refreshBehaviour) {
       case DefaultGridRefreshBehaviour():
@@ -791,17 +759,8 @@ class GridRefreshingStatus<T extends Cell> {
         }
 
         mutation.isRefreshing = false;
-        _locked = false;
+        updateProgress = null;
 
-        return mutation.cellCount;
-      case RetainedGridRefreshBehaviour():
-        refreshBehaviour.interface.save(f.then((value) {
-          mutation.cellCount = value;
-          mutation.isRefreshing = false;
-          _locked = false;
-
-          return value;
-        }));
         return mutation.cellCount;
     }
   }

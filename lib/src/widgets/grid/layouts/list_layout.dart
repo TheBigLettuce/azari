@@ -7,19 +7,28 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
-import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:gallery/src/interfaces/grid/grid_mutation_interface.dart';
 
 import '../grid_frame.dart';
 
 class ListLayout<T extends Cell> implements GridLayouter<T> {
+  const ListLayout({
+    this.hideThumbnails = false,
+    this.unpressable = false,
+  });
+
   final bool hideThumbnails;
   final bool unpressable;
 
   @override
-  List<Widget> call(BuildContext context, GridFrameState<T> state) {
+  bool get isList => true;
+
+  @override
+  List<Widget> call(BuildContext context, GridSettingsBase settings,
+      GridFrameState<T> state) {
     return [
       blueprint<T>(
         context,
@@ -55,7 +64,6 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
         itemCount: state.cellCount,
         itemBuilder: (context, index) => _tile(
           context,
-          state,
           selection,
           index: index,
           systemNavigationInsets: systemNavigationInsets,
@@ -66,19 +74,19 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
 
   static Widget _tile<T extends Cell>(
     BuildContext context,
-    GridMutationInterface<T> state,
+    // GridMutationInterface<T> state,
     GridSelection<T> selection, {
     required int index,
     required double systemNavigationInsets,
     required bool hideThumbnails,
     required void Function(BuildContext, T, int)? onPressed,
   }) {
-    final cell = state.getCell(index);
+    final cell = CellProvider.getOf<T>(context, index);
     final selected = selection.isSelected(index);
 
     return WrapSelection(
       actionsAreEmpty: selection.addActions.isEmpty,
-      selectUntil: (i) => selection.selectUnselectUntil(i, state),
+      selectUntil: (i) => selection.selectUnselectUntil(context, i),
       thisIndx: index,
       isSelected: selected,
       ignoreSwipeGesture: selection.ignoreSwipe,
@@ -106,15 +114,4 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
       ),
     ).animate(key: cell.uniqueKey()).fadeIn();
   }
-
-  @override
-  GridColumn? get columns => null;
-
-  @override
-  bool get isList => true;
-
-  const ListLayout({
-    this.hideThumbnails = false,
-    this.unpressable = false,
-  });
 }

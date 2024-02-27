@@ -7,8 +7,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/db/state_restoration.dart';
-import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/pages/more/blacklisted_posts.dart';
@@ -20,15 +18,10 @@ import 'settings/blacklisted_directores.dart';
 import 'settings/settings_widget.dart';
 
 class MorePage extends StatelessWidget {
-  final TagManager<Unrestorable> tagManager;
-  final BooruAPIState api;
-  // final SelectionGlue<SystemGalleryDirectoryFile> glue;
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;
 
   const MorePage({
     super.key,
-    required this.api,
-    required this.tagManager,
     required this.generateGlue,
   });
 
@@ -41,25 +34,6 @@ class MorePage extends StatelessWidget {
       ),
       body: ListView(
         children: [
-          // ListTile(
-          //   style: ListTileStyle.drawer,
-          //   leading: Icon(
-          //     Icons.tag,
-          //     color: Theme.of(context).colorScheme.primary,
-          //   ),
-          //   title: Text(AppLocalizations.of(context)!.tagsLabel),
-          //   onTap: () {
-          //     Navigator.push(context, MaterialPageRoute(
-          //       builder: (context) {
-          //         return TagsPage(
-          //           tagManager: tagManager,
-          //           booru: api,
-          //           generateGlue: generateGlue,
-          //         );
-          //       },
-          //     ));
-          //   },
-          // ),
           ListTile(
             style: ListTileStyle.drawer,
             leading: Icon(
@@ -75,21 +49,6 @@ class MorePage extends StatelessWidget {
               ));
             },
           ),
-          // ListTile(
-          //   style: ListTileStyle.drawer,
-          //   leading: Icon(
-          //     Icons.notes_outlined,
-          //     color: Theme.of(context).colorScheme.primary,
-          //   ),
-          //   title: Text(AppLocalizations.of(context)!.notesPage),
-          //   onTap: () {
-          //     Navigator.push(context, MaterialPageRoute(
-          //       builder: (context) {
-          //         return const NotesPage();
-          //       },
-          //     ));
-          //   },
-          // ),
           ListTile(
             style: ListTileStyle.drawer,
             leading: Icon(

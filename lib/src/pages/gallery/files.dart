@@ -87,7 +87,6 @@ class _GalleryFilesState extends State<GalleryFiles>
   final plug = chooseGalleryPlug();
 
   late final StreamSubscription<Settings?> settingsWatcher;
-  late final StreamSubscription<GridSettingsFiles?> gridSettingsWatcher;
 
   GridSettingsFiles gridSettings = GridSettingsFiles.current;
 
@@ -112,7 +111,6 @@ class _GalleryFilesState extends State<GalleryFiles>
 
       if (!inRefresh) {
         state.gridKey.currentState?.mutation.isRefreshing = false;
-        state.gridKey.currentState?.refreshingStatus.unlock();
 
         performSearch(searchTextController.text);
         if (i == 1) {
@@ -208,12 +206,6 @@ class _GalleryFilesState extends State<GalleryFiles>
   void initState() {
     super.initState();
 
-    gridSettingsWatcher = GridSettingsFiles.watch((newSettings) {
-      gridSettings = newSettings!;
-
-      setState(() {});
-    });
-
     settingsWatcher = Settings.watch((s) {
       state.settings = s!;
 
@@ -225,7 +217,6 @@ class _GalleryFilesState extends State<GalleryFiles>
   @override
   void dispose() {
     settingsWatcher.cancel();
-    gridSettingsWatcher.cancel();
 
     widget.api.close();
     stream.close();
@@ -249,8 +240,11 @@ class _GalleryFilesState extends State<GalleryFiles>
           state,
           (context) => GridFrame(
             key: state.gridKey,
+            layout: GridSettingsLayoutBehaviour(gridSettings),
+            refreshingStatus: state.refreshingStatus,
             getCell: (i) => widget.api.directCell(i),
             functionality: GridFunctionality(
+                watchLayoutSettings: GridSettingsFiles.watch,
                 backButton: CallbackGridBackButton(
                   onPressed: () {
                     final filterMode = currentFilteringMode();
@@ -279,7 +273,6 @@ class _GalleryFilesState extends State<GalleryFiles>
                   ),
                 )),
             systemNavigationInsets: widget.viewPadding ?? EdgeInsets.zero,
-            hasReachedEnd: () => true,
             imageViewDescription: ImageViewDescription(
               imageViewKey: state.imageViewKey,
               statistics: const ImageViewStatistics(
@@ -320,7 +313,7 @@ class _GalleryFilesState extends State<GalleryFiles>
             // }),
 
             description: GridDescription(
-              widget.callback != null
+              actions: widget.callback != null
                   ? []
                   : extra.isTrash
                       ? [
@@ -395,7 +388,7 @@ class _GalleryFilesState extends State<GalleryFiles>
                           final n = math.Random.secure().nextInt(upTo);
 
                           widget.callback?.call(
-                              state.gridKey.currentState!.mutation.getCell(n));
+                              state.gridKey.currentState!.widget.getCell(n));
                         } catch (e, trace) {
                           _log.logDefaultImportant(
                               "getting random number".errorMessage(e), trace);
@@ -420,21 +413,15 @@ class _GalleryFilesState extends State<GalleryFiles>
                         gridSettings.copy(columns: columns).save()),
               ],
               tightMode: true,
-              hideTitle: gridSettings.hideName,
               inlineMenuButtonItems: true,
               bottomWidget: widget.callback != null
                   ? CopyMovePreview.hintWidget(
                       context, AppLocalizations.of(context)!.chooseFileNotice)
                   : null,
               keybindsDescription: widget.dirName,
-              layout: gridSettings.layoutType.layout(
-                gridSettings,
-                tightMode: true,
-                gridSeed: widget.callback != null ? 0 : state.gridSeed,
-              ),
+              gridSeed: state.gridSeed,
             ),
           ),
-          noDrawer: widget.callback != null,
           canPop: currentFilteringMode() == FilteringMode.noFilter &&
               searchTextController.text.isEmpty,
           overrideOnPop: (pop, hideAppBar) {

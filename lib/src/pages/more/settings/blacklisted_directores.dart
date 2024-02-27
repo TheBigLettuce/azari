@@ -8,6 +8,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
@@ -17,7 +18,6 @@ import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_search_widget.dart';
 import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
-import 'package:gallery/src/widgets/grid/layouts/list_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:isar/isar.dart';
@@ -87,26 +87,28 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
         child: GridSkeleton(
           state,
           (context) => GridFrame<BlacklistedDirectory>(
-              key: state.gridKey,
-              getCell: loader.getCell,
-              systemNavigationInsets: MediaQuery.viewPaddingOf(context),
-              hasReachedEnd: () => true,
-              functionality: GridFunctionality(
-                search: OverrideGridSearchWidget(
-                  SearchAndFocus(
-                      searchWidget(context,
-                          hint: AppLocalizations.of(context)!
-                              .blacklistedDirectoriesPageName),
-                      searchFocus),
-                ),
-                selectionGlue: GlueProvider.of(context),
-                refresh: SynchronousGridRefresh(() => loader.count()),
+            key: state.gridKey,
+            layout: const GridSettingsLayoutBehaviour(GridSettingsBase.list()),
+            refreshingStatus: state.refreshingStatus,
+            getCell: loader.getCell,
+            systemNavigationInsets: MediaQuery.viewPaddingOf(context),
+            functionality: GridFunctionality(
+              search: OverrideGridSearchWidget(
+                SearchAndFocus(
+                    searchWidget(context,
+                        hint: AppLocalizations.of(context)!
+                            .blacklistedDirectoriesPageName),
+                    searchFocus),
               ),
-              imageViewDescription: ImageViewDescription(
-                imageViewKey: state.imageViewKey,
-              ),
-              mainFocus: state.mainFocus,
-              description: GridDescription([
+              selectionGlue: GlueProvider.of(context),
+              refresh: SynchronousGridRefresh(() => loader.count()),
+            ),
+            imageViewDescription: ImageViewDescription(
+              imageViewKey: state.imageViewKey,
+            ),
+            mainFocus: state.mainFocus,
+            description: GridDescription(
+              actions: [
                 GridAction(
                   Icons.restore_page,
                   (selected) {
@@ -116,17 +118,19 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
                   true,
                 )
               ],
-                  menuButtonItems: [
-                    IconButton(
-                        onPressed: () {
-                          BlacklistedDirectory.clear();
-                          chooseGalleryPlug().notify(null);
-                        },
-                        icon: const Icon(Icons.delete))
-                  ],
-                  keybindsDescription: AppLocalizations.of(context)!
-                      .blacklistedDirectoriesPageName,
-                  layout: const ListLayout(unpressable: true))),
+              menuButtonItems: [
+                IconButton(
+                    onPressed: () {
+                      BlacklistedDirectory.clear();
+                      chooseGalleryPlug().notify(null);
+                    },
+                    icon: const Icon(Icons.delete))
+              ],
+              keybindsDescription:
+                  AppLocalizations.of(context)!.blacklistedDirectoriesPageName,
+              gridSeed: state.gridSeed,
+            ),
+          ),
           canPop: true,
           overrideOnPop: (pop, hideAppBar) {
             if (hideAppBar()) {

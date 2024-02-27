@@ -15,13 +15,10 @@ part 'grid_state.g.dart';
 class GridState extends GridStateBase {
   GridState({
     required super.tags,
-    required super.scrollPositionTags,
-    required super.selectedPost,
-    required super.scrollPositionGrid,
     required super.name,
     required super.safeMode,
     required super.time,
-    required super.page,
+    required super.scrollOffset,
   });
 
   GridState.empty(String name, String tags, SafeMode safeMode)
@@ -29,39 +26,32 @@ class GridState extends GridStateBase {
           tags: tags,
           name: name,
           safeMode: safeMode,
-          scrollPositionGrid: 0,
-          selectedPost: null,
-          scrollPositionTags: null,
-          page: null,
+          scrollOffset: 0,
           time: DateTime.now(),
         );
 
-  GridState copy(bool replaceScrollTagsSelectedPost,
-          {String? name,
-          String? tags,
-          double? scrollPositionGrid,
-          int? selectedPost,
-          SafeMode? safeMode,
-          double? scrollPositionTags,
-          DateTime? time,
-          int? page}) =>
+  GridState copy({
+    String? name,
+    String? tags,
+    double? scrollOffset,
+    SafeMode? safeMode,
+    DateTime? time,
+  }) =>
       GridState(
         tags: tags ?? this.tags,
         safeMode: safeMode ?? this.safeMode,
-        scrollPositionTags: replaceScrollTagsSelectedPost
-            ? scrollPositionTags
-            : scrollPositionTags ?? this.scrollPositionTags,
-        selectedPost: replaceScrollTagsSelectedPost
-            ? selectedPost
-            : selectedPost ?? this.selectedPost,
-        scrollPositionGrid: scrollPositionGrid ?? this.scrollPositionGrid,
-        page: page ?? this.page,
         time: time ?? this.time,
         name: name ?? this.name,
+        scrollOffset: scrollOffset ?? this.scrollOffset,
       );
 }
 
 class GridStateBase {
+  @override
+  String toString() {
+    return "GridStateBase: $name, $time, '$tags', $scrollOffset, $safeMode";
+  }
+
   Id? id;
 
   @Index(unique: true, replace: true)
@@ -71,23 +61,16 @@ class GridStateBase {
 
   final String tags;
 
-  final double scrollPositionGrid;
-
-  final int? selectedPost;
-  final double? scrollPositionTags;
-  final int? page;
+  final double scrollOffset;
 
   @enumerated
   final SafeMode safeMode;
 
   GridStateBase({
     required this.tags,
-    required this.scrollPositionTags,
-    required this.selectedPost,
     required this.safeMode,
-    required this.scrollPositionGrid,
+    required this.scrollOffset,
     required this.name,
-    required this.page,
     required this.time,
   });
 }

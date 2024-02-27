@@ -124,6 +124,8 @@ class _ReadingTabState extends State<ReadingTab> {
         state,
         (context) => GridFrame<CompactMangaDataBase>(
           key: state.gridKey,
+          layout: _ReadingLayout(startReading: _startReading),
+          refreshingStatus: state.refreshingStatus,
           imageViewDescription: ImageViewDescription(
             imageViewKey: state.imageViewKey,
           ),
@@ -131,9 +133,7 @@ class _ReadingTabState extends State<ReadingTab> {
               onPressed: OverrideGridOnCellPressBehaviour(
                 onPressed: (context, idx) {
                   final cell =
-                      MutationInterfaceProvider.of<CompactMangaDataBase>(
-                              context)
-                          .getCell(idx);
+                      CellProvider.getOf<CompactMangaDataBase>(context, idx);
                   inInner = true;
 
                   Navigator.of(context, rootNavigator: true)
@@ -169,18 +169,14 @@ class _ReadingTabState extends State<ReadingTab> {
           getCell: (i) => data[i],
           initalScrollPosition: 0,
           systemNavigationInsets: widget.viewInsets,
-          hasReachedEnd: () => true,
           mainFocus: state.mainFocus,
           description: GridDescription(
-            const [],
+            actions: const [],
             ignoreEmptyWidgetOnNoContent: true,
             ignoreSwipeSelectGesture: true,
             showAppBar: false,
             keybindsDescription: "Read tab",
-            layout: _ReadingLayout(
-              startReading: _startReading,
-              gridSeed: state.gridSeed,
-            ),
+            gridSeed: state.gridSeed,
           ),
         ),
         canPop: true,
@@ -189,18 +185,30 @@ class _ReadingTabState extends State<ReadingTab> {
   }
 }
 
-class _ReadingLayout implements GridLayouter<CompactMangaDataBase> {
+class _ReadingLayout
+    implements GridLayouter<CompactMangaDataBase>, GridLayoutBehaviour {
   final void Function(int idx) startReading;
-  final int gridSeed;
 
   const _ReadingLayout({
     required this.startReading,
-    required this.gridSeed,
   });
 
   @override
-  List<Widget> call(
-      BuildContext context, GridFrameState<CompactMangaDataBase> state) {
+  final GridSettingsBase defaultSettings = const GridSettingsBase(
+    aspectRatio: GridAspectRatio.oneTwo,
+    columns: GridColumn.three,
+    layoutType: GridLayoutType.grid,
+    hideName: false,
+  );
+
+  @override
+  GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings) {
+    return this as GridLayouter<T>;
+  }
+
+  @override
+  List<Widget> call(BuildContext context, GridSettingsBase settings,
+      GridFrameState<CompactMangaDataBase> state) {
     void onPressed(CompactMangaDataBase e, int idx) {
       state.widget.functionality.onPressed.launch(context, idx, state);
     }
@@ -226,22 +234,24 @@ class _ReadingLayout implements GridLayouter<CompactMangaDataBase> {
       if (state.mutation.cellCount == 0)
         SliverToBoxAdapter(
           child: EmptyWidget(
-            gridSeed: gridSeed,
+            gridSeed: state.widget.description.gridSeed,
           ),
         )
       else
         SliverToBoxAdapter(
           child: SizedBox(
-            height: (MediaQuery.sizeOf(context).shortestSide / 3),
+            height: (MediaQuery.sizeOf(context).shortestSide /
+                settings.columns.number),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: state.mutation.cellCount,
               itemBuilder: (context, index) {
-                final cell = state.mutation.getCell(index);
+                final cell = state.widget.getCell(index);
 
                 return SizedBox(
-                  width: (MediaQuery.sizeOf(context).shortestSide / 3) *
-                      GridAspectRatio.oneTwo.value,
+                  width: (MediaQuery.sizeOf(context).shortestSide /
+                          settings.columns.number) *
+                      settings.aspectRatio.value,
                   child: ImportantCard(
                     cell: cell,
                     idx: index,
@@ -270,9 +280,6 @@ class _ReadingLayout implements GridLayouter<CompactMangaDataBase> {
   }
 
   @override
-  GridColumn get columns => GridColumn.three;
-
-  @override
   bool get isList => false;
 }
 
@@ -295,7 +302,7 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
   final data = PinnedManga.getAll(-1);
 
   late final GridMutationInterface<PinnedManga> mutationInterface =
-      _DummyMutationInterface(data);
+      DefaultMutationInterface(data.length);
   late final GridSelection<PinnedManga> selection = GridSelection(
     setState,
     const [],
@@ -321,6 +328,7 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
   @override
   void dispose() {
     watcher.cancel();
+    mutationInterface.dispose();
 
     super.dispose();
   }
@@ -355,30 +363,4 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
             aspectRatio: GridAspectRatio.one.value,
           );
   }
-}
-
-class _DummyMutationInterface implements GridMutationInterface<PinnedManga> {
-  _DummyMutationInterface(this.data) : cellCount = data.length;
-
-  final List<PinnedManga> data;
-
-  @override
-  int cellCount = 0;
-
-  @override
-  PinnedManga getCell(int i) {
-    return data[i];
-  }
-
-  @override
-  bool isRefreshing = false;
-
-  @override
-  bool get mutated => false;
-
-  @override
-  void setSource(int cellCount, PinnedManga Function(int i) getCell) {}
-
-  @override
-  void reset() {}
 }

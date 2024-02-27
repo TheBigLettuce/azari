@@ -7,129 +7,85 @@
 
 part of '../state_restoration.dart';
 
-typedef InsertGridState = Function(
-    {required String tags, required String name, required SafeMode safeMode});
-
-typedef TagManagerWatch = StreamSubscription<dynamic> Function(
-    bool, void Function());
-
-sealed class TagManagerType {}
-
-class Restorable implements TagManagerType {}
-
-class Unrestorable implements TagManagerType {}
-
-class TagManager<T extends TagManagerType> {
+class TagManager {
   final IsarBooruTagging _excluded;
   final IsarBooruTagging _latest;
-  final bool _temporary;
-
-  final InsertGridState _insert;
-
-  final TagManagerWatch watch;
 
   BooruTagging get excluded => _excluded;
   BooruTagging get latest => _latest;
 
-  void onTagPressed(
-    BuildContext context,
-    Tag t,
-    Booru booru,
-    bool restore, {
-    SelectionGlue<J> Function<J extends Cell>()? generateGlue,
-    SafeMode? overrideSafeMode,
-    bool useRootNavigator = false,
-    // required EdgeInsets? viewInsets,
-  }) {
-    t = t.trim();
-    if (t.tag.isEmpty) {
-      return;
-    }
-
-    latest.add(t);
-
-    PauseVideoNotifier.maybePauseOf(context, true);
-
-    if (restore && !_temporary) {
-      final instance = DbsOpen.secondaryGrid(temporary: false);
-      final state = _insert(
-          tags: t.tag,
-          name: instance.name,
-          safeMode: overrideSafeMode ?? Settings.fromDb().safeMode);
-
-      Navigator.of(context, rootNavigator: useRootNavigator)
-          .push(MaterialPageRoute(builder: (context) {
-        return SecondaryBooruGrid(
-          tagManager: this as TagManager<Restorable>,
-          noRestoreOnBack: true,
-          api: BooruAPIState.fromEnum(booru, page: null),
-          restore: state,
-          generateGlue: generateGlue,
-          instance: instance,
-        );
-      }));
-      //.whenComplete(() => PauseVideoNotifier.maybePauseOf(context, false));
-    } else {
-      final TagManager<Unrestorable> tagManager = this
-              is TagManager<Unrestorable>
-          ? this as TagManager<Unrestorable>
-          : TagManager._copy(_insert, _excluded, _latest, _temporary, watch);
-
-      Navigator.of(context, rootNavigator: useRootNavigator)
-          .push(MaterialPageRoute(builder: (context) {
-        return RandomBooruGrid(
-          tagManager: tagManager,
-          api: BooruAPIState.fromEnum(booru, page: null),
-          tags: t.tag,
-          overrideSafeMode: overrideSafeMode,
-          generateGlue: generateGlue,
-        );
-      }));
-      //.whenComplete(() => PauseVideoNotifier.maybePauseOf(context, false));
-    }
-  }
-
-  static TagManager<Restorable> restorable(
-      StateRestoration parent, TagManagerWatch watch) {
-    return TagManager._(parent, watch, false);
-  }
-
-  static TagManager<Unrestorable> unrestorable(
-      StateRestoration parent, TagManagerWatch watch) {
-    return TagManager._(parent, watch, true);
-  }
-
-  TagManager._(StateRestoration parent, this.watch, this._temporary)
-      : _insert = parent.insert,
-        _excluded =
-            IsarBooruTagging(excludedMode: true, isarCurrent: parent._mainGrid),
-        _latest = IsarBooruTagging(
-            excludedMode: false, isarCurrent: parent._mainGrid);
-
-  TagManager._copy(
-      this._insert, this._excluded, this._latest, this._temporary, this.watch);
-
-  static TagManager<Unrestorable> fromEnum(Booru booru) {
+  factory TagManager.fromEnum(Booru booru) {
     final mainGrid = DbsOpen.primaryGrid(booru);
 
-    return TagManager._(
-        StateRestoration(mainGrid, mainGrid.name, Settings.fromDb().safeMode),
-        (fire, f) =>
-            mainGrid.tags.watchLazy(fireImmediately: fire).listen((event) {
-              f();
-            }),
-        true);
+    return TagManager._(mainGrid);
   }
 
-  static TagManager<Restorable> fromEnumRestorable(Booru booru) {
-    final mainGrid = DbsOpen.primaryGrid(booru);
-
-    return TagManager._(
-        StateRestoration(mainGrid, mainGrid.name, Settings.fromDb().safeMode),
-        (fire, f) =>
-            mainGrid.tags.watchLazy(fireImmediately: fire).listen((event) {
-              f();
-            }),
-        false);
-  }
+  TagManager._(Isar mainGrid)
+      : _excluded = IsarBooruTagging(excludedMode: true, isarCurrent: mainGrid),
+        _latest = IsarBooruTagging(excludedMode: false, isarCurrent: mainGrid);
 }
+
+// typedef InsertGridState = Function(Isar mainGrid,
+//     {required String tags, required String name, required SafeMode safeMode});
+
+// typedef TagManagerWatch = StreamSubscription<dynamic> Function(
+//     bool, void Function());
+
+  // void onTagPressed(
+  //   BuildContext context,
+  //   Tag t,
+  //   Booru booru,
+  //   bool restore, {
+  //   SelectionGlue<J> Function<J extends Cell>()? generateGlue,
+  //   SafeMode? overrideSafeMode,
+  //   bool useRootNavigator = false,
+  // }) {
+  //   //   t = t.trim();
+  //   //   if (t.tag.isEmpty) {
+  //   //     return;
+  //   //   }
+
+  //   //   latest.add(t);
+
+  //   //   PauseVideoNotifier.maybePauseOf(context, true);
+
+  //   //   if (restore && !_temporary) {
+  //   //     final instance = DbsOpen.secondaryGrid(temporary: false);
+  //   //     final state = _insert(
+  //   //       _latest.isarCurrent,
+  //   //       tags: t.tag,
+  //   //       name: instance.name,
+  //   //       safeMode: overrideSafeMode ?? Settings.fromDb().safeMode,
+  //   //     );
+
+  //   //     Navigator.of(context, rootNavigator: useRootNavigator)
+  //   //         .push(MaterialPageRoute(builder: (context) {
+  //   //       return SecondaryBooruGrid(
+  //   //         tagManager: this as TagManager<Restorable>,
+  //   //         noRestoreOnBack: true,
+  //   //         api: BooruAPI.fromEnum(booru, page: null),
+  //   //         restore: state,
+  //   //         generateGlue: generateGlue,
+  //   //         instance: instance,
+  //   //       );
+  //   //     }));
+  //   //     //.whenComplete(() => PauseVideoNotifier.maybePauseOf(context, false));
+  //   //   } else {
+  //   //     final TagManager<Unrestorable> tagManager = this
+  //   //             is TagManager<Unrestorable>
+  //   //         ? this as TagManager<Unrestorable>
+  //   //         : TagManager._copy(_insert, _excluded, _latest, _temporary, watch);
+
+  //   //     Navigator.of(context, rootNavigator: useRootNavigator)
+  //   //         .push(MaterialPageRoute(builder: (context) {
+  //   //       return RandomBooruGrid(
+  //   //         tagManager: tagManager,
+  //   //         api: BooruAPI.fromEnum(booru, page: null),
+  //   //         tags: t.tag,
+  //   //         overrideSafeMode: overrideSafeMode,
+  //   //         generateGlue: generateGlue,
+  //   //       );
+  //   //     }));
+  //   //     //.whenComplete(() => PauseVideoNotifier.maybePauseOf(context, false));
+  //   //   }
+  // }

@@ -10,11 +10,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/grid_settings/favorites.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
+import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/filtering/filters.dart';
 import 'package:gallery/src/pages/booru/grid_settings_button.dart';
 import 'package:gallery/src/widgets/grid/actions/favorites.dart';
 import 'package:gallery/src/net/downloader.dart';
-import 'package:gallery/src/interfaces/booru/booru_api_state.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
@@ -22,7 +22,6 @@ import 'package:gallery/src/db/schemas/tags/local_tag_dictionary.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
-import 'package:gallery/src/widgets/grid/layouts/segment_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:isar/isar.dart';
@@ -52,6 +51,8 @@ class FavoriteBooruPage extends StatelessWidget {
 
     return GridFrame<FavoriteBooru>(
       key: state.state.gridKey,
+      layout: GridSettingsLayoutBehaviour(state.gridSettings),
+      refreshingStatus: state.state.refreshingStatus,
       overrideController: conroller,
       imageViewDescription: ImageViewDescription(
         addIconsImage: (p) => state.iconsImage(p),
@@ -59,38 +60,21 @@ class FavoriteBooruPage extends StatelessWidget {
       ),
       functionality: GridFunctionality(
         selectionGlue: glue,
+        watchLayoutSettings: GridSettingsFavorites.watch,
         download: state.download,
         refresh: SynchronousGridRefresh(() => state.loader.count()),
       ),
       getCell: state.loader.getCell,
       systemNavigationInsets: EdgeInsets.zero,
-      hasReachedEnd: () => true,
       mainFocus: state.state.mainFocus,
       description: GridDescription(
-        state.gridActions(),
+        actions: state.gridActions(),
         showAppBar: false,
         asSliver: true,
-        hideTitle: true,
         ignoreEmptyWidgetOnNoContent: false,
         ignoreSwipeSelectGesture: false,
         keybindsDescription: AppLocalizations.of(context)!.favoritesLabel,
-        layout:
-            // state.segmented
-            //     ? SegmentLayout(
-            //         Segments(
-            //           "Ungrouped", // TODO: change
-            //           hidePinnedIcon: true,
-            //           prebuiltSegments: state.segments,
-            //         ),
-            //         state.gridSettings.columns,
-            //         state.gridSettings.aspectRatio,
-            //         hideAlias: state.gridSettings.hideName,
-            //       )
-            //     :
-            state.gridSettings.layoutType.layout(
-          state.gridSettings,
-          gridSeed: state.state.gridSeed,
-        ),
+        gridSeed: state.state.gridSeed,
       ),
     );
   }
@@ -136,9 +120,8 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T>
     implements SearchFilterGrid<FavoriteBooru> {
   late final StreamSubscription favoritesWatcher;
   late final StreamSubscription<MiscSettings?> miscSettingsWatcher;
-  late final StreamSubscription<GridSettingsFavorites?> gridSettingsWatcher;
 
-  final booru = BooruAPIState.fromSettings();
+  final booru = Settings.fromDb().selectedBooru;
 
   MiscSettings miscSettings = MiscSettings.current;
   GridSettingsFavorites gridSettings = GridSettingsFavorites.current;
@@ -267,19 +250,12 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T>
   void disposeFavoriteBooruState() {
     miscSettingsWatcher.cancel();
     favoritesWatcher.cancel();
-    gridSettingsWatcher.cancel();
 
     state.dispose();
     disposeSearch();
   }
 
   void initFavoriteBooruState() {
-    gridSettingsWatcher = GridSettingsFavorites.watch((newSettings) {
-      gridSettings = newSettings!;
-
-      setState(() {});
-    });
-
     searchHook(state);
 
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
@@ -327,7 +303,7 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T>
     return Downloader.g.add(
         DownloadFile.d(
             url: p.fileDownloadUrl(),
-            site: booru.booru.url,
+            site: booru.url,
             name: p.filename(),
             thumbUrl: p.previewUrl),
         state.settings);
@@ -368,13 +344,15 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T>
 
   List<Widget> appBarButtons() {
     return [
-      GridSettingsButton(gridSettings,
-          selectHideName: null,
-          selectRatio: (ratio) => gridSettings.copy(aspectRatio: ratio).save(),
-          selectGridLayout: (layoutType) =>
-              gridSettings.copy(layoutType: layoutType).save(),
-          selectGridColumn: (columns) =>
-              gridSettings.copy(columns: columns).save())
+      GridSettingsButton(
+        gridSettings,
+        selectHideName: null,
+        selectRatio: (ratio) => gridSettings.copy(aspectRatio: ratio).save(),
+        selectGridLayout: (layoutType) =>
+            gridSettings.copy(layoutType: layoutType).save(),
+        selectGridColumn: (columns) =>
+            gridSettings.copy(columns: columns).save(),
+      )
     ];
   }
 }

@@ -47,9 +47,12 @@ class GridSettingsFiles extends GridSettingsBase {
     Dbs.g.main.writeTxnSync(() => Dbs.g.main.gridSettingsFiles.putSync(this));
   }
 
-  static StreamSubscription<GridSettingsFiles?> watch(
-      void Function(GridSettingsFiles?) f) {
-    return Dbs.g.main.gridSettingsFiles.watchObject(0).listen(f);
+  static StreamSubscription<GridSettingsFiles> watch(
+      void Function(GridSettingsFiles) f) {
+    return Dbs.g.main.gridSettingsFiles
+        .watchObject(0)
+        .map((event) => event!)
+        .listen(f);
   }
 
   static GridSettingsFiles get current =>

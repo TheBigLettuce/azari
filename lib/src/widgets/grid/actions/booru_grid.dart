@@ -11,7 +11,7 @@ import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 
 import '../../../net/downloader.dart';
-import '../../../interfaces/booru/booru_api_state.dart';
+import '../../../interfaces/booru/booru_api.dart';
 import '../../../db/tags/post_tags.dart';
 import '../../../db/schemas/downloader/download_file.dart';
 import '../../../db/schemas/tags/local_tag_dictionary.dart';
@@ -53,7 +53,7 @@ class BooruGridActions {
   }
 
   static GridAction<T> download<T extends PostBase>(
-      BuildContext context, BooruAPIState api) {
+      BuildContext context, Booru booru) {
     return GridAction(Icons.download, (selected) {
       final settings = Settings.fromDb();
 
@@ -61,7 +61,7 @@ class BooruGridActions {
       Downloader.g.addAll(
           selected.map((e) => DownloadFile.d(
               url: e.fileUrl,
-              site: api.booru.url,
+              site: booru.url,
               name: e.filename(),
               thumbUrl: e.previewUrl)),
           settings);

@@ -9,25 +9,27 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
-import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
-import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:gallery/src/interfaces/grid/grid_mutation_interface.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid/grid_cell.dart';
 import 'package:gallery/src/widgets/grid/parts/segment_label.dart';
 
 import '../grid_frame.dart';
 
 class SegmentLayout<T extends Cell> implements GridLayouter<T> {
+  const SegmentLayout(this.segments);
+
   final Segments<T> segments;
-  final GridAspectRatio aspectRatio;
 
   @override
-  final GridColumn columns;
+  bool get isList => false;
 
   @override
-  List<Widget> call(BuildContext context, GridFrameState<T> state) {
+  List<Widget> call(BuildContext context, GridSettingsBase settings,
+      GridFrameState<T> state) {
     if (segments.prebuiltSegments != null) {
       return [
         prototype(
@@ -35,14 +37,17 @@ class SegmentLayout<T extends Cell> implements GridLayouter<T> {
           segments,
           state.mutation,
           state.selection,
-          columns.number,
+          settings.columns.number,
           systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
-          aspectRatio: aspectRatio.value,
+          functionality: state.widget.functionality,
+          aspectRatio: settings.aspectRatio.value,
           refreshingStatus: state.refreshingStatus,
           gridCell: (context, idx) {
             return GridCell.frameDefault(
               context,
               idx,
+              hideTitle: settings.hideName,
+              isList: isList,
               state: state,
             );
           },
@@ -50,6 +55,8 @@ class SegmentLayout<T extends Cell> implements GridLayouter<T> {
             return GridCell.frameDefault(
               context,
               idx,
+              hideTitle: settings.hideName,
+              isList: isList,
               state: state,
             );
           },
@@ -61,14 +68,17 @@ class SegmentLayout<T extends Cell> implements GridLayouter<T> {
       segments,
       state.mutation,
       state.selection,
-      columns.number,
+      settings.columns.number,
       systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
-      aspectRatio: aspectRatio.value,
+      functionality: state.widget.functionality,
+      aspectRatio: settings.aspectRatio.value,
       refreshingStatus: state.refreshingStatus,
       gridCell: (context, idx) {
         return GridCell.frameDefault(
           context,
           idx,
+          isList: isList,
+          hideTitle: settings.hideName,
           state: state,
         );
       },
@@ -76,6 +86,8 @@ class SegmentLayout<T extends Cell> implements GridLayouter<T> {
         return GridCell.frameDefault(
           context,
           idx,
+          hideTitle: settings.hideName,
+          isList: isList,
           state: state,
         );
       },
@@ -93,11 +105,14 @@ class SegmentLayout<T extends Cell> implements GridLayouter<T> {
     GridSelection<T> selection,
     int columns, {
     required GridRefreshingStatus<T> refreshingStatus,
+    required GridFunctionality<T> functionality,
     required MakeCellFunc<T> gridCell,
     required GridCell<T> Function(BuildContext, int idx, T) gridCellT,
     required double aspectRatio,
     required double systemNavigationInsets,
   }) {
+    final getCell = CellProvider.of<T>(context);
+
     final segRows = <dynamic>[];
 
     makeRows<J>(List<J> value) {
@@ -141,7 +156,7 @@ class SegmentLayout<T extends Cell> implements GridLayouter<T> {
                                     ? segments.limitLabelChildren!
                                     : e.value,
                                 (index) => index + prevCount)
-                            .map((e) => state.getCell(e))
+                            .map((e) => getCell(e))
                             .toList());
 
                     return;
@@ -151,7 +166,7 @@ class SegmentLayout<T extends Cell> implements GridLayouter<T> {
 
                   for (final i
                       in List.generate(e.value, (index) => index + prevCount)) {
-                    cells.add(state.getCell(i - 1));
+                    cells.add(getCell(i - 1));
                   }
 
                   segments.onLabelPressed!(e.key, cells);
@@ -181,7 +196,7 @@ class SegmentLayout<T extends Cell> implements GridLayouter<T> {
                             if (segments.addToSticky!(val.seg,
                                 unsticky: val.sticky ? true : null)) {
                               HapticFeedback.vibrate();
-                              refreshingStatus.refresh();
+                              refreshingStatus.refresh(functionality);
                             }
                           }
                         : null,
@@ -232,6 +247,7 @@ class SegmentLayout<T extends Cell> implements GridLayouter<T> {
     GridSelection<T> selection,
     int columns, {
     required GridRefreshingStatus<T> refreshingStatus,
+    required GridFunctionality<T> functionality,
     required MakeCellFunc<T> gridCell,
     required GridCell<T> Function(BuildContext, int idx, T) gridCellT,
     required double systemNavigationInsets,
@@ -241,12 +257,14 @@ class SegmentLayout<T extends Cell> implements GridLayouter<T> {
     final segMap = <String, List<int>>{};
     final stickySegs = <String, List<int>>{};
 
+    final getCell = CellProvider.of<T>(context);
+
     final unsegmented = <int>[];
 
     segments.addToSticky;
 
     for (var i = 0; i < state.cellCount; i++) {
-      final (res, sticky) = segments.segment!(state.getCell(i));
+      final (res, sticky) = segments.segment!(getCell(i));
       if (res == null) {
         unsegmented.add(i);
       } else {
@@ -302,14 +320,13 @@ class SegmentLayout<T extends Cell> implements GridLayouter<T> {
             key,
             value
                 .take(segments.limitLabelChildren!)
-                .map((e) => state.getCell(e))
+                .map((e) => getCell(e))
                 .toList());
 
         return;
       }
 
-      segments.onLabelPressed!(
-          key, value.map((e) => state.getCell(e)).toList());
+      segments.onLabelPressed!(key, value.map((e) => getCell(e)).toList());
     }
 
     stickySegs.forEach((key, value) {
@@ -378,7 +395,7 @@ class SegmentLayout<T extends Cell> implements GridLayouter<T> {
                             if (segments.addToSticky!(val.seg,
                                 unsticky: val.sticky ? true : null)) {
                               HapticFeedback.vibrate();
-                              refreshingStatus.refresh();
+                              refreshingStatus.refresh(functionality);
                             }
                           }
                         : null,
@@ -452,10 +469,10 @@ class SegmentLayout<T extends Cell> implements GridLayouter<T> {
                 currentScroll: selection.controller,
                 selectUntil: (i) {
                   if (predefined != null) {
-                    selection.selectUnselectUntil(indx, state,
+                    selection.selectUnselectUntil(context, indx,
                         selectFrom: predefined());
                   } else {
-                    selection.selectUnselectUntil(indx, state);
+                    selection.selectUnselectUntil(context, indx);
                   }
                 },
                 selectUnselect: () => selection.selectOrUnselect(context, indx),
@@ -490,7 +507,7 @@ class SegmentLayout<T extends Cell> implements GridLayouter<T> {
                 ignoreSwipeGesture: selection.ignoreSwipe,
                 bottomPadding: systemNavigationInsets,
                 currentScroll: selection.controller,
-                selectUntil: (i) => selection.selectUnselectUntil(i, state),
+                selectUntil: (i) => selection.selectUnselectUntil(context, i),
                 selectUnselect: () => selection.selectOrUnselect(context, -1),
                 isSelected: selection.isSelected(-1),
                 child: gridCell(context, cell.$1, cell.$2),
@@ -499,15 +516,6 @@ class SegmentLayout<T extends Cell> implements GridLayouter<T> {
           );
         }).toList(),
       );
-
-  @override
-  bool get isList => false;
-
-  const SegmentLayout(
-    this.segments,
-    this.columns,
-    this.aspectRatio,
-  );
 }
 
 class _SegSticky {

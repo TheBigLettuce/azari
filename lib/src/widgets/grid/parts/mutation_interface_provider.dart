@@ -7,23 +7,30 @@
 
 part of '../grid_frame.dart';
 
-class MutationInterfaceProvider<T extends Cell> extends InheritedWidget {
-  final GridMutationInterface<T> state;
+class CellProvider<T extends Cell> extends InheritedWidget {
+  final T Function(int i) getCell;
 
-  const MutationInterfaceProvider({
+  const CellProvider({
     super.key,
-    required this.state,
+    required this.getCell,
     required super.child,
   });
 
-  static GridMutationInterface<T> of<T extends Cell>(BuildContext context) {
-    final widget = context
-        .dependOnInheritedWidgetOfExactType<MutationInterfaceProvider<T>>();
+  static T getOf<T extends Cell>(BuildContext context, int i) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<CellProvider<T>>();
 
-    return widget!.state;
+    return widget!.getCell(i);
+  }
+
+  static T Function(int) of<T extends Cell>(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<CellProvider<T>>();
+
+    return widget!.getCell;
   }
 
   @override
-  bool updateShouldNotify(MutationInterfaceProvider<T> oldWidget) =>
-      state != oldWidget.state;
+  bool updateShouldNotify(CellProvider<T> oldWidget) =>
+      getCell != oldWidget.getCell;
 }

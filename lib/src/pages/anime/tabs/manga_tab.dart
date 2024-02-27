@@ -6,6 +6,8 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/base/grid_settings_base.dart';
+import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
@@ -14,10 +16,8 @@ import 'package:gallery/src/pages/anime/manga/manga_info_page.dart';
 import 'package:gallery/src/pages/anime/paging_container.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_on_cell_press_behaviour.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_refresh_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
-import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
@@ -26,7 +26,7 @@ class MangaTab extends StatefulWidget {
   final MangaAPI api;
   final List<MangaEntry> elems;
   final EdgeInsets viewInsets;
-  final PagingContainer container;
+  final PagingContainer<MangaEntry> container;
 
   const MangaTab({
     super.key,
@@ -41,9 +41,10 @@ class MangaTab extends StatefulWidget {
 }
 
 class _MangaTabState extends State<MangaTab> {
-  final state = GridSkeletonState<MangaEntry>();
-
-  bool reachedEnd = false;
+  late final state = GridSkeletonState<MangaEntry>(
+    initalCellCount: widget.elems.length,
+    overrideRefreshStatus: widget.container.refreshingStatus,
+  );
 
   @override
   void initState() {
@@ -60,7 +61,7 @@ class _MangaTabState extends State<MangaTab> {
   Future<int> _refresh() async {
     widget.elems.clear();
     widget.container.page = 0;
-    reachedEnd = false;
+    widget.container.reachedEnd = false;
 
     final r = await widget.api.top(widget.container.page, 30);
     widget.elems.addAll(r);
@@ -72,7 +73,7 @@ class _MangaTabState extends State<MangaTab> {
     final r = await widget.api.top(widget.container.page + 1, 30);
     widget.elems.addAll(r);
     widget.container.page += 1;
-    reachedEnd = r.isEmpty;
+    widget.container.reachedEnd = r.isEmpty;
 
     return widget.elems.length;
   }
@@ -83,8 +84,14 @@ class _MangaTabState extends State<MangaTab> {
       state,
       (context) => GridFrame(
         key: state.gridKey,
+        layout: const GridSettingsLayoutBehaviour(GridSettingsBase(
+          columns: GridColumn.three,
+          aspectRatio: GridAspectRatio.zeroSeven,
+          hideName: false,
+          layoutType: GridLayoutType.grid,
+        )),
+        refreshingStatus: state.refreshingStatus,
         getCell: (i) => widget.elems[i],
-        initalCellCount: widget.elems.length,
         initalScrollPosition: widget.container.scrollPos,
         imageViewDescription: ImageViewDescription(
           imageViewKey: state.imageViewKey,
@@ -95,13 +102,9 @@ class _MangaTabState extends State<MangaTab> {
               GlueProvider.generateOf<AnimeEntry, MangaEntry>(context),
           refresh: AsyncGridRefresh(_refresh),
           loadNext: _loadNext,
-          refreshBehaviour: RetainedGridRefreshBehaviour(
-            widget.container.refreshingInterface,
-          ),
           onPressed: OverrideGridOnCellPressBehaviour(
             onPressed: (context, idx) {
-              final cell = MutationInterfaceProvider.of<MangaEntry>(context)
-                  .getCell(idx);
+              final cell = CellProvider.getOf<MangaEntry>(context, idx);
 
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) {
@@ -116,17 +119,13 @@ class _MangaTabState extends State<MangaTab> {
           ),
         ),
         systemNavigationInsets: widget.viewInsets,
-        hasReachedEnd: () => reachedEnd,
         mainFocus: state.mainFocus,
-        description: const GridDescription(
-          [],
+        description: GridDescription(
+          actions: const [],
           ignoreSwipeSelectGesture: true,
           showAppBar: false,
           keybindsDescription: "Manga page",
-          layout: GridLayout(
-            GridColumn.three,
-            GridAspectRatio.zeroSeven,
-          ),
+          gridSeed: state.gridSeed,
         ),
       ),
       canPop: false,
