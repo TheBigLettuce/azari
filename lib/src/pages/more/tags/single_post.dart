@@ -22,7 +22,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:qrscan/qrscan.dart';
 
 import '../../../db/schemas/booru/post.dart';
-import '../../../widgets/grid/actions/booru_grid.dart';
+import '../../booru/booru_grid_actions.dart';
 import '../../../interfaces/booru/booru_api.dart';
 import '../../../db/schemas/downloader/download_file.dart';
 import '../../../db/schemas/settings/settings.dart';

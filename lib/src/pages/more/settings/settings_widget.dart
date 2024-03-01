@@ -13,7 +13,7 @@ import 'package:gallery/src/interfaces/booru/booru.dart';
 
 import '../../../db/schemas/settings/settings.dart';
 import '../../../widgets/restart_widget.dart';
-import '../../../widgets/skeletons/skeleton_settings.dart';
+import '../../../widgets/skeletons/settings.dart';
 import '../../../widgets/skeletons/skeleton_state.dart';
 import 'settings_list.dart';
 
@@ -40,7 +40,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return SkeletonSettings(
+    return SettingsSkeleton(
       AppLocalizations.of(context)!.settingsPageName,
       skeletonState,
       child: SliverPadding(

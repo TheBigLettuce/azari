@@ -18,7 +18,7 @@ import 'package:gallery/src/pages/anime/info_base/card_panel/card_shell.dart';
 import 'package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart';
 import 'package:gallery/src/pages/anime/info_base/refresh_entry_icon.dart';
 import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
-import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
+import 'package:gallery/src/widgets/skeletons/settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -71,7 +71,7 @@ class _FinishedAnimeInfoPageState extends State<FinishedAnimeInfoPage>
   Widget build(BuildContext context) {
     final overlayColor = Theme.of(context).colorScheme.background;
 
-    Widget body() => SkeletonSettings(
+    Widget body() => SettingsSkeleton(
           AppLocalizations.of(context)!.finishedTab,
           state,
           extendBodyBehindAppBar: true,

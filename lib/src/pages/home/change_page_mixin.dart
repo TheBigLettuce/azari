@@ -132,17 +132,12 @@ mixin _ChangePageMixin on State<Home> {
     }
 
     if (widget.callback != null) {
-      return _NavigatorShell(
-        pop: _popGallery,
-        navigatorKey: mainKey,
-        child: GlueProvider<SystemGalleryDirectory>(
-          generate: _generateGlue,
-          glue: _generateGlue(),
-          child: GalleryDirectories(
-            viewPadding: padding,
-            nestedCallback: widget.callback,
-            procPop: (pop) => _procPop(icons, pop),
-          ),
+      return WrapGridPage<SystemGalleryDirectory>(
+        scaffoldKey: GlobalKey(),
+        child: GalleryDirectories(
+          viewPadding: padding,
+          nestedCallback: widget.callback,
+          procPop: (pop) => _procPop(icons, pop),
         ),
       );
     }

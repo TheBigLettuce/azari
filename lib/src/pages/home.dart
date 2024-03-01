@@ -14,12 +14,13 @@ import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/grid/selection_glue.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/pages/anime/anime.dart';
 import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
 import 'package:gallery/src/pages/manga/manga_page.dart';
 import 'package:gallery/src/pages/more/settings/network_status.dart';
-import 'package:gallery/src/widgets/grid/glue_bottom_app_bar.dart';
+import 'package:gallery/src/pages/glue_bottom_app_bar.dart';
+import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 import 'package:isar/isar.dart';
@@ -30,8 +31,8 @@ import '../db/initalize_db.dart';
 import '../db/tags/post_tags.dart';
 import '../db/schemas/booru/post.dart';
 import '../db/schemas/settings/settings.dart';
-import '../widgets/grid/selection/selection_glue_state.dart';
-import '../widgets/skeletons/home_skeleton.dart';
+import '../widgets/grid_frame/configuration/selection_glue_state.dart';
+import '../widgets/skeletons/home.dart';
 import '../widgets/skeletons/skeleton_state.dart';
 import 'booru/booru_page.dart';
 import 'gallery/directories.dart';
@@ -113,45 +114,48 @@ class _HomeState extends State<Home>
         "Home",
         state,
         (context) => _currentPage(context, this, edgeInsets),
-        navBar: Animate(
-            controller: controllerNavBar,
-            target: glueState.actions != null ? 1 : 0,
-            effects: [
-              MoveEffect(
-                curve: Easing.emphasizedAccelerate,
-                begin: Offset.zero,
-                end: Offset(0, 100 + edgeInsets.bottom),
-              ),
-              SwapEffect(
-                builder: (context, _) {
-                  return glueState.actions != null
-                      ? Animate(
-                          effects: [
-                            MoveEffect(
-                              duration: 100.ms,
-                              curve: Easing.emphasizedDecelerate,
-                              begin: Offset(0, 100 + edgeInsets.bottom),
-                              end: Offset.zero,
-                            ),
-                          ],
-                          child: GlueBottomAppBar(glueState),
-                        )
-                      : Padding(
-                          padding: EdgeInsets.only(bottom: edgeInsets.bottom));
-                },
-              )
-            ],
-            child: NavigationBar(
-              labelBehavior:
-                  NavigationDestinationLabelBehavior.onlyShowSelected,
-              backgroundColor:
-                  Theme.of(context).colorScheme.surface.withOpacity(0.95),
-              selectedIndex: currentRoute,
-              onDestinationSelected: (route) => _switchPage(this, route),
-              destinations: widget.callback != null
-                  ? iconsGalleryNotes(context)
-                  : icons(context, currentRoute),
-            )),
+        navBar: widget.callback != null
+            ? null
+            : Animate(
+                controller: controllerNavBar,
+                target: glueState.actions != null ? 1 : 0,
+                effects: [
+                  MoveEffect(
+                    curve: Easing.emphasizedAccelerate,
+                    begin: Offset.zero,
+                    end: Offset(0, 100 + edgeInsets.bottom),
+                  ),
+                  SwapEffect(
+                    builder: (context, _) {
+                      return glueState.actions != null
+                          ? Animate(
+                              effects: [
+                                MoveEffect(
+                                  duration: 100.ms,
+                                  curve: Easing.emphasizedDecelerate,
+                                  begin: Offset(0, 100 + edgeInsets.bottom),
+                                  end: Offset.zero,
+                                ),
+                              ],
+                              child: GlueBottomAppBar(glueState),
+                            )
+                          : Padding(
+                              padding:
+                                  EdgeInsets.only(bottom: edgeInsets.bottom));
+                    },
+                  )
+                ],
+                child: NavigationBar(
+                  labelBehavior:
+                      NavigationDestinationLabelBehavior.onlyShowSelected,
+                  backgroundColor:
+                      Theme.of(context).colorScheme.surface.withOpacity(0.95),
+                  selectedIndex: currentRoute,
+                  onDestinationSelected: (route) => _switchPage(this, route),
+                  destinations: widget.callback != null
+                      ? iconsGalleryNotes(context)
+                      : icons(context, currentRoute),
+                )),
         selectedRoute: currentRoute,
       ),
     );

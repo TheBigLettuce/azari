@@ -10,13 +10,13 @@ import 'dart:io';
 
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
-import 'package:gallery/src/interfaces/grid/grid_column.dart';
-import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
-import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
-import 'package:gallery/src/widgets/grid/layouts/grid_masonry_layout.dart';
-import 'package:gallery/src/widgets/grid/layouts/grid_quilted.dart';
-import 'package:gallery/src/widgets/grid/layouts/list_layout.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
+import 'package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart';
+import 'package:gallery/src/widgets/grid_frame/layouts/grid_masonry_layout.dart';
+import 'package:gallery/src/widgets/grid_frame/layouts/grid_quilted.dart';
+import 'package:gallery/src/widgets/grid_frame/layouts/list_layout.dart';
 import 'package:isar/isar.dart';
 
 import '../../base/grid_settings_base.dart';

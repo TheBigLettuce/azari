@@ -10,7 +10,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_booru.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
-import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
+import 'package:gallery/src/widgets/skeletons/settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -41,7 +41,7 @@ class _DashboardState extends State<Dashboard> {
 
   @override
   Widget build(BuildContext context) {
-    return SkeletonSettings(
+    return SettingsSkeleton(
       AppLocalizations.of(context)!.dashboardPage,
       state,
       appBar: AppBar(

@@ -13,14 +13,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
-import 'package:gallery/src/widgets/grid/wrappers/wrap_grid_action_button.dart';
-import 'package:gallery/src/widgets/image_view/loading_builder.dart';
+import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_action_button.dart';
+import 'package:gallery/src/widgets/image_view/mixins/loading_builder.dart';
 import 'package:gallery/src/widgets/image_view/make_image_view_bindings.dart';
-import 'package:gallery/src/widgets/image_view/wrap_image_view_notifiers.dart';
-import 'package:gallery/src/widgets/image_view/wrap_image_view_skeleton.dart';
-import 'package:gallery/src/widgets/image_view/wrap_image_view_theme.dart';
+import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart';
+import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_skeleton.dart';
+import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_theme.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
-import 'package:gallery/src/widgets/grid/grid_frame.dart';
+import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/notifiers/focus.dart';
 import 'package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart';
 import 'package:logging/logging.dart';
@@ -34,10 +34,9 @@ import '../../interfaces/cell/contentable.dart';
 import '../keybinds/describe_keys.dart';
 import 'body.dart';
 import 'bottom_bar.dart';
-import 'end_drawer.dart';
-import 'page_type_mixin.dart';
-import 'palette_mixin.dart';
-import 'note_list.dart';
+import 'app_bar/end_drawer.dart';
+import 'mixins/page_type.dart';
+import 'mixins/palette.dart';
 
 final Color kListTileColorInInfo = Colors.white60.withOpacity(0.8);
 
@@ -123,7 +122,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   final GlobalKey<ScaffoldState> key = GlobalKey();
   final GlobalKey<WrapImageViewNotifiersState> wrapNotifiersKey = GlobalKey();
   final GlobalKey<WrapImageViewThemeState> wrapThemeKey = GlobalKey();
-  final GlobalKey<NoteListState> noteListKey = GlobalKey();
+  // final GlobalKey<NoteListState> noteListKey = GlobalKey();
 
   late final ScrollController scrollController =
       ScrollController(initialScrollOffset: widget.infoScrollOffset ?? 0);
@@ -178,7 +177,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
             AppLocalizations.of(context)!.imageViewPageName, widget.focusMain)
       };
 
-      noteListKey.currentState?.loadNotes(drawCell(currentPage));
+      // noteListKey.currentState?.loadNotes(drawCell(currentPage));
 
       setState(() {});
 
@@ -306,7 +305,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     widget.statistics?.viewed();
     widget.statistics?.swiped();
 
-    noteListKey.currentState?.unextendNotes();
+    // noteListKey.currentState?.unextendNotes();
     currentPage = index;
     widget.pageChange?.call(this);
     _loadNext(index);
@@ -321,7 +320,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     fullscreenPlug.setTitle(c.alias(true));
 
     setState(() {
-      noteListKey.currentState?.loadNotes(c);
+      // noteListKey.currentState?.loadNotes(c);
 
       extractPalette(context, widget.getCell(currentPage)!, key,
           scrollController, currentPage, _resetAnimation);
@@ -414,9 +413,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                   ? null
                   : ImageViewBottomAppBar(
                       textController: noteTextController,
-                      addNote: () => noteListKey.currentState
-                          ?.addNote(drawCell(currentPage), currentPalette),
-                      showAddNoteButton: false,
                       children: widget.addIcons
                               ?.call(drawCell(currentPage))
                               .map(

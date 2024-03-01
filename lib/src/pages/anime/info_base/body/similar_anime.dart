@@ -8,10 +8,10 @@
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
 import 'package:gallery/src/pages/anime/info_base/body/body_segment_label.dart';
 import 'package:gallery/src/pages/anime/info_pages/anime_info_id.dart';
-import 'package:gallery/src/widgets/grid/grid_cell.dart';
+import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
 
 class SimilarAnime extends StatefulWidget {
   final AnimeEntry entry;

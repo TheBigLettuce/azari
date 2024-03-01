@@ -7,8 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import '../../widgets/skeletons/grid_skeleton_state.dart';
+import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 
 class AddToBookmarksButton extends StatelessWidget {
   final GridSkeletonState state;

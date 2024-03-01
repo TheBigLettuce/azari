@@ -8,7 +8,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/pages/more/notes/tab_with_count.dart';
+import 'package:gallery/src/pages/more/tab_with_count.dart';
 
 class WatchingTabCount extends StatefulWidget {
   final StreamSubscription<int> Function(void Function(int) f) createWatcher;

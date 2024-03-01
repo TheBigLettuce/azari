@@ -18,22 +18,22 @@ import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
-import 'package:gallery/src/interfaces/grid/selection_glue.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
-import 'package:gallery/src/pages/anime/manga/manga_info_page.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_layout_behaviour.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_on_cell_press_behaviour.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_search_widget.dart';
-import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
-import 'package:gallery/src/widgets/grid/grid_frame.dart';
-import 'package:gallery/src/widgets/grid/wrappers/wrap_grid_page.dart';
+import 'package:gallery/src/pages/manga/manga_info_page.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_on_cell_press_behaviour.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
+import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
+import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
-import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
+import 'package:gallery/src/widgets/skeletons/grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 
 import '../info_pages/discover_anime_info_page.dart';
 
@@ -71,7 +71,7 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
             return (genre.id, genre.name);
           },
           onPressed: (cell) {
-            Navigator.push(context, MaterialPageRoute(
+            Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
               builder: (context) {
                 return MangaInfoPage(
                   id: cell.id,

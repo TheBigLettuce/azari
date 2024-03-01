@@ -24,7 +24,7 @@ import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/grid/selection_glue.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/pages/booru/booru_restored_page.dart';
 import 'package:gallery/src/pages/booru/booru_search_page.dart';
@@ -33,19 +33,20 @@ import 'package:gallery/src/pages/home.dart';
 import 'package:gallery/src/pages/more/favorite_booru_page.dart';
 import 'package:gallery/src/pages/more/settings/settings_widget.dart';
 import 'package:gallery/src/pages/more/tags/tags_widget.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_layout_behaviour.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_refreshing_status.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_search_widget.dart';
-import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
-import 'package:gallery/src/widgets/grid/configuration/page_description.dart';
-import 'package:gallery/src/widgets/grid/configuration/page_switcher.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/page_description.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/pages/booru/bookmark_button.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
+import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:isar/isar.dart';
 
-import '../../widgets/grid/actions/booru_grid.dart';
+import 'booru_grid_actions.dart';
 import '../../net/downloader.dart';
 import '../../db/tags/post_tags.dart';
 import '../../db/initalize_db.dart';
@@ -53,16 +54,15 @@ import '../../db/schemas/downloader/download_file.dart';
 import '../../db/schemas/booru/post.dart';
 import '../../db/schemas/settings/settings.dart';
 import '../../widgets/search_bar/search_launch_grid_data.dart';
-import '../../widgets/skeletons/grid_skeleton_state.dart';
 import '../../widgets/notifiers/booru_api.dart';
 import '../../widgets/search_bar/search_launch_grid.dart';
 
-import '../../widgets/skeletons/grid_skeleton.dart';
+import '../../widgets/skeletons/grid.dart';
 
-import 'package:gallery/src/widgets/grid/grid_frame.dart';
+import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'grid_button.dart';
+import '../../widgets/grid_frame/configuration/grid_frame_settings_button.dart';
 
 class _MainGridPagingState implements PagingEntry, PageSaver {
   _MainGridPagingState(int initalCellCount, this.booru)
@@ -233,10 +233,11 @@ class _BooruPageState extends State<BooruPage> {
       swapSearchIconWithAddItems: false,
       addItems: (context) => [
         OpenMenuButton(
-          generateGlue: widget.generateGlue,
           context: context,
           controller: search.searchController,
-          tagManager: pagingState.tagManager,
+          launchGrid: (context, tag, [safeMode]) {
+            _onBooruTagPressed(context, pagingState.api.booru, tag, safeMode);
+          },
           booru: pagingState.api.booru,
         )
       ],

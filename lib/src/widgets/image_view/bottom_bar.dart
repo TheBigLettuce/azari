@@ -12,16 +12,13 @@ import '../notifiers/app_bar_visibility.dart';
 
 class ImageViewBottomAppBar extends StatelessWidget {
   final TextEditingController textController;
-  final bool showAddNoteButton;
-  final void Function() addNote;
   final List<Widget> children;
 
-  const ImageViewBottomAppBar(
-      {super.key,
-      required this.textController,
-      required this.addNote,
-      required this.showAddNoteButton,
-      required this.children});
+  const ImageViewBottomAppBar({
+    super.key,
+    required this.textController,
+    required this.children,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -34,25 +31,10 @@ class ImageViewBottomAppBar extends StatelessWidget {
         child: IgnorePointer(
           ignoring: !AppBarVisibilityNotifier.of(context),
           child: BottomAppBar(
-            child: !showAddNoteButton
-                ? Wrap(
-                    spacing: 4,
-                    children: children,
-                  )
-                : Stack(children: [
-                    Wrap(
-                      spacing: 4,
-                      children: children,
-                    ),
-                    Align(
-                        alignment: Alignment.centerRight,
-                        child: FloatingActionButton(
-                          elevation: 0,
-                          heroTag: null,
-                          onPressed: addNote,
-                          child: const Icon(Icons.edit_square),
-                        ))
-                  ]),
+            child: Wrap(
+              spacing: 4,
+              children: children,
+            ),
           ),
         ));
   }

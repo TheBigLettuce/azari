@@ -12,27 +12,26 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
-import 'package:gallery/src/interfaces/grid/selection_glue.dart';
-import 'package:gallery/src/widgets/grid/actions/downloads.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_layout_behaviour.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_search_widget.dart';
-import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
-import 'package:gallery/src/widgets/grid/grid_frame.dart';
-import 'package:gallery/src/interfaces/grid/grid_column.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
+import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
+import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../db/loaders/linear_isar_loader.dart';
-import '../../widgets/grid/wrappers/wrap_grid_page.dart';
-import '../../widgets/skeletons/grid_skeleton_state_filter.dart';
-import '../../widgets/skeletons/grid_skeleton.dart';
+import '../../widgets/grid_frame/wrappers/wrap_grid_page.dart';
+import '../../widgets/skeletons/grid.dart';
 
 class Downloads extends StatefulWidget {
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;
@@ -129,6 +128,16 @@ class _DownloadsState extends State<Downloads> {
         hideName: false,
       );
 
+  static GridAction<DownloadFile> delete(BuildContext context) {
+    return GridAction(Icons.remove, (selected) {
+      if (selected.isEmpty) {
+        return;
+      }
+
+      Downloader.g.remove(selected);
+    }, true);
+  }
+
   @override
   Widget build(BuildContext context) {
     return WrapGridPage<DownloadFile>(
@@ -161,7 +170,7 @@ class _DownloadsState extends State<Downloads> {
             mainFocus: state.mainFocus,
             description: GridDescription(
               actions: [
-                DownloadsActions.delete(context),
+                delete(context),
               ],
               menuButtonItems: [
                 IconButton(

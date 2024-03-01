@@ -6,8 +6,8 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
-import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
-import 'package:gallery/src/interfaces/grid/grid_column.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
 import 'package:isar/isar.dart';
 
 class GridSettingsBase {

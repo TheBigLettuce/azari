@@ -13,28 +13,28 @@ import 'package:gallery/src/db/schemas/grid_settings/favorites.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/filtering/filtering_interface.dart';
-import 'package:gallery/src/pages/booru/grid_button.dart';
-import 'package:gallery/src/widgets/grid/actions/favorites.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart';
+import 'package:gallery/src/pages/more/favorite_booru_actions.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/tags/local_tag_dictionary.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_layout_behaviour.dart';
-import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
-import 'package:gallery/src/widgets/grid/grid_frame.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
+import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
+import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../db/loaders/linear_isar_loader.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
-import '../../widgets/grid/actions/booru_grid.dart';
+import '../booru/booru_grid_actions.dart';
 import '../../db/tags/post_tags.dart';
 import '../../db/schemas/downloader/download_file.dart';
-import '../../widgets/skeletons/grid_skeleton_state_filter.dart';
 
 class FavoriteBooruPage extends StatelessWidget {
   final FavoriteBooruPageState state;

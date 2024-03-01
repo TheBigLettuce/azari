@@ -11,23 +11,23 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/grid/selection_glue.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/db/schemas/gallery/blacklisted_directory.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_layout_behaviour.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_search_widget.dart';
-import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
-import 'package:gallery/src/widgets/grid/grid_frame.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
+import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
+import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../../db/loaders/linear_isar_loader.dart';
-import '../../../widgets/grid/wrappers/wrap_grid_page.dart';
-import '../../../widgets/skeletons/grid_skeleton_state_filter.dart';
-import '../../../widgets/skeletons/grid_skeleton.dart';
+import '../../../widgets/grid_frame/wrappers/wrap_grid_page.dart';
+import '../../../widgets/skeletons/grid.dart';
 
 class BlacklistedDirectories extends StatefulWidget {
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;

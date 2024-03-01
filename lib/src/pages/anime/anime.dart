@@ -21,34 +21,33 @@ import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
-import 'package:gallery/src/interfaces/grid/grid_column.dart';
-import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
-import 'package:gallery/src/interfaces/grid/grid_mutation_interface.dart';
-import 'package:gallery/src/interfaces/grid/selection_glue.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:gallery/src/net/anime/jikan.dart';
 import 'package:gallery/src/pages/anime/info_pages/finished_anime_info_page.dart';
 import 'package:gallery/src/pages/anime/info_pages/discover_anime_info_page.dart';
 import 'package:gallery/src/pages/anime/info_pages/watching_anime_info_page.dart';
-import 'package:gallery/src/pages/anime/manga/manga_info_page.dart';
+import 'package:gallery/src/pages/manga/manga_info_page.dart';
 import 'package:gallery/src/pages/anime/paging_container.dart';
-import 'package:gallery/src/pages/more/notes/tab_with_count.dart';
+import 'package:gallery/src/pages/more/tab_with_count.dart';
 import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_fab_type.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_layout_behaviour.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_on_cell_press_behaviour.dart';
-import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
-import 'package:gallery/src/widgets/grid/grid_frame.dart';
-import 'package:gallery/src/widgets/grid/grid_cell.dart';
-import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
-import 'package:gallery/src/widgets/grid/parts/segment_label.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_fab_type.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_on_cell_press_behaviour.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
+import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
+import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
+import 'package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart';
+import 'package:gallery/src/widgets/grid_frame/parts/segment_label.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
-import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
-import 'package:gallery/src/widgets/skeletons/skeleton_settings.dart';
+import 'package:gallery/src/widgets/skeletons/grid.dart';
+import 'package:gallery/src/widgets/skeletons/settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -57,7 +56,7 @@ import 'search/search_anime.dart';
 part 'tabs/discover_tab.dart';
 part 'tabs/watching_tab.dart';
 part 'tabs/finished_tab.dart';
-part 'tabs/reading_tab.dart';
+part '../manga/reading_tab.dart';
 part 'tab_bar_wrapper.dart';
 
 const int kWatchingTabIndx = 0;
@@ -200,7 +199,7 @@ class _AnimePageState extends State<AnimePage>
           : tabController.index == kDiscoverTabIndx
               ? null
               : widget.procPop,
-      child: SkeletonSettings(
+      child: SettingsSkeleton(
         AppLocalizations.of(context)!.animePage,
         state,
         appBar: PreferredSize(

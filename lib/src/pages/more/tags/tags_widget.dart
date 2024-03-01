@@ -10,7 +10,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru_tagging.dart';
-import 'package:gallery/src/widgets/grid/grid_frame.dart';
+import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/make_tags.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
 

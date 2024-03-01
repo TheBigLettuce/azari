@@ -7,7 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:gallery/src/widgets/grid/grid_frame.dart';
+import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:isar/isar.dart';
 
 import 'contentable.dart';

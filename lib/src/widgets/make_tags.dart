@@ -134,6 +134,6 @@ Iterable<Widget> makeTags(
   return [
     SettingsLabel(AppLocalizations.of(context)!.tagsInfoPage,
         Theme.of(context).textTheme.titleSmall!),
-    ...ListTile.divideTiles(tiles: tiles)
+    ...ListTile.divideTiles(context: context, tiles: tiles)
   ];
 }

@@ -10,18 +10,20 @@ import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
-import 'package:gallery/src/interfaces/grid/grid_column.dart';
-import 'package:gallery/src/interfaces/grid/selection_glue.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_layout_behaviour.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_on_cell_press_behaviour.dart';
-import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
-import 'package:gallery/src/widgets/grid/grid_frame.dart';
-import 'package:gallery/src/widgets/grid/wrappers/wrap_grid_page.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_on_cell_press_behaviour.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
+import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
+import 'package:gallery/src/widgets/grid_frame/layouts/list_layout.dart';
+import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
-import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
+import 'package:gallery/src/widgets/skeletons/grid.dart';
+import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 
 class BlacklistedPostsPage extends StatefulWidget {
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;
@@ -65,7 +67,7 @@ class _BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
         (context) => GridFrame(
           key: state.gridKey,
           getCell: (i) => list[i],
-          layout: GridSettingsLayoutBehaviour(_gridSettingsBase),
+          layout: _ListLayout(hideImages, _gridSettingsBase),
           refreshingStatus: state.refreshingStatus,
           functionality: GridFunctionality(
             selectionGlue: GlueProvider.of(context),
@@ -110,5 +112,20 @@ class _BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
         canPop: true,
       ),
     );
+  }
+}
+
+class _ListLayout implements GridLayoutBehaviour {
+  const _ListLayout(this.hideThumbnails, this.fnc);
+
+  final bool hideThumbnails;
+  final GridSettingsBase Function() fnc;
+
+  @override
+  GridSettingsBase Function() get defaultSettings => fnc;
+
+  @override
+  GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings) {
+    return ListLayout<T>(hideThumbnails: hideThumbnails);
   }
 }

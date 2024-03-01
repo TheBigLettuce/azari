@@ -8,10 +8,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/grid/selection_glue.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/pages/more/blacklisted_posts.dart';
 
-import '../../widgets/skeletons/drawer/azari_icon.dart';
+import '../../widgets/azari_icon.dart';
 import 'dashboard/dashboard.dart';
 import 'downloads.dart';
 import 'settings/blacklisted_directores.dart';

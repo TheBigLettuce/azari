@@ -14,7 +14,7 @@ import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart';
-import 'package:gallery/src/pages/anime/manga/next_chapter_button.dart';
+import 'package:gallery/src/pages/manga/next_chapter_button.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:isar/isar.dart';
 
