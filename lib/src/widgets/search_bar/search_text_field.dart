@@ -6,7 +6,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/widgets/notifiers/focus.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -17,12 +16,14 @@ import '../notifiers/tag_refresh.dart';
 class SearchTextField extends StatelessWidget {
   final FilterNotifierData data;
   final String filename;
-  final AddInfoColorData colors;
   final bool showDeleteButton;
 
   const SearchTextField(
-      this.data, this.filename, this.showDeleteButton, this.colors,
-      {super.key});
+    this.data,
+    this.filename,
+    this.showDeleteButton, {
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -50,8 +51,6 @@ class SearchTextField extends StatelessWidget {
                 ]
               : null,
           hintText: AppLocalizations.of(context)!.filterHint,
-          textStyle: MaterialStatePropertyAll(
-              TextStyle(color: colors.foregroundColor)),
           backgroundColor: MaterialStatePropertyAll(
               Theme.of(context).colorScheme.surface.withOpacity(0.1)),
           elevation: const MaterialStatePropertyAll(0),

@@ -6,22 +6,24 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/db/state_restoration.dart';
 
-class StateRestorationProvider extends InheritedWidget {
-  final StateRestoration state;
+class GridBottomPaddingProvider extends InheritedWidget {
+  final double padding;
 
-  const StateRestorationProvider(
-      {super.key, required this.state, required super.child});
+  const GridBottomPaddingProvider({
+    super.key,
+    required this.padding,
+    required super.child,
+  });
 
-  static StateRestoration? maybeOf(BuildContext context) {
+  static double of(BuildContext context) {
     final widget =
-        context.dependOnInheritedWidgetOfExactType<StateRestorationProvider>();
+        context.dependOnInheritedWidgetOfExactType<GridBottomPaddingProvider>();
 
-    return widget?.state;
+    return widget!.padding;
   }
 
   @override
-  bool updateShouldNotify(StateRestorationProvider oldWidget) =>
-      oldWidget.state != state;
+  bool updateShouldNotify(GridBottomPaddingProvider oldWidget) =>
+      padding != oldWidget.padding;
 }

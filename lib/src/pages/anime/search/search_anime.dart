@@ -9,7 +9,6 @@ import 'dart:async';
 
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/main.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
@@ -25,6 +24,7 @@ import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
 import 'package:gallery/src/pages/anime/manga/manga_info_page.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_layout_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_on_cell_press_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_search_widget.dart';
 import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
@@ -241,8 +241,6 @@ class _SearchAnimePageState<T extends Cell, I, G>
     return _results.length;
   }
 
-  late final SelectionGlue<T>? _glue = widget.generateGlue?.call();
-
   GridSettingsBase _settings() => GridSettingsBase(
         aspectRatio: GridAspectRatio.zeroSeven,
         columns: gridSettings.columns,
@@ -261,9 +259,7 @@ class _SearchAnimePageState<T extends Cell, I, G>
     }
 
     Widget body(BuildContext context) => WrapGridPage<T>(
-          provided: widget.generateGlue != null
-              ? (_glue!, widget.generateGlue!)
-              : null,
+          provided: widget.generateGlue,
           scaffoldKey: state.scaffoldKey,
           child: GridSkeleton<T>(
             state,
@@ -285,7 +281,7 @@ class _SearchAnimePageState<T extends Cell, I, G>
                     return _load(currentSearch);
                   }),
                   onPressed: OverrideGridOnCellPressBehaviour(
-                    onPressed: (context, idx) {
+                    onPressed: (context, idx, _) {
                       widget.onPressed(_results[idx]);
                     },
                   ),

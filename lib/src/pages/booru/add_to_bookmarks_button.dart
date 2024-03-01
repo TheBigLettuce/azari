@@ -12,7 +12,7 @@ import '../../widgets/skeletons/grid_skeleton_state.dart';
 
 class AddToBookmarksButton extends StatelessWidget {
   final GridSkeletonState state;
-  final void Function() f;
+  final bool Function() f;
 
   const AddToBookmarksButton({
     super.key,
@@ -24,7 +24,10 @@ class AddToBookmarksButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
         onPressed: () {
-          f();
+          final proceed = f();
+          if (!proceed) {
+            return;
+          }
           ScaffoldMessenger.of(state.scaffoldKey.currentContext!)
               .showSnackBar(SnackBar(
                   content: Text(

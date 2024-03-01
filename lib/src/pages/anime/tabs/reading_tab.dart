@@ -131,7 +131,7 @@ class _ReadingTabState extends State<ReadingTab> {
           ),
           functionality: GridFunctionality(
               onPressed: OverrideGridOnCellPressBehaviour(
-                onPressed: (context, idx) {
+                onPressed: (context, idx, _) {
                   final cell =
                       CellProvider.getOf<CompactMangaDataBase>(context, idx);
                   inInner = true;

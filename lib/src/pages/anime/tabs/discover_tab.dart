@@ -40,7 +40,7 @@ class __DiscoverTabState extends State<_DiscoverTab> {
     state = GridSkeletonState<AnimeEntry>(
       initalCellCount: widget.entries.length,
       // reachedEnd: () => _reachedEnd,
-      overrideRefreshStatus: widget.pagingContainer.refreshingStatus,
+      // overrideRefreshStatus: widget.pagingContainer.refreshingStatus,
     );
 
     gridSettingsWatcher = GridSettingsAnimeDiscovery.watch((e) {
@@ -72,7 +72,7 @@ class __DiscoverTabState extends State<_DiscoverTab> {
       (context) => GridFrame<AnimeEntry>(
         key: state.gridKey,
         layout: GridSettingsLayoutBehaviour(_settings),
-        refreshingStatus: state.refreshingStatus,
+        refreshingStatus: widget.pagingContainer.refreshingStatus,
         getCell: (i) => widget.entries[i],
         initalScrollPosition: widget.pagingContainer.scrollPos,
         functionality: GridFunctionality(
@@ -103,7 +103,7 @@ class __DiscoverTabState extends State<_DiscoverTab> {
             return widget.entries.length;
           }),
           onPressed:
-              OverrideGridOnCellPressBehaviour(onPressed: (context, idx) {
+              OverrideGridOnCellPressBehaviour(onPressed: (context, idx, _) {
             final cell = CellProvider.getOf<AnimeEntry>(context, idx);
 
             Navigator.push(context, MaterialPageRoute(

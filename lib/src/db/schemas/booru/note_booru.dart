@@ -7,6 +7,7 @@
 
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/booru_post_functionality_mixin.dart';
 import 'package:gallery/src/db/base/post_base.dart';
@@ -42,7 +43,7 @@ class NoteBooru extends NoteBase
     required this.sampleUrl,
     required this.previewUrl,
   }) {
-    initValues(ValueKey((postId, booru)), previewUrl, () {
+    initValues(() {
       String url = switch (Settings.fromDb().quality) {
         DisplayQuality.original => fileUrl,
         DisplayQuality.sample => sampleUrl
@@ -71,6 +72,12 @@ class NoteBooru extends NoteBase
       }
     });
   }
+
+  @override
+  Key uniqueKey() => ValueKey((postId, booru));
+
+  @override
+  ImageProvider thumbnail() => CachedNetworkImageProvider(previewUrl);
 
   @Index(unique: true, replace: true, composite: [CompositeIndex("booru")])
   final int postId;

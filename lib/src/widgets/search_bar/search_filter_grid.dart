@@ -7,7 +7,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
-import 'package:gallery/src/interfaces/search_mixin.dart';
 import 'package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -18,28 +17,16 @@ import '../skeletons/grid_skeleton_state_filter.dart';
 part 'search_widget.dart';
 
 /// Search mixin which filters the elements on a grid.
-mixin SearchFilterGrid<T extends Cell> implements SearchMixin {
-  @override
+class SearchFilterGrid<T extends Cell> {
+  SearchFilterGrid(this._state, this.addItems);
+
   final TextEditingController searchTextController = TextEditingController();
-  @override
   final FocusNode searchFocus = FocusNode();
 
-  late final List<Widget>? addItems;
+  final List<Widget>? addItems;
   final GlobalKey<__SearchWidgetState> _key = GlobalKey();
 
-  late final GridSkeletonStateFilter<T> _state;
-
-  @override
-  void searchHook(state, [List<Widget>? items]) {
-    addItems = items;
-    _state = state;
-  }
-
-  @override
-  void disposeSearch() {
-    searchTextController.dispose();
-    searchFocus.dispose();
-  }
+  final GridSkeletonStateFilter<T> _state;
 
   late FilteringMode _currentFilterMode = _state.defaultMode;
   bool _searchVirtual = false;
@@ -47,30 +34,25 @@ mixin SearchFilterGrid<T extends Cell> implements SearchMixin {
       PostTags.g.completeLocalTag;
 
   void _onChanged(String value, bool direct) {
-    var interf = _state.gridKey.currentState?.mutation;
-    if (interf != null) {
-      final sorting = _state.hook(_currentFilterMode);
-      // if (!direct) {
-      //   value = value.trim();
-      //   if (value.isEmpty) {
-      //     interf.restore();
-      //     widget.instance._state.filter.resetFilter();
-      //     setState(() {});
-      //     return;
-      //   }
-      // }
+    var interf = _state.refreshingStatus.mutation;
+    final sorting = _state.hook(_currentFilterMode);
+    // if (!direct) {
+    //   value = value.trim();
+    //   if (value.isEmpty) {
+    //     interf.restore();
+    //     widget.instance._state.filter.resetFilter();
+    //     setState(() {});
+    //     return;
+    //   }
+    // }
 
-      _state.filter.setSortingMode(sorting);
+    _state.filter.setSortingMode(sorting);
 
-      // var res =
-      // _state.filter.filter(_searchVirtual ? "" : value, _currentFilterMode);
+    var res =
+        _state.filter.filter(_searchVirtual ? "" : value, _currentFilterMode);
 
-      // interf.setSource(res.count, (i) {
-      //   final cell = res.cell(i);
-      //   return _state.transform(cell, sorting);
-      // });
-      _key.currentState?.update();
-    }
+    interf.cellCount = res.count;
+    _key.currentState?.update();
   }
 
   void performSearch(String s, [bool orDirectly = false]) {
@@ -135,7 +117,11 @@ mixin SearchFilterGrid<T extends Cell> implements SearchMixin {
     _reset(resetFilterMode);
   }
 
-  @override
+  void dispose() {
+    searchTextController.dispose();
+    searchFocus.dispose();
+  }
+
   Widget searchWidget(BuildContext context, {String? hint, int? count}) =>
       _SearchWidget<T>(
         key: _key,

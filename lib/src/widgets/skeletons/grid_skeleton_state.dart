@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/widgets.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_refreshing_status.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 
 import '../../db/schemas/settings/settings.dart';
@@ -18,8 +19,6 @@ class GridSkeletonState<T extends Cell> extends SkeletonState {
   final GlobalKey<ImageViewState<T>> imageViewKey = GlobalKey();
   Settings settings = Settings.fromDb();
   final GridRefreshingStatus<T> refreshingStatus;
-
-  // final Future<bool> Function() onWillPop;
 
   @override
   void dispose() {

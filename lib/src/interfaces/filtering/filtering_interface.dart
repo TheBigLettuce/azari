@@ -7,12 +7,25 @@
 
 import 'package:gallery/src/interfaces/cell/cell.dart';
 
-import 'filter_result.dart';
 import 'filtering_mode.dart';
-import 'sorting_mode.dart';
 
 abstract class FilterInterface<T extends Cell> {
   FilterResult<T> filter(String s, FilteringMode mode);
   void setSortingMode(SortingMode mode);
-  void resetFilter();
+
+  SortingMode get currentSortingMode;
+
+  // void resetFilter();
+}
+
+/// Sorting modes.
+/// Implemented inside the [FilterInterface].
+enum SortingMode { none, size }
+
+/// Result of the filter to provide to the [GridMutationInterface].
+class FilterResult<T extends Cell> {
+  final int count;
+  final T Function(int i) cell;
+
+  const FilterResult(this.cell, this.count);
 }

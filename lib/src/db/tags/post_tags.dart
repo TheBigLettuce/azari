@@ -45,11 +45,12 @@ class DisassembleResult {
   /// The post number.
   final int id;
 
-  const DisassembleResult(
-      {required this.booru,
-      required this.ext,
-      required this.hash,
-      required this.id});
+  const DisassembleResult({
+    required this.booru,
+    required this.ext,
+    required this.hash,
+    required this.id,
+  });
 }
 
 /// Post tags saved locally.

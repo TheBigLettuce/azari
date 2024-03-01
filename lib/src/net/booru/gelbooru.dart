@@ -179,7 +179,7 @@ class Gelbooru implements BooruAPI {
     BooruTagging excludedTags, {
     required SafeMode? overrideSafeMode,
   }) async {
-    final excluded = excludedTags.get().map((e) => "-${e.tag} ").toList();
+    final excluded = excludedTags.get(-1).map((e) => "-${e.tag} ").toList();
 
     final String excludedTagsString = switch (excluded.isNotEmpty) {
       true => excluded.reduce((value, element) => value + element),

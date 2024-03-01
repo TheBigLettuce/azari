@@ -35,6 +35,7 @@ class GridQuiltedLayout<T extends Cell> implements GridLayouter<T> {
         gridCell: (BuildContext context, int idx) => GridCell.frameDefault(
           context,
           idx,
+          imageAlign: Alignment.topCenter,
           hideTitle: settings.hideName,
           isList: isList,
           state: state,

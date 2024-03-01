@@ -67,7 +67,6 @@ class ImageView<T extends Cell> extends StatefulWidget {
 
   final InheritedWidget Function(Widget child)? registerNotifiers;
 
-  // final NoteInterface<T>? noteInterface;
   final void Function()? onEmptyNotes;
 
   final ImageViewStatistics? statistics;
@@ -315,7 +314,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     widget.scrollUntill(index);
 
-    // final c = widget.getCell(index);
     loadCells(index, cellCount);
 
     final c = drawCell(index);
@@ -389,24 +387,21 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                       FocusNotifier.of(context);
                       ImageViewInfoTilesRefreshNotifier.of(context);
 
-                      final addInfo =
-                          drawCell(currentPage).addInfo(context, () {
-                        widget.updateTagScrollPos(
-                            scrollController.offset, currentPage);
-                      },
-                              AddInfoColorData(
-                                borderColor: Theme.of(context)
-                                    .colorScheme
-                                    .outlineVariant,
-                                foregroundColor: currentPalette
-                                        ?.mutedColor?.bodyTextColor
-                                        .harmonizeWith(Theme.of(context)
-                                            .colorScheme
-                                            .primary) ??
-                                    kListTileColorInInfo,
-                                systemOverlayColor:
-                                    widget.systemOverlayRestoreColor,
-                              ));
+                      final addInfo = drawCell(currentPage).addInfo(context);
+
+                      // AddInfoColorData(
+                      //       borderColor: Theme.of(context)
+                      //           .colorScheme
+                      //           .outlineVariant,
+                      //       foregroundColor: currentPalette
+                      //               ?.mutedColor?.bodyTextColor
+                      //               .harmonizeWith(Theme.of(context)
+                      //                   .colorScheme
+                      //                   .primary) ??
+                      //           kListTileColorInInfo,
+                      //       systemOverlayColor:
+                      //           widget.systemOverlayRestoreColor,
+                      //     )
 
                       return addInfo == null || addInfo.isEmpty
                           ? const Drawer(child: EmptyWidget(gridSeed: 0))

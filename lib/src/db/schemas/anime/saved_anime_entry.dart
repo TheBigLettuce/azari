@@ -37,7 +37,7 @@ class AnimeGenre {
 }
 
 @embedded
-class Relation extends Cell with CachedCellValuesMixin {
+class Relation extends Cell {
   final String thumbUrl;
   final String title;
   final String type;
@@ -50,20 +50,25 @@ class Relation extends Cell with CachedCellValuesMixin {
     this.title = "",
     this.type = "",
     this.id = 0,
-  }) {
-    initValues(ValueKey(thumbUrl), thumbUrl,
-        () => NetImage(CachedNetworkImageProvider(thumbUrl)));
-  }
+  });
 
   @override
   int? isarId;
 
   @override
+  Contentable content() => NetImage(CachedNetworkImageProvider(thumbUrl));
+
+  @override
+  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(thumbUrl);
+
+  @override
+  Key uniqueKey() => ValueKey(thumbUrl);
+
+  @override
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override
-  List<Widget>? addInfo(BuildContext context, extra, AddInfoColorData colors) =>
-      null;
+  List<Widget>? addInfo(BuildContext context) => null;
 
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;

@@ -17,7 +17,6 @@ import 'package:gallery/src/db/schemas/gallery/blacklisted_directory.dart';
 import 'package:gallery/src/db/schemas/gallery/favorite_booru_post.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_api_directories.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_api_files.dart';
-import 'package:gallery/src/interfaces/gallery/gallery_files_extra.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/pages/more/settings/network_status.dart';
 import 'package:isar/isar.dart';
@@ -26,10 +25,8 @@ import 'package:gallery/src/plugs/gallery/android/api.g.dart';
 import '../../../db/isar_filter.dart';
 import '../../../interfaces/filtering/filtering_interface.dart';
 import '../../../interfaces/filtering/filtering_mode.dart';
-import '../../../interfaces/filtering/sorting_mode.dart';
 import '../../platform_functions.dart';
 import '../../gallery.dart';
-import '../../../interfaces/gallery/gallery_directories_extra.dart';
 
 part 'android_api_files.dart';
 part 'gallery_impl.dart';
@@ -162,8 +159,9 @@ class _AndroidGallery implements GalleryAPIDirectories {
   }
 
   @override
-  SystemGalleryDirectory directCell(int i) =>
-      _global!.db.systemGalleryDirectorys.getSync(i + 1)!;
+  SystemGalleryDirectory directCell(int i) => filter.isFiltering
+      ? filter.to.systemGalleryDirectorys.getSync(i + 1)!
+      : _global!.db.systemGalleryDirectorys.getSync(i + 1)!;
 
   @override
   Future<int> refresh() {

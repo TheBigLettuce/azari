@@ -16,7 +16,7 @@ import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
-import 'package:gallery/src/pages/booru/booru_search_page.dart';
+import 'package:gallery/src/pages/booru/booru_restored_page.dart';
 import 'package:gallery/src/pages/more/settings/settings_widget.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/shimmer_loading_indicator.dart';
@@ -110,22 +110,21 @@ class _BookmarkPageState extends State<BookmarkPage> {
 
     widget.saveSelectedPage(e.name);
 
-    // inInner = true;
+    inInner = true;
 
-    // Navigator.push(context, MaterialPageRoute(
-    //   builder: (context) {
-    //     return RandomBooruGrid(
-    //       tags: e.tags,
-    //       onDispose: () {
-    //         if (!isRestart) {
-    //           widget.saveSelectedPage(null);
-    //         }
-    //       },
-    //       generateGlue: widget.generateGlue,
-    //       booru: e.booru,
-    //     );
-    //   },
-    // )).whenComplete(_procUpdate);
+    Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        return BooruRestoredPage(
+          state: e,
+          onDispose: () {
+            if (!isRestart) {
+              widget.saveSelectedPage(null);
+            }
+          },
+          generateGlue: widget.generateGlue,
+        );
+      },
+    )).whenComplete(_procUpdate);
   }
 
   @override

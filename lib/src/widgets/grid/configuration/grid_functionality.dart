@@ -27,7 +27,6 @@ class GridFunctionality<T extends Cell> {
     this.registerNotifiers,
     this.updateScrollPosition,
     this.download,
-    this.progressTicker,
     this.watchLayoutSettings,
     this.onPressed = const DefaultGridOnCellPressBehaviour(),
     this.fab = const DefaultGridFab(),
@@ -51,10 +50,6 @@ class GridFunctionality<T extends Cell> {
   ///  and [selectedCell] represents the inital page of the image view.
   /// State restoration takes this info into the account.
   final void Function(double pos)? updateScrollPosition;
-
-  /// If the elemnts of the grid arrive in batches [progressTicker] can be set to not null,
-  /// grid will subscribe to it and set the cell count from this ticker's events.
-  final Stream<int>? progressTicker;
 
   final Widget Function(Object error)? onError;
 

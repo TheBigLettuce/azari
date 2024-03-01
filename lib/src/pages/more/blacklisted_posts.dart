@@ -14,6 +14,7 @@ import 'package:gallery/src/interfaces/grid/grid_aspect_ratio.dart';
 import 'package:gallery/src/interfaces/grid/grid_column.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_layout_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_on_cell_press_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
@@ -23,13 +24,11 @@ import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton_state.dart';
 
 class BlacklistedPostsPage extends StatefulWidget {
-  final SelectionGlue<HiddenBooruPost> glue;
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;
 
   const BlacklistedPostsPage({
     super.key,
     required this.generateGlue,
-    required this.glue,
   });
 
   @override
@@ -60,7 +59,7 @@ class _BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
   Widget build(BuildContext context) {
     return WrapGridPage<HiddenBooruPost>(
       scaffoldKey: state.scaffoldKey,
-      provided: (widget.glue, widget.generateGlue),
+      provided: widget.generateGlue,
       child: GridSkeleton<HiddenBooruPost>(
         state,
         (context) => GridFrame(

@@ -8,11 +8,11 @@
 import 'package:flutter/material.dart';
 
 class Sticker {
-  final IconData icon;
-  final Color? color;
-  final Color? backgroundColor;
-  final bool right;
+  const Sticker(
+    this.icon, {
+    this.important = false,
+  });
 
-  const Sticker(this.icon,
-      {this.color, this.backgroundColor, this.right = false});
+  final IconData icon;
+  final bool important;
 }

@@ -11,21 +11,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
-import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
-import 'package:gallery/src/db/schemas/settings/settings.dart';
-import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/interfaces/grid/grid_layouter.dart';
 import 'package:gallery/src/pages/booru/grid_button.dart';
 import 'package:gallery/src/pages/booru/grid_settings_button.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_back_button_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid/configuration/grid_refresh_behaviour.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_layout_behaviour.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_refreshing_status.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_search_widget.dart';
 import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid/configuration/page_description.dart';
 import 'package:gallery/src/widgets/grid/configuration/page_switcher.dart';
 import 'package:gallery/src/widgets/grid/parts/grid_app_bar_leading.dart';
 import 'package:gallery/src/widgets/grid/parts/grid_app_bar_title.dart';
+import 'package:gallery/src/widgets/grid/parts/grid_bottom_padding_provider.dart';
 import 'package:gallery/src/widgets/grid/parts/page_switching_widget.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import '../../interfaces/cell/cell.dart';
@@ -40,7 +38,7 @@ import 'grid_cell.dart';
 import '../../interfaces/grid/selection_glue.dart';
 
 part 'selection/grid_selection.dart';
-part 'selection/wrap_selection.dart';
+part 'wrappers/wrap_selection.dart';
 part 'mutation.dart';
 part '../../interfaces/grid/segments.dart';
 part '../../interfaces/grid/grid_action.dart';
@@ -54,38 +52,10 @@ part 'parts/body_padding.dart';
 part 'parts/bottom_widget.dart';
 part 'parts/mutation_interface_provider.dart';
 
-abstract class GridLayoutBehaviour {
-  const GridLayoutBehaviour();
-
-  GridSettingsBase Function() get defaultSettings;
-
-  GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings);
-}
-
-class GridSettingsLayoutBehaviour implements GridLayoutBehaviour {
-  const GridSettingsLayoutBehaviour(this.defaultSettings);
-
-  @override
-  final GridSettingsBase Function() defaultSettings;
-
-  @override
-  GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings) =>
-      settings.layoutType.layout();
-}
-
 /// The grid of images.
 class GridFrame<T extends Cell> extends StatefulWidget {
   /// Grid gets the cell from [getCell].
   final T Function(int) getCell;
-
-  // final int? backButtonBadge;
-
-  /// The cell includes some keybinds by default.
-  /// If [additionalKeybinds] is not null, they are added together.
-  final Map<SingleActivatorDescription, Null Function()>? additionalKeybinds;
-
-  /// If not null, [searchWidget] is displayed in the appbar.
-  // final SearchAndFocus? searchWidget;
 
   /// [initalScrollPosition] is needed for the state restoration.
   /// If [initalScrollPosition] is not 0, then it is set as the starting scrolling position.
@@ -118,7 +88,6 @@ class GridFrame<T extends Cell> extends StatefulWidget {
 
   const GridFrame({
     required super.key,
-    this.additionalKeybinds,
     required this.getCell,
     this.initalScrollPosition = 0,
     required this.functionality,
@@ -155,8 +124,6 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
     ignoreSwipe: widget.description.ignoreSwipeSelectGesture,
   );
 
-  StreamSubscription<int>? ticker;
-
   GridRefreshingStatus<T> get refreshingStatus => widget.refreshingStatus;
   GridMutationInterface<T> get mutation => refreshingStatus.mutation;
 
@@ -165,30 +132,20 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
   List<int>? segTranslation;
 
   void _restoreState(ImageViewDescription<T> imageViewDescription) {
-    if (mutation.cellCount != 0 &&
-        imageViewDescription.pageViewScrollingOffset != null &&
-        imageViewDescription.initalCell != null) {
-      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        imageViewDescription.beforeImageViewRestore?.call();
-
-        // onPressed(
-        //     context, _state.getCell(widget.initalCell!), widget.initalCell!,
-        //     offset: widget.pageViewScrollingOffset);
-      });
-    } else if (mutation.cellCount != 0 &&
-        imageViewDescription.initalCell != null) {
-      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        imageViewDescription.beforeImageViewRestore?.call();
-
-        // onPressed(
-        //   context,
-        //   _state.getCell(widget.initalCell!),
-        //   widget.initalCell!,
-        // );
-      });
-    } else {
-      imageViewDescription.beforeImageViewRestore?.call();
-    }
+    // if (mutation.cellCount != 0 &&
+    //     imageViewDescription.pageViewScrollingOffset != null &&
+    //     imageViewDescription.initalCell != null) {
+    //   WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+    //     imageViewDescription.beforeImageViewRestore?.call();
+    //   });
+    // } else if (mutation.cellCount != 0 &&
+    //     imageViewDescription.initalCell != null) {
+    //   WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+    //     imageViewDescription.beforeImageViewRestore?.call();
+    //   });
+    // } else {
+    imageViewDescription.beforeImageViewRestore?.call();
+    // }
   }
 
   late double lastOffset = widget.initalScrollPosition;
@@ -215,10 +172,6 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
         ? widget.overrideController!
         : ScrollController(initialScrollOffset: widget.initalScrollPosition);
 
-    ticker = functionality.progressTicker?.listen((event) {
-      mutation.cellCount = event;
-    });
-
     _restoreState(widget.imageViewDescription);
 
     if (mutation.cellCount == 0) {
@@ -230,7 +183,6 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
         controller = widget.overrideController ?? ScrollController();
 
         WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-          // _addFabListener();
           _registerOffsetSaver(controller);
         });
 
@@ -255,7 +207,6 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
                       controller.positions.first.maxScrollExtent) >=
                   1 - (height / controller.positions.first.maxScrollExtent)) {
             refreshingStatus.onNearEnd(widget.functionality);
-            // _state._loadNext(context);
           }
         });
 
@@ -268,7 +219,6 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
   void dispose() {
     _mutationEvents.cancel();
     _gridSettingsWatcher?.cancel();
-    ticker?.cancel();
 
     if (widget.overrideController == null) {
       controller.dispose();
@@ -319,44 +269,6 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
     controller.jumpTo(target);
   }
 
-  // Map<SingleActivatorDescription, void Function()> _makeBindings(
-  //         BuildContext context) =>
-  //     {
-  //       SingleActivatorDescription(AppLocalizations.of(context)!.refresh,
-  //           const SingleActivator(LogicalKeyboardKey.f5)): _state._f5,
-  //       if (widget.searchWidget != null &&
-  //           widget.searchWidget!.onPressed != null)
-  //         SingleActivatorDescription(
-  //                 AppLocalizations.of(context)!.selectSuggestion,
-  //                 const SingleActivator(LogicalKeyboardKey.enter, shift: true)):
-  //             () {
-  //           widget.searchWidget?.onPressed!();
-  //         },
-  //       if (widget.searchWidget != null)
-  //         SingleActivatorDescription(
-  //             AppLocalizations.of(context)!.focusSearch,
-  //             const SingleActivator(LogicalKeyboardKey.keyF,
-  //                 control: true)): () {
-  //           if (widget.searchWidget == null) {
-  //             return;
-  //           }
-
-  //           if (widget.searchWidget!.focus.hasFocus) {
-  //             widget.mainFocus.requestFocus();
-  //           } else {
-  //             widget.searchWidget!.focus.requestFocus();
-  //           }
-  //         },
-  //       if (widget.onBack != null)
-  //         SingleActivatorDescription(AppLocalizations.of(context)!.back,
-  //             const SingleActivator(LogicalKeyboardKey.escape)): () {
-  //           selection.selected.clear();
-  //           selection.glue.close();
-  //           widget.onBack!();
-  //         },
-  //       if (widget.additionalKeybinds != null) ...widget.additionalKeybinds!,
-  //     };
-
   List<Widget> _makeActions(
       BuildContext context, GridDescription<T> description) {
     final button = widget.description.settingsButton;
@@ -379,8 +291,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
       return ret;
     }
 
-    return ret +
-        ((!description.inlineMenuButtonItems &&
+    return ((!description.inlineMenuButtonItems &&
                 description.menuButtonItems!.length > 1)
             ? [
                 PopupMenuButton(
@@ -398,7 +309,8 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
               ]
             : [
                 ...description.menuButtonItems!,
-              ]);
+              ]) +
+        ret;
   }
 
   List<Widget> bodySlivers(BuildContext context, PageDescription? page) {
@@ -411,6 +323,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
 
       final List<Widget> appBarActions = page != null
           ? [
+              ...page.appIcons,
               if (pageSettingsButton != null)
                 GridSettingsButton(
                   pageSettingsButton.overrideDefault!,
@@ -422,7 +335,6 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
                   safeMode: pageSettingsButton.safeMode,
                   selectSafeMode: pageSettingsButton.selectSafeMode,
                 ),
-              ...page.appIcons
             ]
           : _makeActions(context, description);
 
@@ -563,8 +475,12 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
           focusMain: widget.mainFocus.requestFocus,
           child: CellProvider<T>(
             getCell: widget.getCell,
-            child: SliverMainAxisGroup(
-              slivers: bodySlivers(context, page),
+            child: Builder(
+              builder: (context) {
+                return SliverMainAxisGroup(
+                  slivers: bodySlivers(context, page),
+                );
+              },
             ),
           ),
         ),
@@ -573,66 +489,70 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
 
     final fab = functionality.fab;
 
-    Widget child = _BodyWrapping(
-      bindings: const {},
-      mainFocus: widget.mainFocus,
-      pageName: widget.description.keybindsDescription,
-      children: [
-        if (atHomePage)
-          RefreshIndicator(
-            onRefresh: () => refreshingStatus.refresh(widget.functionality),
-            child: mainBody(context, page),
-          )
-        else
-          mainBody(context, page),
-        if (description.footer != null)
+    Widget child(BuildContext context) {
+      Widget ret = _BodyWrapping(
+        bindings: const {},
+        mainFocus: widget.mainFocus,
+        pageName: widget.description.keybindsDescription,
+        children: [
+          if (atHomePage)
+            RefreshIndicator(
+              onRefresh: () => refreshingStatus.refresh(widget.functionality),
+              child: mainBody(context, page),
+            )
+          else
+            mainBody(context, page),
+          if (description.footer != null)
+            Align(
+              alignment: Alignment.bottomLeft,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: widget.systemNavigationInsets.bottom,
+                ),
+                child: description.footer!,
+              ),
+            ),
+          if (!widget.description.showAppBar ||
+              widget.description.pages != null)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: _calculateBottomPadding(),
+                ),
+                child: PreferredSize(
+                  preferredSize: const Size.fromHeight(4),
+                  child: !mutation.isRefreshing
+                      ? const Padding(
+                          padding: EdgeInsets.only(top: 4),
+                          child: SizedBox(),
+                        )
+                      : const LinearProgressIndicator(),
+                ),
+              ),
+            ),
           Align(
-            alignment: Alignment.bottomLeft,
+            alignment: Alignment.bottomRight,
             child: Padding(
               padding: EdgeInsets.only(
-                bottom: widget.systemNavigationInsets.bottom,
-              ),
-              child: description.footer!,
-            ),
-          ),
-        if (!widget.description.showAppBar || widget.description.pages != null)
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: EdgeInsets.only(
-                bottom: _calculateBottomPadding(),
-              ),
-              child: PreferredSize(
-                preferredSize: const Size.fromHeight(4),
-                child: !mutation.isRefreshing
-                    ? const Padding(
-                        padding: EdgeInsets.only(top: 4),
-                        child: SizedBox(),
-                      )
-                    : const LinearProgressIndicator(),
+                  right: 4, bottom: _calculateBottomPadding() + 4),
+              child: PrimaryScrollController(
+                controller: controller,
+                child: Builder(
+                  builder: (context) {
+                    return fab.widget(context, ValueKey(currentPage));
+                  },
+                ),
               ),
             ),
           ),
-        Align(
-          alignment: Alignment.bottomRight,
-          child: Padding(
-            padding: EdgeInsets.only(
-                right: 4, bottom: _calculateBottomPadding() + 4),
-            child: PrimaryScrollController(
-              controller: controller,
-              child: Builder(
-                builder: (context) {
-                  return fab.widget(context, ValueKey(currentPage));
-                },
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
+        ],
+      );
+      if (functionality.registerNotifiers != null) {
+        ret = functionality.registerNotifiers!(ret);
+      }
 
-    if (functionality.registerNotifiers != null) {
-      child = functionality.registerNotifiers!(child);
+      return ret;
     }
 
     return GridBottomPaddingProvider(
@@ -642,7 +562,9 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
         focusMain: widget.mainFocus.requestFocus,
         child: CellProvider<T>(
           getCell: widget.getCell,
-          child: child,
+          child: Builder(
+            builder: child,
+          ),
         ),
       ),
     );
@@ -675,15 +597,9 @@ mixin GridSubpageState<T extends Cell> on State<GridFrame<T>> {
       savedOffset = controller.offset;
     }
 
-    // updateFab(
-    //   fab: false,
-    //   foreground: false,
-    // );
-
     currentPage = next;
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      // _addFabListener();
       if (next == 0) {
         _registerOffsetSaver(controller);
       }
@@ -697,107 +613,5 @@ mixin GridSubpageState<T extends Cell> on State<GridFrame<T>> {
     });
 
     setState(() {});
-  }
-}
-
-class GridBottomPaddingProvider extends InheritedWidget {
-  final double padding;
-
-  const GridBottomPaddingProvider({
-    super.key,
-    required this.padding,
-    required super.child,
-  });
-
-  static double of(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<GridBottomPaddingProvider>();
-
-    return widget!.padding;
-  }
-
-  @override
-  bool updateShouldNotify(GridBottomPaddingProvider oldWidget) =>
-      padding != oldWidget.padding;
-}
-
-class GridRefreshingStatus<T extends Cell> {
-  GridRefreshingStatus(
-    int initalCellCount,
-    this._reachedEnd,
-  ) : mutation = DefaultMutationInterface(initalCellCount);
-
-  void dispose() {
-    mutation.dispose();
-    updateProgress?.ignore();
-  }
-
-  final GridMutationInterface<T> mutation;
-
-  // final GridFunctionality<T> functionality;
-
-  final bool Function() _reachedEnd;
-
-  bool get reachedEnd => _reachedEnd();
-  Future<int>? updateProgress;
-
-  Object? refreshingError;
-
-  Future<int> refresh(GridFunctionality<T> functionality) {
-    if (updateProgress != null) {
-      return Future.value(mutation.cellCount);
-    }
-
-    final refresh = functionality.refresh;
-    switch (refresh) {
-      case SynchronousGridRefresh():
-        mutation.cellCount = refresh.refresh();
-
-        return Future.value(mutation.cellCount);
-      case AsyncGridRefresh():
-        updateProgress = refresh.refresh();
-
-        refreshingError = null;
-        mutation.isRefreshing = true;
-        mutation.cellCount = 0;
-
-        return _saveOrWait(updateProgress!, functionality);
-      case RetainedGridRefresh():
-        refresh.refresh();
-
-        return Future.value(0);
-    }
-  }
-
-  Future<int> onNearEnd(GridFunctionality<T> functionality) async {
-    if (updateProgress != null ||
-        functionality.loadNext == null ||
-        mutation.isRefreshing ||
-        reachedEnd) {
-      return Future.value(mutation.cellCount);
-    }
-
-    updateProgress = functionality.loadNext!();
-    mutation.isRefreshing = true;
-
-    return _saveOrWait(updateProgress!, functionality);
-  }
-
-  Future<int> _saveOrWait(
-      Future<int> f, GridFunctionality<T> functionality) async {
-    final refreshBehaviour = functionality.refreshBehaviour;
-    switch (refreshBehaviour) {
-      case DefaultGridRefreshBehaviour():
-        try {
-          mutation.cellCount = await f;
-        } catch (e) {
-          refreshingError = e;
-        }
-
-        mutation.isRefreshing = false;
-        updateProgress = null;
-
-        return mutation.cellCount;
-    }
   }
 }

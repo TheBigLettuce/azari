@@ -14,8 +14,12 @@ abstract class GridOnCellPressedBehaviour {
   const GridOnCellPressedBehaviour();
 
   void launch<T extends Cell>(
-      BuildContext gridContext, int startingCell, GridFrameState<T> state,
-      [double? startingOffset]);
+    BuildContext gridContext,
+    int startingCell,
+    GridFrameState<T> state, {
+    double? startingOffset,
+    T? useCellInsteadIdx,
+  });
 }
 
 class OverrideGridOnCellPressBehaviour implements GridOnCellPressedBehaviour {
@@ -23,16 +27,28 @@ class OverrideGridOnCellPressBehaviour implements GridOnCellPressedBehaviour {
     this.onPressed = _doNothing,
   });
 
-  static void _doNothing(BuildContext context, int idx) {}
+  static void _doNothing(
+    BuildContext context,
+    int idx,
+    Cell? overrideCell,
+  ) {}
 
-  final void Function(BuildContext context, int idx) onPressed;
+  final void Function(
+    BuildContext context,
+    int idx,
+    Cell? overrideCell,
+  ) onPressed;
 
   @override
   void launch<T extends Cell>(
-      BuildContext gridContext, int startingCell, GridFrameState<T> state,
-      [double? startingOffset]) {
+    BuildContext gridContext,
+    int startingCell,
+    GridFrameState<T> state, {
+    double? startingOffset,
+    T? useCellInsteadIdx,
+  }) {
     state.widget.mainFocus.requestFocus();
-    onPressed(gridContext, startingCell);
+    onPressed(gridContext, startingCell, useCellInsteadIdx);
   }
 }
 
@@ -41,8 +57,12 @@ class DefaultGridOnCellPressBehaviour implements GridOnCellPressedBehaviour {
 
   @override
   void launch<T extends Cell>(
-      BuildContext gridContext, int startingCell, GridFrameState<T> state,
-      [double? startingOffset]) {
+    BuildContext gridContext,
+    int startingCell,
+    GridFrameState<T> state, {
+    double? startingOffset,
+    T? useCellInsteadIdx,
+  }) {
     final functionality = state.widget.functionality;
     final imageDesctipion = state.widget.imageViewDescription;
     final mutation = state.mutation;

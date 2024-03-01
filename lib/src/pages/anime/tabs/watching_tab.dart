@@ -134,7 +134,7 @@ class __WatchingTabState extends State<_WatchingTab> {
               GlueProvider.generateOf<AnimeEntry, SavedAnimeEntry>(context),
           refresh: SynchronousGridRefresh(() => backlog.length),
           onPressed:
-              OverrideGridOnCellPressBehaviour(onPressed: (context, idx) {
+              OverrideGridOnCellPressBehaviour(onPressed: (context, idx, _) {
             final cell = CellProvider.getOf<SavedAnimeEntry>(context, idx);
 
             Navigator.push(context, MaterialPageRoute(

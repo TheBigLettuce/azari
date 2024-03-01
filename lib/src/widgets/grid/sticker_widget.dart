@@ -9,27 +9,37 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
 
 class StickerWidget extends StatelessWidget {
+  const StickerWidget(
+    this.e, {
+    super.key,
+    this.onPressed,
+  });
+
   final Sticker e;
   final void Function()? onPressed;
 
-  const StickerWidget(this.e, {super.key, this.onPressed});
-
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Container(
-        padding: const EdgeInsets.all(2),
+        padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-            color: e.backgroundColor != null
-                ? e.backgroundColor!.withOpacity(0.6)
-                : Theme.of(context).colorScheme.inversePrimary.withOpacity(0.6),
-            borderRadius: BorderRadius.circular(5)),
-        child: Icon(
-          e.icon,
-          color: e.color != null
-              ? e.color!.withOpacity(0.8)
-              : Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+          shape: BoxShape.circle,
+          color: e.important
+              ? colorScheme.onPrimary.withOpacity(0.9)
+              : colorScheme.surfaceVariant.withOpacity(0.8),
+        ),
+        child: Transform.translate(
+          offset: const Offset(0, -0.5),
+          child: Icon(
+            e.icon,
+            color: e.important
+                ? colorScheme.primary.withOpacity(0.9)
+                : colorScheme.onSurfaceVariant.withOpacity(0.8),
+          ),
         ),
       ),
     );

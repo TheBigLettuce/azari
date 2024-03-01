@@ -7,10 +7,30 @@
 
 import 'dart:async';
 
+import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
+import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:isar/isar.dart';
 
 import '../../interfaces/booru_tagging.dart';
+
+class TagManager {
+  final IsarBooruTagging _excluded;
+  final IsarBooruTagging _latest;
+
+  BooruTagging get excluded => _excluded;
+  BooruTagging get latest => _latest;
+
+  factory TagManager.fromEnum(Booru booru) {
+    final mainGrid = DbsOpen.primaryGrid(booru);
+
+    return TagManager._(mainGrid);
+  }
+
+  TagManager._(Isar mainGrid)
+      : _excluded = IsarBooruTagging(excludedMode: true, isarCurrent: mainGrid),
+        _latest = IsarBooruTagging(excludedMode: false, isarCurrent: mainGrid);
+}
 
 class IsarBooruTagging implements BooruTagging {
   const IsarBooruTagging({
@@ -28,11 +48,20 @@ class IsarBooruTagging implements BooruTagging {
   }
 
   @override
-  List<Tag> get() {
+  List<Tag> get(int i) {
+    if (i.isNegative) {
+      return isarCurrent.tags
+          .filter()
+          .isExcludedEqualTo(excludedMode)
+          .sortByTimeDesc()
+          .findAllSync();
+    }
+
     return isarCurrent.tags
         .filter()
         .isExcludedEqualTo(excludedMode)
         .sortByTimeDesc()
+        .limit(i)
         .findAllSync();
   }
 

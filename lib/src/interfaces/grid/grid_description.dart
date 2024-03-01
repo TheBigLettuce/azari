@@ -9,6 +9,27 @@ part of '../../widgets/grid/grid_frame.dart';
 
 /// Metadata about the grid.
 class GridDescription<T extends Cell> {
+  const GridDescription({
+    required this.actions,
+    required this.gridSeed,
+    required this.keybindsDescription,
+    this.showAppBar = true,
+    this.ignoreEmptyWidgetOnNoContent = false,
+    this.bottomWidget,
+    this.ignoreSwipeSelectGesture = false,
+    this.cellTitleAtBottom = false,
+    // this.ignoreImageViewEndDrawer = false,
+    this.asSliver = false,
+    this.settingsButton,
+    this.inlineMenuButtonItems = false,
+    this.tightMode = false,
+    this.titleLines = 1,
+    this.menuButtonItems,
+    this.footer,
+    this.pages,
+    this.pageName,
+  });
+
   /// Displayed in the keybinds info page name.
   final String keybindsDescription;
 
@@ -52,25 +73,4 @@ class GridDescription<T extends Cell> {
   /// if [searchWidget] is null. If [menuButtonItems] includes only one widget,
   /// it is displayed directly.
   final List<Widget>? menuButtonItems;
-
-  const GridDescription({
-    required this.actions,
-    required this.gridSeed,
-    required this.keybindsDescription,
-    this.showAppBar = true,
-    this.ignoreEmptyWidgetOnNoContent = false,
-    this.bottomWidget,
-    this.ignoreSwipeSelectGesture = false,
-    this.cellTitleAtBottom = false,
-    // this.ignoreImageViewEndDrawer = false,
-    this.asSliver = false,
-    this.settingsButton,
-    this.inlineMenuButtonItems = false,
-    this.tightMode = false,
-    this.titleLines = 1,
-    this.menuButtonItems,
-    this.footer,
-    this.pages,
-    this.pageName,
-  });
 }

@@ -45,15 +45,169 @@ class GridSettingsButton extends StatefulWidget {
 }
 
 class _GridSettingsButtonState extends State<GridSettingsButton> {
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: () {
+        showModalBottomSheet(
+          context: context,
+          backgroundColor:
+              Theme.of(context).colorScheme.surface.withOpacity(0.95),
+          isScrollControlled: true,
+          showDragHandle: true,
+          useSafeArea: false,
+          useRootNavigator: true,
+          builder: (context) {
+            return SafeArea(
+              child: _BottomSheetContent(button: widget),
+            );
+          },
+        );
+      },
+      icon: const Icon(Icons.more_horiz_outlined),
+    );
+  }
+}
+
+Widget _safeMode(BuildContext context, SafeMode safeMode,
+    {void Function(SafeMode?)? selectSafeMode}) {
+  return TextButton(
+    child: Text(AppLocalizations.of(context)!.safeModeSetting),
+    onPressed: () => radioDialog<SafeMode>(
+      context,
+      SafeMode.values.map((e) => (e, e.string)),
+      safeMode,
+      (value) {
+        (selectSafeMode ??
+            (value) {
+              Settings.fromDb().copy(safeMode: value).save();
+            })(value);
+
+        Navigator.pop(context);
+      },
+      title: AppLocalizations.of(context)!.safeModeSetting,
+    ),
+  );
+}
+
+Widget _hideName(
+    BuildContext context, bool hideName, void Function(bool) select) {
+  return SwitchListTile(
+    contentPadding: EdgeInsets.zero,
+    title: Text(AppLocalizations.of(context)!.hideNames),
+    value: hideName,
+    onChanged: (_) => select(!hideName),
+  );
+}
+
+class _RadioGroup<T> extends StatelessWidget {
+  final Iterable<(T, String)> values;
+  final T selected;
+  final void Function(T?) select;
+  final String title;
+
+  const _RadioGroup({
+    super.key,
+    required this.select,
+    required this.selected,
+    required this.values,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: SegmentedButton(
+                  onSelectionChanged: (selection) {
+                    select(selection.first);
+                  },
+                  segments: values
+                      .map(
+                        (e) => ButtonSegment(value: e.$1, label: Text(e.$2)),
+                      )
+                      .toList(),
+                  selected: {selected},
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+Widget _ratio(BuildContext context, GridAspectRatio aspectRatio,
+    void Function(GridAspectRatio?) select) {
+  return _RadioGroup(
+    select: select,
+    selected: aspectRatio,
+    values: GridAspectRatio.values.map((e) => (e, e.value.toString())),
+    title: AppLocalizations.of(context)!.aspectRatio,
+  );
+}
+
+Widget _columns(BuildContext context, GridColumn columns,
+    void Function(GridColumn?) select) {
+  return _RadioGroup(
+    select: select,
+    selected: columns,
+    values: GridColumn.values.map((e) => (e, e.number.toString())),
+    title: AppLocalizations.of(context)!.gridColumns,
+  );
+}
+
+Widget _gridLayout(BuildContext context, GridLayoutType selectGridLayout,
+    void Function(GridLayoutType?) select) {
+  return _RadioGroup(
+    select: select,
+    selected: selectGridLayout,
+    values: GridLayoutType.values.map((e) => (e, e.text)),
+    title: "Layout",
+  );
+}
+
+class _BottomSheetContent extends StatefulWidget {
+  final GridSettingsButton button;
+
+  const _BottomSheetContent({
+    super.key,
+    required this.button,
+  });
+
+  @override
+  State<_BottomSheetContent> createState() => __BottomSheetContentState();
+}
+
+class __BottomSheetContentState extends State<_BottomSheetContent> {
+  GridSettingsButton get button => widget.button;
+
   StreamSubscription<GridSettingsBase>? watcher;
 
-  late GridSettingsBase gridSettings = widget.gridSettings();
+  late GridSettingsBase gridSettings = button.gridSettings();
 
   @override
   void initState() {
     super.initState();
 
-    watcher = widget.watch?.call((newSettings) {
+    watcher = button.watch?.call((newSettings) {
       gridSettings = newSettings;
 
       setState(() {});
@@ -69,93 +223,37 @@ class _GridSettingsButtonState extends State<GridSettingsButton> {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton(
-      icon: const Icon(Icons.more_horiz_outlined),
-      itemBuilder: (context) => [
-        if (widget.safeMode != null)
-          _safeMode(context, widget.safeMode!,
-              selectSafeMode: (s) => widget.selectSafeMode!(s, gridSettings)),
-        if (widget.selectGridLayout != null)
-          _gridLayout(context, gridSettings.layoutType,
-              (t) => widget.selectGridLayout!(t, gridSettings)),
-        if (widget.selectHideName != null)
-          _hideName(context, gridSettings.hideName,
-              (n) => widget.selectHideName!(n, gridSettings)),
-        if (widget.selectRatio != null)
-          _ratio(context, gridSettings.aspectRatio,
-              (r) => widget.selectRatio!(r, gridSettings)),
-        _columns(context, gridSettings.columns,
-            (c) => widget.selectGridColumn(c, gridSettings))
-      ],
+    return SizedBox(
+      width: double.infinity,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Text(
+                "Settings",
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            if (button.safeMode != null)
+              _safeMode(context, button.safeMode!,
+                  selectSafeMode: (s) =>
+                      button.selectSafeMode!(s, gridSettings)),
+            if (button.selectHideName != null)
+              _hideName(context, gridSettings.hideName,
+                  (n) => button.selectHideName!(n, gridSettings)),
+            if (button.selectGridLayout != null)
+              _gridLayout(context, gridSettings.layoutType,
+                  (t) => button.selectGridLayout!(t, gridSettings)),
+            if (button.selectRatio != null)
+              _ratio(context, gridSettings.aspectRatio,
+                  (r) => button.selectRatio!(r, gridSettings)),
+            _columns(context, gridSettings.columns,
+                (c) => button.selectGridColumn(c, gridSettings))
+          ],
+        ),
+      ),
     );
   }
-}
-
-PopupMenuItem _safeMode(BuildContext context, SafeMode safeMode,
-    {void Function(SafeMode?)? selectSafeMode}) {
-  return PopupMenuItem(
-    child: Text(AppLocalizations.of(context)!.safeModeSetting),
-    onTap: () => radioDialog<SafeMode>(
-      context,
-      SafeMode.values.map((e) => (e, e.string)),
-      safeMode,
-      selectSafeMode ??
-          (value) {
-            Settings.fromDb().copy(safeMode: value).save();
-          },
-      title: AppLocalizations.of(context)!.safeModeSetting,
-    ),
-  );
-}
-
-PopupMenuItem _hideName(
-    BuildContext context, bool hideName, void Function(bool) select) {
-  return PopupMenuItem(
-    child: Text(hideName
-        ? AppLocalizations.of(context)!.showNames
-        : AppLocalizations.of(context)!.hideNames),
-    onTap: () => select(!hideName),
-  );
-}
-
-PopupMenuItem _ratio(BuildContext context, GridAspectRatio aspectRatio,
-    void Function(GridAspectRatio?) select) {
-  return PopupMenuItem(
-    child: Text(AppLocalizations.of(context)!.aspectRatio),
-    onTap: () => radioDialog(
-      context,
-      GridAspectRatio.values.map((e) => (e, e.value.toString())).toList(),
-      aspectRatio,
-      select,
-      title: AppLocalizations.of(context)!.aspectRatio,
-    ),
-  );
-}
-
-PopupMenuItem _columns(BuildContext context, GridColumn columns,
-    void Function(GridColumn?) select) {
-  return PopupMenuItem(
-    child: Text(AppLocalizations.of(context)!.gridColumns),
-    onTap: () => radioDialog(
-      context,
-      GridColumn.values.map((e) => (e, e.number.toString())).toList(),
-      columns,
-      select,
-      title: AppLocalizations.of(context)!.nPerElementsSetting,
-    ),
-  );
-}
-
-PopupMenuItem _gridLayout(BuildContext context, GridLayoutType selectGridLayout,
-    void Function(GridLayoutType?) select) {
-  return PopupMenuItem(
-    child: const Text("Layout"), // TODO: change
-    onTap: () => radioDialog(
-      context,
-      GridLayoutType.values.map((e) => (e, e.text)),
-      selectGridLayout,
-      select,
-      title: "Layout",
-    ),
-  );
 }

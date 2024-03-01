@@ -6,13 +6,10 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/db/base/post_base.dart';
-import 'package:gallery/src/interfaces/gallery/gallery_files_extra.dart';
-
-import '../../db/tags/post_tags.dart';
-import '../../db/schemas/gallery/system_gallery_directory_file.dart';
+import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
+import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/interfaces/gallery/gallery_api_files.dart';
 
 /// Data for the [FilteringMode.same].
 class SameFilterAccumulator {
@@ -24,34 +21,7 @@ class SameFilterAccumulator {
         skipped = 0;
 }
 
-abstract class Filters {
-  static (Iterable<T>, dynamic) sameFavorites<T extends PostBase>(
-      Iterable<T> cells,
-      Map<String, Set<String>>? data,
-      bool end,
-      Iterable<T> Function(Map<String, Set<String>>? data) collect) {
-    data = data ?? {};
-
-    T? prevCell;
-    for (final e in cells) {
-      if (prevCell != null) {
-        if (prevCell.md5 == e.md5) {
-          final prev = data[e.md5] ?? {prevCell.fileUrl};
-
-          data[e.md5] = {...prev, e.fileUrl};
-        }
-      }
-
-      prevCell = e;
-    }
-
-    if (end) {
-      return (collect(data), null);
-    }
-
-    return (const [], data);
-  }
-
+abstract class FileFilters {
   static (Iterable<SystemGalleryDirectoryFile>, dynamic) tag(
       Iterable<SystemGalleryDirectoryFile> cells, String searchText) {
     if (searchText.isEmpty) {
@@ -157,7 +127,7 @@ abstract class Filters {
                 extra.loadNextThumbnails(() {
                   try {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        duration: 4.seconds,
+                        duration: const Duration(seconds: 4),
                         content: Text(AppLocalizations.of(context)!.loaded)));
                     performSearch();
                   } catch (_) {}

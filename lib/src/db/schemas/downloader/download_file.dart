@@ -7,6 +7,7 @@
 
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/widgets.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
@@ -18,7 +19,7 @@ import '../../../interfaces/cell/cell.dart';
 part 'download_file.g.dart';
 
 @collection
-class DownloadFile extends Cell with CachedCellValuesMixin {
+class DownloadFile extends Cell {
   DownloadFile.d({
     this.isarId,
     required this.name,
@@ -27,9 +28,7 @@ class DownloadFile extends Cell with CachedCellValuesMixin {
     required this.site,
   })  : inProgress = true,
         isFailed = false,
-        date = DateTime.now() {
-    initValues(ValueKey(url), thumbUrl, () => const EmptyContent());
-  }
+        date = DateTime.now();
 
   DownloadFile(
     this.inProgress,
@@ -39,9 +38,16 @@ class DownloadFile extends Cell with CachedCellValuesMixin {
     required this.url,
     required this.thumbUrl,
     required this.site,
-  }) : date = DateTime.now() {
-    initValues(ValueKey(url), thumbUrl, () => const EmptyContent());
-  }
+  }) : date = DateTime.now();
+
+  @override
+  Contentable content() => const EmptyContent();
+
+  @override
+  Key uniqueKey() => ValueKey(url);
+
+  @override
+  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(thumbUrl);
 
   @override
   String toString() =>
@@ -87,9 +93,7 @@ class DownloadFile extends Cell with CachedCellValuesMixin {
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override
-  List<Widget>? addInfo(
-          BuildContext context, dynamic extra, AddInfoColorData colors) =>
-      null;
+  List<Widget>? addInfo(BuildContext context) => null;
 
   @override
   String alias(bool isList) => name;
@@ -99,9 +103,6 @@ class DownloadFile extends Cell with CachedCellValuesMixin {
 
   @override
   List<Sticker> stickers(BuildContext context) => const [];
-
-  @override
-  ImageProvider<Object>? thumbnail() => null;
 
   static void saveAll(List<DownloadFile> l) {
     Dbs.g.main.writeTxnSync(() => Dbs.g.main.downloadFiles.putAllSync(l));

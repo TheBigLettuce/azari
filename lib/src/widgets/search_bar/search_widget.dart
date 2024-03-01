@@ -93,6 +93,7 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
       FilteringMode() => makeSearchBar(
           context,
           swapSearchIcon: true,
+          disable: false,
           focusNode: widget.instance.searchFocus,
           addItems: _addItems(),
           count: count,

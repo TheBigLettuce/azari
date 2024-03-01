@@ -29,39 +29,65 @@ class SegmentLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     final rightGesture = MediaQuery.systemGestureInsetsOf(context).right;
 
+    final row = Row(
+      textBaseline: TextBaseline.alphabetic,
+      mainAxisAlignment: overridePinnedIcon == null && hidePinnedIcon
+          ? MainAxisAlignment.start
+          : MainAxisAlignment.spaceBetween,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      children: [
+        Container(
+          clipBehavior: onPress == null ? Clip.none : Clip.antiAlias,
+          padding: onPress == null
+              ? const EdgeInsets.all(8)
+              : const EdgeInsets.only(left: 12, right: 12, top: 8, bottom: 8),
+          decoration: onPress == null
+              ? null
+              : BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .secondaryContainer
+                      .withOpacity(0.4),
+                ),
+          child: Text(
+            text,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  letterSpacing: 0.8,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSecondaryContainer
+                      .withOpacity(0.8),
+                ),
+          ),
+        ),
+        if ((sticky && !hidePinnedIcon) || overridePinnedIcon != null)
+          overridePinnedIcon ??
+              const IconButton.filled(
+                  onPressed: null, icon: Icon(Icons.push_pin_outlined)),
+      ],
+    );
+
     return Padding(
         padding: EdgeInsets.only(
             bottom: 8,
             top: 16,
-            left: 8,
+            // left: ,
             right: rightGesture == 0 ? 8 : rightGesture / 2),
         child: GestureDetector(
           onLongPress: onLongPress,
           onTap: onPress,
-          child: SizedBox.fromSize(
-            size: Size.fromHeight(
-                (Theme.of(context).textTheme.headlineLarge?.fontSize ?? 24) +
-                    8),
-            child: Row(
-              textBaseline: TextBaseline.alphabetic,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              children: [
-                Text(
-                  text,
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      letterSpacing: 2,
-                      color: Theme.of(context).colorScheme.secondary),
+          child: hidePinnedIcon && overridePinnedIcon == null
+              ? row
+              : SizedBox.fromSize(
+                  size: Size.fromHeight(
+                      (Theme.of(context).textTheme.headlineMedium?.fontSize ??
+                              24) +
+                          8 +
+                          16),
+                  child: row,
                 ),
-                if ((sticky && !hidePinnedIcon) || overridePinnedIcon != null)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: overridePinnedIcon ??
-                        const Icon(Icons.push_pin_outlined),
-                  ),
-              ],
-            ),
-          ),
         ));
   }
 }

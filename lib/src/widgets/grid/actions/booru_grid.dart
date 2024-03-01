@@ -11,7 +11,6 @@ import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 
 import '../../../net/downloader.dart';
-import '../../../interfaces/booru/booru_api.dart';
 import '../../../db/tags/post_tags.dart';
 import '../../../db/schemas/downloader/download_file.dart';
 import '../../../db/schemas/tags/local_tag_dictionary.dart';

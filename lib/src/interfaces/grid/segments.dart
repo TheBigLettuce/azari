@@ -9,6 +9,18 @@ part of '../../widgets/grid/grid_frame.dart';
 
 /// Segments of the grid.
 class Segments<T> {
+  const Segments(
+    this.unsegmentedLabel, {
+    this.addToSticky,
+    this.segment,
+    this.limitLabelChildren,
+    this.prebuiltSegments,
+    this.onLabelPressed,
+    this.hidePinnedIcon = false,
+    this.injectedSegments = const [],
+    this.injectedLabel = "Special",
+  }) : assert(prebuiltSegments == null || segment == null);
+
   /// Under [unsegmentedLabel] appear cells on which [segment] returns null,
   /// or are single standing.
   final String unsegmentedLabel;
@@ -38,15 +50,4 @@ class Segments<T> {
   final void Function(String label, List<T> children)? onLabelPressed;
 
   final bool hidePinnedIcon;
-
-  const Segments(this.unsegmentedLabel,
-      {this.addToSticky,
-      this.segment,
-      this.limitLabelChildren,
-      this.prebuiltSegments,
-      this.onLabelPressed,
-      this.hidePinnedIcon = false,
-      this.injectedSegments = const [],
-      this.injectedLabel = "Special"})
-      : assert(prebuiltSegments == null || segment == null);
 }

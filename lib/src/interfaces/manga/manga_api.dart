@@ -13,23 +13,6 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
 
-enum MangaMeta {
-  mangaDex(name: "MangaDex", url: "api.mangadex.org");
-
-  final String url;
-  final String name;
-
-  const MangaMeta({
-    required this.url,
-    required this.name,
-  });
-}
-
-enum MangaChapterOrder {
-  desc,
-  asc;
-}
-
 abstract class MangaAPI {
   MangaMeta get site;
 
@@ -59,6 +42,23 @@ abstract class MangaAPI {
   Future<List<MangaEntry>> top(int page, int count);
 }
 
+enum MangaMeta {
+  mangaDex(name: "MangaDex", url: "api.mangadex.org");
+
+  final String url;
+  final String name;
+
+  const MangaMeta({
+    required this.url,
+    required this.name,
+  });
+}
+
+enum MangaChapterOrder {
+  desc,
+  asc;
+}
+
 class MangaImage implements Cell {
   MangaImage(
     this.url,
@@ -77,8 +77,7 @@ class MangaImage implements Cell {
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override
-  List<Widget>? addInfo(BuildContext context, extra, AddInfoColorData colors) =>
-      null;
+  List<Widget>? addInfo(BuildContext context) => null;
 
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
@@ -152,8 +151,7 @@ class MangaEntry implements Cell {
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override
-  List<Widget>? addInfo(BuildContext context, extra, AddInfoColorData colors) =>
-      null;
+  List<Widget>? addInfo(BuildContext context) => null;
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
 

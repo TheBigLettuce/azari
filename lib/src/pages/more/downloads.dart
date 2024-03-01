@@ -19,6 +19,7 @@ import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_layout_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_search_widget.dart';
 import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
@@ -34,21 +35,18 @@ import '../../widgets/skeletons/grid_skeleton_state_filter.dart';
 import '../../widgets/skeletons/grid_skeleton.dart';
 
 class Downloads extends StatefulWidget {
-  final SelectionGlue<DownloadFile> glue;
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;
 
   const Downloads({
     super.key,
     required this.generateGlue,
-    required this.glue,
   });
 
   @override
   State<Downloads> createState() => _DownloadsState();
 }
 
-class _DownloadsState extends State<Downloads>
-    with SearchFilterGrid<DownloadFile> {
+class _DownloadsState extends State<Downloads> {
   final loader = LinearIsarLoader<DownloadFile>(DownloadFileSchema, Dbs.g.main,
       (offset, limit, s, sort, mode) {
     return Dbs.g.main.downloadFiles
@@ -58,6 +56,8 @@ class _DownloadsState extends State<Downloads>
         .limit(limit)
         .findAllSync();
   });
+
+  late final SearchFilterGrid<DownloadFile> search;
 
   late final StreamSubscription<void> _updates;
 
@@ -72,19 +72,20 @@ class _DownloadsState extends State<Downloads>
   @override
   void initState() {
     super.initState();
-    searchHook(state);
+
+    search = SearchFilterGrid(state, null);
 
     Downloader.g.markStale();
 
     _updates = DownloadFile.watch((_) async {
-      performSearch(searchTextController.text);
+      search.performSearch(search.searchTextController.text);
     });
   }
 
   @override
   void dispose() {
     _updates.cancel();
-    disposeSearch();
+    search.dispose();
     state.dispose();
 
     super.dispose();
@@ -132,7 +133,7 @@ class _DownloadsState extends State<Downloads>
   Widget build(BuildContext context) {
     return WrapGridPage<DownloadFile>(
         scaffoldKey: state.scaffoldKey,
-        provided: (widget.glue, widget.generateGlue),
+        provided: widget.generateGlue,
         child: GridSkeleton(
           state,
           (context) => GridFrame<DownloadFile>(
@@ -148,9 +149,9 @@ class _DownloadsState extends State<Downloads>
             functionality: GridFunctionality(
               search: OverrideGridSearchWidget(
                 SearchAndFocus(
-                  searchWidget(context,
+                  search.searchWidget(context,
                       hint: AppLocalizations.of(context)!.downloadsPageName),
-                  searchFocus,
+                  search.searchFocus,
                 ),
               ),
               // onBack: () => Navigator.pop(context),

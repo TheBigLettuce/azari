@@ -57,7 +57,6 @@ import 'package:path/path.dart' as path;
 import 'schemas/tags/tags.dart';
 
 part 'dbs.dart';
-part 'dbs_open.dart';
 
 bool _initalized = false;
 

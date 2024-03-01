@@ -5,114 +5,98 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
+import 'package:gallery/src/interfaces/booru_tagging.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/make_tags.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
 
 import '../../../db/schemas/tags/tags.dart';
-import '../../../widgets/empty_widget.dart';
-import '../../../widgets/time_label.dart';
 
-class TagsWidget extends StatelessWidget {
-  final void Function(Tag tag) deleteTag;
+class TagsWidget extends StatefulWidget {
   final void Function(Tag tag, SafeMode? safeMode)? onPress;
   final bool redBackground;
-  final List<Tag> tags;
-  final Widget searchBar;
+  final BooruTagging tagging;
 
   const TagsWidget({
     super.key,
-    required this.tags,
-    required this.searchBar,
     this.redBackground = false,
-    required this.deleteTag,
+    required this.tagging,
     required this.onPress,
   });
 
   @override
+  State<TagsWidget> createState() => _TagsWidgetState();
+}
+
+class _TagsWidgetState extends State<TagsWidget> {
+  late final StreamSubscription<void> watcher;
+  late final List<Tag> _tags = widget.tagging.get(30);
+  int refreshes = 0;
+
+  @override
+  void initState() {
+    super.initState();
+
+    watcher = widget.tagging.watch((_) {
+      _tags.clear();
+
+      _tags.addAll(widget.tagging.get(30));
+
+      setState(() {
+        refreshes += 1;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    watcher.cancel();
+
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final listWraps = <Widget>[
-      Padding(
-        padding:
-            const EdgeInsets.only(bottom: 10, left: 10, right: 10, top: 10),
-        child: searchBar,
-      )
-    ];
-    final list = <Widget>[];
-    final timeNow = DateTime.now();
-
-    if (tags.isEmpty) {
-      return SliverList.list(
-        children: [
-          ...listWraps,
-          const Center(
-              child: EmptyWidget(
-            gridSeed: 0,
-          ))
-        ],
-      );
-    }
-
-    (int, int, int)? time;
-
-    final titleStyle = Theme.of(context)
-        .textTheme
-        .titleSmall!
-        .copyWith(color: Theme.of(context).colorScheme.secondary);
-
-    for (final e in tags) {
-      if (time == null) {
-        time = (e.time.day, e.time.month, e.time.year);
-      } else if (time != (e.time.day, e.time.month, e.time.year)) {
-        listWraps.add(TimeLabel(time, titleStyle, timeNow));
-        listWraps.add(Padding(
-          padding: const EdgeInsets.only(left: 16),
-          child: Wrap(
-            children: list.map((e) => e).toList(),
-          ),
-        ));
-
-        time = (e.time.day, e.time.month, e.time.year);
-
-        list.clear();
-      }
-
-      list.add(SingleTagWidget(
-        onPress: onPress,
-        tag: e,
-        redBackground: redBackground,
-        deleteTag: deleteTag,
-      ));
-    }
-
-    if (list.isNotEmpty) {
-      final t = tags.last.time;
-      listWraps.add(TimeLabel((t.day, t.month, t.year), titleStyle, timeNow));
-      listWraps.add(Padding(
-        padding: const EdgeInsets.only(left: 16),
-        child: Wrap(
-          children: list.map((e) => e).toList(),
+    return Padding(
+      padding: const EdgeInsets.only(left: 2, top: 2),
+      child: SizedBox(
+        height: 38,
+        child: ListView.builder(
+          key: ValueKey(refreshes),
+          itemCount: _tags.length,
+          scrollDirection: Axis.horizontal,
+          itemBuilder: (context, index) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 2),
+              child: SingleTagWidget(
+                tag: _tags[index],
+                tagging: widget.tagging,
+                onPress: widget.onPress,
+                redBackground: widget.redBackground,
+              ),
+            );
+          },
         ),
-      ));
-    }
-
-    return SliverList.list(children: listWraps);
+      ),
+    );
   }
 }
 
 class SingleTagWidget extends StatelessWidget {
   final Tag tag;
-  final void Function(Tag tag) deleteTag;
+  final BooruTagging tagging;
   final bool redBackground;
   final void Function(Tag tag, SafeMode? safeMode)? onPress;
 
   const SingleTagWidget({
     super.key,
     required this.tag,
-    required this.deleteTag,
     required this.onPress,
+    required this.tagging,
     required this.redBackground,
   });
 
@@ -132,7 +116,7 @@ class SingleTagWidget extends StatelessWidget {
           ),
         PopupMenuItem(
           onTap: () {
-            deleteTag(tag);
+            tagging.delete(tag);
           },
           child: const Text("Delete"), // TODO: change
         )
@@ -148,6 +132,7 @@ class SingleTagWidget extends StatelessWidget {
         onPressed: onPress == null
             ? null
             : () {
+                tagging.add(tag);
                 onPress!(tag, null);
               },
       ),

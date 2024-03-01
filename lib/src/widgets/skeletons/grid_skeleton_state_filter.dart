@@ -8,7 +8,6 @@
 import '../../interfaces/cell/cell.dart';
 import '../../interfaces/filtering/filtering_interface.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
-import '../../interfaces/filtering/sorting_mode.dart';
 import 'grid_skeleton_state.dart';
 
 class GridSkeletonStateFilter<T extends Cell> extends GridSkeletonState<T> {

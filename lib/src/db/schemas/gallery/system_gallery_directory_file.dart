@@ -7,7 +7,6 @@
 
 import 'dart:developer';
 
-import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/booru_post_functionality_mixin.dart';
 import 'package:gallery/src/db/base/system_gallery_directory_file_functionality_mixin.dart';
@@ -16,10 +15,10 @@ import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/pages/booru/booru_page.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
-import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:gallery/src/widgets/set_wallpaper_tile.dart';
 import 'package:isar/isar.dart';
@@ -29,7 +28,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../interfaces/cell/contentable.dart';
 import '../../../interfaces/cell/sticker.dart';
-import '../../state_restoration.dart';
 import '../../../widgets/translation_notes.dart';
 import '../settings/settings.dart';
 
@@ -37,9 +35,7 @@ part 'system_gallery_directory_file.g.dart';
 
 @collection
 class SystemGalleryDirectoryFile extends Cell
-    with
-        CachedCellValuesFilesMixin,
-        SystemGalleryDirectoryFileFunctionalityMixin {
+    with SystemGalleryDirectoryFileFunctionalityMixin {
   SystemGalleryDirectoryFile({
     required this.id,
     required this.bucketId,
@@ -56,21 +52,30 @@ class SystemGalleryDirectoryFile extends Cell
     required this.isOriginal,
     required this.lastModified,
     required this.originalUri,
-  }) {
-    initValues(ValueKey(id), (id, isVideo), () {
-      final size = Size(width.toDouble(), height.toDouble());
+  });
 
-      if (isVideo) {
-        return AndroidVideo(uri: originalUri, size: size);
-      }
+  @override
+  Contentable content() {
+    final size = Size(width.toDouble(), height.toDouble());
 
-      if (isGif) {
-        return AndroidGif(uri: originalUri, size: size);
-      }
+    if (isVideo) {
+      return AndroidVideo(uri: originalUri, size: size);
+    }
 
-      return AndroidImage(uri: originalUri, size: size);
-    });
+    if (isGif) {
+      return AndroidGif(uri: originalUri, size: size);
+    }
+
+    return AndroidImage(uri: originalUri, size: size);
   }
+
+  @override
+  ImageProvider<Object>? thumbnail() =>
+      SystemGalleryThumbnailProvider(id, isVideo);
+
+  @override
+  Key uniqueKey() => ValueKey(id);
+
   @override
   Id? isarId;
 
@@ -170,8 +175,7 @@ class SystemGalleryDirectoryFile extends Cell
   }
 
   @override
-  List<Widget>? addInfo(
-      BuildContext context, dynamic extra, AddInfoColorData colors) {
+  List<Widget>? addInfo(BuildContext context) {
     DisassembleResult? res;
     try {
       res = PostTags.g.dissassembleFilename(name);
@@ -181,13 +185,10 @@ class SystemGalleryDirectoryFile extends Cell
 
     return wrapTagsList(
       context,
-      extra,
-      colors,
       [
         MenuWrapper(
           title: name,
           child: addInfoTile(
-              colors: colors,
               title: AppLocalizations.of(context)!.nameTitle,
               subtitle: name,
               trailing: plug.temporary
@@ -233,48 +234,36 @@ class SystemGalleryDirectoryFile extends Cell
                       icon: const Icon(Icons.edit))),
         ),
         addInfoTile(
-            colors: colors,
-            title: AppLocalizations.of(context)!.dateModified,
-            subtitle: lastModified.toString()),
+          title: AppLocalizations.of(context)!.dateModified,
+          subtitle: lastModified.toString(),
+        ),
         addInfoTile(
-            colors: colors,
-            title: AppLocalizations.of(context)!.widthInfoPage,
-            subtitle: "${width}px"),
+          title: AppLocalizations.of(context)!.widthInfoPage,
+          subtitle: "${width}px",
+        ),
         addInfoTile(
-            colors: colors,
-            title: AppLocalizations.of(context)!.heightInfoPage,
-            subtitle: "${height}px"),
-        addInfoTile(colors: colors, title: "Size", subtitle: kbMbSize(size)),
+          title: AppLocalizations.of(context)!.heightInfoPage,
+          subtitle: "${height}px",
+        ),
+        addInfoTile(
+          title: "Size",
+          subtitle: kbMbSize(size),
+        ),
         if (res != null && tagsFlat.contains("translated"))
-          TranslationNotes.tile(
-              context, colors.foregroundColor, res.id, res.booru),
-        if (!isVideo && !isGif)
-          SetWallpaperTile(
-            colors: colors,
-            id: id,
-          ),
+          TranslationNotes.tile(context, res.id, res.booru),
+        if (!isVideo && !isGif) SetWallpaperTile(id: id),
       ],
       name,
-      temporary: plug.temporary,
       showDeleteButton: true,
-      launchGrid: plug.temporary
+      launchGrid: res == null
           ? null
           : (context, t, [safeMode]) {
-              try {
-                // final res = PostTags.g.dissassembleFilename(name);
-                // final tagManager = TagManager.fromEnum(res.booru);
-
-                // tagManager.onTagPressed(
-                //   context,
-                //   Tag(tag: t, isExcluded: false, time: DateTime.now()),
-                //   res.booru,
-                //   false,
-                //   overrideSafeMode: safeMode,
-                // );
-              } catch (e) {
-                log("launching local tag random booru",
-                    level: Level.SEVERE.value, error: e);
-              }
+              OnBooruTagPressed.pressOf(
+                context,
+                t,
+                res!.booru,
+                overrideSafeMode: safeMode,
+              );
             },
     );
   }
@@ -287,15 +276,8 @@ class SystemGalleryDirectoryFile extends Cell
     return [
       ...injectedStickers,
       ...defaultStickers(context, this).map((e) => Sticker(e.$1)),
-      if (isFavorite)
-        Sticker(Icons.star_rounded,
-            right: true,
-            color: Colors.yellow.shade900
-                .harmonizeWith(Theme.of(context).colorScheme.primary),
-            backgroundColor: Colors.yellowAccent.shade100
-                .harmonizeWith(Theme.of(context).colorScheme.primary)),
-      if (notesFlat.isNotEmpty)
-        const Sticker(Icons.sticky_note_2_outlined, right: true)
+      if (isFavorite) const Sticker(Icons.star_rounded, important: true),
+      if (notesFlat.isNotEmpty) const Sticker(Icons.sticky_note_2_outlined)
     ];
   }
 }

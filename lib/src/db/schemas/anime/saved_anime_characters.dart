@@ -74,7 +74,7 @@ class SavedAnimeCharacters {
 }
 
 @embedded
-class AnimeCharacter extends Cell with CachedCellValuesMixin {
+class AnimeCharacter extends Cell {
   final String imageUrl;
   final String name;
   final String role;
@@ -83,28 +83,33 @@ class AnimeCharacter extends Cell with CachedCellValuesMixin {
     this.imageUrl = "",
     this.name = "",
     this.role = "",
-  }) {
-    initValues(ValueKey(imageUrl), imageUrl,
-        () => NetImage(CachedNetworkImageProvider(imageUrl)));
-  }
+  });
 
   @override
   int? isarId;
 
   @override
+  Contentable content() => NetImage(CachedNetworkImageProvider(imageUrl));
+
+  @override
+  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(imageUrl);
+
+  @override
+  Key uniqueKey() => ValueKey(imageUrl);
+
+  @override
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override
-  List<Widget>? addInfo(BuildContext context, extra, AddInfoColorData colors) =>
-      [
+  List<Widget>? addInfo(BuildContext context) => [
         addInfoTile(
-            colors: colors,
-            title: AppLocalizations.of(context)!.sourceFileInfoPage,
-            subtitle: imageUrl),
+          title: AppLocalizations.of(context)!.sourceFileInfoPage,
+          subtitle: imageUrl,
+        ),
         addInfoTile(
-            colors: colors,
-            title: AppLocalizations.of(context)!.role,
-            subtitle: role),
+          title: AppLocalizations.of(context)!.role,
+          subtitle: role,
+        ),
       ];
 
   @override

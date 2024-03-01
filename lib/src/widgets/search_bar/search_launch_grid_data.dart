@@ -6,20 +6,26 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/tags/tags.dart';
 
 class SearchLaunchGridData {
   final FocusNode mainFocus;
   final List<Widget> Function(BuildContext) addItems;
   final String searchText;
-  final void Function(BuildContext, Tag) onSubmit;
+  final void Function(BuildContext, String) onSubmit;
   final bool swapSearchIconWithAddItems;
+  final Future<List<String>> Function(String tag) completeTag;
+
+  final bool disabled;
+  final Widget header;
 
   const SearchLaunchGridData({
     required this.mainFocus,
+    required this.completeTag,
     required this.searchText,
     required this.addItems,
+    required this.header,
     this.swapSearchIconWithAddItems = true,
+    this.disabled = false,
     required this.onSubmit,
   });
 }

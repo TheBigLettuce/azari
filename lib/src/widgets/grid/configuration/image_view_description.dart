@@ -17,19 +17,9 @@ class ImageViewDescription<T extends Cell> {
     this.pageChangeImage,
     this.beforeImageViewRestore,
     this.onExitImageView,
-    this.pageViewScrollingOffset,
     this.statistics,
-    this.initalCell,
     this.ignoreImageViewEndDrawer = false,
   });
-
-  /// [initalCell] is needed for the state restoration.
-  /// If [initalCell] is not null the grid will launch image view setting [ImageView.startingCell] as this value.
-  final int? initalCell;
-
-  /// [pageViewScrollingOffset] is needed for the state restoration.
-  /// If not null, [pageViewScrollingOffset] gets supplied to the [ImageView.infoScrollOffset].
-  final double? pageViewScrollingOffset;
 
   final void Function()? onExitImageView;
 
@@ -40,10 +30,6 @@ class ImageViewDescription<T extends Cell> {
   final bool ignoreImageViewEndDrawer;
 
   final GlobalKey<ImageViewState<T>> imageViewKey;
-
-  /// Overrides the default behaviour of launching the image view on cell pressed.
-  /// [overrideOnPress] can, for example, include calls to [Navigator.push] of routes.
-  // final void Function(BuildContext context, T cell)? overrideOnPress;
 
   /// Supplied to [ImageView.addIcons].
   final List<GridAction<T>> Function(T)? addIconsImage;

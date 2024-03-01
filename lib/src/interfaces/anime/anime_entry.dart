@@ -19,8 +19,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'anime_api.dart';
 
-class AnimeEntry extends Cell
-    with CachedCellValuesMixin, BooruPostFunctionalityMixin {
+class AnimeEntry extends Cell with BooruPostFunctionalityMixin {
   AnimeEntry({
     required this.site,
     required this.type,
@@ -41,10 +40,16 @@ class AnimeEntry extends Cell
     required this.episodes,
     required this.background,
     required this.explicit,
-  }) {
-    initValues(ValueKey((thumbUrl, id)), thumbUrl,
-        () => NetImage(CachedNetworkImageProvider(thumbUrl)));
-  }
+  });
+
+  @override
+  Contentable content() => NetImage(CachedNetworkImageProvider(thumbUrl));
+
+  @override
+  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(thumbUrl);
+
+  @override
+  Key uniqueKey() => ValueKey((thumbUrl, id));
 
   @override
   Id? isarId;
@@ -88,12 +93,12 @@ class AnimeEntry extends Cell
   }
 
   @override
-  List<Widget>? addInfo(BuildContext context, extra, AddInfoColorData colors) {
+  List<Widget>? addInfo(BuildContext context) {
     return [
       addInfoTile(
-          colors: colors,
-          title: AppLocalizations.of(context)!.sourceFileInfoPage,
-          subtitle: thumbUrl),
+        title: AppLocalizations.of(context)!.sourceFileInfoPage,
+        subtitle: thumbUrl,
+      ),
     ];
   }
 
@@ -113,10 +118,10 @@ class AnimeEntry extends Cell
     return [
       if (this is! SavedAnimeEntry && watching)
         !inBacklog
-            ? const Sticker(Icons.play_arrow_rounded, right: true)
-            : const Sticker(Icons.library_add_check, right: true),
+            ? const Sticker(Icons.play_arrow_rounded)
+            : const Sticker(Icons.library_add_check),
       if (this is! WatchedAnimeEntry && WatchedAnimeEntry.watched(id, site))
-        const Sticker(Icons.check, right: true),
+        const Sticker(Icons.check, important: true),
     ];
   }
 }

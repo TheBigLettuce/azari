@@ -22,7 +22,10 @@ List<String> _fromDanbooruTags(List<dynamic> l) =>
     l.map((e) => e["name"] as String).toList();
 
 class Danbooru implements BooruAPI {
-  const Danbooru(this.client, {this.booru = Booru.danbooru});
+  const Danbooru(
+    this.client, {
+    this.booru = Booru.danbooru,
+  });
 
   static const _log = LogTarget.booru;
 
@@ -30,9 +33,6 @@ class Danbooru implements BooruAPI {
 
   @override
   final Booru booru;
-
-  @override
-  final int? currentPage = null;
 
   @override
   final bool wouldBecomeStale = false;
@@ -175,7 +175,7 @@ class Danbooru implements BooruAPI {
       List<dynamic> m, BooruTagging? excludedTags) async {
     final List<Post> list = [];
     int? currentSkipped;
-    final exclude = excludedTags?.get();
+    final exclude = excludedTags?.get(-1);
 
     final escaper = HtmlUnescape();
 

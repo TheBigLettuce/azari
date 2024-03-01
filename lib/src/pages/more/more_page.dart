@@ -61,7 +61,6 @@ class MorePage extends StatelessWidget {
                 builder: (context) {
                   return Downloads(
                     generateGlue: generateGlue,
-                    glue: generateGlue(),
                   );
                 },
               ));
@@ -81,7 +80,6 @@ class MorePage extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (context) => BlacklistedDirectories(
                       generateGlue: generateGlue,
-                      glue: generateGlue(),
                     ),
                   ));
             },
@@ -99,7 +97,6 @@ class MorePage extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (context) => BlacklistedPostsPage(
                       generateGlue: generateGlue,
-                      glue: generateGlue(),
                     ),
                   ));
             },

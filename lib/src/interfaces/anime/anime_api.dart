@@ -31,17 +31,37 @@ abstract class AnimeAPI {
   bool get charactersIsSync;
 }
 
-class AnimePicture extends Cell with CachedCellValuesMixin {
+enum AnimeMetadata {
+  jikan;
+
+  AnimeAPI get api => switch (this) {
+        AnimeMetadata.jikan => const Jikan(),
+      };
+}
+
+enum AnimeSafeMode {
+  safe,
+  ecchi,
+  h;
+}
+
+class AnimePicture extends Cell {
   final String imageUrl;
   final String thumbUrl;
 
   AnimePicture({
     required this.imageUrl,
     required this.thumbUrl,
-  }) {
-    initValues(ValueKey(thumbUrl), thumbUrl,
-        () => NetImage(CachedNetworkImageProvider(imageUrl)));
-  }
+  });
+
+  @override
+  Contentable content() => NetImage(CachedNetworkImageProvider(imageUrl));
+
+  @override
+  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(thumbUrl);
+
+  @override
+  Key uniqueKey() => (ValueKey(thumbUrl));
 
   @override
   int? isarId;
@@ -50,8 +70,7 @@ class AnimePicture extends Cell with CachedCellValuesMixin {
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override
-  List<Widget>? addInfo(BuildContext context, extra, AddInfoColorData colors) =>
-      null;
+  List<Widget>? addInfo(BuildContext context) => null;
 
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
@@ -66,21 +85,21 @@ class AnimePicture extends Cell with CachedCellValuesMixin {
   List<Sticker> stickers(BuildContext context) => const [];
 }
 
-enum AnimeSafeMode {
-  safe,
-  ecchi,
-  h;
-}
-
-class AnimeRecommendations extends Cell with CachedCellValuesMixin {
+class AnimeRecommendations extends Cell {
   AnimeRecommendations({
     required this.id,
     required this.thumbUrl,
     required this.title,
-  }) {
-    initValues(ValueKey((thumbUrl, id)), thumbUrl,
-        () => NetImage(CachedNetworkImageProvider(thumbUrl)));
-  }
+  });
+
+  @override
+  Contentable content() => NetImage(CachedNetworkImageProvider(thumbUrl));
+
+  @override
+  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(thumbUrl);
+
+  @override
+  Key uniqueKey() => ValueKey((thumbUrl, id));
 
   final String thumbUrl;
   final String title;
@@ -93,8 +112,7 @@ class AnimeRecommendations extends Cell with CachedCellValuesMixin {
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override
-  List<Widget>? addInfo(BuildContext context, extra, AddInfoColorData colors) =>
-      null;
+  List<Widget>? addInfo(BuildContext context) => null;
 
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
@@ -121,12 +139,4 @@ class AnimeNewsEntry {
     required this.thumbUrl,
     required this.title,
   });
-}
-
-enum AnimeMetadata {
-  jikan;
-
-  AnimeAPI get api => switch (this) {
-        AnimeMetadata.jikan => const Jikan(),
-      };
 }

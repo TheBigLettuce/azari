@@ -17,10 +17,7 @@ import '../selection/selection_glue_state.dart';
 
 class WrapGridPage<T extends Cell> extends StatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
-  final (
-    SelectionGlue<T>,
-    SelectionGlue<J> Function<J extends Cell>()
-  )? provided;
+  final SelectionGlue<J> Function<J extends Cell>()? provided;
   final int navBarHeight;
   final Widget child;
 
@@ -41,12 +38,12 @@ class _WrapGridPageState<T extends Cell> extends State<WrapGridPage<T>>
   final glueState = SelectionGlueState(
     hide: (_) {},
   );
-  late final SelectionGlue<T> glue = widget.provided?.$1 ??
+  late final SelectionGlue<T> glue = widget.provided?.call() ??
       glueState.glue<T>(() => MediaQuery.viewInsetsOf(context).bottom != 0,
           setState, () => widget.navBarHeight, false);
 
   SelectionGlue<J> _generate<J extends Cell>() {
-    return widget.provided?.$2.call() ??
+    return widget.provided?.call() ??
         glueState.glue(() => MediaQuery.viewInsetsOf(context).bottom != 0,
             setState, () => widget.navBarHeight, false);
   }

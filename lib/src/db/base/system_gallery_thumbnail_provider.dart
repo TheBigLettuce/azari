@@ -13,21 +13,19 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
 import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:transparent_image/transparent_image.dart';
 
 final _thumbLoadingStatus = <int, Future<ThumbId>>{};
 
 ListTile addInfoTile({
-  required AddInfoColorData colors,
   required String title,
   required String? subtitle,
   void Function()? onPressed,
   Widget? trailing,
 }) =>
     ListTile(
-      textColor: colors.foregroundColor,
+      // textColor: colors.foregroundColor,
       title: Text(title),
       trailing: trailing,
       onTap: onPressed,
@@ -36,6 +34,8 @@ ListTile addInfoTile({
 
 class SystemGalleryThumbnailProvider
     extends ImageProvider<SystemGalleryThumbnailProvider> {
+  const SystemGalleryThumbnailProvider(this.id, this.tryPinned);
+
   final int id;
   final bool tryPinned;
 
@@ -146,6 +146,4 @@ class SystemGalleryThumbnailProvider
 
   @override
   int get hashCode => id.hashCode;
-
-  SystemGalleryThumbnailProvider(this.id, this.tryPinned);
 }

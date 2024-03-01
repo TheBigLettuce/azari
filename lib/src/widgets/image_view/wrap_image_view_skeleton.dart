@@ -5,10 +5,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:gallery/src/widgets/grid/sticker_widget.dart';
 import 'package:palette_generator/palette_generator.dart';
@@ -46,15 +44,7 @@ class WrapImageViewSkeleton<T extends Cell> extends StatelessWidget {
     final currentStickers = currentCell
         .addStickers(context)
         ?.map((e) => StickerWidget(
-              Sticker(e.$1,
-                  color: currentPalette?.dominantColor?.bodyTextColor
-                          .harmonizeWith(Theme.of(context).colorScheme.primary)
-                          .withOpacity(0.8) ??
-                      kListTileColorInInfo,
-                  backgroundColor: currentPalette?.dominantColor?.color
-                          .harmonizeWith(Theme.of(context).colorScheme.primary)
-                          .withOpacity(0.5) ??
-                      Colors.black.withOpacity(0.5)),
+              Sticker(e.$1),
               onPressed: e.$2,
             ))
         .toList();

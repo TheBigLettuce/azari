@@ -18,7 +18,7 @@ abstract class BooruTagging {
 
   /// Get the current tags.
   /// Last added first.
-  List<Tag> get();
+  List<Tag> get(int limit);
 
   /// Add the [tag] to the DB.
   /// Updates the added time if already exist.

@@ -7,6 +7,17 @@
 
 part of 'initalize_db.dart';
 
+const kFilesSchemas = [SystemGalleryDirectoryFileSchema];
+const kDirectoriesSchemas = [SystemGalleryDirectorySchema];
+const kPrimaryGridSchemas = [
+  GridStateSchema,
+  TagSchema,
+  PostSchema,
+  GridBooruPagingSchema,
+];
+
+late final Dbs _dbs;
+
 class Dbs {
   const Dbs._({
     required this.blacklisted,
@@ -36,9 +47,67 @@ class Dbs {
       ..createSync();
   }
 
- 
-
   static Dbs get g => _dbs;
 }
 
-late final Dbs _dbs;
+abstract class DbsOpen {
+  static Isar primaryGrid(Booru booru) {
+    final instance = Isar.getInstance(booru.string);
+    if (instance != null) {
+      return instance;
+    }
+
+    return Isar.openSync(kPrimaryGridSchemas,
+        directory: _dbs.directory, inspector: false, name: booru.string);
+  }
+
+  static Isar secondaryGrid({bool temporary = true}) {
+    return Isar.openSync([PostSchema, GridBooruPagingSchema],
+        directory: temporary ? _dbs.temporaryDbDir : _dbs.directory,
+        inspector: false,
+        name: _microsecSinceEpoch());
+  }
+
+  static Isar secondaryGridName(String name) {
+    return Isar.openSync([PostSchema, GridBooruPagingSchema],
+        directory: _dbs.directory, inspector: false, name: name);
+  }
+
+  static Isar localTags() => Isar.openSync(
+        [
+          LocalTagsSchema,
+          LocalTagDictionarySchema,
+          DirectoryTagSchema,
+          PinnedTagSchema,
+        ],
+        directory: _dbs.directory,
+        inspector: false,
+        name: "localTags",
+      );
+
+  static Isar androidGalleryDirectories({bool? temporary}) => Isar.openSync(
+        kDirectoriesSchemas,
+        directory: temporary == true ? _dbs.temporaryDbDir : _dbs.directory,
+        inspector: false,
+        name: temporary == true
+            ? _microsecSinceEpoch()
+            : "systemGalleryDirectories",
+      );
+
+  static Isar androidGalleryFiles() => Isar.openSync(
+        kFilesSchemas,
+        directory: _dbs.temporaryDbDir,
+        inspector: false,
+        name: _microsecSinceEpoch(),
+      );
+
+  static Isar temporarySchemas(List<CollectionSchema> schemas) => Isar.openSync(
+        schemas,
+        directory: _dbs.temporaryDbDir,
+        inspector: false,
+        name: _microsecSinceEpoch(),
+      );
+
+  static String _microsecSinceEpoch() =>
+      DateTime.now().microsecondsSinceEpoch.toString();
+}

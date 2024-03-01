@@ -9,6 +9,18 @@ part of '../../widgets/grid/grid_frame.dart';
 
 /// Action which can be taken upon a selected group of cells.
 class GridAction<T> {
+  const GridAction(
+    this.icon,
+    this.onPress,
+    this.closeOnPress, {
+    this.showOnlyWhenSingle = false,
+    this.backgroundColor,
+    this.onLongPress,
+    this.color,
+    this.animate = false,
+    this.play = true,
+  });
+
   /// Icon of the button.
   final IconData icon;
 
@@ -31,12 +43,4 @@ class GridAction<T> {
   final Color? color;
   final bool animate;
   final bool play;
-
-  const GridAction(this.icon, this.onPress, this.closeOnPress,
-      {this.showOnlyWhenSingle = false,
-      this.backgroundColor,
-      this.onLongPress,
-      this.color,
-      this.animate = false,
-      this.play = true});
 }

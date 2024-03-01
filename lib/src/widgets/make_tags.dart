@@ -17,8 +17,6 @@ import 'package:gallery/src/pages/more/settings/settings_label.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../db/tags/post_tags.dart';
-import '../interfaces/cell/cell.dart';
-import '../plugs/platform_fullscreens.dart';
 import 'load_tags.dart';
 import 'menu_wrapper.dart';
 import 'notifiers/filter.dart';
@@ -44,8 +42,6 @@ PopupMenuItem launchGridSafeModeItem(
 
 Iterable<Widget> makeTags(
   BuildContext context,
-  dynamic extra,
-  AddInfoColorData colors,
   List<String> tags,
   String filename, {
   required List<String> pinnedTags,
@@ -68,7 +64,6 @@ Iterable<Widget> makeTags(
       )
     ];
   }
-  final plug = choosePlatformFullscreenPlug(colors.systemOverlayColor);
   final value = FilterValueNotifier.maybeOf(context).trim();
   final data = FilterNotifier.maybeOf(context);
 
@@ -120,21 +115,13 @@ Iterable<Widget> makeTags(
         title: e,
         items: makeItems(e),
         child: ListTile(
-          trailing: pinned
-              ? Icon(
-                  Icons.push_pin_rounded,
-                  color: colors.foregroundColor.withOpacity(0.6),
-                  size: 18,
-                )
-              : null,
-          textColor: colors.foregroundColor,
+          trailing:
+              pinned ? const Icon(Icons.push_pin_rounded, size: 18) : null,
           title: Text(e),
           onTap: launchGrid == null
               ? null
               : () {
                   launchGrid(context, e);
-                  plug.unfullscreen();
-                  extra();
                 },
         ),
       );
@@ -145,15 +132,8 @@ Iterable<Widget> makeTags(
   ];
 
   return [
-    SettingsLabel(
-        AppLocalizations.of(context)!.tagsInfoPage,
-        Theme.of(context)
-            .textTheme
-            .titleSmall!
-            .copyWith(color: colors.foregroundColor)),
-    ...ListTile.divideTiles(
-      color: colors.borderColor,
-      tiles: tiles,
-    )
+    SettingsLabel(AppLocalizations.of(context)!.tagsInfoPage,
+        Theme.of(context).textTheme.titleSmall!),
+    ...ListTile.divideTiles(tiles: tiles)
   ];
 }

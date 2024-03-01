@@ -11,7 +11,6 @@ import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru_tagging.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/interfaces/filtering/filtering_mode.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
@@ -103,11 +102,8 @@ mixin BooruPostFunctionalityMixin {
 
 List<Widget> wrapTagsList(
   BuildContext context,
-  dynamic extra,
-  AddInfoColorData colors,
   List<Widget> lists,
   String filename, {
-  bool temporary = false,
   bool showDeleteButton = false,
   List<String>? supplyTags,
   void Function(BuildContext, String, [SafeMode?])? launchGrid,
@@ -138,13 +134,11 @@ List<Widget> wrapTagsList(
         children: lists,
       ),
     if (postTags.isNotEmpty && data != null)
-      SearchTextField(data, filename, showDeleteButton, colors),
+      SearchTextField(data, filename, showDeleteButton),
     ...makeTags(
       context,
-      extra,
-      colors,
       tags,
-      temporary ? "" : filename,
+      filename,
       launchGrid: launchGrid,
       excluded: excluded,
       pinnedTags: pinnedTags,

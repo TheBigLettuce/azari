@@ -5,11 +5,11 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'package:gallery/src/interfaces/filtering/filtering_interface.dart';
 import 'package:isar/isar.dart';
 
 import '../../interfaces/cell/cell.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
-import '../../interfaces/filtering/sorting_mode.dart';
 import '../initalize_db.dart';
 import '../isar_filter.dart';
 

@@ -8,16 +8,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 import 'package:gallery/src/db/schemas/grid_settings/directories.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/grid/grid_mutation_interface.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/pages/booru/grid_button.dart';
-import 'package:gallery/src/pages/booru/grid_settings_button.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/widgets/copy_move_preview.dart';
 import 'package:gallery/src/widgets/grid/actions/favorites.dart';
@@ -34,7 +33,6 @@ import 'package:gallery/src/widgets/grid/configuration/grid_on_cell_press_behavi
 import 'package:gallery/src/widgets/grid/configuration/grid_search_widget.dart';
 import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
-import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/grid/layouts/segment_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
@@ -67,8 +65,7 @@ class GalleryDirectories extends StatefulWidget {
   State<GalleryDirectories> createState() => _GalleryDirectoriesState();
 }
 
-class _GalleryDirectoriesState extends State<GalleryDirectories>
-    with SearchFilterGrid<SystemGalleryDirectory> {
+class _GalleryDirectoriesState extends State<GalleryDirectories> {
   static const _log = LogTarget.gallery;
 
   late final StreamSubscription<Settings?> settingsWatcher;
@@ -79,14 +76,17 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
 
   int galleryVersion = 0;
 
+  GridMutationInterface<SystemGalleryDirectory> get mutation =>
+      state.refreshingStatus.mutation;
+
   bool proceed = true;
   late final extra = api.getExtra()
     ..setRefreshGridCallback(() {
       if (widget.callback != null) {
-        stream.add(0);
-        state.gridKey.currentState?.mutation.isRefreshing = true;
+        mutation.cellCount = 0;
+        mutation.isRefreshing = true;
       } else {
-        if (state.gridKey.currentState?.mutation.isRefreshing == false) {
+        if (!mutation.isRefreshing) {
           _refresh();
         }
       }
@@ -101,13 +101,13 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
         : 0,
   );
 
-  late final galleryPlug = chooseGalleryPlug();
+  final galleryPlug = chooseGalleryPlug();
+
+  late final SearchFilterGrid<SystemGalleryDirectory> search;
 
   late final api = galleryPlug.galleryApi(
       temporaryDb: widget.callback != null || widget.nestedCallback != null,
       setCurrentApi: widget.callback == null);
-  final stream = StreamController<int>(sync: true);
-
   bool isThumbsLoading = false;
 
   int? trashThumbId;
@@ -131,10 +131,10 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
 
     if (widget.callback != null) {
       extra.setTemporarySet((i, end) {
-        stream.add(i);
+        mutation.cellCount = i;
 
         if (end) {
-          state.gridKey.currentState?.mutation.isRefreshing = false;
+          mutation.isRefreshing = false;
         }
       });
     }
@@ -150,7 +150,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
       setState(() {});
     });
 
-    searchHook(state);
+    search = SearchFilterGrid(state, null);
 
     if (widget.callback != null) {
       PlatformFunctions.trashThumbId().then((value) {
@@ -165,11 +165,11 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
     extra.setRefreshingStatusCallback((i, inRefresh, empty) {
       state.gridKey.currentState?.selection.reset();
 
-      stream.add(i);
+      mutation.cellCount = i;
 
       if (!inRefresh || empty) {
-        state.gridKey.currentState?.mutation.isRefreshing = false;
-        performSearch(searchTextController.text);
+        mutation.isRefreshing = false;
+        search.performSearch(search.searchTextController.text);
         setState(() {});
       }
     });
@@ -181,8 +181,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
     miscSettingsWatcher.cancel();
 
     api.close();
-    stream.close();
-    disposeSearch();
+    search.dispose();
     state.dispose();
     Dbs.g.clearTemporaryImages();
     lifecycleListener.dispose();
@@ -198,8 +197,11 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
         });
       } catch (_) {}
     });
-    stream.add(0);
-    state.gridKey.currentState?.mutation.isRefreshing = true;
+
+    // if (setCellCount) {
+    //   mutation.cellCount = 0;
+    // }
+    mutation.isRefreshing = true;
     api.refresh();
     galleryPlug.version.then((value) => galleryVersion = value);
   }
@@ -288,15 +290,18 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
         state,
         (context) => GridFrame(
               key: state.gridKey,
-              layout: const GridSettingsLayoutBehaviour(
-                  GridSettingsDirectories.current),
+              layout: SegmentLayout(
+                _makeSegments(context),
+                GridSettingsDirectories.current,
+              ),
               refreshingStatus: state.refreshingStatus,
               getCell: (i) => api.directCell(i),
               functionality: GridFunctionality(
                   onPressed: OverrideGridOnCellPressBehaviour(
-                      onPressed: (context, idx) {
-                    final cell = CellProvider.getOf<SystemGalleryDirectory>(
-                        context, idx);
+                      onPressed: (context, idx, providedCell) {
+                    final cell = providedCell as SystemGalleryDirectory? ??
+                        CellProvider.getOf<SystemGalleryDirectory>(
+                            context, idx);
 
                     if (widget.callback != null) {
                       widget.callback!.c(cell, null).then((_) {
@@ -310,8 +315,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                           GlueProvider.generateOf<SystemGalleryDirectory, J>(
                               context);
 
-                      final glue = generate<SystemGalleryDirectoryFile>();
-
                       final apiFiles = switch (cell.bucketId) {
                         "trash" => extra.trash(),
                         "favorites" => extra.favorites(),
@@ -324,7 +327,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                             builder: (context) => switch (cell.bucketId) {
                               "favorites" => GalleryFiles(
                                   viewPadding: widget.viewPadding,
-                                  glue: glue,
                                   generateGlue: generate,
                                   api: apiFiles,
                                   callback: widget.nestedCallback,
@@ -332,7 +334,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                                   bucketId: "favorites"),
                               "trash" => GalleryFiles(
                                   viewPadding: widget.viewPadding,
-                                  glue: glue,
                                   api: apiFiles,
                                   generateGlue: generate,
                                   callback: widget.nestedCallback,
@@ -341,7 +342,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                               String() => GalleryFiles(
                                   viewPadding: widget.viewPadding,
                                   generateGlue: generate,
-                                  glue: glue,
                                   api: apiFiles,
                                   dirName: d.name,
                                   callback: widget.nestedCallback,
@@ -350,7 +350,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                           ));
                     }
                   }),
-                  progressTicker: stream.stream,
                   selectionGlue: glue,
                   watchLayoutSettings: GridSettingsDirectories.watch,
                   refresh: widget.callback != null
@@ -368,15 +367,19 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
                       : RetainedGridRefresh(_refresh),
                   search: OverrideGridSearchWidget(
                     SearchAndFocus(
-                        searchWidget(context,
+                        search.searchWidget(context,
+                            count: widget.callback != null
+                                ? extra.db.systemGalleryDirectorys.countSync()
+                                : null,
                             hint:
                                 AppLocalizations.of(context)!.directoriesHint),
-                        searchFocus),
+                        search.searchFocus),
                   )),
               imageViewDescription: ImageViewDescription(
                 imageViewKey: state.imageViewKey,
               ),
-              systemNavigationInsets: widget.viewPadding ?? EdgeInsets.zero,
+              systemNavigationInsets:
+                  widget.viewPadding ?? MediaQuery.viewPaddingOf(context),
               mainFocus: state.mainFocus,
               description: GridDescription(
                 actions:
@@ -479,13 +482,13 @@ class _GalleryDirectoriesState extends State<GalleryDirectories>
               ),
             ),
         canPop: widget.callback != null || widget.nestedCallback != null
-            ? currentFilteringMode() == FilteringMode.noFilter &&
-                searchTextController.text.isEmpty
+            ? search.currentFilteringMode() == FilteringMode.noFilter &&
+                search.searchTextController.text.isEmpty
             : false, overrideOnPop: (pop, hideAppBar) {
-      final filterMode = currentFilteringMode();
+      final filterMode = search.currentFilteringMode();
       if (filterMode != FilteringMode.noFilter ||
-          searchTextController.text.isNotEmpty) {
-        resetSearch();
+          search.searchTextController.text.isNotEmpty) {
+        search.resetSearch();
         return;
       }
 

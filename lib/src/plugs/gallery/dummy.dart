@@ -8,12 +8,9 @@
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/gallery/blacklisted_directory.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
-import 'package:gallery/src/interfaces/filtering/filter_result.dart';
 import 'package:gallery/src/interfaces/filtering/filtering_interface.dart';
 import 'package:gallery/src/interfaces/filtering/filtering_mode.dart';
-import 'package:gallery/src/interfaces/filtering/sorting_mode.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_api_files.dart';
-import 'package:gallery/src/interfaces/gallery/gallery_directories_extra.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:isar/isar.dart';
 
@@ -76,6 +73,9 @@ class _DummyFilter implements FilterInterface<SystemGalleryDirectory> {
   void setSortingMode(SortingMode mode) {}
 
   const _DummyFilter();
+
+  @override
+  SortingMode get currentSortingMode => SortingMode.none;
 }
 
 class _DummyDirectoriesExtra implements GalleryDirectoriesExtra {

@@ -28,7 +28,16 @@ class NoteBase implements Cell {
   final int? textColor;
 
   @override
-  List<Widget>? addInfo(BuildContext context, extra, AddInfoColorData colors) {
+  Contentable content() => const EmptyContent();
+
+  @override
+  ImageProvider<Object>? thumbnail() => null;
+
+  @override
+  Key uniqueKey() => throw UnimplementedError();
+
+  @override
+  List<Widget>? addInfo(BuildContext context) {
     return null;
   }
 
@@ -52,14 +61,5 @@ class NoteBase implements Cell {
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override
-  Contentable content() => const EmptyContent();
-
-  @override
   List<Sticker> stickers(BuildContext context) => const [];
-
-  @override
-  ImageProvider<Object>? thumbnail() => null;
-
-  @override
-  Key uniqueKey() => throw UnimplementedError();
 }

@@ -420,21 +420,21 @@ List<MangaGenre> _genres(List<dynamic> l) {
       .toList();
 }
 
-String? _tagOrNullList(String tag, List<dynamic> l) {
-  if (l.isEmpty) {
-    return "";
-  }
+// String? _tagOrNullList(String tag, List<dynamic> l) {
+//   if (l.isEmpty) {
+//     return "";
+//   }
 
-  String? ret;
-  for (final e in l) {
-    final str = e[tag];
-    if (str != null) {
-      ret = str;
-    }
-  }
+//   String? ret;
+//   for (final e in l) {
+//     final str = e[tag];
+//     if (str != null) {
+//       ret = str;
+//     }
+//   }
 
-  return ret;
-}
+//   return ret;
+// }
 
 List<String> _tagEntries(String tag, List<dynamic> l, int? exclude) {
   final ret = <String>[];
@@ -495,21 +495,21 @@ List<String> _tagEntries(String tag, List<dynamic> l, int? exclude) {
   return null;
 }
 
-String _tagOrFirstList(String tag, List<dynamic> l) {
-  if (l.isEmpty) {
-    return "";
-  }
+// String _tagOrFirstList(String tag, List<dynamic> l) {
+//   if (l.isEmpty) {
+//     return "";
+//   }
 
-  String? ret;
-  for (final e in l) {
-    final str = e[tag];
-    if (str != null) {
-      ret = str;
-    }
-  }
+//   String? ret;
+//   for (final e in l) {
+//     final str = e[tag];
+//     if (str != null) {
+//       ret = str;
+//     }
+//   }
 
-  return ret ?? (l.isNotEmpty ? _tagOrFirst(tag, l.first) : "");
-}
+//   return ret ?? (l.isNotEmpty ? _tagOrFirst(tag, l.first) : "");
+// }
 
 String _tagOrFirst(String tag, Map<String, dynamic> m) {
   final en = m[tag];

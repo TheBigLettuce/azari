@@ -16,15 +16,21 @@ import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
+import 'package:gallery/src/interfaces/booru/booru.dart';
+import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/filtering/filtering_interface.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_api_files.dart';
-import 'package:gallery/src/interfaces/gallery/gallery_files_extra.dart';
+import 'package:gallery/src/interfaces/grid/grid_mutation_interface.dart';
 import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
+import 'package:gallery/src/pages/booru/booru_page.dart';
+import 'package:gallery/src/pages/booru/booru_search_page.dart';
 import 'package:gallery/src/pages/booru/grid_button.dart';
-import 'package:gallery/src/pages/booru/grid_settings_button.dart';
+import 'package:gallery/src/pages/gallery/files_filters.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_back_button_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_layout_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_search_widget.dart';
 import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
@@ -40,12 +46,10 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../db/schemas/settings/settings.dart';
 import '../../db/schemas/gallery/system_gallery_directory.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
-import '../../interfaces/filtering/sorting_mode.dart';
 import '../../plugs/gallery.dart';
 import '../../widgets/copy_move_preview.dart';
 import '../../widgets/grid/wrappers/wrap_grid_page.dart';
 import '../../widgets/search_bar/search_filter_grid.dart';
-import '../../interfaces/filtering/filters.dart';
 import '../../widgets/skeletons/grid_skeleton_state_filter.dart';
 import '../../widgets/skeletons/grid_skeleton.dart';
 import 'callback_description.dart';
@@ -60,7 +64,6 @@ class GalleryFiles extends StatefulWidget {
   final String bucketId;
   final GalleryAPIFiles api;
   final CallbackDescriptionNested? callback;
-  final SelectionGlue<SystemGalleryDirectoryFile> glue;
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;
   final EdgeInsets? viewPadding;
 
@@ -70,7 +73,6 @@ class GalleryFiles extends StatefulWidget {
     this.callback,
     required this.dirName,
     required this.bucketId,
-    required this.glue,
     required this.generateGlue,
     this.viewPadding,
   });
@@ -79,11 +81,8 @@ class GalleryFiles extends StatefulWidget {
   State<GalleryFiles> createState() => _GalleryFilesState();
 }
 
-class _GalleryFilesState extends State<GalleryFiles>
-    with SearchFilterGrid<SystemGalleryDirectoryFile>, _FilesActionsMixin {
+class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
   static const _log = LogTarget.gallery;
-
-  final stream = StreamController<int>(sync: true);
 
   final plug = chooseGalleryPlug();
 
@@ -92,7 +91,6 @@ class _GalleryFilesState extends State<GalleryFiles>
   late final GalleryFilesExtra extra = widget.api.getExtra()
     ..setRefreshingStatusCallback((i, inRefresh, empty) {
       if (empty) {
-        // state.gridKey.currentState?.selection.currentBottomSheet?.close();
         state.imageViewKey.currentState?.key.currentState?.closeEndDrawer();
         final imageViewContext = state.imageViewKey.currentContext;
         if (imageViewContext != null) {
@@ -106,49 +104,54 @@ class _GalleryFilesState extends State<GalleryFiles>
 
       state.gridKey.currentState?.selection.reset();
 
-      stream.add(i);
+      mutation.cellCount = i;
 
       if (!inRefresh) {
-        state.gridKey.currentState?.mutation.isRefreshing = false;
+        mutation.isRefreshing = false;
 
-        performSearch(searchTextController.text);
+        search.performSearch(search.searchTextController.text);
         if (i == 1) {
           state.imageViewKey.currentState?.hardRefresh();
+        } else {
+          state.imageViewKey.currentState?.update(context, i, pop: false);
         }
         setState(() {});
       }
     })
     ..setRefreshGridCallback(() {
-      if (state.gridKey.currentState?.mutation.isRefreshing == false) {
-        _refresh();
+      if (!mutation.isRefreshing) {
+        mutation.isRefreshing = true;
+        widget.api.refresh();
       }
     })
     ..setPassFilter((cells, data, end) {
-      final filterMode = currentFilteringMode();
+      final filterMode = search.currentFilteringMode();
 
       return switch (filterMode) {
-        FilteringMode.favorite => Filters.favorite(cells),
-        FilteringMode.untagged => Filters.untagged(cells),
-        FilteringMode.tag => Filters.tag(cells, searchTextController.text),
+        FilteringMode.favorite => FileFilters.favorite(cells),
+        FilteringMode.untagged => FileFilters.untagged(cells),
+        FilteringMode.tag =>
+          FileFilters.tag(cells, search.searchTextController.text),
         FilteringMode.notes => (
             cells.where((element) => element.notesFlat.isNotEmpty).where(
                 (element) => element.notesFlat
-                    .contains(searchTextController.text.toLowerCase())),
+                    .contains(search.searchTextController.text.toLowerCase())),
             null
           ),
         FilteringMode.tagReversed =>
-          Filters.tagReversed(cells, searchTextController.text),
-        FilteringMode.video => Filters.video(cells),
-        FilteringMode.gif => Filters.gif(cells),
-        FilteringMode.duplicate => Filters.duplicate(cells),
-        FilteringMode.original => Filters.original(cells),
-        FilteringMode.same => Filters.same(
+          FileFilters.tagReversed(cells, search.searchTextController.text),
+        FilteringMode.video => FileFilters.video(cells),
+        FilteringMode.gif => FileFilters.gif(cells),
+        FilteringMode.duplicate => FileFilters.duplicate(cells),
+        FilteringMode.original => FileFilters.original(cells),
+        FilteringMode.same => FileFilters.same(
             context,
             cells,
             data,
             extra,
-            getCell: (i) => widget.api.directCell(i - 1),
-            performSearch: () => performSearch(searchTextController.text),
+            getCell: (i) => widget.api.directCell(i - 1, true),
+            performSearch: () =>
+                search.performSearch(search.searchTextController.text),
             end: end,
           ),
         FilteringMode() => (cells, data),
@@ -159,7 +162,7 @@ class _GalleryFilesState extends State<GalleryFiles>
       GridSkeletonStateFilter(
     transform: (cell, sorting) {
       if (sorting == SortingMode.size ||
-          currentFilteringMode() == FilteringMode.same) {
+          search.currentFilteringMode() == FilteringMode.same) {
         cell.injectedStickers.add(cell.sizeSticker(cell.size));
       }
 
@@ -173,7 +176,7 @@ class _GalleryFilesState extends State<GalleryFiles>
       if (selected == FilteringMode.tag ||
           selected == FilteringMode.tagReversed ||
           selected == FilteringMode.notes) {
-        markSearchVirtual();
+        search.markSearchVirtual();
       }
 
       setState(() {});
@@ -201,6 +204,11 @@ class _GalleryFilesState extends State<GalleryFiles>
     },
   );
 
+  GridMutationInterface<SystemGalleryDirectoryFile> get mutation =>
+      state.refreshingStatus.mutation;
+
+  late final SearchFilterGrid<SystemGalleryDirectoryFile> search;
+
   @override
   void initState() {
     super.initState();
@@ -210,7 +218,8 @@ class _GalleryFilesState extends State<GalleryFiles>
 
       setState(() {});
     });
-    searchHook(state);
+
+    search = SearchFilterGrid(state, null);
   }
 
   @override
@@ -218,22 +227,34 @@ class _GalleryFilesState extends State<GalleryFiles>
     settingsWatcher.cancel();
 
     widget.api.close();
-    stream.close();
-    disposeSearch();
+    search.dispose();
     state.dispose();
     super.dispose();
   }
 
   void _refresh() {
-    stream.add(0);
-    state.gridKey.currentState?.mutation.isRefreshing = true;
+    mutation.cellCount = 0;
+    mutation.isRefreshing = true;
     widget.api.refresh();
+  }
+
+  void _onBooruTagPressed(BuildContext context, Booru booru, String tag,
+      SafeMode? overrideSafeMode) {
+    Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        return BooruSearchPage(
+          booru: booru,
+          tags: tag,
+          overrideSafeMode: overrideSafeMode,
+        );
+      },
+    ));
   }
 
   @override
   Widget build(BuildContext context) {
     return WrapGridPage<SystemGalleryDirectoryFile>(
-        provided: (widget.glue, widget.generateGlue),
+        provided: widget.generateGlue,
         scaffoldKey: state.scaffoldKey,
         child: GridSkeleton<SystemGalleryDirectoryFile>(
           state,
@@ -242,34 +263,40 @@ class _GalleryFilesState extends State<GalleryFiles>
             layout:
                 const GridSettingsLayoutBehaviour(GridSettingsFiles.current),
             refreshingStatus: state.refreshingStatus,
-            getCell: (i) => widget.api.directCell(i),
+            getCell: (i) => state.transform(
+                widget.api.directCell(i), state.filter.currentSortingMode),
             functionality: GridFunctionality(
+                registerNotifiers: (child) {
+                  return OnBooruTagPressed(
+                    onPressed: _onBooruTagPressed,
+                    child: child,
+                  );
+                },
                 watchLayoutSettings: GridSettingsFiles.watch,
                 backButton: CallbackGridBackButton(
                   onPressed: () {
-                    final filterMode = currentFilteringMode();
+                    final filterMode = search.currentFilteringMode();
                     if (filterMode != FilteringMode.noFilter) {
-                      resetSearch();
+                      search.resetSearch();
                       return;
                     }
                     Navigator.pop(context);
                   },
                 ),
-                progressTicker: stream.stream,
                 selectionGlue: GlueProvider.of(context),
                 refresh: extra.supportsDirectRefresh
                     ? AsyncGridRefresh(() async {
                         final i = await widget.api.refresh();
 
-                        performSearch(searchTextController.text);
+                        search.performSearch(search.searchTextController.text);
 
                         return i;
                       })
                     : RetainedGridRefresh(_refresh),
                 search: OverrideGridSearchWidget(
                   SearchAndFocus(
-                    searchWidget(context, hint: widget.dirName),
-                    searchFocus,
+                    search.searchWidget(context, hint: widget.dirName),
+                    search.searchFocus,
                   ),
                 )),
             systemNavigationInsets: widget.viewPadding ?? EdgeInsets.zero,
@@ -431,13 +458,13 @@ class _GalleryFilesState extends State<GalleryFiles>
               gridSeed: state.gridSeed,
             ),
           ),
-          canPop: currentFilteringMode() == FilteringMode.noFilter &&
-              searchTextController.text.isEmpty,
+          canPop: search.currentFilteringMode() == FilteringMode.noFilter &&
+              search.searchTextController.text.isEmpty,
           overrideOnPop: (pop, hideAppBar) {
-            final filterMode = currentFilteringMode();
+            final filterMode = search.currentFilteringMode();
             if (filterMode != FilteringMode.noFilter ||
-                searchTextController.text.isNotEmpty) {
-              resetSearch();
+                search.searchTextController.text.isNotEmpty) {
+              search.resetSearch();
               setState(() {});
               return;
             }

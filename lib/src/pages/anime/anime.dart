@@ -15,7 +15,6 @@ import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
-import 'package:gallery/src/db/schemas/grid_settings/directories.dart';
 import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
 import 'package:gallery/src/db/schemas/manga/pinned_manga.dart';
 import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
@@ -39,12 +38,12 @@ import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_fab_type.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_layout_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_on_cell_press_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/grid/grid_cell.dart';
 import 'package:gallery/src/widgets/grid/layouts/grid_layout.dart';
-import 'package:gallery/src/widgets/grid/layouts/grid_quilted.dart';
 import 'package:gallery/src/widgets/grid/parts/segment_label.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/skeletons/grid_skeleton.dart';
@@ -61,8 +60,6 @@ part 'tabs/finished_tab.dart';
 part 'tabs/reading_tab.dart';
 part 'tab_bar_wrapper.dart';
 
-// const int kReadTabIndx = 0;
-// const int kMangaTabIndx = 1;
 const int kWatchingTabIndx = 0;
 const int kDiscoverTabIndx = 1;
 const int kWatchedTabIndx = 2;
@@ -144,20 +141,10 @@ class _AnimePageState extends State<AnimePage>
   bool _launchSearch(bool force) {
     final offsetIndex = tabController.index + tabController.offset;
 
-    // if (force ||
-    //     (tabController.offset.isNegative
-    //         ? offsetIndex <= 3.5 && offsetIndex > 2.5
-    //         : offsetIndex >= 2.5 && offsetIndex < 3.5)) {
-
-    //   return true;
-    // }
-
     if (tabController.offset.isNegative
         ? offsetIndex <= 1.5 && offsetIndex > 0.5
         : offsetIndex >= 0.5 && offsetIndex < 1.5) {
       SearchAnimePage.launchAnimeApi(context, api);
-
-      // SearchAnimePage.launchMangaApi(context, mangaApi);
 
       return true;
     }
@@ -200,11 +187,6 @@ class _AnimePageState extends State<AnimePage>
         isScrollable: true,
         controller: tabController,
         tabs: [
-          // const WatchingTabCount(
-          //   "Reading",
-          //   createWatcher: ReadMangaChapter.watchReading, // TODO: change
-          // ),
-          // const Tab(text: "Manga"), // TODO: change
           TabWithCount(AppLocalizations.of(context)!.watchingTab, savedCount),
           Tab(text: AppLocalizations.of(context)!.discoverTab),
           TabWithCount(AppLocalizations.of(context)!.finishedTab,
@@ -236,18 +218,6 @@ class _AnimePageState extends State<AnimePage>
         child: TabBarView(
           controller: tabController,
           children: [
-            // ReadingTab(
-            //   widget.viewPadding,
-            //   key: readKey,
-            //   api: mangaApi,
-            //   onDispose: _hideResetSelection,
-            // ),
-            // MangaTab(
-            //   container: mangaContainer,
-            //   api: mangaApi,
-            //   elems: mangaEntries,
-            //   viewInsets: widget.viewPadding,
-            // ),
             _WatchingTab(
               widget.viewPadding,
               key: watchingKey,

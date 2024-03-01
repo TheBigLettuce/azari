@@ -5,6 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/widgets.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
@@ -17,11 +18,8 @@ import '../../../interfaces/cell/sticker.dart';
 part 'hidden_booru_post.g.dart';
 
 @collection
-class HiddenBooruPost extends Cell with CachedCellValuesMixin {
-  HiddenBooruPost(this.booru, this.postId, this.thumbUrl) {
-    initValues(ValueKey((postId, booru)), thumbUrl, () => const EmptyContent());
-  }
-
+class HiddenBooruPost extends Cell {
+  HiddenBooruPost(this.booru, this.postId, this.thumbUrl);
   @override
   Id? isarId;
 
@@ -61,12 +59,21 @@ class HiddenBooruPost extends Cell with CachedCellValuesMixin {
   }
 
   @override
+  Contentable content() => const EmptyContent();
+
+  @override
+  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(thumbUrl);
+
+  @override
+  Key uniqueKey() => ValueKey((postId, booru));
+
+  @override
   List<Widget>? addButtons(BuildContext context) {
     return null;
   }
 
   @override
-  List<Widget>? addInfo(BuildContext context, extra, AddInfoColorData colors) {
+  List<Widget>? addInfo(BuildContext context) {
     return null;
   }
 

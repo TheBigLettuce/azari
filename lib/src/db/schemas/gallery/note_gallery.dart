@@ -7,19 +7,19 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/note_base.dart';
+import 'package:gallery/src/db/base/system_gallery_thumbnail_provider.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 import 'package:gallery/src/interfaces/note_interface.dart';
 import 'package:isar/isar.dart';
 
-import '../../../interfaces/cell/cell.dart';
 import '../../../interfaces/cell/contentable.dart';
 import '../../../plugs/platform_functions.dart';
 
 part 'note_gallery.g.dart';
 
 @collection
-class NoteGallery extends NoteBase with CachedCellValuesFilesMixin {
+class NoteGallery extends NoteBase {
   NoteGallery(
     super.text,
     super.time, {
@@ -31,21 +31,29 @@ class NoteGallery extends NoteBase with CachedCellValuesFilesMixin {
     required super.textColor,
     required this.isGif,
     required this.isVideo,
-  }) {
-    initValues(ValueKey(id), (id, isVideo), () {
-      final size = Size(width.toDouble(), height.toDouble());
+  });
 
-      if (isVideo) {
-        return AndroidVideo(uri: originalUri, size: size);
-      }
+  @override
+  Contentable content() {
+    final size = Size(width.toDouble(), height.toDouble());
 
-      if (isGif) {
-        return AndroidGif(uri: originalUri, size: size);
-      }
+    if (isVideo) {
+      return AndroidVideo(uri: originalUri, size: size);
+    }
 
-      return AndroidImage(uri: originalUri, size: size);
-    });
+    if (isGif) {
+      return AndroidGif(uri: originalUri, size: size);
+    }
+
+    return AndroidImage(uri: originalUri, size: size);
   }
+
+  @override
+  ImageProvider<Object>? thumbnail() =>
+      SystemGalleryThumbnailProvider(id, isVideo);
+
+  @override
+  Key uniqueKey() => ValueKey(id);
 
   @Index(unique: true, replace: true)
   final int id;

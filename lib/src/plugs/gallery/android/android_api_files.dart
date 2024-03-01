@@ -178,8 +178,10 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
   GalleryFilesExtra getExtra() => _GalleryFilesExtra._(this);
 
   @override
-  SystemGalleryDirectoryFile directCell(int i) =>
-      db.systemGalleryDirectoryFiles.getSync(i + 1)!;
+  SystemGalleryDirectoryFile directCell(int i, [bool bypassFilter = false]) =>
+      filter.isFiltering && !bypassFilter
+          ? filter.to.systemGalleryDirectoryFiles.getSync(i + 1)!
+          : db.systemGalleryDirectoryFiles.getSync(i + 1)!;
 
   final IsarFilter<SystemGalleryDirectoryFile> filter;
 

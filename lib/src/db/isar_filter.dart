@@ -8,10 +8,8 @@
 import 'package:isar/isar.dart';
 
 import '../interfaces/cell/cell.dart';
-import '../interfaces/filtering/filter_result.dart';
 import '../interfaces/filtering/filtering_interface.dart';
 import '../interfaces/filtering/filtering_mode.dart';
-import '../interfaces/filtering/sorting_mode.dart';
 
 class IsarFilter<T extends Cell> implements FilterInterface<T> {
   Isar _from;
@@ -24,6 +22,9 @@ class IsarFilter<T extends Cell> implements FilterInterface<T> {
   SortingMode currentSorting = SortingMode.none;
 
   Isar get to => _to;
+
+  @override
+  SortingMode get currentSortingMode => currentSorting;
 
   void setFrom(Isar from) {
     _from = from;
@@ -94,12 +95,12 @@ class IsarFilter<T extends Cell> implements FilterInterface<T> {
         _to.collection<T>().countSync());
   }
 
-  @override
-  void resetFilter() {
-    isFiltering = false;
-    currentSorting = SortingMode.none;
-    _to.writeTxnSync(() => _to.collection<T>().clearSync());
-  }
+  // @override
+  // void resetFilter() {
+  //   isFiltering = false;
+  //   currentSorting = SortingMode.none;
+  //   _to.writeTxnSync(() => _to.collection<T>().clearSync());
+  // }
 
   IsarFilter(Isar from, Isar to, this.getElems, {this.passFilter})
       : _from = from,

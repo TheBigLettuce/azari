@@ -50,6 +50,9 @@ class GridCell<T extends Cell> extends StatefulWidget {
   final bool animate;
   final GridSelection<T>? selection;
 
+  final bool alignTitleToTopLeft;
+  final Alignment imageAlign;
+
   const GridCell({
     super.key,
     required T cell,
@@ -66,7 +69,9 @@ class GridCell<T extends Cell> extends StatefulWidget {
     required this.isList,
     this.lines,
     this.selection,
+    this.imageAlign = Alignment.center,
     this.ignoreStickers = false,
+    this.alignTitleToTopLeft = true,
     this.onLongPress,
   }) : _data = cell;
 
@@ -76,29 +81,35 @@ class GridCell<T extends Cell> extends StatefulWidget {
     required GridFrameState<T> state,
     required bool isList,
     required bool hideTitle,
+    bool alignTitleToTopLeft = false,
+    Alignment imageAlign = Alignment.center,
+    T? overrideCell,
     bool animated = false,
   }) {
     final functionality = state.widget.functionality;
     final description = state.widget.description;
     final selection = state.selection;
 
-    final cell = CellProvider.getOf<T>(context, idx);
+    final cell = overrideCell ?? CellProvider.getOf<T>(context, idx);
 
     return GridCell(
       cell: cell,
       hideAlias: hideTitle,
       isList: isList,
       indx: idx,
+      alignTitleToTopLeft: alignTitleToTopLeft,
       selection: state.selection,
       download: functionality.download,
       lines: description.titleLines,
       tight: description.tightMode,
+      imageAlign: imageAlign,
       animate: animated,
       labelAtBottom: description.cellTitleAtBottom,
       onPressed: (context) => functionality.onPressed.launch(
         context,
         idx,
         state,
+        useCellInsteadIdx: overrideCell,
       ),
       onLongPress: idx.isNegative || selection.addActions.isEmpty
           ? null
@@ -135,28 +146,70 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
   Widget build(BuildContext context) {
     final stickers = widget._data.stickers(context);
     final isSelected = widget.selection?.isSelected(widget.indx) ?? false;
+// alignment: widget.alignTitleToTopLeft
+//               ? Alignment.topLeft
+//               : Alignment.bottomCenter,
 
-    Widget alias() => Container(
-          alignment: Alignment.bottomCenter,
+    Widget topAlignAlias() {
+// final gradientColor = Theme.of(context).colorScheme.surface;
+// final textColor = Theme.of(context).colorScheme
+
+      return SizedBox(
+        width: double.infinity,
+        child: Container(
           decoration: BoxDecoration(
               gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                Colors.black.withAlpha(50),
-                Colors.black12,
-                Colors.black45
+                Colors.black.withOpacity(0.38),
+                Colors.black.withOpacity(0.3),
+                Colors.black.withOpacity(0.2),
+                Colors.black.withOpacity(0.05),
+                Colors.black.withOpacity(0),
               ])),
           child: Padding(
-              padding: const EdgeInsets.all(6),
-              child: Text(
-                widget.forceAlias ?? widget._data.alias(widget.isList),
-                softWrap: false,
-                overflow: TextOverflow.ellipsis,
-                maxLines: widget.lines ?? 1,
-                style: TextStyle(color: Colors.white.withOpacity(0.7)),
-              )),
-        );
+            padding:
+                const EdgeInsets.only(left: 8, right: 8, top: 6, bottom: 18),
+            child: Text(
+              widget.forceAlias ?? widget._data.alias(widget.isList),
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              maxLines: widget.lines ?? 1,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    Widget alias() {
+      return widget.alignTitleToTopLeft
+          ? topAlignAlias()
+          : Container(
+              alignment: Alignment.bottomCenter,
+              decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                    Colors.black.withAlpha(50),
+                    Colors.black12,
+                    Colors.black45
+                  ])),
+              child: Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: Text(
+                    widget.forceAlias ?? widget._data.alias(widget.isList),
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: widget.lines ?? 1,
+                    style: TextStyle(color: Colors.white.withOpacity(0.7)),
+                  )),
+            );
+    }
 
     Widget card() => InkWell(
           borderRadius: BorderRadius.circular(15.0),
@@ -186,6 +239,7 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                         : RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15.0))),
                 child: Stack(
+                  fit: StackFit.loose,
                   children: [
                     Center(
                         child: LayoutBuilder(builder: (context, constraints) {
@@ -217,7 +271,7 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                         },
                         image: widget._data.thumbnail() ??
                             MemoryImage(kTransparentImage),
-                        alignment: Alignment.center,
+                        alignment: widget.imageAlign,
                         color: isSelected
                             ? Theme.of(context)
                                 .colorScheme
@@ -229,7 +283,7 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                         colorBlendMode:
                             isSelected ? BlendMode.srcATop : BlendMode.darken,
                         fit: BoxFit.cover,
-                        filterQuality: FilterQuality.low,
+                        filterQuality: FilterQuality.medium,
                         width: constraints.maxWidth,
                         height: constraints.maxHeight,
                       );
@@ -242,20 +296,19 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                             child: Wrap(
                               direction: Axis.vertical,
                               children: stickers
-                                  .where((element) => element.right)
                                   .map((e) => StickerWidget(e))
                                   .toList(),
                             )),
                       ),
-                      Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Wrap(
-                            direction: Axis.vertical,
-                            children: stickers
-                                .where((element) => !element.right)
-                                .map((e) => StickerWidget(e))
-                                .toList(),
-                          ))
+                      // Padding(
+                      //     padding: const EdgeInsets.all(8),
+                      //     child: Wrap(
+                      //       direction: Axis.vertical,
+                      //       children: stickers
+                      //           .where((element) => !element.right)
+                      //           .map((e) => StickerWidget(e))
+                      //           .toList(),
+                      //     ))
                     ],
                     if ((!widget.hideAlias &&
                             !widget.shadowOnTop &&
@@ -286,6 +339,7 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
       ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Expanded(
               flex: 2,

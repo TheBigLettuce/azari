@@ -7,19 +7,18 @@
 
 import 'dart:io';
 
-import 'package:dynamic_color/dynamic_color.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/booru_post_functionality_mixin.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/booru/note_booru.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
+import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/db/state_restoration.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:gallery/src/pages/booru/booru_page.dart';
-import 'package:gallery/src/widgets/image_view/wrap_image_view_notifiers.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:gallery/src/widgets/translation_notes.dart';
 import 'package:isar/isar.dart';
@@ -31,7 +30,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../interfaces/cell/contentable.dart';
 import '../../interfaces/booru/display_quality.dart';
-import '../schemas/tags/tags.dart';
 
 class PostBase extends Cell
     with CachedCellValuesMixin, BooruPostFunctionalityMixin {
@@ -52,11 +50,7 @@ class PostBase extends Cell
     required this.createdAt,
     this.isarId,
   }) {
-    initValues(
-        ValueKey(fileUrl),
-        HiddenBooruPost.isHidden(id, Booru.fromPrefix(prefix)!)
-            ? null
-            : previewUrl, () {
+    initValues(() {
       if (HiddenBooruPost.isHidden(id, Booru.fromPrefix(prefix)!)) {
         return const EmptyContent();
       }
@@ -117,6 +111,12 @@ class PostBase extends Cell
   final DateTime createdAt;
   final String prefix;
 
+  @override
+  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(previewUrl);
+
+  @override
+  Key uniqueKey() => ValueKey(fileUrl);
+
   String filename() =>
       "${prefix.isNotEmpty ? '${prefix}_' : ''}$id - $md5${ext != '.zip' ? ext : path_util.extension(sampleUrl)}";
 
@@ -135,10 +135,11 @@ class PostBase extends Cell
         })
       else
         IconButton(
-            onPressed: () {
-              showQr(context, prefix, id);
-            },
-            icon: const Icon(Icons.qr_code_rounded))
+          onPressed: () {
+            showQr(context, prefix, id);
+          },
+          icon: const Icon(Icons.qr_code_rounded),
+        )
     ];
   }
 
@@ -156,20 +157,16 @@ class PostBase extends Cell
   }
 
   @override
-  List<Widget>? addInfo(
-      BuildContext context, dynamic extra, AddInfoColorData colors) {
+  List<Widget>? addInfo(BuildContext context) {
     final dUrl = fileDownloadUrl();
     final tagManager = TagManager.fromEnum(Booru.fromPrefix(prefix)!);
 
     return wrapTagsList(
       context,
-      extra,
-      colors,
       [
         MenuWrapper(
           title: dUrl,
           child: ListTile(
-            textColor: colors.foregroundColor,
             title: Text(AppLocalizations.of(context)!.pathInfoPage),
             subtitle: Text(dUrl),
             onTap: () => launchUrl(Uri.parse(dUrl),
@@ -177,24 +174,20 @@ class PostBase extends Cell
           ),
         ),
         ListTile(
-          textColor: colors.foregroundColor,
           title: Text(AppLocalizations.of(context)!.widthInfoPage),
           subtitle: Text("${width}px"),
         ),
         ListTile(
-          textColor: colors.foregroundColor,
           title: Text(AppLocalizations.of(context)!.heightInfoPage),
           subtitle: Text("${height}px"),
         ),
         ListTile(
-          textColor: colors.foregroundColor,
           title: Text(AppLocalizations.of(context)!.createdAtInfoPage),
           subtitle: Text(AppLocalizations.of(context)!.date(createdAt)),
         ),
         MenuWrapper(
           title: sourceUrl,
           child: ListTile(
-            textColor: colors.foregroundColor,
             title: Text(AppLocalizations.of(context)!.sourceFileInfoPage),
             subtitle: Text(sourceUrl),
             onTap: sourceUrl.isNotEmpty && Uri.tryParse(sourceUrl) != null
@@ -204,18 +197,15 @@ class PostBase extends Cell
           ),
         ),
         ListTile(
-          textColor: colors.foregroundColor,
           title: Text(AppLocalizations.of(context)!.ratingInfoPage),
           subtitle: Text(rating),
         ),
         ListTile(
-          textColor: colors.foregroundColor,
           title: Text(AppLocalizations.of(context)!.scoreInfoPage),
           subtitle: Text(score.toString()),
         ),
         if (tags.contains("translated"))
-          TranslationNotes.tile(
-              context, colors.foregroundColor, id, Booru.fromPrefix(prefix)!),
+          TranslationNotes.tile(context, id, Booru.fromPrefix(prefix)!),
       ],
       filename(),
       supplyTags: tags,
@@ -224,15 +214,8 @@ class PostBase extends Cell
         Navigator.pop(context);
         Navigator.pop(context);
 
-        OnBooruTagPressed.pressOf(context, t, overrideSafeMode: safeMode);
-        // tagManager.onTagPressed(
-        //   OriginalGridContext.maybeOf(context) ?? context,
-        //   Tag.string(tag: t),
-        //   Booru.fromPrefix(prefix)!,
-        //   true,
-        //   overrideSafeMode: safeMode,
-        //   generateGlue: OriginalGridContext.generateOf(context),
-        // );
+        OnBooruTagPressed.pressOf(context, t, Booru.fromPrefix(prefix)!,
+            overrideSafeMode: safeMode);
       },
     );
   }
@@ -254,16 +237,11 @@ class PostBase extends Cell
     final isHidden = HiddenBooruPost.isHidden(id, Booru.fromPrefix(prefix)!);
 
     return [
-      if (isHidden) const Sticker(Icons.hide_image_rounded, right: true),
+      if (isHidden) const Sticker(Icons.hide_image_rounded),
       if (this is! FavoriteBooru && Settings.isFavorite(fileUrl))
-        Sticker(Icons.favorite_rounded,
-            color: Colors.red.shade900
-                .harmonizeWith(Theme.of(context).colorScheme.primary),
-            backgroundColor: Colors.redAccent.shade100
-                .harmonizeWith(Theme.of(context).colorScheme.primary),
-            right: true),
+        const Sticker(Icons.favorite_rounded, important: true),
       if (NoteBooru.hasNotes(id, Booru.fromPrefix(prefix)!))
-        const Sticker(Icons.sticky_note_2_outlined, right: true),
+        const Sticker(Icons.sticky_note_2_outlined),
       ...defaultStickers(
         content(),
         context,

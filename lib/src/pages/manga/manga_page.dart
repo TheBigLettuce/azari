@@ -9,7 +9,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/net/manga/manga_dex.dart';
 import 'package:gallery/src/pages/anime/anime.dart';
-import 'package:gallery/src/widgets/grid/parts/segment_label.dart';
 
 class MangaPage extends StatefulWidget {
   final void Function(bool) procPop;

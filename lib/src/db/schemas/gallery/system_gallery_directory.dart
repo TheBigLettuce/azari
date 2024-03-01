@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/base/system_gallery_thumbnail_provider.dart';
 import 'package:isar/isar.dart';
 
 import '../../../interfaces/cell/cell.dart';
@@ -15,7 +16,7 @@ import '../../../interfaces/cell/sticker.dart';
 part 'system_gallery_directory.g.dart';
 
 @collection
-class SystemGalleryDirectory extends Cell with CachedCellValuesFilesMixin {
+class SystemGalleryDirectory extends Cell {
   SystemGalleryDirectory({
     required this.bucketId,
     required this.name,
@@ -24,10 +25,7 @@ class SystemGalleryDirectory extends Cell with CachedCellValuesFilesMixin {
     required this.relativeLoc,
     required this.lastModified,
     required this.thumbFileId,
-  }) {
-    initValues(
-        ValueKey(bucketId), (thumbFileId, true), () => const EmptyContent());
-  }
+  });
 
   @override
   Id? isarId;
@@ -49,15 +47,23 @@ class SystemGalleryDirectory extends Cell with CachedCellValuesFilesMixin {
   final String tag;
 
   @override
+  Contentable content() => const EmptyContent();
+
+  @override
+  ImageProvider<Object>? thumbnail() =>
+      SystemGalleryThumbnailProvider(thumbFileId, true);
+
+  @override
+  Key uniqueKey() => ValueKey(bucketId);
+
+  @override
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
 
   @override
-  List<Widget>? addInfo(
-          BuildContext context, dynamic extra, AddInfoColorData colors) =>
-      null;
+  List<Widget>? addInfo(BuildContext context) => null;
 
   @override
   String alias(bool isList) => name;

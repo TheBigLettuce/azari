@@ -12,13 +12,12 @@ import 'package:gallery/src/widgets/notifiers/focus.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../../db/schemas/tags/tags.dart';
 import 'autocomplete_tag.dart';
 
 class AutocompleteWidget extends StatelessWidget {
   final TextEditingController controller;
   final void Function(String) highlightChanged;
-  final void Function(Tag) onSubmit;
+  final void Function(String) onSubmit;
   final void Function() focusMain;
   final Future<List<String>> Function(String) complF;
   final FocusNode focus;
@@ -35,23 +34,31 @@ class AutocompleteWidget extends StatelessWidget {
   final String? searchTextOverride;
   final bool plainSearchBar;
   final bool swapSearchIcon;
+  final bool disable;
 
-  const AutocompleteWidget(this.controller, this.highlightChanged,
-      this.onSubmit, this.focusMain, this.complF, this.focus,
-      {super.key,
-      this.scrollHack,
-      this.noSticky = false,
-      this.submitOnPress = false,
-      this.roundBorders = false,
-      this.searchTextOverride,
-      this.customHint,
-      required this.swapSearchIcon,
-      this.showSearch = false,
-      this.plainSearchBar = false,
-      this.searchCount,
-      this.noUnfocus = false,
-      this.onChanged,
-      this.addItems});
+  const AutocompleteWidget(
+    this.controller,
+    this.highlightChanged,
+    this.onSubmit,
+    this.focusMain,
+    this.complF,
+    this.focus, {
+    super.key,
+    this.scrollHack,
+    this.noSticky = false,
+    this.submitOnPress = false,
+    this.roundBorders = false,
+    this.searchTextOverride,
+    this.customHint,
+    required this.swapSearchIcon,
+    this.showSearch = false,
+    this.plainSearchBar = false,
+    this.searchCount,
+    this.disable = false,
+    this.noUnfocus = false,
+    this.onChanged,
+    this.addItems,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +72,7 @@ class AutocompleteWidget extends StatelessWidget {
                     if (submitOnPress) {
                       focusMain();
                       controller.text = "";
-                      onSubmit(Tag.string(tag: elem));
+                      onSubmit(elem);
                       return;
                     }
 
@@ -92,9 +99,12 @@ class AutocompleteWidget extends StatelessWidget {
                   title: Text(elem),
                 ))
             .toList();
+
         return Align(
           alignment: Alignment.topLeft,
           child: Material(
+            color: Theme.of(context).colorScheme.surface,
+            surfaceTintColor: Theme.of(context).colorScheme.surfaceTint,
             clipBehavior: Clip.antiAlias,
             borderRadius: BorderRadius.circular(25),
             elevation: 4,
@@ -133,11 +143,12 @@ class AutocompleteWidget extends StatelessWidget {
                 focusNode: focusNode,
                 hintText: AppLocalizations.of(context)!.searchHint,
                 leading: const Icon(Icons.search),
-                onChanged: (_) => onChanged,
+                onChanged: disable ? null : (_) => onChanged,
                 // onSubmitted: onFieldSubmitted,
               )
             : makeSearchBar(context,
                 focusNode: focusNode,
+                disable: disable,
                 addItems: addItems,
                 textController: textEditingController,
                 onChanged: onChanged,
@@ -148,13 +159,17 @@ class AutocompleteWidget extends StatelessWidget {
                 customHint: customHint);
       },
       optionsBuilder: (textEditingValue) async {
+        if (disable) {
+          return const [];
+        }
+
         try {
           return await autocompleteTag(textEditingValue.text, complF);
         } catch (e, trace) {
           log("autocomplete in search, excluded tags",
               level: Level.WARNING.value, error: e, stackTrace: trace);
 
-          return [];
+          return const [];
         }
       },
     );
@@ -170,92 +185,119 @@ Widget makeSearchBar(
   required List<Widget>? addItems,
   required TextEditingController textController,
   required void Function()? onChanged,
-  required void Function(Tag) onSubmit,
+  required void Function(String) onSubmit,
   required bool swapSearchIcon,
+  required bool disable,
 }) {
   final notifier = FocusNotifier.of(context);
 
-  return DefaultSelectionStyle(
-    cursorColor: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
-    child: Theme(
-      data: Theme.of(context).copyWith(
-          searchBarTheme: SearchBarThemeData(
-            overlayColor: MaterialStatePropertyAll(
-                Theme.of(context).colorScheme.onPrimary.withOpacity(0.05)),
-            textStyle: MaterialStatePropertyAll(
-              TextStyle(color: Theme.of(context).colorScheme.onPrimary),
-            ),
-            elevation: const MaterialStatePropertyAll(0),
-            backgroundColor: MaterialStatePropertyAll(
-                Theme.of(context).colorScheme.surfaceTint.withOpacity(0.8)),
-            hintStyle: MaterialStatePropertyAll(
-              TextStyle(
-                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.5),
+  return AbsorbPointer(
+    absorbing: disable,
+    child: DefaultSelectionStyle(
+      cursorColor: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+            searchBarTheme: SearchBarThemeData(
+              overlayColor: MaterialStatePropertyAll(
+                  Theme.of(context).colorScheme.onPrimary.withOpacity(0.05)),
+              textStyle: MaterialStatePropertyAll(
+                TextStyle(
+                  color: disable
+                      ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
+                      : Theme.of(context).colorScheme.onPrimary,
+                ),
+              ),
+              elevation: const MaterialStatePropertyAll(0),
+              backgroundColor: MaterialStatePropertyAll(disable
+                  ? Theme.of(context).colorScheme.surface.withOpacity(0.4)
+                  : Theme.of(context).colorScheme.surfaceTint.withOpacity(0.8)),
+              hintStyle: MaterialStatePropertyAll(
+                TextStyle(
+                  color:
+                      Theme.of(context).colorScheme.onPrimary.withOpacity(0.5),
+                ),
               ),
             ),
-          ),
-          badgeTheme: BadgeThemeData(
-            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-            textColor: Theme.of(context)
-                .colorScheme
-                .onPrimaryContainer
-                .withOpacity(0.8),
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            iconColor: Theme.of(context).colorScheme.onPrimary,
-            prefixIconColor: Theme.of(context).colorScheme.onPrimary,
-            suffixIconColor: Theme.of(context).colorScheme.onPrimary,
-          ),
-          iconTheme: IconThemeData(
-              size: 18, color: Theme.of(context).colorScheme.onPrimary),
-          iconButtonTheme: IconButtonThemeData(
-              style: ButtonStyle(
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
-                  padding: const MaterialStatePropertyAll(EdgeInsets.all(0)),
-                  iconColor: MaterialStatePropertyAll(
-                      Theme.of(context).colorScheme.onPrimary))),
-          hintColor: Theme.of(context).colorScheme.onPrimary.withOpacity(0.5)),
-      child: SearchBar(
-        side: const MaterialStatePropertyAll(BorderSide.none),
-        leading: !notifier.hasFocus
-            ? swapSearchIcon && addItems != null && addItems.length == 1
-                ? addItems.first
-                : const Icon(Icons.search_rounded)
-            : BackButton(
-                onPressed: () {
-                  notifier.unfocus();
+            badgeTheme: BadgeThemeData(
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              textColor: Theme.of(context)
+                  .colorScheme
+                  .onPrimaryContainer
+                  .withOpacity(0.8),
+            ),
+            inputDecorationTheme: InputDecorationTheme(
+              iconColor: disable
+                  ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
+                  : Theme.of(context).colorScheme.onPrimary,
+              prefixIconColor: disable
+                  ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
+                  : Theme.of(context).colorScheme.onPrimary,
+              suffixIconColor: disable
+                  ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
+                  : Theme.of(context).colorScheme.onPrimary,
+            ),
+            iconTheme: IconThemeData(
+              size: 18,
+              color: disable
+                  ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
+                  : Theme.of(context).colorScheme.onPrimary,
+            ),
+            iconButtonTheme: IconButtonThemeData(
+                style: ButtonStyle(
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                    padding: const MaterialStatePropertyAll(EdgeInsets.all(0)),
+                    iconColor: MaterialStatePropertyAll(
+                        Theme.of(context).colorScheme.onPrimary))),
+            hintColor:
+                Theme.of(context).colorScheme.onPrimary.withOpacity(0.5)),
+        child: SearchBar(
+          side: const MaterialStatePropertyAll(BorderSide.none),
+          leading: !notifier.hasFocus
+              ? swapSearchIcon && addItems != null && addItems.length == 1
+                  ? addItems.first
+                  : const Icon(Icons.search_rounded)
+              : BackButton(
+                  onPressed: () {
+                    notifier.unfocus();
+                  },
+                ),
+          constraints: BoxConstraints.expand(
+              height: 38,
+              width: !notifier.hasFocus || disable
+                  ? 114 + (count != null ? 38 : 0)
+                  : null),
+          hintText: notifier.hasFocus && !disable
+              ? "${searchTextOverride ?? AppLocalizations.of(context)!.searchHint} ${customHint ?? ''}"
+              : customHint ??
+                  searchTextOverride ??
+                  AppLocalizations.of(context)!.searchHint,
+          controller: textController,
+          focusNode: focusNode,
+          trailing: notifier.hasFocus && !disable
+              ? [
+                  if (addItems != null) ...addItems,
+                  IconButton(
+                      onPressed: () {
+                        textController.clear();
+                        onChanged?.call();
+                      },
+                      icon: const Icon(Icons.close))
+                ]
+              : count != null
+                  ? [Badge(label: Text(count.toString()))]
+                  : null,
+          onChanged: disable
+              ? null
+              : (value) {
+                  onChanged?.call();
                 },
-              ),
-        constraints: BoxConstraints.expand(
-            height: 38,
-            width: !notifier.hasFocus ? 114 + (count != null ? 38 : 0) : null),
-        hintText: notifier.hasFocus
-            ? "${searchTextOverride ?? AppLocalizations.of(context)!.searchHint} ${customHint ?? ''}"
-            : customHint ??
-                searchTextOverride ??
-                AppLocalizations.of(context)!.searchHint,
-        controller: textController,
-        focusNode: focusNode,
-        trailing: notifier.hasFocus
-            ? [
-                if (addItems != null) ...addItems,
-                IconButton(
-                    onPressed: () {
-                      textController.clear();
-                      onChanged?.call();
-                    },
-                    icon: const Icon(Icons.close))
-              ]
-            : count != null
-                ? [Badge(label: Text(count.toString()))]
-                : null,
-        onChanged: (value) {
-          onChanged?.call();
-        },
-        onSubmitted: (value) {
-          onSubmit(Tag.string(tag: value));
-        },
+          onSubmitted: disable
+              ? null
+              : (value) {
+                  onSubmit(value);
+                },
+        ),
       ),
     ),
   );

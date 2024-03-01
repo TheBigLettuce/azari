@@ -119,7 +119,7 @@ class __FinishedTabState extends State<_FinishedTab> {
                 GlueProvider.generateOf<AnimeEntry, WatchedAnimeEntry>(context),
             refresh: SynchronousGridRefresh(() => _list.length),
             onPressed: OverrideGridOnCellPressBehaviour(
-              onPressed: (context, idx) {
+              onPressed: (context, idx, _) {
                 final cell =
                     CellProvider.getOf<WatchedAnimeEntry>(context, idx);
 

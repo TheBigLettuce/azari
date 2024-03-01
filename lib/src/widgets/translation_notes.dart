@@ -16,10 +16,8 @@ class TranslationNotes extends StatefulWidget {
   final int postId;
   final Booru booru;
 
-  static Widget tile(
-      BuildContext context, Color foregroundColor, int postId, Booru booru) {
+  static Widget tile(BuildContext context, int postId, Booru booru) {
     return ListTile(
-      textColor: foregroundColor,
       title: Text(AppLocalizations.of(context)!.hasTranslations),
       subtitle: Text(AppLocalizations.of(context)!.tapToView),
       onTap: () {

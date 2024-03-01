@@ -15,6 +15,7 @@ import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:gallery/src/pages/anime/manga/manga_info_page.dart';
 import 'package:gallery/src/pages/anime/paging_container.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_layout_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_on_cell_press_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
@@ -105,7 +106,7 @@ class _MangaTabState extends State<MangaTab> {
           refresh: AsyncGridRefresh(_refresh),
           loadNext: _loadNext,
           onPressed: OverrideGridOnCellPressBehaviour(
-            onPressed: (context, idx) {
+            onPressed: (context, idx, _) {
               final cell = CellProvider.getOf<MangaEntry>(context, idx);
 
               Navigator.push(context, MaterialPageRoute(

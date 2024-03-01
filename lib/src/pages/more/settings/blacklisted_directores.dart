@@ -15,6 +15,7 @@ import 'package:gallery/src/interfaces/grid/selection_glue.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/db/schemas/gallery/blacklisted_directory.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_layout_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_search_widget.dart';
 import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
@@ -29,21 +30,18 @@ import '../../../widgets/skeletons/grid_skeleton_state_filter.dart';
 import '../../../widgets/skeletons/grid_skeleton.dart';
 
 class BlacklistedDirectories extends StatefulWidget {
-  final SelectionGlue<BlacklistedDirectory> glue;
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;
 
   const BlacklistedDirectories({
     super.key,
     required this.generateGlue,
-    required this.glue,
   });
 
   @override
   State<BlacklistedDirectories> createState() => _BlacklistedDirectoriesState();
 }
 
-class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
-    with SearchFilterGrid<BlacklistedDirectory> {
+class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
   late final StreamSubscription blacklistedWatcher;
   final loader = LinearIsarLoader<BlacklistedDirectory>(
       BlacklistedDirectorySchema,
@@ -59,13 +57,15 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
     transform: (cell, sort) => cell,
   );
 
+  late final SearchFilterGrid<BlacklistedDirectory> search;
+
   @override
   void initState() {
     super.initState();
-    searchHook(state);
+    search = SearchFilterGrid(state, null);
 
     blacklistedWatcher = BlacklistedDirectory.watch((event) {
-      performSearch(searchTextController.text);
+      search.performSearch(search.searchTextController.text);
       setState(() {});
     });
   }
@@ -74,7 +74,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
   void dispose() {
     blacklistedWatcher.cancel();
     state.dispose();
-    disposeSearch();
+    search.dispose();
 
     super.dispose();
   }
@@ -82,7 +82,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
   @override
   Widget build(BuildContext context) {
     return WrapGridPage<BlacklistedDirectory>(
-        provided: (widget.glue, widget.generateGlue),
+        provided: widget.generateGlue,
         scaffoldKey: state.scaffoldKey,
         child: GridSkeleton(
           state,
@@ -95,10 +95,10 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories>
             functionality: GridFunctionality(
               search: OverrideGridSearchWidget(
                 SearchAndFocus(
-                    searchWidget(context,
+                    search.searchWidget(context,
                         hint: AppLocalizations.of(context)!
                             .blacklistedDirectoriesPageName),
-                    searchFocus),
+                    search.searchFocus),
               ),
               selectionGlue: GlueProvider.of(context),
               refresh: SynchronousGridRefresh(() => loader.count()),

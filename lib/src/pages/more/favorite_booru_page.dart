@@ -8,10 +8,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/base/post_base.dart';
 import 'package:gallery/src/db/schemas/grid_settings/favorites.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
-import 'package:gallery/src/interfaces/filtering/filters.dart';
+import 'package:gallery/src/interfaces/filtering/filtering_interface.dart';
 import 'package:gallery/src/pages/booru/grid_button.dart';
 import 'package:gallery/src/widgets/grid/actions/favorites.dart';
 import 'package:gallery/src/net/downloader.dart';
@@ -20,6 +21,7 @@ import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/tags/local_tag_dictionary.dart';
 import 'package:gallery/src/widgets/grid/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid/configuration/grid_layout_behaviour.dart';
 import 'package:gallery/src/widgets/grid/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid/grid_frame.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
@@ -29,7 +31,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../db/loaders/linear_isar_loader.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
-import '../../interfaces/filtering/sorting_mode.dart';
 import '../../widgets/grid/actions/booru_grid.dart';
 import '../../db/tags/post_tags.dart';
 import '../../db/schemas/downloader/download_file.dart';
@@ -95,7 +96,7 @@ class FavoriteBooruStateHolder extends StatefulWidget {
 }
 
 class _FavoriteBooruStateHolderState extends State<FavoriteBooruStateHolder>
-    with FavoriteBooruPageState, SearchFilterGrid<FavoriteBooru> {
+    with FavoriteBooruPageState {
   @override
   void initState() {
     super.initState();
@@ -116,8 +117,7 @@ class _FavoriteBooruStateHolderState extends State<FavoriteBooruStateHolder>
   }
 }
 
-mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T>
-    implements SearchFilterGrid<FavoriteBooru> {
+mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
   late final StreamSubscription favoritesWatcher;
   late final StreamSubscription<MiscSettings?> miscSettingsWatcher;
 
@@ -170,7 +170,7 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T>
         .findAllSync();
   })
     ..filter.passFilter = (cells, data, end) {
-      final filterMode = currentFilteringMode();
+      final filterMode = search.currentFilteringMode();
 
       if (filterMode == FilteringMode.group) {
         segments = segments ?? {};
@@ -184,8 +184,7 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T>
       }
 
       return switch (filterMode) {
-        FilteringMode.same =>
-          Filters.sameFavorites(cells, data, end, _collector),
+        FilteringMode.same => sameFavorites(cells, data, end, _collector),
         FilteringMode.ungrouped => (
             cells.where(
                 (element) => element.group == null || element.group!.isEmpty),
@@ -213,6 +212,33 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T>
         }
       }
     }();
+  }
+
+  static (Iterable<T>, dynamic) sameFavorites<T extends PostBase>(
+      Iterable<T> cells,
+      Map<String, Set<String>>? data,
+      bool end,
+      Iterable<T> Function(Map<String, Set<String>>? data) collect) {
+    data = data ?? {};
+
+    T? prevCell;
+    for (final e in cells) {
+      if (prevCell != null) {
+        if (prevCell.md5 == e.md5) {
+          final prev = data[e.md5] ?? {prevCell.fileUrl};
+
+          data[e.md5] = {...prev, e.fileUrl};
+        }
+      }
+
+      prevCell = e;
+    }
+
+    if (end) {
+      return (collect(data), null);
+    }
+
+    return (const [], data);
   }
 
   late final state = GridSkeletonStateFilter<FavoriteBooru>(
@@ -246,20 +272,22 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T>
     },
   );
 
+  late final SearchFilterGrid<FavoriteBooru> search;
+
   void disposeFavoriteBooruState() {
     miscSettingsWatcher.cancel();
     favoritesWatcher.cancel();
 
     state.dispose();
-    disposeSearch();
+    search.dispose();
   }
 
   void initFavoriteBooruState() {
-    searchHook(state);
+    search = SearchFilterGrid(state, null);
 
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      setFilteringMode(miscSettings.favoritesPageMode);
-      setLocalTagCompleteF((string) {
+      search.setFilteringMode(miscSettings.favoritesPageMode);
+      search.setLocalTagCompleteF((string) {
         final result = Dbs.g.main.localTagDictionarys
             .filter()
             .tagContains(string)
@@ -280,10 +308,10 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T>
     });
 
     favoritesWatcher = FavoriteBooru.watch((event) {
-      performSearch(searchTextController.text, true);
+      search.performSearch(search.searchTextController.text, true);
     });
 
-    prewarmResults();
+    search.prewarmResults();
   }
 
   List<GridAction<FavoriteBooru>> iconsImage(FavoriteBooru p) {

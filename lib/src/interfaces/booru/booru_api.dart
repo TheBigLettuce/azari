@@ -5,7 +5,6 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
@@ -19,23 +18,6 @@ import '../../net/booru/gelbooru.dart';
 import '../booru_tagging.dart';
 import 'booru.dart';
 
-abstract class PageSaver {
-  const PageSaver();
-
-  void save(int page);
-
-  int get current;
-}
-
-class EmptyPageSaver implements PageSaver {
-  const EmptyPageSaver();
-
-  @override
-  int get current => 0;
-
-  @override
-  void save(int page) {}
-}
 
 /// The interface to interact with the various booru APIs.
 ///
@@ -115,4 +97,22 @@ abstract class BooruAPI {
 
     return 15 * settings.columns.number;
   }
+}
+
+abstract class PageSaver {
+  const PageSaver();
+
+  void save(int page);
+
+  int get current;
+}
+
+class EmptyPageSaver implements PageSaver {
+  const EmptyPageSaver();
+
+  @override
+  int get current => 0;
+
+  @override
+  void save(int page) {}
 }
