@@ -6,23 +6,29 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../pages/more/settings/settings_label.dart';
 
 class TimeLabel extends StatelessWidget {
+  const TimeLabel(
+    this.time,
+    this.titleStyle,
+    this.now, {
+    super.key,
+    this.removePadding = false,
+  });
+
   final (int, int, int) time;
   final TextStyle titleStyle;
   final DateTime now;
   final bool removePadding;
 
-  const TimeLabel(this.time, this.titleStyle, this.now,
-      {super.key, this.removePadding = false});
-
   @override
   Widget build(BuildContext context) {
     if (time == (now.day, now.month, now.year)) {
       return SettingsLabel(
-        "Today",
+        AppLocalizations.of(context)!.todayLabel,
         titleStyle,
         removePadding: removePadding,
       );

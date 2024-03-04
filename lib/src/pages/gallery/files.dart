@@ -104,8 +104,6 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
 
       state.gridKey.currentState?.selection.reset();
 
-      mutation.cellCount = i;
-
       if (!inRefresh) {
         mutation.isRefreshing = false;
 
@@ -160,13 +158,17 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
 
   late final GridSkeletonStateFilter<SystemGalleryDirectoryFile> state =
       GridSkeletonStateFilter(
-    transform: (cell, sorting) {
-      if (sorting == SortingMode.size ||
+    transform: (cell) {
+      if (state.filter.currentSortingMode == SortingMode.size ||
           search.currentFilteringMode() == FilteringMode.same) {
         cell.injectedStickers.add(cell.sizeSticker(cell.size));
       }
 
       return cell;
+    },
+    sortingModes: {
+      SortingMode.none,
+      SortingMode.size,
     },
     hook: (selected) {
       if (selected == FilteringMode.same) {
@@ -180,12 +182,6 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
       }
 
       setState(() {});
-
-      if (selected == FilteringMode.size) {
-        return SortingMode.size;
-      }
-
-      return SortingMode.none;
     },
     filter: extra.filter,
     filteringModes: {
@@ -199,7 +195,6 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
       FilteringMode.tagReversed,
       FilteringMode.untagged,
       FilteringMode.gif,
-      FilteringMode.size,
       FilteringMode.video
     },
   );
@@ -263,8 +258,7 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
             layout:
                 const GridSettingsLayoutBehaviour(GridSettingsFiles.current),
             refreshingStatus: state.refreshingStatus,
-            getCell: (i) => state.transform(
-                widget.api.directCell(i), state.filter.currentSortingMode),
+            getCell: (i) => state.transform(widget.api.directCell(i)),
             functionality: GridFunctionality(
                 registerNotifiers: (child) {
                   return OnBooruTagPressed(
@@ -326,19 +320,7 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
                           ];
               },
             ),
-
             mainFocus: state.mainFocus,
-
-            // noteInterface: NoteGallery.interface((
-            //     {int? replaceIndx, bool addNote = false, int? removeNote}) {
-            //   if (state.gridKey.currentState?.mutationInterface.isRefreshing ==
-            //       true) {
-            //     return;
-            //   }
-
-            //   _refresh();
-            // }),
-
             description: GridDescription(
               actions: widget.callback != null
                   ? []

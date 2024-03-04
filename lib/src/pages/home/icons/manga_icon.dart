@@ -37,7 +37,6 @@ class _MangaIcon extends StatelessWidget {
             Colors.indigo,
             Colors.purple,
             Colors.red
-            // Theme.of(context).colorScheme.primary,
           ])
         ],
         child: Icon(
@@ -45,7 +44,7 @@ class _MangaIcon extends StatelessWidget {
           color: isSelected ? Theme.of(context).colorScheme.primary : null,
         ),
       ),
-      label: "Manga", // TODO: change
+      label: AppLocalizations.of(context)!.mangaPage,
     );
   }
 }

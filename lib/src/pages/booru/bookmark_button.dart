@@ -10,10 +10,14 @@ import 'dart:async';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/base/post_base.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/booru/post.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
+import 'package:gallery/src/db/schemas/settings/settings.dart';
+import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/pages/home.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/pages/booru/booru_restored_page.dart';
@@ -26,12 +30,14 @@ import '../../widgets/time_label.dart';
 
 class BookmarkPage extends StatefulWidget {
   final void Function(String? e) saveSelectedPage;
+  final PagingStateRegistry pagingRegistry;
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;
 
   const BookmarkPage({
     super.key,
     required this.saveSelectedPage,
     required this.generateGlue,
+    required this.pagingRegistry,
   });
 
   @override
@@ -40,7 +46,10 @@ class BookmarkPage extends StatefulWidget {
 
 class _BookmarkPageState extends State<BookmarkPage> {
   late final StreamSubscription<void> watcher;
+  late final StreamSubscription<void> settingsWatcher;
   final List<GridStateBooru> gridStates = [];
+
+  Settings settings = Settings.fromDb();
 
   final m = <String, List<Post>>{};
 
@@ -50,6 +59,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
   @override
   void dispose() {
     watcher.cancel();
+    settingsWatcher.cancel();
 
     super.dispose();
   }
@@ -57,6 +67,12 @@ class _BookmarkPageState extends State<BookmarkPage> {
   @override
   void initState() {
     super.initState();
+
+    settingsWatcher = Settings.watch((s) {
+      settings = s!;
+
+      setState(() {});
+    });
 
     watcher = Dbs.g.main.gridStateBoorus
         .watchLazy(fireImmediately: true)
@@ -79,7 +95,21 @@ class _BookmarkPageState extends State<BookmarkPage> {
       for (final e in gridStates) {
         final db = DbsOpen.secondaryGridName(e.name);
 
-        final p = db.posts.where().limit(5).findAllSync();
+        final List<Post> p = switch (settings.safeMode) {
+          SafeMode.normal => db.posts
+              .where()
+              .ratingEqualTo(PostRating.general)
+              .limit(5)
+              .findAllSync(),
+          SafeMode.relaxed => db.posts
+              .where()
+              .ratingEqualTo(PostRating.general)
+              .or()
+              .ratingEqualTo(PostRating.sensitive)
+              .limit(5)
+              .findAllSync(),
+          SafeMode.none => db.posts.where().limit(5).findAllSync(),
+        };
 
         List<Post>? l = m[e.name];
         if (l == null) {
@@ -116,9 +146,11 @@ class _BookmarkPageState extends State<BookmarkPage> {
       builder: (context) {
         return BooruRestoredPage(
           state: e,
+          pagingRegistry: widget.pagingRegistry,
           onDispose: () {
             if (!isRestart) {
               widget.saveSelectedPage(null);
+              widget.pagingRegistry.remove(e.name);
             }
           },
           generateGlue: widget.generateGlue,
@@ -127,47 +159,46 @@ class _BookmarkPageState extends State<BookmarkPage> {
     )).whenComplete(_procUpdate);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    List<Widget> makeList() {
-      final timeNow = DateTime.now();
-      final list = <Widget>[];
+  List<Widget> makeList(BuildContext context) {
+    final timeNow = DateTime.now();
+    final list = <Widget>[];
 
-      final titleStyle = Theme.of(context)
-          .textTheme
-          .titleSmall!
-          .copyWith(color: Theme.of(context).colorScheme.secondary);
+    final titleStyle = Theme.of(context)
+        .textTheme
+        .titleSmall!
+        .copyWith(color: Theme.of(context).colorScheme.secondary);
 
-      (int, int, int)? time;
+    (int, int, int)? time;
 
-      for (final e in gridStates) {
-        final addTime =
-            time == null || time != (e.time.day, e.time.month, e.time.year);
-        if (addTime) {
-          time = (e.time.day, e.time.month, e.time.year);
+    for (final e in gridStates) {
+      final addTime =
+          time == null || time != (e.time.day, e.time.month, e.time.year);
+      if (addTime) {
+        time = (e.time.day, e.time.month, e.time.year);
 
-          list.add(TimeLabel(time, titleStyle, timeNow));
-        }
-
-        list.add(
-          Padding(
-            padding:
-                EdgeInsets.only(top: addTime ? 0 : 12, left: 12, right: 16),
-            child: _BookmarkListTile(
-              onPressed: launchGrid,
-              key: ValueKey(e.name),
-              state: e,
-              title: e.tags,
-              subtitle: e.booru.string,
-              posts: m[e.name]!,
-            ),
-          ),
-        );
+        list.add(TimeLabel(time, titleStyle, timeNow));
       }
 
-      return list;
+      list.add(
+        Padding(
+          padding: EdgeInsets.only(top: addTime ? 0 : 12, left: 12, right: 16),
+          child: _BookmarkListTile(
+            onPressed: launchGrid,
+            key: ValueKey(e.name),
+            state: e,
+            title: e.tags,
+            subtitle: e.booru.string,
+            posts: m[e.name]!,
+          ),
+        ),
+      );
     }
 
+    return list;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return gridStates.isEmpty
         ? const SliverToBoxAdapter(
             child: EmptyWidget(
@@ -175,7 +206,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
             ),
           )
         : SliverList.list(
-            children: makeList(),
+            children: makeList(context),
           );
   }
 }
@@ -249,7 +280,6 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final singleHeight = (size.width / 5) - (12 / 5) - (18 / 5) - (12 / 5);
-    // final colorPrimary = Theme.of(context).colorScheme.primaryContainer;
 
     Iterable<Widget> addDividers(
         Iterable<Widget> l, double height, int len, Color? dividerColor) sync* {

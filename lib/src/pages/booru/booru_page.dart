@@ -19,11 +19,14 @@ import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_booru.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
+import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
+import 'package:gallery/src/interfaces/booru_tagging.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/pages/more/tags/single_post.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/pages/booru/booru_restored_page.dart';
@@ -43,6 +46,7 @@ import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart'
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/pages/booru/bookmark_button.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
+import 'package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:isar/isar.dart';
 
@@ -224,10 +228,12 @@ class _BooruPageState extends State<BooruPage> {
     search = SearchLaunchGrid(SearchLaunchGridData(
       completeTag: pagingState.api.completeTag,
       mainFocus: state.mainFocus,
-      header: TagsWidget(
-        tagging: pagingState.tagManager.latest,
-        onPress: (tag, safeMode) => _onBooruTagPressed(
-            context, pagingState.api.booru, tag.tag, safeMode),
+      header: _LatestAndExcluded(
+        api: pagingState.api,
+        tagManager: pagingState.tagManager,
+        onPressed: (tag, safeMode) {
+          _onBooruTagPressed(context, pagingState.api.booru, tag.tag, safeMode);
+        },
       ),
       searchText: "",
       swapSearchIconWithAddItems: false,
@@ -281,9 +287,11 @@ class _BooruPageState extends State<BooruPage> {
         Navigator.push(context, MaterialPageRoute(
           builder: (context) {
             return BooruRestoredPage(
+              pagingRegistry: widget.pagingRegistry,
               onDispose: () {
                 if (!isRestart) {
                   pagingState.restoreSecondaryGrid = null;
+                  widget.pagingRegistry.remove(e.name);
                 }
               },
               state: e,
@@ -361,12 +369,13 @@ class _BooruPageState extends State<BooruPage> {
     PostTags.g.addTagsPost(p.filename(), p.tags, true);
 
     return Downloader.g.add(
-        DownloadFile.d(
-            url: p.fileDownloadUrl(),
-            site: pagingState.api.booru.url,
-            name: p.filename(),
-            thumbUrl: p.previewUrl),
-        state.settings);
+      DownloadFile.d(
+          url: p.fileDownloadUrl(),
+          site: pagingState.api.booru.url,
+          name: p.filename(),
+          thumbUrl: p.previewUrl),
+      state.settings,
+    );
   }
 
   Future<int> _addLast() async {
@@ -503,6 +512,7 @@ class _BooruPageState extends State<BooruPage> {
               ),
               systemNavigationInsets: widget.viewPadding,
               description: GridDescription(
+                risingAnimation: true,
                 actions: [
                   BooruGridActions.download(context, pagingState.api.booru),
                   BooruGridActions.favorites(context, null,
@@ -543,6 +553,7 @@ class _BooruPageState extends State<BooruPage> {
                                 ]),
                           1 => PageDescription(slivers: [
                               BookmarkPage(
+                                pagingRegistry: widget.pagingRegistry,
                                 generateGlue: widget.generateGlue,
                                 saveSelectedPage: (s) =>
                                     pagingState.restoreSecondaryGrid = s,
@@ -586,8 +597,7 @@ class _BooruPageState extends State<BooruPage> {
 
               final s = state.gridKey.currentState;
               if (s != null && s.currentPage != 0) {
-                s.currentPage = 0;
-                s.setState(() {});
+                s.onSubpageSwitched(0, s.selection, s.controller);
                 return;
               }
 
@@ -596,6 +606,105 @@ class _BooruPageState extends State<BooruPage> {
           ),
         );
       },
+    );
+  }
+}
+
+class _LatestAndExcluded extends StatefulWidget {
+  final TagManager tagManager;
+  final BooruAPI api;
+  final void Function(Tag, SafeMode?) onPressed;
+
+  const _LatestAndExcluded({
+    super.key,
+    required this.onPressed,
+    required this.tagManager,
+    required this.api,
+  });
+
+  @override
+  State<_LatestAndExcluded> createState() => __LatestAndExcludedState();
+}
+
+class __LatestAndExcludedState extends State<_LatestAndExcluded> {
+  BooruTagging get excluded => widget.tagManager.excluded;
+  BooruTagging get latest => widget.tagManager.latest;
+
+  bool showExcluded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        TagsWidget(
+          tagging: latest,
+          onPress: widget.onPressed,
+          leading: IconButton(
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    DialogRoute(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: Text(
+                              AppLocalizations.of(context)!.searchSinglePost),
+                          content: SinglePost(tagManager: widget.tagManager),
+                        );
+                      },
+                    ));
+              },
+              icon: const Icon(Icons.search)),
+        ),
+        const Padding(padding: EdgeInsets.only(bottom: 4)),
+        showExcluded
+            ? TagsWidget(
+                tagging: excluded,
+                onPress: null,
+                redBackground: true,
+                leading: IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          DialogRoute(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: Text(AppLocalizations.of(context)!
+                                    .addToExcluded),
+                                content: AutocompleteWidget(
+                                  null,
+                                  (s) {},
+                                  swapSearchIcon: false,
+                                  (s) {
+                                    widget.tagManager.excluded
+                                        .add(Tag.string(tag: s));
+
+                                    Navigator.pop(context);
+                                  },
+                                  () {},
+                                  widget.api.completeTag,
+                                  null,
+                                  submitOnPress: true,
+                                  roundBorders: true,
+                                  plainSearchBar: true,
+                                  showSearch: true,
+                                ),
+                              );
+                            },
+                          ));
+                    },
+                    icon: const Icon(Icons.add)),
+              )
+            : TextButton(
+                onPressed: () {
+                  showExcluded = !showExcluded;
+
+                  setState(() {});
+                },
+                child: Text(AppLocalizations.of(context)!.showExcludedTags),
+              )
+      ],
     );
   }
 }

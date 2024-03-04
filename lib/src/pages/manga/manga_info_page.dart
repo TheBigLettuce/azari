@@ -114,7 +114,7 @@ class _MangaInfoPageState extends State<MangaInfoPage>
             mode: entry.safety,
             overlayColor: overlayColor,
             child: SettingsSkeleton(
-              "Manga info",
+              AppLocalizations.of(context)!.mangaInfoPage,
               state,
               appBar: PreferredSize(
                 preferredSize: const Size.fromHeight(kToolbarHeight),
@@ -124,6 +124,45 @@ class _MangaInfoPageState extends State<MangaInfoPage>
                 ),
               ),
               extendBodyBehindAppBar: true,
+              bottomAppBar: BottomAppBar(
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        if (isPinned) {
+                          PinnedManga.deleteSingle(
+                              entry.id.toString(), entry.site);
+                        } else {
+                          PinnedManga.addAll([
+                            PinnedManga(
+                              mangaId: entry.id.toString(),
+                              site: entry.site,
+                              thumbUrl: entry.thumbUrl,
+                              title: entry.title,
+                            )
+                          ]);
+                        }
+
+                        isPinned =
+                            PinnedManga.exist(entry.id.toString(), entry.site);
+
+                        setState(() {});
+                      },
+                      icon: Icon(
+                        Icons.push_pin_rounded,
+                        color: isPinned
+                            ? Theme.of(context).colorScheme.primary
+                            : null,
+                      ),
+                    ),
+                    IconButton(
+                        onPressed: () {
+                          launchUrl(Uri.parse(widget.api.browserUrl(entry)));
+                        },
+                        icon: const Icon(Icons.public)),
+                  ],
+                ),
+              ),
               child: SingleChildScrollView(
                 controller: scrollController,
                 // primary: true,
@@ -133,119 +172,85 @@ class _MangaInfoPageState extends State<MangaInfoPage>
                   child: Stack(
                     children: [
                       BackgroundImage(image: entry.thumbnail()!),
-                      CardShell(
-                        viewPadding: MediaQuery.viewPaddingOf(context),
-                        title: entry.title,
-                        titleEnglish: entry.titleEnglish,
-                        titleJapanese: entry.titleJapanese,
-                        titleSynonyms: entry.titleSynonyms,
-                        safeMode: entry.safety,
-                        info: [
-                          UnsizedCard(
-                            subtitle:
-                                Text(AppLocalizations.of(context)!.cardYear),
-                            tooltip: AppLocalizations.of(context)!.cardYear,
-                            title: Text(entry.year == 0
-                                ? cardUnknownValue
-                                : entry.year.toString()),
-                            transparentBackground: true,
-                          ),
-                          if (score != null)
-                            UnsizedCard(
-                              subtitle: const Text("Score"), // TODO: change
-                              title: Text(score!.isNegative
-                                  ? cardUnknownValue
-                                  : score!.toString()),
-                              tooltip: "score",
-                              transparentBackground: true,
-                            )
-                          else
-                            const Center(
-                              child: SizedBox(
-                                height: 18,
-                                width: 18,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
+                      Column(
+                        children: [
+                          CardShell(
+                            viewPadding: MediaQuery.viewPaddingOf(context),
+                            title: entry.title,
+                            titleEnglish: entry.titleEnglish,
+                            titleJapanese: entry.titleJapanese,
+                            titleSynonyms: entry.titleSynonyms,
+                            safeMode: entry.safety,
+                            info: [
+                              UnsizedCard(
+                                subtitle: Text(
+                                    AppLocalizations.of(context)!.cardYear),
+                                tooltip: AppLocalizations.of(context)!.cardYear,
+                                title: Text(entry.year == 0
+                                    ? cardUnknownValue
+                                    : entry.year.toString()),
+                                transparentBackground: true,
                               ),
-                            ),
-                          UnsizedCard(
-                            subtitle: const Text("Status"), // TODO: change
-                            tooltip: "Status",
-                            title: Text(entry.status),
-                            transparentBackground: true,
+                              if (score != null)
+                                UnsizedCard(
+                                  subtitle: Text(
+                                      AppLocalizations.of(context)!.cardScore),
+                                  title: Text(score!.isNegative
+                                      ? cardUnknownValue
+                                      : score!.toString()),
+                                  tooltip:
+                                      AppLocalizations.of(context)!.cardScore,
+                                  transparentBackground: true,
+                                )
+                              else
+                                const Center(
+                                  child: SizedBox(
+                                    height: 18,
+                                    width: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                ),
+                              UnsizedCard(
+                                subtitle: Text(
+                                    AppLocalizations.of(context)!.cardStatus),
+                                tooltip:
+                                    AppLocalizations.of(context)!.cardStatus,
+                                title: Text(entry.status),
+                                transparentBackground: true,
+                              ),
+                              UnsizedCard(
+                                subtitle: Text(
+                                    AppLocalizations.of(context)!.cardVolumes),
+                                tooltip:
+                                    AppLocalizations.of(context)!.cardVolumes,
+                                title: Text(entry.volumes.isNegative
+                                    ? cardUnknownValue
+                                    : entry.volumes.toString()),
+                                transparentBackground: true,
+                              ),
+                              UnsizedCard(
+                                subtitle: Text(AppLocalizations.of(context)!
+                                    .cardDemographics),
+                                tooltip: AppLocalizations.of(context)!
+                                    .cardDemographics,
+                                title: Text(entry.demographics.isEmpty
+                                    ? cardUnknownValue
+                                    : entry.demographics),
+                                transparentBackground: true,
+                              ),
+                            ],
                           ),
-                          UnsizedCard(
-                            subtitle: const Text("Volumes"), // TODO: change
-                            tooltip: "Volumes",
-                            title: Text(entry.volumes.isNegative
-                                ? cardUnknownValue
-                                : entry.volumes.toString()),
-                            transparentBackground: true,
-                          ),
-                          UnsizedCard(
-                            subtitle:
-                                const Text("Demographics"), // TODO: change
-                            tooltip: "Demographics",
-                            title: Text(entry.demographics.isEmpty
-                                ? cardUnknownValue
-                                : entry.demographics),
-                            transparentBackground: true,
-                          ),
-                        ],
-                        buttons: [
-                          UnsizedCard(
-                            subtitle: Text(AppLocalizations.of(context)!
-                                .cardInBrowser), // TODO: change
-                            tooltip:
-                                AppLocalizations.of(context)!.cardInBrowser,
-                            title: const Icon(Icons.public),
-                            transparentBackground: true,
-                            onPressed: () {
-                              launchUrl(
-                                  Uri.parse(widget.api.browserUrl(entry)));
-                            },
-                          ),
-                          UnsizedCard(
-                            subtitle: Text(
-                                isPinned ? "Unpin" : "Pin"), // TODO: change
-                            tooltip: isPinned ? "Unpin" : "Pin",
-                            title: Icon(
-                              Icons.push_pin_rounded,
-                              color: isPinned
-                                  ? Theme.of(context).colorScheme.primary
-                                  : null,
-                            ),
-                            transparentBackground: true,
-                            onPressed: () {
-                              if (isPinned) {
-                                PinnedManga.deleteSingle(
-                                    entry.id.toString(), entry.site);
-                              } else {
-                                PinnedManga.addAll([
-                                  PinnedManga(
-                                    mangaId: entry.id.toString(),
-                                    site: entry.site,
-                                    thumbUrl: entry.thumbUrl,
-                                    title: entry.title,
-                                  )
-                                ]);
-                              }
-
-                              isPinned = PinnedManga.exist(
-                                  entry.id.toString(), entry.site);
-
-                              setState(() {});
-                            },
+                          MangaInfoBody(
+                            api: widget.api,
+                            overlayColor: overlayColor,
+                            entry: entry,
+                            scrollController: scrollController,
+                            viewPadding: MediaQuery.viewPaddingOf(context),
                           ),
                         ],
-                      ),
-                      MangaInfoBody(
-                        api: widget.api,
-                        overlayColor: overlayColor,
-                        entry: entry,
-                        scrollController: scrollController,
-                        viewPadding: MediaQuery.viewPaddingOf(context),
-                      ),
+                      )
                     ],
                   ),
                 ),

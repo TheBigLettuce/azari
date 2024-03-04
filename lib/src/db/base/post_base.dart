@@ -15,6 +15,7 @@ import 'package:gallery/src/db/schemas/booru/note_booru.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
+import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
@@ -30,6 +31,30 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../interfaces/cell/contentable.dart';
 import '../../interfaces/booru/display_quality.dart';
+
+enum PostRating {
+  general,
+  sensitive,
+  questionable,
+  explicit;
+
+  String translatedName(BuildContext context) => switch (this) {
+        PostRating.general =>
+          AppLocalizations.of(context)!.enumPostRatingGeneral,
+        PostRating.sensitive =>
+          AppLocalizations.of(context)!.enumPostRatingSensitive,
+        PostRating.questionable =>
+          AppLocalizations.of(context)!.enumPostRatingQuestionable,
+        PostRating.explicit =>
+          AppLocalizations.of(context)!.enumPostRatingExplicit,
+      };
+
+  SafeMode get asSafeMode => switch (this) {
+        PostRating.general => SafeMode.normal,
+        PostRating.sensitive => SafeMode.relaxed,
+        PostRating.questionable || PostRating.explicit => SafeMode.none,
+      };
+}
 
 class PostBase extends Cell
     with CachedCellValuesMixin, BooruPostFunctionalityMixin {
@@ -106,7 +131,9 @@ class PostBase extends Cell
 
   final String ext;
 
-  final String rating;
+  @Index()
+  @enumerated
+  final PostRating rating;
   final int score;
   final DateTime createdAt;
   final String prefix;
@@ -198,7 +225,7 @@ class PostBase extends Cell
         ),
         ListTile(
           title: Text(AppLocalizations.of(context)!.ratingInfoPage),
-          subtitle: Text(rating),
+          subtitle: Text(rating.translatedName(context)),
         ),
         ListTile(
           title: Text(AppLocalizations.of(context)!.scoreInfoPage),

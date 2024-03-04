@@ -147,6 +147,7 @@ class __WatchingTabState extends State<_WatchingTab> {
         systemNavigationInsets: widget.viewInsets,
         mainFocus: state.mainFocus,
         description: GridDescription(
+          risingAnimation: true,
           actions: const [],
           keybindsDescription: AppLocalizations.of(context)!.watchingTab,
           showAppBar: false,
@@ -177,8 +178,6 @@ class _WatchingLayout
   final void Function() flipWatchingRight;
 
   final List<SavedAnimeEntry> currentlyWatching;
-
-  // final GridColumn columns;
 
   @override
   GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings) {
@@ -216,7 +215,7 @@ class _WatchingLayout
           hidePinnedIcon: true,
           onPress: null,
           sticky: false,
-          overridePinnedIcon: IconButton(
+          overridePinnedIcon: IconButton.filledTonal(
             onPressed: flipWatchingRight,
             icon: (watchingRight
                     ? const Icon(Icons.arrow_back)
@@ -258,7 +257,7 @@ class _WatchingLayout
           hidePinnedIcon: true,
           onPress: null,
           sticky: false,
-          overridePinnedIcon: IconButton(
+          overridePinnedIcon: IconButton.filledTonal(
             onPressed: flipBacklogUpward,
             icon: (backlogUpward
                     ? const Icon(Icons.arrow_upward)
@@ -313,6 +312,7 @@ class ImportantCard<T extends Cell> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return UnsizedCard(
+      leanToLeft: false,
       subtitle: Text(cell.alias(false)),
       title: SizedBox(
         height: 40,

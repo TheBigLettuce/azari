@@ -12,9 +12,11 @@ import 'page_description.dart';
 class PageSwitcher {
   const PageSwitcher(
     this.pages,
-    this.buildPage,
-  );
+    this.buildPage, {
+    this.overrideHomeIcon,
+  });
 
+  final Icon? overrideHomeIcon;
   final List<Widget> pages;
   final PageDescription Function(int i) buildPage;
 }

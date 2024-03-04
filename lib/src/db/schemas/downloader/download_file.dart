@@ -146,12 +146,18 @@ class DownloadFile extends Cell {
     return Dbs.g.main.downloadFiles.watchLazy(fireImmediately: fire).listen(f);
   }
 
-  static List<DownloadFile> nextNumber(int minus) => Dbs.g.main.downloadFiles
-      .where()
-      .inProgressEqualTo(false)
-      .or()
-      .isFailedEqualTo(false)
-      .sortByDateDesc()
-      .limit(6 - minus)
-      .findAllSync();
+  static List<DownloadFile> nextNumber(int minus) {
+    if (Dbs.g.main.downloadFiles.countSync() < 6) {
+      return const [];
+    }
+
+    return Dbs.g.main.downloadFiles
+        .where()
+        .inProgressEqualTo(false)
+        .or()
+        .isFailedEqualTo(false)
+        .sortByDateDesc()
+        .limit(6 - minus)
+        .findAllSync();
+  }
 }

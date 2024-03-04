@@ -118,7 +118,7 @@ class _SettingsListState extends State<SettingsList> {
           }, title: AppLocalizations.of(context)!.selectedBooruSetting),
         ),
         ListTile(
-          title: const Text("Theme"), // TODO: change
+          title: Text(AppLocalizations.of(context)!.settingsTheme),
           onTap: () => radioDialog(
             context,
             ThemeType.values.map((e) => (e, e.string)),
@@ -128,7 +128,7 @@ class _SettingsListState extends State<SettingsList> {
                 selectTheme(context, _miscSettings!, value);
               }
             },
-            title: "Theme",
+            title: AppLocalizations.of(context)!.settingsTheme,
           ),
           subtitle: Text(_miscSettings!.themeType.string),
         ),
@@ -136,12 +136,12 @@ class _SettingsListState extends State<SettingsList> {
           title: Text(AppLocalizations.of(context)!.imageDisplayQualitySetting),
           onTap: () => radioDialog(
             context,
-            DisplayQuality.values.map((e) => (e, e.string)),
+            DisplayQuality.values.map((e) => (e, e.translatedString(context))),
             _settings!.quality,
             (value) => _settings!.copy(quality: value).save(),
             title: AppLocalizations.of(context)!.imageDisplayQualitySetting,
           ),
-          subtitle: Text(_settings!.quality.string),
+          subtitle: Text(_settings!.quality.translatedString(context)),
         ),
         SwitchListTile(
           value: _settings!.autoRefresh,
@@ -270,8 +270,7 @@ class _SettingsListState extends State<SettingsList> {
                                                         .clearCachedThumbs();
 
                                                     thumbnailCount =
-                                                        PlatformFunctions
-                                                            .thumbCacheSize();
+                                                        Future.value(0);
 
                                                     setState(() {});
                                                     Navigator.pop(context);
@@ -388,10 +387,10 @@ class _SettingsListState extends State<SettingsList> {
 
   String _calculateMBSize(int i) {
     if (i == 0) {
-      return "0 MB";
+      return AppLocalizations.of(context)!.megabytes(0);
     }
 
-    return "${(i / (1000 * 1000)).toStringAsFixed(1)} MB";
+    return AppLocalizations.of(context)!.megabytes((i / (1000 * 1000)));
   }
 
   @override

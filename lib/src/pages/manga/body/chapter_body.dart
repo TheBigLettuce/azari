@@ -70,7 +70,7 @@ class __ChapterBodyState extends State<_ChapterBody> {
         child: Padding(
           padding: const EdgeInsets.only(bottom: 12, top: 16),
           child: Text(
-            "Volume ${e.$2}",
+            AppLocalizations.of(context)!.mangaVolumeName(e.$2),
             style: SettingsLabel.defaultStyle(context),
           ),
         ),
@@ -201,8 +201,8 @@ class __ChapterBodyState extends State<_ChapterBody> {
                   icon: const Icon(Icons.navigate_next_rounded),
                   label: Text(
                     _chapterStale == null
-                        ? "Start reading"
-                        : "Continue reading",
+                        ? AppLocalizations.of(context)!.mangaStartReading
+                        : AppLocalizations.of(context)!.mangaContinueReading,
                   ),
                 ),
               ),

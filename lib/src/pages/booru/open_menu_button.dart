@@ -28,9 +28,8 @@ class OpenMenuButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton(
-      // icon: const Icon(Icons.search_rounded),
       itemBuilder: (_) {
-        return MenuWrapper.menuItems(controller.text, true, [
+        return MenuWrapper.menuItems(context, controller.text, true, [
           launchGridSafeModeItem(
             context,
             controller.text,

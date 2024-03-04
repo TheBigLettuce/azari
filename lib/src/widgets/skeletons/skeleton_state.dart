@@ -53,21 +53,21 @@ class GridSkeletonState<T extends Cell> extends SkeletonState {
 class GridSkeletonStateFilter<T extends Cell> extends GridSkeletonState<T> {
   final FilterInterface<T> filter;
   final Set<FilteringMode> filteringModes;
+  final Set<SortingMode> sortingModes;
   final bool unsetFilteringModeOnReset;
   final FilteringMode defaultMode;
+  final void Function(FilteringMode selected) hook;
+  final T Function(T cell) transform;
 
-  static SortingMode _doNothing(FilteringMode m) => SortingMode.none;
-
-  final SortingMode Function(FilteringMode selected) hook;
-
-  final T Function(T cell, SortingMode sort) transform;
+  static void _doNothing(FilteringMode m) {}
 
   GridSkeletonStateFilter({
     required this.filter,
     required this.transform,
-    this.filteringModes = const {},
-    this.defaultMode = FilteringMode.noFilter,
     this.hook = _doNothing,
+    this.filteringModes = const {},
+    this.sortingModes = const {},
+    this.defaultMode = FilteringMode.noFilter,
     this.unsetFilteringModeOnReset = true,
     super.initalCellCount = 0,
   });

@@ -94,7 +94,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   late final GridSkeletonStateFilter<SystemGalleryDirectory> state =
       GridSkeletonStateFilter(
-    transform: (cell, _) => cell,
+    transform: (cell) => cell,
     filter: extra.filter,
     initalCellCount: widget.callback != null
         ? extra.db.systemGalleryDirectorys.countSync()
@@ -165,8 +165,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     extra.setRefreshingStatusCallback((i, inRefresh, empty) {
       state.gridKey.currentState?.selection.reset();
 
-      mutation.cellCount = i;
-
       if (!inRefresh || empty) {
         mutation.isRefreshing = false;
         search.performSearch(search.searchTextController.text);
@@ -198,9 +196,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       } catch (_) {}
     });
 
-    // if (setCellCount) {
-    //   mutation.cellCount = 0;
-    // }
     mutation.isRefreshing = true;
     api.refresh();
     galleryPlug.version.then((value) => galleryVersion = value);
@@ -208,7 +203,10 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   Segments<SystemGalleryDirectory> _makeSegments(BuildContext context) =>
       Segments(
-        "Uncategorized",
+        AppLocalizations.of(context)!.segmentsUncategorized,
+        injectedLabel: AppLocalizations.of(context)!.segmentsSpecial,
+        displayFirstCellInSpecial:
+            widget.callback != null || widget.nestedCallback != null,
         segment: (cell) {
           for (final booru in Booru.values) {
             if (booru.url == cell.name) {
@@ -228,7 +226,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
           );
         },
         addToSticky: (seg, {unsticky}) {
-          if (seg == "Booru" || seg == "Special") {
+          if (seg == "Booru" ||
+              seg == AppLocalizations.of(context)!.segmentsSpecial) {
             return false;
           }
           if (unsticky == true) {
@@ -242,35 +241,40 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
         injectedSegments: [
           if (FavoriteBooruPost.isNotEmpty())
             SystemGalleryDirectory(
-                bucketId: "favorites",
-                name: "Favorites", // change
-                tag: "",
-                volumeName: "",
-                relativeLoc: "",
-                lastModified: 0,
-                thumbFileId: miscSettings.favoritesThumbId != 0
-                    ? miscSettings.favoritesThumbId
-                    : FavoriteBooruPost.thumbnail),
+              bucketId: "favorites",
+              name: AppLocalizations.of(context)!
+                  .galleryDirectoriesFavorites, // change
+              tag: "",
+              volumeName: "",
+              relativeLoc: "",
+              lastModified: 0,
+              thumbFileId: miscSettings.favoritesThumbId != 0
+                  ? miscSettings.favoritesThumbId
+                  : FavoriteBooruPost.thumbnail,
+            ),
           if (trashThumbId != null)
             SystemGalleryDirectory(
-                bucketId: "trash",
-                name: "Trash", // change
-                tag: "",
-                volumeName: "",
-                relativeLoc: "",
-                lastModified: 0,
-                thumbFileId: trashThumbId!),
+              bucketId: "trash",
+              name:
+                  AppLocalizations.of(context)!.galleryDirectoryTrash, // change
+              tag: "",
+              volumeName: "",
+              relativeLoc: "",
+              lastModified: 0,
+              thumbFileId: trashThumbId!,
+            ),
         ],
         onLabelPressed: widget.callback != null && !widget.callback!.joinable
             ? null
             : (label, children) =>
                 SystemGalleryDirectoriesActions.joinedDirectoriesFnc(
-                    context,
-                    label,
-                    children,
-                    extra,
-                    widget.viewPadding ?? EdgeInsets.zero,
-                    widget.nestedCallback),
+                  context,
+                  label,
+                  children,
+                  extra,
+                  widget.viewPadding ?? EdgeInsets.zero,
+                  widget.nestedCallback,
+                ),
       );
 
   void _closeIfNotInner(SelectionGlue<SystemGalleryDirectory> g) {
@@ -330,22 +334,27 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                                   generateGlue: generate,
                                   api: apiFiles,
                                   callback: widget.nestedCallback,
-                                  dirName: "favorites",
-                                  bucketId: "favorites"),
+                                  dirName: AppLocalizations.of(context)!
+                                      .galleryDirectoriesFavorites,
+                                  bucketId: "favorites",
+                                ),
                               "trash" => GalleryFiles(
                                   viewPadding: widget.viewPadding,
                                   api: apiFiles,
                                   generateGlue: generate,
                                   callback: widget.nestedCallback,
-                                  dirName: "trash",
-                                  bucketId: "trash"),
+                                  dirName: AppLocalizations.of(context)!
+                                      .galleryDirectoryTrash,
+                                  bucketId: "trash",
+                                ),
                               String() => GalleryFiles(
                                   viewPadding: widget.viewPadding,
                                   generateGlue: generate,
                                   api: apiFiles,
                                   dirName: d.name,
                                   callback: widget.nestedCallback,
-                                  bucketId: d.bucketId)
+                                  bucketId: d.bucketId,
+                                )
                             },
                           ));
                     }
@@ -382,6 +391,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                   widget.viewPadding ?? MediaQuery.viewPaddingOf(context),
               mainFocus: state.mainFocus,
               description: GridDescription(
+                risingAnimation:
+                    widget.nestedCallback == null && widget.callback == null,
                 actions:
                     widget.callback != null || widget.nestedCallback != null
                         ? [
@@ -419,7 +430,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                               _refresh();
 
                               Navigator.of(context, rootNavigator: true).pop();
-                            }),
+                            }, true),
                             SystemGalleryDirectoriesActions.blacklist(
                                 context, extra),
                             SystemGalleryDirectoriesActions.joinedDirectories(

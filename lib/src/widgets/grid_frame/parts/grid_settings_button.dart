@@ -21,6 +21,7 @@ class GridSettingsButton extends StatefulWidget {
   const GridSettingsButton(
     this.gridSettings, {
     super.key,
+    required this.onChanged,
     required this.selectRatio,
     required this.selectHideName,
     required this.selectGridLayout,
@@ -30,6 +31,7 @@ class GridSettingsButton extends StatefulWidget {
     this.selectSafeMode,
   });
 
+  final void Function() onChanged;
   final GridSettingsBase Function() gridSettings;
   final void Function(GridAspectRatio?, GridSettingsBase)? selectRatio;
   final void Function(bool, GridSettingsBase)? selectHideName;
@@ -69,13 +71,118 @@ class _GridSettingsButtonState extends State<GridSettingsButton> {
   }
 }
 
+class SegmentedButtonGroup<T> extends StatelessWidget {
+  final Iterable<(T, String)> values;
+  final T? selected;
+  final void Function(T?) select;
+  final String title;
+  final bool allowUnselect;
+
+  const SegmentedButtonGroup({
+    super.key,
+    required this.select,
+    required this.selected,
+    required this.values,
+    required this.title,
+    this.allowUnselect = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final newValues = values.toList()
+      ..sort((e1, e2) {
+        return e1.$2.compareTo(e2.$2);
+      });
+    final selectedSegment =
+        newValues.indexWhere((element) => element.$1 == selected);
+    if (selectedSegment != -1) {
+      final s = newValues.removeAt(selectedSegment);
+      newValues.insert(0, s);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: SegmentedButton<T>(
+                  emptySelectionAllowed: selected == null || allowUnselect,
+                  onSelectionChanged: values.length == 1 && !allowUnselect
+                      ? null
+                      : (selection) {
+                          if (allowUnselect && selection.isEmpty) {
+                            select(null);
+
+                            return;
+                          }
+                          select(selection.first);
+                        },
+                  segments: newValues
+                      .map(
+                        (e) => ButtonSegment(value: e.$1, label: Text(e.$2)),
+                      )
+                      .toList(),
+                  selected: selected != null ? {selected as T} : {},
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+Widget _ratio(BuildContext context, GridAspectRatio aspectRatio,
+    void Function(GridAspectRatio?) select) {
+  return SegmentedButtonGroup(
+    select: select,
+    selected: aspectRatio,
+    values: GridAspectRatio.values.map((e) => (e, e.value.toString())),
+    title: AppLocalizations.of(context)!.aspectRatio,
+  );
+}
+
+Widget _columns(BuildContext context, GridColumn columns,
+    void Function(GridColumn?) select) {
+  return SegmentedButtonGroup(
+    select: select,
+    selected: columns,
+    values: GridColumn.values.map((e) => (e, e.number.toString())),
+    title: AppLocalizations.of(context)!.gridColumns,
+  );
+}
+
+Widget _gridLayout(BuildContext context, GridLayoutType selectGridLayout,
+    void Function(GridLayoutType?) select) {
+  return SegmentedButtonGroup(
+    select: select,
+    selected: selectGridLayout,
+    values: GridLayoutType.values.map((e) => (e, e.text)),
+    title: AppLocalizations.of(context)!.layoutLabel,
+  );
+}
+
 Widget _safeMode(BuildContext context, SafeMode safeMode,
     {void Function(SafeMode?)? selectSafeMode}) {
   return TextButton(
     child: Text(AppLocalizations.of(context)!.safeModeSetting),
     onPressed: () => radioDialog<SafeMode>(
       context,
-      SafeMode.values.map((e) => (e, e.string)),
+      SafeMode.values.map((e) => (e, e.translatedString(context))),
       safeMode,
       (value) {
         (selectSafeMode ??
@@ -97,90 +204,6 @@ Widget _hideName(
     title: Text(AppLocalizations.of(context)!.hideNames),
     value: hideName,
     onChanged: (_) => select(!hideName),
-  );
-}
-
-class _RadioGroup<T> extends StatelessWidget {
-  final Iterable<(T, String)> values;
-  final T selected;
-  final void Function(T?) select;
-  final String title;
-
-  const _RadioGroup({
-    super.key,
-    required this.select,
-    required this.selected,
-    required this.values,
-    required this.title,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 4, bottom: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Text(
-              title,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: SegmentedButton(
-                  onSelectionChanged: (selection) {
-                    select(selection.first);
-                  },
-                  segments: values
-                      .map(
-                        (e) => ButtonSegment(value: e.$1, label: Text(e.$2)),
-                      )
-                      .toList(),
-                  selected: {selected},
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-Widget _ratio(BuildContext context, GridAspectRatio aspectRatio,
-    void Function(GridAspectRatio?) select) {
-  return _RadioGroup(
-    select: select,
-    selected: aspectRatio,
-    values: GridAspectRatio.values.map((e) => (e, e.value.toString())),
-    title: AppLocalizations.of(context)!.aspectRatio,
-  );
-}
-
-Widget _columns(BuildContext context, GridColumn columns,
-    void Function(GridColumn?) select) {
-  return _RadioGroup(
-    select: select,
-    selected: columns,
-    values: GridColumn.values.map((e) => (e, e.number.toString())),
-    title: AppLocalizations.of(context)!.gridColumns,
-  );
-}
-
-Widget _gridLayout(BuildContext context, GridLayoutType selectGridLayout,
-    void Function(GridLayoutType?) select) {
-  return _RadioGroup(
-    select: select,
-    selected: selectGridLayout,
-    values: GridLayoutType.values.map((e) => (e, e.text)),
-    title: "Layout",
   );
 }
 
@@ -232,25 +255,34 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
           children: [
             Center(
               child: Text(
-                "Settings",
+                AppLocalizations.of(context)!.settingsLabel,
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
             if (button.safeMode != null)
-              _safeMode(context, button.safeMode!,
-                  selectSafeMode: (s) =>
-                      button.selectSafeMode!(s, gridSettings)),
+              _safeMode(context, button.safeMode!, selectSafeMode: (s) {
+                button.selectSafeMode!(s, gridSettings);
+                button.onChanged();
+              }),
             if (button.selectHideName != null)
-              _hideName(context, gridSettings.hideName,
-                  (n) => button.selectHideName!(n, gridSettings)),
+              _hideName(context, gridSettings.hideName, (n) {
+                button.selectHideName!(n, gridSettings);
+                button.onChanged();
+              }),
             if (button.selectGridLayout != null)
-              _gridLayout(context, gridSettings.layoutType,
-                  (t) => button.selectGridLayout!(t, gridSettings)),
+              _gridLayout(context, gridSettings.layoutType, (t) {
+                button.selectGridLayout!(t, gridSettings);
+                button.onChanged();
+              }),
             if (button.selectRatio != null)
-              _ratio(context, gridSettings.aspectRatio,
-                  (r) => button.selectRatio!(r, gridSettings)),
-            _columns(context, gridSettings.columns,
-                (c) => button.selectGridColumn(c, gridSettings))
+              _ratio(context, gridSettings.aspectRatio, (r) {
+                button.selectRatio!(r, gridSettings);
+                button.onChanged();
+              }),
+            _columns(context, gridSettings.columns, (c) {
+              button.selectGridColumn(c, gridSettings);
+              button.onChanged();
+            })
           ],
         ),
       ),

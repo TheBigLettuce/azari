@@ -28,13 +28,11 @@ import '../../../db/schemas/downloader/download_file.dart';
 import '../../../db/schemas/settings/settings.dart';
 
 class SinglePost extends StatefulWidget {
-  final FocusNode focus;
   final TagManager tagManager;
   final Widget? overrideLeading;
 
   const SinglePost({
     super.key,
-    required this.focus,
     required this.tagManager,
     this.overrideLeading,
   });
@@ -61,7 +59,7 @@ class _SinglePostState extends State<SinglePost> {
 
     final booru = Settings.fromDb().selectedBooru;
     client = BooruAPI.defaultClientForBooru(booru);
-    booruApi = BooruAPI.fromEnum(booru, client, const EmptyPageSaver());
+    booruApi = BooruAPI.fromEnum(booru, client, EmptyPageSaver());
   }
 
   @override
@@ -83,7 +81,7 @@ class _SinglePostState extends State<SinglePost> {
 
     BooruAPI booru;
     if (replaceBooru != null) {
-      booru = BooruAPI.fromEnum(replaceBooru, client, const EmptyPageSaver());
+      booru = BooruAPI.fromEnum(replaceBooru, client, EmptyPageSaver());
     } else {
       booru = booruApi;
     }
@@ -170,9 +168,8 @@ class _SinglePostState extends State<SinglePost> {
       controller: menuController,
       child: SearchBar(
         hintText: AppLocalizations.of(context)!.goPostHint,
-        focusNode: widget.focus,
         controller: controller,
-        leading: widget.overrideLeading ?? const Icon(Icons.search),
+        // leading: widget.overrideLeading ?? const Icon(Icons.search),
         trailing: [
           IconButton(
             icon: const Icon(Icons.close),

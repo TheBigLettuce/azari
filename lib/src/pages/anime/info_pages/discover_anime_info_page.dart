@@ -5,6 +5,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
@@ -32,9 +34,26 @@ class _DiscoverAnimeInfoPageState extends State<DiscoverAnimeInfoPage>
   final state = SkeletonState();
   final scrollController = ScrollController();
 
+  late final StreamSubscription<void> entriesWatcher;
+
+  late (bool, bool) _isWatchingBacklog =
+      SavedAnimeEntry.isWatchingBacklog(widget.entry.id, widget.entry.site);
+
+  late bool _watched =
+      WatchedAnimeEntry.watched(widget.entry.id, widget.entry.site);
+
   @override
   void initState() {
     super.initState();
+
+    entriesWatcher = SavedAnimeEntry.watchAll((_) {
+      _isWatchingBacklog =
+          SavedAnimeEntry.isWatchingBacklog(widget.entry.id, widget.entry.site);
+
+      _watched = WatchedAnimeEntry.watched(widget.entry.id, widget.entry.site);
+
+      setState(() {});
+    });
 
     SavedAnimeEntry.maybeGet(widget.entry.id, widget.entry.site)
         ?.copySuper(widget.entry, true)
@@ -49,6 +68,7 @@ class _DiscoverAnimeInfoPageState extends State<DiscoverAnimeInfoPage>
   @override
   void dispose() {
     scrollController.dispose();
+    entriesWatcher.cancel();
 
     state.dispose();
 
@@ -65,6 +85,37 @@ class _DiscoverAnimeInfoPageState extends State<DiscoverAnimeInfoPage>
       child: SettingsSkeleton(
         AppLocalizations.of(context)!.discoverTab,
         state,
+        fab: FloatingActionButton(
+          onPressed: _watched
+              ? null
+              : () {
+                  if (_isWatchingBacklog.$2) {
+                    SavedAnimeEntry.deleteAll([
+                      SavedAnimeEntry.maybeGet(
+                              widget.entry.id, widget.entry.site)!
+                          .isarId!
+                    ]);
+                  } else {
+                    SavedAnimeEntry.addAll([widget.entry], widget.entry.site);
+                  }
+                },
+          child: _watched
+              ? const Icon(Icons.check_rounded)
+              : _isWatchingBacklog.$1
+                  ? const Icon(Icons.library_add_check)
+                  : const Icon(Icons.add_rounded),
+        ),
+        bottomAppBar: BottomAppBar(
+          child: Row(
+            children: CardPanel.defaultButtons(
+              context,
+              widget.entry,
+              isWatching: _isWatchingBacklog.$1,
+              inBacklog: _isWatchingBacklog.$2,
+              watched: _watched,
+            ),
+          ),
+        ),
         appBar: PreferredSize(
             preferredSize: const Size.fromHeight(kToolbarHeight),
             child: AnimeInfoAppBar(
@@ -78,15 +129,19 @@ class _DiscoverAnimeInfoPageState extends State<DiscoverAnimeInfoPage>
             child: Stack(
               children: [
                 BackgroundImage(image: widget.entry.thumbnail()!),
-                CardPanel(
-                  viewPadding: MediaQuery.viewPaddingOf(context),
-                  entry: widget.entry,
-                ),
-                AnimeInfoBody(
-                  overlayColor: overlayColor,
-                  entry: widget.entry,
-                  viewPadding: MediaQuery.viewPaddingOf(context),
-                ),
+                Column(
+                  children: [
+                    CardPanel(
+                      viewPadding: MediaQuery.viewPaddingOf(context),
+                      entry: widget.entry,
+                    ),
+                    AnimeInfoBody(
+                      overlayColor: overlayColor,
+                      entry: widget.entry,
+                      viewPadding: MediaQuery.viewPaddingOf(context),
+                    ),
+                  ],
+                )
               ],
             ),
           ),

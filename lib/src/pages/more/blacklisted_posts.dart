@@ -10,6 +10,7 @@ import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/pages/more/blacklisted_page.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
@@ -20,10 +21,9 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_on_cell_press_
 import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/grid_frame/layouts/list_layout.dart';
-import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:gallery/src/widgets/skeletons/grid.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BlacklistedPostsPage extends StatefulWidget {
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;
@@ -34,14 +34,13 @@ class BlacklistedPostsPage extends StatefulWidget {
   });
 
   @override
-  State<BlacklistedPostsPage> createState() => _BlacklistedPostsPageState();
+  State<BlacklistedPostsPage> createState() => BlacklistedPostsPageState();
 }
 
-class _BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
+class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
   late final state =
       GridSkeletonState<HiddenBooruPost>(initalCellCount: list.length);
   var list = <HiddenBooruPost>[];
-  bool hideImages = true;
 
   @override
   void dispose() {
@@ -57,59 +56,50 @@ class _BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
         hideName: false,
       );
 
+  late final glue = widget.generateGlue<HiddenBooruPost>();
+
   @override
   Widget build(BuildContext context) {
-    return WrapGridPage<HiddenBooruPost>(
-      scaffoldKey: state.scaffoldKey,
-      provided: widget.generateGlue,
-      child: GridSkeleton<HiddenBooruPost>(
-        state,
-        (context) => GridFrame(
-          key: state.gridKey,
-          getCell: (i) => list[i],
-          layout: _ListLayout(hideImages, _gridSettingsBase),
-          refreshingStatus: state.refreshingStatus,
-          functionality: GridFunctionality(
-            selectionGlue: GlueProvider.of(context),
-            onPressed: const OverrideGridOnCellPressBehaviour(),
-            refresh: SynchronousGridRefresh(() {
+    return GlueProvider(
+      glue: glue,
+      generate: widget.generateGlue,
+      child: GridFrame<HiddenBooruPost>(
+        key: state.gridKey,
+        getCell: (i) => list[i],
+        layout: _ListLayout(
+            HideBlacklistedImagesNotifier.of(context), _gridSettingsBase),
+        refreshingStatus: state.refreshingStatus,
+        functionality: GridFunctionality(
+          selectionGlue: glue,
+          onPressed: const OverrideGridOnCellPressBehaviour(),
+          refresh: SynchronousGridRefresh(() {
+            list = HiddenBooruPost.getAll();
+
+            return list.length;
+          }),
+        ),
+        imageViewDescription: ImageViewDescription(
+          imageViewKey: state.imageViewKey,
+        ),
+        systemNavigationInsets: MediaQuery.viewPaddingOf(context),
+        mainFocus: state.mainFocus,
+        description: GridDescription(
+          showAppBar: false,
+          asSliver: true,
+          actions: [
+            GridAction(Icons.photo, (selected) {
+              HiddenBooruPost.removeAll(
+                  selected.map((e) => (e.postId, e.booru)).toList());
+
               list = HiddenBooruPost.getAll();
 
-              return list.length;
-            }),
-          ),
-          imageViewDescription: ImageViewDescription(
-            imageViewKey: state.imageViewKey,
-          ),
-          systemNavigationInsets: MediaQuery.viewPaddingOf(context),
-          mainFocus: state.mainFocus,
-          description: GridDescription(
-            actions: [
-              GridAction(Icons.photo, (selected) {
-                HiddenBooruPost.removeAll(
-                    selected.map((e) => (e.postId, e.booru)).toList());
-
-                list = HiddenBooruPost.getAll();
-
-                state.refreshingStatus.mutation.cellCount = list.length;
-              }, true)
-            ],
-            menuButtonItems: [
-              IconButton(
-                  onPressed: () {
-                    hideImages = !hideImages;
-
-                    setState(() {});
-                  },
-                  icon: hideImages
-                      ? const Icon(Icons.image_rounded)
-                      : const Icon(Icons.hide_image_rounded))
-            ],
-            keybindsDescription: "Blacklisted posts",
-            gridSeed: state.gridSeed,
-          ),
+              state.refreshingStatus.mutation.cellCount = list.length;
+            }, true)
+          ],
+          keybindsDescription:
+              AppLocalizations.of(context)!.blacklistedPostsPageName,
+          gridSeed: state.gridSeed,
         ),
-        canPop: true,
       ),
     );
   }

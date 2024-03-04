@@ -13,12 +13,14 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class EmptyWidget extends StatelessWidget {
   final String? error;
+  final String? overrideEmpty;
   final bool mini;
   final int gridSeed;
 
   const EmptyWidget({
     super.key,
     this.error,
+    this.overrideEmpty,
     required this.gridSeed,
     this.mini = false,
   });
@@ -56,9 +58,10 @@ class EmptyWidget extends StatelessWidget {
             ),
           ),
           TextSpan(
-              text: error == null
-                  ? "${AppLocalizations.of(context)!.emptyValue}..."
-                  : "${AppLocalizations.of(context)!.error}: $error",
+              text: overrideEmpty ??
+                  (error == null
+                      ? "${AppLocalizations.of(context)!.emptyValue}..."
+                      : "${AppLocalizations.of(context)!.error}: $error"),
               style: TextStyle(
                   fontStyle: FontStyle.italic,
                   fontSize: error != null

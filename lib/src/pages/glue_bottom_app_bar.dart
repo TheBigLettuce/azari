@@ -33,8 +33,6 @@ class GlueBottomAppBar extends StatelessWidget {
                 children: glue.actions!.$1,
               ),
               Row(
-                // textBaseline: TextBaseline.alphabetic,
-                // crossAxisAlignment: CrossAxisAlignment.baseline,
                 children: [
                   ConstrainedBox(
                     constraints: const BoxConstraints(
@@ -70,13 +68,13 @@ class GlueBottomAppBar extends StatelessWidget {
                     ),
                   ),
                   const Padding(padding: EdgeInsets.only(right: 4)),
-                  const Text(
-                    "・",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Padding(padding: EdgeInsets.only(right: 4)),
+                  // const Text(
+                  //   "・",
+                  //   style: TextStyle(
+                  //     fontWeight: FontWeight.bold,
+                  //   ),
+                  // ),
+                  // const Padding(padding: EdgeInsets.only(right: 4)),
                   IconButton.filledTonal(
                     onPressed: () {
                       glue.actions?.$2();
@@ -85,13 +83,6 @@ class GlueBottomAppBar extends StatelessWidget {
                   ),
                 ],
               ),
-
-              // FloatingActionButton(
-              //   elevation: 0,
-              //   onPressed: () {},
-              //   heroTag: null,
-              //   child: ,
-              // )
             ],
           ),
         )

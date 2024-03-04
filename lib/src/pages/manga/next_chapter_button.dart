@@ -96,11 +96,13 @@ class SkipChapterButtonState extends State<SkipChapterButton> {
           page,
         );
 
-        ReadMangaChapter.setProgress(
-          original.pages,
-          siteMangaId: widget.mangaId,
-          chapterId: original.id,
-        );
+        if (widget.direction == SkipDirection.right) {
+          ReadMangaChapter.setProgress(
+            original.pages,
+            siteMangaId: widget.mangaId,
+            chapterId: original.id,
+          );
+        }
 
         _launch(value.first.id);
       }
@@ -115,12 +117,6 @@ class SkipChapterButtonState extends State<SkipChapterButton> {
 
   void _launch(String id) {
     currentChapter = id;
-
-    ReadMangaChapter.setProgress(
-      1,
-      siteMangaId: widget.mangaId,
-      chapterId: id,
-    );
 
     widget.reloadChapters();
 
@@ -167,11 +163,13 @@ class SkipChapterButtonState extends State<SkipChapterButton> {
 
     final c = chapters[idx];
 
-    ReadMangaChapter.setProgress(
-      c.pages,
-      siteMangaId: widget.mangaId,
-      chapterId: c.id,
-    );
+    if (widget.direction == SkipDirection.right) {
+      ReadMangaChapter.setProgress(
+        c.pages,
+        siteMangaId: widget.mangaId,
+        chapterId: c.id,
+      );
+    }
 
     _launch(e.id);
   }

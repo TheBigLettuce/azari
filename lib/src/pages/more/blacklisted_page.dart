@@ -11,6 +11,9 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/pages/more/blacklisted_posts.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/page_description.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/db/schemas/gallery/blacklisted_directory.dart';
@@ -25,23 +28,23 @@ import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../../db/loaders/linear_isar_loader.dart';
-import '../../../widgets/grid_frame/wrappers/wrap_grid_page.dart';
-import '../../../widgets/skeletons/grid.dart';
+import '../../db/loaders/linear_isar_loader.dart';
+import '../../widgets/grid_frame/wrappers/wrap_grid_page.dart';
+import '../../widgets/skeletons/grid.dart';
 
-class BlacklistedDirectories extends StatefulWidget {
+class BlacklistedPage extends StatefulWidget {
   final SelectionGlue<J> Function<J extends Cell>() generateGlue;
 
-  const BlacklistedDirectories({
+  const BlacklistedPage({
     super.key,
     required this.generateGlue,
   });
 
   @override
-  State<BlacklistedDirectories> createState() => _BlacklistedDirectoriesState();
+  State<BlacklistedPage> createState() => _BlacklistedPageState();
 }
 
-class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
+class _BlacklistedPageState extends State<BlacklistedPage> {
   late final StreamSubscription blacklistedWatcher;
   final loader = LinearIsarLoader<BlacklistedDirectory>(
       BlacklistedDirectorySchema,
@@ -54,7 +57,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
           .findAllSync());
   late final state = GridSkeletonStateFilter<BlacklistedDirectory>(
     filter: loader.filter,
-    transform: (cell, sort) => cell,
+    transform: (cell) => cell,
   );
 
   late final SearchFilterGrid<BlacklistedDirectory> search;
@@ -79,6 +82,8 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
     super.dispose();
   }
 
+  bool hideBlacklistedImages = true;
+
   @override
   Widget build(BuildContext context) {
     return WrapGridPage<BlacklistedDirectory>(
@@ -93,11 +98,14 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
             getCell: loader.getCell,
             systemNavigationInsets: MediaQuery.viewPaddingOf(context),
             functionality: GridFunctionality(
+              registerNotifiers: (child) => HideBlacklistedImagesNotifier(
+                hiding: hideBlacklistedImages,
+                child: child,
+              ),
               search: OverrideGridSearchWidget(
                 SearchAndFocus(
                     search.searchWidget(context,
-                        hint: AppLocalizations.of(context)!
-                            .blacklistedDirectoriesPageName),
+                        hint: AppLocalizations.of(context)!.blacklistedPage),
                     search.searchFocus),
               ),
               selectionGlue: GlueProvider.of(context),
@@ -108,6 +116,28 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
             ),
             mainFocus: state.mainFocus,
             description: GridDescription(
+              pages: PageSwitcher(
+                const [Icon(Icons.image)],
+                (i) => PageDescription(
+                  appIcons: [
+                    IconButton(
+                        onPressed: () {
+                          hideBlacklistedImages = !hideBlacklistedImages;
+
+                          setState(() {});
+                        },
+                        icon: hideBlacklistedImages
+                            ? const Icon(Icons.image_rounded)
+                            : const Icon(Icons.hide_image_rounded))
+                  ],
+                  slivers: [
+                    BlacklistedPostsPage(
+                      generateGlue: widget.generateGlue,
+                    )
+                  ],
+                ),
+                overrideHomeIcon: const Icon(Icons.folder),
+              ),
               actions: [
                 GridAction(
                   Icons.restore_page,
@@ -127,7 +157,7 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
                     icon: const Icon(Icons.delete))
               ],
               keybindsDescription:
-                  AppLocalizations.of(context)!.blacklistedDirectoriesPageName,
+                  AppLocalizations.of(context)!.blacklistedPage,
               gridSeed: state.gridSeed,
             ),
           ),
@@ -140,4 +170,25 @@ class _BlacklistedDirectoriesState extends State<BlacklistedDirectories> {
           },
         ));
   }
+}
+
+class HideBlacklistedImagesNotifier extends InheritedWidget {
+  final bool hiding;
+
+  const HideBlacklistedImagesNotifier({
+    super.key,
+    required this.hiding,
+    required super.child,
+  });
+
+  static bool of(BuildContext context) {
+    final widget = context
+        .dependOnInheritedWidgetOfExactType<HideBlacklistedImagesNotifier>();
+
+    return widget!.hiding;
+  }
+
+  @override
+  bool updateShouldNotify(HideBlacklistedImagesNotifier oldWidget) =>
+      hiding != oldWidget.hiding;
 }

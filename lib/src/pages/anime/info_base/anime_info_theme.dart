@@ -85,7 +85,6 @@ class _ButtonsThemes extends StatelessWidget {
             theme.colorScheme.primary.withOpacity(0.8),
           ),
         )),
-        // buttonTheme: const ButtonThemeData(),
         textButtonTheme: TextButtonThemeData(
           style: ButtonStyle(
               textStyle: MaterialStatePropertyAll(

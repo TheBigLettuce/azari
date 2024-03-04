@@ -231,6 +231,10 @@ class PagingStateRegistry {
     return _map[key]!;
   }
 
+  void remove(String key) {
+    _map.remove(key)?.dispose();
+  }
+
   void dispose() {
     for (final e in _map.entries) {
       e.value.dispose();

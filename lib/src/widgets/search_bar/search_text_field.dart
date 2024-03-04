@@ -58,33 +58,6 @@ class SearchTextField extends StatelessWidget {
           onSubmitted: (value) {
             FocusNotifier.of(context).unfocus();
           }),
-    )
-        // TextField(
-        //   decoration: autocompleteBarDecoration(context, () {
-        //     data.searchController.clear();
-        //     FocusNotifier.of(context).unfocus();
-        //   },
-        //       showDeleteButton
-        //           ? [
-        //               IconButton(
-        //                   onPressed: () {
-        //                     final notifier = TagRefreshNotifier.maybeOf(context);
-        //                     PostTags.g.deletePostTags(filename);
-        //                     notifier?.call();
-        //                   },
-        //                   icon: const Icon(Icons.delete))
-        //             ]
-        //           : null,
-        //       showSearch: true,
-        //       roundBorders: false,
-        //       hint: AppLocalizations.of(context)!.filterHint),
-        //   focusNode: data.searchFocus,
-        //   controller: data.searchController,
-        //   onSubmitted: (value) {
-        //     FocusNotifier.of(context).unfocus();
-        //     // data.focusMain();
-        //   },
-        // )
-        ;
+    );
   }
 }

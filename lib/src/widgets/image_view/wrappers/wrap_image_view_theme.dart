@@ -114,12 +114,30 @@ class WrapImageViewThemeState extends State<WrapImageViewTheme>
                 ?.withOpacity(0.5),
           ),
           listTileTheme: ListTileThemeData(
-            textColor: tweenDominantTextColor
+            textColor: tweenMutedTextColor
+                .transform(_animationController.value)
+                ?.withOpacity(0.8),
+            iconColor: tweenMutedTextColor
                 .transform(_animationController.value)
                 ?.withOpacity(0.8),
           ),
+          filledButtonTheme: FilledButtonThemeData(
+              style: ButtonStyle(
+            foregroundColor: MaterialStatePropertyAll(
+              tweenDominantTextColor
+                  .transform(_animationController.value)
+                  ?.withOpacity(0.8),
+            ),
+            backgroundColor: MaterialStatePropertyAll(
+              tweenDominantColor.transform(_animationController.value),
+            ),
+          )),
+          dividerTheme: DividerThemeData(
+              color: tweenMutedTextColor
+                  .transform(_animationController.value)
+                  ?.withOpacity(0.2)),
           iconTheme: IconThemeData(
-            color: tweenDominantTextColor
+            color: tweenMutedTextColor
                 .transform(_animationController.value)
                 ?.withOpacity(0.8),
           ),

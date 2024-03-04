@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/pages/more/settings/network_status.dart';
 import 'package:gallery/src/widgets/gesture_dead_zones.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../keybinds/describe_keys.dart';
 import '../keybinds/keybind_description.dart';
@@ -103,7 +104,7 @@ class HomeSkeleton extends StatelessWidget {
                               ),
                               const Padding(padding: EdgeInsets.only(right: 4)),
                               Text(
-                                "No Internet",
+                                AppLocalizations.of(context)!.noInternet,
                                 style: TextStyle(
                                   color: Theme.of(context)
                                       .colorScheme

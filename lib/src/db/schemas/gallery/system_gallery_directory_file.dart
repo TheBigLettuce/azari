@@ -132,8 +132,7 @@ class SystemGalleryDirectoryFile extends Cell
         IconButton(
             onPressed: () {
               final dio = BooruAPI.defaultClientForBooru(res!.booru);
-              final api =
-                  BooruAPI.fromEnum(res.booru, dio, const EmptyPageSaver());
+              final api = BooruAPI.fromEnum(res.booru, dio, EmptyPageSaver());
 
               api.singlePost(res.id).then((post) {
                 PlatformFunctions.deleteFiles([this]);

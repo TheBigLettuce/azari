@@ -24,25 +24,25 @@ class _RefreshEntryIconState extends State<RefreshEntryIcon> {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-        onPressed: _refreshingProgress != null
-            ? null
-            : () {
-                _refreshingProgress =
-                    widget.entry.site.api.info(widget.entry.id)
-                      ..then((value) {
-                        if (value != null) {
-                          widget.save(value);
-                        }
-                      }).whenComplete(() {
-                        _refreshingProgress = null;
+      onPressed: _refreshingProgress != null
+          ? null
+          : () {
+              _refreshingProgress = widget.entry.site.api.info(widget.entry.id)
+                ..then((value) {
+                  if (value != null) {
+                    widget.save(value);
+                  }
+                }).whenComplete(() {
+                  _refreshingProgress = null;
 
-                        try {
-                          setState(() {});
-                        } catch (_) {}
-                      });
+                  try {
+                    setState(() {});
+                  } catch (_) {}
+                });
 
-                setState(() {});
-              },
-        icon: const Icon(Icons.refresh_rounded));
+              setState(() {});
+            },
+      icon: const Icon(Icons.refresh_rounded),
+    );
   }
 }

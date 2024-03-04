@@ -56,8 +56,6 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
 
         setState(() {
           chewieController = ChewieController(
-              // materialProgressColors:
-              //     ChewieProgressColors(backgroundColor: widget.backgroundColor),
               videoPlayerController: controller,
               aspectRatio: controller.value.aspectRatio,
               autoInitialize: false,

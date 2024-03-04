@@ -67,15 +67,18 @@ class _DummyFilter implements FilterInterface<SystemGalleryDirectory> {
   }
 
   @override
-  void resetFilter() {}
-
-  @override
   void setSortingMode(SortingMode mode) {}
 
   const _DummyFilter();
 
   @override
   SortingMode get currentSortingMode => SortingMode.none;
+
+  @override
+  bool get empty => true;
+
+  @override
+  void resetFilter() {}
 }
 
 class _DummyDirectoriesExtra implements GalleryDirectoriesExtra {

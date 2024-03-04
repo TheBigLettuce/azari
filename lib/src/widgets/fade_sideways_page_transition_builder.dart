@@ -5,8 +5,9 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-// shamelessly stolen from the Flutter source
 import 'package:flutter/material.dart';
+
+// shamelessly stolen from the Flutter source
 
 class FadeSidewaysPageTransitionBuilder implements PageTransitionsBuilder {
   // Fractional offset from 1/4 screen below the top to fully on screen.
@@ -35,23 +36,3 @@ class FadeSidewaysPageTransitionBuilder implements PageTransitionsBuilder {
 
   const FadeSidewaysPageTransitionBuilder();
 }
-
-// class FadePageTransitionBuilder implements PageTransitionsBuilder {
-//   static final Animatable<double> _fastOutSlowInTween =
-//       CurveTween(curve: Easing.standard);
-
-//   @override
-//   Widget buildTransitions<T>(
-//       PageRoute<T> route,
-//       BuildContext context,
-//       Animation<double> animation,
-//       Animation<double> secondaryAnimation,
-//       Widget child) {
-//     return FadeTransition(
-//       opacity: animation.drive(_fastOutSlowInTween),
-//       child: child,
-//     );
-//   }
-
-//   const FadePageTransitionBuilder();
-// }

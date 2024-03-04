@@ -610,7 +610,7 @@ internal class Mover(
         }
 
         val thumb = if (network) Glide.with(context).asBitmap().load(uri).submit()
-            .get() else context.contentResolver.loadThumbnail(uri, Size(420, 420), null)
+            .get() else context.contentResolver.loadThumbnail(uri, Size(320, 320), null)
         val stream = ByteArrayOutputStream()
 
         val scaled = thumb.scale(9, 8)

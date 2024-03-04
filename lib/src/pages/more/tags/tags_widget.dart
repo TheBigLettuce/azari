@@ -10,9 +10,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru_tagging.dart';
+import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/make_tags.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../../db/schemas/tags/tags.dart';
 
@@ -20,12 +22,14 @@ class TagsWidget extends StatefulWidget {
   final void Function(Tag tag, SafeMode? safeMode)? onPress;
   final bool redBackground;
   final BooruTagging tagging;
+  final Widget? leading;
 
   const TagsWidget({
     super.key,
     this.redBackground = false,
     required this.tagging,
     required this.onPress,
+    this.leading,
   });
 
   @override
@@ -61,28 +65,47 @@ class _TagsWidgetState extends State<TagsWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 2, top: 2),
-      child: SizedBox(
-        height: 38,
-        child: ListView.builder(
-          key: ValueKey(refreshes),
-          itemCount: _tags.length,
-          scrollDirection: Axis.horizontal,
-          itemBuilder: (context, index) {
-            return Padding(
-              padding: const EdgeInsets.only(right: 2),
-              child: SingleTagWidget(
-                tag: _tags[index],
-                tagging: widget.tagging,
-                onPress: widget.onPress,
-                redBackground: widget.redBackground,
+    return _tags.isEmpty
+        ? Row(
+            children: [
+              if (widget.leading != null) widget.leading!,
+              EmptyWidget(
+                gridSeed: 0,
+                mini: true,
+                overrideEmpty: AppLocalizations.of(context)!.noBooruTags,
               ),
-            );
-          },
-        ),
-      ),
-    );
+            ],
+          )
+        : Padding(
+            padding: const EdgeInsets.only(left: 2, top: 2),
+            child: SizedBox(
+              height: 38,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.leading != null) widget.leading!,
+                  Expanded(
+                    child: ListView.builder(
+                      key: ValueKey(refreshes),
+                      itemCount: _tags.length,
+                      scrollDirection: Axis.horizontal,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 2),
+                          child: SingleTagWidget(
+                            tag: _tags[index],
+                            tagging: widget.tagging,
+                            onPress: widget.onPress,
+                            redBackground: widget.redBackground,
+                          ),
+                        );
+                      },
+                    ),
+                  )
+                ],
+              ),
+            ),
+          );
   }
 }
 
@@ -118,7 +141,7 @@ class SingleTagWidget extends StatelessWidget {
           onTap: () {
             tagging.delete(tag);
           },
-          child: const Text("Delete"), // TODO: change
+          child: Text(AppLocalizations.of(context)!.delete),
         )
       ],
       child: RawChip(

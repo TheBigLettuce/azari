@@ -14,6 +14,7 @@ import 'package:gallery/src/pages/anime/info_base/body/body_segment_label.dart';
 import 'package:gallery/src/pages/anime/search/search_anime.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'anime_characters_widgets.dart';
 import 'anime_genres.dart';
@@ -106,7 +107,8 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const BodySegmentLabel(text: "Pictures"), // TODO: change
+              BodySegmentLabel(
+                  text: AppLocalizations.of(context)!.animePicturesLabel),
               SizedBox(
                 height: MediaQuery.sizeOf(context).longestSide *
                     0.2 *
@@ -165,7 +167,8 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
 
                       setState(() {});
                     },
-                    child: const Text("Load pictures"), // TODO: change
+                    child:
+                        Text(AppLocalizations.of(context)!.animeLoadPictures),
                   ),
                 );
         }

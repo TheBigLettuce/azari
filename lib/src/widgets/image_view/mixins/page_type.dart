@@ -116,35 +116,12 @@ mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
               : PhotoGalleryPageVideo(
                   url: uri,
                   localVideo: local,
-                  // loadingColor: ColorTween(
-                  //             begin: previousPallete?.dominantColor?.color
-                  //                 .harmonizeWith(
-                  //                     Theme.of(context).colorScheme.primary),
-                  //             end: currentPalette?.dominantColor?.color
-                  //                 .harmonizeWith(
-                  //                     Theme.of(context).colorScheme.primary))
-                  //         .transform(_animationController.value) ??
-                  //     Theme.of(context).colorScheme.background,
-                  // backgroundColor: ColorTween(
-                  //             begin: previousPallete?.mutedColor?.color
-                  //                 .harmonizeWith(
-                  //                     Theme.of(context).colorScheme.primary)
-                  //                 .withOpacity(0.7),
-                  //             end: currentPalette?.mutedColor?.color
-                  //                 .harmonizeWith(
-                  //                     Theme.of(context).colorScheme.primary)
-                  //                 .withOpacity(0.7))
-                  //         .transform(_animationController.value) ??
-                  //     Theme.of(context).colorScheme.primary,
                 ));
 
   PhotoViewGalleryPageOptions _makeNetImage(ImageProvider provider) {
     final options = PhotoViewGalleryPageOptions(
-      // tightMode: true,
-      // gestureDetectorBehavior: HitTestBehavior.opaque,
       minScale: PhotoViewComputedScale.contained * 0.8,
       maxScale: PhotoViewComputedScale.covered * 1.8,
-      // basePosition: vertical ? Alignment.centerLeft : null,
       initialScale: PhotoViewComputedScale.contained,
       filterQuality: FilterQuality.high,
       imageProvider: fakeProvider ?? provider,

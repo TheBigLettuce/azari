@@ -1,4 +1,5 @@
 {
+    "@@locale": "en",
     "ok": "ok",
     "@ok": {
         "description": "Button in the modal dialog with info which dismisses it"
@@ -454,9 +455,9 @@
     "@backup": {
         "description": "Backup button"
     },
-    "blacklistedDirectoriesPageName": "Blacklisted Directories",
-    "@blacklistedDirectoriesPageName": {
-        "description": "Blacklisted directories page"
+    "blacklistedPage": "Blacklisted",
+    "@blacklistedPage": {
+        "description": "Blacklisted directories and booru images page"
     },
     "currentTagTitle": "Current tag",
     "@currentTagTitle": {
@@ -957,5 +958,332 @@
     "blacklistedPostsPageName": "Blacklisted Posts",
     "@blacklistedPostsPageName": {
         "description": "Blacklisted posts page"
+    },
+    "tryAgain": "Try again",
+    "@tryAgain": {
+        "description": "Button label to retry fetching data from the internet"
+    },
+    "animePicturesLabel": "Pictures",
+    "@animePicturesLabel": {
+        "description": "Displayed above the anime's pictures in anime info page"
+    },
+    "animeLoadPictures": "Load pictures",
+    "@animeLoadPictures": {
+        "description": "Button label to load the anime pictures"
+    },
+    "animeSimilar": "Similar",
+    "@animeSimilar": {
+        "description": "Displayed above the anime's similar anime in anime info page"
+    },
+    "animeLoadSimilar": "Load similar",
+    "@animeLoadSimilar": {
+        "description": "Button label to load the anime's similar"
+    },
+    "invalidAnimeEntry": "Invalid anime entry",
+    "@invalidAnimeEntry": {
+        "description": "Error message displayed when the anime entry cannot be loaded from the API"
+    },
+    "mangaMarkAsRead": "Mark as read",
+    "@mangaMarkAsRead": {
+        "description": "Button label to mark the manga chapter as read"
+    },
+    "mangaRemoveProgress": "Remove progress",
+    "@mangaRemoveProgress": {
+        "description": "Button label to clear the manga chapter's reading progress"
+    },
+    "mangaChapterName": "Chapter {name}",
+    "@mangaChapterName": {
+        "description": "Formatted manga chapter's name",
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "mangaProgressDone": "done",
+    "@mangaProgressDone": {
+        "description": "Displayed instead of the manga's chapter count"
+    },
+    "mangaChaptersLabel": "Chapters",
+    "@mangaChaptersLabel": {
+        "description": "Displayed above the manga's chapters"
+    },
+    "mangaShowRead": "Show read",
+    "@mangaShowRead": {
+        "description": "Button label to show the read manga chapters"
+    },
+    "mangaHideRead": "Hide read",
+    "@mangaHideRead": {
+        "description": "Button label to hide the read manga chapters"
+    },
+    "mangaClearCachedMangaChapters": "Clear",
+    "@mangaClearCachedMangaChapters": {
+        "description": "Button label to clear the cached manga chapters"
+    },
+    "mangaLoadNextChapters": "Load next",
+    "@mangaLoadNextChapters": {
+        "description": "Button label to load next manga's chapters"
+    },
+    "mangaLoadChapters": "Load chapters",
+    "@mangaLoadChapters": {
+        "description": "Button label to try loading the manga's chapters"
+    },
+    "copyLabel": "Copy",
+    "@copyLabel": {
+        "description": "Copy piece of information"
+    },
+    "chooseSafeMode": "Choose safe mode",
+    "@chooseSafeMode": {
+        "description": "Dialog title to choose the safe mode with which the booru search page will be launched"
+    },
+    "launchWithSafeMode": "Launch with safe mode",
+    "@launchWithSafeMode": {
+        "description": "Button label to open the choose the safe mode dialog"
+    },
+    "removeFromExcluded": "Remove from excluded",
+    "@removeFromExcluded": {
+        "description": "Button label to remove the booru tag from the excluded tags"
+    },
+    "addToExcluded": "Add to excluded",
+    "@addToExcluded": {
+        "description": "Button label to add the booru tag to the excluded tags"
+    },
+    "pinTag": "Pin",
+    "@pinTag": {
+        "description": "Button label to pin the booru tag to the top of the tag list"
+    },
+    "unpinTag": "Unpin",
+    "@unpinTag": {
+        "description": "Button label to unpin the booru tag from the top of the tag list"
+    },
+    "setAsWallpaper": "Set as wallpaper",
+    "@setAsWallpaper": {
+        "description": "Button label to set the gallery image as the device's wallpaper"
+    },
+    "noBooruTags": "No tags",
+    "@noBooruTags": {
+        "description": "Displayed in booru search page when no booru tags have been found, either latest tags or excluded"
+    },
+    "megabytes": "{number} MB",
+    "@megabytes": {
+        "description": "Megabytes",
+        "placeholders": {
+            "number": {
+                "type": "double"
+            }
+        }
+    },
+    "settingsTheme": "Theme",
+    "@settingsTheme": {
+        "description": "Settings, choose theme list tile title"
+    },
+    "pinGroupLabel": "Pin",
+    "@pinGroupLabel": {
+        "description": "Button label to pin a segment"
+    },
+    "showExcludedTags": "Show excluded",
+    "@showExcludedTags": {
+        "description": "Button label to show the excluded booru tags"
+    },
+    "searchSinglePost": "Search single post",
+    "@searchSinglePost": {
+        "description": "Dialog title to search for a single booru post"
+    },
+    "searchTextIsEmpty": "Search text is empty",
+    "@searchTextIsEmpty": {
+        "description": "Displayed when trying to add a search page to bookmarks but the search text is empty"
+    },
+    "mangaPage": "Manga",
+    "@mangaPage": {
+        "description": "Manga page name"
+    },
+    "mangaInfoPage": "Manga info",
+    "@mangaInfoPage": {
+        "description": "Manga info page name"
+    },
+    "cardStatus": "Status",
+    "@cardStatus": {
+        "description": "Manga card panel, status of the manga"
+    },
+    "cardVolumes": "Volumes",
+    "@cardVolumes": {
+        "description": "Manga card panel. volumes of the manga"
+    },
+    "cardDemographics": "Demographics",
+    "@cardDemographics": {
+        "description": "Manga card panel, demographics of the manga"
+    },
+    "mangaReadingLabel": "Reading",
+    "@mangaReadingLabel": {
+        "description": "Displayed above the recently read mangas"
+    },
+    "mangaContinueReading": "Continue reading",
+    "@mangaContinueReading": {
+        "description": "Button label to read the latest read manga"
+    },
+    "mangaPinnedLabel": "Pinned",
+    "@mangaPinnedLabel": {
+        "description": "Displayed above the pinned manga"
+    },
+    "enumPostRatingGeneral": "General",
+    "@enumPostRatingGeneral": {
+        "description": "PostRating.general"
+    },
+    "enumPostRatingSensitive": "Sensitive",
+    "@enumPostRatingSensitive": {
+        "description": "PostRating.sensitive"
+    },
+    "enumPostRatingQuestionable": "Questionable",
+    "@enumPostRatingQuestionable": {
+        "description": "PostRating.questionable"
+    },
+    "enumPostRatingExplicit": "Explicit",
+    "@enumPostRatingExplicit": {
+        "description": "PostRating.explicit"
+    },
+    "enumSafeModeNormal": "Normal",
+    "@enumSafeModeNormal": {
+        "description": "SafeMode.normal"
+    },
+    "enumSafeModeNone": "None",
+    "@enumSafeModeNone": {
+        "description": "SafeMode.none"
+    },
+    "enumSafeModeRelaxed": "Relaxed",
+    "@enumSafeModeRelaxed": {
+        "description": "SafeMode.relaxed"
+    },
+    "enumDisplayQualityOriginal": "Original",
+    "@enumDisplayQualityOriginal": {
+        "description": "DisplayQuality.original"
+    },
+    "enumDisplayQualitySample": "Sample",
+    "@enumDisplayQualitySample": {
+        "description": "DisplayQuality.sample"
+    },
+    "enumSortringModeNone": "None",
+    "@enumSortringModeNone": {
+        "description": "SortingMode.none"
+    },
+    "enumSortringModeSize": "Size",
+    "@enumSortringModeSize": {
+        "description": "SortingMode.size"
+    },
+    "enumFilteringModeFavorite": "Favorite",
+    "@enumFilteringModeFavorite": {
+        "description": "FilteringMode.favorite"
+    },
+    "enumFilteringModeOriginal": "Original",
+    "@enumFilteringModeOriginal": {
+        "description": "FilteringMode.original"
+    },
+    "enumFilteringModeSame": "Same",
+    "@enumFilteringModeSame": {
+        "description": "FilteringMode.same"
+    },
+    "enumFilteringModeVideo": "Video",
+    "@enumFilteringModeVideo": {
+        "description": "FilteringMode.video"
+    },
+    "enumFilteringModeDuplicate": "Duplicate",
+    "@enumFilteringModeDuplicate": {
+        "description": "FilteringMode.duplicate"
+    },
+    "enumFilteringModeGif": "GIF",
+    "@enumFilteringModeGif": {
+        "description": "FilteringMode.gif"
+    },
+    "enumFilteringModeTag": "Tag",
+    "@enumFilteringModeTag": {
+        "description": "FilteringMode.tag"
+    },
+    "enumFilteringModeUntagged": "Untagged",
+    "@enumFilteringModeUntagged": {
+        "description": "FilteringMode.untagged"
+    },
+    "enumFilteringModeTagReversed": "Tag reversed",
+    "@enumFilteringModeTagReversed": {
+        "description": "FilteringMode.tagReversed"
+    },
+    "enumFilteringModeGroup": "Group",
+    "@enumFilteringModeGroup": {
+        "description": "FilteringMode.group"
+    },
+    "enumFilteringModeUngrouped": "Ungrouped",
+    "@enumFilteringModeUngrouped": {
+        "description": "FilteringMode.ungrouped"
+    },
+    "enumFilteringModeNotes": "Notes",
+    "@enumFilteringModeNotes": {
+        "description": "FilteringMode.notes"
+    },
+    "enumFilteringModeNoFilter": "No filter",
+    "@enumFilteringModeNoFilter": {
+        "description": "FilteringMode.noFilter"
+    },
+    "filteringLabel": "Filtering",
+    "@filteringLabel": {
+        "description": "Displayed above filtering choices"
+    },
+    "sortingModesLabel": "Sorting modes",
+    "@sortingModesLabel": {
+        "description": "Displayed above sorting modes"
+    },
+    "filteringModesLabel": "Filtering modes",
+    "@filteringModesLabel": {
+        "description": "Displayed above filtering modes"
+    },
+    "todayLabel": "Today",
+    "@todayLabel": {
+        "description": "Today label for segmenting purposes"
+    },
+    "noInternet": "No Internet",
+    "@noInternet": {
+        "description": "Displayed when the app has no access to the internet"
+    },
+    "layoutLabel": "Layout",
+    "@layoutLabel": {
+        "description": "Displayed above layout choices"
+    },
+    "homePage": "Home",
+    "@homePage": {
+        "description": "Home page name"
+    },
+    "mangaVolumeName": "Volume {name}",
+    "@mangaVolumeName": {
+        "description": "Formatted manga chapter's name",
+        "placeholders": {
+            "name": {
+                "type": "String"
+            }
+        }
+    },
+    "mangaStartReading": "Start reading",
+    "@mangaStartReading": {
+        "description": "Button label to start reading the manga"
+    },
+    "segmentsUncategorized": "Uncategorized",
+    "@segmentsUncategorized": {
+        "description": "Uncategorized segment label"
+    },
+    "segmentsSpecial": "Special",
+    "@segmentsSpecial": {
+        "description": "Special segment label"
+    },
+    "galleryDirectoriesFavorites": "Favorites",
+    "@galleryDirectoriesFavorites": {
+        "description": "Gallery directories favorite page"
+    },
+    "galleryDirectoryTrash": "Trash",
+    "@galleryDirectoryTrash": {
+        "description": "Gallery directories trash page"
+    },
+    "animeSearchSearching": "Searching",
+    "@animeSearchSearching": {
+        "description": "Displayed above searching options in the anime search page"
+    },
+    "animeSearchGenres": "Genres",
+    "@animeSearchGenres": {
+        "description": "Displayed above genre options"
     }
 }

@@ -9,11 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_name_widget.dart';
 
-import 'left_arrow.dart';
-import 'right_arrow.dart';
-
 class CardShell extends StatefulWidget {
-  final List<Widget> buttons;
   final List<Widget> info;
   final EdgeInsets viewPadding;
 
@@ -32,7 +28,6 @@ class CardShell extends StatefulWidget {
     required this.safeMode,
     required this.viewPadding,
     required this.info,
-    required this.buttons,
   });
 
   @override
@@ -90,30 +85,6 @@ class _CardShellState extends State<CardShell> {
     super.dispose();
   }
 
-  List<Widget> _insertBlanks(List<Widget> from, List<Widget> compared) {
-    if (from.length == compared.length) {
-      final res = <Widget>[];
-      for (final e in from.indexed) {
-        res.add(e.$2);
-        res.add(compared[e.$1]);
-      }
-
-      return res;
-    }
-
-    final res = <Widget>[];
-    for (final e in from.indexed) {
-      res.add(e.$2);
-      res.add(compared.elementAtOrNull(e.$1) ?? const SizedBox.shrink());
-    }
-
-    return res;
-  }
-
-  List<Widget> _merge() {
-    return _insertBlanks(widget.info, widget.buttons);
-  }
-
   @override
   Widget build(BuildContext context) {
     return DefaultTextStyle.merge(
@@ -123,58 +94,44 @@ class _CardShellState extends State<CardShell> {
             ? Colors.pink.withOpacity(0.8)
             : Theme.of(context).colorScheme.primary.withOpacity(0.8),
       ),
-      child: SizedBox(
-        height: 2 +
-            kToolbarHeight +
-            widget.viewPadding.top +
-            MediaQuery.sizeOf(context).height * 0.3,
-        child: Padding(
-          padding: EdgeInsets.only(
-            top: 2 + kToolbarHeight + widget.viewPadding.top,
-            left: 22,
-            right: 22,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AnimeNameWidget(
-                title: widget.title,
-                titleEnglish: widget.titleEnglish,
-                titleJapanese: widget.titleJapanese,
-                titleSynonyms: widget.titleSynonyms,
-                safeMode: widget.safeMode,
+      child: Padding(
+        padding: EdgeInsets.only(
+          top: 2 + kToolbarHeight + widget.viewPadding.top,
+          left: 22,
+          right: 22,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AnimeNameWidget(
+              title: widget.title,
+              titleEnglish: widget.titleEnglish,
+              titleJapanese: widget.titleJapanese,
+              titleSynonyms: widget.titleSynonyms,
+              safeMode: widget.safeMode,
+            ),
+            Theme(
+              data: Theme.of(context).copyWith(
+                  iconTheme: IconThemeData(
+                      color:
+                          Theme.of(context).iconTheme.color?.withOpacity(0.8))),
+              child: SizedBox(
+                height: 80,
+                child: ClipRRect(
+                  borderRadius:
+                      const BorderRadius.all(Radius.elliptical(40, 40)),
+                  clipBehavior: Clip.antiAlias,
+                  child: ListView(
+                    clipBehavior: Clip.none,
+                    controller: cardsController,
+                    scrollDirection: Axis.horizontal,
+                    children: widget.info,
+                  ),
+                ),
               ),
-              Theme(
-                data: Theme.of(context).copyWith(
-                    iconTheme: IconThemeData(
-                        color: Theme.of(context)
-                            .iconTheme
-                            .color
-                            ?.withOpacity(0.8))),
-                child: Expanded(
-                    child: Stack(
-                  children: [
-                    ClipRRect(
-                      borderRadius:
-                          const BorderRadius.all(Radius.elliptical(40, 40)),
-                      clipBehavior: Clip.antiAlias,
-                      child: GridView(
-                        clipBehavior: Clip.none,
-                        controller: cardsController,
-                        scrollDirection: Axis.horizontal,
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2),
-                        children: _merge(),
-                      ),
-                    ),
-                    LeftArrow(show: _showArrorLeft),
-                    RightArrow(show: _showArrowRight),
-                  ],
-                )),
-              )
-            ],
-          ),
+            )
+          ],
         ),
       ),
     );

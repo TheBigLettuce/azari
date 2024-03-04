@@ -32,12 +32,13 @@ class GridQuiltedLayout<T extends Cell> implements GridLayouter<T> {
         state.selection,
         randomNumber: state.widget.description.gridSeed,
         systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
-        gridCell: (BuildContext context, int idx) => GridCell.frameDefault(
+        gridCell: (context, idx) => GridCell.frameDefault(
           context,
           idx,
           imageAlign: Alignment.topCenter,
           hideTitle: settings.hideName,
           isList: isList,
+          animated: PlayAnimationNotifier.maybeOf(context) ?? false,
           state: state,
         ),
         columns: settings.columns,

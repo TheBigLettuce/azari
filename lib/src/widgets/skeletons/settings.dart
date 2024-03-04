@@ -20,6 +20,8 @@ class SettingsSkeleton extends StatelessWidget {
   final SkeletonState state;
   final Widget child;
   final PreferredSizeWidget? appBar;
+  final Widget? bottomAppBar;
+  final Widget? fab;
   final bool extendBodyBehindAppBar;
   final bool extendBody;
   final bool expectSliverBody;
@@ -30,7 +32,9 @@ class SettingsSkeleton extends StatelessWidget {
     this.state, {
     super.key,
     this.appBar,
+    this.bottomAppBar,
     required this.child,
+    this.fab,
     this.expectSliverBody = true,
     this.extendBody = false,
     this.autofocus = true,
@@ -60,7 +64,11 @@ class SettingsSkeleton extends StatelessWidget {
           autofocus: autofocus,
           focusNode: state.mainFocus,
           child: Scaffold(
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.endContained,
+            bottomNavigationBar: bottomAppBar,
             extendBody: extendBody,
+            floatingActionButton: fab,
             extendBodyBehindAppBar: extendBodyBehindAppBar,
             drawerEnableOpenDragGesture:
                 MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,

@@ -120,13 +120,8 @@ class SystemGalleryThumbnailProvider
 
     // copied from Flutter source of FileImage
 
-    // TODO(jonahwilliams): making this sync caused test failures that seem to
-    // indicate that we can fail to call evict unless at least one await has
-    // occurred in the test.
-    // https://github.com/flutter/flutter/issues/113044
     final int lengthInBytes = await file.length();
     if (lengthInBytes == 0) {
-      // The file may become available later.
       PaintingBinding.instance.imageCache.evict(key);
       throw StateError('$file is empty and cannot be loaded as an image.');
     }

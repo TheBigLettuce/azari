@@ -12,7 +12,6 @@ import 'package:gallery/src/db/base/post_base.dart';
 import 'package:gallery/src/db/schemas/grid_settings/favorites.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
-import 'package:gallery/src/interfaces/filtering/filtering_interface.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart';
 import 'package:gallery/src/pages/more/favorite_booru_actions.dart';
 import 'package:gallery/src/net/downloader.dart';
@@ -24,6 +23,7 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
+import 'package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
@@ -52,7 +52,17 @@ class FavoriteBooruPage extends StatelessWidget {
 
     return GridFrame<FavoriteBooru>(
       key: state.state.gridKey,
-      layout: const GridSettingsLayoutBehaviour(GridSettingsFavorites.current),
+      layout: state.segments != null
+          ? SegmentLayout<FavoriteBooru>(
+              Segments(
+                AppLocalizations.of(context)!.segmentsUncategorized,
+                injectedLabel: '',
+                hidePinnedIcon: true,
+                prebuiltSegments: state.segments,
+              ),
+              GridSettingsFavorites.current,
+            )
+          : const GridSettingsLayoutBehaviour(GridSettingsFavorites.current),
       refreshingStatus: state.state.refreshingStatus,
       overrideController: conroller,
       imageViewDescription: ImageViewDescription(
@@ -117,6 +127,49 @@ class _FavoriteBooruStateHolderState extends State<FavoriteBooruStateHolder>
   }
 }
 
+class _FilterEnumSegmentKey implements SegmentKey {
+  const _FilterEnumSegmentKey(this.mode);
+
+  final FilteringMode mode;
+
+  @override
+  String translatedString(BuildContext context) =>
+      mode.translatedString(context);
+
+  @override
+  int get hashCode => mode.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! _FilterEnumSegmentKey) {
+      return false;
+    }
+
+    return other.mode == mode;
+  }
+}
+
+class _StringSegmentKey implements SegmentKey {
+  const _StringSegmentKey(this.string);
+
+  final String string;
+
+  @override
+  String translatedString(BuildContext context) => string;
+
+  @override
+  int get hashCode => string.hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! _StringSegmentKey) {
+      return false;
+    }
+
+    return other.string == string;
+  }
+}
+
 mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
   late final StreamSubscription favoritesWatcher;
   late final StreamSubscription<MiscSettings?> miscSettingsWatcher;
@@ -125,7 +178,7 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
 
   MiscSettings miscSettings = MiscSettings.current;
 
-  Map<String, int>? segments;
+  Map<SegmentKey, int>? segments;
 
   bool segmented = false;
 
@@ -176,8 +229,18 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
         segments = segments ?? {};
 
         for (final e in cells) {
-          segments![e.group ?? "Ungrouped"] =
-              (segments![e.group ?? "Ungrouped"] ?? 0) + 1;
+          if (e.group != null) {
+            segments![_StringSegmentKey(e.group!)] =
+                (segments![_StringSegmentKey(e.group!)] ?? 0) + 1;
+
+            continue;
+          }
+
+          segments![const _FilterEnumSegmentKey(FilteringMode.ungrouped)] =
+              (segments![const _FilterEnumSegmentKey(
+                          FilteringMode.ungrouped)] ??
+                      0) +
+                  1;
         }
       } else {
         segments = null;
@@ -255,8 +318,6 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
       }
 
       MiscSettings.setFavoritesPageMode(selected);
-
-      return SortingMode.none;
     },
     defaultMode: FilteringMode.tag,
     filteringModes: {
@@ -267,7 +328,7 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
       FilteringMode.video,
       FilteringMode.same,
     },
-    transform: (FavoriteBooru cell, SortingMode sort) {
+    transform: (FavoriteBooru cell) {
       return cell;
     },
   );
@@ -285,21 +346,19 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
   void initFavoriteBooruState() {
     search = SearchFilterGrid(state, null);
 
-    WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      search.setFilteringMode(miscSettings.favoritesPageMode);
-      search.setLocalTagCompleteF((string) {
-        final result = Dbs.g.main.localTagDictionarys
-            .filter()
-            .tagContains(string)
-            .sortByFrequencyDesc()
-            .limit(10)
-            .findAllSync();
+    search.setFilteringMode(miscSettings.favoritesPageMode);
+    search.setLocalTagCompleteF((string) {
+      final result = Dbs.g.main.localTagDictionarys
+          .filter()
+          .tagContains(string)
+          .sortByFrequencyDesc()
+          .limit(10)
+          .findAllSync();
 
-        return Future.value(result.map((e) => e.tag).toList());
-      });
-
-      setState(() {});
+      return Future.value(result.map((e) => e.tag).toList());
     });
+
+    setState(() {});
 
     miscSettingsWatcher = MiscSettings.watch((s) {
       miscSettings = s!;
@@ -354,7 +413,7 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
       FavoriteBooru.addAllFileUrl(selected);
 
       Navigator.of(context, rootNavigator: true).pop();
-    });
+    }, false);
   }
 
   List<GridAction<FavoriteBooru>> gridActions() {

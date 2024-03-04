@@ -203,6 +203,7 @@ void main() async {
       accentColor: accentColor,
       key: restartKey,
       child: (d, l) => MaterialApp(
+        debugShowCheckedModeBanner: false,
         themeAnimationCurve: Easing.emphasizedAccelerate,
         title: 'Azari',
         darkTheme: d,

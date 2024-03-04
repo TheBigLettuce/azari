@@ -18,7 +18,7 @@ import 'package:gallery/src/pages/anime/info_base/card_panel/card_panel.dart';
 import 'package:gallery/src/pages/anime/info_base/card_panel/card_shell.dart';
 import 'package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart';
 import 'package:gallery/src/pages/anime/info_base/refresh_entry_icon.dart';
-import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
+import 'package:gallery/src/pages/anime/info_pages/finished_anime_info_page.dart';
 import 'package:gallery/src/widgets/skeletons/settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -49,7 +49,6 @@ class _WatchingAnimeInfoPageState extends State<WatchingAnimeInfoPage>
 
     watcher = entry.watch((e) {
       if (e == null) {
-        Navigator.pop(context);
         return;
       }
 
@@ -74,6 +73,16 @@ class _WatchingAnimeInfoPageState extends State<WatchingAnimeInfoPage>
 
   void _addToWatched() {
     WatchedAnimeEntry.move(entry);
+
+    final newEntry = WatchedAnimeEntry.maybeGet(entry.id, entry.site)!;
+    Navigator.of(context, rootNavigator: true)
+        .pushReplacement(MaterialPageRoute(
+      builder: (context) {
+        return FinishedAnimeInfoPage(
+          entry: newEntry,
+        );
+      },
+    ));
   }
 
   @override
@@ -88,6 +97,58 @@ class _WatchingAnimeInfoPageState extends State<WatchingAnimeInfoPage>
         SettingsSkeleton(
           AppLocalizations.of(context)!.watchingTab,
           state,
+          fab: FloatingActionButton(
+            onPressed: _addToWatched,
+            child: const Icon(Icons.check_rounded),
+          ),
+          bottomAppBar: BottomAppBar(
+            child: Row(
+              children: [
+                IconButton(
+                    onPressed: () {
+                      if (!entry.inBacklog) {
+                        entry.unsetIsWatching();
+                        return;
+                      }
+
+                      if (!entry.setCurrentlyWatching()) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(
+                                AppLocalizations.of(context)!.cantWatchThree)));
+                      }
+                    },
+                    icon: Icon(
+                      Icons.play_arrow_rounded,
+                      color: entry.inBacklog
+                          ? null
+                          : Theme.of(context).colorScheme.primary,
+                    )),
+                ...CardPanel.defaultButtons(
+                  context,
+                  entry,
+                  isWatching: true,
+                  inBacklog: entry.inBacklog,
+                  watched: false,
+                ),
+                IconButton(
+                  onPressed: () {
+                    SavedAnimeEntry.deleteAll([entry.isarId!]);
+
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(
+                          AppLocalizations.of(context)!.removedFromWatching),
+                      action: SnackBarAction(
+                          label: AppLocalizations.of(context)!.undoLabel,
+                          onPressed: () {
+                            SavedAnimeEntry.addAll([entry], entry.site);
+                          }),
+                    ));
+                  },
+                  icon: const Icon(Icons.delete_rounded),
+                ),
+              ],
+            ),
+          ),
           extendBodyBehindAppBar: true,
           appBar: PreferredSize(
               preferredSize: const Size.fromHeight(kToolbarHeight),
@@ -108,84 +169,29 @@ class _WatchingAnimeInfoPageState extends State<WatchingAnimeInfoPage>
                   bottom: MediaQuery.viewPaddingOf(context).bottom),
               child: Stack(children: [
                 BackgroundImage(image: entry.thumbnail()!),
-                CardShell(
-                  title: entry.title,
-                  titleEnglish: entry.titleEnglish,
-                  titleJapanese: entry.titleJapanese,
-                  titleSynonyms: entry.titleSynonyms,
-                  safeMode: entry.explicit,
-                  viewPadding: MediaQuery.viewPaddingOf(context),
-                  buttons: [
-                    ...CardPanel.defaultButtons(
-                      context,
-                      entry,
-                      isWatching: true,
-                      inBacklog: entry.inBacklog,
-                      watched: false,
-                      replaceWatchCard: UnsizedCard(
-                        subtitle:
-                            Text(AppLocalizations.of(context)!.cardWatching),
-                        title: Icon(
-                          Icons.play_arrow_rounded,
-                          color: entry.inBacklog
-                              ? null
-                              : Theme.of(context).colorScheme.primary,
+                Column(
+                  children: [
+                    CardShell(
+                      title: entry.title,
+                      titleEnglish: entry.titleEnglish,
+                      titleJapanese: entry.titleJapanese,
+                      titleSynonyms: entry.titleSynonyms,
+                      safeMode: entry.explicit,
+                      viewPadding: MediaQuery.viewPaddingOf(context),
+                      // buttons: ,
+                      info: [
+                        ...CardPanel.defaultInfo(
+                          context,
+                          entry,
                         ),
-                        tooltip: AppLocalizations.of(context)!.cardWatching,
-                        onPressed: () {
-                          if (!entry.inBacklog) {
-                            entry.unsetIsWatching();
-                            return;
-                          }
-
-                          if (!entry.setCurrentlyWatching()) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                content: Text(AppLocalizations.of(context)!
-                                    .cantWatchThree)));
-                          }
-                        },
-                        transparentBackground: true,
-                      ),
+                      ],
                     ),
-                    UnsizedCard(
-                      subtitle: Text(AppLocalizations.of(context)!.cardDone),
-                      title: const Icon(Icons.check_rounded),
-                      tooltip: AppLocalizations.of(context)!.cardDone,
-                      transparentBackground: true,
-                      onPressed: _addToWatched,
-                    ),
-                    UnsizedCard(
-                      subtitle: Text(AppLocalizations.of(context)!.cardRemove),
-                      title: const Icon(Icons.close),
-                      tooltip: AppLocalizations.of(context)!.cardRemove,
-                      transparentBackground: true,
-                      onPressed: () {
-                        SavedAnimeEntry.deleteAll([widget.entry.isarId!]);
-
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(AppLocalizations.of(context)!
-                              .removedFromWatching),
-                          action: SnackBarAction(
-                              label: AppLocalizations.of(context)!.undoLabel,
-                              onPressed: () {
-                                SavedAnimeEntry.addAll(
-                                    [widget.entry], widget.entry.site);
-                              }),
-                        ));
-                      },
-                    )
-                  ],
-                  info: [
-                    ...CardPanel.defaultInfo(
-                      context,
-                      entry,
+                    AnimeInfoBody(
+                      overlayColor: overlayColor,
+                      entry: entry,
+                      viewPadding: MediaQuery.viewPaddingOf(context),
                     ),
                   ],
-                ),
-                AnimeInfoBody(
-                  overlayColor: overlayColor,
-                  entry: entry,
-                  viewPadding: MediaQuery.viewPaddingOf(context),
                 ),
               ]),
             ),

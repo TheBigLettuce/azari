@@ -42,7 +42,7 @@ import 'more/settings/settings_widget.dart';
 part 'home/icons/anime_icon.dart';
 part 'home/icons/gallery_icon.dart';
 part 'home/icons/booru_icon.dart';
-part 'home/icons/favorites_icon.dart';
+part 'home/icons/manga_icon.dart';
 part 'home/navigator_shell.dart';
 part 'home/change_page_mixin.dart';
 part 'home/animated_icons_mixin.dart';
@@ -111,7 +111,7 @@ class _HomeState extends State<Home>
     return SelectionCountNotifier(
       count: glueState.count,
       child: HomeSkeleton(
-        "Home",
+        AppLocalizations.of(context)!.homePage,
         state,
         (context) => _currentPage(context, this, edgeInsets),
         navBar: widget.callback != null

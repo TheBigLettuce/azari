@@ -31,7 +31,6 @@ class AnimeGenres<T> extends StatelessWidget {
           spacing: 4,
           children: genres
               .map((e) => ActionChip(
-                    // backgroundColor: Theme.of(context).chipTheme.backgroundColor,
                     surfaceTintColor: Theme.of(context).colorScheme.surfaceTint,
                     elevation: 4,
                     visualDensity: VisualDensity.compact,

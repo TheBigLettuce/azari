@@ -142,7 +142,7 @@ class _TabBarWrapperState extends State<TabBarWrapper> {
           Padding(
             padding: const EdgeInsets.only(top: 10),
             child: SizedBox(
-                width: 24 + (rightPadding <= 0 ? 8 : rightPadding / 2),
+                width: 24 + 24 + (rightPadding <= 0 ? 8 : rightPadding / 2),
                 child: GestureDetector(
                   onLongPress: () {
                     widget.onPressed(true);

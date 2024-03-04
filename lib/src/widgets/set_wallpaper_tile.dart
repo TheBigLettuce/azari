@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SetWallpaperTile extends StatefulWidget {
   final int id;
@@ -49,9 +50,7 @@ class _SetWallpaperTileState extends State<SetWallpaperTile> {
                 width: 14,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : const Text("Set as wallpaper"), // TODO: change
-
-        // subtitle: subtitle != null ? Text(subtitle) : null,
+            : Text(AppLocalizations.of(context)!.setAsWallpaper),
       ),
     );
   }

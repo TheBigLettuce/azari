@@ -8,7 +8,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
@@ -18,11 +17,11 @@ import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
+import 'package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
@@ -62,11 +61,8 @@ class _DownloadsState extends State<Downloads> {
 
   late final state = GridSkeletonStateFilter<DownloadFile>(
     filter: loader.filter,
-    transform: (cell, sort) => cell,
+    transform: (cell) => cell,
   );
-
-  AnimationController? refreshController;
-  AnimationController? deleteController;
 
   @override
   void initState() {
@@ -90,40 +86,41 @@ class _DownloadsState extends State<Downloads> {
     super.dispose();
   }
 
-  // Segments<DownloadFile> _makeSegments(BuildContext context) => Segments(
-  //       AppLocalizations.of(context)!.unknownSegmentsPlaceholder,
-  //       hidePinnedIcon: true,
-  //       limitLabelChildren: 6,
-  //       segment: (cell) {
-  //         return (Downloader.g.downloadDescription(cell), true);
-  //       },
-  //       onLabelPressed: (label, children) {
-  //         if (children.isEmpty) {
-  //           return;
-  //         }
+  Segments<DownloadFile> _makeSegments(BuildContext context) => Segments(
+        AppLocalizations.of(context)!.unknownSegmentsPlaceholder,
+        hidePinnedIcon: true,
+        limitLabelChildren: 6,
+        injectedLabel: "",
+        segment: (cell) {
+          return (Downloader.g.downloadDescription(cell), true);
+        },
+        onLabelPressed: (label, children) {
+          if (children.isEmpty) {
+            return;
+          }
 
-  //         if (label == kDownloadInProgress) {
-  //           Downloader.g.markStale(override: children);
-  //         } else if (label == kDownloadOnHold) {
-  //           Downloader.g.addAll(children, state.settings);
-  //         } else if (label == kDownloadFailed) {
-  //           final n = (6 - children.length);
+          if (label == kDownloadInProgress) {
+            Downloader.g.markStale(override: children);
+          } else if (label == kDownloadOnHold) {
+            Downloader.g.addAll(children, state.settings);
+          } else if (label == kDownloadFailed) {
+            final n = (6 - children.length);
 
-  //           if (!n.isNegative && n != 0) {
-  //             Downloader.g.addAll([
-  //               ...children,
-  //               ...DownloadFile.nextNumber(children.length),
-  //             ], state.settings);
-  //           } else {
-  //             Downloader.g.addAll(children, state.settings);
-  //           }
-  //         }
-  //       },
-  //     );
+            if (!n.isNegative && n != 0) {
+              Downloader.g.addAll([
+                ...children,
+                ...DownloadFile.nextNumber(children.length),
+              ], state.settings);
+            } else {
+              Downloader.g.addAll(children, state.settings);
+            }
+          }
+        },
+      );
 
   GridSettingsBase _gridSettingsBase() => const GridSettingsBase(
         aspectRatio: GridAspectRatio.one,
-        columns: GridColumn.two,
+        columns: GridColumn.three,
         layoutType: GridLayoutType.grid,
         hideName: false,
       );
@@ -147,7 +144,7 @@ class _DownloadsState extends State<Downloads> {
           state,
           (context) => GridFrame<DownloadFile>(
             key: state.gridKey,
-            layout: GridSettingsLayoutBehaviour(_gridSettingsBase),
+            layout: SegmentLayout(_makeSegments(context), _gridSettingsBase),
             refreshingStatus: state.refreshingStatus,
             getCell: loader.getCell,
             initalScrollPosition: 0,
@@ -163,7 +160,6 @@ class _DownloadsState extends State<Downloads> {
                   search.searchFocus,
                 ),
               ),
-              // onBack: () => Navigator.pop(context),
               selectionGlue: GlueProvider.of(context),
               refresh: SynchronousGridRefresh(() => loader.count()),
             ),
@@ -174,16 +170,9 @@ class _DownloadsState extends State<Downloads> {
               ],
               menuButtonItems: [
                 IconButton(
-                    onPressed: () {
-                      if (deleteController != null) {
-                        deleteController!.forward(from: 0);
-                      }
-                      Downloader.g.removeAll();
-                    },
-                    icon: const Icon(Icons.close).animate(
-                        onInit: (controller) => deleteController = controller,
-                        effects: const [FlipEffect(begin: 1, end: 0)],
-                        autoPlay: false)),
+                  onPressed: Downloader.g.removeAll,
+                  icon: const Icon(Icons.close),
+                ),
               ],
               keybindsDescription:
                   AppLocalizations.of(context)!.downloadsPageName,

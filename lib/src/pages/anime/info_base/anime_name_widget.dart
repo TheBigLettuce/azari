@@ -41,14 +41,14 @@ class AnimeNameWidget extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    // fontWeight: FontWeight.w400,
-                    color: safeMode == AnimeSafeMode.h ||
-                            safeMode == AnimeSafeMode.ecchi
-                        ? Colors.pink.withOpacity(0.8)
-                        : Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.8)),
+                      color: safeMode == AnimeSafeMode.h ||
+                              safeMode == AnimeSafeMode.ecchi
+                          ? Colors.pink.withOpacity(0.8)
+                          : Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.8),
+                    ),
               ),
             ),
             Text(

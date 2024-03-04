@@ -19,6 +19,7 @@ import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/pages/booru/booru_page.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/pages/booru/add_to_bookmarks_button.dart';
@@ -101,7 +102,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
   void initState() {
     super.initState();
 
-    api = BooruAPI.fromEnum(widget.booru, client, const EmptyPageSaver());
+    api = BooruAPI.fromEnum(widget.booru, client, EmptyPageSaver());
 
     safeMode = widget.overrideSafeMode;
 
@@ -116,7 +117,6 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
       addItems: (_) => const [],
       onSubmit: (context, tag) {
         _clearAndRefreshB(tag);
-        // }
       },
     ));
 
@@ -320,8 +320,15 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                   ),
                   loadNext: _addLast,
                   refresh: AsyncGridRefresh(_clearAndRefresh),
-                  registerNotifiers: (child) =>
-                      BooruAPINotifier(api: api, child: child),
+                  registerNotifiers: (child) => OnBooruTagPressed(
+                    onPressed: (context, _, tag, overrideSafeMode) {
+                      safeMode = overrideSafeMode;
+                      search.searchController.text = tag;
+
+                      _clearAndRefreshB(tag);
+                    },
+                    child: BooruAPINotifier(api: api, child: child),
+                  ),
                 ),
                 systemNavigationInsets: MediaQuery.of(context).viewPadding,
                 description: GridDescription(
@@ -337,8 +344,9 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                           if (tags.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                  content: Text(
-                                      "Search text is empty")), // TODO: change
+                                content: Text(AppLocalizations.of(context)!
+                                    .searchTextIsEmpty),
+                              ),
                             );
 
                             return false;

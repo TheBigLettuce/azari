@@ -14,10 +14,14 @@ import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_booru_paging.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/db/tags/booru_tagging.dart';
+import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/pages/booru/booru_page.dart';
+import 'package:gallery/src/pages/booru/booru_search_page.dart';
+import 'package:gallery/src/pages/home.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/pages/more/tags/tags_widget.dart';
@@ -66,6 +70,7 @@ class _IsarPageSaver implements PageSaver {
 
 class BooruRestoredPage extends StatefulWidget {
   final GridStateBooru state;
+  final PagingStateRegistry pagingRegistry;
   final SafeMode? overrideSafeMode;
   final void Function()? onDispose;
   final SelectionGlue<J> Function<J extends Cell>()? generateGlue;
@@ -74,6 +79,7 @@ class BooruRestoredPage extends StatefulWidget {
     super.key,
     required this.state,
     this.generateGlue,
+    required this.pagingRegistry,
     this.overrideSafeMode,
     this.onDispose,
   });
@@ -82,22 +88,25 @@ class BooruRestoredPage extends StatefulWidget {
   State<BooruRestoredPage> createState() => _BooruRestoredPageState();
 }
 
-class _BooruRestoredPageState extends State<BooruRestoredPage> {
-  static const _log = LogTarget.booru;
+class RestoredBooruPageState implements PagingEntry {
+  RestoredBooruPageState(
+    Booru booru,
+    String name,
+  )   : tagManager = TagManager.fromEnum(booru),
+        instance = DbsOpen.secondaryGridName(name),
+        client = BooruAPI.defaultClientForBooru(booru) {
+    api = BooruAPI.fromEnum(booru, client, _IsarPageSaver(instance));
+  }
 
-  late final StreamSubscription<Settings?> settingsWatcher;
-  late final StreamSubscription favoritesWatcher;
-  late final Dio client = BooruAPI.defaultClientForBooru(widget.state.booru);
-  late final tagManager = TagManager.fromEnum(widget.state.booru);
+  final Dio client;
+  final TagManager tagManager;
   late final BooruAPI api;
-
-  late final SearchLaunchGrid search;
 
   int? currentSkipped;
 
   bool reachedEnd = false;
 
-  late final Isar instance = DbsOpen.secondaryGridName(widget.state.name);
+  final Isar instance;
 
   late final state = GridSkeletonState<Post>(
     initalCellCount: instance.posts.countSync(),
@@ -105,11 +114,69 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
   );
 
   @override
+  void dispose() {
+    client.close();
+
+    state.dispose();
+
+    instance.close(deleteFromDisk: false);
+  }
+
+  @override
+  double get offset {
+    final o =
+        Dbs.g.main.gridStateBoorus.getByNameSync(instance.name)!.scrollOffset;
+    if (o.isNaN) {
+      return 0;
+    }
+
+    return o;
+  }
+
+  @override
+  int get page => instance.gridBooruPagings.getSync(0)?.page ?? 0;
+
+  @override
+  void setOffset(double o) {
+    final prev = Dbs.g.main.gridStateBoorus.getByNameSync(instance.name)!;
+
+    Dbs.g.main.writeTxnSync(
+      () => Dbs.g.main.gridStateBoorus.putByNameSync(prev.copy(
+        scrollOffset: o,
+      )),
+    );
+  }
+
+  @override
+  void setPage(int p) {
+    instance.writeTxnSync(
+      () => instance.gridBooruPagings.putSync(GridBooruPaging(page)),
+    );
+  }
+}
+
+class _BooruRestoredPageState extends State<BooruRestoredPage> {
+  static const _log = LogTarget.booru;
+
+  late final StreamSubscription<Settings?> settingsWatcher;
+  late final StreamSubscription favoritesWatcher;
+
+  late final SearchLaunchGrid search;
+
+  late final RestoredBooruPageState pagingState;
+
+  BooruAPI get api => pagingState.api;
+  GridSkeletonState<Post> get state => pagingState.state;
+  TagManager get tagManager => pagingState.tagManager;
+  Isar get instance => pagingState.instance;
+
+  @override
   void initState() {
     super.initState();
 
-    api =
-        BooruAPI.fromEnum(widget.state.booru, client, _IsarPageSaver(instance));
+    pagingState = widget.pagingRegistry.getOrRegister(widget.state.name, () {
+      return RestoredBooruPageState(widget.state.booru, widget.state.name);
+    }) as RestoredBooruPageState;
 
     search = SearchLaunchGrid(SearchLaunchGridData(
       completeTag: api.completeTag,
@@ -145,12 +212,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
 
     widget.onDispose?.call();
 
-    client.close();
     search.dispose();
-
-    state.dispose();
-
-    instance.close(deleteFromDisk: false);
 
     super.dispose();
   }
@@ -177,13 +239,13 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
         overrideSafeMode: _safeMode(),
       );
 
-      currentSkipped = list.$2;
+      pagingState.currentSkipped = list.$2;
       await instance.writeTxn(() {
         instance.posts.clear();
         return instance.posts.putAllByFileUrl(list.$1);
       });
 
-      reachedEnd = false;
+      pagingState.reachedEnd = false;
     } catch (e) {
       rethrow;
     }
@@ -210,7 +272,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
   }
 
   Future<int> _addLast() async {
-    if (reachedEnd) {
+    if (pagingState.reachedEnd) {
       return instance.posts.countSync();
     }
     final p = instance.posts.getSync(instance.posts.countSync());
@@ -220,18 +282,18 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
 
     try {
       final list = await api.fromPost(
-        currentSkipped != null && currentSkipped! < p.id
-            ? currentSkipped!
+        pagingState.currentSkipped != null && pagingState.currentSkipped! < p.id
+            ? pagingState.currentSkipped!
             : p.id,
         widget.state.tags,
         tagManager.excluded,
         overrideSafeMode: _safeMode(),
       );
 
-      if (list.$1.isEmpty && currentSkipped == null) {
-        reachedEnd = true;
+      if (list.$1.isEmpty && pagingState.currentSkipped == null) {
+        pagingState.reachedEnd = true;
       } else {
-        currentSkipped = list.$2;
+        pagingState.currentSkipped = list.$2;
         final oldCount = instance.posts.countSync();
         instance
             .writeTxnSync(() => instance.posts.putAllByFileUrlSync(list.$1));
@@ -250,13 +312,17 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
     return instance.posts.count();
   }
 
-  double _scrollOffset() {
-    final o = widget.state.scrollOffset;
-    if (o.isNaN) {
-      return 0;
-    }
-
-    return o;
+  void _onTagPressed(
+      BuildContext context, Booru booru, String tag, SafeMode? safeMode) {
+    Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        return BooruSearchPage(
+          booru: booru,
+          tags: tag,
+          overrideSafeMode: safeMode,
+        );
+      },
+    ));
   }
 
   @override
@@ -279,7 +345,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                     GridSettingsBooru.current),
                 mainFocus: state.mainFocus,
                 getCell: (i) => instance.posts.getSync(i + 1)!,
-                initalScrollPosition: _scrollOffset(),
+                initalScrollPosition: pagingState.offset,
                 imageViewDescription: ImageViewDescription(
                   addIconsImage: (post) => [
                     BooruGridActions.favorites(context, post),
@@ -293,16 +359,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                 ),
                 functionality: GridFunctionality(
                   watchLayoutSettings: GridSettingsBooru.watch,
-                  updateScrollPosition: (pos) {
-                    final prev = Dbs.g.main.gridStateBoorus
-                        .getByNameSync(widget.state.name)!;
-
-                    Dbs.g.main.writeTxnSync(
-                      () => Dbs.g.main.gridStateBoorus.putByNameSync(prev.copy(
-                        scrollOffset: pos,
-                      )),
-                    );
-                  },
+                  updateScrollPosition: pagingState.setOffset,
                   onError: (error) {
                     return OutlinedButton(
                       onPressed: () {
@@ -321,8 +378,10 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                   ),
                   loadNext: _addLast,
                   refresh: AsyncGridRefresh(_clearAndRefresh),
-                  registerNotifiers: (child) =>
-                      BooruAPINotifier(api: api, child: child),
+                  registerNotifiers: (child) => OnBooruTagPressed(
+                    onPressed: _onTagPressed,
+                    child: BooruAPINotifier(api: api, child: child),
+                  ),
                 ),
                 systemNavigationInsets: MediaQuery.of(context).viewPadding,
                 description: GridDescription(

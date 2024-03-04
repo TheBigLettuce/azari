@@ -12,6 +12,7 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.d
 import 'package:gallery/src/pages/anime/info_base/body/body_segment_label.dart';
 import 'package:gallery/src/pages/anime/info_pages/anime_info_id.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SimilarAnime extends StatefulWidget {
   final AnimeEntry entry;
@@ -37,7 +38,8 @@ class _SimilarAnimeState extends State<SimilarAnime> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const BodySegmentLabel(text: "Similar"), // TODO: change
+              BodySegmentLabel(
+                  text: AppLocalizations.of(context)!.animeSimilar),
               SizedBox(
                 height: MediaQuery.sizeOf(context).longestSide * 0.2,
                 child: ClipRRect(
@@ -89,7 +91,7 @@ class _SimilarAnimeState extends State<SimilarAnime> {
 
                       setState(() {});
                     },
-                    child: const Text("Load similar"), // TODO: change
+                    child: Text(AppLocalizations.of(context)!.animeLoadSimilar),
                   ),
                 );
         }

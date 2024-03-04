@@ -17,7 +17,6 @@ import 'package:gallery/src/pages/anime/info_base/card_panel/card_panel.dart';
 import 'package:gallery/src/pages/anime/info_base/card_panel/card_shell.dart';
 import 'package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart';
 import 'package:gallery/src/pages/anime/info_base/refresh_entry_icon.dart';
-import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
 import 'package:gallery/src/widgets/skeletons/settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -74,6 +73,34 @@ class _FinishedAnimeInfoPageState extends State<FinishedAnimeInfoPage>
     Widget body() => SettingsSkeleton(
           AppLocalizations.of(context)!.finishedTab,
           state,
+          bottomAppBar: BottomAppBar(
+            child: Row(
+              children: [
+                ...CardPanel.defaultButtons(
+                  context,
+                  entry,
+                  isWatching: false,
+                  inBacklog: false,
+                  watched: true,
+                ),
+                IconButton(
+                    onPressed: () {
+                      WatchedAnimeEntry.delete(entry.id, entry.site);
+
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(
+                            AppLocalizations.of(context)!.removeFromWatched),
+                        action: SnackBarAction(
+                            label: AppLocalizations.of(context)!.undoLabel,
+                            onPressed: () {
+                              WatchedAnimeEntry.read(entry);
+                            }),
+                      ));
+                    },
+                    icon: const Icon(Icons.close_rounded))
+              ],
+            ),
+          ),
           extendBodyBehindAppBar: true,
           appBar: PreferredSize(
               preferredSize: const Size.fromHeight(kToolbarHeight),
@@ -91,60 +118,26 @@ class _FinishedAnimeInfoPageState extends State<FinishedAnimeInfoPage>
                   bottom: MediaQuery.viewPaddingOf(context).bottom),
               child: Stack(children: [
                 BackgroundImage(image: entry.thumbnail()!),
-                CardShell(
-                  title: widget.entry.title,
-                  titleEnglish: widget.entry.titleEnglish,
-                  titleJapanese: widget.entry.titleJapanese,
-                  titleSynonyms: widget.entry.titleSynonyms,
-                  safeMode: widget.entry.explicit,
-                  viewPadding: MediaQuery.viewPaddingOf(context),
-                  info: [
-                    ...CardPanel.defaultInfo(context, entry),
-                  ],
-                  buttons: [
-                    ...CardPanel.defaultButtons(
-                      context,
-                      entry,
-                      isWatching: false,
-                      inBacklog: false,
-                      watched: true,
-                      replaceWatchCard: UnsizedCard(
-                        subtitle:
-                            Text(AppLocalizations.of(context)!.cardWatched),
-                        title: Icon(
-                          Icons.check_rounded,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        tooltip: AppLocalizations.of(context)!.cardWatched,
-                        transparentBackground: true,
-                      ),
+                Column(
+                  children: [
+                    CardShell(
+                      title: widget.entry.title,
+                      titleEnglish: widget.entry.titleEnglish,
+                      titleJapanese: widget.entry.titleJapanese,
+                      titleSynonyms: widget.entry.titleSynonyms,
+                      safeMode: widget.entry.explicit,
+                      viewPadding: MediaQuery.viewPaddingOf(context),
+                      info: [
+                        ...CardPanel.defaultInfo(context, entry),
+                      ],
                     ),
-                    UnsizedCard(
-                      subtitle: Text(AppLocalizations.of(context)!.cardRemove),
-                      title: const Icon(Icons.close_rounded),
-                      tooltip: AppLocalizations.of(context)!.cardRemove,
-                      transparentBackground: true,
-                      onPressed: () {
-                        WatchedAnimeEntry.delete(entry.id, entry.site);
-
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(
-                              AppLocalizations.of(context)!.removeFromWatched),
-                          action: SnackBarAction(
-                              label: AppLocalizations.of(context)!.undoLabel,
-                              onPressed: () {
-                                WatchedAnimeEntry.read(entry);
-                              }),
-                        ));
-                      },
-                    )
+                    AnimeInfoBody(
+                      overlayColor: overlayColor,
+                      entry: entry,
+                      viewPadding: MediaQuery.viewPaddingOf(context),
+                    ),
                   ],
-                ),
-                AnimeInfoBody(
-                  overlayColor: overlayColor,
-                  entry: entry,
-                  viewPadding: MediaQuery.viewPaddingOf(context),
-                ),
+                )
               ]),
             ),
           ),

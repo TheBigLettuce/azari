@@ -133,6 +133,7 @@ class __FinishedTabState extends State<_FinishedTab> {
         systemNavigationInsets: widget.viewInsets,
         mainFocus: state.mainFocus,
         description: GridDescription(
+          risingAnimation: true,
           actions: const [],
           keybindsDescription: AppLocalizations.of(context)!.finishedTab,
           showAppBar: false,

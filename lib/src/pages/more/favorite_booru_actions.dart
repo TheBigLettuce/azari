@@ -14,7 +14,8 @@ abstract class FavoritesActions {
   static GridAction<T> addToGroup<T>(
       BuildContext context,
       String? Function(List<T>) initalValue,
-      void Function(List<T>, String, bool) onSubmitted) {
+      void Function(List<T>, String, bool) onSubmitted,
+      bool showPinButton) {
     return GridAction(
       Icons.group_work_outlined,
       (selected) {
@@ -29,6 +30,7 @@ abstract class FavoritesActions {
               initalValue: initalValue,
               onSubmitted: onSubmitted,
               selected: selected,
+              showPinButton: showPinButton,
             );
           },
         ));
@@ -42,12 +44,14 @@ class _GroupDialogWidget<T> extends StatefulWidget {
   final List<T> selected;
   final String? Function(List<T>) initalValue;
   final void Function(List<T>, String, bool) onSubmitted;
+  final bool showPinButton;
 
   const _GroupDialogWidget({
     super.key,
     required this.initalValue,
     required this.onSubmitted,
     required this.selected,
+    required this.showPinButton,
   });
 
   @override
@@ -73,15 +77,15 @@ class __GroupDialogWidgetState<T> extends State<_GroupDialogWidget<T>> {
               widget.onSubmitted(widget.selected, value, toPin);
             },
           ),
-          SwitchListTile(
-              // controlAffinity: ListTileControlAffinity.leading,
-              title: const Text("Pin"), // TODO: change
-              value: toPin,
-              onChanged: (b) {
-                toPin = b;
+          if (widget.showPinButton)
+            SwitchListTile(
+                title: Text(AppLocalizations.of(context)!.pinGroupLabel),
+                value: toPin,
+                onChanged: (b) {
+                  toPin = b;
 
-                setState(() {});
-              })
+                  setState(() {});
+                })
         ],
       ),
       // actions: [

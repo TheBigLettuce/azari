@@ -22,19 +22,20 @@ class AddToBookmarksButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-        onPressed: () {
-          final proceed = f();
-          if (!proceed) {
-            return;
-          }
-          ScaffoldMessenger.of(state.scaffoldKey.currentContext!)
-              .showSnackBar(SnackBar(
-                  content: Text(
-            AppLocalizations.of(context)!.bookmarked,
-          )));
-          state.gridKey.currentState?.selection.reset();
-          Navigator.pop(context);
-        },
-        icon: const Icon(Icons.bookmark_add));
+      onPressed: () {
+        final proceed = f();
+        if (!proceed) {
+          return;
+        }
+        ScaffoldMessenger.of(state.scaffoldKey.currentContext!)
+            .showSnackBar(SnackBar(
+                content: Text(
+          AppLocalizations.of(context)!.bookmarked,
+        )));
+        state.gridKey.currentState?.selection.reset();
+        Navigator.pop(context);
+      },
+      icon: const Icon(Icons.bookmark_add),
+    );
   }
 }

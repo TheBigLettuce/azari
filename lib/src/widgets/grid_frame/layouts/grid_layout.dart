@@ -34,6 +34,7 @@ class GridLayout<T extends Cell> implements GridLayouter<T> {
             idx,
             hideTitle: settings.hideName,
             isList: isList,
+            animated: PlayAnimationNotifier.maybeOf(context) ?? false,
             state: state,
           );
         },

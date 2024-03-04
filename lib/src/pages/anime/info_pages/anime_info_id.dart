@@ -87,7 +87,7 @@ class _AnimeInfoIdPageState extends State<AnimeInfoIdPage>
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.hasData && snapshot.data == null) {
-          return errorW("Invalid anime entry"); // TODO: change
+          return errorW(AppLocalizations.of(context)!.invalidAnimeEntry);
         }
 
         if (!snapshot.hasData && !snapshot.hasError) {
@@ -123,15 +123,21 @@ class _AnimeInfoIdPageState extends State<AnimeInfoIdPage>
                         child: Stack(
                           children: [
                             BackgroundImage(image: snapshot.data!.thumbnail()!),
-                            CardPanel(
-                              viewPadding: MediaQuery.viewPaddingOf(context),
-                              entry: snapshot.data!,
-                            ),
-                            AnimeInfoBody(
-                              overlayColor: overlayColor,
-                              entry: snapshot.data!,
-                              viewPadding: MediaQuery.viewPaddingOf(context),
-                            ),
+                            Column(
+                              children: [
+                                CardPanel(
+                                  viewPadding:
+                                      MediaQuery.viewPaddingOf(context),
+                                  entry: snapshot.data!,
+                                ),
+                                AnimeInfoBody(
+                                  overlayColor: overlayColor,
+                                  entry: snapshot.data!,
+                                  viewPadding:
+                                      MediaQuery.viewPaddingOf(context),
+                                ),
+                              ],
+                            )
                           ],
                         ),
                       ),

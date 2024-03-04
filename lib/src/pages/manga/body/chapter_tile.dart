@@ -13,6 +13,7 @@ import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
 import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ChapterTile extends StatefulWidget {
   final MangaChapter chapter;
@@ -80,11 +81,23 @@ class _ChapterTileState extends State<ChapterTile> {
 
             widget.finishRead();
           },
-          child: const Text("Mark as read"), // TODO: change
+          child: Text(AppLocalizations.of(context)!.mangaMarkAsRead),
+        ),
+        PopupMenuItem(
+          onTap: () {
+            ReadMangaChapter.delete(
+              siteMangaId: widget.entry.id.toString(),
+              chapterId: widget.chapter.id,
+            );
+
+            widget.finishRead();
+          },
+          child: Text(AppLocalizations.of(context)!.mangaRemoveProgress),
         )
       ],
       includeCopy: false,
-      title: "Chapter ${widget.chapter.chapter}",
+      title: AppLocalizations.of(context)!
+          .mangaChapterName(widget.chapter.chapter),
       child: ListTile(
         enabled: widget.chapter.pages != 0,
         onTap: widget.chapter.pages == 0
@@ -133,7 +146,7 @@ class _ChapterTileState extends State<ChapterTile> {
             const Padding(padding: EdgeInsets.only(left: 6)),
             Text(
               progress == widget.chapter.pages
-                  ? "done" // TODO: change
+                  ? AppLocalizations.of(context)!.mangaProgressDone
                   : progress == null
                       ? widget.chapter.pages.toString()
                       : "$progress / ${widget.chapter.pages}",

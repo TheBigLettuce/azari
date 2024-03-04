@@ -69,22 +69,42 @@ class GridFunctionality<T extends Cell> {
 
 sealed class GridRefreshType {
   const GridRefreshType();
+
+  bool get pullToRefresh;
 }
 
 class SynchronousGridRefresh implements GridRefreshType {
-  const SynchronousGridRefresh(this.refresh);
+  const SynchronousGridRefresh(
+    this.refresh, {
+    this.pullToRefresh = false,
+  });
+
+  @override
+  final bool pullToRefresh;
 
   final int Function() refresh;
 }
 
 class AsyncGridRefresh implements GridRefreshType {
-  const AsyncGridRefresh(this.refresh);
+  const AsyncGridRefresh(
+    this.refresh, {
+    this.pullToRefresh = true,
+  });
+
+  @override
+  final bool pullToRefresh;
 
   final Future<int> Function() refresh;
 }
 
 class RetainedGridRefresh implements GridRefreshType {
-  const RetainedGridRefresh(this.refresh);
+  const RetainedGridRefresh(
+    this.refresh, {
+    this.pullToRefresh = true,
+  });
+
+  @override
+  final bool pullToRefresh;
 
   final void Function() refresh;
 }

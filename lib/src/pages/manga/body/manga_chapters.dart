@@ -17,6 +17,7 @@ import 'package:gallery/src/pages/anime/info_base/body/body_segment_label.dart';
 import 'package:gallery/src/pages/manga/body/chapter_tile.dart';
 import 'package:gallery/src/pages/more/settings/settings_label.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 part 'chapter_body.dart';
 
@@ -182,12 +183,12 @@ class _MangaChaptersState extends State<MangaChapters> {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const BodySegmentLabel(text: "Chapters"), // TODO: change
+            BodySegmentLabel(
+                text: AppLocalizations.of(context)!.mangaChaptersLabel),
             PopupMenuButton(
               position: PopupMenuPosition.under,
               shape: const BeveledRectangleBorder(),
               clipBehavior: Clip.antiAlias,
-              // splashRadius: 15,
               itemBuilder: (context) {
                 return [
                   PopupMenuItem(
@@ -195,8 +196,8 @@ class _MangaChaptersState extends State<MangaChapters> {
                       ChapterSettings.setHideRead(!settings.hideRead);
                     },
                     child: settings.hideRead
-                        ? const Text("Show read") // TODO: change
-                        : const Text("Hide read"), // TODO: change
+                        ? Text(AppLocalizations.of(context)!.mangaShowRead)
+                        : Text(AppLocalizations.of(context)!.mangaHideRead),
                   ),
                   PopupMenuItem(
                     onTap: () {
@@ -211,13 +212,18 @@ class _MangaChaptersState extends State<MangaChapters> {
 
                       setState(() {});
                     },
-                    child: const Text("Clear"), // TODO: change
+                    child: Text(AppLocalizations.of(context)!
+                        .mangaClearCachedMangaChapters),
                   ),
                 ];
               },
-              child: const TextButton(
+              child: TextButton(
                 onPressed: null,
-                child: Text("Settings"), // TODO: change
+                style: ButtonStyle(
+                  foregroundColor: MaterialStatePropertyAll(
+                      Theme.of(context).colorScheme.primary),
+                ),
+                child: Text(AppLocalizations.of(context)!.settingsLabel),
               ),
             ),
           ],
@@ -262,7 +268,8 @@ class _MangaChaptersState extends State<MangaChapters> {
                                             strokeWidth: 2,
                                           ),
                                         )
-                                      : const Text("Load next"), // TODO: change
+                                      : Text(AppLocalizations.of(context)!
+                                          .mangaLoadNextChapters),
                                 ),
                               ),
                             )
@@ -293,7 +300,7 @@ class _MangaChaptersState extends State<MangaChapters> {
                 )
               : FilledButton(
                   onPressed: _loadChapters,
-                  child: const Text("Load chapters"), // TODO: change
+                  child: Text(AppLocalizations.of(context)!.mangaLoadChapters),
                 );
         }
       },

@@ -202,6 +202,9 @@ class ThumbId {
   final String path;
   final int differenceHash;
 
-  const ThumbId(
-      {required this.id, required this.path, required this.differenceHash});
+  const ThumbId({
+    required this.id,
+    required this.path,
+    required this.differenceHash,
+  });
 }

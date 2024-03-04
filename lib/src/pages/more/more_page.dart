@@ -9,12 +9,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
-import 'package:gallery/src/pages/more/blacklisted_posts.dart';
 
 import '../../widgets/azari_icon.dart';
 import 'dashboard/dashboard.dart';
 import 'downloads.dart';
-import 'settings/blacklisted_directores.dart';
+import 'blacklisted_page.dart';
 import 'settings/settings_widget.dart';
 
 class MorePage extends StatelessWidget {
@@ -72,30 +71,12 @@ class MorePage extends StatelessWidget {
               Icons.hide_image_outlined,
               color: Theme.of(context).colorScheme.primary,
             ),
-            title: Text(
-                AppLocalizations.of(context)!.blacklistedDirectoriesPageName),
+            title: Text(AppLocalizations.of(context)!.blacklistedPage),
             onTap: () {
               Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => BlacklistedDirectories(
-                      generateGlue: generateGlue,
-                    ),
-                  ));
-            },
-          ),
-          ListTile(
-            style: ListTileStyle.drawer,
-            leading: Icon(
-              Icons.hide_image_rounded,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            title: Text(AppLocalizations.of(context)!.blacklistedPostsPageName),
-            onTap: () {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => BlacklistedPostsPage(
+                    builder: (context) => BlacklistedPage(
                       generateGlue: generateGlue,
                     ),
                   ));

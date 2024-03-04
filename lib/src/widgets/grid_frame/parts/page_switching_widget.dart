@@ -45,8 +45,9 @@ class PageSwitchingWidget<T extends Cell> extends StatelessWidget {
           state.onSubpageSwitched(set.first, selection, controller);
         },
         segments: [
-          const ButtonSegment(
-            icon: Icon(Icons.home_rounded),
+          ButtonSegment(
+            icon:
+                pageSwitcher.overrideHomeIcon ?? const Icon(Icons.home_rounded),
             value: 0,
           ),
           ...pageSwitcher.pages.indexed.map((e) => ButtonSegment(

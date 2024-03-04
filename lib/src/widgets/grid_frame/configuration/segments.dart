@@ -7,6 +7,12 @@
 
 part of '../grid_frame.dart';
 
+abstract class SegmentKey {
+  const SegmentKey();
+
+  String translatedString(BuildContext context);
+}
+
 /// Segments of the grid.
 class Segments<T> {
   const Segments(
@@ -16,9 +22,10 @@ class Segments<T> {
     this.limitLabelChildren,
     this.prebuiltSegments,
     this.onLabelPressed,
+    this.displayFirstCellInSpecial = false,
     this.hidePinnedIcon = false,
     this.injectedSegments = const [],
-    this.injectedLabel = "Special",
+    required this.injectedLabel,
   }) : assert(prebuiltSegments == null || segment == null);
 
   /// Under [unsegmentedLabel] appear cells on which [segment] returns null,
@@ -38,7 +45,7 @@ class Segments<T> {
   /// as a single element segment on the grid.
   final (String? segment, bool sticky) Function(T cell)? segment;
 
-  final Map<String, int>? prebuiltSegments;
+  final Map<SegmentKey, int>? prebuiltSegments;
   final int? limitLabelChildren;
 
   /// If [addToSticky] is not null. then it will be possible to make
@@ -50,4 +57,5 @@ class Segments<T> {
   final void Function(String label, List<T> children)? onLabelPressed;
 
   final bool hidePinnedIcon;
+  final bool displayFirstCellInSpecial;
 }

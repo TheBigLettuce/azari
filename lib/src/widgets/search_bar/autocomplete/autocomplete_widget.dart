@@ -15,12 +15,12 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'autocomplete_tag.dart';
 
 class AutocompleteWidget extends StatelessWidget {
-  final TextEditingController controller;
+  final TextEditingController? controller;
   final void Function(String) highlightChanged;
   final void Function(String) onSubmit;
   final void Function() focusMain;
   final Future<List<String>> Function(String) complF;
-  final FocusNode focus;
+  final FocusNode? focus;
   final ScrollController? scrollHack;
   final bool noSticky;
   final bool submitOnPress;
@@ -69,9 +69,13 @@ class AutocompleteWidget extends StatelessWidget {
         final tiles = options
             .map((elem) => ListTile(
                   onTap: () {
+                    if (controller == null) {
+                      return;
+                    }
+
                     if (submitOnPress) {
                       focusMain();
-                      controller.text = "";
+                      controller!.text = "";
                       onSubmit(elem);
                       return;
                     }
@@ -81,7 +85,7 @@ class AutocompleteWidget extends StatelessWidget {
                       return;
                     }
 
-                    final tags = List.from(controller.text.split(" "));
+                    final tags = List.from(controller!.text.split(" "));
 
                     if (tags.isNotEmpty) {
                       tags.removeLast();
@@ -190,67 +194,58 @@ Widget makeSearchBar(
   required bool disable,
 }) {
   final notifier = FocusNotifier.of(context);
+  final onPrimary = Theme.of(context).colorScheme.onPrimary;
+  final onSurface = Theme.of(context).colorScheme.onSurface;
+  final surface = Theme.of(context).colorScheme.surface;
+  final surfaceTint = Theme.of(context).colorScheme.surfaceTint;
+  final primaryContainer = Theme.of(context).colorScheme.primaryContainer;
+  final onPrimaryContainer = Theme.of(context).colorScheme.onPrimaryContainer;
 
   return AbsorbPointer(
     absorbing: disable,
     child: DefaultSelectionStyle(
-      cursorColor: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
+      cursorColor: onPrimary.withOpacity(0.8),
       child: Theme(
         data: Theme.of(context).copyWith(
             searchBarTheme: SearchBarThemeData(
-              overlayColor: MaterialStatePropertyAll(
-                  Theme.of(context).colorScheme.onPrimary.withOpacity(0.05)),
+              overlayColor:
+                  MaterialStatePropertyAll(onPrimary.withOpacity(0.05)),
               textStyle: MaterialStatePropertyAll(
                 TextStyle(
-                  color: disable
-                      ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
-                      : Theme.of(context).colorScheme.onPrimary,
+                  color: disable ? onSurface.withOpacity(0.4) : onPrimary,
                 ),
               ),
               elevation: const MaterialStatePropertyAll(0),
               backgroundColor: MaterialStatePropertyAll(disable
-                  ? Theme.of(context).colorScheme.surface.withOpacity(0.4)
-                  : Theme.of(context).colorScheme.surfaceTint.withOpacity(0.8)),
+                  ? surface.withOpacity(0.4)
+                  : surfaceTint.withOpacity(0.8)),
               hintStyle: MaterialStatePropertyAll(
                 TextStyle(
-                  color:
-                      Theme.of(context).colorScheme.onPrimary.withOpacity(0.5),
+                  color: onPrimary.withOpacity(0.5),
                 ),
               ),
             ),
             badgeTheme: BadgeThemeData(
-              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              textColor: Theme.of(context)
-                  .colorScheme
-                  .onPrimaryContainer
-                  .withOpacity(0.8),
+              backgroundColor: primaryContainer,
+              textColor: onPrimaryContainer.withOpacity(0.8),
             ),
             inputDecorationTheme: InputDecorationTheme(
-              iconColor: disable
-                  ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
-                  : Theme.of(context).colorScheme.onPrimary,
-              prefixIconColor: disable
-                  ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
-                  : Theme.of(context).colorScheme.onPrimary,
-              suffixIconColor: disable
-                  ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
-                  : Theme.of(context).colorScheme.onPrimary,
+              iconColor: disable ? onSurface.withOpacity(0.4) : onPrimary,
+              prefixIconColor: disable ? onSurface.withOpacity(0.4) : onPrimary,
+              suffixIconColor: disable ? onSurface.withOpacity(0.4) : onPrimary,
             ),
             iconTheme: IconThemeData(
               size: 18,
-              color: disable
-                  ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
-                  : Theme.of(context).colorScheme.onPrimary,
+              color: disable ? onSurface.withOpacity(0.4) : onPrimary,
             ),
             iconButtonTheme: IconButtonThemeData(
-                style: ButtonStyle(
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                    padding: const MaterialStatePropertyAll(EdgeInsets.all(0)),
-                    iconColor: MaterialStatePropertyAll(
-                        Theme.of(context).colorScheme.onPrimary))),
-            hintColor:
-                Theme.of(context).colorScheme.onPrimary.withOpacity(0.5)),
+              style: ButtonStyle(
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                  padding: const MaterialStatePropertyAll(EdgeInsets.all(0)),
+                  iconColor: MaterialStatePropertyAll(onPrimary)),
+            ),
+            hintColor: onPrimary.withOpacity(0.5)),
         child: SearchBar(
           side: const MaterialStatePropertyAll(BorderSide.none),
           leading: !notifier.hasFocus

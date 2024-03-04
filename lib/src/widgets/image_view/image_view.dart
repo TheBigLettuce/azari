@@ -122,7 +122,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   final GlobalKey<ScaffoldState> key = GlobalKey();
   final GlobalKey<WrapImageViewNotifiersState> wrapNotifiersKey = GlobalKey();
   final GlobalKey<WrapImageViewThemeState> wrapThemeKey = GlobalKey();
-  // final GlobalKey<NoteListState> noteListKey = GlobalKey();
 
   late final ScrollController scrollController =
       ScrollController(initialScrollOffset: widget.infoScrollOffset ?? 0);
@@ -177,8 +176,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
             AppLocalizations.of(context)!.imageViewPageName, widget.focusMain)
       };
 
-      // noteListKey.currentState?.loadNotes(drawCell(currentPage));
-
       setState(() {});
 
       refreshPalette();
@@ -231,11 +228,11 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     }
   }
 
-  void update(BuildContext context, int count, {bool pop = true}) {
+  void update(BuildContext? context, int count, {bool pop = true}) {
     if (count == 0) {
       if (pop) {
         key.currentState?.closeEndDrawer();
-        Navigator.pop(context);
+        Navigator.pop(context ?? this.context);
       }
       return;
     }
@@ -305,7 +302,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     widget.statistics?.viewed();
     widget.statistics?.swiped();
 
-    // noteListKey.currentState?.unextendNotes();
     currentPage = index;
     widget.pageChange?.call(this);
     _loadNext(index);
@@ -320,8 +316,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     fullscreenPlug.setTitle(c.alias(true));
 
     setState(() {
-      // noteListKey.currentState?.loadNotes(c);
-
       extractPalette(context, widget.getCell(currentPage)!, key,
           scrollController, currentPage, _resetAnimation);
     });
@@ -387,20 +381,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                       ImageViewInfoTilesRefreshNotifier.of(context);
 
                       final addInfo = drawCell(currentPage).addInfo(context);
-
-                      // AddInfoColorData(
-                      //       borderColor: Theme.of(context)
-                      //           .colorScheme
-                      //           .outlineVariant,
-                      //       foregroundColor: currentPalette
-                      //               ?.mutedColor?.bodyTextColor
-                      //               .harmonizeWith(Theme.of(context)
-                      //                   .colorScheme
-                      //                   .primary) ??
-                      //           kListTileColorInInfo,
-                      //       systemOverlayColor:
-                      //           widget.systemOverlayRestoreColor,
-                      //     )
 
                       return addInfo == null || addInfo.isEmpty
                           ? const Drawer(child: EmptyWidget(gridSeed: 0))

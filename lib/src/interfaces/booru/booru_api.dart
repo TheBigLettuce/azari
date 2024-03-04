@@ -18,7 +18,6 @@ import '../../net/booru/gelbooru.dart';
 import '../booru_tagging.dart';
 import 'booru.dart';
 
-
 /// The interface to interact with the various booru APIs.
 ///
 /// Implemenations of this interface should hold no state, other than the [client].
@@ -108,11 +107,13 @@ abstract class PageSaver {
 }
 
 class EmptyPageSaver implements PageSaver {
-  const EmptyPageSaver();
+  EmptyPageSaver();
 
   @override
-  int get current => 0;
+  int current = 0;
 
   @override
-  void save(int page) {}
+  void save(int page) {
+    current = page;
+  }
 }

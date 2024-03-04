@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:dio/dio.dart';
+import 'package:gallery/src/db/base/post_base.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
@@ -20,6 +21,8 @@ import '../../db/schemas/booru/post.dart';
 import 'package:intl/intl.dart';
 
 import '../../interfaces/booru_tagging.dart';
+
+const Duration _defaultTimeout = Duration(seconds: 30);
 
 abstract class BooruRespDecoder {
   const BooruRespDecoder();
@@ -71,6 +74,8 @@ class GelbooruRespDecoder implements BooruRespDecoder {
       DateTime date = dateFormatter.parse(createdAt).copyWith(
           year: int.tryParse(createdAt.substring(createdAt.length - 4)));
 
+      final rating = post["rating"];
+
       list.add(Post(
           height: post["height"],
           prefix: booru.prefix,
@@ -82,7 +87,15 @@ class GelbooruRespDecoder implements BooruRespDecoder {
           score: post["score"],
           sourceUrl: post["source"],
           createdAt: date,
-          rating: post["rating"],
+          rating: rating == null
+              ? PostRating.general
+              : switch (rating as String) {
+                  "general" => PostRating.general,
+                  "sensitive" => PostRating.sensitive,
+                  "questionable" => PostRating.questionable,
+                  "explicit" => PostRating.explicit,
+                  String() => PostRating.general,
+                },
           width: post["width"],
           fileUrl: post["file_url"],
           previewUrl: post["preview_url"],
@@ -126,6 +139,8 @@ class Gelbooru implements BooruAPI {
       }),
       LogReq(LogReq.notes(booru, postId), _log),
       options: Options(
+        sendTimeout: _defaultTimeout,
+        receiveTimeout: _defaultTimeout,
         responseType: ResponseType.plain,
       ),
     );
@@ -149,7 +164,11 @@ class Gelbooru implements BooruAPI {
         "name_pattern": "$t%",
         "orderby": "count"
       }),
-      options: Options(responseType: ResponseType.json),
+      options: Options(
+        sendTimeout: _defaultTimeout,
+        receiveTimeout: _defaultTimeout,
+        responseType: ResponseType.json,
+      ),
       LogReq(LogReq.completeTag(booru, t), _log),
     );
 
@@ -205,7 +224,11 @@ class Gelbooru implements BooruAPI {
 
     final resp = await client.getUriLog(
       Uri.https(booru.url, "/index.php", query),
-      options: Options(responseType: ResponseType.json),
+      options: Options(
+        sendTimeout: _defaultTimeout,
+        receiveTimeout: _defaultTimeout,
+        responseType: ResponseType.json,
+      ),
       LogReq(LogReq.page(booru, p), _log),
     );
 
@@ -222,7 +245,11 @@ class Gelbooru implements BooruAPI {
         "id": id.toString(),
         "json": "1"
       }),
-      options: Options(responseType: ResponseType.json),
+      options: Options(
+        sendTimeout: _defaultTimeout,
+        receiveTimeout: _defaultTimeout,
+        responseType: ResponseType.json,
+      ),
       LogReq(LogReq.singlePost(booru, id), _log),
     );
 

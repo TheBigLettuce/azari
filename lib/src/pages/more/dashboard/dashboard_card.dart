@@ -16,6 +16,7 @@ class UnsizedCard extends StatelessWidget {
   final bool transparentBackground;
   final void Function()? onPressed;
   final void Function()? onLongPressed;
+  final bool leanToLeft;
 
   const UnsizedCard({
     super.key,
@@ -25,6 +26,7 @@ class UnsizedCard extends StatelessWidget {
     required this.tooltip,
     this.transparentBackground = false,
     this.onPressed,
+    this.leanToLeft = true,
     this.onLongPressed,
   });
 
@@ -40,6 +42,7 @@ class UnsizedCard extends StatelessWidget {
       onPressed: onPressed,
       width: null,
       height: null,
+      leanLeft: leanToLeft,
     );
   }
 }
@@ -55,6 +58,7 @@ class BaseCard extends StatelessWidget {
   final double? height;
   final bool expandTitle;
   final void Function()? onLongPressed;
+  final bool leanLeft;
 
   const BaseCard({
     super.key,
@@ -68,6 +72,7 @@ class BaseCard extends StatelessWidget {
     this.transparentBackground = false,
     this.onPressed,
     this.onLongPressed,
+    this.leanLeft = false,
   });
 
   @override
@@ -77,7 +82,9 @@ class BaseCard extends StatelessWidget {
         Widget body() => Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: leanLeft
+                    ? CrossAxisAlignment.start
+                    : CrossAxisAlignment.center,
                 children: [
                   DefaultTextStyle.merge(
                     overflow: TextOverflow.ellipsis,
@@ -91,7 +98,11 @@ class BaseCard extends StatelessWidget {
                     child: Padding(
                       padding: height == null
                           ? EdgeInsets.zero
-                          : const EdgeInsets.all(4),
+                          : EdgeInsets.only(
+                              left: leanLeft ? 0 : 4,
+                              right: leanLeft ? 24 : 8,
+                              top: 4,
+                              bottom: 4),
                       child: expandTitle ? Expanded(child: title) : title,
                     ),
                   ),
@@ -105,7 +116,8 @@ class BaseCard extends StatelessWidget {
                                 .withOpacity(0.6),
                           ),
                       child: Padding(
-                        padding: const EdgeInsets.only(left: 8, right: 8),
+                        padding: EdgeInsets.only(
+                            left: leanLeft ? 0 : 8, right: leanLeft ? 24 : 8),
                         child: subtitle,
                       ),
                     ),

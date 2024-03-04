@@ -20,11 +20,8 @@ class BodyPadding extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(
-        top: MediaQuery.sizeOf(context).height * 0.3 +
-            kToolbarHeight +
-            viewPadding.top +
-            8,
+      padding: const EdgeInsets.only(
+        // top: 8,
         left: 22,
         right: 22,
       ),

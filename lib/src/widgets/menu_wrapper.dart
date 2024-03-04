@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../pages/more/settings/settings_label.dart';
 
@@ -17,7 +18,8 @@ class MenuWrapper extends StatefulWidget {
 
   final Widget child;
 
-  static List<PopupMenuItem> menuItems(String title, bool includeCopy,
+  static List<PopupMenuItem> menuItems(
+          BuildContext context, String title, bool includeCopy,
           [List<PopupMenuItem>? items]) =>
       [
         PopupMenuItem(
@@ -33,13 +35,12 @@ class MenuWrapper extends StatefulWidget {
             onTap: () {
               Clipboard.setData(ClipboardData(text: title));
             },
-            child: const Text("Copy"), // TODO: change
+            child: Text(AppLocalizations.of(context)!.copyLabel),
           )
       ];
 
   const MenuWrapper({
     super.key,
-    // required this.excluded,
     this.items = const [],
     required this.title,
     required this.child,
@@ -86,7 +87,11 @@ class _MenuWrapperState extends State<MenuWrapper> {
             Offset.zero & overlay.size,
           ),
           items: MenuWrapper.menuItems(
-              widget.title, widget.includeCopy, widget.items),
+            context,
+            widget.title,
+            widget.includeCopy,
+            widget.items,
+          ),
         );
       },
       child: widget.child,

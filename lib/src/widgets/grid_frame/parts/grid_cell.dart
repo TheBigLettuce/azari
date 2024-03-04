@@ -146,14 +146,8 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
   Widget build(BuildContext context) {
     final stickers = widget._data.stickers(context);
     final isSelected = widget.selection?.isSelected(widget.indx) ?? false;
-// alignment: widget.alignTitleToTopLeft
-//               ? Alignment.topLeft
-//               : Alignment.bottomCenter,
 
     Widget topAlignAlias() {
-// final gradientColor = Theme.of(context).colorScheme.surface;
-// final textColor = Theme.of(context).colorScheme
-
       return SizedBox(
         width: double.infinity,
         child: Container(
@@ -300,15 +294,6 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                                   .toList(),
                             )),
                       ),
-                      // Padding(
-                      //     padding: const EdgeInsets.all(8),
-                      //     child: Wrap(
-                      //       direction: Axis.vertical,
-                      //       children: stickers
-                      //           .where((element) => !element.right)
-                      //           .map((e) => StickerWidget(e))
-                      //           .toList(),
-                      //     ))
                     ],
                     if ((!widget.hideAlias &&
                             !widget.shadowOnTop &&

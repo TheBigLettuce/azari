@@ -31,13 +31,13 @@ PopupMenuItem launchGridSafeModeItem(
       onTap: () {
         radioDialog<SafeMode>(
           context,
-          SafeMode.values.map((e) => (e, e.string)),
+          SafeMode.values.map((e) => (e, e.translatedString(context))),
           Settings.fromDb().safeMode,
           (value) => launchGrid(context, tag, value),
-          title: "Choose safe mode", // TODO: change
+          title: AppLocalizations.of(context)!.chooseSafeMode,
         );
       },
-      child: const Text("Launch with safe mode"), // TODO: change
+      child: Text(AppLocalizations.of(context)!.launchWithSafeMode),
     );
 
 Iterable<Widget> makeTags(
@@ -80,8 +80,9 @@ Iterable<Widget> makeTags(
               excluded.add(t);
             }
           },
-          child: Text(
-              excluded.exists(t) ? "Remove from excluded" : "Add to excluded"),
+          child: Text(excluded.exists(t)
+              ? AppLocalizations.of(context)!.removeFromExcluded
+              : AppLocalizations.of(context)!.addToExcluded),
         ),
       if (launchGrid != null)
         launchGridSafeModeItem(
@@ -99,7 +100,11 @@ Iterable<Widget> makeTags(
 
           ImageViewInfoTilesRefreshNotifier.refreshOf(context);
         },
-        child: Text(PinnedTag.isPinned(tag) ? "Unpin" : "Pin"),
+        child: Text(
+          PinnedTag.isPinned(tag)
+              ? AppLocalizations.of(context)!.unpinTag
+              : AppLocalizations.of(context)!.pinTag,
+        ),
       ),
     ];
   }

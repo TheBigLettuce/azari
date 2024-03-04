@@ -39,8 +39,6 @@ class __DiscoverTabState extends State<_DiscoverTab> {
 
     state = GridSkeletonState<AnimeEntry>(
       initalCellCount: widget.entries.length,
-      // reachedEnd: () => _reachedEnd,
-      // overrideRefreshStatus: widget.pagingContainer.refreshingStatus,
     );
 
     gridSettingsWatcher = GridSettingsAnimeDiscovery.watch((e) {
@@ -118,6 +116,7 @@ class __DiscoverTabState extends State<_DiscoverTab> {
         systemNavigationInsets: widget.viewInsets,
         mainFocus: state.mainFocus,
         description: GridDescription(
+          risingAnimation: true,
           actions: [
             GridAction(Icons.add, (selected) {
               SavedAnimeEntry.addAll(selected, widget.api.site);

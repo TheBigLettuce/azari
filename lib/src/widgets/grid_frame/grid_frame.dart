@@ -34,7 +34,6 @@ import '../keybinds/describe_keys.dart';
 import '../keybinds/keybind_description.dart';
 import '../keybinds/single_activator_description.dart';
 import '../notifiers/focus.dart';
-// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'configuration/selection_glue.dart';
 
@@ -133,20 +132,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
   List<int>? segTranslation;
 
   void _restoreState(ImageViewDescription<T> imageViewDescription) {
-    // if (mutation.cellCount != 0 &&
-    //     imageViewDescription.pageViewScrollingOffset != null &&
-    //     imageViewDescription.initalCell != null) {
-    //   WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-    //     imageViewDescription.beforeImageViewRestore?.call();
-    //   });
-    // } else if (mutation.cellCount != 0 &&
-    //     imageViewDescription.initalCell != null) {
-    //   WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-    //     imageViewDescription.beforeImageViewRestore?.call();
-    //   });
-    // } else {
     imageViewDescription.beforeImageViewRestore?.call();
-    // }
   }
 
   late double lastOffset = widget.initalScrollPosition;
@@ -214,6 +200,23 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
         setState(() {});
       });
     }
+  }
+
+  bool _enableAnimations = false;
+
+  void enableAnimationsFor(
+      [Duration duration = const Duration(milliseconds: 300)]) {
+    setState(() {
+      _enableAnimations = true;
+    });
+
+    Future.delayed(duration, () {
+      try {
+        _enableAnimations = false;
+
+        setState(() {});
+      } catch (_) {}
+    });
   }
 
   @override
@@ -285,6 +288,9 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
           selectGridColumn: button.selectGridColumn,
           safeMode: button.safeMode,
           selectSafeMode: button.selectSafeMode,
+          onChanged: () {
+            enableAnimationsFor();
+          },
         )
     ];
 
@@ -335,6 +341,9 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
                   selectGridColumn: pageSettingsButton.selectGridColumn,
                   safeMode: pageSettingsButton.safeMode,
                   selectSafeMode: pageSettingsButton.selectSafeMode,
+                  onChanged: () {
+                    enableAnimationsFor();
+                  },
                 ),
             ]
           : _makeActions(context, description);
@@ -469,19 +478,22 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
         (search is OverrideGridSearchWidget ? search.widget.focus : null);
 
     if (description.asSliver) {
-      return GridBottomPaddingProvider(
-        padding: _calculateBottomPadding(),
-        child: FocusNotifier(
-          notifier: searchFocus,
-          focusMain: widget.mainFocus.requestFocus,
-          child: CellProvider<T>(
-            getCell: widget.getCell,
-            child: Builder(
-              builder: (context) {
-                return SliverMainAxisGroup(
-                  slivers: bodySlivers(context, page),
-                );
-              },
+      return PlayAnimationNotifier(
+        play: _enableAnimations,
+        child: GridBottomPaddingProvider(
+          padding: _calculateBottomPadding(),
+          child: FocusNotifier(
+            notifier: searchFocus,
+            focusMain: widget.mainFocus.requestFocus,
+            child: CellProvider<T>(
+              getCell: widget.getCell,
+              child: Builder(
+                builder: (context) {
+                  return SliverMainAxisGroup(
+                    slivers: bodySlivers(context, page),
+                  );
+                },
+              ),
             ),
           ),
         ),
@@ -496,7 +508,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
         mainFocus: widget.mainFocus,
         pageName: widget.description.keybindsDescription,
         children: [
-          if (atHomePage)
+          if (atHomePage && widget.functionality.refresh.pullToRefresh)
             RefreshIndicator(
               onRefresh: () => refreshingStatus.refresh(widget.functionality),
               child: mainBody(context, page),
@@ -553,21 +565,71 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
         ret = functionality.registerNotifiers!(ret);
       }
 
+      if (widget.description.risingAnimation) {
+        ret = _RisingAnimation(key: ValueKey(currentPage), child: ret);
+      }
+
       return ret;
     }
 
-    return GridBottomPaddingProvider(
-      padding: _calculateBottomPadding(),
-      child: FocusNotifier(
-        notifier: searchFocus,
-        focusMain: widget.mainFocus.requestFocus,
-        child: CellProvider<T>(
-          getCell: widget.getCell,
-          child: Builder(
-            builder: child,
+    return PlayAnimationNotifier(
+      play: _enableAnimations,
+      child: GridBottomPaddingProvider(
+        padding: _calculateBottomPadding(),
+        child: FocusNotifier(
+          notifier: searchFocus,
+          focusMain: widget.mainFocus.requestFocus,
+          child: CellProvider<T>(
+            getCell: widget.getCell,
+            child: Builder(
+              builder: child,
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class PlayAnimationNotifier extends InheritedWidget {
+  final bool play;
+
+  const PlayAnimationNotifier({
+    super.key,
+    required this.play,
+    required super.child,
+  });
+
+  static bool? maybeOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<PlayAnimationNotifier>();
+
+    return widget?.play;
+  }
+
+  @override
+  bool updateShouldNotify(PlayAnimationNotifier oldWidget) =>
+      play != oldWidget.play;
+}
+
+class _RisingAnimation extends StatelessWidget {
+  final Widget child;
+
+  const _RisingAnimation({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Animate(
+      autoPlay: true,
+      effects: [
+        FadeEffect(begin: 0, end: 1, duration: 400.ms, curve: Easing.standard),
+        MoveEffect(
+            begin: const Offset(0, 60),
+            end: const Offset(0, 0),
+            duration: 400.ms,
+            curve: Easing.standard),
+      ],
+      child: child,
     );
   }
 }

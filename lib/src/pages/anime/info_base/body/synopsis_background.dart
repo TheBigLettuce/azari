@@ -5,6 +5,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -15,7 +17,6 @@ import 'anime_body_text_selection_toolbar.dart';
 import 'body_segment_label.dart';
 
 class SynopsisBackground extends StatelessWidget {
-  // final AnimeEntry entry;
   final String background;
   final String synopsis;
   final BoxConstraints constraints;
@@ -53,7 +54,6 @@ class SynopsisBackground extends StatelessWidget {
     }
 
     return Wrap(
-      // alignment: WrapAlignment.center,
       crossAxisAlignment: WrapCrossAlignment.start,
       direction: Axis.vertical,
       children: [
@@ -69,12 +69,28 @@ class SynopsisBackground extends StatelessWidget {
                     selectable: true,
                     styleSheetTheme: MarkdownStyleSheetBaseTheme.material,
                     data: synopsis,
+                    bulletBuilder: (index, style) {
+                      return Transform.rotate(
+                        angle: -pi / Random(index).nextInt(100),
+                        child: Icon(
+                          const IconData(0x2726),
+                          size: 12,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.8),
+                          applyTextScaling: true,
+                        ),
+                      );
+                    },
                     styleSheet: MarkdownStyleSheet.fromTheme(
                       textTheme,
                     ).copyWith(
+                        horizontalRuleDecoration: const UnderlineTabIndicator(
+                            borderSide: BorderSide.none),
                         a: TextStyle(
-                      color: theme.colorScheme.primary,
-                    )),
+                          color: theme.colorScheme.primary,
+                        )),
                   )
                 : SelectableText(
                     synopsis,

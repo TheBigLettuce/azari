@@ -98,24 +98,10 @@ class DefaultGridOnCellPressBehaviour implements GridOnCellPressedBehaviour {
         addIcons: imageDesctipion.addIconsImage,
         focusMain: state.widget.mainFocus.requestFocus,
         infoScrollOffset: startingOffset,
-        // predefinedIndexes: segTranslation,
         getCell: state.widget.getCell,
-        // noteInterface: widget.noteInterface,
         cellCount: mutation.cellCount,
         download: functionality.download,
-        startingCell:
-            // segTranslation != null
-            //     ? () {
-            //         for (final (i, e) in segTranslation!.indexed) {
-            //           if (e == startingCell) {
-            //             return i;
-            //           }
-            //         }
-
-            //         return 0;
-            //       }()
-            //     :
-            startingCell,
+        startingCell: startingCell,
         onNearEnd: () =>
             state.refreshingStatus.onNearEnd(state.widget.functionality),
       );

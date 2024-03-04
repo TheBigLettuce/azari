@@ -54,32 +54,21 @@ class __FabState extends State<_Fab> {
     if (fab != showFab) {
       showFab = fab;
       try {
-        // widget.hideShowNavBar(!showFab);
         setState(() {});
       } catch (_) {}
     }
   }
 
   void _listener() {
-    // if (!_state.isRefreshing) {
-    // if (currentPage == 0) {
-    //   widget.updateScrollPosition?.call(controller.offset);
-    // }
-    // }
-
     final controller = widget.controller;
 
     if (controller.offset == 0) {
       _updateFab(
         fab: false,
-        // foreground: inImageView,
-        // foreground: true,
       );
     } else {
       _updateFab(
         fab: !controller.position.isScrollingNotifier.value,
-        // foreground: inImageView,
-        // foreground: true,
       );
     }
   }
@@ -97,10 +86,9 @@ class __FabState extends State<_Fab> {
 
               widget.controller.animateTo(scroll,
                   duration: 200.ms, curve: Easing.emphasizedAccelerate);
-              // widget.scrollPos?.call(scroll);
             },
             child: FloatingActionButton(
-              elevation: 2,
+              // elevation: 2,
               onPressed: () {
                 widget.controller.animateTo(
                   0,

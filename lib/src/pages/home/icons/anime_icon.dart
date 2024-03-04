@@ -36,7 +36,7 @@ class _AnimeIcon extends StatelessWidget {
             Icons.video_library,
             color: isSelected ? Theme.of(context).colorScheme.primary : null,
           )),
-      label: "Anime", // TODO: change
+      label: AppLocalizations.of(context)!.animePage,
     );
   }
 }

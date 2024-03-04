@@ -35,26 +35,38 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
 
   List<Widget> _addItems() => [
         if (widget.instance._state.filteringModes.isNotEmpty)
-          PopupMenuButton<FilteringMode>(
-            // position: PopupMenuPosition.under,
-            // offset: const Offset(0, 14),
-            itemBuilder: (context) {
-              return widget.instance._state.filteringModes
-                  .map((e) => PopupMenuItem(
-                      value: e,
-                      onTap: () {
+          IconButton(
+            onPressed: () {
+              showModalBottomSheet(
+                useRootNavigator: true,
+                isScrollControlled: true,
+                showDragHandle: true,
+                context: context,
+                builder: (context) {
+                  return SafeArea(
+                    child: _FilteringWidget(
+                      selectSorting: (e) {
+                        widget.instance._state.filter.setSortingMode(e);
+                        widget.instance._onChanged(
+                            widget.instance.searchTextController.text, true);
+                      },
+                      currentSorting:
+                          widget.instance._state.filter.currentSortingMode,
+                      enabledSorting: widget.instance._state.sortingModes,
+                      select: (e) {
                         widget.instance._searchVirtual = false;
                         widget.instance._currentFilterMode = e;
                         widget.instance._onChanged(
                             widget.instance.searchTextController.text, true);
                       },
-                      child: Text(e.string)))
-                  .toList();
+                      currentFilter: widget.instance._currentFilterMode,
+                      enabledModes: widget.instance._state.filteringModes,
+                    ),
+                  );
+                },
+              );
             },
-            initialValue: widget.instance._currentFilterMode,
-            icon: Icon(
-              widget.instance._currentFilterMode.icon,
-            ),
+            icon: Icon(widget.instance._currentFilterMode.icon),
             padding: EdgeInsets.zero,
           ),
         if (widget.instance.addItems != null) ...widget.instance.addItems!
@@ -108,4 +120,84 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
   }
 }
 
-// AppLocalizations.of(context)!.filterHint
+class _FilteringWidget extends StatefulWidget {
+  final FilteringMode currentFilter;
+  final SortingMode currentSorting;
+  final Set<FilteringMode> enabledModes;
+  final Set<SortingMode> enabledSorting;
+  final void Function(FilteringMode) select;
+  final void Function(SortingMode) selectSorting;
+
+  const _FilteringWidget({
+    super.key,
+    required this.currentFilter,
+    required this.enabledModes,
+    required this.select,
+    required this.currentSorting,
+    required this.enabledSorting,
+    required this.selectSorting,
+  });
+
+  @override
+  State<_FilteringWidget> createState() => __FilteringWidgetState();
+}
+
+class __FilteringWidgetState extends State<_FilteringWidget> {
+  late FilteringMode currentFilter = widget.currentFilter;
+  late SortingMode currentSorting = widget.currentSorting;
+
+  void _selectFilter(FilteringMode? mode) {
+    if (mode != null) {
+      currentFilter = mode;
+
+      widget.select(mode);
+
+      setState(() {});
+    }
+  }
+
+  void _selectSorting(SortingMode? sort) {
+    if (sort != null) {
+      currentSorting = sort;
+
+      widget.selectSorting(sort);
+
+      setState(() {});
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              AppLocalizations.of(context)!.filteringLabel,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            SegmentedButtonGroup<FilteringMode>(
+              select: _selectFilter,
+              selected: currentFilter,
+              values: widget.enabledModes
+                  .map((e) => (e, e.translatedString(context))),
+              title: AppLocalizations.of(context)!.filteringModesLabel,
+            ),
+            SegmentedButtonGroup<SortingMode>(
+              select: _selectSorting,
+              selected: currentSorting,
+              values: widget.enabledSorting.isEmpty
+                  ? [(currentSorting, currentSorting.translatedString(context))]
+                  : widget.enabledSorting
+                      .map((e) => (e, e.translatedString(context))),
+              title: AppLocalizations.of(context)!.sortingModesLabel,
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}

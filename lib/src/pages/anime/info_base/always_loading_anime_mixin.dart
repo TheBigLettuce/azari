@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class WrapFutureRestartable<T> extends StatefulWidget {
   final Future<T> Function() newStatus;
@@ -66,7 +67,7 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
 
                   setState(() {});
                 },
-                child: const Text("Try again"), // TODO: change
+                child: Text(AppLocalizations.of(context)!.tryAgain),
               ),
             ),
           );

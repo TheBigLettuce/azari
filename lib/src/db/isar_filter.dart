@@ -21,6 +21,8 @@ class IsarFilter<T extends Cell> implements FilterInterface<T> {
   (Iterable<T>, dynamic) Function(Iterable<T>, dynamic, bool)? passFilter;
   SortingMode currentSorting = SortingMode.none;
 
+  int _filteredTimes = 0;
+
   Isar get to => _to;
 
   @override
@@ -81,8 +83,12 @@ class IsarFilter<T extends Cell> implements FilterInterface<T> {
   }
 
   @override
+  bool get empty => _filteredTimes == 0;
+
+  @override
   FilterResult<T> filter(String s, FilteringMode mode) {
     isFiltering = true;
+    _filteredTimes += 1;
     _to.writeTxnSync(
       () => _to.collection<T>().clearSync(),
     );
@@ -95,12 +101,12 @@ class IsarFilter<T extends Cell> implements FilterInterface<T> {
         _to.collection<T>().countSync());
   }
 
-  // @override
-  // void resetFilter() {
-  //   isFiltering = false;
-  //   currentSorting = SortingMode.none;
-  //   _to.writeTxnSync(() => _to.collection<T>().clearSync());
-  // }
+  @override
+  void resetFilter() {
+    isFiltering = false;
+    currentSorting = SortingMode.none;
+    _to.writeTxnSync(() => _to.collection<T>().clearSync());
+  }
 
   IsarFilter(Isar from, Isar to, this.getElems, {this.passFilter})
       : _from = from,

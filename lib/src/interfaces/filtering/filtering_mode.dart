@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 /// Filtering modes.
 /// Implemented outside the [FilterInterface].
@@ -14,50 +15,71 @@ import 'package:flutter/material.dart';
 /// [FilteringMode.tag] and [FilteringMode.tagReversed] override how text filtering works..
 enum FilteringMode {
   /// Filter by the favorite.
-  favorite("Favorite", Icons.star_border_rounded),
+  favorite(Icons.star_border_rounded),
 
   /// Filter by the  "original" tag.
-  original("Original", Icons.circle_outlined),
+  original(Icons.circle_outlined),
 
   /// Filter by filenames, which have (1).ext format.
-  duplicate("Duplicate", Icons.mode_standby_outlined),
+  duplicate(Icons.mode_standby_outlined),
 
   /// Filter by similarity.
-  same("Same", Icons.drag_handle),
+  same(Icons.drag_handle),
 
   /// Filter by video.
-  video("Video", Icons.play_circle),
+  video(Icons.play_circle),
 
   /// Filter by GIF.
-  gif("GIF", Icons.gif_outlined),
+  gif(Icons.gif_outlined),
 
   /// Filter by tag.
-  tag("Tag", Icons.tag),
-
-  /// Filter by size, from bif to small.
-  size("Size", Icons.arrow_downward),
+  tag(Icons.tag),
 
   /// No filter.
-  noFilter("No filter", Icons.filter_list_outlined),
+  noFilter(Icons.filter_list_outlined),
 
   /// Filter by not tag not included.
-  tagReversed("Tag reversed", Icons.label_off_outlined),
+  tagReversed(Icons.label_off_outlined),
 
   /// Filter by no tags on image.
-  untagged("Untagged", Icons.label_off),
+  untagged(Icons.label_off),
 
   /// Filter by segments.
-  group("Group", Icons.group_work_outlined),
+  group(Icons.group_work_outlined),
 
-  ungrouped("Ungrouped", Icons.fiber_manual_record_rounded),
+  ungrouped(Icons.fiber_manual_record_rounded),
 
-  notes("Notes", Icons.sticky_note_2_outlined);
+  notes(Icons.sticky_note_2_outlined);
 
-  /// Name displayed in search bar.
-  final String string;
+  String translatedString(BuildContext context) => switch (this) {
+        FilteringMode.favorite =>
+          AppLocalizations.of(context)!.enumFilteringModeFavorite,
+        FilteringMode.original =>
+          AppLocalizations.of(context)!.enumFilteringModeOriginal,
+        FilteringMode.duplicate =>
+          AppLocalizations.of(context)!.enumFilteringModeDuplicate,
+        FilteringMode.same =>
+          AppLocalizations.of(context)!.enumFilteringModeSame,
+        FilteringMode.video =>
+          AppLocalizations.of(context)!.enumFilteringModeVideo,
+        FilteringMode.gif => AppLocalizations.of(context)!.enumFilteringModeGif,
+        FilteringMode.tag => AppLocalizations.of(context)!.enumFilteringModeTag,
+        FilteringMode.noFilter =>
+          AppLocalizations.of(context)!.enumFilteringModeNoFilter,
+        FilteringMode.tagReversed =>
+          AppLocalizations.of(context)!.enumFilteringModeTagReversed,
+        FilteringMode.untagged =>
+          AppLocalizations.of(context)!.enumFilteringModeUntagged,
+        FilteringMode.group =>
+          AppLocalizations.of(context)!.enumFilteringModeGroup,
+        FilteringMode.ungrouped =>
+          AppLocalizations.of(context)!.enumFilteringModeUngrouped,
+        FilteringMode.notes =>
+          AppLocalizations.of(context)!.enumFilteringModeNotes,
+      };
 
   /// Icon displayed in search bar.
   final IconData icon;
 
-  const FilteringMode(this.string, this.icon);
+  const FilteringMode(this.icon);
 }

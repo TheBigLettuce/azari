@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:dio/dio.dart';
+import 'package:gallery/src/db/base/post_base.dart';
 import 'package:gallery/src/db/schemas/booru/post.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
@@ -192,12 +193,22 @@ class Danbooru implements BooruAPI {
           }
         }
 
+        final rating = e["rating"];
+
         final post = Post(
             height: e["image_height"],
             id: e["id"],
             score: e["score"],
             sourceUrl: e["source"],
-            rating: e["rating"] ?? "?",
+            rating: rating == null
+                ? PostRating.general
+                : switch (rating as String) {
+                    "g" => PostRating.general,
+                    "s" => PostRating.sensitive,
+                    "q" => PostRating.questionable,
+                    "e" => PostRating.explicit,
+                    String() => PostRating.general,
+                  },
             createdAt: DateTime.parse(e["created_at"]),
             md5: e["md5"],
             tags: tags.split(" ").map((e) => escaper.convert(e)).toList(),

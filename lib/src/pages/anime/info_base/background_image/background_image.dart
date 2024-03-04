@@ -62,12 +62,13 @@ class BackgroundImageBase extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         image: DecorationImage(
-            fit: BoxFit.cover,
-            opacity: 0.4,
-            filterQuality: FilterQuality.high,
-            colorFilter:
-                const ColorFilter.mode(Colors.black87, BlendMode.softLight),
-            image: image),
+          fit: BoxFit.cover,
+          opacity: 0.4,
+          filterQuality: FilterQuality.high,
+          colorFilter:
+              const ColorFilter.mode(Colors.black87, BlendMode.softLight),
+          image: image,
+        ),
       ),
       child: child,
     );

@@ -14,11 +14,11 @@ class GridDescription<T extends Cell> {
     required this.gridSeed,
     required this.keybindsDescription,
     this.showAppBar = true,
+    this.risingAnimation = false,
     this.ignoreEmptyWidgetOnNoContent = false,
     this.bottomWidget,
     this.ignoreSwipeSelectGesture = false,
     this.cellTitleAtBottom = false,
-    // this.ignoreImageViewEndDrawer = false,
     this.asSliver = false,
     this.settingsButton,
     this.inlineMenuButtonItems = false,
@@ -62,6 +62,8 @@ class GridDescription<T extends Cell> {
   final bool tightMode;
 
   final int gridSeed;
+
+  final bool risingAnimation;
 
   final PageSwitcher? pages;
 
