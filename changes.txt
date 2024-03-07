@@ -1,3 +1,7 @@
+1.7.1+15:
+— Remove notes for now,
+— Change details.
+
 1.7.0+14:
 — Manga pages,
 — Update icon.
