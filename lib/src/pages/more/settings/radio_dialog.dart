@@ -8,39 +8,47 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-void radioDialog<T>(BuildContext context, Iterable<(T, String)> values,
-    T groupValue, void Function(T? value) onChanged,
-    {required String title}) {
+void radioDialog<T>(
+  BuildContext context,
+  Iterable<(T, String)> values,
+  T groupValue,
+  void Function(T? value) onChanged, {
+  required String title,
+  bool allowSingle = false,
+}) {
   Navigator.push(
-      context,
-      DialogRoute(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            actions: [
-              TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: Text(AppLocalizations.of(context)!.back))
-            ],
-            title: Text(title),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: values
-                  .map((e) => RadioListTile(
-                      shape: const BeveledRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(5))),
-                      value: e.$1,
-                      title: Text(e.$2),
-                      groupValue: groupValue,
-                      onChanged: (value) {
-                        Navigator.pop(context);
-                        onChanged(value);
-                      }))
-                  .toList(),
-            ),
-          );
-        },
-      ));
+    context,
+    DialogRoute(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          actions: [
+            TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text(AppLocalizations.of(context)!.back))
+          ],
+          title: Text(title),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: values
+                .map((e) => RadioListTile(
+                    shape: const BeveledRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(5)),
+                    ),
+                    value: e.$1,
+                    title: Text(e.$2),
+                    groupValue: groupValue,
+                    toggleable: allowSingle,
+                    onChanged: (value) {
+                      Navigator.pop(context);
+                      onChanged(allowSingle ? value ?? groupValue : value);
+                    }))
+                .toList(),
+          ),
+        );
+      },
+    ),
+  );
 }

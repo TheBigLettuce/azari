@@ -80,7 +80,7 @@ mixin _ChangePageMixin on State<Home> {
 
   void _procPopA(_AnimatedIconsMixin icons, bool pop) {
     if (!pop) {
-      _switchPage(icons, kAnimePageRoute);
+      _switchPage(icons, kMangaPageRoute);
     }
   }
 

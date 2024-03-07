@@ -33,7 +33,7 @@ class __WatchingTabState extends State<_WatchingTab> {
   late final StreamSubscription<void> watcher;
   final gridSeed = math.Random().nextInt(948512342);
 
-  bool upward = false;
+  bool upward = MiscSettings.current.animeWatchingOrderReversed;
   bool right = false;
   String _filteringValue = "";
 
@@ -113,6 +113,8 @@ class __WatchingTabState extends State<_WatchingTab> {
           currentlyWatching,
           flipBacklogUpward: () {
             upward = !upward;
+
+            MiscSettings.setAnimeWatchingOrderReversed(upward);
 
             setState(() {});
           },

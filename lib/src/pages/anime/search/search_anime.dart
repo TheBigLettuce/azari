@@ -484,7 +484,8 @@ class __SearchOptionsState<I, G> extends State<_SearchOptions<I, G>> {
                       ? null
                       : (currentGenre!, snapshot.data![currentGenre!]!),
                   values: snapshot.data!.entries.map((e) =>
-                      ((e.key, e.value), widget.idFromGenre(e.value).$2)),
+                      SegmentedButtonValue(
+                          (e.key, e.value), widget.idFromGenre(e.value).$2)),
                   title: AppLocalizations.of(context)!.animeSearchGenres,
                 ),
               ],

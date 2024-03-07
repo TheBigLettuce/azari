@@ -28,7 +28,8 @@ class _SetWallpaperTileState extends State<SetWallpaperTile> {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: FilledButton(
+      child: RawChip(
+        avatar: const Icon(Icons.wallpaper_rounded),
         onPressed: _status != null
             ? null
             : () {
@@ -44,7 +45,7 @@ class _SetWallpaperTileState extends State<SetWallpaperTile> {
 
                 setState(() {});
               },
-        child: _status != null
+        label: _status != null
             ? const SizedBox(
                 height: 14,
                 width: 14,

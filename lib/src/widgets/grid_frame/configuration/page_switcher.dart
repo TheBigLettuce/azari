@@ -9,6 +9,16 @@ import 'package:flutter/material.dart';
 
 import 'page_description.dart';
 
+class PageIcon {
+  const PageIcon(
+    this.icon, {
+    this.count = 0,
+  });
+
+  final IconData icon;
+  final int count;
+}
+
 class PageSwitcher {
   const PageSwitcher(
     this.pages,
@@ -17,6 +27,6 @@ class PageSwitcher {
   });
 
   final Icon? overrideHomeIcon;
-  final List<Widget> pages;
+  final List<PageIcon> pages;
   final PageDescription Function(int i) buildPage;
 }

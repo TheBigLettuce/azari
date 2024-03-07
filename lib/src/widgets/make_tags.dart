@@ -35,52 +35,42 @@ PopupMenuItem launchGridSafeModeItem(
           Settings.fromDb().safeMode,
           (value) => launchGrid(context, tag, value),
           title: AppLocalizations.of(context)!.chooseSafeMode,
+          allowSingle: true,
         );
       },
       child: Text(AppLocalizations.of(context)!.launchWithSafeMode),
     );
 
-Iterable<Widget> makeTags(
-  BuildContext context,
-  List<String> tags,
-  String filename, {
-  required List<String> pinnedTags,
-  void Function(BuildContext, String, [SafeMode?])? launchGrid,
-  BooruTagging? excluded,
-}) {
-  if (tags.isEmpty) {
-    if (filename.isEmpty) {
-      return [Container()];
-    }
-    DisassembleResult? res;
-    try {
-      res = PostTags.g.dissassembleFilename(filename);
-    } catch (_) {}
+class DrawerTagsWidget extends StatelessWidget {
+  final List<String> tags;
+  final String filename;
+  final List<String> pinnedTags;
+  final void Function(BuildContext, String, [SafeMode?])? launchGrid;
+  final BooruTagging? excluded;
 
-    return [
-      LoadTags(
-        filename: filename,
-        res: res,
-      )
-    ];
-  }
-  final value = FilterValueNotifier.maybeOf(context).trim();
-  final data = FilterNotifier.maybeOf(context);
+  const DrawerTagsWidget(
+    this.tags,
+    this.filename, {
+    super.key,
+    required this.pinnedTags,
+    this.launchGrid,
+    this.excluded,
+  });
 
-  List<PopupMenuItem> makeItems(String tag) {
+  List<PopupMenuItem> makeItems(BuildContext context, String tag) {
     final t = Tag.string(tag: tag);
 
     return [
       if (excluded != null)
         PopupMenuItem(
           onTap: () {
-            if (excluded.exists(t)) {
-              excluded.delete(t);
+            if (excluded!.exists(t)) {
+              excluded!.delete(t);
             } else {
-              excluded.add(t);
+              excluded!.add(t);
             }
           },
-          child: Text(excluded.exists(t)
+          child: Text(excluded!.exists(t)
               ? AppLocalizations.of(context)!.removeFromExcluded
               : AppLocalizations.of(context)!.addToExcluded),
         ),
@@ -88,7 +78,7 @@ Iterable<Widget> makeTags(
         launchGridSafeModeItem(
           context,
           tag,
-          launchGrid,
+          launchGrid!,
         ),
       PopupMenuItem(
         onTap: () {
@@ -109,36 +99,69 @@ Iterable<Widget> makeTags(
     ];
   }
 
-  final List<String> filteredTags;
-  if (data != null && value.isNotEmpty) {
-    filteredTags = tags.where((element) => element.contains(value)).toList();
-  } else {
-    filteredTags = tags;
-  }
-
-  Widget makeTile(String e, bool pinned) => MenuWrapper(
+  Widget makeTile(BuildContext context, String e, bool pinned) => MenuWrapper(
         title: e,
-        items: makeItems(e),
-        child: ListTile(
-          trailing:
-              pinned ? const Icon(Icons.push_pin_rounded, size: 18) : null,
-          title: Text(e),
-          onTap: launchGrid == null
+        items: makeItems(context, e),
+        child: RawChip(
+          elevation: 0,
+          clipBehavior: Clip.antiAlias,
+          avatar: pinned ? const Icon(Icons.push_pin_rounded, size: 18) : null,
+          label: Text(e),
+          onPressed: launchGrid == null
               ? null
               : () {
-                  launchGrid(context, e);
+                  launchGrid!(context, e);
                 },
         ),
       );
 
-  final tiles = [
-    ...pinnedTags.map((e) => makeTile(e, true)),
-    ...filteredTags.map((e) => makeTile(e, false)),
-  ];
+  @override
+  Widget build(BuildContext context) {
+    if (tags.isEmpty) {
+      if (filename.isEmpty) {
+        return const SizedBox.shrink();
+      }
+      DisassembleResult? res;
+      try {
+        res = PostTags.g.dissassembleFilename(filename);
+      } catch (_) {}
 
-  return [
-    SettingsLabel(AppLocalizations.of(context)!.tagsInfoPage,
-        Theme.of(context).textTheme.titleSmall!),
-    ...ListTile.divideTiles(context: context, tiles: tiles)
-  ];
+      return LoadTags(
+        filename: filename,
+        res: res,
+      );
+    }
+
+    final value = FilterValueNotifier.maybeOf(context).trim();
+    final data = FilterNotifier.maybeOf(context);
+
+    final Iterable<String> filteredTags;
+    if (data != null && value.isNotEmpty) {
+      filteredTags = tags.where((element) => element.contains(value));
+    } else {
+      filteredTags = tags;
+    }
+
+    final tiles = pinnedTags
+        .map((e) => makeTile(context, e, true))
+        .followedBy(filteredTags.map((e) => makeTile(context, e, false)));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SettingsLabel(
+            AppLocalizations.of(context)!.tagsInfoPage,
+            Theme.of(context).textTheme.titleSmall!.copyWith(
+                  color: Theme.of(context).listTileTheme.textColor,
+                )),
+        Padding(
+          padding: const EdgeInsets.only(right: 12, left: 16, bottom: 8),
+          child: Wrap(
+            spacing: 4,
+            children: tiles.toList(),
+          ),
+        )
+      ],
+    );
+  }
 }

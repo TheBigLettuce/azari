@@ -6,12 +6,11 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 
 class AddToBookmarksButton extends StatelessWidget {
   final GridSkeletonState state;
-  final bool Function() f;
+  final void Function() f;
 
   const AddToBookmarksButton({
     super.key,
@@ -22,19 +21,7 @@ class AddToBookmarksButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      onPressed: () {
-        final proceed = f();
-        if (!proceed) {
-          return;
-        }
-        ScaffoldMessenger.of(state.scaffoldKey.currentContext!)
-            .showSnackBar(SnackBar(
-                content: Text(
-          AppLocalizations.of(context)!.bookmarked,
-        )));
-        state.gridKey.currentState?.selection.reset();
-        Navigator.pop(context);
-      },
+      onPressed: f,
       icon: const Icon(Icons.bookmark_add),
     );
   }

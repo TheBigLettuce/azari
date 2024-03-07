@@ -117,7 +117,7 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
             mainFocus: state.mainFocus,
             description: GridDescription(
               pages: PageSwitcher(
-                const [Icon(Icons.image)],
+                const [PageIcon(Icons.image)],
                 (i) => PageDescription(
                   appIcons: [
                     IconButton(

@@ -134,9 +134,13 @@ List<Widget> wrapTagsList(
         children: lists,
       ),
     if (postTags.isNotEmpty && data != null)
-      SearchTextField(data, filename, showDeleteButton),
-    ...makeTags(
-      context,
+      SearchTextField(
+        data,
+        filename,
+        showDeleteButton,
+        key: ValueKey(filename),
+      ),
+    DrawerTagsWidget(
       tags,
       filename,
       launchGrid: launchGrid,

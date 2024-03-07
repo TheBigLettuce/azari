@@ -71,8 +71,20 @@ class _GridSettingsButtonState extends State<GridSettingsButton> {
   }
 }
 
-class SegmentedButtonGroup<T> extends StatelessWidget {
-  final Iterable<(T, String)> values;
+class SegmentedButtonValue<T> {
+  const SegmentedButtonValue(
+    this.value,
+    this.label, {
+    this.icon,
+  });
+
+  final T value;
+  final String label;
+  final IconData? icon;
+}
+
+class SegmentedButtonGroup<T> extends StatefulWidget {
+  final Iterable<SegmentedButtonValue<T>> values;
   final T? selected;
   final void Function(T?) select;
   final String title;
@@ -88,17 +100,109 @@ class SegmentedButtonGroup<T> extends StatelessWidget {
   });
 
   @override
+  State<SegmentedButtonGroup<T>> createState() => _SegmentedButtonGroupState();
+}
+
+class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
+  final controller = ScrollController();
+
+  @override
+  void dispose() {
+    controller.dispose();
+
+    super.dispose();
+  }
+
+  void select(Set<T> selection) {
+    if (widget.allowUnselect && selection.isEmpty) {
+      widget.select(null);
+
+      return;
+    }
+    widget.select(selection.first);
+
+    controller.animateTo(
+      0,
+      duration: const Duration(milliseconds: 300),
+      curve: Easing.standard,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final newValues = values.toList()
+    final newValues = widget.values.toList()
       ..sort((e1, e2) {
-        return e1.$2.compareTo(e2.$2);
+        return e1.label.compareTo(e2.label);
       });
     final selectedSegment =
-        newValues.indexWhere((element) => element.$1 == selected);
+        newValues.indexWhere((element) => element.value == widget.selected);
     if (selectedSegment != -1) {
       final s = newValues.removeAt(selectedSegment);
       newValues.insert(0, s);
     }
+
+    final child = newValues.length <= 5
+        ? SingleChildScrollView(
+            controller: controller,
+            scrollDirection: Axis.horizontal,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: SegmentedButton<T>(
+                emptySelectionAllowed:
+                    widget.selected == null || widget.allowUnselect,
+                onSelectionChanged:
+                    newValues.length == 1 && !widget.allowUnselect
+                        ? null
+                        : select,
+                segments: newValues
+                    .map(
+                      (e) => ButtonSegment(
+                        value: e.value,
+                        label: Text(e.label),
+                        icon: e.icon != null ? Icon(e.icon) : null,
+                      ),
+                    )
+                    .toList(),
+                selected: widget.selected != null ? {widget.selected as T} : {},
+              ),
+            ),
+          )
+        : SizedBox(
+            height: 40,
+            child: ListView.builder(
+              controller: controller,
+              shrinkWrap: true,
+              itemCount: newValues.length,
+              scrollDirection: Axis.horizontal,
+              itemBuilder: (context, index) {
+                final e = newValues[index];
+
+                return Padding(
+                  padding: EdgeInsets.only(
+                      right: index == newValues.length - 1 ? 8 : 4),
+                  child: ChoiceChip(
+                    selected: e.value == widget.selected,
+                    avatar: e.icon != null ? Icon(e.icon) : null,
+                    label: Text(e.label),
+                    onSelected: newValues.length == 1 && !widget.allowUnselect
+                        ? null
+                        : (_) {
+                            if (e.value == widget.selected) {
+                              if (!widget.allowUnselect) {
+                                return;
+                              }
+
+                              select({});
+                              return;
+                            }
+
+                            select({e.value});
+                          },
+                  ),
+                );
+              },
+            ),
+          );
 
     return Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 4),
@@ -108,37 +212,13 @@ class SegmentedButtonGroup<T> extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Text(
-              title,
+              widget.title,
               style: Theme.of(context).textTheme.bodyLarge,
             ),
           ),
           Align(
             alignment: Alignment.centerRight,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: SegmentedButton<T>(
-                  emptySelectionAllowed: selected == null || allowUnselect,
-                  onSelectionChanged: values.length == 1 && !allowUnselect
-                      ? null
-                      : (selection) {
-                          if (allowUnselect && selection.isEmpty) {
-                            select(null);
-
-                            return;
-                          }
-                          select(selection.first);
-                        },
-                  segments: newValues
-                      .map(
-                        (e) => ButtonSegment(value: e.$1, label: Text(e.$2)),
-                      )
-                      .toList(),
-                  selected: selected != null ? {selected as T} : {},
-                ),
-              ),
-            ),
+            child: child,
           ),
         ],
       ),
@@ -151,7 +231,8 @@ Widget _ratio(BuildContext context, GridAspectRatio aspectRatio,
   return SegmentedButtonGroup(
     select: select,
     selected: aspectRatio,
-    values: GridAspectRatio.values.map((e) => (e, e.value.toString())),
+    values: GridAspectRatio.values
+        .map((e) => SegmentedButtonValue(e, e.value.toString())),
     title: AppLocalizations.of(context)!.aspectRatio,
   );
 }
@@ -161,7 +242,8 @@ Widget _columns(BuildContext context, GridColumn columns,
   return SegmentedButtonGroup(
     select: select,
     selected: columns,
-    values: GridColumn.values.map((e) => (e, e.number.toString())),
+    values: GridColumn.values
+        .map((e) => SegmentedButtonValue(e, e.number.toString())),
     title: AppLocalizations.of(context)!.gridColumns,
   );
 }
@@ -171,7 +253,7 @@ Widget _gridLayout(BuildContext context, GridLayoutType selectGridLayout,
   return SegmentedButtonGroup(
     select: select,
     selected: selectGridLayout,
-    values: GridLayoutType.values.map((e) => (e, e.text)),
+    values: GridLayoutType.values.map((e) => SegmentedButtonValue(e, e.text)),
     title: AppLocalizations.of(context)!.layoutLabel,
   );
 }

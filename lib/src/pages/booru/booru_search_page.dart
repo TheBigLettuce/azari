@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
+import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
@@ -90,7 +91,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
   int? currentSkipped;
 
   bool reachedEnd = false;
-  bool addedToBookmarks = false;
+  bool removeDb = true;
 
   late final Isar instance = DbsOpen.secondaryGrid(temporary: true);
 
@@ -120,6 +121,8 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
       },
     ));
 
+    tagManager.latest.add(Tag.string(tag: widget.tags));
+
     settingsWatcher = Settings.watch((s) {
       state.settings = s!;
 
@@ -144,21 +147,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
 
     state.dispose();
 
-    if (addedToBookmarks) {
-      instance.close(deleteFromDisk: false);
-      final f = File.fromUri(Uri.file(
-          path.joinAll([Dbs.g.temporaryDbDir, "${instance.name}.isar"])));
-      f.renameSync(
-          path.joinAll([Dbs.g.appStorageDir, "${instance.name}.isar"]));
-      Dbs.g.main.writeTxnSync(() => Dbs.g.main.gridStateBoorus.putSync(
-            GridStateBooru(api.booru,
-                tags: tags,
-                scrollOffset: _currentScroll ?? 0,
-                safeMode: safeMode ?? state.settings.safeMode,
-                name: instance.name,
-                time: DateTime.now()),
-          ));
-    } else {
+    if (removeDb) {
       instance.close(deleteFromDisk: true);
     }
 
@@ -349,11 +338,43 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                               ),
                             );
 
-                            return false;
+                            return;
                           }
-                          addedToBookmarks = true;
 
-                          return true;
+                          state.refreshingStatus.mutation.cellCount = 0;
+
+                          instance.close(deleteFromDisk: false).then((value) {
+                            removeDb = false;
+
+                            final f = File.fromUri(Uri.file(path.joinAll([
+                              Dbs.g.temporaryDbDir,
+                              "${instance.name}.isar"
+                            ])));
+                            f.renameSync(path.joinAll([
+                              Dbs.g.appStorageDir,
+                              "${instance.name}.isar"
+                            ]));
+                            Dbs.g.main.writeTxnSync(
+                                () => Dbs.g.main.gridStateBoorus.putSync(
+                                      GridStateBooru(api.booru,
+                                          tags: tags,
+                                          scrollOffset: _currentScroll ?? 0,
+                                          safeMode: safeMode ??
+                                              state.settings.safeMode,
+                                          name: instance.name,
+                                          time: DateTime.now()),
+                                    ));
+
+                            ScaffoldMessenger.of(
+                                    state.scaffoldKey.currentContext!)
+                                .showSnackBar(SnackBar(
+                                    content: Text(
+                              AppLocalizations.of(context)!.bookmarked,
+                            )));
+                            state.gridKey.currentState?.selection.reset();
+
+                            Navigator.pop(context);
+                          });
                         }),
                   ],
                   settingsButton: GridFrameSettingsButton(

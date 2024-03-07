@@ -11,6 +11,7 @@ import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 class CallbackDescription {
   final Future<void> Function(SystemGalleryDirectory? chosen, String? newDir) c;
   final String description;
+  final List<String> suggestFor;
 
   final PreferredSizeWidget? preview;
 
@@ -20,6 +21,11 @@ class CallbackDescription {
     c(chosen, newDir);
   }
 
-  const CallbackDescription(this.description, this.c,
-      {this.preview, required this.joinable});
+  const CallbackDescription(
+    this.description,
+    this.c, {
+    this.preview,
+    required this.joinable,
+    required this.suggestFor,
+  });
 }

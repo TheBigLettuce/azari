@@ -85,6 +85,22 @@ class _BookmarkPageState extends State<BookmarkPage> {
     });
   }
 
+  List<Post> getSingle(Isar db) => switch (settings.safeMode) {
+        SafeMode.normal => db.posts
+            .where()
+            .ratingEqualTo(PostRating.general)
+            .limit(5)
+            .findAllSync(),
+        SafeMode.relaxed => db.posts
+            .where()
+            .ratingEqualTo(PostRating.general)
+            .or()
+            .ratingEqualTo(PostRating.sensitive)
+            .limit(5)
+            .findAllSync(),
+        SafeMode.none => db.posts.where().limit(5).findAllSync(),
+      };
+
   void _updateDirectly() async {
     gridStates.clear();
 
@@ -95,21 +111,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
       for (final e in gridStates) {
         final db = DbsOpen.secondaryGridName(e.name);
 
-        final List<Post> p = switch (settings.safeMode) {
-          SafeMode.normal => db.posts
-              .where()
-              .ratingEqualTo(PostRating.general)
-              .limit(5)
-              .findAllSync(),
-          SafeMode.relaxed => db.posts
-              .where()
-              .ratingEqualTo(PostRating.general)
-              .or()
-              .ratingEqualTo(PostRating.sensitive)
-              .limit(5)
-              .findAllSync(),
-          SafeMode.none => db.posts.where().limit(5).findAllSync(),
-        };
+        final List<Post> p = getSingle(db);
 
         List<Post>? l = m[e.name];
         if (l == null) {
@@ -179,6 +181,18 @@ class _BookmarkPageState extends State<BookmarkPage> {
         list.add(TimeLabel(time, titleStyle, timeNow));
       }
 
+      List<Post>? posts = m[e.name];
+      if (posts == null) {
+        final db = DbsOpen.secondaryGridName(e.name);
+
+        posts = getSingle(db);
+
+        m[e.name] = posts;
+
+        // TODO: do something about this
+        db.close(deleteFromDisk: false);
+      }
+
       list.add(
         Padding(
           padding: EdgeInsets.only(top: addTime ? 0 : 12, left: 12, right: 16),
@@ -188,7 +202,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
             state: e,
             title: e.tags,
             subtitle: e.booru.string,
-            posts: m[e.name]!,
+            posts: posts,
           ),
         ),
       );

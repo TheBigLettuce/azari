@@ -12,6 +12,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/system_gallery_directory_file_functionality_mixin.dart';
 import 'package:gallery/src/db/schemas/grid_settings/files.dart';
+import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
@@ -235,15 +236,25 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
 
   void _onBooruTagPressed(BuildContext context, Booru booru, String tag,
       SafeMode? overrideSafeMode) {
-    Navigator.push(context, MaterialPageRoute(
-      builder: (context) {
-        return BooruSearchPage(
-          booru: booru,
-          tags: tag,
-          overrideSafeMode: overrideSafeMode,
-        );
-      },
-    ));
+    if (overrideSafeMode != null) {
+      Navigator.push(context, MaterialPageRoute(
+        builder: (context) {
+          return BooruSearchPage(
+            booru: booru,
+            tags: tag,
+            overrideSafeMode: overrideSafeMode,
+          );
+        },
+      ));
+
+      return;
+    }
+
+    Navigator.pop(context);
+    Navigator.pop(context);
+
+    search.setFilteringMode(FilteringMode.tag);
+    search.performSearch(tag);
   }
 
   @override
@@ -323,7 +334,7 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
             mainFocus: state.mainFocus,
             description: GridDescription(
               actions: widget.callback != null
-                  ? []
+                  ? const []
                   : extra.isTrash
                       ? [
                           _restoreFromTrash(),
@@ -444,11 +455,11 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
               search.searchTextController.text.isEmpty,
           overrideOnPop: (pop, hideAppBar) {
             final filterMode = search.currentFilteringMode();
-            if (filterMode != FilteringMode.noFilter ||
-                search.searchTextController.text.isNotEmpty) {
-              search.resetSearch();
-              setState(() {});
+            if (search.searchTextController.text.isNotEmpty) {
+              search.performSearch("");
               return;
+            } else if (filterMode != FilteringMode.noFilter) {
+              search.resetSearch();
             }
 
             if (hideAppBar()) {

@@ -23,9 +23,14 @@ import '../grid_frame.dart';
 
 class SegmentLayout<T extends Cell>
     implements GridLayouter<T>, GridLayoutBehaviour {
-  const SegmentLayout(this.segments, this.defaultSettings);
+  const SegmentLayout(
+    this.segments,
+    this.defaultSettings, {
+    this.suggestionPrefix = const [],
+  });
 
   final Segments<T> segments;
+  final List<String> suggestionPrefix;
 
   @override
   bool get isList => false;
@@ -35,7 +40,11 @@ class SegmentLayout<T extends Cell>
 
   @override
   GridLayouter<J> makeFor<J extends Cell>(GridSettingsBase settings) {
-    return SegmentLayout(segments, defaultSettings) as GridLayouter<J>;
+    return SegmentLayout(
+      segments,
+      defaultSettings,
+      suggestionPrefix: suggestionPrefix,
+    ) as GridLayouter<J>;
   }
 
   @override
@@ -85,6 +94,7 @@ class SegmentLayout<T extends Cell>
       functionality: state.widget.functionality,
       aspectRatio: settings.aspectRatio.value,
       refreshingStatus: state.refreshingStatus,
+      suggestionPrefix: suggestionPrefix,
       gridCell: (context, idx) {
         return GridCell.frameDefault(
           context,
@@ -213,6 +223,7 @@ class SegmentLayout<T extends Cell>
     required GridCell<T> Function(BuildContext, int idx, T) gridCellT,
     required double systemNavigationInsets,
     required int gridSeed,
+    required List<String> suggestionPrefix,
     required double aspectRatio,
   }) {
     if (state.cellCount == 0) {
@@ -229,10 +240,35 @@ class SegmentLayout<T extends Cell>
 
     segments.addToSticky;
 
-    final fisrstCell = getCell(0);
+    List<T> suggestionCells = [];
 
     for (var i = 0; i < state.cellCount; i++) {
-      final (res, sticky) = segments.segment!(getCell(i));
+      final cell = getCell(i);
+
+      if (segments.displayFirstCellInSpecial && suggestionPrefix.isNotEmpty) {
+        for (final alias in suggestionPrefix) {
+          if (alias.isEmpty) {
+            continue;
+          }
+
+          if (!alias.indexOf("_").isNegative) {
+            for (final e in alias.split("_")) {
+              if (cell
+                  .alias(false)
+                  .startsWith(e.length <= 4 ? e : e.substring(0, 5))) {
+                suggestionCells.add(cell);
+              }
+            }
+          } else {
+            if (cell.alias(false).startsWith(
+                alias.length <= 4 ? alias : alias.substring(0, 5))) {
+              suggestionCells.add(cell);
+            }
+          }
+        }
+      }
+
+      final (res, sticky) = segments.segment!(cell);
       if (res == null) {
         unsegmented.add(i);
       } else {
@@ -266,7 +302,9 @@ class SegmentLayout<T extends Cell>
           unstickable: false,
           firstIsSpecial: true,
         ),
-        [fisrstCell] + segments.injectedSegments,
+        suggestionCells.isEmpty
+            ? [getCell(0)]
+            : suggestionCells + segments.injectedSegments,
       ));
     } else {
       if (segments.injectedSegments.isNotEmpty) {

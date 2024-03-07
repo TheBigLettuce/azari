@@ -24,9 +24,11 @@ class GridSelection<T extends Cell> {
 
   int? lastSelected;
 
-  void use(void Function(List<T> l) f) {
+  void use(void Function(List<T> l) f, bool closeOnPress) {
     f(_selected.values.toList());
-    reset();
+    if (closeOnPress) {
+      reset();
+    }
   }
 
   final void Function(Function()) _setState;

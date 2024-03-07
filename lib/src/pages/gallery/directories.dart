@@ -297,6 +297,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
               layout: SegmentLayout(
                 _makeSegments(context),
                 GridSettingsDirectories.current,
+                suggestionPrefix: widget.callback?.suggestFor ?? const [],
               ),
               refreshingStatus: state.refreshingStatus,
               getCell: (i) => api.directCell(i),
@@ -308,9 +309,10 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                             context, idx);
 
                     if (widget.callback != null) {
-                      widget.callback!.c(cell, null).then((_) {
-                        Navigator.pop(context);
-                      });
+                      state.refreshingStatus.mutation.cellCount = 0;
+
+                      widget.callback!.c(cell, null);
+                      Navigator.pop(context);
                     } else {
                       StatisticsGallery.addViewedDirectories();
                       final d = cell;

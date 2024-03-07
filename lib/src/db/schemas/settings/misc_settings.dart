@@ -30,6 +30,8 @@ class MiscSettings {
   final bool animeAlwaysLoadFromNet;
   final int favoritesThumbId;
 
+  final bool animeWatchingOrderReversed;
+
   @enumerated
   final ThemeType themeType;
 
@@ -42,15 +44,20 @@ class MiscSettings {
     required this.favoritesThumbId,
     required this.themeType,
     required this.favoritesPageMode,
+    required this.animeWatchingOrderReversed,
   });
 
-  MiscSettings copy(
-          {bool? filesExtendedActions,
-          int? favoritesThumbId,
-          ThemeType? themeType,
-          bool? animeAlwaysLoadFromNet,
-          FilteringMode? favoritesPageMode}) =>
+  MiscSettings copy({
+    bool? filesExtendedActions,
+    int? favoritesThumbId,
+    ThemeType? themeType,
+    bool? animeAlwaysLoadFromNet,
+    bool? animeWatchingOrderReversed,
+    FilteringMode? favoritesPageMode,
+  }) =>
       MiscSettings(
+          animeWatchingOrderReversed:
+              animeWatchingOrderReversed ?? this.animeWatchingOrderReversed,
           themeType: themeType ?? this.themeType,
           animeAlwaysLoadFromNet:
               animeAlwaysLoadFromNet ?? this.animeAlwaysLoadFromNet,
@@ -62,6 +69,7 @@ class MiscSettings {
   static MiscSettings get current =>
       Dbs.g.main.miscSettings.getSync(0) ??
       const MiscSettings(
+        animeWatchingOrderReversed: false,
         animeAlwaysLoadFromNet: false,
         filesExtendedActions: false,
         themeType: ThemeType.systemAccent,
@@ -87,6 +95,11 @@ class MiscSettings {
   static void setAnimeAlwaysLoadFromNet(bool animeAlwaysLoadFromNet) {
     Dbs.g.main.writeTxnSync(() => Dbs.g.main.miscSettings
         .putSync(current.copy(animeAlwaysLoadFromNet: animeAlwaysLoadFromNet)));
+  }
+
+  static void setAnimeWatchingOrderReversed(bool animeWatchingOrderReversed) {
+    Dbs.g.main.writeTxnSync(() => Dbs.g.main.miscSettings.putSync(
+        current.copy(animeWatchingOrderReversed: animeWatchingOrderReversed)));
   }
 
   static void setThemeType(ThemeType theme) {

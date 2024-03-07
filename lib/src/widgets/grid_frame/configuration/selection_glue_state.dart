@@ -65,11 +65,7 @@ class SelectionGlueState {
               .map((e) => WrapGridActionButton(
                     e.icon,
                     () {
-                      selection.use(e.onPress);
-
-                      if (e.closeOnPress) {
-                        selection.reset();
-                      }
+                      selection.use(e.onPress, e.closeOnPress);
                     },
                     false,
                     animate: e.animate,
@@ -77,11 +73,7 @@ class SelectionGlueState {
                     onLongPress: e.onLongPress == null
                         ? null
                         : () {
-                            selection.use(e.onLongPress!);
-
-                            if (e.closeOnPress) {
-                              selection.reset();
-                            }
+                            selection.use(e.onLongPress!, e.closeOnPress);
                           },
                     play: e.play,
                     // backgroundColor: e.backgroundColor,

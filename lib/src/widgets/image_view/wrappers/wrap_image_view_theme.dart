@@ -121,6 +121,29 @@ class WrapImageViewThemeState extends State<WrapImageViewTheme>
                 .transform(_animationController.value)
                 ?.withOpacity(0.8),
           ),
+          chipTheme: ChipThemeData(
+            elevation: 0,
+            side: BorderSide(
+              color: tweenDominantColor
+                      .transform(_animationController.value)
+                      ?.withOpacity(0.8) ??
+                  Colors.black,
+              width: 0,
+            ),
+            backgroundColor: tweenDominantColor
+                .transform(_animationController.value)
+                ?.withOpacity(0.8),
+            labelStyle: TextStyle(
+              color: tweenDominantTextColor
+                  .transform(_animationController.value)
+                  ?.withOpacity(0.8),
+            ),
+            iconTheme: IconThemeData(
+              color: tweenDominantTextColor
+                  .transform(_animationController.value)
+                  ?.withOpacity(0.8),
+            ),
+          ),
           filledButtonTheme: FilledButtonThemeData(
               style: ButtonStyle(
             foregroundColor: MaterialStatePropertyAll(

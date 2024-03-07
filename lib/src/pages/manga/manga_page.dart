@@ -397,7 +397,7 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
               mutationInterface,
               selection,
               gridCell: (context, idx) {
-                final cell = data[idx];
+                final cell = data[data.length - 1 - idx];
 
                 return GridCell(
                   cell: cell,

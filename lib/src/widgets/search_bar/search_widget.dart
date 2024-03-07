@@ -81,11 +81,8 @@ class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
         },
         widget.instance._localTagCompleteFunc,
         widget.instance.searchFocus,
-        // showSearch: !Platform.isAndroid,
         roundBorders: false,
         swapSearchIcon: true,
-
-        // ignoreFocusNotifier: Platform.isAndroid,
         searchCount: count,
         addItems: _addItems(),
         onChanged: () {
@@ -147,13 +144,15 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
   late SortingMode currentSorting = widget.currentSorting;
 
   void _selectFilter(FilteringMode? mode) {
-    if (mode != null) {
+    if (mode == null) {
+      currentFilter = FilteringMode.noFilter;
+    } else {
       currentFilter = mode;
-
-      widget.select(mode);
-
-      setState(() {});
     }
+
+    widget.select(currentFilter);
+
+    setState(() {});
   }
 
   void _selectSorting(SortingMode? sort) {
@@ -182,17 +181,26 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
             SegmentedButtonGroup<FilteringMode>(
               select: _selectFilter,
               selected: currentFilter,
+              allowUnselect: true,
               values: widget.enabledModes
-                  .map((e) => (e, e.translatedString(context))),
+                  .where((element) => element != FilteringMode.noFilter)
+                  .map((e) => SegmentedButtonValue(
+                        e,
+                        e.translatedString(context),
+                        icon: e.icon,
+                      )),
               title: AppLocalizations.of(context)!.filteringModesLabel,
             ),
             SegmentedButtonGroup<SortingMode>(
               select: _selectSorting,
               selected: currentSorting,
               values: widget.enabledSorting.isEmpty
-                  ? [(currentSorting, currentSorting.translatedString(context))]
-                  : widget.enabledSorting
-                      .map((e) => (e, e.translatedString(context))),
+                  ? [
+                      SegmentedButtonValue(currentSorting,
+                          currentSorting.translatedString(context))
+                    ]
+                  : widget.enabledSorting.map((e) =>
+                      SegmentedButtonValue(e, e.translatedString(context))),
               title: AppLocalizations.of(context)!.sortingModesLabel,
             )
           ],

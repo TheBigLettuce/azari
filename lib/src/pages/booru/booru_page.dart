@@ -521,15 +521,14 @@ class _BooruPageState extends State<BooruPage> {
                 ],
                 pages: PageSwitcher(
                     [
-                      _IconWithCount(
+                      PageIcon(
+                        Icons.favorite_rounded,
                         count: FavoriteBooru.count,
-                        icon: const Icon(Icons.favorite_rounded),
                       ),
-                      _IconWithCount(
+                      PageIcon(
+                        Icons.bookmarks_rounded,
                         count: Dbs.g.main.gridStateBoorus.countSync(),
-                        icon: const Icon(Icons.bookmarks_rounded),
                       ),
-                      // const Icon(Icons.tag_rounded),
                     ],
                     (i) => switch (i) {
                           0 => PageDescription(
@@ -590,6 +589,15 @@ class _BooruPageState extends State<BooruPage> {
             ),
             canPop: false,
             overrideOnPop: (pop, hideAppBar) {
+              final gridState = state.gridKey.currentState;
+              if (gridState != null && gridState.currentPage == 1) {
+                if (favoriteBooruState
+                    .search.searchTextController.text.isNotEmpty) {
+                  favoriteBooruState.search.performSearch("");
+                  return;
+                }
+              }
+
               if (hideAppBar()) {
                 setState(() {});
                 return;
@@ -736,31 +744,4 @@ class OnBooruTagPressed extends InheritedWidget {
   @override
   bool updateShouldNotify(OnBooruTagPressed oldWidget) =>
       oldWidget.onPressed != onPressed;
-}
-
-class _IconWithCount extends StatelessWidget {
-  final Icon icon;
-  final int count;
-
-  const _IconWithCount({
-    super.key,
-    required this.count,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        icon,
-        const Padding(padding: EdgeInsets.only(left: 2)),
-        Badge.count(
-          backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-          textColor: Theme.of(context).colorScheme.onSurfaceVariant,
-          alignment: Alignment.bottomCenter,
-          count: count,
-        )
-      ],
-    );
-  }
 }

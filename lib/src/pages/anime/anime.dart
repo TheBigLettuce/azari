@@ -16,6 +16,7 @@ import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
+import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';

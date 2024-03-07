@@ -51,13 +51,52 @@ class PageSwitchingWidget<T extends Cell> extends StatelessWidget {
             value: 0,
           ),
           ...pageSwitcher.pages.indexed.map((e) => ButtonSegment(
-                icon: e.$2,
-                // label: Text(e.$2),
+                icon: _IconWithCount(
+                  count: e.$2.count,
+                  icon: Icon(e.$2.icon),
+                  background: e.$1 + 1 == state.currentPage
+                      ? Theme.of(context).colorScheme.secondary
+                      : Theme.of(context).colorScheme.surfaceVariant,
+                  foreground: e.$1 + 1 == state.currentPage
+                      ? Theme.of(context).colorScheme.onSecondary
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
                 value: e.$1 + 1,
               )),
         ],
         selected: {state.currentPage},
       ),
+    );
+  }
+}
+
+class _IconWithCount extends StatelessWidget {
+  final Icon icon;
+  final int count;
+  final Color background;
+  final Color foreground;
+
+  const _IconWithCount({
+    super.key,
+    required this.count,
+    required this.icon,
+    required this.background,
+    required this.foreground,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        icon,
+        const Padding(padding: EdgeInsets.only(left: 2)),
+        Badge.count(
+          backgroundColor: background,
+          textColor: foreground,
+          alignment: Alignment.bottomCenter,
+          count: count,
+        )
+      ],
     );
   }
 }

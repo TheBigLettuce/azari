@@ -1069,7 +1069,11 @@
         "description": "Megabytes",
         "placeholders": {
             "number": {
-                "type": "double"
+                "type": "double",
+                "format": "decimalPatternDigits",
+                "optionalParameters": {
+                    "decimalDigits": 2
+                }
             }
         }
     },

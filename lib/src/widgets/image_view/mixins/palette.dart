@@ -36,7 +36,6 @@ mixin ImageViewPaletteMixin<T extends Cell> on State<ImageView<T>> {
       previousPallete = currentPalette;
       currentPalette = value;
 
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       SystemChrome.setSystemUIOverlayStyle(
         SystemUiOverlayStyle(
           systemNavigationBarColor: value.dominantColor?.color

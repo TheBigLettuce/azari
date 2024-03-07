@@ -187,6 +187,17 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
       GalleryPlug plug) {
     state.imageViewKey.currentState?.wrapNotifiersKey.currentState
         ?.pauseVideo();
+
+    final List<String> searchPrefix = [];
+    for (final tag in selected.first.tagsFlat.split(" ")) {
+      if (PinnedTag.isPinned(tag)) {
+        searchPrefix.add(tag);
+      }
+      if (searchPrefix.length == 2) {
+        break;
+      }
+    }
+
     Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
       builder: (context) {
         return WrapGridPage<SystemGalleryDirectory>(
@@ -195,56 +206,58 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
               showBackButton: true,
               procPop: (_) {},
               callback: CallbackDescription(
-                  move
-                      ? AppLocalizations.of(context)!.chooseMoveDestination
-                      : AppLocalizations.of(context)!.chooseCopyDestination,
-                  (chosen, newDir) {
-                if (chosen == null && newDir == null) {
-                  throw "both are empty";
-                }
+                move
+                    ? AppLocalizations.of(context)!.chooseMoveDestination
+                    : AppLocalizations.of(context)!.chooseCopyDestination,
+                (chosen, newDir) {
+                  if (chosen == null && newDir == null) {
+                    throw "both are empty";
+                  }
 
-                if (chosen != null && chosen.bucketId == widget.bucketId) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(move
-                          ? AppLocalizations.of(context)!.cantMoveSameDest
-                          : AppLocalizations.of(context)!.cantCopySameDest)));
-                  return Future.value();
-                }
-
-                if (chosen?.bucketId == "favorites") {
-                  _favoriteOrUnfavorite(context, selected, plug);
-                } else if (chosen?.bucketId == "trash") {
-                  if (!move) {
+                  if (chosen != null && chosen.bucketId == widget.bucketId) {
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(
-                      AppLocalizations.of(context)!.cantCopyToTrash,
-                    )));
+                        content: Text(move
+                            ? AppLocalizations.of(context)!.cantMoveSameDest
+                            : AppLocalizations.of(context)!.cantCopySameDest)));
                     return Future.value();
                   }
 
-                  return _deleteDialog(context, selected);
-                } else {
-                  PlatformFunctions.copyMoveFiles(
-                      chosen?.relativeLoc, chosen?.volumeName, selected,
-                      move: move, newDir: newDir);
+                  if (chosen?.bucketId == "favorites") {
+                    _favoriteOrUnfavorite(context, selected, plug);
+                  } else if (chosen?.bucketId == "trash") {
+                    if (!move) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(
+                        AppLocalizations.of(context)!.cantCopyToTrash,
+                      )));
+                      return Future.value();
+                    }
 
-                  if (move) {
-                    StatisticsGallery.addMoved(selected.length);
+                    return _deleteDialog(context, selected);
                   } else {
-                    StatisticsGallery.addCopied(selected.length);
-                  }
-                }
+                    PlatformFunctions.copyMoveFiles(
+                        chosen?.relativeLoc, chosen?.volumeName, selected,
+                        move: move, newDir: newDir);
 
-                return Future.value();
-              },
-                  preview: PreferredSize(
-                    preferredSize: const Size.fromHeight(52),
-                    child: CopyMovePreview(
-                      files: selected,
-                      size: 52,
-                    ),
+                    if (move) {
+                      StatisticsGallery.addMoved(selected.length);
+                    } else {
+                      StatisticsGallery.addCopied(selected.length);
+                    }
+                  }
+
+                  return Future.value();
+                },
+                preview: PreferredSize(
+                  preferredSize: const Size.fromHeight(52),
+                  child: CopyMovePreview(
+                    files: selected,
+                    size: 52,
                   ),
-                  joinable: false),
+                ),
+                joinable: false,
+                suggestFor: searchPrefix,
+              ),
             ));
       },
     )).then((value) => state

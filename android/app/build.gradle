@@ -98,15 +98,15 @@ dependencies {
     implementation 'com.github.bumptech.glide:annotations:4.14.2'
     implementation 'com.github.bumptech.glide:glide:4.14.2'
     ksp 'com.github.bumptech.glide:ksp:4.14.2'
-    implementation 'com.google.android.material:material:1.10.0'
+    implementation 'com.google.android.material:material:1.11.0'
     implementation 'androidx.window:window:1.1.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.6.2'
     implementation 'androidx.window:window-java:1.1.0'
-    implementation "androidx.activity:activity-ktx:1.8.0"
+    implementation "androidx.activity:activity-ktx:1.8.2"
     implementation "androidx.documentfile:documentfile:1.0.1"
     implementation "com.squareup.okio:okio:3.3.0"
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs_nio:2.0.3'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs_nio:2.0.4'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 }
