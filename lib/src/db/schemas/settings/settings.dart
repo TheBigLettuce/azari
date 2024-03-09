@@ -10,7 +10,6 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/base/post_base.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
@@ -27,11 +26,25 @@ import '../booru/favorite_booru.dart';
 
 part 'settings.g.dart';
 
+@embedded
+class SettingsPath {
+  const SettingsPath({
+    this.path = "",
+    this.pathDisplay = "",
+  });
+
+  final String path;
+  final String pathDisplay;
+
+  bool get isEmpty => path.isEmpty;
+  bool get isNotEmpty => path.isNotEmpty;
+}
+
 @collection
 class Settings {
   final Id id = 0;
 
-  final String path;
+  final SettingsPath path;
   @enumerated
   final Booru selectedBooru;
   @enumerated
@@ -42,6 +55,8 @@ class Settings {
   final bool autoRefresh;
   final int autoRefreshMicroseconds;
 
+  final bool showWelcomePage;
+
   const Settings({
     required this.path,
     required this.selectedBooru,
@@ -49,10 +64,11 @@ class Settings {
     required this.autoRefresh,
     required this.autoRefreshMicroseconds,
     required this.safeMode,
+    required this.showWelcomePage,
   });
 
   Settings copy({
-    String? path,
+    SettingsPath? path,
     Booru? selectedBooru,
     DisplayQuality? quality,
     bool? booruListView,
@@ -63,8 +79,10 @@ class Settings {
     bool? expensiveHash,
     SafeMode? safeMode,
     GridAspectRatio? ratio,
+    bool? showWelcomePage,
   }) {
     return Settings(
+      showWelcomePage: showWelcomePage ?? this.showWelcomePage,
       path: path ?? this.path,
       selectedBooru: selectedBooru ?? this.selectedBooru,
       quality: quality ?? this.quality,
@@ -76,7 +94,8 @@ class Settings {
   }
 
   Settings.empty()
-      : path = "",
+      : showWelcomePage = true,
+        path = const SettingsPath(),
         autoRefresh = false,
         autoRefreshMicroseconds = 1.hours.inMicroseconds,
         selectedBooru = Booru.gelbooru,
@@ -94,23 +113,23 @@ class Settings {
   /// Pick an operating system directory.
   /// Calls [onError] in case of any error and resolves to false.
   static Future<bool> chooseDirectory(void Function(String) onError) async {
-    late final String resp;
+    late final SettingsPath resp;
 
     if (Platform.isAndroid) {
       try {
         resp = (await PlatformFunctions.chooseDirectory())!;
       } catch (e) {
-        onError((e as PlatformException).code);
+        onError("Empty result"); // TODO: change
         return false;
       }
     } else {
-      final r = await FilePicker.platform
-          .getDirectoryPath(dialogTitle: "Pick a directory for downloads");
+      final r = await FilePicker.platform.getDirectoryPath(
+          dialogTitle: "Pick a directory for downloads"); // TODO: change
       if (r == null) {
-        onError("Please choose a valid directory");
+        onError("Please choose a valid directory"); // TODO: change
         return false;
       }
-      resp = r;
+      resp = SettingsPath(path: r, pathDisplay: r);
     }
 
     Settings.fromDb().copy(path: resp).save();

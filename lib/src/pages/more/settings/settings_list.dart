@@ -19,6 +19,7 @@ import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/display_quality.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
+import 'package:gallery/welcome_pages.dart';
 
 import '../../../db/tags/post_tags.dart';
 import '../../../db/schemas/settings/settings.dart';
@@ -96,10 +97,10 @@ class _SettingsListState extends State<SettingsList> {
   List<Widget> makeList(BuildContext context, TextStyle titleStyle) => [
         SettingsLabel(AppLocalizations.of(context)!.booruLabel, titleStyle),
         MenuWrapper(
-          title: _settings!.path,
+          title: _settings!.path.path,
           child: ListTile(
             title: Text(AppLocalizations.of(context)!.downloadDirectorySetting),
-            subtitle: Text(_settings!.path),
+            subtitle: Text(_settings!.path.pathDisplay),
             onTap: () async {
               await Settings.chooseDirectory(showDialog);
             },
@@ -383,6 +384,18 @@ class _SettingsListState extends State<SettingsList> {
           onChanged: (value) => MiscSettings.setAnimeAlwaysLoadFromNet(value),
           title: Text(AppLocalizations.of(context)!.animeAlwaysOnline),
         ),
+        ListTile(
+          title: Text("Open welcome page"),
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return WelcomePage(
+                  doNotLaunchHome: true,
+                );
+              },
+            ));
+          },
+        )
       ];
 
   String _calculateMBSize(int i) {

@@ -15,6 +15,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
@@ -245,7 +246,12 @@ class MainActivity : FlutterActivity() {
         if (requestCode == 1) {
             try {
                 if (resultCode == Activity.RESULT_OK) {
-                    engineBindings.callback?.invoke(data!!.data.toString())
+                    engineBindings.callback?.invoke(
+                        Pair(
+                            data!!.data.toString(),
+                            data.data!!.path!!.split(":").last()
+                        )
+                    )
                 } else {
                     engineBindings.callback?.invoke(null)
                 }
@@ -257,6 +263,16 @@ class MainActivity : FlutterActivity() {
             if (engineBindings.callbackMux.isLocked) {
                 engineBindings.callbackMux.unlock()
             }
+        }
+
+        if (requestCode == 99) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                engineBindings.manageMediaCallback!!(MediaStore.canManageMedia(context))
+            } else {
+                engineBindings.manageMediaCallback!!(false);
+            }
+            engineBindings.manageMediaCallback = null
+            engineBindings.manageMediaMux.unlock()
         }
 
         if (requestCode == 9) {
@@ -392,10 +408,6 @@ class Manager(
     private val galleryApi: GalleryApi,
     private val context: FlutterActivity,
 ) : ConnectivityManager.NetworkCallback() {
-    override fun onAvailable(network: Network) {
-//        Log.e("NetConn", "The default network is now: " + network)
-    }
-
     override fun onLost(network: Network) {
         context.runOnUiThread { galleryApi.notifyNetworkStatus(false) {} }
     }

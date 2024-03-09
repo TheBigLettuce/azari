@@ -12,6 +12,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
+import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
@@ -21,6 +22,7 @@ import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/widgets/fade_sideways_page_transition_builder.dart';
 import 'package:gallery/src/widgets/restart_widget.dart';
+import 'package:gallery/welcome_pages.dart';
 // import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -172,7 +174,7 @@ void main() async {
 
   final accentColor = await PlatformFunctions.accentColor();
 
-  GlobalKey restartKey = GlobalKey();
+  final GlobalKey restartKey = GlobalKey();
 
   await FlutterLocalNotificationsPlugin().initialize(
       const InitializationSettings(
@@ -188,15 +190,7 @@ void main() async {
 
   azariVersion = (await PackageInfo.fromPlatform()).version;
 
-  if (Platform.isAndroid) {
-    Permission.notification.request().then((value) async {
-      await Permission.photos.request();
-      await Permission.videos.request();
-      await Permission.storage.request();
-      await Permission.accessMediaLocation.request();
-      PlatformFunctions.requestManageMedia();
-    });
-  }
+  final settings = Settings.fromDb();
 
   runApp(
     RestartWidget(
@@ -208,7 +202,7 @@ void main() async {
         title: 'Azari',
         darkTheme: d,
         theme: l,
-        home: const Home(),
+        home: settings.showWelcomePage ? const WelcomePage() : const Home(),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
       ),

@@ -30,7 +30,6 @@ internal class ImageView(
 
     override fun dispose() {
         imageView.invalidate()
-
     }
 
     init {

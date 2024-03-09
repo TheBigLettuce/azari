@@ -16,7 +16,7 @@ import com.bumptech.glide.load.engine.cache.MemorySizeCalculator
 import com.bumptech.glide.module.AppGlideModule
 
 @GlideModule
-class YourAppGlideModule : AppGlideModule() {
+class AppGlideModule : AppGlideModule() {
     override fun applyOptions(context: Context, builder: GlideBuilder) {
         val calculator = MemorySizeCalculator.Builder(context)
             .setMaxSizeMultiplier(0.40f)

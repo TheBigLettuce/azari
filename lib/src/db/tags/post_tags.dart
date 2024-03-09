@@ -360,7 +360,7 @@ class PostTags {
 
       plug.move(MoveOp(
           source: output,
-          rootDir: Settings.fromDb().path,
+          rootDir: Settings.fromDb().path.path,
           targetDir: "backup"));
       onDone(null);
     } catch (e) {

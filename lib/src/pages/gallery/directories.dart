@@ -448,9 +448,11 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                         onPressed: () async {
                           try {
                             widget.callback!(
-                                null,
-                                await PlatformFunctions.chooseDirectory(
-                                    temporary: true));
+                              null,
+                              await PlatformFunctions.chooseDirectory(
+                                      temporary: true)
+                                  .then((value) => value!.path),
+                            );
                             // ignore: use_build_context_synchronously
                             Navigator.pop(context);
                           } catch (e, trace) {

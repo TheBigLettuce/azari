@@ -90,8 +90,22 @@ class _MainGridPagingState implements PagingEntry, PageSaver {
   late final GridRefreshingStatus<Post> refreshingStatus;
   // final StateRestoration _restore;
 
-  GridState get _currentState =>
-      mainGrid.gridStates.getByNameSync(mainGrid.name)!;
+  GridState get _currentState {
+    GridState? state = mainGrid.gridStates.getByNameSync(mainGrid.name);
+    if (state == null) {
+      state = GridState(
+        tags: "",
+        name: mainGrid.name,
+        safeMode: SafeMode.normal,
+        time: DateTime.now(),
+        scrollOffset: 0,
+      );
+
+      mainGrid.writeTxnSync(() => mainGrid.gridStates.putSync(state!));
+    }
+
+    return state;
+  }
 
   bool needToRefresh(Duration microseconds) =>
       _currentState.time.isBefore(DateTime.now().subtract(microseconds));

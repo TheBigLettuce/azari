@@ -10,6 +10,7 @@ import 'dart:io';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 
@@ -40,8 +41,8 @@ class PlatformFunctions {
     _channel.invokeMethod("loadThumbnail", thumb);
   }
 
-  static void requestManageMedia() {
-    _channel.invokeMethod("requestManageMedia");
+  static Future<bool> requestManageMedia() {
+    return _channel.invokeMethod("requestManageMedia").then((value) => value);
   }
 
   static Future<Color> accentColor() async {
@@ -100,12 +101,25 @@ class PlatformFunctions {
         "deleteFiles", selected.map((e) => e.originalUri).toList());
   }
 
-  static Future<String?> chooseDirectory({bool temporary = false}) async {
-    return _channel.invokeMethod<String>("chooseDirectory", temporary);
+  static Future<SettingsPath?> chooseDirectory({bool temporary = false}) async {
+    return _channel
+        .invokeMethod("chooseDirectory", temporary)
+        .then((value) => SettingsPath(
+              path: value["path"],
+              pathDisplay: value["pathDisplay"],
+            ));
   }
 
   static void refreshGallery() {
     _channel.invokeMethod("refreshGallery");
+  }
+
+  static Future<bool> manageMediaSupported() {
+    return _channel.invokeMethod("manageMediaSupported").then((value) => value);
+  }
+
+  static Future<bool> manageMediaStatus() {
+    return _channel.invokeMethod("manageMediaStatus").then((value) => value);
   }
 
   static void emptyTrash() {

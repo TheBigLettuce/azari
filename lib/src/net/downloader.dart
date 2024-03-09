@@ -269,7 +269,7 @@ class Downloader with _CancelTokens, _StatisticsTimer {
         final settings = Settings.fromDb();
 
         moverPlug.move(MoveOp(
-            source: filePath, rootDir: settings.path, targetDir: d.site));
+            source: filePath, rootDir: settings.path.path, targetDir: d.site));
 
         DownloadFile.deleteAll([d.url]);
         _removeToken(d.url);

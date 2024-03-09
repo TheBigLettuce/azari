@@ -52,7 +52,9 @@ class EngineBindings(
     val engine: FlutterEngine
 
     val callbackMux = Mutex()
-    var callback: ((String?) -> Unit)? = null
+    var callback: ((Pair<String, String>?) -> Unit)? = null
+    val manageMediaMux = Mutex()
+    var manageMediaCallback: ((Boolean) -> Unit)? = null
     val copyFilesMux = Mutex()
     var copyFiles: FilesDest? = null
     val renameMux = Mutex()
@@ -116,17 +118,22 @@ class EngineBindings(
                         callback = {
                             if (it == null) {
                                 callbackMux.unlock()
-                                result.error("empty result", "", "")
+                                result.error("", "", "")
                             } else {
                                 if (!temporary) {
                                     context.contentResolver.takePersistableUriPermission(
-                                        Uri.parse(it),
+                                        Uri.parse(it.first),
                                         (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                                     )
                                 }
 
                                 callbackMux.unlock()
-                                result.success(it)
+                                result.success(
+                                    mapOf<String, String>(
+                                        Pair("path", it.first),
+                                        Pair("pathDisplay", it.second),
+                                    )
+                                )
                             }
                         }
 
@@ -154,10 +161,10 @@ class EngineBindings(
                         callback = {
                             if (it == null) {
                                 callbackMux.unlock()
-                                result.error("empty result", "", "")
+                                result.error("", "", "")
                             } else {
                                 try {
-                                    val uri = Uri.parse(it)
+                                    val uri = Uri.parse(it.first)
                                     var outputFile: String? = null
 
                                     val file =
@@ -203,22 +210,43 @@ class EngineBindings(
                     }
                 }
 
-                "requestManageMedia" -> {
-                    try {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            if (!MediaStore.canManageMedia(context)) {
-                                val intent =
-                                    Intent(Settings.ACTION_REQUEST_MANAGE_MEDIA)
-                                intent.data = Uri.parse("package:${context.packageName}")
-                                context.startActivity(intent)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.e("requestManageMedia", e.toString())
-                    }
-                    result.success(null)
+                "manageMediaSupported" -> {
+                    result.success(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
                 }
 
+                "manageMediaStatus" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        result.success(MediaStore.canManageMedia(context))
+                    } else {
+                        result.success(false)
+                    }
+                }
+
+                "requestManageMedia" -> {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        manageMediaMux.lock()
+
+                        try {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                if (!MediaStore.canManageMedia(context)) {
+                                    val intent =
+                                        Intent(Settings.ACTION_REQUEST_MANAGE_MEDIA)
+                                    intent.data = Uri.parse("package:${context.packageName}")
+
+                                    manageMediaCallback = {
+                                        result.success(it)
+                                    }
+
+                                    context.startActivityForResult(intent, 99)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e("requestManageMedia", e.toString())
+                            result.success(false)
+                            manageMediaMux.unlock()
+                        }
+                    }
+                }
 
                 "rename" -> {
                     CoroutineScope(Dispatchers.IO).launch {
