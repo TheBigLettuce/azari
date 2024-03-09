@@ -12,7 +12,11 @@ import 'package:flutter/material.dart';
 import 'package:gallery/main.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
+import 'package:gallery/src/interfaces/booru/booru.dart';
+import 'package:gallery/src/interfaces/booru/display_quality.dart';
+import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/pages/home.dart';
+import 'package:gallery/src/pages/more/settings/radio_dialog.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -71,97 +75,71 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
   Widget build(BuildContext context) {
     return _WrapPadding(
       title: "Permissions",
-      explanation: "Photos and videos are mandatory",
+      explanation: "Photos and videos are needed for the gallery to work",
       body: Align(
         alignment: Alignment.centerLeft,
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              FilledButton.tonalIcon(
-                onPressed: photoAndVideos
-                    ? null
-                    : () async {
-                        final resultPhotos = await Permission.photos.request();
-                        final resultVideos = await Permission.videos.request();
+              _ButtonWithPadding(
+                icon: const Icon(Icons.photo),
+                onPressed: () async {
+                  final resultPhotos = await Permission.photos.request();
+                  final resultVideos = await Permission.videos.request();
 
-                        setState(() {
-                          photoAndVideos =
-                              resultVideos.isGranted && resultPhotos.isGranted;
-                        });
-                      },
-                icon: photoAndVideos
-                    ? const Icon(Icons.check_rounded)
-                    : const Icon(Icons.photo),
-                label: Text("Photos and videos"),
+                  setState(() {
+                    photoAndVideos =
+                        resultVideos.isGranted && resultPhotos.isGranted;
+                  });
+                },
+                label: "Photos and videos",
+                variant: photoAndVideos
+                    ? ButtonVariant.selected
+                    : ButtonVariant.normal,
               ),
-              const Padding(padding: EdgeInsets.only(top: 8)),
-              FilledButton.tonalIcon(
-                onPressed: mediaLocation
-                    ? null
-                    : () async {
-                        final result =
-                            await Permission.accessMediaLocation.request();
+              _ButtonWithPadding(
+                icon: const Icon(Icons.folder_copy),
+                onPressed: () async {
+                  final result = await Permission.accessMediaLocation.request();
 
-                        setState(() {
-                          mediaLocation = result.isGranted;
-                        });
-                      },
-                icon: mediaLocation
-                    ? const Icon(Icons.check_rounded)
-                    : const Icon(Icons.folder_copy),
-                label: Text("Media location"),
+                  setState(() {
+                    mediaLocation = result.isGranted;
+                  });
+                },
+                label: "Media location",
+                variant: mediaLocation
+                    ? ButtonVariant.selected
+                    : ButtonVariant.secondary,
               ),
-              if (manageMediaSupported != null && manageMediaSupported!) ...[
-                const Padding(padding: EdgeInsets.only(top: 8)),
-                FilledButton.tonalIcon(
-                  onPressed: manageMedia
-                      ? null
-                      : () async {
-                          final result =
-                              await PlatformFunctions.requestManageMedia();
+              if (manageMediaSupported != null && manageMediaSupported!)
+                _ButtonWithPadding(
+                  icon: const Icon(Icons.perm_media),
+                  onPressed: () async {
+                    final result = await PlatformFunctions.requestManageMedia();
 
-                          setState(() {
-                            manageMedia = result;
-                          });
-                        },
-                  icon: manageMedia
-                      ? const Icon(Icons.check_rounded)
-                      : const Icon(Icons.perm_media),
-                  label: Text("Manage media"),
+                    setState(() {
+                      manageMedia = result;
+                    });
+                  },
+                  label: "Manage media",
+                  variant: manageMedia
+                      ? ButtonVariant.selected
+                      : ButtonVariant.secondary,
                 ),
-              ],
-              // const Padding(padding: EdgeInsets.only(top: 8)),
-              // FilledButton.tonalIcon(
-              //   onPressed: storage
-              //       ? null
-              //       : () async {
-              //           final result = await Permission.storage.request();
+              _ButtonWithPadding(
+                icon: const Icon(Icons.notifications_rounded),
+                onPressed: () async {
+                  final result = await Permission.notification.request();
 
-              //           setState(() {
-              //             storage = result.isGranted;
-              //           });
-              //         },
-              //   icon: storage
-              //       ? const Icon(Icons.check_rounded)
-              //       : const Icon(Icons.storage_rounded),
-              //   label: Text("Storage"),
-              // ),
-              const Padding(padding: EdgeInsets.only(top: 8)),
-              FilledButton.tonalIcon(
-                onPressed: notifications
-                    ? null
-                    : () async {
-                        final result = await Permission.notification.request();
-
-                        setState(() {
-                          notifications = result.isGranted;
-                        });
-                      },
-                icon: notifications
-                    ? const Icon(Icons.check_rounded)
-                    : const Icon(Icons.notifications_rounded),
-                label: Text("Notifications"),
+                  setState(() {
+                    notifications = result.isGranted;
+                  });
+                },
+                label: "Notifications",
+                variant: notifications
+                    ? ButtonVariant.selected
+                    : ButtonVariant.secondary,
               ),
             ],
           ),
@@ -222,7 +200,7 @@ class _WelcomePageState extends State<WelcomePage> {
           onPressed: () {
             Navigator.pushReplacement(context, MaterialPageRoute(
               builder: (context) {
-                return PickFilePage(
+                return InitalSettings(
                   doNotLaunchHome: widget.doNotLaunchHome,
                 );
               },
@@ -289,19 +267,19 @@ class CongratulationPage extends StatelessWidget {
   }
 }
 
-class PickFilePage extends StatefulWidget {
+class InitalSettings extends StatefulWidget {
   final bool doNotLaunchHome;
 
-  const PickFilePage({
+  const InitalSettings({
     super.key,
     required this.doNotLaunchHome,
   });
 
   @override
-  State<PickFilePage> createState() => _PickFilePageState();
+  State<InitalSettings> createState() => _InitalSettingsState();
 }
 
-class _PickFilePageState extends State<PickFilePage> {
+class _InitalSettingsState extends State<InitalSettings> {
   late final StreamSubscription<void> watcher;
   Settings settings = Settings.fromDb();
 
@@ -350,7 +328,7 @@ class _PickFilePageState extends State<PickFilePage> {
   @override
   Widget build(BuildContext context) {
     return _WrapPadding(
-      title: "Download directory",
+      title: "Inital settings",
       explanation: "Download directory is used for multiple purposes",
       body: Align(
         alignment: Alignment.centerLeft,
@@ -368,8 +346,9 @@ class _PickFilePageState extends State<PickFilePage> {
                   setState(() {});
                 });
               },
-              label: Text(
-                  settings.path.isEmpty ? "Pick" : settings.path.pathDisplay),
+              label: Text(settings.path.isEmpty
+                  ? "Download directory"
+                  : settings.path.pathDisplay),
             ),
             if (error != null)
               Padding(
@@ -381,6 +360,58 @@ class _PickFilePageState extends State<PickFilePage> {
                       ),
                 ),
               ),
+            const Padding(padding: EdgeInsets.only(top: 8)),
+            _ButtonWithPadding(
+              icon: const Icon(Icons.image_rounded),
+              onPressed: () {
+                radioDialog(
+                  context,
+                  Booru.values.map((e) => (e, e.string)),
+                  settings.selectedBooru,
+                  (value) {
+                    settings.copy(selectedBooru: value).save();
+                  },
+                  title: "Booru",
+                );
+              },
+              label: "Booru: ${settings.selectedBooru.string}",
+              variant: ButtonVariant.secondary,
+            ),
+            _ButtonWithPadding(
+              icon: const Icon(Icons.settings_display),
+              onPressed: () {
+                radioDialog(
+                  context,
+                  DisplayQuality.values
+                      .map((e) => (e, e.translatedString(context))),
+                  settings.quality,
+                  (value) {
+                    settings.copy(quality: value).save();
+                  },
+                  title: "Display quality",
+                );
+              },
+              label:
+                  "Image display quality: ${settings.quality.translatedString(context)}",
+              variant: ButtonVariant.secondary,
+            ),
+            _ButtonWithPadding(
+              icon: const Icon(Icons.eighteen_up_rating_rounded),
+              onPressed: () {
+                radioDialog(
+                  context,
+                  SafeMode.values.map((e) => (e, e.translatedString(context))),
+                  settings.safeMode,
+                  (value) {
+                    settings.copy(safeMode: value).save();
+                  },
+                  title: "Safe mode",
+                );
+              },
+              label:
+                  "Safe mode: ${settings.safeMode.translatedString(context)}",
+              variant: ButtonVariant.secondary,
+            )
           ],
         ),
       ),
@@ -488,6 +519,49 @@ class _WrapPadding extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+enum ButtonVariant {
+  selected,
+  secondary,
+  normal;
+}
+
+class _ButtonWithPadding extends StatelessWidget {
+  final double padding;
+  final Icon icon;
+  final void Function() onPressed;
+  final String label;
+  final ButtonVariant variant;
+
+  const _ButtonWithPadding({
+    super.key,
+    this.padding = 8,
+    required this.icon,
+    required this.onPressed,
+    required this.label,
+    required this.variant,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: padding),
+      child: variant == ButtonVariant.secondary
+          ? ElevatedButton.icon(
+              onPressed: onPressed,
+              icon: icon,
+              label: Text(label),
+            )
+          : FilledButton.tonalIcon(
+              icon: variant == ButtonVariant.selected
+                  ? const Icon(Icons.check_rounded)
+                  : icon,
+              onPressed: variant == ButtonVariant.selected ? null : onPressed,
+              label: Text(label),
+            ),
     );
   }
 }
