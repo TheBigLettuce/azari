@@ -238,9 +238,7 @@ class SegmentLayout<T extends Cell>
 
     final unsegmented = <int>[];
 
-    segments.addToSticky;
-
-    List<T> suggestionCells = [];
+    final List<T> suggestionCells = [];
 
     for (var i = 0; i < state.cellCount; i++) {
       final cell = getCell(i);

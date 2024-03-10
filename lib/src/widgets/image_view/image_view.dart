@@ -239,7 +239,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     cellCount = count;
     final prv = currentPage;
-    currentPage = prv.clamp(0, count);
+    currentPage = prv.clamp(0, count - 1);
     loadCells(currentPage, cellCount);
 
     setState(() {});
