@@ -152,7 +152,7 @@ class PostBase extends Cell with BooruPostFunctionalityMixin {
   Key uniqueKey() => ValueKey(fileUrl);
 
   String filename() =>
-      "'${booru.prefix}_'$id - $md5${ext != '.zip' ? ext : path_util.extension(sampleUrl)}";
+      "${booru.prefix}_$id - $md5${ext != '.zip' ? ext : path_util.extension(sampleUrl)}";
 
   @override
   List<Widget>? addButtons(BuildContext context) {
