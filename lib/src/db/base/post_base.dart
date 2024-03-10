@@ -56,8 +56,7 @@ enum PostRating {
       };
 }
 
-class PostBase extends Cell
-    with CachedCellValuesMixin, BooruPostFunctionalityMixin {
+class PostBase extends Cell with BooruPostFunctionalityMixin {
   PostBase({
     required this.id,
     required this.height,
@@ -65,7 +64,7 @@ class PostBase extends Cell
     required this.tags,
     required this.width,
     required this.fileUrl,
-    required this.prefix,
+    required this.booru,
     required this.previewUrl,
     required this.sampleUrl,
     required this.ext,
@@ -74,40 +73,7 @@ class PostBase extends Cell
     required this.score,
     required this.createdAt,
     this.isarId,
-  }) {
-    initValues(() {
-      if (HiddenBooruPost.isHidden(id, Booru.fromPrefix(prefix)!)) {
-        return const EmptyContent();
-      }
-
-      String url = switch (Settings.fromDb().quality) {
-        DisplayQuality.original => fileUrl,
-        DisplayQuality.sample => sampleUrl
-      };
-
-      var type = lookupMimeType(url);
-      if (type == null) {
-        return const EmptyContent();
-      }
-
-      var typeHalf = type.split("/");
-
-      if (typeHalf[0] == "image") {
-        ImageProvider provider;
-        try {
-          provider = NetworkImage(url);
-        } catch (e) {
-          provider = MemoryImage(kTransparentImage);
-        }
-
-        return typeHalf[1] == "gif" ? NetGif(provider) : NetImage(provider);
-      } else if (typeHalf[0] == "video") {
-        return NetVideo(path_util.extension(url) == ".zip" ? sampleUrl : url);
-      } else {
-        return const EmptyContent();
-      }
-    });
-  }
+  });
 
   @override
   Id? isarId;
@@ -136,34 +102,75 @@ class PostBase extends Cell
   final PostRating rating;
   final int score;
   final DateTime createdAt;
-  final String prefix;
+  @enumerated
+  final Booru booru;
 
   @override
-  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(previewUrl);
+  ImageProvider<Object>? thumbnail() {
+    if (HiddenBooruPost.isHidden(id, booru)) {
+      return _transparent;
+    }
+
+    return CachedNetworkImageProvider(previewUrl);
+  }
+
+  @override
+  Contentable content() {
+    if (HiddenBooruPost.isHidden(id, booru)) {
+      return const EmptyContent();
+    }
+
+    String url = switch (Settings.fromDb().quality) {
+      DisplayQuality.original => fileUrl,
+      DisplayQuality.sample => sampleUrl
+    };
+
+    var type = lookupMimeType(url);
+    if (type == null) {
+      return const EmptyContent();
+    }
+
+    var typeHalf = type.split("/");
+
+    if (typeHalf[0] == "image") {
+      ImageProvider provider;
+      try {
+        provider = NetworkImage(url);
+      } catch (e) {
+        provider = MemoryImage(kTransparentImage);
+      }
+
+      return typeHalf[1] == "gif" ? NetGif(provider) : NetImage(provider);
+    } else if (typeHalf[0] == "video") {
+      return NetVideo(path_util.extension(url) == ".zip" ? sampleUrl : url);
+    } else {
+      return const EmptyContent();
+    }
+  }
 
   @override
   Key uniqueKey() => ValueKey(fileUrl);
 
   String filename() =>
-      "${prefix.isNotEmpty ? '${prefix}_' : ''}$id - $md5${ext != '.zip' ? ext : path_util.extension(sampleUrl)}";
+      "'${booru.prefix}_'$id - $md5${ext != '.zip' ? ext : path_util.extension(sampleUrl)}";
 
   @override
   List<Widget>? addButtons(BuildContext context) {
     return [
       openInBrowserButton(Uri.base, () {
         launchUrl(
-          Booru.fromPrefix(prefix)!.browserLink(id),
+          booru.browserLink(id),
           mode: LaunchMode.externalApplication,
         );
       }),
       if (Platform.isAndroid)
         shareButton(context, fileUrl, () {
-          showQr(context, prefix, id);
+          showQr(context, booru.prefix, id);
         })
       else
         IconButton(
           onPressed: () {
-            showQr(context, prefix, id);
+            showQr(context, booru.prefix, id);
           },
           icon: const Icon(Icons.qr_code_rounded),
         )
@@ -177,7 +184,7 @@ class PostBase extends Cell
       context,
       tags,
       id,
-      Booru.fromPrefix(prefix)!,
+      booru,
     );
 
     return icons.isEmpty ? null : icons;
@@ -186,7 +193,7 @@ class PostBase extends Cell
   @override
   List<Widget>? addInfo(BuildContext context) {
     final dUrl = fileDownloadUrl();
-    final tagManager = TagManager.fromEnum(Booru.fromPrefix(prefix)!);
+    final tagManager = TagManager.fromEnum(booru);
 
     return wrapTagsList(
       context,
@@ -232,7 +239,7 @@ class PostBase extends Cell
           subtitle: Text(score.toString()),
         ),
         if (tags.contains("translated"))
-          TranslationNotes.tile(context, id, Booru.fromPrefix(prefix)!),
+          TranslationNotes.tile(context, id, booru),
       ],
       filename(),
       supplyTags: tags,
@@ -241,7 +248,7 @@ class PostBase extends Cell
         Navigator.pop(context);
         Navigator.pop(context);
 
-        OnBooruTagPressed.pressOf(context, t, Booru.fromPrefix(prefix)!,
+        OnBooruTagPressed.pressOf(context, t, booru,
             overrideSafeMode: safeMode);
       },
     );
@@ -261,21 +268,23 @@ class PostBase extends Cell
 
   @override
   List<Sticker> stickers(BuildContext context) {
-    final isHidden = HiddenBooruPost.isHidden(id, Booru.fromPrefix(prefix)!);
+    final isHidden = HiddenBooruPost.isHidden(id, booru);
 
     return [
       if (isHidden) const Sticker(Icons.hide_image_rounded),
       if (this is! FavoriteBooru && Settings.isFavorite(fileUrl))
         const Sticker(Icons.favorite_rounded, important: true),
-      if (NoteBooru.hasNotes(id, Booru.fromPrefix(prefix)!))
+      if (NoteBooru.hasNotes(id, booru))
         const Sticker(Icons.sticky_note_2_outlined),
       ...defaultStickers(
         content(),
         context,
         tags,
         id,
-        Booru.fromPrefix(prefix)!,
+        booru,
       ).map((e) => Sticker(e.$1))
     ];
   }
 }
+
+final _transparent = MemoryImage(kTransparentImage);

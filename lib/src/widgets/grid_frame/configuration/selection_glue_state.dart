@@ -28,13 +28,15 @@ class SelectionGlueState {
     }
 
     if (_playAnimation != null) {
-      _playAnimation!(true).then((value) {
+      _playAnimation(true).then((value) {
         actions = null;
+        count = 0;
         setState(() {});
       });
     } else {}
     try {
       actions = null;
+      count = 0;
 
       setState(() {});
     } catch (_) {}
@@ -82,7 +84,7 @@ class SelectionGlueState {
               .toList();
 
           if (_playAnimation != null) {
-            _playAnimation!(false).then((value) => setState(() {
+            _playAnimation(false).then((value) => setState(() {
                   actions = (
                     a,
                     () {

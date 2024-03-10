@@ -151,7 +151,7 @@ class Settings {
             tags: post.tags,
             width: post.width,
             fileUrl: post.fileUrl,
-            prefix: post.prefix,
+            booru: post.booru,
             previewUrl: post.previewUrl,
             sampleUrl: post.sampleUrl,
             ext: post.ext,

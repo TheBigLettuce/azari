@@ -12,7 +12,7 @@ import 'page_description.dart';
 class PageIcon {
   const PageIcon(
     this.icon, {
-    this.count = 0,
+    this.count = -1,
   });
 
   final IconData icon;

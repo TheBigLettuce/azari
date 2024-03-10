@@ -86,17 +86,19 @@ class _IconWithCount extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        icon,
-        const Padding(padding: EdgeInsets.only(left: 2)),
-        Badge.count(
-          backgroundColor: background,
-          textColor: foreground,
-          alignment: Alignment.bottomCenter,
-          count: count,
-        )
-      ],
-    );
+    return count.isNegative
+        ? icon
+        : Row(
+            children: [
+              icon,
+              const Padding(padding: EdgeInsets.only(left: 2)),
+              Badge.count(
+                backgroundColor: background,
+                textColor: foreground,
+                alignment: Alignment.bottomCenter,
+                count: count,
+              )
+            ],
+          );
   }
 }

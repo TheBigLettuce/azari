@@ -29,7 +29,7 @@ class BooruGridActions {
       final toDelete = <(int, Booru)>[];
       final toAdd = <HiddenBooruPost>[];
 
-      final booru = Booru.fromPrefix(selected.first.prefix)!;
+      final booru = selected.first.booru;
 
       for (final cell in selected) {
         if (HiddenBooruPost.isHidden(cell.id, booru)) {
@@ -44,9 +44,7 @@ class BooruGridActions {
 
       setState();
     }, true,
-        color: post != null &&
-                HiddenBooruPost.isHidden(
-                    post.id, Booru.fromPrefix(post.prefix)!)
+        color: post != null && HiddenBooruPost.isHidden(post.id, post.booru)
             ? Theme.of(context).colorScheme.primary
             : null);
   }

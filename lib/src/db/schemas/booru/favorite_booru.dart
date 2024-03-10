@@ -8,6 +8,7 @@
 import 'dart:async';
 
 import 'package:gallery/src/db/initalize_db.dart';
+import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:isar/isar.dart';
 
 import '../../base/post_base.dart';
@@ -16,22 +17,23 @@ part 'favorite_booru.g.dart';
 
 @collection
 class FavoriteBooru extends PostBase {
-  FavoriteBooru(
-      {required super.height,
-      required super.id,
-      required super.md5,
-      required super.tags,
-      required super.width,
-      required super.fileUrl,
-      required super.prefix,
-      required super.previewUrl,
-      required super.sampleUrl,
-      required super.ext,
-      this.group,
-      required super.sourceUrl,
-      required super.rating,
-      required super.score,
-      required super.createdAt});
+  FavoriteBooru({
+    required super.height,
+    required super.id,
+    required super.md5,
+    required super.tags,
+    required super.width,
+    required super.fileUrl,
+    required super.booru,
+    required super.previewUrl,
+    required super.sampleUrl,
+    required super.ext,
+    this.group,
+    required super.sourceUrl,
+    required super.rating,
+    required super.score,
+    required super.createdAt,
+  });
 
   @Index()
   String? group;

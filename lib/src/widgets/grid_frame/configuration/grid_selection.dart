@@ -46,7 +46,7 @@ class GridSelection<T extends Cell> {
     lastSelected = null;
 
     _setState(() {});
-    glue.updateCount(_selected.length);
+    // glue.updateCount(_selected.length);
   }
 
   bool isSelected(int indx) =>

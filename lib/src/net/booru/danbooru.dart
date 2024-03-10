@@ -196,28 +196,29 @@ class Danbooru implements BooruAPI {
         final rating = e["rating"];
 
         final post = Post(
-            height: e["image_height"],
-            id: e["id"],
-            score: e["score"],
-            sourceUrl: e["source"],
-            rating: rating == null
-                ? PostRating.general
-                : switch (rating as String) {
-                    "g" => PostRating.general,
-                    "s" => PostRating.sensitive,
-                    "q" => PostRating.questionable,
-                    "e" => PostRating.explicit,
-                    String() => PostRating.general,
-                  },
-            createdAt: DateTime.parse(e["created_at"]),
-            md5: e["md5"],
-            tags: tags.split(" ").map((e) => escaper.convert(e)).toList(),
-            width: e["image_width"],
-            fileUrl: e["file_url"],
-            previewUrl: e["preview_file_url"],
-            sampleUrl: e["large_file_url"],
-            ext: ".${e["file_ext"]}",
-            prefix: booru.prefix);
+          height: e["image_height"],
+          id: e["id"],
+          score: e["score"],
+          sourceUrl: e["source"],
+          rating: rating == null
+              ? PostRating.general
+              : switch (rating as String) {
+                  "g" => PostRating.general,
+                  "s" => PostRating.sensitive,
+                  "q" => PostRating.questionable,
+                  "e" => PostRating.explicit,
+                  String() => PostRating.general,
+                },
+          createdAt: DateTime.parse(e["created_at"]),
+          md5: e["md5"],
+          tags: tags.split(" ").map((e) => escaper.convert(e)).toList(),
+          width: e["image_width"],
+          fileUrl: e["file_url"],
+          previewUrl: e["preview_file_url"],
+          sampleUrl: e["large_file_url"],
+          ext: ".${e["file_ext"]}",
+          booru: booru,
+        );
 
         list.add(post);
       } catch (_) {

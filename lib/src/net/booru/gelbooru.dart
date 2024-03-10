@@ -78,7 +78,7 @@ class GelbooruRespDecoder implements BooruRespDecoder {
 
       list.add(Post(
           height: post["height"],
-          prefix: booru.prefix,
+          booru: booru,
           id: post["id"],
           md5: post["md5"],
           tags: (post["tags"].split(" ") as List<String>)

@@ -21,7 +21,6 @@ import 'package:isar/isar.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../interfaces/cell/cell.dart';
 import '../../../plugs/platform_functions.dart';
 import '../../../interfaces/booru/display_quality.dart';
 import '../../base/note_base.dart';
@@ -30,8 +29,7 @@ import '../settings/settings.dart';
 part 'note_booru.g.dart';
 
 @collection
-class NoteBooru extends NoteBase
-    with CachedCellValuesMixin, BooruPostFunctionalityMixin {
+class NoteBooru extends NoteBase with BooruPostFunctionalityMixin {
   NoteBooru(
     super.text,
     super.time, {
@@ -42,36 +40,7 @@ class NoteBooru extends NoteBase
     required this.fileUrl,
     required this.sampleUrl,
     required this.previewUrl,
-  }) {
-    initValues(() {
-      String url = switch (Settings.fromDb().quality) {
-        DisplayQuality.original => fileUrl,
-        DisplayQuality.sample => sampleUrl
-      };
-
-      var type = lookupMimeType(url);
-      if (type == null) {
-        return const EmptyContent();
-      }
-
-      var typeHalf = type.split("/");
-
-      if (typeHalf[0] == "image") {
-        ImageProvider provider;
-        try {
-          provider = NetworkImage(url);
-        } catch (e) {
-          provider = MemoryImage(kTransparentImage);
-        }
-
-        return typeHalf[1] == "gif" ? NetGif(provider) : NetImage(provider);
-      } else if (typeHalf[0] == "video") {
-        return NetVideo(url);
-      } else {
-        return const EmptyContent();
-      }
-    });
-  }
+  });
 
   @override
   Key uniqueKey() => ValueKey((postId, booru));
@@ -87,6 +56,36 @@ class NoteBooru extends NoteBase
   final String fileUrl;
   final String previewUrl;
   final String sampleUrl;
+
+  @override
+  Contentable content() {
+    String url = switch (Settings.fromDb().quality) {
+      DisplayQuality.original => fileUrl,
+      DisplayQuality.sample => sampleUrl
+    };
+
+    var type = lookupMimeType(url);
+    if (type == null) {
+      return const EmptyContent();
+    }
+
+    var typeHalf = type.split("/");
+
+    if (typeHalf[0] == "image") {
+      ImageProvider provider;
+      try {
+        provider = NetworkImage(url);
+      } catch (e) {
+        provider = MemoryImage(kTransparentImage);
+      }
+
+      return typeHalf[1] == "gif" ? NetGif(provider) : NetImage(provider);
+    } else if (typeHalf[0] == "video") {
+      return NetVideo(url);
+    } else {
+      return const EmptyContent();
+    }
+  }
 
   @override
   List<Widget>? addButtons(BuildContext context) {
@@ -281,16 +280,12 @@ class NoteBooru extends NoteBase
       void Function(void Function()) setState) {
     return NoteInterface(
       reorder: (cell, from, to) {
-        reorder(
-            booru: Booru.fromPrefix(cell.prefix)!,
-            postId: cell.id,
-            from: from,
-            to: to);
+        reorder(booru: cell.booru, postId: cell.id, from: from, to: to);
       },
       addNote: (text, cell, backgroundColor, textColor) {
         NoteBooru.add(
           cell.id,
-          Booru.fromPrefix(cell.prefix)!,
+          cell.booru,
           text: text,
           backgroundColor: backgroundColor,
           textColor: textColor,
@@ -303,18 +298,17 @@ class NoteBooru extends NoteBase
         } catch (_) {}
       },
       replace: (cell, indx, newText) {
-        NoteBooru.replace(
-            cell.id, Booru.fromPrefix(cell.prefix)!, indx, newText);
+        NoteBooru.replace(cell.id, cell.booru, indx, newText);
       },
       delete: (cell, indx) {
-        NoteBooru.remove(cell.id, Booru.fromPrefix(cell.prefix)!, indx);
+        NoteBooru.remove(cell.id, cell.booru, indx);
         try {
           setState(() {});
         } catch (_) {}
       },
       load: (cell) {
         return Dbs.g.blacklisted.noteBoorus
-            .getByPostIdBooruSync(cell.id, Booru.fromPrefix(cell.prefix)!);
+            .getByPostIdBooruSync(cell.id, cell.booru);
       },
     );
   }

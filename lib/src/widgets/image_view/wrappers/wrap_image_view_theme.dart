@@ -160,7 +160,7 @@ class WrapImageViewThemeState extends State<WrapImageViewTheme>
                   .transform(_animationController.value)
                   ?.withOpacity(0.2)),
           iconTheme: IconThemeData(
-            color: tweenMutedTextColor
+            color: tweenDominantTextColor
                 .transform(_animationController.value)
                 ?.withOpacity(0.8),
           ),

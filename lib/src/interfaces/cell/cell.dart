@@ -8,7 +8,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
-import 'package:isar/isar.dart';
 
 import 'contentable.dart';
 import 'sticker.dart';
@@ -59,27 +58,4 @@ abstract class Cell {
 
   /// Const constructor to allow implementations to have const constructors.
   const Cell();
-}
-
-mixin CachedCellValuesMixin on Cell {
-  @ignore
-  late final Contentable Function() _contentInit;
-
-  @ignore
-  Contentable? _content;
-
-  void initValues(Contentable Function() content) {
-    _contentInit = content;
-  }
-
-  @override
-  Contentable content() {
-    if (_content != null) {
-      return _content!;
-    }
-
-    _content = _contentInit();
-
-    return _content!;
-  }
 }
