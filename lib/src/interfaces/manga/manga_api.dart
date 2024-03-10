@@ -48,6 +48,10 @@ enum MangaMeta {
   final String url;
   final String name;
 
+  String browserUrl() => switch (this) {
+        MangaMeta.mangaDex => "mangadex.org",
+      };
+
   const MangaMeta({
     required this.url,
     required this.name,

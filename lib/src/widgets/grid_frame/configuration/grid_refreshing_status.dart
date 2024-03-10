@@ -43,11 +43,11 @@ class GridRefreshingStatus<T extends Cell> {
 
         return Future.value(mutation.cellCount);
       case AsyncGridRefresh():
-        updateProgress = refresh.refresh();
-
         refreshingError = null;
         mutation.isRefreshing = true;
         mutation.cellCount = 0;
+
+        updateProgress = refresh.refresh();
 
         return _saveOrWait(updateProgress!, functionality);
       case RetainedGridRefresh():

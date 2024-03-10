@@ -32,11 +32,20 @@ abstract class AnimeAPI {
 }
 
 enum AnimeMetadata {
-  jikan;
+  jikan("Jikan/MAL");
+
+  final String name;
+  // final String url;
 
   AnimeAPI get api => switch (this) {
         AnimeMetadata.jikan => const Jikan(),
       };
+
+  String browserUrl() => switch (this) {
+        AnimeMetadata.jikan => "myanimelist.net",
+      };
+
+  const AnimeMetadata(this.name);
 }
 
 enum AnimeSafeMode {

@@ -42,6 +42,7 @@ class __WatchingTabState extends State<_WatchingTab> {
     if (m == null) {
       return;
     }
+    value = value.trim();
 
     _filteringValue = value;
 
@@ -51,7 +52,7 @@ class __WatchingTabState extends State<_WatchingTab> {
     _watchingFilter.clear();
 
     if (value.isEmpty) {
-      m.reset();
+      setState(() {});
 
       return;
     }

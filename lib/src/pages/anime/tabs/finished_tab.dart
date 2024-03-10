@@ -69,6 +69,8 @@ class __FinishedTabState extends State<_FinishedTab> {
       return;
     }
 
+    value = value.trim();
+
     _filteringValue = value;
 
     final l = value.toLowerCase();
@@ -76,7 +78,7 @@ class __FinishedTabState extends State<_FinishedTab> {
     _filter.clear();
 
     if (value.isEmpty) {
-      m.reset();
+      setState(() {});
 
       return;
     }

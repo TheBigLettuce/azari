@@ -88,7 +88,6 @@ class __FabState extends State<_Fab> {
                   duration: 200.ms, curve: Easing.emphasizedAccelerate);
             },
             child: FloatingActionButton(
-              // elevation: 2,
               onPressed: () {
                 widget.controller.animateTo(
                   0,

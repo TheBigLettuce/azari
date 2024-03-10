@@ -17,6 +17,7 @@ import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
@@ -34,6 +35,8 @@ import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/skeletons/grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 import '../info_pages/discover_anime_info_page.dart';
 
@@ -47,6 +50,8 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
   final void Function(T) onPressed;
   final SelectionGlue<J> Function<J extends Cell>()? generateGlue;
   final EdgeInsets? viewInsets;
+  final String info;
+  final Uri siteUri;
 
   static void launchMangaApi(
     BuildContext context,
@@ -65,6 +70,8 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
           initalText: search,
           explicit: safeMode,
           initalGenreId: initalGenreId,
+          info: api.site.name,
+          siteUri: Uri.https(api.site.browserUrl()),
           idFromGenre: (genre) {
             return (genre.id, genre.name);
           },
@@ -117,6 +124,8 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
           initalText: search,
           explicit: safeMode,
           initalGenreId: initalGenreId,
+          siteUri: Uri.https(api.site.browserUrl()),
+          info: api.site.name,
           idFromGenre: (genre) {
             return (genre.id, genre.title);
           },
@@ -145,6 +154,8 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
     this.generateGlue,
     this.viewInsets,
     this.explicit = AnimeSafeMode.safe,
+    required this.info,
+    required this.siteUri,
   });
 
   @override
@@ -194,7 +205,7 @@ class _SearchAnimePageState<T extends Cell, I, G>
 
     if (widget.initalGenreId != null || widget.initalText != null) {
       WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        _load(currentSearch);
+        _load();
       });
     }
   }
@@ -209,7 +220,7 @@ class _SearchAnimePageState<T extends Cell, I, G>
     super.dispose();
   }
 
-  Future<int> _load(String value) async {
+  Future<int> _load() async {
     final mutation = state.gridKey.currentState?.mutation;
 
     mutation?.isRefreshing = true;
@@ -218,9 +229,8 @@ class _SearchAnimePageState<T extends Cell, I, G>
     _results.clear();
     _page = 0;
     _reachedEnd = false;
-    currentSearch = value;
 
-    final result = await widget.search(value, 0, currentGenre, mode);
+    final result = await widget.search(currentSearch, 0, currentGenre, mode);
 
     _results.addAll(result);
 
@@ -273,15 +283,20 @@ class _SearchAnimePageState<T extends Cell, I, G>
               imageViewDescription:
                   ImageViewDescription(imageViewKey: state.imageViewKey),
               functionality: GridFunctionality(
+                  onError: (error) {
+                    return FilledButton(
+                      onPressed: () {
+                        launchUrl(
+                          widget.siteUri,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      },
+                      child: Text("Open in browser"),
+                    );
+                  },
                   loadNext: _loadNext,
                   selectionGlue: GlueProvider.of(context),
-                  refresh: AsyncGridRefresh(() {
-                    if (_results.isEmpty) {
-                      return Future.value(0);
-                    }
-
-                    return _load(currentSearch);
-                  }),
+                  refresh: AsyncGridRefresh(_load),
                   onPressed: OverrideGridOnCellPressBehaviour(
                     onPressed: (context, idx, _) {
                       widget.onPressed(_results[idx]);
@@ -302,7 +317,9 @@ class _SearchAnimePageState<T extends Cell, I, G>
                               return;
                             }
 
-                            _load(value);
+                            currentSearch = value;
+
+                            _load();
                           },
                         ),
                         searchFocus),
@@ -324,7 +341,7 @@ class _SearchAnimePageState<T extends Cell, I, G>
                       };
 
                       if (_results.isNotEmpty) {
-                        _load(currentSearch);
+                        _load();
                       }
 
                       WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
@@ -373,10 +390,11 @@ class _SearchAnimePageState<T extends Cell, I, G>
                           builder: (context) {
                             return SafeArea(
                               child: _SearchOptions<I, G>(
+                                info: widget.info,
                                 setCurrentGenre: (g) {
                                   currentGenre = g;
 
-                                  _load(currentSearch);
+                                  _load();
 
                                   setState(() {});
                                 },
@@ -420,6 +438,7 @@ class _SearchOptions<I, G> extends StatefulWidget {
   final I? initalGenreId;
   final Future<Map<I, G>> genreFuture;
   final (I, String) Function(G) idFromGenre;
+  final String info;
 
   final void Function(I?) setCurrentGenre;
 
@@ -429,6 +448,7 @@ class _SearchOptions<I, G> extends StatefulWidget {
     required this.setCurrentGenre,
     required this.genreFuture,
     required this.idFromGenre,
+    required this.info,
   });
 
   @override
@@ -453,6 +473,20 @@ class __SearchOptionsState<I, G> extends State<_SearchOptions<I, G>> {
     return FutureBuilder(
       future: widget.genreFuture,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: SizedBox(
+              height: 40,
+              child: EmptyWidget(
+                gridSeed: 0,
+                mini: true,
+                error: EmptyWidget.unwrapDioError(snapshot.error),
+              ),
+            ),
+          );
+        }
+
         if (!snapshot.hasData) {
           return const SizedBox(
             width: double.infinity,
@@ -487,6 +521,31 @@ class __SearchOptionsState<I, G> extends State<_SearchOptions<I, G>> {
                       SegmentedButtonValue(
                           (e.key, e.value), widget.idFromGenre(e.value).$2)),
                   title: AppLocalizations.of(context)!.animeSearchGenres,
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 16, bottom: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.4),
+                      ),
+                      const Padding(padding: EdgeInsets.only(right: 4)),
+                      Text(
+                        "Using ${widget.info}",
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.4),
+                            ),
+                      )
+                    ],
+                  ),
                 ),
               ],
             ),

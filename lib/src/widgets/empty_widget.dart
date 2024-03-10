@@ -58,21 +58,25 @@ class EmptyWidget extends StatelessWidget {
             ),
           ),
           TextSpan(
-              text: overrideEmpty ??
-                  (error == null
-                      ? "${AppLocalizations.of(context)!.emptyValue}..."
-                      : "${AppLocalizations.of(context)!.error}: $error"),
-              style: TextStyle(
-                  fontStyle: FontStyle.italic,
-                  fontSize: error != null
-                      ? mini
-                          ? 14
-                          : 14 * 2
-                      : null)),
+            text: overrideEmpty ??
+                (error == null
+                    ? "${AppLocalizations.of(context)!.emptyValue}..."
+                    : "${AppLocalizations.of(context)!.error}: $error"),
+            style: TextStyle(
+              overflow: TextOverflow.ellipsis,
+              fontStyle: FontStyle.italic,
+              fontSize: error != null
+                  ? mini
+                      ? 14
+                      : 14 * 2
+                  : null,
+            ),
+          ),
         ]),
         maxLines: error != null ? 4 : 2,
         textAlign: TextAlign.center,
         style: TextStyle(
+          overflow: TextOverflow.ellipsis,
           color: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
           fontSize: mini ? 12 : null,
         ),

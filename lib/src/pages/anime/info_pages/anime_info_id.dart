@@ -5,13 +5,14 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/pages/anime/info_base/anime_info_app_bar.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
 import 'package:gallery/src/pages/anime/info_base/background_image/background_image.dart';
 import 'package:gallery/src/pages/anime/info_base/body/anime_info_body.dart';
@@ -39,11 +40,17 @@ class _AnimeInfoIdPageState extends State<AnimeInfoIdPage>
   final state = SkeletonState();
   final scrollController = ScrollController();
 
+  late final StreamSubscription<void> entriesWatcher;
+
   late Future<AnimeEntry?> _future;
 
   @override
   void initState() {
     super.initState();
+
+    entriesWatcher = SavedAnimeEntry.watchAll((_) {
+      setState(() {});
+    });
 
     _future = widget.site.api.info(widget.id).then((value) {
       if (value != null) {
@@ -63,6 +70,8 @@ class _AnimeInfoIdPageState extends State<AnimeInfoIdPage>
 
   @override
   void dispose() {
+    entriesWatcher.cancel();
+
     _future.ignore();
 
     scrollController.dispose();
@@ -99,6 +108,13 @@ class _AnimeInfoIdPageState extends State<AnimeInfoIdPage>
         } else if (snapshot.hasError) {
           return errorW(snapshot.error!.toString());
         } else {
+          final entry = snapshot.data!;
+
+          late (bool, bool) isWatchingBacklog =
+              SavedAnimeEntry.isWatchingBacklog(entry.id, entry.site);
+
+          late bool watched = WatchedAnimeEntry.watched(entry.id, entry.site);
+
           return AnimeInfoTheme(
             overlayColor: overlayColor,
             mode: snapshot.data!.explicit,
@@ -109,11 +125,38 @@ class _AnimeInfoIdPageState extends State<AnimeInfoIdPage>
                   child: SettingsSkeleton(
                     AppLocalizations.of(context)!.discoverTab,
                     state,
-                    appBar: PreferredSize(
-                        preferredSize: const Size.fromHeight(kToolbarHeight),
-                        child: AnimeInfoAppBar(
-                            cell: snapshot.data!,
-                            scrollController: scrollController)),
+                    fab: FloatingActionButton(
+                      onPressed: watched
+                          ? null
+                          : () {
+                              if (isWatchingBacklog.$2) {
+                                SavedAnimeEntry.deleteAll([
+                                  SavedAnimeEntry.maybeGet(
+                                          entry.id, entry.site)!
+                                      .isarId!
+                                ]);
+                              } else {
+                                SavedAnimeEntry.addAll([entry], entry.site);
+                              }
+                            },
+                      child: watched
+                          ? const Icon(Icons.check_rounded)
+                          : isWatchingBacklog.$1
+                              ? const Icon(Icons.library_add_check)
+                              : const Icon(Icons.add_rounded),
+                    ),
+                    bottomAppBar: BottomAppBar(
+                      child: Row(
+                        children: CardPanel.defaultButtons(
+                          context,
+                          entry,
+                          isWatching: isWatchingBacklog.$1,
+                          inBacklog: isWatchingBacklog.$2,
+                          watched: watched,
+                        ),
+                      ),
+                    ),
+                    expectSliverBody: false,
                     extendBodyBehindAppBar: true,
                     child: SingleChildScrollView(
                       controller: scrollController,
