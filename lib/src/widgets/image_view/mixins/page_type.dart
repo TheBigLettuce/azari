@@ -86,40 +86,40 @@ mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
   }
 
   PhotoViewGalleryPageOptions galleryBuilder(BuildContext context, int i) {
-    final content = drawCell(i).content();
-
-    // final fileContent = widget.predefinedIndexes != null
-    //     ? widget.getCell(widget.predefinedIndexes![indx]).fileDisplay()
-    //     : widget.getCell(indx).fileDisplay();
+    final cell = drawCell(i);
+    final content = cell.content();
 
     return switch (content) {
-      AndroidImage() =>
-        _makeAndroidImage(context, content.size, content.uri, false),
-      AndroidGif() =>
-        _makeAndroidImage(context, content.size, content.uri, true),
-      NetGif() => _makeNetImage(content.provider),
-      NetImage() => _makeNetImage(content.provider),
-      AndroidVideo() => _makeVideo(context, content.uri, true),
-      NetVideo() => _makeVideo(context, content.uri, false),
+      AndroidImage() => _makeAndroidImage(
+          context, cell.uniqueKey(), content.size, content.uri, false),
+      AndroidGif() => _makeAndroidImage(
+          context, cell.uniqueKey(), content.size, content.uri, true),
+      NetGif() => _makeNetImage(cell.uniqueKey(), content.provider),
+      NetImage() => _makeNetImage(cell.uniqueKey(), content.provider),
+      AndroidVideo() =>
+        _makeVideo(context, cell.uniqueKey(), content.uri, true),
+      NetVideo() => _makeVideo(context, cell.uniqueKey(), content.uri, false),
       EmptyContent() =>
         PhotoViewGalleryPageOptions.customChild(child: const SizedBox.shrink())
     };
   }
 
   PhotoViewGalleryPageOptions _makeVideo(
-          BuildContext context, String uri, bool local) =>
+          BuildContext context, Key key, String uri, bool local) =>
       PhotoViewGalleryPageOptions.customChild(
           disableGestures: true,
           tightMode: true,
           child: !Platform.isAndroid
               ? const Center(child: Icon(Icons.error_outline))
               : PhotoGalleryPageVideo(
+                  key: key,
                   url: uri,
                   localVideo: local,
                 ));
 
-  PhotoViewGalleryPageOptions _makeNetImage(ImageProvider provider) {
+  PhotoViewGalleryPageOptions _makeNetImage(Key key, ImageProvider provider) {
     final options = PhotoViewGalleryPageOptions(
+      key: key,
       minScale: PhotoViewComputedScale.contained * 0.8,
       maxScale: PhotoViewComputedScale.covered * 1.8,
       initialScale: PhotoViewComputedScale.contained,
@@ -140,11 +140,13 @@ mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
   }
 
   PhotoViewGalleryPageOptions _makeAndroidImage(
-          BuildContext context, Size size, String uri, bool isGif) =>
+          BuildContext context, Key key, Size size, String uri, bool isGif) =>
       PhotoViewGalleryPageOptions.customChild(
-          gestureDetectorBehavior: HitTestBehavior.translucent,
-          disableGestures: true,
-          filterQuality: FilterQuality.high,
+        gestureDetectorBehavior: HitTestBehavior.translucent,
+        disableGestures: true,
+        filterQuality: FilterQuality.high,
+        child: KeyedSubtree(
+          key: key,
           child: Center(
             child: SizedBox(
                 height: MediaQuery.of(context).size.height,
@@ -175,5 +177,7 @@ mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
                     ),
                   ),
                 )),
-          ));
+          ),
+        ),
+      );
 }

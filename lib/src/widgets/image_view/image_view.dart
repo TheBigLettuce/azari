@@ -238,32 +238,9 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     }
 
     cellCount = count;
-
-    if (cellCount == 1) {
-      final newCell = widget.getCell(0);
-      if (newCell == null) {
-        return;
-      }
-
-      if (newCell.isarId == drawCell(currentPage).isarId) {
-        return;
-      }
-      controller.previousPage(duration: 200.ms, curve: Easing.standard);
-
-      loadCells(0, cellCount);
-      hardRefresh();
-    } else if (currentPage > cellCount - 1) {
-      controller.previousPage(duration: 200.ms, curve: Easing.standard);
-    } else if (widget.getCell(currentPage)!.uniqueKey() !=
-        drawCell(currentPage, true).uniqueKey()) {
-      if (currentPage == 0) {
-        controller.nextPage(duration: 200.ms, curve: Easing.standard);
-      } else {
-        controller.previousPage(duration: 200.ms, curve: Easing.standard);
-      }
-    } else {
-      loadCells(currentPage, cellCount);
-    }
+    final prv = currentPage;
+    currentPage = prv.clamp(0, count);
+    loadCells(currentPage, cellCount);
 
     setState(() {});
   }

@@ -10,6 +10,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/widgets/empty_widget.dart';
 
 class WrapFutureRestartable<T> extends StatefulWidget {
   final Future<T> Function() newStatus;
@@ -60,14 +61,23 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
           return Scaffold(
             appBar: AppBar(),
             body: Center(
-              child: FilledButton(
-                onPressed: () {
-                  f = widget.newStatus();
-                  count += 1;
+              child: Column(
+                children: [
+                  EmptyWidget(
+                    gridSeed: 0,
+                    error: EmptyWidget.unwrapDioError(snapshot.error),
+                  ),
+                  const Padding(padding: EdgeInsets.only(bottom: 8)),
+                  FilledButton(
+                    onPressed: () {
+                      f = widget.newStatus();
+                      count += 1;
 
-                  setState(() {});
-                },
-                child: Text(AppLocalizations.of(context)!.tryAgain),
+                      setState(() {});
+                    },
+                    child: Text(AppLocalizations.of(context)!.tryAgain),
+                  )
+                ],
               ),
             ),
           );

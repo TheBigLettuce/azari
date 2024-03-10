@@ -288,7 +288,7 @@ class _SearchAnimePageState<T extends Cell, I, G>
                       onPressed: () {
                         launchUrl(
                           widget.siteUri,
-                          mode: LaunchMode.externalApplication,
+                          mode: LaunchMode.inAppBrowserView,
                         );
                       },
                       child: Text("Open in browser"),

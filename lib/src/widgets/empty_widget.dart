@@ -49,36 +49,39 @@ class EmptyWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text.rich(
-        TextSpan(children: [
-          TextSpan(
-            text: "${chooseKaomoji(gridSeed)}\n",
-            style: TextStyle(
-              fontSize: mini ? 14 : 14 * 2,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 8, right: 8),
+        child: Text.rich(
+          TextSpan(children: [
+            TextSpan(
+              text: "${chooseKaomoji(gridSeed)}\n",
+              style: TextStyle(
+                fontSize: mini ? 14 : 14 * 2,
+              ),
             ),
-          ),
-          TextSpan(
-            text: overrideEmpty ??
-                (error == null
-                    ? "${AppLocalizations.of(context)!.emptyValue}..."
-                    : "${AppLocalizations.of(context)!.error}: $error"),
-            style: TextStyle(
-              overflow: TextOverflow.ellipsis,
-              fontStyle: FontStyle.italic,
-              fontSize: error != null
-                  ? mini
-                      ? 14
-                      : 14 * 2
-                  : null,
+            TextSpan(
+              text: overrideEmpty ??
+                  (error == null
+                      ? "${AppLocalizations.of(context)!.emptyValue}..."
+                      : "${AppLocalizations.of(context)!.error}: $error"),
+              style: TextStyle(
+                overflow: TextOverflow.ellipsis,
+                fontStyle: FontStyle.italic,
+                fontSize: error != null
+                    ? mini
+                        ? 14
+                        : 14 * 2
+                    : null,
+              ),
             ),
+          ]),
+          maxLines: error != null ? 4 : 2,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            overflow: TextOverflow.ellipsis,
+            color: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+            fontSize: mini ? 12 : null,
           ),
-        ]),
-        maxLines: error != null ? 4 : 2,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          overflow: TextOverflow.ellipsis,
-          color: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
-          fontSize: mini ? 12 : null,
         ),
       ),
     );

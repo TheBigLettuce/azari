@@ -13,6 +13,7 @@ import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
+import 'package:gallery/src/pages/anime/info_base/anime_info_app_bar.dart';
 import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
 import 'package:gallery/src/pages/anime/info_base/background_image/background_image.dart';
 import 'package:gallery/src/pages/anime/info_base/body/anime_info_body.dart';
@@ -125,6 +126,10 @@ class _AnimeInfoIdPageState extends State<AnimeInfoIdPage>
                   child: SettingsSkeleton(
                     AppLocalizations.of(context)!.discoverTab,
                     state,
+                    appBar: PreferredSize(
+                        preferredSize: const Size.fromHeight(kToolbarHeight),
+                        child: AnimeInfoAppBar(
+                            cell: entry, scrollController: scrollController)),
                     fab: FloatingActionButton(
                       onPressed: watched
                           ? null
