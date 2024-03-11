@@ -37,9 +37,10 @@ internal class ImageView(
         imageView = android.widget.ImageView(context)
         if (isGif) {
             try {
-                Glide.with(context).asGif().load(Uri.parse(params["uri"])).diskCacheStrategy(
-                    DiskCacheStrategy.NONE
-                ).into(imageView)
+                Glide.with(context).asGif()
+                    .load(Uri.parse(params["uri"])).diskCacheStrategy(
+                        DiskCacheStrategy.NONE
+                    ).into(imageView)
             } catch (e: Exception) {
                 Log.e("loading image", e.toString())
             }

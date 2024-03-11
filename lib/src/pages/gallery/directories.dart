@@ -311,8 +311,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     if (widget.callback != null) {
                       state.refreshingStatus.mutation.cellCount = 0;
 
-                      widget.callback!.c(cell, null);
                       Navigator.pop(context);
+                      widget.callback!.c(cell, null);
                     } else {
                       StatisticsGallery.addViewedDirectories();
                       final d = cell;

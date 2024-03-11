@@ -207,27 +207,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     wrapThemeKey.currentState?.resetAnimation();
   }
 
-  void hardRefresh() {
-    fakeProvider = MemoryImage(kTransparentImage);
-
-    setState(() {});
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      setState(() {
-        fakeProvider = null;
-      });
-    });
-  }
-
-  void refreshImage() {
-    final content = drawCell(currentPage).content();
-
-    if (content is NetImage) {
-      PaintingBinding.instance.imageCache.evict(content.provider);
-
-      hardRefresh();
-    }
-  }
-
   void update(BuildContext? context, int count, {bool pop = true}) {
     if (count == 0) {
       if (pop) {
@@ -241,6 +220,9 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     final prv = currentPage;
     currentPage = prv.clamp(0, count - 1);
     loadCells(currentPage, cellCount);
+    WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+      refreshPalette();
+    });
 
     setState(() {});
   }
@@ -264,6 +246,12 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     }
   }
 
+  void refreshImage() {
+    refreshTries += 1;
+
+    setState(() {});
+  }
+
   void _onTap() {
     fullscreenPlug.fullscreen();
     wrapNotifiersKey.currentState?.toggle();
@@ -278,6 +266,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   void _onPageChanged(int index) {
     widget.statistics?.viewed();
     widget.statistics?.swiped();
+
+    refreshTries = 0;
 
     currentPage = index;
     widget.pageChange?.call(this);
@@ -335,7 +325,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
       count: _incr,
       incr: _incrTiles,
       child: WrapImageViewNotifiers<T>(
-        hardRefresh: hardRefresh,
+        hardRefresh: refreshImage,
         mainFocus: mainFocus,
         gridContext: widget.gridContext,
         key: wrapNotifiersKey,

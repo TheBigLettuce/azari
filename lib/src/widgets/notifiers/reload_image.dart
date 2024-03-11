@@ -22,6 +22,9 @@ class ReloadImageNotifier extends InheritedWidget {
     widget!.reload();
   }
 
-  const ReloadImageNotifier(
-      {super.key, required this.reload, required super.child});
+  const ReloadImageNotifier({
+    super.key,
+    required this.reload,
+    required super.child,
+  });
 }

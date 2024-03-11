@@ -109,11 +109,8 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
         mutation.isRefreshing = false;
 
         search.performSearch(search.searchTextController.text);
-        if (i == 1) {
-          state.imageViewKey.currentState?.hardRefresh();
-        } else {
-          state.imageViewKey.currentState?.update(context, i, pop: false);
-        }
+        state.imageViewKey.currentState?.update(context, i, pop: false);
+
         setState(() {});
       }
     })

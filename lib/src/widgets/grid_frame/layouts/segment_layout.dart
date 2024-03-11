@@ -300,9 +300,8 @@ class SegmentLayout<T extends Cell>
           unstickable: false,
           firstIsSpecial: true,
         ),
-        suggestionCells.isEmpty
-            ? [getCell(0)]
-            : suggestionCells + segments.injectedSegments,
+        (suggestionCells.isEmpty ? [getCell(0)] : suggestionCells) +
+            segments.injectedSegments,
       ));
     } else {
       if (segments.injectedSegments.isNotEmpty) {

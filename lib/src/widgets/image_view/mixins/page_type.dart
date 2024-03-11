@@ -21,7 +21,7 @@ import '../../../interfaces/cell/cell.dart';
 import '../image_view.dart';
 
 mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
-  ImageProvider? fakeProvider;
+  int refreshTries = 0;
 
   (T, int)? _currentCell;
   (T, int)? _previousCell;
@@ -119,12 +119,12 @@ mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
 
   PhotoViewGalleryPageOptions _makeNetImage(Key key, ImageProvider provider) {
     final options = PhotoViewGalleryPageOptions(
-      key: key,
+      key: ValueKey((key, refreshTries)),
       minScale: PhotoViewComputedScale.contained * 0.8,
       maxScale: PhotoViewComputedScale.covered * 1.8,
       initialScale: PhotoViewComputedScale.contained,
       filterQuality: FilterQuality.high,
-      imageProvider: fakeProvider ?? provider,
+      imageProvider: provider,
       errorBuilder: (context, error, stackTrace) {
         return LoadingErrorWidget(
           error: error.toString(),
@@ -160,19 +160,16 @@ mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
                         aspectRatio: size.aspectRatio == 0
                             ? MediaQuery.of(context).size.aspectRatio
                             : size.aspectRatio,
-                        child: fakeProvider != null
-                            ? Image(image: fakeProvider!)
-                            : AndroidView(
-                                viewType: "imageview",
-                                hitTestBehavior:
-                                    PlatformViewHitTestBehavior.transparent,
-                                creationParams: {
-                                  "uri": uri,
-                                  if (isGif) "gif": "",
-                                },
-                                creationParamsCodec:
-                                    const StandardMessageCodec(),
-                              ),
+                        child: AndroidView(
+                          viewType: "imageview",
+                          hitTestBehavior:
+                              PlatformViewHitTestBehavior.transparent,
+                          creationParams: {
+                            "uri": uri,
+                            if (isGif) "gif": "",
+                          },
+                          creationParamsCodec: const StandardMessageCodec(),
+                        ),
                       ),
                     ),
                   ),

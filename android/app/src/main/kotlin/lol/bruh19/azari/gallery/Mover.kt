@@ -617,7 +617,7 @@ internal class Mover(
 
         val hash = diffHashFromThumb(scaled)
 
-        thumb.compress(Bitmap.CompressFormat.WEBP_LOSSY, 100, stream)
+        thumb.compress(Bitmap.CompressFormat.JPEG, 100, stream)
 
         val path = locker.put(stream, id, saveToPinned)
 
