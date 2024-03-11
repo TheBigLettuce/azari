@@ -36,7 +36,6 @@ import 'package:gallery/src/widgets/skeletons/grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:url_launcher/url_launcher_string.dart';
 
 import '../info_pages/discover_anime_info_page.dart';
 

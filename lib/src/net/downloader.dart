@@ -126,7 +126,7 @@ class Downloader with _CancelTokens, _StatisticsTimer {
   }
 
   void add(DownloadFile download, Settings settings) {
-    if (settings.path == "") {
+    if (settings.path.isEmpty) {
       download.failed().save();
 
       return;
@@ -148,7 +148,7 @@ class Downloader with _CancelTokens, _StatisticsTimer {
   }
 
   void addAll(Iterable<DownloadFile> downloads, Settings settings) {
-    if (settings.path == "") {
+    if (settings.path.isEmpty) {
       return;
     }
 

@@ -24,13 +24,11 @@ import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/notifiers/focus.dart';
 import 'package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart';
 import 'package:logging/logging.dart';
-import 'package:transparent_image/transparent_image.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../keybinds/keybind_description.dart';
 import '../../interfaces/cell/cell.dart';
-import '../../interfaces/cell/contentable.dart';
 import '../keybinds/describe_keys.dart';
 import 'body.dart';
 import 'bottom_bar.dart';

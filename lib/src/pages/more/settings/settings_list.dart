@@ -389,7 +389,7 @@ class _SettingsListState extends State<SettingsList> {
           onTap: () {
             Navigator.push(context, MaterialPageRoute(
               builder: (context) {
-                return WelcomePage(
+                return const WelcomePage(
                   doNotLaunchHome: true,
                 );
               },
