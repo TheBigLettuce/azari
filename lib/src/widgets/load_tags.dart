@@ -12,7 +12,7 @@ import '../db/tags/post_tags.dart';
 import 'notifiers/tag_refresh.dart';
 
 class LoadTags extends StatelessWidget {
-  final DisassembleResult? res;
+  final DisassembleResult res;
   final String filename;
 
   const LoadTags({
@@ -23,50 +23,49 @@ class LoadTags extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return res == null
-        ? Container()
-        : Padding(
-            padding: const EdgeInsets.all(4),
-            child: Column(children: [
-              Padding(
-                padding: const EdgeInsets.only(
-                  bottom: 8,
-                ),
-                child: Text(AppLocalizations.of(context)!.loadTags),
-              ),
-              FilledButton(
-                  onPressed: TagRefreshNotifier.isRefreshingOf(context) ?? false
-                      ? null
-                      : () {
-                          try {
-                            final setIsRefreshing =
-                                TagRefreshNotifier.setIsRefreshingOf(context);
-                            setIsRefreshing?.call(true);
+    return SliverPadding(
+      padding: const EdgeInsets.all(4),
+      sliver: SliverToBoxAdapter(
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.only(
+              bottom: 8,
+            ),
+            child: Text(AppLocalizations.of(context)!.loadTags),
+          ),
+          FilledButton(
+              onPressed: TagRefreshNotifier.isRefreshingOf(context) ?? false
+                  ? null
+                  : () {
+                      try {
+                        final setIsRefreshing =
+                            TagRefreshNotifier.setIsRefreshingOf(context);
+                        setIsRefreshing?.call(true);
 
-                            final notifier =
-                                TagRefreshNotifier.maybeOf(context);
+                        final notifier = TagRefreshNotifier.maybeOf(context);
 
-                            PostTags.g
-                                .loadFromDissassemble(filename, res!)
-                                .then((value) {
-                              PostTags.g.addTagsPost(filename, value, true);
-                              notifier?.call();
-                            }).whenComplete(() => setIsRefreshing?.call(false));
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                content: Text(AppLocalizations.of(context)!
-                                    .notValidFilename(e.toString()))));
-                          }
-                        },
-                  child: TagRefreshNotifier.isRefreshingOf(context) ?? false
-                      ? SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(
-                              color: Theme.of(context).colorScheme.onPrimary),
-                        )
-                      : Text("From ${res!.booru.string}"))
-            ]),
-          );
+                        PostTags.g
+                            .loadFromDissassemble(filename, res)
+                            .then((value) {
+                          PostTags.g.addTagsPost(filename, value, true);
+                          notifier?.call();
+                        }).whenComplete(() => setIsRefreshing?.call(false));
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(AppLocalizations.of(context)!
+                                .notValidFilename(e.toString()))));
+                      }
+                    },
+              child: TagRefreshNotifier.isRefreshingOf(context) ?? false
+                  ? SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(
+                          color: Theme.of(context).colorScheme.onPrimary),
+                    )
+                  : Text("From ${res.booru.string}"))
+        ]),
+      ),
+    );
   }
 }

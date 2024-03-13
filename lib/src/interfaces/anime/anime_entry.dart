@@ -19,7 +19,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'anime_api.dart';
 
-class AnimeEntry extends Cell with BooruPostFunctionalityMixin {
+class AnimeEntry with BooruPostFunctionalityMixin implements Cell {
   AnimeEntry({
     required this.site,
     required this.type,
@@ -93,13 +93,13 @@ class AnimeEntry extends Cell with BooruPostFunctionalityMixin {
   }
 
   @override
-  List<Widget>? addInfo(BuildContext context) {
-    return [
+  Widget? contentInfo(BuildContext context) {
+    return SliverList.list(children: [
       addInfoTile(
         title: AppLocalizations.of(context)!.sourceFileInfoPage,
         subtitle: thumbUrl,
-      ),
-    ];
+      )
+    ]);
   }
 
   @override

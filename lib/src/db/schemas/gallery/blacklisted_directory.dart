@@ -38,7 +38,7 @@ class BlacklistedDirectory implements Cell {
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
 
   @override
-  List<Widget>? addInfo(BuildContext context) => null;
+  Widget? contentInfo(BuildContext context) => null;
 
   @override
   String alias(bool isList) => name;

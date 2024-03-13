@@ -13,15 +13,11 @@ import 'package:gallery/src/db/base/booru_post_functionality_mixin.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/booru/note_booru.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
-import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
-import 'package:gallery/src/pages/booru/booru_page.dart';
-import 'package:gallery/src/widgets/menu_wrapper.dart';
-import 'package:gallery/src/widgets/translation_notes.dart';
 import 'package:isar/isar.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path_util;
@@ -56,7 +52,7 @@ enum PostRating {
       };
 }
 
-class PostBase extends Cell with BooruPostFunctionalityMixin {
+class PostBase with BooruPostFunctionalityMixin implements Cell {
   PostBase({
     required this.id,
     required this.height,
@@ -191,68 +187,7 @@ class PostBase extends Cell with BooruPostFunctionalityMixin {
   }
 
   @override
-  List<Widget>? addInfo(BuildContext context) {
-    final dUrl = fileDownloadUrl();
-    final tagManager = TagManager.fromEnum(booru);
-
-    return wrapTagsList(
-      context,
-      [
-        MenuWrapper(
-          title: dUrl,
-          child: ListTile(
-            title: Text(AppLocalizations.of(context)!.pathInfoPage),
-            subtitle: Text(dUrl),
-            onTap: () => launchUrl(Uri.parse(dUrl),
-                mode: LaunchMode.externalApplication),
-          ),
-        ),
-        ListTile(
-          title: Text(AppLocalizations.of(context)!.widthInfoPage),
-          subtitle: Text("${width}px"),
-        ),
-        ListTile(
-          title: Text(AppLocalizations.of(context)!.heightInfoPage),
-          subtitle: Text("${height}px"),
-        ),
-        ListTile(
-          title: Text(AppLocalizations.of(context)!.createdAtInfoPage),
-          subtitle: Text(AppLocalizations.of(context)!.date(createdAt)),
-        ),
-        MenuWrapper(
-          title: sourceUrl,
-          child: ListTile(
-            title: Text(AppLocalizations.of(context)!.sourceFileInfoPage),
-            subtitle: Text(sourceUrl),
-            onTap: sourceUrl.isNotEmpty && Uri.tryParse(sourceUrl) != null
-                ? () => launchUrl(Uri.parse(sourceUrl),
-                    mode: LaunchMode.externalApplication)
-                : null,
-          ),
-        ),
-        ListTile(
-          title: Text(AppLocalizations.of(context)!.ratingInfoPage),
-          subtitle: Text(rating.translatedName(context)),
-        ),
-        ListTile(
-          title: Text(AppLocalizations.of(context)!.scoreInfoPage),
-          subtitle: Text(score.toString()),
-        ),
-        if (tags.contains("translated"))
-          TranslationNotes.tile(context, id, booru),
-      ],
-      filename(),
-      supplyTags: tags,
-      excluded: tagManager.excluded,
-      launchGrid: (context, t, [safeMode]) {
-        Navigator.pop(context);
-        Navigator.pop(context);
-
-        OnBooruTagPressed.pressOf(context, t, booru,
-            overrideSafeMode: safeMode);
-      },
-    );
-  }
+  Widget? contentInfo(BuildContext context) => PostInfo(post: this);
 
   @override
   String alias(bool isList) => isList ? tags.join(" ") : id.toString();

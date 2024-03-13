@@ -345,13 +345,14 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                       FocusNotifier.of(context);
                       ImageViewInfoTilesRefreshNotifier.of(context);
 
-                      final addInfo = drawCell(currentPage).addInfo(context);
+                      final addInfo =
+                          drawCell(currentPage).contentInfo(context);
 
-                      return addInfo == null || addInfo.isEmpty
+                      return addInfo == null
                           ? const Drawer(child: EmptyWidget(gridSeed: 0))
                           : ImageViewEndDrawer(
                               scrollController: scrollController,
-                              children: addInfo,
+                              sliver: addInfo,
                             );
                     }),
               bottomAppBar: widget.addIcons == null

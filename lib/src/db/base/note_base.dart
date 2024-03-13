@@ -37,9 +37,7 @@ class NoteBase implements Cell {
   Key uniqueKey() => throw UnimplementedError();
 
   @override
-  List<Widget>? addInfo(BuildContext context) {
-    return null;
-  }
+  Widget? contentInfo(BuildContext context) => null;
 
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) {

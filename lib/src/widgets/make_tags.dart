@@ -47,6 +47,7 @@ class DrawerTagsWidget extends StatelessWidget {
   final List<String> pinnedTags;
   final void Function(BuildContext, String, [SafeMode?])? launchGrid;
   final BooruTagging? excluded;
+  final DisassembleResult? res;
 
   const DrawerTagsWidget(
     this.tags,
@@ -55,6 +56,7 @@ class DrawerTagsWidget extends StatelessWidget {
     required this.pinnedTags,
     this.launchGrid,
     this.excluded,
+    required this.res,
   });
 
   List<PopupMenuItem> makeItems(BuildContext context, String tag) {
@@ -119,17 +121,15 @@ class DrawerTagsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     if (tags.isEmpty) {
       if (filename.isEmpty) {
-        return const SizedBox.shrink();
+        return const SliverPadding(padding: EdgeInsets.zero);
       }
-      DisassembleResult? res;
-      try {
-        res = PostTags.g.dissassembleFilename(filename);
-      } catch (_) {}
 
-      return LoadTags(
-        filename: filename,
-        res: res,
-      );
+      return res == null
+          ? const SliverPadding(padding: EdgeInsets.zero)
+          : LoadTags(
+              filename: filename,
+              res: res!,
+            );
     }
 
     final value = FilterValueNotifier.maybeOf(context).trim();
@@ -146,8 +146,7 @@ class DrawerTagsWidget extends StatelessWidget {
         .map((e) => makeTile(context, e, true))
         .followedBy(filteredTags.map((e) => makeTile(context, e, false)));
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return SliverList.list(
       children: [
         SettingsLabel(
             AppLocalizations.of(context)!.tagsInfoPage,

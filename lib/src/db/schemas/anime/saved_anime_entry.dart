@@ -37,7 +37,7 @@ class AnimeGenre {
 }
 
 @embedded
-class Relation extends Cell {
+class Relation implements Cell {
   final String thumbUrl;
   final String title;
   final String type;
@@ -68,7 +68,7 @@ class Relation extends Cell {
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override
-  List<Widget>? addInfo(BuildContext context) => null;
+  Widget? contentInfo(BuildContext context) => null;
 
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;

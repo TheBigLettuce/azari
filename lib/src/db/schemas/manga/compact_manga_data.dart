@@ -59,7 +59,7 @@ class CompactMangaDataBase implements Cell {
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override
-  List<Widget>? addInfo(BuildContext context) => null;
+  Widget? contentInfo(BuildContext context) => null;
 
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;

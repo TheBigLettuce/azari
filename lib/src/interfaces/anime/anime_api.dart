@@ -54,7 +54,7 @@ enum AnimeSafeMode {
   h;
 }
 
-class AnimePicture extends Cell {
+class AnimePicture implements Cell {
   final String imageUrl;
   final String thumbUrl;
 
@@ -79,7 +79,7 @@ class AnimePicture extends Cell {
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override
-  List<Widget>? addInfo(BuildContext context) => null;
+  Widget? contentInfo(BuildContext context) => null;
 
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
@@ -94,7 +94,7 @@ class AnimePicture extends Cell {
   List<Sticker> stickers(BuildContext context) => const [];
 }
 
-class AnimeRecommendations extends Cell {
+class AnimeRecommendations implements Cell {
   AnimeRecommendations({
     required this.id,
     required this.thumbUrl,
@@ -121,7 +121,7 @@ class AnimeRecommendations extends Cell {
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override
-  List<Widget>? addInfo(BuildContext context) => null;
+  Widget? contentInfo(BuildContext context) => null;
 
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;

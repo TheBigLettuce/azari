@@ -74,7 +74,7 @@ class SavedAnimeCharacters {
 }
 
 @embedded
-class AnimeCharacter extends Cell {
+class AnimeCharacter implements Cell {
   final String imageUrl;
   final String name;
   final String role;
@@ -101,7 +101,7 @@ class AnimeCharacter extends Cell {
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override
-  List<Widget>? addInfo(BuildContext context) => [
+  Widget? contentInfo(BuildContext context) => SliverList.list(children: [
         addInfoTile(
           title: AppLocalizations.of(context)!.sourceFileInfoPage,
           subtitle: imageUrl,
@@ -110,7 +110,7 @@ class AnimeCharacter extends Cell {
           title: AppLocalizations.of(context)!.role,
           subtitle: role,
         ),
-      ];
+      ]);
 
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;

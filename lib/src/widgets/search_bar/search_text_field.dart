@@ -51,8 +51,6 @@ class SearchTextField extends StatelessWidget {
                 ]
               : null,
           hintText: AppLocalizations.of(context)!.filterHint,
-          backgroundColor: MaterialStatePropertyAll(
-              Theme.of(context).colorScheme.surface.withOpacity(0.1)),
           elevation: const MaterialStatePropertyAll(0),
           controller: data.searchController,
           onSubmitted: (value) {

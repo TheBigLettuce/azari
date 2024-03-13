@@ -9,8 +9,6 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:palette_generator/palette_generator.dart';
 
-import '../image_view.dart';
-
 class WrapImageViewTheme extends StatefulWidget {
   final PaletteGenerator? currentPalette;
   final PaletteGenerator? previousPallete;
@@ -57,117 +55,34 @@ class WrapImageViewThemeState extends State<WrapImageViewTheme>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final tweenMutedTextColor = ColorTween(
-      begin: widget.previousPallete?.mutedColor?.bodyTextColor
-              .harmonizeWith(theme.colorScheme.primary) ??
-          kListTileColorInInfo,
-      end: widget.currentPalette?.mutedColor?.bodyTextColor
-              .harmonizeWith(theme.colorScheme.primary) ??
-          kListTileColorInInfo,
-    );
-
-    final tweenMutedColor = ColorTween(
-      begin: widget.previousPallete?.mutedColor?.color
-              .harmonizeWith(theme.colorScheme.primary) ??
-          theme.colorScheme.surface,
-      end: widget.currentPalette?.mutedColor?.color
-              .harmonizeWith(theme.colorScheme.primary) ??
-          theme.colorScheme.surface,
-    );
-
-    final tweenDominantTextColor = ColorTween(
-      begin: widget.previousPallete?.dominantColor?.bodyTextColor
-              .harmonizeWith(theme.colorScheme.primary) ??
-          kListTileColorInInfo,
-      end: widget.currentPalette?.dominantColor?.bodyTextColor
-              .harmonizeWith(theme.colorScheme.primary) ??
-          kListTileColorInInfo,
-    );
-
     final tweenDominantColor = ColorTween(
       begin: widget.previousPallete?.dominantColor?.color
               .harmonizeWith(theme.colorScheme.primary) ??
-          Colors.black,
+          theme.colorScheme.primary,
       end: widget.currentPalette?.dominantColor?.color
               .harmonizeWith(theme.colorScheme.primary) ??
-          Colors.black,
+          theme.colorScheme.primary,
+    );
+
+    final colorScheme = ColorScheme.fromSeed(
+      brightness: theme.brightness,
+      seedColor: tweenDominantColor.lerp(_animationController.value)!,
+    );
+
+    final themeData = ThemeData.from(
+      colorScheme: colorScheme,
     );
 
     return Theme(
-      data: theme.copyWith(
-          hintColor: tweenMutedTextColor.transform(_animationController.value),
-          drawerTheme: DrawerThemeData(
-            backgroundColor: tweenMutedColor
-                .transform(_animationController.value)
-                ?.withOpacity(0.85),
-          ),
-          progressIndicatorTheme: ProgressIndicatorThemeData(
-              color: widget.currentPalette?.dominantColor?.bodyTextColor
-                  .harmonizeWith(theme.colorScheme.primary)
-                  .withOpacity(0.8)),
-          appBarTheme: AppBarTheme(
-            foregroundColor: tweenDominantTextColor
-                .transform(_animationController.value)
-                ?.withOpacity(0.8),
-            backgroundColor: tweenDominantColor
-                .transform(_animationController.value)
-                ?.withOpacity(0.5),
-          ),
-          listTileTheme: ListTileThemeData(
-            textColor: tweenMutedTextColor
-                .transform(_animationController.value)
-                ?.withOpacity(0.8),
-            iconColor: tweenMutedTextColor
-                .transform(_animationController.value)
-                ?.withOpacity(0.8),
-          ),
-          chipTheme: ChipThemeData(
-            elevation: 0,
-            side: BorderSide(
-              color: tweenDominantColor
-                      .transform(_animationController.value)
-                      ?.withOpacity(0.8) ??
-                  Colors.black,
-              width: 0,
-            ),
-            backgroundColor: tweenDominantColor
-                .transform(_animationController.value)
-                ?.withOpacity(0.8),
-            labelStyle: TextStyle(
-              color: tweenDominantTextColor
-                  .transform(_animationController.value)
-                  ?.withOpacity(0.8),
-            ),
-            iconTheme: IconThemeData(
-              color: tweenDominantTextColor
-                  .transform(_animationController.value)
-                  ?.withOpacity(0.8),
-            ),
-          ),
-          filledButtonTheme: FilledButtonThemeData(
-              style: ButtonStyle(
-            foregroundColor: MaterialStatePropertyAll(
-              tweenDominantTextColor
-                  .transform(_animationController.value)
-                  ?.withOpacity(0.8),
-            ),
-            backgroundColor: MaterialStatePropertyAll(
-              tweenDominantColor.transform(_animationController.value),
-            ),
-          )),
-          dividerTheme: DividerThemeData(
-              color: tweenMutedTextColor
-                  .transform(_animationController.value)
-                  ?.withOpacity(0.2)),
-          iconTheme: IconThemeData(
-            color: tweenDominantTextColor
-                .transform(_animationController.value)
-                ?.withOpacity(0.8),
+      data: themeData.copyWith(
+          appBarTheme: themeData.appBarTheme.copyWith(
+            backgroundColor: colorScheme.surface.withOpacity(0.95),
           ),
           bottomAppBarTheme: BottomAppBarTheme(
-            color: tweenDominantColor
-                .transform(_animationController.value)
-                ?.withOpacity(0.5),
+            color: colorScheme.surface.withOpacity(0.95),
+          ),
+          drawerTheme: DrawerThemeData(
+            backgroundColor: colorScheme.surface.withOpacity(0.95),
           )),
       child: widget.child,
     );

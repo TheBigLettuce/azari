@@ -18,7 +18,7 @@ class EndDrawerHeading extends StatelessWidget {
       expandedHeight: 152,
       collapsedHeight: kToolbarHeight,
       automaticallyImplyLeading: false,
-      actions: [Container()],
+      actions: const [SizedBox.shrink()],
       pinned: true,
       leading: BackButton(
         onPressed: () {
@@ -28,7 +28,7 @@ class EndDrawerHeading extends StatelessWidget {
       flexibleSpace: FlexibleSpaceBar(
           title: Text(
         headline,
-        style: TextStyle(color: Theme.of(context).appBarTheme.foregroundColor),
+        style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
       )),
     );
   }

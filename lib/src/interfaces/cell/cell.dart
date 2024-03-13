@@ -16,7 +16,10 @@ import 'sticker.dart';
 /// Implementations of this interface can be presented on the [GridFrame].
 /// This can be not only a cell on a grid, it can be also an element in a list.
 /// [GridFrame] decides how this gets displayed.
-abstract class Cell {
+abstract interface class Cell {
+  /// Const constructor to allow implementations to have const constructors.
+  const Cell();
+
   /// Common pattern of the implementations of [Cell] is that they are all an Isar schema.
   /// However, this property can be ignored, together with the setter.
   /// This is only useful for the internal implementations, not used in the [GridFrame].
@@ -31,7 +34,7 @@ abstract class Cell {
 
   /// Additional information about the cell.
   /// This gets displayed in the "Info" list view, in the image view.
-  List<Widget>? addInfo(BuildContext context);
+  Widget? contentInfo(BuildContext context);
 
   /// Additional buttons which get diplayed in the image view's appbar.
   List<Widget>? addButtons(BuildContext context);
@@ -55,7 +58,4 @@ abstract class Cell {
   List<Sticker> stickers(BuildContext context);
 
   Key uniqueKey();
-
-  /// Const constructor to allow implementations to have const constructors.
-  const Cell();
 }

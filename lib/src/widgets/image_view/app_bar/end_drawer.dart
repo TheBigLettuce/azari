@@ -11,12 +11,12 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ImageViewEndDrawer extends StatelessWidget {
   final ScrollController scrollController;
-  final List<Widget> children;
+  final Widget sliver;
 
   const ImageViewEndDrawer({
     super.key,
     required this.scrollController,
-    required this.children,
+    required this.sliver,
   });
 
   @override
@@ -32,7 +32,7 @@ class ImageViewEndDrawer extends StatelessWidget {
             padding: EdgeInsets.only(
                 bottom:
                     insets.bottom + MediaQuery.of(context).viewPadding.bottom),
-            sliver: SliverList.list(children: children),
+            sliver: sliver,
           )
         ],
       ),

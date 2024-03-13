@@ -19,7 +19,7 @@ import '../../../interfaces/cell/cell.dart';
 part 'download_file.g.dart';
 
 @collection
-class DownloadFile extends Cell {
+class DownloadFile implements Cell {
   DownloadFile.d({
     this.isarId,
     required this.name,
@@ -93,7 +93,7 @@ class DownloadFile extends Cell {
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override
-  List<Widget>? addInfo(BuildContext context) => null;
+  Widget? contentInfo(BuildContext context) => null;
 
   @override
   String alias(bool isList) => name;

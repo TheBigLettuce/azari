@@ -16,7 +16,7 @@ import '../../../interfaces/cell/sticker.dart';
 part 'system_gallery_directory.g.dart';
 
 @collection
-class SystemGalleryDirectory extends Cell {
+class SystemGalleryDirectory implements Cell {
   SystemGalleryDirectory({
     required this.bucketId,
     required this.name,
@@ -63,7 +63,7 @@ class SystemGalleryDirectory extends Cell {
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
 
   @override
-  List<Widget>? addInfo(BuildContext context) => null;
+  Widget? contentInfo(BuildContext context) => null;
 
   @override
   String alias(bool isList) => name;

@@ -13,7 +13,7 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
 
-abstract class MangaAPI {
+abstract interface class MangaAPI {
   MangaMeta get site;
 
   String browserUrl(MangaEntry e);
@@ -81,7 +81,7 @@ class MangaImage implements Cell {
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override
-  List<Widget>? addInfo(BuildContext context) => null;
+  Widget? contentInfo(BuildContext context) => null;
 
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
@@ -155,7 +155,8 @@ class MangaEntry implements Cell {
   List<Widget>? addButtons(BuildContext context) => null;
 
   @override
-  List<Widget>? addInfo(BuildContext context) => null;
+  Widget? contentInfo(BuildContext context) => null;
+
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
 

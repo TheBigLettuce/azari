@@ -201,12 +201,6 @@ class _SearchAnimePageState<T extends Cell, I, G>
 
     currentGenre = widget.initalGenreId;
     currentSearch = widget.initalText ?? "";
-
-    if (widget.initalGenreId != null || widget.initalText != null) {
-      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        _load();
-      });
-    }
   }
 
   @override

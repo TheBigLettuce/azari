@@ -18,7 +18,7 @@ import '../../../interfaces/cell/sticker.dart';
 part 'hidden_booru_post.g.dart';
 
 @collection
-class HiddenBooruPost extends Cell {
+class HiddenBooruPost implements Cell {
   HiddenBooruPost(this.booru, this.postId, this.thumbUrl);
   @override
   Id? isarId;
@@ -73,9 +73,7 @@ class HiddenBooruPost extends Cell {
   }
 
   @override
-  List<Widget>? addInfo(BuildContext context) {
-    return null;
-  }
+  Widget? contentInfo(BuildContext context) => null;
 
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) {

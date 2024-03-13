@@ -61,25 +61,6 @@ class WrapSelection extends StatelessWidget {
               }
               selectUnselect();
             },
-            onMove: (details) {
-              final scrollController = currentScroll();
-
-              if (scrollController.position.isScrollingNotifier.value) {
-                return;
-              }
-
-              final height = MediaQuery.of(context).size.height;
-              if (details.offset.dy < 120 && scrollController.offset > 100) {
-                scrollController.animateTo(scrollController.offset - 100,
-                    duration: 200.ms, curve: Easing.emphasizedAccelerate);
-              } else if (details.offset.dy + bottomPadding >
-                      (height * 0.9) - (bottomPadding) &&
-                  scrollController.offset <
-                      scrollController.position.maxScrollExtent * 0.99) {
-                scrollController.animateTo(scrollController.offset + 100,
-                    duration: 200.ms, curve: Easing.emphasizedAccelerate);
-              }
-            },
             onWillAcceptWithDetails: (data) => true,
             builder: (context, _, __) {
               return Draggable(

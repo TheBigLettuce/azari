@@ -6,20 +6,24 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/base/post_base.dart';
 import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
+import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/interfaces/booru_tagging.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/interfaces/filtering/filtering_mode.dart';
+import 'package:gallery/src/pages/booru/booru_page.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/widgets/make_tags.dart';
+import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:gallery/src/widgets/notifiers/filter.dart';
 import 'package:gallery/src/widgets/search_bar/search_text_field.dart';
 import 'package:gallery/src/widgets/translation_notes.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 mixin BooruPostFunctionalityMixin {
   void showQr(BuildContext context, String prefix, int id) {
@@ -100,52 +104,141 @@ mixin BooruPostFunctionalityMixin {
   }
 }
 
-List<Widget> wrapTagsList(
-  BuildContext context,
-  List<Widget> lists,
-  String filename, {
-  bool showDeleteButton = false,
-  List<String>? supplyTags,
-  void Function(BuildContext, String, [SafeMode?])? launchGrid,
-  BooruTagging? excluded,
-}) {
-  final data = FilterNotifier.maybeOf(context);
-  final pinnedTags = <String>[];
-  final List<String> postTags;
-  if (supplyTags == null) {
-    postTags = PostTags.g.getTagsPost(filename);
-  } else {
-    postTags = supplyTags;
-  }
+class PostInfo extends StatefulWidget {
+  final PostBase post;
 
-  final tags = <String>[];
+  const PostInfo({
+    super.key,
+    required this.post,
+  });
 
-  for (final e in postTags) {
-    if (PinnedTag.isPinned(e)) {
-      pinnedTags.add(e);
-    } else {
-      tags.add(e);
-    }
-  }
-
-  return [
-    if (!(data?.searchFocus.hasFocus ?? false))
-      ListBody(
-        children: lists,
-      ),
-    if (postTags.isNotEmpty && data != null)
-      SearchTextField(
-        data,
-        filename,
-        showDeleteButton,
-        key: ValueKey(filename),
-      ),
-    DrawerTagsWidget(
-      tags,
-      filename,
-      launchGrid: launchGrid,
-      excluded: excluded,
-      pinnedTags: pinnedTags,
-    )
-  ];
+  @override
+  State<PostInfo> createState() => _PostInfoState();
 }
+
+class _PostInfoState extends State<PostInfo> {
+  PostBase get post => widget.post;
+
+  late final tagManager = TagManager.fromEnum(post.booru);
+
+  void _launchGrid(BuildContext context, String t, [SafeMode? safeMode]) {
+    Navigator.pop(context);
+    Navigator.pop(context);
+
+    OnBooruTagPressed.pressOf(context, t, post.booru,
+        overrideSafeMode: safeMode);
+  }
+
+  DisassembleResult? res;
+
+  @override
+  void initState() {
+    super.initState();
+
+    try {
+      res = PostTags.g.dissassembleFilename(post.filename());
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filterData = FilterNotifier.maybeOf(context);
+
+    final pinnedTags = <String>[];
+
+    final tags = <String>[];
+
+    for (final e in post.tags) {
+      if (PinnedTag.isPinned(e)) {
+        pinnedTags.add(e);
+      } else {
+        tags.add(e);
+      }
+    }
+
+    final filename = post.filename();
+
+    return SliverMainAxisGroup(slivers: [
+      if (!(filterData?.searchFocus.hasFocus ?? false))
+        SliverList.list(
+          children: [
+            MenuWrapper(
+              title: post.fileDownloadUrl(),
+              child: ListTile(
+                title: Text(AppLocalizations.of(context)!.pathInfoPage),
+                subtitle: Text(post.fileDownloadUrl()),
+                onTap: () => launchUrl(Uri.parse(post.fileDownloadUrl()),
+                    mode: LaunchMode.externalApplication),
+              ),
+            ),
+            ListTile(
+              title: Text(AppLocalizations.of(context)!.widthInfoPage),
+              subtitle: Text("${post.width}px"),
+            ),
+            ListTile(
+              title: Text(AppLocalizations.of(context)!.heightInfoPage),
+              subtitle: Text("${post.height}px"),
+            ),
+            ListTile(
+              title: Text(AppLocalizations.of(context)!.createdAtInfoPage),
+              subtitle:
+                  Text(AppLocalizations.of(context)!.date(post.createdAt)),
+            ),
+            MenuWrapper(
+              title: post.sourceUrl,
+              child: ListTile(
+                title: Text(AppLocalizations.of(context)!.sourceFileInfoPage),
+                subtitle: Text(post.sourceUrl),
+                onTap: post.sourceUrl.isNotEmpty &&
+                        Uri.tryParse(post.sourceUrl) != null
+                    ? () => launchUrl(Uri.parse(post.sourceUrl),
+                        mode: LaunchMode.externalApplication)
+                    : null,
+              ),
+            ),
+            ListTile(
+              title: Text(AppLocalizations.of(context)!.ratingInfoPage),
+              subtitle: Text(post.rating.translatedName(context)),
+            ),
+            ListTile(
+              title: Text(AppLocalizations.of(context)!.scoreInfoPage),
+              subtitle: Text(post.score.toString()),
+            ),
+            if (tags.contains("translated"))
+              TranslationNotes.tile(context, post.id, post.booru),
+          ],
+        ),
+      if (tags.isNotEmpty && filterData != null)
+        SliverToBoxAdapter(
+          child: SearchTextField(
+            filterData,
+            filename,
+            true,
+            key: ValueKey(filename),
+          ),
+        ),
+      DrawerTagsWidget(
+        tags,
+        filename,
+        launchGrid: _launchGrid,
+        excluded: tagManager.excluded,
+        pinnedTags: pinnedTags,
+        res: res,
+      )
+    ]);
+  }
+}
+
+// List<Widget> wrapTagsList(
+//   BuildContext context,
+//   List<Widget> lists,
+//   String filename, {
+//   bool showDeleteButton = false,
+//   List<String>? supplyTags,
+//   void Function(BuildContext, String, [SafeMode?])? launchGrid,
+//   BooruTagging? excluded,
+// }) {
+//   final data = FilterNotifier.maybeOf(context);
+
+//   return [];
+// }
