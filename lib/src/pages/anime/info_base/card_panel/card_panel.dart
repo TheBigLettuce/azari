@@ -8,9 +8,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
+import 'package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart';
 import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'anime_news.dart';
 import 'card_shell.dart';
 
 class CardPanel extends StatefulWidget {
@@ -89,6 +91,45 @@ class CardPanel extends StatefulWidget {
             },
             icon: const Icon(Icons.smart_display_rounded),
           ),
+        IconButton(
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              useSafeArea: true,
+              isScrollControlled: true,
+              useRootNavigator: true,
+              constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.85),
+              showDragHandle: true,
+              builder: (context) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Center(
+                      child: Text(
+                        "News",
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    const Padding(padding: EdgeInsets.only(top: 8)),
+                    Expanded(
+                      child: WrapFutureRestartable(
+                        bottomSheetVariant: true,
+                        builder: (context, value) {
+                          return AnimeNews(news: value);
+                        },
+                        newStatus: () {
+                          return entry.site.api.animeNews(entry, 0);
+                        },
+                      ),
+                    )
+                  ],
+                );
+              },
+            );
+          },
+          icon: const Icon(Icons.newspaper_rounded),
+        )
       ];
 
   @override

@@ -68,7 +68,7 @@ class _WatchingAnimeInfoPageState extends State<WatchingAnimeInfoPage>
   }
 
   void _addToWatched() {
-    WatchedAnimeEntry.move(entry);
+    WatchedAnimeEntry.moveAll([entry]);
 
     final newEntry = WatchedAnimeEntry.maybeGet(entry.id, entry.site)!;
     Navigator.of(context, rootNavigator: true)

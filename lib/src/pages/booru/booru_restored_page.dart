@@ -271,10 +271,11 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
     );
   }
 
-  Future<int> _addLast() async {
-    if (pagingState.reachedEnd) {
+  Future<int> _addLast([int repeatCount = 0]) async {
+    if (pagingState.reachedEnd || repeatCount >= 3) {
       return instance.posts.countSync();
     }
+
     final p = instance.posts.getSync(instance.posts.countSync());
     if (p == null) {
       return instance.posts.countSync();
@@ -299,7 +300,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
             .writeTxnSync(() => instance.posts.putAllByFileUrlSync(list.$1));
 
         if (instance.posts.countSync() - oldCount < 3) {
-          return await _addLast();
+          return await _addLast(repeatCount + 1);
         }
       }
     } catch (e, trace) {

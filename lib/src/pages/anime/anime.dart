@@ -39,6 +39,7 @@ import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
 import 'package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/segment_label.dart';
+import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/skeletons/grid.dart';
 import 'package:gallery/src/widgets/skeletons/settings.dart';
@@ -187,11 +188,8 @@ class _AnimePageState extends State<AnimePage>
 
     return PopScope(
       canPop: false,
-      onPopInvoked: tabKey.currentState?._showSearchField == true
-          ? _procHideTab
-          : tabController.index == kDiscoverTabIndx
-              ? null
-              : widget.procPop,
+      onPopInvoked:
+          tabKey.currentState?._showSearchField == true ? _procHideTab : null,
       child: SettingsSkeleton(
         AppLocalizations.of(context)!.animePage,
         state,
@@ -212,6 +210,7 @@ class _AnimePageState extends State<AnimePage>
           children: [
             _WatchingTab(
               widget.viewPadding,
+              procPop: widget.procPop,
               key: watchingKey,
               onDispose: _hideResetSelection,
             ),
@@ -226,6 +225,7 @@ class _AnimePageState extends State<AnimePage>
               widget.viewPadding,
               key: finishedKey,
               onDispose: _hideResetSelection,
+              procPop: widget.procPop,
             ),
           ],
         ),

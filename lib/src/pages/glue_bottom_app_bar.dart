@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue_state.dart';
 
 class GlueBottomAppBar extends StatelessWidget {
@@ -68,16 +69,10 @@ class GlueBottomAppBar extends StatelessWidget {
                     ),
                   ),
                   const Padding(padding: EdgeInsets.only(right: 4)),
-                  // const Text(
-                  //   "・",
-                  //   style: TextStyle(
-                  //     fontWeight: FontWeight.bold,
-                  //   ),
-                  // ),
-                  // const Padding(padding: EdgeInsets.only(right: 4)),
                   IconButton.filledTonal(
                     onPressed: () {
                       glue.actions?.$2();
+                      HapticFeedback.mediumImpact();
                     },
                     icon: const Icon(Icons.close_rounded),
                   ),

@@ -142,33 +142,35 @@ class WatchedAnimeEntry extends AnimeEntry {
   static WatchedAnimeEntry? maybeGet(int id, AnimeMetadata site) =>
       Dbs.g.anime.watchedAnimeEntrys.getBySiteIdSync(site, id);
 
-  static void move(SavedAnimeEntry entry) {
-    SavedAnimeEntry.deleteAll([entry.isarId!]);
+  static void moveAll(List<SavedAnimeEntry> entries) {
+    SavedAnimeEntry.deleteAll(entries.map((e) => e.isarId!).toList());
 
     Dbs.g.anime
-        .writeTxnSync(() => Dbs.g.anime.watchedAnimeEntrys.putBySiteIdSync(
-              WatchedAnimeEntry(
-                type: entry.type,
-                explicit: entry.explicit,
-                date: DateTime.now(),
-                site: entry.site,
-                relations: entry.relations,
-                background: entry.background,
-                thumbUrl: entry.thumbUrl,
-                title: entry.title,
-                titleJapanese: entry.titleJapanese,
-                titleEnglish: entry.titleEnglish,
-                score: entry.score,
-                synopsis: entry.synopsis,
-                year: entry.year,
-                id: entry.id,
-                siteUrl: entry.siteUrl,
-                isAiring: entry.isAiring,
-                titleSynonyms: entry.titleSynonyms,
-                genres: entry.genres,
-                trailerUrl: entry.trailerUrl,
-                episodes: entry.episodes,
-              ),
+        .writeTxnSync(() => Dbs.g.anime.watchedAnimeEntrys.putAllBySiteIdSync(
+              entries
+                  .map((entry) => WatchedAnimeEntry(
+                        type: entry.type,
+                        explicit: entry.explicit,
+                        date: DateTime.now(),
+                        site: entry.site,
+                        relations: entry.relations,
+                        background: entry.background,
+                        thumbUrl: entry.thumbUrl,
+                        title: entry.title,
+                        titleJapanese: entry.titleJapanese,
+                        titleEnglish: entry.titleEnglish,
+                        score: entry.score,
+                        synopsis: entry.synopsis,
+                        year: entry.year,
+                        id: entry.id,
+                        siteUrl: entry.siteUrl,
+                        isAiring: entry.isAiring,
+                        titleSynonyms: entry.titleSynonyms,
+                        genres: entry.genres,
+                        trailerUrl: entry.trailerUrl,
+                        episodes: entry.episodes,
+                      ))
+                  .toList(),
             ));
   }
 

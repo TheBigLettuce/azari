@@ -140,12 +140,14 @@ class AnimeNewsEntry {
   final String title;
   final String content;
   final String? thumbUrl;
-  final String date;
+  final DateTime date;
+  final String browserUrl;
 
   const AnimeNewsEntry({
     required this.content,
     required this.date,
     required this.thumbUrl,
+    required this.browserUrl,
     required this.title,
   });
 }

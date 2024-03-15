@@ -472,18 +472,20 @@ class _WrapPadding extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Center(
-                  child: Column(
-                    children: [
-                      Text(
-                        title,
-                        style: theme.textTheme.headlineLarge,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 40),
-                        child: body,
-                      ),
-                    ],
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        Text(
+                          title,
+                          style: theme.textTheme.headlineLarge,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 40),
+                          child: body,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 explanation == null

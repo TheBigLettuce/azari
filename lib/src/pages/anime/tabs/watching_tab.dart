@@ -10,10 +10,12 @@ part of '../anime.dart';
 class _WatchingTab extends StatefulWidget {
   final EdgeInsets viewInsets;
   final void Function() onDispose;
+  final void Function(bool) procPop;
 
   const _WatchingTab(
     this.viewInsets, {
     required super.key,
+    required this.procPop,
     required this.onDispose,
   });
 
@@ -108,7 +110,7 @@ class __WatchingTabState extends State<_WatchingTab> {
 
   @override
   Widget build(BuildContext context) {
-    return GridSkeleton<SavedAnimeEntry>(
+    return GridSkeleton<AnimeEntry>(
       state,
       (context) => GridFrame<SavedAnimeEntry>(
         key: state.gridKey,
@@ -154,6 +156,20 @@ class __WatchingTabState extends State<_WatchingTab> {
         description: GridDescription(
           risingAnimation: true,
           actions: [
+            GridAction(Icons.play_arrow_rounded, (selected) {
+              final entry = selected.first;
+
+              if (!entry.inBacklog) {
+                entry.unsetIsWatching();
+                return;
+              }
+
+              if (!entry.setCurrentlyWatching()) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content:
+                        Text(AppLocalizations.of(context)!.cantWatchThree)));
+              }
+            }, true, showOnlyWhenSingle: true),
             GridAction(
               Icons.delete_rounded,
               (selected) {
@@ -171,6 +187,9 @@ class __WatchingTabState extends State<_WatchingTab> {
               },
               true,
             ),
+            GridAction(Icons.check_rounded, (selected) {
+              WatchedAnimeEntry.moveAll(selected);
+            }, true),
           ],
           keybindsDescription: AppLocalizations.of(context)!.watchingTab,
           showAppBar: false,
@@ -180,6 +199,14 @@ class __WatchingTabState extends State<_WatchingTab> {
         ),
       ),
       canPop: false,
+      overrideOnPop: (pop, hideAppBar) {
+        if (hideAppBar()) {
+          setState(() {});
+          return;
+        }
+
+        widget.procPop(pop);
+      },
     );
   }
 }

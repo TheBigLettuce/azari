@@ -129,16 +129,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       },
     );
 
-    if (widget.callback != null) {
-      extra.setTemporarySet((i, end) {
-        mutation.cellCount = i;
-
-        if (end) {
-          mutation.isRefreshing = false;
-        }
-      });
-    }
-
     settingsWatcher = Settings.watch((s) {
       state.settings = s!;
       setState(() {});
@@ -151,6 +141,17 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     });
 
     search = SearchFilterGrid(state, null);
+
+    if (widget.callback != null) {
+      search.performSearch("", true);
+
+      extra.setTemporarySet((i, end) {
+        if (end) {
+          mutation.isRefreshing = false;
+          search.performSearch(search.searchTextController.text);
+        }
+      });
+    }
 
     if (widget.callback != null) {
       PlatformFunctions.trashThumbId().then((value) {

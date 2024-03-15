@@ -10,9 +10,11 @@ part of '../anime.dart';
 class _FinishedTab extends StatefulWidget {
   final void Function() onDispose;
   final EdgeInsets viewInsets;
+  final void Function(bool) procPop;
 
   const _FinishedTab(
     this.viewInsets, {
+    required this.procPop,
     required super.key,
     required this.onDispose,
   });
@@ -108,7 +110,7 @@ class __FinishedTabState extends State<_FinishedTab> {
 
   @override
   Widget build(BuildContext context) {
-    return GridSkeleton<WatchedAnimeEntry>(
+    return GridSkeleton<AnimeEntry>(
       state,
       (context) => GridFrame<WatchedAnimeEntry>(
         key: state.gridKey,
@@ -146,6 +148,14 @@ class __FinishedTabState extends State<_FinishedTab> {
         ),
       ),
       canPop: false,
+      overrideOnPop: (pop, hideAppBar) {
+        if (hideAppBar()) {
+          setState(() {});
+          return;
+        }
+
+        widget.procPop(pop);
+      },
     );
   }
 }

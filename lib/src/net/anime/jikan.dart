@@ -106,7 +106,8 @@ class Jikan implements AnimeAPI {
     return response
         .map((e) => AnimeNewsEntry(
               content: e.excerpt,
-              date: e.date,
+              date: DateTime.parse(e.date),
+              browserUrl: e.url,
               thumbUrl: e.imageUrl,
               title: e.title,
             ))

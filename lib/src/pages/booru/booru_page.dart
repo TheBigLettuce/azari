@@ -230,6 +230,19 @@ class _BooruPageState extends State<BooruPage> {
       inForeground = false;
     }, onShow: () {
       inForeground = true;
+
+      if (pagingState.api.wouldBecomeStale &&
+          state.settings.autoRefresh &&
+          state.settings.autoRefreshMicroseconds != 0 &&
+          pagingState.needToRefresh(
+              state.settings.autoRefreshMicroseconds.microseconds)) {
+        final gridState = state.gridKey.currentState;
+        if (gridState != null) {
+          pagingState.refreshingStatus.refresh(gridState.widget.functionality);
+        }
+
+        pagingState.updateTime();
+      }
     });
 
     timeUpdater = Stream.periodic(5.seconds).listen((event) {
@@ -391,9 +404,13 @@ class _BooruPageState extends State<BooruPage> {
     );
   }
 
-  Future<int> _addLast() async {
+  Future<int> _addLast([int repeatCount = 0]) async {
     final mainGrid = pagingState.mainGrid;
     final api = pagingState.api;
+
+    if (repeatCount >= 3) {
+      return mainGrid.posts.countSync();
+    }
 
     if (pagingState.reachedEnd) {
       return mainGrid.posts.countSync();
@@ -427,7 +444,7 @@ class _BooruPageState extends State<BooruPage> {
         pagingState.updateTime();
 
         if (mainGrid.posts.countSync() - oldCount < 3) {
-          return await _addLast();
+          return await _addLast(repeatCount + 1);
         }
       }
     } catch (e, trace) {

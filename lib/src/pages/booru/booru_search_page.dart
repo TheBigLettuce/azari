@@ -216,10 +216,11 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
         state.settings);
   }
 
-  Future<int> _addLast() async {
-    if (reachedEnd) {
+  Future<int> _addLast([int repeatCount = 0]) async {
+    if (reachedEnd || repeatCount >= 3) {
       return instance.posts.countSync();
     }
+
     final p = instance.posts.getSync(instance.posts.countSync());
     if (p == null) {
       return instance.posts.countSync();
@@ -242,7 +243,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
             .writeTxnSync(() => instance.posts.putAllByFileUrlSync(list.$1));
 
         if (instance.posts.countSync() - oldCount < 3) {
-          return await _addLast();
+          return await _addLast(repeatCount + 1);
         }
       }
     } catch (e, trace) {
