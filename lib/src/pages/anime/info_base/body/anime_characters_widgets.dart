@@ -96,6 +96,8 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
                                 cell: e.$2,
                                 indx: e.$1,
                                 forceAlias: e.$2.role,
+                                alignTitleToTopLeft: true,
+                                imageAlign: Alignment.topCenter,
                                 onPressed: (context) {
                                   Navigator.push(context, MaterialPageRoute(
                                     builder: (context) {

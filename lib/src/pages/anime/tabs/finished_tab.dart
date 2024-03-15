@@ -80,6 +80,8 @@ class __FinishedTabState extends State<_FinishedTab> {
     if (value.isEmpty) {
       setState(() {});
 
+      m.cellCount = _list.length;
+
       return;
     }
 

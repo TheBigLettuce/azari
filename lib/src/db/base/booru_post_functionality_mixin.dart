@@ -213,7 +213,7 @@ class _PostInfoState extends State<PostInfo> {
           child: SearchTextField(
             filterData,
             filename,
-            true,
+            false,
             key: ValueKey(filename),
           ),
         ),
@@ -228,17 +228,3 @@ class _PostInfoState extends State<PostInfo> {
     ]);
   }
 }
-
-// List<Widget> wrapTagsList(
-//   BuildContext context,
-//   List<Widget> lists,
-//   String filename, {
-//   bool showDeleteButton = false,
-//   List<String>? supplyTags,
-//   void Function(BuildContext, String, [SafeMode?])? launchGrid,
-//   BooruTagging? excluded,
-// }) {
-//   final data = FilterNotifier.maybeOf(context);
-
-//   return [];
-// }

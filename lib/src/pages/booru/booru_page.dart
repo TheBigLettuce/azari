@@ -88,7 +88,6 @@ class _MainGridPagingState implements PagingEntry, PageSaver {
   int? currentSkipped;
 
   late final GridRefreshingStatus<Post> refreshingStatus;
-  // final StateRestoration _restore;
 
   GridState get _currentState {
     GridState? state = mainGrid.gridStates.getByNameSync(mainGrid.name);
@@ -508,12 +507,13 @@ class _BooruPageState extends State<BooruPage> {
                 ),
                 updateScrollPosition: pagingState.setOffset,
                 onError: (error) {
-                  return OutlinedButton(
+                  return OutlinedButton.icon(
                     onPressed: () {
                       launchUrl(Uri.https(pagingState.api.booru.url),
                           mode: LaunchMode.externalApplication);
                     },
-                    child: Text(AppLocalizations.of(context)!.openInBrowser),
+                    label: Text(AppLocalizations.of(context)!.openInBrowser),
+                    icon: const Icon(Icons.public),
                   );
                 },
                 registerNotifiers: (child) => OnBooruTagPressed(

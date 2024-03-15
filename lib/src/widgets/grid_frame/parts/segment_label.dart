@@ -54,11 +54,8 @@ class SegmentLabel extends StatelessWidget {
           child: Text(
             text,
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  letterSpacing: 0.8,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSecondaryContainer
-                      .withOpacity(0.8),
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
                 ),
           ),
         ),
@@ -73,7 +70,6 @@ class SegmentLabel extends StatelessWidget {
         padding: EdgeInsets.only(
             bottom: 8,
             top: 16,
-            // left: ,
             right: rightGesture == 0 ? 8 : rightGesture / 2),
         child: GestureDetector(
           onLongPress: onLongPress,
@@ -89,5 +85,44 @@ class SegmentLabel extends StatelessWidget {
                   child: row,
                 ),
         ));
+  }
+}
+
+class MediumSegmentLabel extends StatelessWidget {
+  final String text;
+  final Widget? trailingWidget;
+
+  const MediumSegmentLabel(
+    this.text, {
+    super.key,
+    this.trailingWidget,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final rightGesture = MediaQuery.systemGestureInsetsOf(context).right;
+
+    return Padding(
+      padding: EdgeInsets.only(
+          bottom: 8, top: 8, right: rightGesture == 0 ? 8 : rightGesture / 2),
+      child: Row(
+        textBaseline: TextBaseline.alphabetic,
+        mainAxisAlignment: trailingWidget == null
+            ? MainAxisAlignment.start
+            : MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        children: [
+          Text(
+            text,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                ),
+          ),
+          if (trailingWidget != null) trailingWidget!,
+        ],
+      ),
+    );
   }
 }

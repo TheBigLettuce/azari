@@ -56,6 +56,7 @@ class _SimilarAnimeState extends State<SimilarAnime> {
                               child: GridCell(
                                 cell: e.$2,
                                 indx: e.$1,
+                                lines: 2,
                                 onPressed: (context) {
                                   Navigator.push(context, MaterialPageRoute(
                                     builder: (context) {

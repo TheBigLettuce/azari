@@ -41,8 +41,6 @@ class _FinishedAnimeInfoPageState extends State<FinishedAnimeInfoPage>
   void initState() {
     super.initState();
 
-    maybeFetchInfo(entry, (e) => entry.copySuper(e).save());
-
     watcher = entry.watch((e) {
       if (e == null) {
         Navigator.pop(context);
@@ -60,8 +58,6 @@ class _FinishedAnimeInfoPageState extends State<FinishedAnimeInfoPage>
     watcher.cancel();
     scrollController.dispose();
     state.dispose();
-
-    loadingFuture?.ignore();
 
     super.dispose();
   }
@@ -146,7 +142,16 @@ class _FinishedAnimeInfoPageState extends State<FinishedAnimeInfoPage>
     return AnimeInfoTheme(
       mode: entry.explicit,
       overlayColor: overlayColor,
-      child: wrapLoading(context, body()),
+      child: WrapFutureRestartable(
+        builder: (context, value) {
+          return body();
+        },
+        newStatus: () => maybeFetchInfo(entry).then((value) {
+          entry.copySuper(value).save();
+
+          return value;
+        }),
+      ),
     );
   }
 }

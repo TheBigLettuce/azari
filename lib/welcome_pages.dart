@@ -9,6 +9,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:gallery/main.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
@@ -448,8 +449,11 @@ class _WrapPadding extends StatelessWidget {
 
     return Scaffold(
       body: Padding(
-        padding:
-            const EdgeInsets.only(top: 80, bottom: 40, left: 40, right: 40),
+        padding: EdgeInsets.only(
+            top: 80,
+            bottom: 40 + MediaQuery.viewPaddingOf(context).bottom,
+            left: 40,
+            right: 40),
         child: Stack(
           children: [
             if (addCenteredIcon)

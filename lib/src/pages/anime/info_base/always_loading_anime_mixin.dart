@@ -15,11 +15,13 @@ import 'package:gallery/src/widgets/empty_widget.dart';
 class WrapFutureRestartable<T> extends StatefulWidget {
   final Future<T> Function() newStatus;
   final Widget Function(BuildContext context, T value) builder;
+  final bool bottomSheetVariant;
 
   const WrapFutureRestartable({
     super.key,
     required this.builder,
     required this.newStatus,
+    this.bottomSheetVariant = false,
   });
 
   @override
@@ -47,6 +49,56 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.bottomSheetVariant) {
+      return FutureBuilder(
+        key: ValueKey(count),
+        future: f,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData && !snapshot.hasError) {
+            return const SizedBox(
+              width: double.infinity,
+              height: 40,
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(
+                  child: SizedBox(
+                    width: 40,
+                    child: LinearProgressIndicator(),
+                  ),
+                ),
+              ),
+            );
+          } else if (snapshot.hasError) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                EmptyWidget(
+                  gridSeed: 0,
+                  error: EmptyWidget.unwrapDioError(snapshot.error),
+                ),
+                const Padding(padding: EdgeInsets.only(bottom: 8)),
+                FilledButton(
+                  onPressed: () {
+                    f = widget.newStatus();
+                    count += 1;
+
+                    setState(() {});
+                  },
+                  child: Text(AppLocalizations.of(context)!.tryAgain),
+                ),
+                const Padding(padding: EdgeInsets.only(bottom: 8)),
+              ],
+            );
+          } else {
+            return widget
+                .builder(context, snapshot.data as T)
+                .animate()
+                .fadeIn();
+          }
+        },
+      );
+    }
+
     return FutureBuilder(
       key: ValueKey(count),
       future: f,
@@ -54,7 +106,10 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
         if (!snapshot.hasData && !snapshot.hasError) {
           return const Scaffold(
             body: Center(
-              child: CircularProgressIndicator(),
+              child: SizedBox(
+                width: 40,
+                child: LinearProgressIndicator(),
+              ),
             ),
           );
         } else if (snapshot.hasError) {
@@ -82,8 +137,9 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
             ),
           );
         } else {
-          return Container(
-            color: Theme.of(context).colorScheme.background,
+          return DecoratedBox(
+            decoration:
+                BoxDecoration(color: Theme.of(context).colorScheme.background),
             child:
                 widget.builder(context, snapshot.data as T).animate().fadeIn(),
           );
@@ -95,39 +151,12 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
 
 mixin AlwaysLoadingAnimeMixin {
   final alwaysLoading = MiscSettings.current.animeAlwaysLoadFromNet;
-  Future? loadingFuture;
 
-  void maybeFetchInfo(AnimeEntry entry, void Function(AnimeEntry e) f) {
+  Future<AnimeEntry> maybeFetchInfo(AnimeEntry entry) {
     if (alwaysLoading) {
-      loadingFuture = entry.site.api.info(entry.id).then((value) {
-        if (value == null) {
-          return value;
-        }
-
-        f(value);
-
-        return value;
-      });
+      return entry.site.api.info(entry.id);
     }
-  }
 
-  Widget wrapLoading(BuildContext context, Widget child) => alwaysLoading
-      ? FutureBuilder(
-          future: loadingFuture,
-          builder: (context, snapshot) {
-            if (!snapshot.hasData && !snapshot.hasError) {
-              return const Scaffold(
-                body: Center(
-                  child: CircularProgressIndicator(),
-                ),
-              );
-            } else {
-              return Container(
-                color: Theme.of(context).colorScheme.background,
-                child: child.animate().fadeIn(),
-              );
-            }
-          },
-        )
-      : child;
+    return Future.value(entry);
+  }
 }

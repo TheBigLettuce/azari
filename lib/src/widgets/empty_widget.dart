@@ -54,19 +54,26 @@ class EmptyWidget extends StatelessWidget {
         child: Text.rich(
           TextSpan(children: [
             TextSpan(
-              text: "${chooseKaomoji(gridSeed)}\n",
+              text: error != null
+                  ? r"(ﾟヘﾟ)？" "\n"
+                  : "${chooseKaomoji(gridSeed)}\n",
               style: TextStyle(
                 fontSize: mini ? 14 : 14 * 2,
+                color:
+                    error == null ? null : Theme.of(context).colorScheme.error,
               ),
             ),
             TextSpan(
               text: overrideEmpty ??
                   (error == null
                       ? "${AppLocalizations.of(context)!.emptyValue}..."
-                      : "${AppLocalizations.of(context)!.error}: $error"),
+                      : "${AppLocalizations.of(context)!.error} — $error"),
               style: TextStyle(
                 overflow: TextOverflow.ellipsis,
-                fontStyle: FontStyle.italic,
+                color: error == null
+                    ? null
+                    : Theme.of(context).colorScheme.error.withOpacity(0.6),
+                fontStyle: error != null ? null : FontStyle.italic,
                 fontSize: error != null
                     ? mini
                         ? 14

@@ -25,7 +25,7 @@ class Jikan implements AnimeAPI {
   AnimeMetadata get site => AnimeMetadata.jikan;
 
   @override
-  Future<AnimeEntry?> info(int id) async {
+  Future<AnimeEntry> info(int id) async {
     try {
       final response = await api.Jikan(debug: kDebugMode).getAnime(id);
 

@@ -204,11 +204,14 @@ class _MangaInfoPageState extends State<MangaInfoPage>
                                 )
                               else
                                 const Center(
-                                  child: SizedBox(
-                                    height: 18,
-                                    width: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
+                                  child: Padding(
+                                    padding: EdgeInsets.only(right: 24),
+                                    child: SizedBox(
+                                      height: 18,
+                                      width: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
                                     ),
                                   ),
                                 ),

@@ -71,7 +71,7 @@ class GridCell<T extends Cell> extends StatefulWidget {
     this.selection,
     this.imageAlign = Alignment.center,
     this.ignoreStickers = false,
-    this.alignTitleToTopLeft = true,
+    this.alignTitleToTopLeft = false,
     this.onLongPress,
   }) : _data = cell;
 
@@ -340,11 +340,13 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                       : const EdgeInsets.only(right: 4, left: 4),
                   child: Text(
                     widget._data.alias(false),
+                    maxLines: widget.lines,
                     style: TextStyle(
                         color: Theme.of(context)
                             .colorScheme
                             .onSurface
-                            .withOpacity(0.8)),
+                            .withOpacity(0.8),
+                        overflow: TextOverflow.fade),
                   ),
                 ))
         ],

@@ -54,6 +54,8 @@ class __WatchingTabState extends State<_WatchingTab> {
     if (value.isEmpty) {
       setState(() {});
 
+      m.cellCount = backlog.length;
+
       return;
     }
 
@@ -151,7 +153,25 @@ class __WatchingTabState extends State<_WatchingTab> {
         mainFocus: state.mainFocus,
         description: GridDescription(
           risingAnimation: true,
-          actions: const [],
+          actions: [
+            GridAction(
+              Icons.delete_rounded,
+              (selected) {
+                SavedAnimeEntry.deleteAll(
+                  selected.map((e) => e.isarId!).toList(),
+                );
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text("Deleted from backlog"),
+                  action: SnackBarAction(
+                      label: "Undo",
+                      onPressed: () {
+                        SavedAnimeEntry.addAll(selected, selected.first.site);
+                      }),
+                ));
+              },
+              true,
+            ),
+          ],
           keybindsDescription: AppLocalizations.of(context)!.watchingTab,
           showAppBar: false,
           ignoreSwipeSelectGesture: true,
@@ -212,87 +232,95 @@ class _WatchingLayout
     }
 
     return [
-      SliverToBoxAdapter(
-        child: SegmentLabel(
-          AppLocalizations.of(context)!.watchingLabel,
-          hidePinnedIcon: true,
-          onPress: null,
-          sticky: false,
-          overridePinnedIcon: IconButton.filledTonal(
-            onPressed: flipWatchingRight,
-            icon: (watchingRight
-                    ? const Icon(Icons.arrow_back)
-                    : const Icon(Icons.arrow_forward))
-                .animate(key: ValueKey(watchingRight))
-                .fadeIn(),
+      SliverPadding(
+        padding: const EdgeInsets.only(left: 14, right: 14),
+        sliver: SliverToBoxAdapter(
+          child: MediumSegmentLabel(
+            AppLocalizations.of(context)!.watchingLabel,
+            trailingWidget: IconButton.filledTonal(
+              visualDensity: VisualDensity.compact,
+              onPressed: flipWatchingRight,
+              icon: (watchingRight
+                      ? const Icon(Icons.arrow_back)
+                      : const Icon(Icons.arrow_forward))
+                  .animate(key: ValueKey(watchingRight))
+                  .fadeIn(),
+            ),
           ),
         ),
       ),
       if (currentlyWatching.isNotEmpty)
-        SliverGrid.count(
-          crossAxisCount: 3,
-          children: watchingRight
-              ? currentlyWatching.reversed.indexed
-                  .map((e) => ImportantCard(
-                        cell: e.$2,
+        SliverPadding(
+          padding: const EdgeInsets.only(left: 14, right: 14),
+          sliver: SliverGrid.count(
+            crossAxisCount: 3,
+            children: watchingRight
+                ? currentlyWatching.reversed.indexed
+                    .map((e) => ImportantCard(
+                          cell: e.$2,
+                          idx: e.$1,
+                          onPressed: onPressed,
+                        ).animate(key: ValueKey(e)).fadeIn())
+                    .toList()
+                : currentlyWatching.indexed
+                    .map(
+                      (e) => ImportantCard(
                         idx: e.$1,
+                        cell: e.$2,
                         onPressed: onPressed,
-                      ).animate(key: ValueKey(e)).fadeIn())
-                  .toList()
-              : currentlyWatching.indexed
-                  .map(
-                    (e) => ImportantCard(
-                      idx: e.$1,
-                      cell: e.$2,
-                      onPressed: onPressed,
-                    ).animate(key: ValueKey(e)).fadeIn(),
-                  )
-                  .toList(),
+                      ).animate(key: ValueKey(e)).fadeIn(),
+                    )
+                    .toList(),
+          ),
         )
       else
         SliverToBoxAdapter(
             child: EmptyWidget(
           gridSeed: state.widget.description.gridSeed,
         )),
-      SliverToBoxAdapter(
-        child: SegmentLabel(
-          AppLocalizations.of(context)!.backlogLabel,
-          hidePinnedIcon: true,
-          onPress: null,
-          sticky: false,
-          overridePinnedIcon: IconButton.filledTonal(
-            onPressed: flipBacklogUpward,
-            icon: (backlogUpward
-                    ? const Icon(Icons.arrow_upward)
-                    : const Icon(Icons.arrow_downward))
-                .animate(key: ValueKey(backlogUpward))
-                .fadeIn(),
+      SliverPadding(
+        padding: const EdgeInsets.only(left: 14, right: 14),
+        sliver: SliverToBoxAdapter(
+          child: MediumSegmentLabel(
+            AppLocalizations.of(context)!.backlogLabel,
+            trailingWidget: IconButton.filledTonal(
+              visualDensity: VisualDensity.compact,
+              onPressed: flipBacklogUpward,
+              icon: (backlogUpward
+                      ? const Icon(Icons.arrow_upward)
+                      : const Icon(Icons.arrow_downward))
+                  .animate(key: ValueKey(backlogUpward))
+                  .fadeIn(),
+            ),
           ),
         ),
       ),
       if (state.mutation.cellCount > 0)
-        GridLayout.blueprint<SavedAnimeEntry>(
-          context,
-          state.mutation,
-          state.selection,
-          systemNavigationInsets: 0,
-          aspectRatio: gridSettings.aspectRatio.value,
-          columns: gridSettings.columns.number,
-          gridCell: (context, idx) {
-            return GridCell.frameDefault(
-              context,
-              idx,
-              hideTitle: gridSettings.hideName,
-              isList: isList,
-              state: state,
-              animated: true,
-            );
-          },
+        SliverPadding(
+          padding: const EdgeInsets.only(left: 14, right: 14),
+          sliver: GridLayout.blueprint<SavedAnimeEntry>(
+            context,
+            state.mutation,
+            state.selection,
+            systemNavigationInsets: 0,
+            aspectRatio: gridSettings.aspectRatio.value,
+            columns: gridSettings.columns.number,
+            gridCell: (context, idx) {
+              return GridCell.frameDefault(
+                context,
+                idx,
+                hideTitle: gridSettings.hideName,
+                isList: isList,
+                state: state,
+                animated: true,
+              );
+            },
+          ),
         )
       else
         SliverToBoxAdapter(
             child: EmptyWidget(
-          gridSeed: state.widget.description.gridSeed,
+          gridSeed: state.widget.description.gridSeed + 1,
         )),
     ];
   }

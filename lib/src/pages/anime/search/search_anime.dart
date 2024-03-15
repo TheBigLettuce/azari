@@ -17,6 +17,7 @@ import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
@@ -44,7 +45,7 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
   final String? initalText;
   final AnimeSafeMode explicit;
   final Future<List<T>> Function(String, int, I?, AnimeSafeMode) search;
-  final Future<Map<I, G>> Function(AnimeSafeMode)? genres;
+  final Future<Map<I, G>> Function(AnimeSafeMode) genres;
   final (I, String) Function(G) idFromGenre;
   final void Function(T) onPressed;
   final SelectionGlue<J> Function<J extends Cell>()? generateGlue;
@@ -190,12 +191,18 @@ class _SearchAnimePageState<T extends Cell, I, G>
     });
 
     if (widget.initalGenreId != null) {
-      _genreFuture = widget.genres?.call(AnimeSafeMode.safe).then((value) {
+      _genreFuture = widget.genres(AnimeSafeMode.safe).then((value) {
         genres = value;
 
         setState(() {});
 
         return value;
+      }).onError((error, stackTrace) {
+        _genreFuture = null;
+
+        setState(() {});
+
+        throw error.toString();
       });
     }
 
@@ -277,14 +284,15 @@ class _SearchAnimePageState<T extends Cell, I, G>
                   ImageViewDescription(imageViewKey: state.imageViewKey),
               functionality: GridFunctionality(
                   onError: (error) {
-                    return FilledButton(
+                    return FilledButton.icon(
                       onPressed: () {
                         launchUrl(
                           widget.siteUri,
                           mode: LaunchMode.inAppBrowserView,
                         );
                       },
-                      child: Text("Open in browser"),
+                      label: Text(AppLocalizations.of(context)!.openInBrowser),
+                      icon: const Icon(Icons.public),
                     );
                   },
                   loadNext: _loadNext,
@@ -365,16 +373,6 @@ class _SearchAnimePageState<T extends Cell, I, G>
                   if (widget.genres != null)
                     IconButton(
                       onPressed: () {
-                        _genreFuture ??= widget.genres
-                            ?.call(AnimeSafeMode.safe)
-                            .then((value) {
-                          genres = value;
-
-                          setState(() {});
-
-                          return value;
-                        });
-
                         showModalBottomSheet(
                           context: context,
                           isScrollControlled: true,
@@ -392,7 +390,23 @@ class _SearchAnimePageState<T extends Cell, I, G>
                                   setState(() {});
                                 },
                                 initalGenreId: currentGenre,
-                                genreFuture: _genreFuture!,
+                                genreFuture: () {
+                                  if (_genreFuture != null) {
+                                    return _genreFuture!;
+                                  }
+
+                                  return widget
+                                      .genres(AnimeSafeMode.safe)
+                                      .then((value) {
+                                    genres = value;
+
+                                    _genreFuture = Future.value(value);
+
+                                    setState(() {});
+
+                                    return value;
+                                  });
+                                },
                                 idFromGenre: widget.idFromGenre,
                               ),
                             );
@@ -429,7 +443,7 @@ class _SearchAnimePageState<T extends Cell, I, G>
 
 class _SearchOptions<I, G> extends StatefulWidget {
   final I? initalGenreId;
-  final Future<Map<I, G>> genreFuture;
+  final Future<Map<I, G>> Function() genreFuture;
   final (I, String) Function(G) idFromGenre;
   final String info;
 
@@ -463,30 +477,8 @@ class __SearchOptionsState<I, G> extends State<_SearchOptions<I, G>> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: widget.genreFuture,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: SizedBox(
-              height: 40,
-              child: EmptyWidget(
-                gridSeed: 0,
-                mini: true,
-                error: EmptyWidget.unwrapDioError(snapshot.error),
-              ),
-            ),
-          );
-        }
-
-        if (!snapshot.hasData) {
-          return const SizedBox(
-            width: double.infinity,
-            child: LinearProgressIndicator(),
-          );
-        }
-
+    return WrapFutureRestartable<Map<I, G>>(
+      builder: (context, value) {
         return SizedBox(
           width: double.infinity,
           child: Padding(
@@ -509,10 +501,9 @@ class __SearchOptionsState<I, G> extends State<_SearchOptions<I, G>> {
                   },
                   selected: currentGenre == null
                       ? null
-                      : (currentGenre!, snapshot.data![currentGenre!]!),
-                  values: snapshot.data!.entries.map((e) =>
-                      SegmentedButtonValue(
-                          (e.key, e.value), widget.idFromGenre(e.value).$2)),
+                      : (currentGenre!, value[currentGenre!]!),
+                  values: value.entries.map((e) => SegmentedButtonValue(
+                      (e.key, e.value), widget.idFromGenre(e.value).$2)),
                   title: AppLocalizations.of(context)!.animeSearchGenres,
                 ),
                 Padding(
@@ -545,6 +536,8 @@ class __SearchOptionsState<I, G> extends State<_SearchOptions<I, G>> {
           ),
         );
       },
+      newStatus: widget.genreFuture,
+      bottomSheetVariant: true,
     );
   }
 }

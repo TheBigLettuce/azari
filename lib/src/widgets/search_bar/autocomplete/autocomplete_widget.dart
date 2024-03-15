@@ -70,6 +70,9 @@ class AutocompleteWidget extends StatelessWidget {
             .map((elem) => ListTile(
                   onTap: () {
                     if (controller == null) {
+                      if (submitOnPress) {
+                        onSubmit(elem);
+                      }
                       return;
                     }
 
@@ -148,7 +151,7 @@ class AutocompleteWidget extends StatelessWidget {
                 hintText: AppLocalizations.of(context)!.searchHint,
                 leading: const Icon(Icons.search),
                 onChanged: disable ? null : (_) => onChanged,
-                // onSubmitted: onFieldSubmitted,
+                onSubmitted: onSubmit,
               )
             : makeSearchBar(context,
                 focusNode: focusNode,

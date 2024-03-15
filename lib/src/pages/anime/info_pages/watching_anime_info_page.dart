@@ -45,8 +45,6 @@ class _WatchingAnimeInfoPageState extends State<WatchingAnimeInfoPage>
   void initState() {
     super.initState();
 
-    maybeFetchInfo(entry, (e) => entry.copySuper(e).save());
-
     watcher = entry.watch((e) {
       if (e == null) {
         return;
@@ -65,8 +63,6 @@ class _WatchingAnimeInfoPageState extends State<WatchingAnimeInfoPage>
 
     state.dispose();
     scrollController.dispose();
-
-    loadingFuture?.ignore();
 
     super.dispose();
   }
@@ -92,111 +88,116 @@ class _WatchingAnimeInfoPageState extends State<WatchingAnimeInfoPage>
     return AnimeInfoTheme(
       mode: entry.explicit,
       overlayColor: overlayColor,
-      child: wrapLoading(
-        context,
-        SettingsSkeleton(
-          AppLocalizations.of(context)!.watchingTab,
-          state,
-          fab: FloatingActionButton(
-            onPressed: _addToWatched,
-            child: const Icon(Icons.check_rounded),
-          ),
-          bottomAppBar: BottomAppBar(
-            child: Row(
-              children: [
-                IconButton(
-                    onPressed: () {
-                      if (!entry.inBacklog) {
-                        entry.unsetIsWatching();
-                        return;
-                      }
-
-                      if (!entry.setCurrentlyWatching()) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text(
-                                AppLocalizations.of(context)!.cantWatchThree)));
-                      }
-                    },
-                    icon: Icon(
-                      Icons.play_arrow_rounded,
-                      color: entry.inBacklog
-                          ? null
-                          : Theme.of(context).colorScheme.primary,
-                    )),
-                ...CardPanel.defaultButtons(
-                  context,
-                  entry,
-                  isWatching: true,
-                  inBacklog: entry.inBacklog,
-                  watched: false,
-                ),
-                IconButton(
-                  onPressed: () {
-                    SavedAnimeEntry.deleteAll([entry.isarId!]);
-
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(
-                          AppLocalizations.of(context)!.removedFromWatching),
-                      action: SnackBarAction(
-                          label: AppLocalizations.of(context)!.undoLabel,
-                          onPressed: () {
-                            SavedAnimeEntry.addAll([entry], entry.site);
-                          }),
-                    ));
-                  },
-                  icon: const Icon(Icons.delete_rounded),
-                ),
-              ],
+      child: WrapFutureRestartable(
+        builder: (context, value) {
+          return SettingsSkeleton(
+            AppLocalizations.of(context)!.watchingTab,
+            state,
+            fab: FloatingActionButton(
+              onPressed: _addToWatched,
+              child: const Icon(Icons.check_rounded),
             ),
-          ),
-          extendBodyBehindAppBar: true,
-          appBar: PreferredSize(
-              preferredSize: const Size.fromHeight(kToolbarHeight),
-              child: AnimeInfoAppBar(
-                cell: entry,
-                scrollController: scrollController,
-                appBarActions: [
-                  RefreshEntryIcon(
+            bottomAppBar: BottomAppBar(
+              child: Row(
+                children: [
+                  IconButton(
+                      onPressed: () {
+                        if (!entry.inBacklog) {
+                          entry.unsetIsWatching();
+                          return;
+                        }
+
+                        if (!entry.setCurrentlyWatching()) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text(AppLocalizations.of(context)!
+                                  .cantWatchThree)));
+                        }
+                      },
+                      icon: Icon(
+                        Icons.play_arrow_rounded,
+                        color: entry.inBacklog
+                            ? null
+                            : Theme.of(context).colorScheme.primary,
+                      )),
+                  ...CardPanel.defaultButtons(
+                    context,
                     entry,
-                    (e) => entry.copySuper(e).save(),
-                  )
+                    isWatching: true,
+                    inBacklog: entry.inBacklog,
+                    watched: false,
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      SavedAnimeEntry.deleteAll([entry.isarId!]);
+
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(
+                            AppLocalizations.of(context)!.removedFromWatching),
+                        action: SnackBarAction(
+                            label: AppLocalizations.of(context)!.undoLabel,
+                            onPressed: () {
+                              SavedAnimeEntry.addAll([entry], entry.site);
+                            }),
+                      ));
+                    },
+                    icon: const Icon(Icons.delete_rounded),
+                  ),
                 ],
-              )),
-          child: SingleChildScrollView(
-            controller: scrollController,
-            child: Padding(
-              padding: EdgeInsets.only(
-                  bottom: MediaQuery.viewPaddingOf(context).bottom),
-              child: Stack(children: [
-                BackgroundImage(image: entry.thumbnail()!),
-                Column(
-                  children: [
-                    CardShell(
-                      title: entry.title,
-                      titleEnglish: entry.titleEnglish,
-                      titleJapanese: entry.titleJapanese,
-                      titleSynonyms: entry.titleSynonyms,
-                      safeMode: entry.explicit,
-                      viewPadding: MediaQuery.viewPaddingOf(context),
-                      // buttons: ,
-                      info: [
-                        ...CardPanel.defaultInfo(
-                          context,
-                          entry,
-                        ),
-                      ],
-                    ),
-                    AnimeInfoBody(
-                      overlayColor: overlayColor,
-                      entry: entry,
-                      viewPadding: MediaQuery.viewPaddingOf(context),
-                    ),
-                  ],
-                ),
-              ]),
+              ),
             ),
-          ),
-        ),
+            extendBodyBehindAppBar: true,
+            appBar: PreferredSize(
+                preferredSize: const Size.fromHeight(kToolbarHeight),
+                child: AnimeInfoAppBar(
+                  cell: entry,
+                  scrollController: scrollController,
+                  appBarActions: [
+                    RefreshEntryIcon(
+                      entry,
+                      (e) => entry.copySuper(e).save(),
+                    )
+                  ],
+                )),
+            child: SingleChildScrollView(
+              controller: scrollController,
+              child: Padding(
+                padding: EdgeInsets.only(
+                    bottom: MediaQuery.viewPaddingOf(context).bottom),
+                child: Stack(children: [
+                  BackgroundImage(image: entry.thumbnail()!),
+                  Column(
+                    children: [
+                      CardShell(
+                        title: entry.title,
+                        titleEnglish: entry.titleEnglish,
+                        titleJapanese: entry.titleJapanese,
+                        titleSynonyms: entry.titleSynonyms,
+                        safeMode: entry.explicit,
+                        viewPadding: MediaQuery.viewPaddingOf(context),
+                        info: [
+                          ...CardPanel.defaultInfo(
+                            context,
+                            entry,
+                          ),
+                        ],
+                      ),
+                      AnimeInfoBody(
+                        overlayColor: overlayColor,
+                        entry: entry,
+                        viewPadding: MediaQuery.viewPaddingOf(context),
+                      ),
+                    ],
+                  ),
+                ]),
+              ),
+            ),
+          );
+        },
+        newStatus: () => maybeFetchInfo(entry).then((value) {
+          entry.copySuper(value).save();
+
+          return value;
+        }),
       ),
     );
   }

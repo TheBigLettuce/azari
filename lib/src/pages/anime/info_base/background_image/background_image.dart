@@ -65,6 +65,7 @@ class BackgroundImageBase extends StatelessWidget {
           fit: BoxFit.cover,
           opacity: 0.4,
           filterQuality: FilterQuality.high,
+          alignment: Alignment.topCenter,
           colorFilter:
               const ColorFilter.mode(Colors.black87, BlendMode.softLight),
           image: image,

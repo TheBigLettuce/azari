@@ -292,12 +292,13 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                     _currentScroll = pos;
                   },
                   onError: (error) {
-                    return OutlinedButton(
+                    return OutlinedButton.icon(
                       onPressed: () {
                         launchUrl(Uri.https(api.booru.url),
                             mode: LaunchMode.externalApplication);
                       },
-                      child: Text(AppLocalizations.of(context)!.openInBrowser),
+                      label: Text(AppLocalizations.of(context)!.openInBrowser),
+                      icon: const Icon(Icons.public),
                     );
                   },
                   download: _download,

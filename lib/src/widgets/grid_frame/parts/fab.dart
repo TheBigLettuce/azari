@@ -38,16 +38,14 @@ class __FabState extends State<_Fab> {
 
   @override
   void dispose() {
-    super.dispose();
-
     final pos = widget.controller.positions.toList();
-    if (pos.isEmpty) {
-      return;
+    if (pos.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        pos.first.isScrollingNotifier.removeListener(_listener);
+      });
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      pos.first.isScrollingNotifier.removeListener(_listener);
-    });
+    super.dispose();
   }
 
   void _updateFab({required bool fab}) {

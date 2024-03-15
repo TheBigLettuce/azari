@@ -148,10 +148,6 @@ class _MangaPageState extends State<MangaPage> {
     });
   }
 
-  SelectionGlue<J> _generateGlue<J extends Cell>() {
-    return GlueProvider.generateOf<CompactMangaDataBase, J>(context);
-  }
-
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -191,19 +187,14 @@ class _MangaPageState extends State<MangaPage> {
                 pullToRefresh: false,
               ),
               fab: OverrideGridFab(
-                FloatingActionButton.extended(
-                  onPressed: () {
-                    SearchAnimePage.launchMangaApi(
-                      context,
-                      api,
-                      search: "",
-                      viewInsets: widget.viewPadding,
-                      generateGlue: _generateGlue,
-                    );
-                  },
-                  label: Text(AppLocalizations.of(context)!.searchHint),
-                  icon: const Icon(Icons.search),
-                ),
+                (scrollController, key) {
+                  return ReadingFab(
+                    key: key,
+                    viewPadding: widget.viewPadding,
+                    api: api,
+                    controller: scrollController,
+                  );
+                },
               )),
           getCell: (i) => data[i],
           initalScrollPosition: 0,
@@ -224,6 +215,104 @@ class _MangaPageState extends State<MangaPage> {
           widget.procPop(pop);
         },
       ),
+    );
+  }
+}
+
+class ReadingFab extends StatefulWidget {
+  final MangaAPI api;
+  final EdgeInsets viewPadding;
+  final ScrollController controller;
+
+  const ReadingFab({
+    super.key,
+    required this.api,
+    required this.viewPadding,
+    required this.controller,
+  });
+
+  @override
+  State<ReadingFab> createState() => _ReadingFabState();
+}
+
+class _ReadingFabState extends State<ReadingFab>
+    with SingleTickerProviderStateMixin {
+  SelectionGlue<J> _generateGlue<J extends Cell>() {
+    return GlueProvider.generateOf<CompactMangaDataBase, J>(context);
+  }
+
+  late final AnimationController animation;
+
+  bool extended = true;
+
+  void _listener() {
+    if (widget.controller.offset == 0 && !extended) {
+      animation.reverse().then((value) => setState(() {
+            extended = true;
+          }));
+    } else if (widget.controller.offset > 0 && extended) {
+      animation.forward().then((value) => setState(() {
+            extended = false;
+          }));
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    animation = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    )..addListener(() {
+        setState(() {});
+      });
+
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      final pos = widget.controller.positions.toList();
+      if (pos.isEmpty) {
+        return;
+      }
+
+      pos.first.addListener(_listener);
+    });
+  }
+
+  @override
+  void dispose() {
+    animation.dispose();
+
+    final pos = widget.controller.positions.toList();
+    if (pos.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        pos.first.removeListener(_listener);
+      });
+    }
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton.extended(
+      isExtended: extended,
+      shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(16.0)))
+          .lerpTo(
+        const CircleBorder(),
+        Easing.standard.transform(animation.value),
+      ),
+      onPressed: () {
+        SearchAnimePage.launchMangaApi(
+          context,
+          widget.api,
+          search: "",
+          viewInsets: widget.viewPadding,
+          generateGlue: _generateGlue,
+        );
+      },
+      label: Text(AppLocalizations.of(context)!.searchHint),
+      icon: const Icon(Icons.search),
     );
   }
 }
@@ -263,16 +352,16 @@ class _ReadingLayout
     }
 
     return [
-      SliverToBoxAdapter(
-        child: SegmentLabel(
-          AppLocalizations.of(context)!.mangaReadingLabel,
-          hidePinnedIcon: true,
-          onPress: null,
-          sticky: false,
-          overridePinnedIcon: TextButton(
-            onPressed:
-                state.mutation.cellCount == 0 ? null : () => startReading(0),
-            child: Text(AppLocalizations.of(context)!.mangaContinueReading),
+      SliverPadding(
+        padding: const EdgeInsets.only(left: 14, right: 14),
+        sliver: SliverToBoxAdapter(
+          child: MediumSegmentLabel(
+            AppLocalizations.of(context)!.mangaReadingLabel,
+            trailingWidget: TextButton(
+              onPressed:
+                  state.mutation.cellCount == 0 ? null : () => startReading(0),
+              child: Text(AppLocalizations.of(context)!.mangaContinueReading),
+            ),
           ),
         ),
       ),
@@ -283,37 +372,40 @@ class _ReadingLayout
           ),
         )
       else
-        SliverToBoxAdapter(
-          child: SizedBox(
-            height: (MediaQuery.sizeOf(context).shortestSide /
-                settings.columns.number),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: state.mutation.cellCount,
-              itemBuilder: (context, index) {
-                final cell = state.widget.getCell(index);
+        SliverPadding(
+          padding: const EdgeInsets.only(left: 14, right: 14),
+          sliver: SliverToBoxAdapter(
+            child: SizedBox(
+              height: (MediaQuery.sizeOf(context).shortestSide /
+                  settings.columns.number),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: state.mutation.cellCount,
+                itemBuilder: (context, index) {
+                  final cell = state.widget.getCell(index);
 
-                return SizedBox(
-                  width: (MediaQuery.sizeOf(context).shortestSide /
-                          settings.columns.number) *
-                      settings.aspectRatio.value,
-                  child: ImportantCard(
-                    cell: cell,
-                    idx: index,
-                    onLongPressed: onLongPressed,
-                    onPressed: onPressed,
-                  ),
-                );
-              },
+                  return SizedBox(
+                    width: (MediaQuery.sizeOf(context).shortestSide /
+                            settings.columns.number) *
+                        settings.aspectRatio.value,
+                    child: ImportantCard(
+                      cell: cell,
+                      idx: index,
+                      onLongPressed: onLongPressed,
+                      onPressed: onPressed,
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ),
-      SliverToBoxAdapter(
-        child: SegmentLabel(
-          AppLocalizations.of(context)!.mangaPinnedLabel,
-          hidePinnedIcon: false,
-          onPress: null,
-          sticky: false,
+      SliverPadding(
+        padding: const EdgeInsets.only(left: 14, right: 14),
+        sliver: SliverToBoxAdapter(
+          child: MediumSegmentLabel(
+            AppLocalizations.of(context)!.mangaPinnedLabel,
+          ),
         ),
       ),
       _PinnedMangaWidget(
@@ -387,7 +479,7 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
   @override
   Widget build(BuildContext context) {
     return SliverPadding(
-      padding: const EdgeInsets.only(left: 4, right: 4),
+      padding: const EdgeInsets.only(left: 14, right: 14),
       sliver: data.isEmpty
           ? const SliverToBoxAdapter(
               child: EmptyWidget(gridSeed: 0),
@@ -402,6 +494,8 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
                 return GridCell(
                   cell: cell,
                   indx: idx,
+                  imageAlign: Alignment.topCenter,
+                  alignTitleToTopLeft: true,
                   onPressed: (context) {
                     widget.onPress(context, cell);
                   },

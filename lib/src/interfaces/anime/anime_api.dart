@@ -16,7 +16,7 @@ import '../cell/sticker.dart';
 import 'anime_entry.dart';
 
 abstract class AnimeAPI {
-  Future<AnimeEntry?> info(int id);
+  Future<AnimeEntry> info(int id);
   Future<List<AnimeCharacter>> characters(AnimeEntry entry);
   Future<List<AnimeEntry>> search(
       String title, int page, int? genreId, AnimeSafeMode? mode);
