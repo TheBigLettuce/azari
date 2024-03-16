@@ -7,6 +7,7 @@
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/schemas/manga/pinned_manga.dart';
 import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
@@ -170,7 +171,10 @@ class MangaEntry implements Cell {
   String? fileDownloadUrl() => null;
 
   @override
-  List<Sticker> stickers(BuildContext context) => const [];
+  List<Sticker> stickers(BuildContext context) => [
+        if (PinnedManga.exist(id.toString(), site))
+          Sticker(Icons.push_pin_rounded),
+      ];
 
   @override
   ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(thumbUrl);

@@ -24,21 +24,26 @@ class StickerWidget extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: e.important
-              ? colorScheme.onPrimary.withOpacity(0.9)
-              : colorScheme.surfaceVariant.withOpacity(0.8),
-        ),
-        child: Transform.translate(
-          offset: const Offset(0, -0.5),
-          child: Icon(
-            e.icon,
+      child: SizedBox(
+        height: 28,
+        width: 28,
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
             color: e.important
-                ? colorScheme.primary.withOpacity(0.9)
-                : colorScheme.onSurfaceVariant.withOpacity(0.8),
+                ? colorScheme.onPrimary.withOpacity(0.9)
+                : colorScheme.surfaceVariant.withOpacity(0.8),
+          ),
+          child: Transform.translate(
+            offset: const Offset(0, 0),
+            child: Icon(
+              e.icon,
+              size: 20,
+              color: e.important
+                  ? colorScheme.primary.withOpacity(0.9)
+                  : colorScheme.onSurfaceVariant.withOpacity(0.8),
+            ),
           ),
         ),
       ),

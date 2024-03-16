@@ -44,7 +44,7 @@ class _MangaInfoPageState extends State<MangaInfoPage>
   double? score;
   Future? scoreFuture;
 
-  bool isPinned = false;
+  late bool isPinned = PinnedManga.exist(widget.id.toString(), widget.api.site);
 
   @override
   void initState() {
@@ -165,7 +165,6 @@ class _MangaInfoPageState extends State<MangaInfoPage>
               ),
               child: SingleChildScrollView(
                 controller: scrollController,
-                // primary: true,
                 child: Padding(
                   padding: EdgeInsets.only(
                       bottom: MediaQuery.viewPaddingOf(context).bottom),

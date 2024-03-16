@@ -63,6 +63,8 @@ class _MangaPageState extends State<MangaPage> {
   final dio = Dio();
   late final api = MangaDex(dio);
 
+  final GlobalKey<_PinnedMangaWidgetState> _pinnedKey = GlobalKey();
+
   bool dirty = false;
 
   bool inInner = false;
@@ -156,7 +158,10 @@ class _MangaPageState extends State<MangaPage> {
         state,
         (context) => GridFrame<CompactMangaDataBase>(
           key: state.gridKey,
-          layout: _ReadingLayout(startReading: _startReading),
+          layout: _ReadingLayout(
+            startReading: _startReading,
+            pinnedMangaKey: _pinnedKey,
+          ),
           refreshingStatus: state.refreshingStatus,
           imageViewDescription: ImageViewDescription(
             imageViewKey: state.imageViewKey,
@@ -211,6 +216,9 @@ class _MangaPageState extends State<MangaPage> {
           ),
         ),
         canPop: false,
+        secondarySelectionHide: () {
+          _pinnedKey.currentState?.selection.reset();
+        },
         overrideOnPop: (pop, _) {
           widget.procPop(pop);
         },
@@ -319,11 +327,13 @@ class _ReadingFabState extends State<ReadingFab>
 
 class _ReadingLayout
     implements GridLayouter<CompactMangaDataBase>, GridLayoutBehaviour {
-  final void Function(int idx) startReading;
-
   const _ReadingLayout({
     required this.startReading,
+    required this.pinnedMangaKey,
   });
+
+  final void Function(int idx) startReading;
+  final GlobalKey<_PinnedMangaWidgetState> pinnedMangaKey;
 
   static GridSettingsBase _defaultSettings() => const GridSettingsBase(
         aspectRatio: GridAspectRatio.oneTwo,
@@ -409,6 +419,7 @@ class _ReadingLayout
         ),
       ),
       _PinnedMangaWidget(
+        key: pinnedMangaKey,
         controller: state.controller,
         onPress: (context, cell) {
           state.widget.functionality.onPressed
@@ -448,11 +459,24 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
       DefaultMutationInterface(data.length);
   late final GridSelection<PinnedManga> selection = GridSelection(
     setState,
-    const [],
+    [
+      GridAction(Icons.push_pin_rounded, (selected) {
+        PinnedManga.deleteAll(selected.map((e) => e.isarId!).toList());
+
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Unpinned"),
+          action: SnackBarAction(
+              label: "Undo",
+              onPressed: () {
+                PinnedManga.addAll(selected, true);
+              }),
+        ));
+      }, true),
+    ],
     widget.glue,
     () => widget.controller,
     noAppBar: true,
-    ignoreSwipe: true,
+    ignoreSwipe: false,
   );
 
   @override
@@ -478,37 +502,47 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return SliverPadding(
-      padding: const EdgeInsets.only(left: 14, right: 14),
-      sliver: data.isEmpty
-          ? const SliverToBoxAdapter(
-              child: EmptyWidget(gridSeed: 0),
-            )
-          : GridLayout.blueprint<PinnedManga>(
-              context,
-              mutationInterface,
-              selection,
-              gridCell: (context, idx) {
-                final cell = data[data.length - 1 - idx];
+    return CellProvider(
+      getCell: (i) => data[data.length - 1 - i],
+      child: SliverPadding(
+        padding: const EdgeInsets.only(left: 14, right: 14),
+        sliver: data.isEmpty
+            ? const SliverToBoxAdapter(
+                child: EmptyWidget(gridSeed: 0),
+              )
+            : Builder(
+                builder: (context) {
+                  return GridLayout.blueprint<PinnedManga>(
+                    context,
+                    mutationInterface,
+                    selection,
+                    gridCell: (context, idx) {
+                      final cell = data[data.length - 1 - idx];
 
-                return GridCell(
-                  cell: cell,
-                  indx: idx,
-                  imageAlign: Alignment.topCenter,
-                  alignTitleToTopLeft: true,
-                  onPressed: (context) {
-                    widget.onPress(context, cell);
-                  },
-                  tight: false,
-                  download: null,
-                  isList: false,
-                  hideAlias: false,
-                );
-              },
-              columns: GridColumn.three.number,
-              systemNavigationInsets: 0,
-              aspectRatio: GridAspectRatio.one.value,
-            ),
+                      return GridCell(
+                        cell: cell,
+                        indx: idx,
+                        imageAlign: Alignment.topCenter,
+                        alignTitleToTopLeft: true,
+                        onPressed: (context) {
+                          widget.onPress(context, cell);
+                        },
+                        onLongPress: () {
+                          selection.selectOrUnselect(context, idx);
+                        },
+                        tight: false,
+                        download: null,
+                        isList: false,
+                        hideAlias: false,
+                      );
+                    },
+                    columns: GridColumn.three.number,
+                    systemNavigationInsets: 0,
+                    aspectRatio: GridAspectRatio.one.value,
+                  );
+                },
+              ),
+      ),
     );
   }
 }

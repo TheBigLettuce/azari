@@ -31,7 +31,7 @@ class GlueBottomAppBar extends StatelessWidget {
             children: [
               Wrap(
                 spacing: 4,
-                children: glue.actions!.$1,
+                children: glue.actions?.$1 ?? [],
               ),
               Row(
                 children: [

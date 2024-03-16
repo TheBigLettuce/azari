@@ -16,6 +16,7 @@ import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
 import 'package:gallery/src/pages/anime/info_base/background_image/background_image.dart';
 import 'package:gallery/src/pages/anime/info_base/body/anime_info_body.dart';
 import 'package:gallery/src/pages/anime/info_base/card_panel/card_panel.dart';
+import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/skeletons/settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -96,7 +97,7 @@ class _DiscoverAnimeInfoPageState extends State<DiscoverAnimeInfoPage>
                           .isarId!
                     ]);
                   } else {
-                    SavedAnimeEntry.addAll([widget.entry], widget.entry.site);
+                    SavedAnimeEntry.addAll([widget.entry]);
                   }
                 },
           child: _watched

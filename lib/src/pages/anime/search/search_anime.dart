@@ -14,11 +14,12 @@ import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
+import 'package:gallery/src/db/schemas/manga/pinned_manga.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/pages/anime/anime.dart';
 import 'package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart';
-import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
@@ -52,6 +53,7 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
   final EdgeInsets? viewInsets;
   final String info;
   final Uri siteUri;
+  final List<GridAction<T>> actions;
 
   static void launchMangaApi(
     BuildContext context,
@@ -69,6 +71,33 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
           viewInsets: viewInsets,
           initalText: search,
           explicit: safeMode,
+          actions: [
+            GridAction(Icons.push_pin_rounded, (selected) {
+              final toDelete = <MangaEntry>[];
+              final toAdd = <MangaEntry>[];
+
+              for (final e in selected) {
+                if (PinnedManga.exist(e.id.toString(), e.site)) {
+                  toDelete.add(e);
+                } else {
+                  toAdd.add(e);
+                }
+              }
+
+              PinnedManga.addAll(toAdd
+                  .map((e) => PinnedManga(
+                        mangaId: e.id.toString(),
+                        site: e.site,
+                        thumbUrl: e.thumbUrl,
+                        title: e.title,
+                      ))
+                  .toList());
+
+              PinnedManga.deleteAllIds(
+                toDelete.map((e) => (e.id, e.site)).toList(),
+              );
+            }, true),
+          ],
           initalGenreId: initalGenreId,
           info: api.site.name,
           siteUri: Uri.https(api.site.browserUrl()),
@@ -123,6 +152,7 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
         return SearchAnimePage<AnimeEntry, int, AnimeGenre>(
           initalText: search,
           explicit: safeMode,
+          actions: DiscoverTab.actions(),
           initalGenreId: initalGenreId,
           siteUri: Uri.https(api.site.browserUrl()),
           info: api.site.name,
@@ -155,6 +185,7 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
     this.viewInsets,
     this.explicit = AnimeSafeMode.safe,
     required this.info,
+    required this.actions,
     required this.siteUri,
   });
 
@@ -305,32 +336,33 @@ class _SearchAnimePageState<T extends Cell, I, G>
                   ),
                   search: OverrideGridSearchWidget(
                     SearchAndFocus(
-                        TextFormField(
-                          initialValue: currentSearch,
-                          decoration: InputDecoration(
-                              hintText:
-                                  "${AppLocalizations.of(context)!.searchHint} ${currentGenre == null ? '' : genres == null ? '...' : title(genres?[currentGenre!])}",
-                              border: InputBorder.none),
-                          focusNode: searchFocus,
-                          onFieldSubmitted: (value) {
-                            final grid = state.gridKey.currentState;
-                            if (grid == null || grid.mutation.isRefreshing) {
-                              return;
-                            }
+                      TextFormField(
+                        initialValue: currentSearch,
+                        decoration: InputDecoration(
+                            hintText:
+                                "${AppLocalizations.of(context)!.searchHint} ${currentGenre == null ? '' : genres == null ? '...' : title(genres?[currentGenre!])}",
+                            border: InputBorder.none),
+                        focusNode: searchFocus,
+                        onFieldSubmitted: (value) {
+                          final grid = state.gridKey.currentState;
+                          if (grid == null || grid.mutation.isRefreshing) {
+                            return;
+                          }
 
-                            currentSearch = value;
+                          currentSearch = value;
 
-                            _load();
-                          },
-                        ),
-                        searchFocus),
+                          _load();
+                        },
+                      ),
+                      searchFocus,
+                    ),
                   )),
               systemNavigationInsets: widget.viewInsets ??
                   (MediaQuery.viewPaddingOf(context) +
                       const EdgeInsets.only(bottom: 4)),
               mainFocus: state.mainFocus,
               description: GridDescription(
-                actions: const [],
+                actions: widget.actions,
                 inlineMenuButtonItems: true,
                 menuButtonItems: [
                   TextButton(
@@ -370,54 +402,53 @@ class _SearchAnimePageState<T extends Cell, I, G>
                       ),
                     ),
                   ),
-                  if (widget.genres != null)
-                    IconButton(
-                      onPressed: () {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          useRootNavigator: true,
-                          showDragHandle: true,
-                          builder: (context) {
-                            return SafeArea(
-                              child: _SearchOptions<I, G>(
-                                info: widget.info,
-                                setCurrentGenre: (g) {
-                                  currentGenre = g;
+                  IconButton(
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        useRootNavigator: true,
+                        showDragHandle: true,
+                        builder: (context) {
+                          return SafeArea(
+                            child: _SearchOptions<I, G>(
+                              info: widget.info,
+                              setCurrentGenre: (g) {
+                                currentGenre = g;
 
-                                  _load();
+                                _load();
+
+                                setState(() {});
+                              },
+                              initalGenreId: currentGenre,
+                              genreFuture: () {
+                                if (_genreFuture != null) {
+                                  return _genreFuture!;
+                                }
+
+                                return widget
+                                    .genres(AnimeSafeMode.safe)
+                                    .then((value) {
+                                  genres = value;
+
+                                  _genreFuture = Future.value(value);
 
                                   setState(() {});
-                                },
-                                initalGenreId: currentGenre,
-                                genreFuture: () {
-                                  if (_genreFuture != null) {
-                                    return _genreFuture!;
-                                  }
 
-                                  return widget
-                                      .genres(AnimeSafeMode.safe)
-                                      .then((value) {
-                                    genres = value;
-
-                                    _genreFuture = Future.value(value);
-
-                                    setState(() {});
-
-                                    return value;
-                                  });
-                                },
-                                idFromGenre: widget.idFromGenre,
-                              ),
-                            );
-                          },
-                        );
-                      },
-                      icon: Icon(Icons.filter_list_outlined,
-                          color: currentGenre != null
-                              ? Theme.of(context).colorScheme.primary
-                              : null),
-                    ),
+                                  return value;
+                                });
+                              },
+                              idFromGenre: widget.idFromGenre,
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    icon: Icon(Icons.filter_list_outlined,
+                        color: currentGenre != null
+                            ? Theme.of(context).colorScheme.primary
+                            : null),
+                  ),
                 ],
                 titleLines: 2,
                 keybindsDescription:
@@ -426,6 +457,7 @@ class _SearchAnimePageState<T extends Cell, I, G>
               ),
             ),
             canPop: true,
+            overrideOnPop: (_, __) {},
           ),
         );
 

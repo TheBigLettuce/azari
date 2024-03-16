@@ -18,12 +18,14 @@ class GridSkeleton<T extends Cell> extends StatelessWidget {
   final void Function(bool, bool Function())? overrideOnPop;
   final GridSkeletonState<T> state;
   final GridFrame<T> Function(BuildContext context) grid;
+  final void Function()? secondarySelectionHide;
 
   const GridSkeleton(
     this.state,
     this.grid, {
     super.key,
     required this.canPop,
+    this.secondarySelectionHide,
     this.overrideOnPop,
   });
 
@@ -36,6 +38,7 @@ class GridSkeleton<T extends Cell> extends StatelessWidget {
           : (pop) {
               if (GlueProvider.of<T>(context).isOpen()) {
                 state.gridKey.currentState?.selection.reset();
+                secondarySelectionHide?.call();
                 return;
               }
 

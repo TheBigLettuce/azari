@@ -136,7 +136,7 @@ class _WatchingAnimeInfoPageState extends State<WatchingAnimeInfoPage>
                         action: SnackBarAction(
                             label: AppLocalizations.of(context)!.undoLabel,
                             onPressed: () {
-                              SavedAnimeEntry.addAll([entry], entry.site);
+                              SavedAnimeEntry.addAll([entry]);
                             }),
                       ));
                     },

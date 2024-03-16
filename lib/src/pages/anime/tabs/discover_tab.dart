@@ -7,14 +7,34 @@
 
 part of '../anime.dart';
 
-class _DiscoverTab extends StatefulWidget {
+class DiscoverTab extends StatefulWidget {
   final EdgeInsets viewInsets;
   final void Function(bool) procPop;
   final List<AnimeEntry> entries;
   final PagingContainer<AnimeEntry> pagingContainer;
   final AnimeAPI api;
 
-  const _DiscoverTab({
+  static List<GridAction<AnimeEntry>> actions() => [
+        GridAction(Icons.add, (selected) {
+          final toDelete = <AnimeEntry>[];
+          final toAdd = <AnimeEntry>[];
+
+          for (final e in selected) {
+            final entry = SavedAnimeEntry.maybeGet(e.id, e.site);
+            if (entry == null) {
+              toAdd.add(e);
+            } else if (entry.inBacklog) {
+              toDelete.add(e);
+            }
+          }
+
+          SavedAnimeEntry.addAll(toAdd);
+          SavedAnimeEntry.deleteAllIds(
+              toDelete.map((e) => (e.id, e.site)).toList());
+        }, true),
+      ];
+
+  const DiscoverTab({
     required this.procPop,
     required this.entries,
     required this.pagingContainer,
@@ -23,10 +43,10 @@ class _DiscoverTab extends StatefulWidget {
   });
 
   @override
-  State<_DiscoverTab> createState() => __DiscoverTabState();
+  State<DiscoverTab> createState() => _DiscoverTabState();
 }
 
-class __DiscoverTabState extends State<_DiscoverTab> {
+class _DiscoverTabState extends State<DiscoverTab> {
   late final StreamSubscription<GridSettingsAnimeDiscovery?>
       gridSettingsWatcher;
   late final GridSkeletonState<AnimeEntry> state;
@@ -117,11 +137,7 @@ class __DiscoverTabState extends State<_DiscoverTab> {
         mainFocus: state.mainFocus,
         description: GridDescription(
           risingAnimation: true,
-          actions: [
-            GridAction(Icons.add, (selected) {
-              SavedAnimeEntry.addAll(selected, widget.api.site);
-            }, true),
-          ],
+          actions: DiscoverTab.actions(),
           showAppBar: false,
           keybindsDescription: AppLocalizations.of(context)!.discoverTab,
           ignoreSwipeSelectGesture: true,

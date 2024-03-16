@@ -36,6 +36,7 @@ class WatchedAnimeEntry extends AnimeEntry {
     required super.isAiring,
     required super.titleSynonyms,
     required super.genres,
+    required super.staff,
     required super.background,
     required super.trailerUrl,
     required super.episodes,
@@ -46,6 +47,7 @@ class WatchedAnimeEntry extends AnimeEntry {
   WatchedAnimeEntry copySuper(AnimeEntry e, [bool ignoreRelations = false]) {
     return WatchedAnimeEntry(
       date: date,
+      staff: e.staff,
       type: e.type,
       explicit: e.explicit,
       site: e.site,
@@ -90,6 +92,7 @@ class WatchedAnimeEntry extends AnimeEntry {
     DateTime? date,
     String? type,
     AnimeSafeMode? explicit,
+    List<Relation>? staff,
   }) {
     return WatchedAnimeEntry(
       explicit: explicit ?? this.explicit,
@@ -105,6 +108,7 @@ class WatchedAnimeEntry extends AnimeEntry {
       synopsis: synopsis ?? this.synopsis,
       year: year ?? this.year,
       id: id ?? this.id,
+      staff: staff ?? this.staff,
       siteUrl: siteUrl ?? this.siteUrl,
       isAiring: isAiring ?? this.isAiring,
       titleSynonyms: titleSynonyms ?? this.titleSynonyms,
@@ -129,6 +133,12 @@ class WatchedAnimeEntry extends AnimeEntry {
         () => Dbs.g.anime.watchedAnimeEntrys.deleteBySiteIdSync(site, id));
   }
 
+  static void deleteAll(List<int> ids) {
+    Dbs.g.anime.writeTxnSync(
+      () => Dbs.g.anime.watchedAnimeEntrys.deleteAllSync(ids),
+    );
+  }
+
   static int count() => Dbs.g.anime.watchedAnimeEntrys.countSync();
 
   static List<WatchedAnimeEntry> get all =>
@@ -139,8 +149,20 @@ class WatchedAnimeEntry extends AnimeEntry {
         () => Dbs.g.anime.watchedAnimeEntrys.putBySiteIdSync(entry));
   }
 
+  static void reAdd(List<WatchedAnimeEntry> entries) {
+    Dbs.g.anime.writeTxnSync(
+      () => Dbs.g.anime.watchedAnimeEntrys.putAllSync(entries),
+    );
+  }
+
   static WatchedAnimeEntry? maybeGet(int id, AnimeMetadata site) =>
       Dbs.g.anime.watchedAnimeEntrys.getBySiteIdSync(site, id);
+
+  static void moveAllReversed(List<WatchedAnimeEntry> entries) {
+    WatchedAnimeEntry.deleteAll(entries.map((e) => e.isarId!).toList());
+
+    SavedAnimeEntry.addAll(entries);
+  }
 
   static void moveAll(List<SavedAnimeEntry> entries) {
     SavedAnimeEntry.deleteAll(entries.map((e) => e.isarId!).toList());
@@ -163,6 +185,7 @@ class WatchedAnimeEntry extends AnimeEntry {
                         synopsis: entry.synopsis,
                         year: entry.year,
                         id: entry.id,
+                        staff: entry.staff,
                         siteUrl: entry.siteUrl,
                         isAiring: entry.isAiring,
                         titleSynonyms: entry.titleSynonyms,

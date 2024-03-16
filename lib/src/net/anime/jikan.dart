@@ -29,7 +29,7 @@ class Jikan implements AnimeAPI {
     try {
       final response = await api.Jikan(debug: kDebugMode).getAnime(id);
 
-      return _fromJikenAnime(response);
+      return _fromJikanAnime(response);
     } catch (e, trace) {
       _log.logDefaultImportant("Jikan API info".errorMessage(e), trace);
 
@@ -68,7 +68,7 @@ class Jikan implements AnimeAPI {
               : null,
     );
 
-    return response.map((e) => _fromJikenAnime(e)).toList();
+    return response.map((e) => _fromJikanAnime(e)).toList();
   }
 
   @override
@@ -77,7 +77,7 @@ class Jikan implements AnimeAPI {
       final response =
           await api.Jikan(debug: kDebugMode).getTopAnime(page: page + 1);
 
-      return response.map((e) => _fromJikenAnime(e)).toList();
+      return response.map((e) => _fromJikanAnime(e)).toList();
     } catch (e, trace) {
       _log.logDefaultImportant("Jikan API top".errorMessage(e), trace);
       return const [];
@@ -155,7 +155,7 @@ List<Relation> _fromMeta(api.BuiltList<api.Meta> l) {
       .toList();
 }
 
-AnimeEntry _fromJikenAnime(api.Anime e) {
+AnimeEntry _fromJikanAnime(api.Anime e) {
   return AnimeEntry(
     explicit: e.genres.indexWhere((e) => e.name == "Hentai") != -1
         ? AnimeSafeMode.h
@@ -177,6 +177,10 @@ AnimeEntry _fromJikenAnime(api.Anime e) {
             const [],
     year: e.year ?? 0,
     siteUrl: e.url,
+    staff: e.producers
+        .map((e) =>
+            Relation(thumbUrl: "", title: e.name, type: e.type, id: e.malId))
+        .toList(),
     isAiring: e.airing,
     titleEnglish: e.titleEnglish ?? "",
     titleJapanese: e.titleJapanese ?? "",

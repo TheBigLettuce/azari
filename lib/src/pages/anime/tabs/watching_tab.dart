@@ -34,6 +34,7 @@ class __WatchingTabState extends State<_WatchingTab> {
 
   late final StreamSubscription<void> watcher;
   final gridSeed = math.Random().nextInt(948512342);
+  final GlobalKey<__CurrentlyWatchingState> watchingKey = GlobalKey();
 
   bool upward = MiscSettings.current.animeWatchingOrderReversed;
   bool right = false;
@@ -116,6 +117,7 @@ class __WatchingTabState extends State<_WatchingTab> {
         key: state.gridKey,
         layout: _WatchingLayout(
           currentlyWatching,
+          watchingKey: watchingKey,
           flipBacklogUpward: () {
             upward = !upward;
 
@@ -181,15 +183,17 @@ class __WatchingTabState extends State<_WatchingTab> {
                   action: SnackBarAction(
                       label: "Undo",
                       onPressed: () {
-                        SavedAnimeEntry.addAll(selected, selected.first.site);
+                        SavedAnimeEntry.reAdd(selected);
                       }),
                 ));
               },
               true,
             ),
-            GridAction(Icons.check_rounded, (selected) {
-              WatchedAnimeEntry.moveAll(selected);
-            }, true),
+            const GridAction(
+              Icons.check_rounded,
+              WatchedAnimeEntry.moveAll,
+              true,
+            ),
           ],
           keybindsDescription: AppLocalizations.of(context)!.watchingTab,
           showAppBar: false,
@@ -199,6 +203,9 @@ class __WatchingTabState extends State<_WatchingTab> {
         ),
       ),
       canPop: false,
+      secondarySelectionHide: () {
+        watchingKey.currentState?.selection.reset();
+      },
       overrideOnPop: (pop, hideAppBar) {
         if (hideAppBar()) {
           setState(() {});
@@ -219,7 +226,10 @@ class _WatchingLayout
     required this.flipBacklogUpward,
     required this.flipWatchingRight,
     required this.watchingRight,
+    required this.watchingKey,
   });
+
+  final GlobalKey<__CurrentlyWatchingState> watchingKey;
 
   final bool backlogUpward;
   final void Function() flipBacklogUpward;
@@ -250,14 +260,6 @@ class _WatchingLayout
   @override
   List<Widget> call(BuildContext context, GridSettingsBase gridSettings,
       GridFrameState<SavedAnimeEntry> state) {
-    void onPressed(SavedAnimeEntry e, int _) {
-      Navigator.push(context, MaterialPageRoute(
-        builder: (context) {
-          return WatchingAnimeInfoPage(entry: e);
-        },
-      ));
-    }
-
     return [
       SliverPadding(
         padding: const EdgeInsets.only(left: 14, right: 14),
@@ -279,25 +281,12 @@ class _WatchingLayout
       if (currentlyWatching.isNotEmpty)
         SliverPadding(
           padding: const EdgeInsets.only(left: 14, right: 14),
-          sliver: SliverGrid.count(
-            crossAxisCount: 3,
-            children: watchingRight
-                ? currentlyWatching.reversed.indexed
-                    .map((e) => ImportantCard(
-                          cell: e.$2,
-                          idx: e.$1,
-                          onPressed: onPressed,
-                        ).animate(key: ValueKey(e)).fadeIn())
-                    .toList()
-                : currentlyWatching.indexed
-                    .map(
-                      (e) => ImportantCard(
-                        idx: e.$1,
-                        cell: e.$2,
-                        onPressed: onPressed,
-                      ).animate(key: ValueKey(e)).fadeIn(),
-                    )
-                    .toList(),
+          sliver: _CurrentlyWatching(
+            key: watchingKey,
+            currentlyWatching: currentlyWatching,
+            watchingRight: watchingRight,
+            controller: state.controller,
+            glue: GlueProvider.generateOf<AnimeEntry, SavedAnimeEntry>(context),
           ),
         )
       else
@@ -350,6 +339,137 @@ class _WatchingLayout
           gridSeed: state.widget.description.gridSeed + 1,
         )),
     ];
+  }
+}
+
+class _CurrentlyWatching extends StatefulWidget {
+  final bool watchingRight;
+  final List<SavedAnimeEntry> currentlyWatching;
+  final ScrollController controller;
+  final SelectionGlue<SavedAnimeEntry> glue;
+
+  const _CurrentlyWatching({
+    super.key,
+    required this.currentlyWatching,
+    required this.controller,
+    required this.watchingRight,
+    required this.glue,
+  });
+
+  @override
+  State<_CurrentlyWatching> createState() => __CurrentlyWatchingState();
+}
+
+class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
+  late final selection = GridSelection<SavedAnimeEntry>(
+    setState,
+    [
+      GridAction(
+        Icons.play_arrow_rounded,
+        (selected) {
+          SavedAnimeEntry.unsetIsWatchingAll(selected);
+        },
+        true,
+      ),
+      GridAction(
+        Icons.delete_rounded,
+        (selected) {
+          SavedAnimeEntry.deleteAll(
+            selected.map((e) => e.isarId!).toList(),
+          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("Deleted from backlog"),
+            action: SnackBarAction(
+                label: "Undo",
+                onPressed: () {
+                  SavedAnimeEntry.reAdd(selected);
+                }),
+          ));
+        },
+        true,
+      ),
+      GridAction(
+        Icons.check_rounded,
+        (selected) {
+          WatchedAnimeEntry.moveAll(selected);
+        },
+        true,
+      ),
+    ],
+    widget.glue,
+    () => widget.controller,
+    noAppBar: true,
+    ignoreSwipe: true,
+  );
+
+  void onPressed(SavedAnimeEntry e, int _) {
+    Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        return WatchingAnimeInfoPage(entry: e);
+      },
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CellProvider(
+        getCell: (i) => widget.currentlyWatching[i],
+        child: Builder(
+          builder: (context) {
+            return SliverGrid.count(
+              crossAxisCount: 3,
+              children: widget.watchingRight
+                  ? widget.currentlyWatching.reversed.indexed
+                      .map((e) => WrapSelection(
+                            isSelected: selection.isSelected(e.$1),
+                            ignoreSwipeGesture: selection.ignoreSwipe,
+                            selectUnselect: () =>
+                                selection.selectOrUnselect(context, e.$1),
+                            thisIndx: e.$1,
+                            bottomPadding: 0,
+                            selectionEnabled: selection.isNotEmpty,
+                            currentScroll: selection.controller,
+                            selectUntil: (i) =>
+                                selection.selectUnselectUntil(context, i),
+                            actionsAreEmpty: selection.addActions.isEmpty,
+                            child: ImportantCard(
+                              cell: e.$2,
+                              idx: e.$1,
+                              onPressed: onPressed,
+                              onLongPressed: (cell, idx) {
+                                selection.selectOrUnselect(context, idx);
+                              },
+                            ),
+                          ).animate(key: ValueKey(e)).fadeIn())
+                      .toList()
+                  : widget.currentlyWatching.indexed
+                      .map(
+                        (e) => WrapSelection(
+                          isSelected: selection.isSelected(e.$1),
+                          ignoreSwipeGesture: selection.ignoreSwipe,
+                          selectUnselect: () =>
+                              selection.selectOrUnselect(context, e.$1),
+                          thisIndx: e.$1,
+                          bottomPadding: 0,
+                          selectionEnabled: selection.isNotEmpty,
+                          currentScroll: selection.controller,
+                          selectUntil: (i) =>
+                              selection.selectUnselectUntil(context, i),
+                          actionsAreEmpty: selection.addActions.isEmpty,
+                          child: ImportantCard(
+                            cell: e.$2,
+                            idx: e.$1,
+                            onPressed: onPressed,
+                            onLongPressed: (cell, idx) {
+                              selection.selectOrUnselect(context, idx);
+                            },
+                          ),
+                        ).animate(key: ValueKey(e)).fadeIn(),
+                      )
+                      .toList(),
+            );
+          },
+        ));
   }
 }
 

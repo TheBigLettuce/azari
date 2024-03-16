@@ -44,6 +44,8 @@ class AnimeInfoBody extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            AnimeStaff(entry: entry),
+            const Padding(padding: EdgeInsets.only(top: 8)),
             AnimeGenres<AnimeGenre>(
               genres: entry.genres.map((e) => (e, e.unpressable)).toList(),
               title: (e) => e.title,
@@ -78,6 +80,30 @@ class AnimeInfoBody extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class AnimeStaff extends StatelessWidget {
+  final AnimeEntry entry;
+
+  const AnimeStaff({super.key, required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    return entry.staff.isEmpty
+        ? const SizedBox.shrink()
+        : Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              entry.staff.join(", "),
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.4),
+                  ),
+            ),
+          );
   }
 }
 

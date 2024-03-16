@@ -227,6 +227,8 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
 
     if (res != null) {
       tagManager = TagManager.fromEnum(res!.booru);
+    } else {
+      tagManager = null;
     }
 
     postTags.addAll(PostTags.g.getTagsPost(file.name));

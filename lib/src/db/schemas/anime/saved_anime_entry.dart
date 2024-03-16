@@ -45,6 +45,11 @@ class Relation implements Cell {
 
   bool get idIsValid => id != 0 && type != "manga";
 
+  @override
+  String toString() {
+    return title;
+  }
+
   Relation({
     this.thumbUrl = "",
     this.title = "",
@@ -99,6 +104,7 @@ class SavedAnimeEntry extends AnimeEntry {
     required super.relations,
     required super.synopsis,
     required super.year,
+    required super.staff,
     required super.siteUrl,
     required super.isAiring,
     required super.titleSynonyms,
@@ -124,6 +130,7 @@ class SavedAnimeEntry extends AnimeEntry {
       explicit: e.explicit,
       thumbUrl: e.thumbUrl,
       title: e.title,
+      staff: e.staff,
       titleJapanese: e.titleJapanese,
       titleEnglish: e.titleEnglish,
       score: e.score,
@@ -161,6 +168,7 @@ class SavedAnimeEntry extends AnimeEntry {
     String? synopsis,
     String? type,
     AnimeSafeMode? explicit,
+    List<Relation>? staff,
   }) {
     return SavedAnimeEntry(
       id: id ?? this.id,
@@ -170,6 +178,7 @@ class SavedAnimeEntry extends AnimeEntry {
       background: background ?? this.background,
       inBacklog: inBacklog ?? this.inBacklog,
       site: site ?? this.site,
+      staff: staff ?? this.staff,
       thumbUrl: thumbUrl ?? this.thumbUrl,
       title: title ?? this.title,
       titleJapanese: titleJapanese ?? this.titleJapanese,
@@ -209,6 +218,13 @@ class SavedAnimeEntry extends AnimeEntry {
     return true;
   }
 
+  static void unsetIsWatchingAll(List<SavedAnimeEntry> entries) {
+    Dbs.g.anime.writeTxnSync(
+      () => Dbs.g.anime.savedAnimeEntrys.putAllBySiteIdSync(
+          entries.map((e) => e.copy(inBacklog: true)).toList()),
+    );
+  }
+
   static List<SavedAnimeEntry> backlog() {
     return Dbs.g.anime.savedAnimeEntrys
         .filter()
@@ -246,16 +262,39 @@ class SavedAnimeEntry extends AnimeEntry {
         .writeTxnSync(() => Dbs.g.anime.savedAnimeEntrys.deleteAllSync(ids));
   }
 
-  static void addAll(List<AnimeEntry> entries, AnimeMetadata site) {
+  static void deleteAllIds(List<(int, AnimeMetadata)> ids) {
+    if (ids.isEmpty) {
+      return;
+    }
+
+    Dbs.g.anime
+        .writeTxnSync(() => Dbs.g.anime.savedAnimeEntrys.deleteAllBySiteIdSync(
+              ids.map((e) => e.$2).toList(),
+              ids.map((e) => e.$1).toList(),
+            ));
+  }
+
+  static void reAdd(List<SavedAnimeEntry> entries) {
+    Dbs.g.anime
+        .writeTxnSync(() => Dbs.g.anime.savedAnimeEntrys.putAllSync(entries));
+  }
+
+  static void addAll(List<AnimeEntry> entries) {
+    if (entries.isEmpty) {
+      return;
+    }
+
     Dbs.g.anime.writeTxnSync(
       () => Dbs.g.anime.savedAnimeEntrys.putAllSync(entries
-          .where((element) => !WatchedAnimeEntry.watched(element.id, site))
+          .where(
+              (element) => !WatchedAnimeEntry.watched(element.id, element.site))
           .map((e) => SavedAnimeEntry(
               id: e.id,
               explicit: e.explicit,
               type: e.type,
               inBacklog: true,
-              site: site,
+              site: e.site,
+              staff: e.staff,
               relations: e.relations,
               thumbUrl: e.thumbUrl,
               title: e.title,

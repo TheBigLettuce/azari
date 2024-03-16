@@ -35,15 +35,44 @@ class PinnedManga extends CompactMangaDataBase {
     return Dbs.g.anime.pinnedMangas.where().limit(limit).findAllSync();
   }
 
-  static void addAll(List<PinnedManga> l) {
+  static void addAll(List<PinnedManga> l, [bool saveId = false]) {
+    if (l.isEmpty) {
+      return;
+    }
+
+    if (saveId) {
+      Dbs.g.anime.writeTxnSync(
+        () => Dbs.g.anime.pinnedMangas.putAllSync(l),
+      );
+
+      return;
+    }
+
     Dbs.g.anime.writeTxnSync(
       () => Dbs.g.anime.pinnedMangas.putAllByMangaIdSiteSync(l),
     );
   }
 
   static void deleteAll(List<int> ids) {
+    if (ids.isEmpty) {
+      return;
+    }
+
     Dbs.g.anime.writeTxnSync(
-      () => Dbs.g.anime.pinnedMangas.deleteAllSync(ids),
+      () => Dbs.g.anime.pinnedMangas.deleteAll(ids),
+    );
+  }
+
+  static void deleteAllIds(List<(MangaId, MangaMeta)> ids) {
+    if (ids.isEmpty) {
+      return;
+    }
+
+    Dbs.g.anime.writeTxnSync(
+      () => Dbs.g.anime.pinnedMangas.deleteAllByMangaIdSiteSync(
+        ids.map((e) => e.$1.toString()).toList(),
+        ids.map((e) => e.$2).toList(),
+      ),
     );
   }
 

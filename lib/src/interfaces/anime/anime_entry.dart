@@ -40,6 +40,7 @@ class AnimeEntry with BooruPostFunctionalityMixin implements Cell {
     required this.episodes,
     required this.background,
     required this.explicit,
+    required this.staff,
   });
 
   @override
@@ -74,6 +75,7 @@ class AnimeEntry with BooruPostFunctionalityMixin implements Cell {
   final List<String> titleSynonyms;
   final List<AnimeGenre> genres;
   final List<Relation> relations;
+  final List<Relation> staff;
 
   final double score;
 

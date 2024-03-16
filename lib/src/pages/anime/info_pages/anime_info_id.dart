@@ -99,7 +99,7 @@ class _AnimeInfoIdPageState extends State<AnimeInfoIdPage>
                                     .isarId!
                               ]);
                             } else {
-                              SavedAnimeEntry.addAll([entry], entry.site);
+                              SavedAnimeEntry.addAll([entry]);
                             }
                           },
                     child: watched

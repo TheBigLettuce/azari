@@ -35,6 +35,7 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_on_cell_press_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
 import 'package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart';
@@ -214,7 +215,7 @@ class _AnimePageState extends State<AnimePage>
               key: watchingKey,
               onDispose: _hideResetSelection,
             ),
-            _DiscoverTab(
+            DiscoverTab(
               api: api,
               procPop: widget.procPop,
               entries: _discoverEntries,

@@ -58,18 +58,21 @@ class _WrapGridPageState<T extends Cell> extends State<WrapGridPage<T>>
         child: Scaffold(
           key: widget.scaffoldKey,
           extendBody: true,
-          bottomNavigationBar: glueState.actions == null
+          bottomNavigationBar: widget.provided != null
               ? null
               : Animate(
-                  effects: const [
-                      MoveEffect(
-                          curve: Easing.emphasizedAccelerate,
-                          end: Offset.zero,
-                          begin: Offset(0, kBottomNavigationBarHeight)),
-                    ],
-                  child: glueState.actions?.$1.isNotEmpty ?? false
-                      ? GlueBottomAppBar(glueState)
-                      : const SizedBox.shrink()),
+                  target: glueState.actions?.$1 == null ? 0 : 1,
+                  effects: [
+                    MoveEffect(
+                      duration: 220.ms,
+                      curve: Easing.emphasizedDecelerate,
+                      end: Offset.zero,
+                      begin: Offset(
+                          0, 100 + MediaQuery.viewPaddingOf(context).bottom),
+                    ),
+                  ],
+                  child: GlueBottomAppBar(glueState),
+                ),
           body: widget.child,
         ),
       ),

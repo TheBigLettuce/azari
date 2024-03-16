@@ -124,6 +124,10 @@ class GridSelection<T extends Cell> {
       return;
     }
 
+    if (glue.isOpen() && _selected.isEmpty) {
+      return;
+    }
+
     if (!isSelected(index)) {
       final cell = CellProvider.getOf<T>(context, index);
 

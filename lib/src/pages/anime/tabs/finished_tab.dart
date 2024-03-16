@@ -140,7 +140,32 @@ class __FinishedTabState extends State<_FinishedTab> {
         mainFocus: state.mainFocus,
         description: GridDescription(
           risingAnimation: true,
-          actions: const [],
+          actions: [
+            GridAction(
+              Icons.delete_rounded,
+              (selected) {
+                WatchedAnimeEntry.deleteAll(
+                    selected.map((e) => e.isarId!).toList());
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Deleted from finished"),
+                    action: SnackBarAction(
+                        label: "Undo",
+                        onPressed: () {
+                          WatchedAnimeEntry.reAdd(selected);
+                        }),
+                  ),
+                );
+              },
+              true,
+            ),
+            const GridAction(
+              Icons.redo_rounded,
+              WatchedAnimeEntry.moveAllReversed,
+              true,
+            ),
+          ],
           keybindsDescription: AppLocalizations.of(context)!.finishedTab,
           showAppBar: false,
           ignoreSwipeSelectGesture: true,
