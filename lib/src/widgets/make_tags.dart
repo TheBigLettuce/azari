@@ -48,6 +48,7 @@ class DrawerTagsWidget extends StatelessWidget {
   final void Function(BuildContext, String, [SafeMode?])? launchGrid;
   final BooruTagging? excluded;
   final DisassembleResult? res;
+  final bool showLabel;
 
   const DrawerTagsWidget(
     this.tags,
@@ -56,6 +57,7 @@ class DrawerTagsWidget extends StatelessWidget {
     required this.pinnedTags,
     this.launchGrid,
     this.excluded,
+    this.showLabel = true,
     required this.res,
   });
 
@@ -148,11 +150,14 @@ class DrawerTagsWidget extends StatelessWidget {
 
     return SliverList.list(
       children: [
-        SettingsLabel(
-            AppLocalizations.of(context)!.tagsInfoPage,
-            Theme.of(context).textTheme.titleSmall!.copyWith(
-                  color: Theme.of(context).listTileTheme.textColor,
-                )),
+        if (showLabel)
+          SettingsLabel(
+              AppLocalizations.of(context)!.tagsInfoPage,
+              Theme.of(context).textTheme.titleSmall!.copyWith(
+                    color: Theme.of(context).listTileTheme.textColor,
+                  ))
+        else
+          const Padding(padding: EdgeInsets.only(top: 8)),
         Padding(
           padding: const EdgeInsets.only(right: 12, left: 16, bottom: 8),
           child: Wrap(

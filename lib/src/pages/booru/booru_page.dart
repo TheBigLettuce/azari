@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
+import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_booru_paging.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state.dart';
@@ -26,7 +27,10 @@ import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru_tagging.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/pages/gallery/directories.dart';
 import 'package:gallery/src/pages/more/tags/single_post.dart';
+import 'package:gallery/src/widgets/azari_icon.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/pages/booru/booru_restored_page.dart';
@@ -43,12 +47,14 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.
 import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/page_description.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart';
+import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/pages/booru/bookmark_button.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:isar/isar.dart';
+import 'package:jikan_api/jikan_api.dart';
 
 import 'booru_grid_actions.dart';
 import '../../net/downloader.dart';
@@ -213,6 +219,8 @@ class _BooruPageState extends State<BooruPage> {
 
   late final state = GridSkeletonState<Post>();
 
+  final menuController = MenuController();
+
   @override
   void initState() {
     super.initState();
@@ -321,7 +329,8 @@ class _BooruPageState extends State<BooruPage> {
                 }
               },
               state: e,
-              generateGlue: widget.generateGlue,
+              generateGlue:
+                  state.settings.buddhaMode ? null : widget.generateGlue,
             );
           },
         ));
@@ -465,7 +474,7 @@ class _BooruPageState extends State<BooruPage> {
       return BooruSearchPage(
         booru: booru,
         tags: tag,
-        generateGlue: widget.generateGlue,
+        generateGlue: state.settings.buddhaMode ? null : widget.generateGlue,
         overrideSafeMode: safeMode,
       );
     }));
@@ -486,9 +495,12 @@ class _BooruPageState extends State<BooruPage> {
               refreshingStatus: pagingState.refreshingStatus,
               layout:
                   const GridSettingsLayoutBehaviour(GridSettingsBooru.current),
-              overrideController: scrollController,
+              overrideController:
+                  state.settings.buddhaMode ? null : scrollController,
               imageViewDescription: ImageViewDescription(
                 imageViewKey: state.imageViewKey,
+                overrideDrawerLabel:
+                    state.settings.buddhaMode ? "Tags" : null, // TODO: change
                 statistics: const ImageViewStatistics(
                   swiped: StatisticsBooru.addSwiped,
                   viewed: StatisticsBooru.addViewed,
@@ -513,6 +525,40 @@ class _BooruPageState extends State<BooruPage> {
               functionality: GridFunctionality(
                 selectionGlue: glue,
                 loadNext: _addLast,
+                backButton: state.settings.buddhaMode
+                    ? OverrideGridBackButton(
+                        MenuAnchor(
+                          style: const MenuStyle(
+                              visualDensity: VisualDensity.compact),
+                          alignmentOffset: const Offset(2, 0),
+                          menuChildren: [
+                            _BuddhaModeMenu(
+                              state: favoriteBooruState,
+                              scrollController: scrollController,
+                              controller: menuController,
+                              pagingRegistry: widget.pagingRegistry,
+                              saveSelectedPage: (s) =>
+                                  pagingState.restoreSecondaryGrid = s,
+                            )
+                          ],
+                          builder: (context, controller, _) {
+                            return IconButton(
+                              icon: const Icon(Icons.account_circle_outlined),
+                              onPressed: () {
+                                if (controller.isOpen) {
+                                  controller.close();
+                                  return;
+                                }
+
+                                controller.open();
+                              },
+                            );
+                          },
+                          consumeOutsideTap: true,
+                          controller: menuController,
+                        ),
+                      )
+                    : const EmptyGridBackButton(inherit: true),
                 watchLayoutSettings: GridSettingsBooru.watch,
                 refresh: AsyncGridRefresh(_clearAndRefresh),
                 download: _download,
@@ -543,6 +589,7 @@ class _BooruPageState extends State<BooruPage> {
               ),
               systemNavigationInsets: widget.viewPadding,
               description: GridDescription(
+                appBarSnap: !state.settings.buddhaMode,
                 risingAnimation: true,
                 actions: [
                   BooruGridActions.download(context, pagingState.api.booru),
@@ -550,47 +597,50 @@ class _BooruPageState extends State<BooruPage> {
                       showDeleteSnackbar: true),
                   BooruGridActions.hide(context, () => setState(() {})),
                 ],
-                pages: PageSwitcher(
-                    [
-                      PageIcon(
-                        Icons.favorite_rounded,
-                        count: FavoriteBooru.count,
-                      ),
-                      PageIcon(
-                        Icons.bookmarks_rounded,
-                        count: Dbs.g.main.gridStateBoorus.countSync(),
-                      ),
-                    ],
-                    (i) => switch (i) {
-                          0 => PageDescription(
-                                search: SearchAndFocus(
-                                  favoriteBooruState.search.searchWidget(
-                                      favoriteBooruState.context,
-                                      count: favoriteBooruState.loader.count()),
-                                  favoriteBooruState.search.searchFocus,
-                                ),
-                                settingsButton:
-                                    favoriteBooruState.gridSettingsButton(),
-                                slivers: [
-                                  GlueProvider<FavoriteBooru>(
-                                    glue: widget.generateGlue(),
-                                    generate: widget.generateGlue,
-                                    child: FavoriteBooruPage(
-                                      conroller: scrollController,
-                                      state: favoriteBooruState,
+                pages: state.settings.buddhaMode
+                    ? null
+                    : PageSwitcher(
+                        [
+                            PageIcon(
+                              Icons.favorite_rounded,
+                              count: FavoriteBooru.count,
+                            ),
+                            PageIcon(
+                              Icons.bookmarks_rounded,
+                              count: Dbs.g.main.gridStateBoorus.countSync(),
+                            ),
+                          ],
+                        (i) => switch (i) {
+                              0 => PageDescription(
+                                    search: SearchAndFocus(
+                                      favoriteBooruState.search.searchWidget(
+                                          favoriteBooruState.context,
+                                          count: favoriteBooruState.loader
+                                              .count()),
+                                      favoriteBooruState.search.searchFocus,
                                     ),
+                                    settingsButton:
+                                        favoriteBooruState.gridSettingsButton(),
+                                    slivers: [
+                                      GlueProvider<FavoriteBooru>(
+                                        glue: widget.generateGlue(),
+                                        generate: widget.generateGlue,
+                                        child: FavoriteBooruPage(
+                                          conroller: scrollController,
+                                          state: favoriteBooruState,
+                                        ),
+                                      ),
+                                    ]),
+                              1 => PageDescription(slivers: [
+                                  BookmarkPage(
+                                    pagingRegistry: widget.pagingRegistry,
+                                    generateGlue: widget.generateGlue,
+                                    saveSelectedPage: (s) =>
+                                        pagingState.restoreSecondaryGrid = s,
                                   ),
                                 ]),
-                          1 => PageDescription(slivers: [
-                              BookmarkPage(
-                                pagingRegistry: widget.pagingRegistry,
-                                generateGlue: widget.generateGlue,
-                                saveSelectedPage: (s) =>
-                                    pagingState.restoreSecondaryGrid = s,
-                              ),
-                            ]),
-                          int() => const PageDescription(slivers: []),
-                        }),
+                              int() => const PageDescription(slivers: []),
+                            }),
                 inlineMenuButtonItems: true,
                 settingsButton: GridFrameSettingsButton(
                   selectSafeMode: (safeMode, _) =>
@@ -618,7 +668,7 @@ class _BooruPageState extends State<BooruPage> {
               getCell: (i) => pagingState.mainGrid.posts.getSync(i + 1)!,
               initalScrollPosition: pagingState.offset,
             ),
-            canPop: false,
+            canPop: state.settings.buddhaMode,
             overrideOnPop: (pop, hideAppBar) {
               final gridState = state.gridKey.currentState;
               if (gridState != null && gridState.currentPage == 1) {
@@ -645,6 +695,155 @@ class _BooruPageState extends State<BooruPage> {
           ),
         );
       },
+    );
+  }
+}
+
+class _BuddhaModeMenu extends StatelessWidget {
+  final MenuController controller;
+  final ScrollController scrollController;
+
+  final FavoriteBooruPageState state;
+  final void Function(String? e) saveSelectedPage;
+  final PagingStateRegistry pagingRegistry;
+
+  const _BuddhaModeMenu({
+    super.key,
+    required this.controller,
+    required this.pagingRegistry,
+    required this.saveSelectedPage,
+    required this.state,
+    required this.scrollController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Theme(
+      data: theme.copyWith(
+        iconTheme: theme.iconTheme.copyWith(size: 20),
+        listTileTheme: theme.listTileTheme.copyWith(
+          titleTextStyle: theme.textTheme.titleSmall,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+          visualDensity: VisualDensity.compact,
+        ),
+        dividerTheme: const DividerThemeData(thickness: 1, space: 0),
+      ),
+      child: SizedBox(
+        width: 140,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(
+                bottom: 8,
+                top: 16,
+              ),
+              child: AzariIcon(
+                color: theme.colorScheme.onSurface.withOpacity(0.8),
+              ),
+            ),
+            Text(
+              "Azari",
+              style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withOpacity(0.8)),
+            ),
+            const Padding(padding: EdgeInsets.only(bottom: 16)),
+            ListTile(
+              leading: Icon(Icons.collections),
+              title: Text("Gallery"),
+              onTap: () {
+                controller.close();
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (context) {
+                    final viewInsets = MediaQuery.viewPaddingOf(context);
+
+                    return WrapGridPage<SystemGalleryDirectory>(
+                      scaffoldKey: GlobalKey(),
+                      child: GalleryDirectories(
+                        procPop: (pop) {},
+                        viewPadding: viewInsets,
+                      ),
+                    );
+                  },
+                ));
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.favorite_outline_rounded),
+              title: Text("Favorites"),
+              onTap: () {
+                controller.close();
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (context) {
+                    final viewInsets = MediaQuery.viewPaddingOf(context);
+
+                    return WrapGridPage<FavoriteBooru>(
+                      scaffoldKey: GlobalKey(),
+                      child: FavoriteBooruPage(
+                        state: state,
+                        conroller: scrollController,
+                        asSliver: false,
+                        viewInsets: viewInsets,
+                      ),
+                    );
+                  },
+                ));
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.bookmark_outline),
+              title: Text("Bookmarks"),
+              onTap: () {
+                controller.close();
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (context) {
+                    return Scaffold(
+                      body: Builder(
+                        builder: (context) {
+                          return CustomScrollView(
+                            slivers: [
+                              SliverAppBar.large(
+                                title: Text("Bookmarks"),
+                              ),
+                              BookmarkPage(
+                                saveSelectedPage: saveSelectedPage,
+                                generateGlue: null,
+                                pagingRegistry: pagingRegistry,
+                              ),
+                              SliverPadding(
+                                padding: EdgeInsets.only(
+                                  bottom: 8 +
+                                      MediaQuery.viewPaddingOf(context).bottom,
+                                ),
+                              )
+                            ],
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ));
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.settings_outlined),
+              title: Text("Settings"),
+              onTap: () {
+                controller.close();
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (context) {
+                    return const SettingsWidget();
+                  },
+                ));
+              },
+            )
+          ],
+        ),
+      ),
     );
   }
 }

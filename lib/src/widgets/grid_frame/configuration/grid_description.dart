@@ -28,6 +28,7 @@ class GridDescription<T extends Cell> {
     this.footer,
     this.pages,
     this.pageName,
+    this.appBarSnap = true,
   });
 
   /// Displayed in the keybinds info page name.
@@ -60,6 +61,8 @@ class GridDescription<T extends Cell> {
   final bool asSliver;
 
   final bool tightMode;
+
+  final bool appBarSnap;
 
   final int gridSeed;
 

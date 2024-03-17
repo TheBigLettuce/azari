@@ -192,9 +192,8 @@ class _MangaPageState extends State<MangaPage> {
                 pullToRefresh: false,
               ),
               fab: OverrideGridFab(
-                (scrollController, key) {
+                (scrollController) {
                   return ReadingFab(
-                    key: key,
                     viewPadding: widget.viewPadding,
                     api: api,
                     controller: scrollController,

@@ -12,11 +12,13 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 class ImageViewEndDrawer extends StatelessWidget {
   final ScrollController scrollController;
   final Widget sliver;
+  final String? overrideDrawerLabel;
 
   const ImageViewEndDrawer({
     super.key,
     required this.scrollController,
     required this.sliver,
+    required this.overrideDrawerLabel,
   });
 
   @override
@@ -27,7 +29,8 @@ class ImageViewEndDrawer extends StatelessWidget {
       child: CustomScrollView(
         controller: scrollController,
         slivers: [
-          EndDrawerHeading(AppLocalizations.of(context)!.infoHeadline),
+          EndDrawerHeading(overrideDrawerLabel ??
+              AppLocalizations.of(context)!.infoHeadline),
           SliverPadding(
             padding: EdgeInsets.only(
                 bottom:

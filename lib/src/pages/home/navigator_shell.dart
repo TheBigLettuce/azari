@@ -10,6 +10,7 @@ part of '../home.dart';
 class _NavigatorShell extends StatefulWidget {
   final GlobalKey<NavigatorState> navigatorKey;
   final void Function(bool) pop;
+  final bool canPop;
   final Widget child;
 
   const _NavigatorShell({
@@ -17,6 +18,7 @@ class _NavigatorShell extends StatefulWidget {
     required this.navigatorKey,
     required this.pop,
     required this.child,
+    this.canPop = false,
   });
 
   @override
@@ -27,7 +29,7 @@ class __NavigatorShellState extends State<_NavigatorShell> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: widget.canPop,
       onPopInvoked: widget.pop,
       child: Navigator(
         onGenerateInitialRoutes: (navigator, initialRoute) {

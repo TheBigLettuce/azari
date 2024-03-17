@@ -86,6 +86,7 @@ class DefaultGridOnCellPressBehaviour implements GridOnCellPressedBehaviour {
         statistics: imageDesctipion.statistics,
         registerNotifiers: functionality.registerNotifiers,
         systemOverlayRestoreColor: overlayColor,
+        overrideDrawerLabel: imageDesctipion.overrideDrawerLabel,
         updateTagScrollPos: (pos, selectedCell) =>
             functionality.updateScrollPosition?.call(offsetGrid),
         scrollUntill: state.tryScrollUntil,

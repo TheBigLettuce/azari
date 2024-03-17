@@ -112,6 +112,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
   late final StreamSubscription<void> _mutationEvents;
 
   late ScrollController controller;
+  // bool swappedController = false;
 
   late GridSettingsBase _layoutSettings = widget.layout.defaultSettings();
 
@@ -173,6 +174,8 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
           registerOffsetSaver(controller);
         });
 
+        setState(() {});
+
         if (functionality.loadNext == null) {
           return;
         }
@@ -196,8 +199,6 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
             refreshingStatus.onNearEnd(widget.functionality);
           }
         });
-
-        setState(() {});
       });
     }
   }
@@ -288,9 +289,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
           selectGridColumn: button.selectGridColumn,
           safeMode: button.safeMode,
           selectSafeMode: button.selectSafeMode,
-          onChanged: () {
-            enableAnimationsFor();
-          },
+          onChanged: enableAnimationsFor,
         )
     ];
 
@@ -341,9 +340,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
                   selectGridColumn: pageSettingsButton.selectGridColumn,
                   safeMode: pageSettingsButton.safeMode,
                   selectSafeMode: pageSettingsButton.selectSafeMode,
-                  onChanged: () {
-                    enableAnimationsFor();
-                  },
+                  onChanged: enableAnimationsFor,
                 ),
             ]
           : _makeActions(context, description);
@@ -388,6 +385,10 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
         title: GridAppBarTitle(state: this, page: page),
         actions: appBarActions,
         bottomWidget: bottomWidget,
+        searchWidget: widget.functionality.search,
+        pageName: widget.description.pageName ??
+            widget.description.keybindsDescription,
+        snap: widget.description.appBarSnap,
       );
     }
 
@@ -549,14 +550,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
             child: Padding(
               padding: EdgeInsets.only(
                   right: 4, bottom: _calculateBottomPadding() + 4),
-              child: PrimaryScrollController(
-                controller: controller,
-                child: Builder(
-                  builder: (context) {
-                    return fab.widget(context, ValueKey(currentPage));
-                  },
-                ),
-              ),
+              child: fab.widget(context, controller),
             ),
           ),
         ],

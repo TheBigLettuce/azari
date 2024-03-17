@@ -258,6 +258,8 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
 
   @override
   Widget build(BuildContext context) {
+    final viewPadding = MediaQuery.viewPaddingOf(context);
+
     return WrapGridPage<Post>(
       provided: widget.generateGlue,
       scaffoldKey: state.scaffoldKey,
@@ -282,6 +284,8 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                     BooruGridActions.download(context, api.booru)
                   ],
                   imageViewKey: state.imageViewKey,
+                  overrideDrawerLabel:
+                      state.settings.buddhaMode ? "Tags" : null, // TODO: change
                   statistics: const ImageViewStatistics(
                     swiped: StatisticsBooru.addSwiped,
                     viewed: StatisticsBooru.addViewed,
@@ -321,8 +325,9 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                     child: BooruAPINotifier(api: api, child: child),
                   ),
                 ),
-                systemNavigationInsets: MediaQuery.of(context).viewPadding,
+                systemNavigationInsets: viewPadding,
                 description: GridDescription(
+                  appBarSnap: !state.settings.buddhaMode,
                   actions: [
                     BooruGridActions.download(context, api.booru),
                     BooruGridActions.favorites(context, null,

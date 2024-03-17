@@ -80,7 +80,8 @@ class SearchFilterGrid<T extends Cell> {
 
     // _state.filter.setSortingMode(sorting);
 
-    _state.filter.filter("", _currentFilterMode);
+    final res = _state.filter.filter("", _currentFilterMode);
+    _state.refreshingStatus.mutation.cellCount = res.count;
 
     // mutation.setSource(res.count, (i) {
     //   final cell = res.cell(i);

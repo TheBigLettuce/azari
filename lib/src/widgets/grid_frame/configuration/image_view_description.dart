@@ -19,6 +19,7 @@ class ImageViewDescription<T extends Cell> {
     this.onExitImageView,
     this.statistics,
     this.ignoreImageViewEndDrawer = false,
+    this.overrideDrawerLabel,
   });
 
   final void Function()? onExitImageView;
@@ -36,4 +37,6 @@ class ImageViewDescription<T extends Cell> {
 
   /// Supplied to [ImageView.pageChange].
   final void Function(ImageViewState<T> state)? pageChangeImage;
+
+  final String? overrideDrawerLabel;
 }

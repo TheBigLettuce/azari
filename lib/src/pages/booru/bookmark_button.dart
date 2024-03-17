@@ -31,7 +31,7 @@ import '../../widgets/time_label.dart';
 class BookmarkPage extends StatefulWidget {
   final void Function(String? e) saveSelectedPage;
   final PagingStateRegistry pagingRegistry;
-  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
+  final SelectionGlue<J> Function<J extends Cell>()? generateGlue;
 
   const BookmarkPage({
     super.key,

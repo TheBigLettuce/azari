@@ -79,6 +79,8 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final void Function()? onRightSwitchPageEnd;
   final void Function()? onLeftSwitchPageEnd;
 
+  final String? overrideDrawerLabel;
+
   const ImageView({
     super.key,
     required this.updateTagScrollPos,
@@ -95,6 +97,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
     required this.focusMain,
     required this.systemOverlayRestoreColor,
     this.pageChange,
+    this.overrideDrawerLabel,
     this.onEmptyNotes,
     this.infoScrollOffset,
     this.download,
@@ -351,6 +354,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                       return addInfo == null
                           ? const Drawer(child: EmptyWidget(gridSeed: 0))
                           : ImageViewEndDrawer(
+                              overrideDrawerLabel: widget.overrideDrawerLabel,
                               scrollController: scrollController,
                               sliver: addInfo,
                             );

@@ -34,6 +34,7 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.
 import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart';
+import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -51,6 +52,7 @@ class GalleryDirectories extends StatefulWidget {
   final bool showBackButton;
   final void Function(bool) procPop;
   final EdgeInsets? viewPadding;
+  final bool wrapGridPage;
 
   const GalleryDirectories({
     super.key,
@@ -58,6 +60,7 @@ class GalleryDirectories extends StatefulWidget {
     this.nestedCallback,
     this.viewPadding,
     required this.procPop,
+    this.wrapGridPage = false,
     this.showBackButton = false,
   }) : assert(!(callback != null && nestedCallback != null));
 
@@ -288,232 +291,250 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   @override
   Widget build(BuildContext context) {
-    final glue = GlueProvider.of<SystemGalleryDirectory>(context)
-        .chain(close: _closeIfNotInner);
+    final viewPadding = MediaQuery.viewPaddingOf(context);
 
-    return GridSkeleton<SystemGalleryDirectory>(
-        state,
-        (context) => GridFrame(
-              key: state.gridKey,
-              layout: SegmentLayout(
-                _makeSegments(context),
-                GridSettingsDirectories.current,
-                suggestionPrefix: widget.callback?.suggestFor ?? const [],
-              ),
-              refreshingStatus: state.refreshingStatus,
-              getCell: (i) => api.directCell(i),
-              functionality: GridFunctionality(
-                  onPressed: OverrideGridOnCellPressBehaviour(
-                      onPressed: (context, idx, providedCell) {
-                    final cell = providedCell as SystemGalleryDirectory? ??
-                        CellProvider.getOf<SystemGalleryDirectory>(
-                            context, idx);
+    Widget child(context) {
+      final glue = GlueProvider.of<SystemGalleryDirectory>(context)
+          .chain(close: _closeIfNotInner);
 
-                    if (widget.callback != null) {
-                      state.refreshingStatus.mutation.cellCount = 0;
+      return GridSkeleton<SystemGalleryDirectory>(
+          state,
+          (context) => GridFrame(
+                key: state.gridKey,
+                layout: SegmentLayout(
+                  _makeSegments(context),
+                  GridSettingsDirectories.current,
+                  suggestionPrefix: widget.callback?.suggestFor ?? const [],
+                ),
+                refreshingStatus: state.refreshingStatus,
+                getCell: (i) => api.directCell(i),
+                functionality: GridFunctionality(
+                    onPressed: OverrideGridOnCellPressBehaviour(
+                        onPressed: (context, idx, providedCell) {
+                      final cell = providedCell as SystemGalleryDirectory? ??
+                          CellProvider.getOf<SystemGalleryDirectory>(
+                              context, idx);
 
-                      Navigator.pop(context);
-                      widget.callback!.c(cell, null);
-                    } else {
-                      StatisticsGallery.addViewedDirectories();
-                      final d = cell;
+                      if (widget.callback != null) {
+                        state.refreshingStatus.mutation.cellCount = 0;
 
-                      SelectionGlue<J> generate<J extends Cell>() =>
-                          GlueProvider.generateOf<SystemGalleryDirectory, J>(
-                              context);
+                        Navigator.pop(context);
+                        widget.callback!.c(cell, null);
+                      } else {
+                        StatisticsGallery.addViewedDirectories();
+                        final d = cell;
 
-                      final apiFiles = switch (cell.bucketId) {
-                        "trash" => extra.trash(),
-                        "favorites" => extra.favorites(),
-                        String() => api.files(d),
-                      };
+                        SelectionGlue<J> generate<J extends Cell>() =>
+                            GlueProvider.generateOf<SystemGalleryDirectory, J>(
+                                context);
 
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => switch (cell.bucketId) {
-                              "favorites" => GalleryFiles(
-                                  viewPadding: widget.viewPadding,
-                                  generateGlue: generate,
-                                  api: apiFiles,
-                                  callback: widget.nestedCallback,
-                                  dirName: AppLocalizations.of(context)!
-                                      .galleryDirectoriesFavorites,
-                                  bucketId: "favorites",
-                                ),
-                              "trash" => GalleryFiles(
-                                  viewPadding: widget.viewPadding,
-                                  api: apiFiles,
-                                  generateGlue: generate,
-                                  callback: widget.nestedCallback,
-                                  dirName: AppLocalizations.of(context)!
-                                      .galleryDirectoryTrash,
-                                  bucketId: "trash",
-                                ),
-                              String() => GalleryFiles(
-                                  viewPadding: widget.viewPadding,
-                                  generateGlue: generate,
-                                  api: apiFiles,
-                                  dirName: d.name,
-                                  callback: widget.nestedCallback,
-                                  bucketId: d.bucketId,
-                                )
-                            },
-                          ));
-                    }
-                  }),
-                  selectionGlue: glue,
-                  watchLayoutSettings: GridSettingsDirectories.watch,
-                  refresh: widget.callback != null
-                      ? SynchronousGridRefresh(() {
-                          PlatformFunctions.trashThumbId().then((value) {
-                            try {
-                              setState(() {
-                                trashThumbId = value;
-                              });
-                            } catch (_) {}
-                          });
+                        final apiFiles = switch (cell.bucketId) {
+                          "trash" => extra.trash(),
+                          "favorites" => extra.favorites(),
+                          String() => api.files(d),
+                        };
 
-                          return extra.db.systemGalleryDirectorys.countSync();
-                        })
-                      : RetainedGridRefresh(_refresh),
-                  search: OverrideGridSearchWidget(
-                    SearchAndFocus(
-                        search.searchWidget(context,
-                            count: widget.callback != null
-                                ? extra.db.systemGalleryDirectorys.countSync()
-                                : null,
-                            hint:
-                                AppLocalizations.of(context)!.directoriesHint),
-                        search.searchFocus),
-                  )),
-              imageViewDescription: ImageViewDescription(
-                imageViewKey: state.imageViewKey,
-              ),
-              systemNavigationInsets:
-                  widget.viewPadding ?? MediaQuery.viewPaddingOf(context),
-              mainFocus: state.mainFocus,
-              description: GridDescription(
-                risingAnimation:
-                    widget.nestedCallback == null && widget.callback == null,
-                actions:
-                    widget.callback != null || widget.nestedCallback != null
-                        ? [
-                            if (widget.callback == null ||
-                                widget.callback!.joinable)
-                              SystemGalleryDirectoriesActions.joinedDirectories(
-                                  context,
-                                  extra,
-                                  widget.viewPadding ?? EdgeInsets.zero,
-                                  widget.nestedCallback)
-                          ]
-                        : [
-                            FavoritesActions.addToGroup(context, (selected) {
-                              final t = selected.first.tag;
-                              for (final e in selected.skip(1)) {
-                                if (t != e.tag) {
-                                  return null;
-                                }
-                              }
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => switch (cell.bucketId) {
+                                "favorites" => GalleryFiles(
+                                    viewPadding: widget.viewPadding,
+                                    generateGlue: state.settings.buddhaMode
+                                        ? null
+                                        : generate,
+                                    api: apiFiles,
+                                    callback: widget.nestedCallback,
+                                    dirName: AppLocalizations.of(context)!
+                                        .galleryDirectoriesFavorites,
+                                    bucketId: "favorites",
+                                  ),
+                                "trash" => GalleryFiles(
+                                    viewPadding: widget.viewPadding,
+                                    api: apiFiles,
+                                    generateGlue: state.settings.buddhaMode
+                                        ? null
+                                        : generate,
+                                    callback: widget.nestedCallback,
+                                    dirName: AppLocalizations.of(context)!
+                                        .galleryDirectoryTrash,
+                                    bucketId: "trash",
+                                  ),
+                                String() => GalleryFiles(
+                                    viewPadding: widget.viewPadding,
+                                    generateGlue: state.settings.buddhaMode
+                                        ? null
+                                        : generate,
+                                    api: apiFiles,
+                                    dirName: d.name,
+                                    callback: widget.nestedCallback,
+                                    bucketId: d.bucketId,
+                                  )
+                              },
+                            ));
+                      }
+                    }),
+                    selectionGlue: glue,
+                    watchLayoutSettings: GridSettingsDirectories.watch,
+                    refresh: widget.callback != null
+                        ? SynchronousGridRefresh(() {
+                            PlatformFunctions.trashThumbId().then((value) {
+                              try {
+                                setState(() {
+                                  trashThumbId = value;
+                                });
+                              } catch (_) {}
+                            });
 
-                              return t;
-                            }, (selected, value, toPin) {
-                              if (value.isEmpty) {
-                                PostTags.g.removeDirectoriesTag(
-                                    selected.map((e) => e.bucketId));
-                              } else {
-                                PostTags.g.setDirectoriesTag(
-                                    selected.map((e) => e.bucketId), value);
-
-                                if (toPin) {
-                                  PinnedDirectories.add(value, true);
-                                }
-                              }
-
-                              _refresh();
-
-                              Navigator.of(context, rootNavigator: true).pop();
-                            }, true),
-                            SystemGalleryDirectoriesActions.blacklist(
-                                context, extra),
+                            return extra.db.systemGalleryDirectorys.countSync();
+                          })
+                        : RetainedGridRefresh(_refresh),
+                    search: OverrideGridSearchWidget(
+                      SearchAndFocus(
+                          search.searchWidget(context,
+                              count: widget.callback != null
+                                  ? extra.db.systemGalleryDirectorys.countSync()
+                                  : null,
+                              hint: AppLocalizations.of(context)!
+                                  .directoriesHint),
+                          search.searchFocus),
+                    )),
+                imageViewDescription: ImageViewDescription(
+                  imageViewKey: state.imageViewKey,
+                ),
+                systemNavigationInsets: widget.viewPadding ?? viewPadding,
+                mainFocus: state.mainFocus,
+                description: GridDescription(
+                  appBarSnap: !state.settings.buddhaMode,
+                  risingAnimation: !state.settings.buddhaMode &&
+                      widget.nestedCallback == null &&
+                      widget.callback == null,
+                  actions: widget.callback != null ||
+                          widget.nestedCallback != null
+                      ? [
+                          if (widget.callback == null ||
+                              widget.callback!.joinable)
                             SystemGalleryDirectoriesActions.joinedDirectories(
                                 context,
                                 extra,
                                 widget.viewPadding ?? EdgeInsets.zero,
                                 widget.nestedCallback)
-                          ],
-                footer: widget.callback?.preview,
-                menuButtonItems: [
-                  if (widget.callback != null)
-                    IconButton(
-                        onPressed: () async {
-                          try {
-                            widget.callback!(
-                              null,
-                              await PlatformFunctions.chooseDirectory(
-                                      temporary: true)
-                                  .then((value) => value!.path),
-                            );
-                            // ignore: use_build_context_synchronously
-                            Navigator.pop(context);
-                          } catch (e, trace) {
-                            _log.logDefaultImportant(
-                                "new folder in android_directories"
-                                    .errorMessage(e),
-                                trace);
+                        ]
+                      : [
+                          FavoritesActions.addToGroup(context, (selected) {
+                            final t = selected.first.tag;
+                            for (final e in selected.skip(1)) {
+                              if (t != e.tag) {
+                                return null;
+                              }
+                            }
 
-                            // ignore: use_build_context_synchronously
-                            Navigator.pop(context);
-                          }
-                        },
-                        icon: const Icon(Icons.create_new_folder_outlined)),
-                ],
-                bottomWidget:
-                    widget.callback != null || widget.nestedCallback != null
-                        ? CopyMovePreview.hintWidget(
-                            context,
-                            widget.callback != null
-                                ? widget.callback!.description
-                                : widget.nestedCallback!.description)
-                        : null,
-                settingsButton: GridFrameSettingsButton(
-                  selectRatio: (ratio, settings) =>
-                      (settings as GridSettingsDirectories)
-                          .copy(aspectRatio: ratio)
-                          .save(),
-                  selectHideName: (hideNames, settings) =>
-                      (settings as GridSettingsDirectories)
-                          .copy(hideName: hideNames)
-                          .save(),
-                  selectGridLayout: null,
-                  selectGridColumn: (columns, settings) =>
-                      (settings as GridSettingsDirectories)
-                          .copy(columns: columns)
-                          .save(),
+                            return t;
+                          }, (selected, value, toPin) {
+                            if (value.isEmpty) {
+                              PostTags.g.removeDirectoriesTag(
+                                  selected.map((e) => e.bucketId));
+                            } else {
+                              PostTags.g.setDirectoriesTag(
+                                  selected.map((e) => e.bucketId), value);
+
+                              if (toPin) {
+                                PinnedDirectories.add(value, true);
+                              }
+                            }
+
+                            _refresh();
+
+                            Navigator.of(context, rootNavigator: true).pop();
+                          }, true),
+                          SystemGalleryDirectoriesActions.blacklist(
+                              context, extra),
+                          SystemGalleryDirectoriesActions.joinedDirectories(
+                              context,
+                              extra,
+                              widget.viewPadding ?? EdgeInsets.zero,
+                              widget.nestedCallback)
+                        ],
+                  footer: widget.callback?.preview,
+                  menuButtonItems: [
+                    if (widget.callback != null)
+                      IconButton(
+                          onPressed: () async {
+                            try {
+                              widget.callback!(
+                                null,
+                                await PlatformFunctions.chooseDirectory(
+                                        temporary: true)
+                                    .then((value) => value!.path),
+                              );
+                              // ignore: use_build_context_synchronously
+                              Navigator.pop(context);
+                            } catch (e, trace) {
+                              _log.logDefaultImportant(
+                                  "new folder in android_directories"
+                                      .errorMessage(e),
+                                  trace);
+
+                              // ignore: use_build_context_synchronously
+                              Navigator.pop(context);
+                            }
+                          },
+                          icon: const Icon(Icons.create_new_folder_outlined)),
+                  ],
+                  bottomWidget:
+                      widget.callback != null || widget.nestedCallback != null
+                          ? CopyMovePreview.hintWidget(
+                              context,
+                              widget.callback != null
+                                  ? widget.callback!.description
+                                  : widget.nestedCallback!.description)
+                          : null,
+                  settingsButton: GridFrameSettingsButton(
+                    selectRatio: (ratio, settings) =>
+                        (settings as GridSettingsDirectories)
+                            .copy(aspectRatio: ratio)
+                            .save(),
+                    selectHideName: (hideNames, settings) =>
+                        (settings as GridSettingsDirectories)
+                            .copy(hideName: hideNames)
+                            .save(),
+                    selectGridLayout: null,
+                    selectGridColumn: (columns, settings) =>
+                        (settings as GridSettingsDirectories)
+                            .copy(columns: columns)
+                            .save(),
+                  ),
+                  inlineMenuButtonItems: true,
+                  keybindsDescription:
+                      AppLocalizations.of(context)!.androidGKeybindsDescription,
+                  gridSeed: state.gridSeed,
                 ),
-                inlineMenuButtonItems: true,
-                keybindsDescription:
-                    AppLocalizations.of(context)!.androidGKeybindsDescription,
-                gridSeed: state.gridSeed,
               ),
-            ),
-        canPop: widget.callback != null || widget.nestedCallback != null
-            ? search.currentFilteringMode() == FilteringMode.noFilter &&
-                search.searchTextController.text.isEmpty
-            : false, overrideOnPop: (pop, hideAppBar) {
-      final filterMode = search.currentFilteringMode();
-      if (filterMode != FilteringMode.noFilter ||
-          search.searchTextController.text.isNotEmpty) {
-        search.resetSearch();
-        return;
-      }
+          canPop: widget.callback != null ||
+                  widget.nestedCallback != null ||
+                  state.settings.buddhaMode
+              ? search.currentFilteringMode() == FilteringMode.noFilter &&
+                  search.searchTextController.text.isEmpty
+              : false, overrideOnPop: (pop, hideAppBar) {
+        final filterMode = search.currentFilteringMode();
+        if (filterMode != FilteringMode.noFilter ||
+            search.searchTextController.text.isNotEmpty) {
+          search.resetSearch();
+          return;
+        }
 
-      if (hideAppBar()) {
-        setState(() {});
-        return;
-      }
+        if (hideAppBar()) {
+          setState(() {});
+          return;
+        }
 
-      widget.procPop(pop);
-    });
+        widget.procPop(pop);
+      });
+    }
+
+    return widget.wrapGridPage
+        ? WrapGridPage<SystemGalleryDirectory>(
+            scaffoldKey: state.scaffoldKey, child: Builder(builder: child))
+        : child(context);
   }
 }

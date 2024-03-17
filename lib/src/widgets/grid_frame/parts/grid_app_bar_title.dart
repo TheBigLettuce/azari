@@ -41,6 +41,10 @@ class GridAppBarTitle extends StatelessWidget {
     return switch (s) {
       EmptyGridSearchWidget() => const SizedBox.shrink(),
       OverrideGridSearchWidget() => s.widget.search,
+      PageNameSearchWidget() => Text(
+          state.widget.description.pageName ??
+              state.widget.description.keybindsDescription,
+        ),
     };
   }
 }

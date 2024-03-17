@@ -64,6 +64,7 @@ class _HomeState extends State<Home>
         _AnimatedIconsMixin,
         _BeforeYouContinueDialogMixin {
   final state = SkeletonState();
+  final settings = Settings.fromDb();
 
   bool isRefreshing = false;
 
@@ -72,8 +73,6 @@ class _HomeState extends State<Home>
   @override
   void initState() {
     super.initState();
-
-    final settings = Settings.fromDb();
 
     initChangePage(this, settings);
     initIcons(this);
@@ -116,46 +115,63 @@ class _HomeState extends State<Home>
         (context) => _currentPage(context, this, edgeInsets),
         navBar: widget.callback != null
             ? null
-            : Animate(
-                controller: controllerNavBar,
-                target: glueState.actions != null ? 1 : 0,
-                effects: [
-                  MoveEffect(
-                    curve: Easing.emphasizedAccelerate,
-                    begin: Offset.zero,
-                    end: Offset(0, 100 + edgeInsets.bottom),
-                  ),
-                  SwapEffect(
-                    builder: (context, _) {
-                      return glueState.actions != null
-                          ? Animate(
-                              effects: [
-                                MoveEffect(
-                                  duration: 100.ms,
-                                  curve: Easing.emphasizedDecelerate,
-                                  begin: Offset(0, 100 + edgeInsets.bottom),
-                                  end: Offset.zero,
-                                ),
-                              ],
-                              child: GlueBottomAppBar(glueState),
-                            )
-                          : Padding(
-                              padding:
-                                  EdgeInsets.only(bottom: edgeInsets.bottom));
-                    },
+            : settings.buddhaMode
+                ? Animate(
+                    target: glueState.actions?.$1 == null ? 0 : 1,
+                    effects: [
+                      MoveEffect(
+                        duration: 220.ms,
+                        curve: Easing.emphasizedDecelerate,
+                        end: Offset.zero,
+                        begin: Offset(
+                            0, 100 + MediaQuery.viewPaddingOf(context).bottom),
+                      ),
+                    ],
+                    child: GlueBottomAppBar(glueState),
                   )
-                ],
-                child: NavigationBar(
-                  labelBehavior:
-                      NavigationDestinationLabelBehavior.onlyShowSelected,
-                  backgroundColor:
-                      Theme.of(context).colorScheme.surface.withOpacity(0.95),
-                  selectedIndex: currentRoute,
-                  onDestinationSelected: (route) => _switchPage(this, route),
-                  destinations: widget.callback != null
-                      ? iconsGalleryNotes(context)
-                      : icons(context, currentRoute),
-                )),
+                : Animate(
+                    controller: controllerNavBar,
+                    target: glueState.actions != null ? 1 : 0,
+                    effects: [
+                      MoveEffect(
+                        curve: Easing.emphasizedAccelerate,
+                        begin: Offset.zero,
+                        end: Offset(0, 100 + edgeInsets.bottom),
+                      ),
+                      SwapEffect(
+                        builder: (context, _) {
+                          return glueState.actions != null
+                              ? Animate(
+                                  effects: [
+                                    MoveEffect(
+                                      duration: 100.ms,
+                                      curve: Easing.emphasizedDecelerate,
+                                      begin: Offset(0, 100 + edgeInsets.bottom),
+                                      end: Offset.zero,
+                                    ),
+                                  ],
+                                  child: GlueBottomAppBar(glueState),
+                                )
+                              : Padding(
+                                  padding: EdgeInsets.only(
+                                      bottom: edgeInsets.bottom));
+                        },
+                      )
+                    ],
+                    child: NavigationBar(
+                      labelBehavior:
+                          NavigationDestinationLabelBehavior.onlyShowSelected,
+                      backgroundColor: Theme.of(context)
+                          .colorScheme
+                          .surface
+                          .withOpacity(0.95),
+                      selectedIndex: currentRoute,
+                      onDestinationSelected: (route) =>
+                          _switchPage(this, route),
+                      destinations: widget.callback != null
+                          ? iconsGalleryNotes(context)
+                          : icons(context, currentRoute),
+                    )),
         selectedRoute: currentRoute,
       ),
     );

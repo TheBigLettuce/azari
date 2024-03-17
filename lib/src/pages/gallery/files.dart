@@ -65,7 +65,7 @@ class GalleryFiles extends StatefulWidget {
   final String bucketId;
   final GalleryAPIFiles api;
   final CallbackDescriptionNested? callback;
-  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
+  final SelectionGlue<J> Function<J extends Cell>()? generateGlue;
   final EdgeInsets? viewPadding;
 
   const GalleryFiles({
@@ -330,6 +330,7 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
             ),
             mainFocus: state.mainFocus,
             description: GridDescription(
+              appBarSnap: !state.settings.buddhaMode,
               actions: widget.callback != null
                   ? const []
                   : extra.isTrash

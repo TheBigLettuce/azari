@@ -15,18 +15,15 @@ part '../parts/fab.dart';
 sealed class GridFabType {
   const GridFabType();
 
-  Widget widget(BuildContext context, Key key);
+  Widget widget(BuildContext context, ScrollController controller);
 }
 
 class DefaultGridFab implements GridFabType {
   const DefaultGridFab();
 
   @override
-  Widget widget(BuildContext context, Key key) {
-    final controller = PrimaryScrollController.of(context);
-
+  Widget widget(BuildContext context, ScrollController controller) {
     return _Fab(
-      key: key,
       controller: controller,
     );
   }
@@ -35,10 +32,10 @@ class DefaultGridFab implements GridFabType {
 class OverrideGridFab implements GridFabType {
   const OverrideGridFab(this.child);
 
-  final Widget Function(ScrollController, Key) child;
+  final Widget Function(ScrollController) child;
 
   @override
-  Widget widget(BuildContext context, Key key) {
-    return child(PrimaryScrollController.of(context), key);
+  Widget widget(BuildContext context, ScrollController controller) {
+    return child(controller);
   }
 }

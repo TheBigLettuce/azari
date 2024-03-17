@@ -27,6 +27,10 @@ mixin _ChangePageMixin on State<Home> {
 
     glueState = SelectionGlueState(
       hide: (hide) {
+        if (Settings.fromDb().buddhaMode) {
+          return;
+        }
+
         if (hide) {
           icons.controllerNavBar.animateTo(1);
         } else {
@@ -131,6 +135,9 @@ mixin _ChangePageMixin on State<Home> {
       );
     }
 
+    SelectionGlue<T> generateGlueC<T extends Cell>() =>
+        glueState.glue(keyboardVisible, setState, () => 80, false);
+
     if (widget.callback != null) {
       return WrapGridPage<SystemGalleryDirectory>(
         scaffoldKey: GlobalKey(),
@@ -138,6 +145,19 @@ mixin _ChangePageMixin on State<Home> {
           viewPadding: padding,
           nestedCallback: widget.callback,
           procPop: (pop) => _procPop(icons, pop),
+        ),
+      );
+    }
+
+    if (Settings.fromDb().buddhaMode) {
+      return GlueProvider<Post>(
+        generate: generateGlueC,
+        glue: generateGlueC(),
+        child: BooruPage(
+          pagingRegistry: pagingRegistry,
+          generateGlue: generateGlueC,
+          viewPadding: padding,
+          procPop: (pop) {},
         ),
       );
     }

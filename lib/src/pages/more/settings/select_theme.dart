@@ -14,6 +14,10 @@ void themeChangeOver() {
   _themeChange = false;
 }
 
+void themeChangeStart() {
+  _themeChange = true;
+}
+
 void selectTheme(
     BuildContext context, MiscSettings miscSettings, ThemeType value) {
   if (miscSettings.themeType == value) {

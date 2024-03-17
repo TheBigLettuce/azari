@@ -21,6 +21,7 @@ import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/tags/local_tag_dictionary.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart';
@@ -39,11 +40,15 @@ import '../../db/schemas/downloader/download_file.dart';
 class FavoriteBooruPage extends StatelessWidget {
   final FavoriteBooruPageState state;
   final ScrollController conroller;
+  final bool asSliver;
+  final EdgeInsets viewInsets;
 
   const FavoriteBooruPage({
     super.key,
     required this.state,
     required this.conroller,
+    this.asSliver = true,
+    this.viewInsets = EdgeInsets.zero,
   });
 
   @override
@@ -67,24 +72,39 @@ class FavoriteBooruPage extends StatelessWidget {
       overrideController: conroller,
       imageViewDescription: ImageViewDescription(
         addIconsImage: (p) => state.iconsImage(p),
+        overrideDrawerLabel:
+            state.state.settings.buddhaMode ? "Tags" : null, // TODO: change
         imageViewKey: state.state.imageViewKey,
       ),
       functionality: GridFunctionality(
+        search: asSliver
+            ? const EmptyGridSearchWidget()
+            : OverrideGridSearchWidget(
+                SearchAndFocus(
+                    state.search.searchWidget(
+                      context,
+                      count: state.state.refreshingStatus.mutation.cellCount,
+                    ),
+                    state.search.searchFocus),
+              ),
         selectionGlue: glue,
         watchLayoutSettings: GridSettingsFavorites.watch,
         download: state.download,
         refresh: SynchronousGridRefresh(() => state.loader.count()),
       ),
       getCell: state.loader.getCell,
-      systemNavigationInsets: EdgeInsets.zero,
+      systemNavigationInsets: viewInsets,
       mainFocus: state.state.mainFocus,
       description: GridDescription(
+        appBarSnap: !state.state.settings.buddhaMode,
         actions: state.gridActions(),
-        showAppBar: false,
-        asSliver: true,
+        settingsButton: !asSliver ? state.gridSettingsButton() : null,
+        showAppBar: !asSliver,
+        asSliver: asSliver,
         ignoreEmptyWidgetOnNoContent: false,
         ignoreSwipeSelectGesture: false,
         keybindsDescription: AppLocalizations.of(context)!.favoritesLabel,
+        pageName: AppLocalizations.of(context)!.favoritesLabel,
         gridSeed: state.state.gridSeed,
       ),
     );

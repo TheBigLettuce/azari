@@ -15,6 +15,10 @@ class EmptyGridSearchWidget implements GridSearchWidget {
   const EmptyGridSearchWidget();
 }
 
+class PageNameSearchWidget implements GridSearchWidget {
+  const PageNameSearchWidget();
+}
+
 class OverrideGridSearchWidget implements GridSearchWidget {
   const OverrideGridSearchWidget(this.widget);
 

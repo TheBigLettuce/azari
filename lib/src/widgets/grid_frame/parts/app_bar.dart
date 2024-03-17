@@ -12,6 +12,9 @@ class _AppBar<T extends Cell> extends StatelessWidget {
   final Widget? leading;
   final List<Widget> actions;
   final PreferredSizeWidget? bottomWidget;
+  final bool snap;
+  final GridSearchWidget searchWidget;
+  final String pageName;
 
   const _AppBar({
     super.key,
@@ -19,23 +22,30 @@ class _AppBar<T extends Cell> extends StatelessWidget {
     required this.bottomWidget,
     required this.leading,
     required this.title,
+    required this.snap,
+    required this.searchWidget,
+    required this.pageName,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SliverAppBar(
-      backgroundColor:
-          Theme.of(context).colorScheme.background.withOpacity(0.95),
-      automaticallyImplyLeading: true,
-      actions: actions,
-      centerTitle: true,
-      title: title,
-      leading: leading,
-      pinned: true,
-      stretch: true,
-      snap: true,
-      floating: true,
-      bottom: bottomWidget,
-    );
+    return searchWidget is PageNameSearchWidget
+        ? SliverAppBar.large(
+            title: Text(pageName),
+          )
+        : SliverAppBar(
+            backgroundColor:
+                Theme.of(context).colorScheme.background.withOpacity(0.95),
+            automaticallyImplyLeading: true,
+            actions: actions,
+            centerTitle: true,
+            title: title,
+            leading: leading,
+            pinned: true,
+            stretch: true,
+            snap: snap,
+            floating: snap,
+            bottom: bottomWidget,
+          );
   }
 }

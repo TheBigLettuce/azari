@@ -97,15 +97,15 @@ class GestureDeadZones extends StatelessWidget {
               ),
             ),
           ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: AbsorbPointer(
-            child: SizedBox(
-              height: systemInsets.bottom,
-              child: Container(),
-            ),
-          ),
-        )
+        // Align(
+        //   alignment: Alignment.bottomCenter,
+        //   child: AbsorbPointer(
+        //     child: SizedBox(
+        //       height: systemInsets.bottom,
+        //       child: Container(),
+        //     ),
+        //   ),
+        // )
       ],
     );
   }

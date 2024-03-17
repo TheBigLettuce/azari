@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/post_base.dart';
+import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
 import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
@@ -16,6 +17,7 @@ import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/interfaces/filtering/filtering_mode.dart';
 import 'package:gallery/src/pages/booru/booru_page.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
+import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/make_tags.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:gallery/src/widgets/notifiers/filter.dart';
@@ -119,6 +121,8 @@ class PostInfo extends StatefulWidget {
 class _PostInfoState extends State<PostInfo> {
   PostBase get post => widget.post;
 
+  final settings = Settings.fromDb();
+
   late final tagManager = TagManager.fromEnum(post.booru);
 
   void _launchGrid(BuildContext context, String t, [SafeMode? safeMode]) {
@@ -142,8 +146,6 @@ class _PostInfoState extends State<PostInfo> {
 
   @override
   Widget build(BuildContext context) {
-    final filterData = FilterNotifier.maybeOf(context);
-
     final pinnedTags = <String>[];
 
     final tags = <String>[];
@@ -157,6 +159,24 @@ class _PostInfoState extends State<PostInfo> {
     }
 
     final filename = post.filename();
+
+    if (settings.buddhaMode) {
+      return tags.isNotEmpty
+          ? DrawerTagsWidget(
+              tags,
+              filename,
+              showLabel: false,
+              launchGrid: _launchGrid,
+              excluded: tagManager.excluded,
+              pinnedTags: pinnedTags,
+              res: res,
+            )
+          : const SliverToBoxAdapter(
+              child: EmptyWidget(gridSeed: 0),
+            );
+    }
+
+    final filterData = FilterNotifier.maybeOf(context);
 
     return SliverMainAxisGroup(slivers: [
       if (!(filterData?.searchFocus.hasFocus ?? false))
