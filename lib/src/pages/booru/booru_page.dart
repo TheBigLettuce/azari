@@ -750,20 +750,15 @@ class _BuddhaModeMenu extends StatelessWidget {
             ),
             const Padding(padding: EdgeInsets.only(bottom: 16)),
             ListTile(
-              leading: Icon(Icons.collections),
+              leading: const Icon(Icons.collections),
               title: Text("Gallery"),
               onTap: () {
                 controller.close();
                 Navigator.push(context, MaterialPageRoute(
                   builder: (context) {
-                    final viewInsets = MediaQuery.viewPaddingOf(context);
-
-                    return WrapGridPage<SystemGalleryDirectory>(
-                      scaffoldKey: GlobalKey(),
-                      child: GalleryDirectories(
-                        procPop: (pop) {},
-                        viewPadding: viewInsets,
-                      ),
+                    return GalleryDirectories(
+                      procPop: (pop) {},
+                      wrapGridPage: true,
                     );
                   },
                 ));
@@ -777,16 +772,11 @@ class _BuddhaModeMenu extends StatelessWidget {
                 controller.close();
                 Navigator.push(context, MaterialPageRoute(
                   builder: (context) {
-                    final viewInsets = MediaQuery.viewPaddingOf(context);
-
-                    return WrapGridPage<FavoriteBooru>(
-                      scaffoldKey: GlobalKey(),
-                      child: FavoriteBooruPage(
-                        state: state,
-                        conroller: scrollController,
-                        asSliver: false,
-                        viewInsets: viewInsets,
-                      ),
+                    return FavoriteBooruPage(
+                      state: state,
+                      conroller: scrollController,
+                      asSliver: false,
+                      wrapGridPage: true,
                     );
                   },
                 ));

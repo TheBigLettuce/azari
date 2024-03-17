@@ -34,38 +34,41 @@ class SystemGalleryDirectoriesActions {
   }
 
   static GridAction<SystemGalleryDirectory> joinedDirectories(
-      BuildContext context,
-      GalleryDirectoriesExtra extra,
-      EdgeInsets viewPadding,
-      CallbackDescriptionNested? callback) {
+    BuildContext context,
+    GalleryDirectoriesExtra extra,
+    EdgeInsets viewPadding,
+    CallbackDescriptionNested? callback,
+    SelectionGlue<J> Function<J extends Cell>()? generate,
+  ) {
     return GridAction(
       Icons.merge_rounded,
       (selected) {
         joinedDirectoriesFnc(
-            context,
-            selected.length == 1
-                ? selected.first.name
-                : "${selected.length} ${AppLocalizations.of(context)!.directoriesPlural}",
-            selected,
-            extra,
-            viewPadding,
-            callback);
+          context,
+          selected.length == 1
+              ? selected.first.name
+              : "${selected.length} ${AppLocalizations.of(context)!.directoriesPlural}",
+          selected,
+          extra,
+          viewPadding,
+          callback,
+          generate,
+        );
       },
       true,
     );
   }
 
   static void joinedDirectoriesFnc(
-      BuildContext context,
-      String label,
-      List<SystemGalleryDirectory> dirs,
-      GalleryDirectoriesExtra extra,
-      EdgeInsets viewPadding,
-      CallbackDescriptionNested? callback) {
+    BuildContext context,
+    String label,
+    List<SystemGalleryDirectory> dirs,
+    GalleryDirectoriesExtra extra,
+    EdgeInsets viewPadding,
+    CallbackDescriptionNested? callback,
+    SelectionGlue<J> Function<J extends Cell>()? generate,
+  ) {
     StatisticsGallery.addJoined();
-
-    SelectionGlue<J> generate<J extends Cell>() =>
-        GlueProvider.generateOf<SystemGalleryDirectory, J>(context);
 
     final joined = extra.joinedDir(dirs.map((e) => e.bucketId).toList());
 

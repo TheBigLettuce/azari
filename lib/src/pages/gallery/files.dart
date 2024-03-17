@@ -256,6 +256,8 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
 
   @override
   Widget build(BuildContext context) {
+    final insets = widget.viewPadding ?? MediaQuery.viewPaddingOf(context);
+
     return WrapGridPage<SystemGalleryDirectoryFile>(
         provided: widget.generateGlue,
         scaffoldKey: state.scaffoldKey,
@@ -301,7 +303,7 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
                     search.searchFocus,
                   ),
                 )),
-            systemNavigationInsets: widget.viewPadding ?? EdgeInsets.zero,
+            systemNavigationInsets: insets,
             imageViewDescription: ImageViewDescription(
               imageViewKey: state.imageViewKey,
               statistics: const ImageViewStatistics(

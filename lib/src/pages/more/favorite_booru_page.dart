@@ -25,6 +25,7 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.
 import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart';
+import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
@@ -41,18 +42,19 @@ class FavoriteBooruPage extends StatelessWidget {
   final FavoriteBooruPageState state;
   final ScrollController conroller;
   final bool asSliver;
-  final EdgeInsets viewInsets;
+  final EdgeInsets? viewInsets;
+  final bool wrapGridPage;
 
   const FavoriteBooruPage({
     super.key,
     required this.state,
     required this.conroller,
     this.asSliver = true,
-    this.viewInsets = EdgeInsets.zero,
+    this.viewInsets,
+    this.wrapGridPage = false,
   });
 
-  @override
-  Widget build(BuildContext context) {
+  Widget child(BuildContext context, EdgeInsets insets) {
     final glue = GlueProvider.of<FavoriteBooru>(context);
 
     return GridFrame<FavoriteBooru>(
@@ -93,7 +95,7 @@ class FavoriteBooruPage extends StatelessWidget {
         refresh: SynchronousGridRefresh(() => state.loader.count()),
       ),
       getCell: state.loader.getCell,
-      systemNavigationInsets: viewInsets,
+      systemNavigationInsets: insets,
       mainFocus: state.state.mainFocus,
       description: GridDescription(
         appBarSnap: !state.state.settings.buddhaMode,
@@ -108,6 +110,20 @@ class FavoriteBooruPage extends StatelessWidget {
         gridSeed: state.state.gridSeed,
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final insets = viewInsets ?? MediaQuery.viewPaddingOf(context);
+
+    return wrapGridPage
+        ? WrapGridPage<FavoriteBooru>(
+            scaffoldKey: state.state.scaffoldKey,
+            child: Builder(
+              builder: (context) => child(context, insets),
+            ),
+          )
+        : child(context, insets);
   }
 }
 
