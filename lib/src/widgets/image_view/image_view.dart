@@ -8,7 +8,6 @@
 import 'dart:async';
 import 'dart:developer';
 
-import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -383,6 +382,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                           const []),
               mainFocus: mainFocus,
               child: ImageViewBody(
+                isPaletteNull: currentPalette == null,
                 onPressedLeft:
                     widget.switchPageOnTapEdges ? _onPressedLeft : null,
                 onPressedRight:
@@ -404,11 +404,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                 itemCount: cellCount,
                 onTap: _onTap,
                 builder: galleryBuilder,
-                decoration: BoxDecoration(
-                  color: currentPalette?.mutedColor?.color
-                      .harmonizeWith(Theme.of(context).colorScheme.primary)
-                      .withOpacity(0.7),
-                ),
               )),
         ),
       ),

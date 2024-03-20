@@ -7,7 +7,6 @@
 
 import 'dart:developer';
 
-import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart';
@@ -51,38 +50,25 @@ mixin ImageViewLoadingBuilderMixin<T extends Cell> on State<ImageView<T>> {
         return const SizedBox.shrink();
       }
 
+      final theme = Theme.of(context);
+
+      final tween = ColorTween(
+        begin: Theme.of(context).colorScheme.background,
+        end: theme.colorScheme.primary,
+      );
+
+      final valueTransformed = value ?? 0;
+
       return Container(
         decoration: BoxDecoration(
             gradient: LinearGradient(
                 begin: Alignment.bottomCenter,
                 end: Alignment.topCenter,
                 colors: [
-              ColorTween(
-                begin: Theme.of(context).colorScheme.background,
-                end: currentPalette?.mutedColor?.color
-                    .harmonizeWith(Theme.of(context).colorScheme.primary),
-              ).lerp(value ?? 0)!,
-              ColorTween(
-                begin:
-                    Theme.of(context).colorScheme.background.withOpacity(0.7),
-                end: currentPalette?.mutedColor?.color
-                    .harmonizeWith(Theme.of(context).colorScheme.primary)
-                    .withOpacity(0.7),
-              ).lerp(value ?? 0)!,
-              ColorTween(
-                begin:
-                    Theme.of(context).colorScheme.background.withOpacity(0.5),
-                end: currentPalette?.mutedColor?.color
-                    .harmonizeWith(Theme.of(context).colorScheme.primary)
-                    .withOpacity(0.5),
-              ).lerp(value ?? 0)!,
-              ColorTween(
-                begin:
-                    Theme.of(context).colorScheme.background.withOpacity(0.3),
-                end: currentPalette?.mutedColor?.color
-                    .harmonizeWith(Theme.of(context).colorScheme.primary)
-                    .withOpacity(0.3),
-              ).lerp(value ?? 0)!,
+              tween.lerp(valueTransformed)!.withOpacity(0.2),
+              tween.lerp(valueTransformed)!.withOpacity(0.16),
+              tween.lerp(valueTransformed)!.withOpacity(0.12),
+              tween.lerp(valueTransformed)!.withOpacity(0.08),
             ])),
         child: _Image(
             t: t,

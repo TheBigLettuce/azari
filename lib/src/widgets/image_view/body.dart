@@ -18,8 +18,8 @@ class ImageViewBody extends StatelessWidget {
   final Widget? notes;
   final void Function() onLongPress;
   final int itemCount;
-  final BoxDecoration decoration;
   final Widget Function(BuildContext, ImageChunkEvent?, int)? loadingBuilder;
+  final bool isPaletteNull;
 
   final void Function()? onPressedRight;
   final void Function()? onPressedLeft;
@@ -31,12 +31,12 @@ class ImageViewBody extends StatelessWidget {
     required this.builder,
     required this.notes,
     required this.loadingBuilder,
-    required this.decoration,
     required this.itemCount,
     required this.onLongPress,
     required this.onTap,
     required this.onPressedLeft,
     required this.onPressedRight,
+    required this.isPaletteNull,
   });
 
   @override
@@ -53,7 +53,11 @@ class ImageViewBody extends StatelessWidget {
           child: PhotoViewGallery.builder(
             loadingBuilder: loadingBuilder,
             enableRotation: true,
-            backgroundDecoration: decoration,
+            backgroundDecoration: BoxDecoration(
+              color: isPaletteNull
+                  ? Theme.of(context).colorScheme.surface
+                  : Theme.of(context).colorScheme.surfaceTint.withOpacity(0.2),
+            ),
             onPageChanged: onPageChanged,
             pageController: pageController,
             itemCount: itemCount,

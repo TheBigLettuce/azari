@@ -274,13 +274,14 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
           ? null
           : (label, children) =>
               SystemGalleryDirectoriesActions.joinedDirectoriesFnc(
-                  context,
-                  label,
-                  children,
-                  extra,
-                  widget.viewPadding ?? EdgeInsets.zero,
-                  widget.nestedCallback,
-                  state.settings.buddhaMode ? null : generate),
+                context,
+                label,
+                children,
+                extra,
+                widget.nestedCallback,
+                widget.viewPadding ?? EdgeInsets.zero,
+                state.settings.buddhaMode ? null : generate,
+              ),
     );
   }
 
@@ -341,34 +342,37 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                           MaterialPageRoute(
                             builder: (context) => switch (cell.bucketId) {
                               "favorites" => GalleryFiles(
-                                  viewPadding: widget.viewPadding,
                                   generateGlue: state.settings.buddhaMode
                                       ? null
                                       : generate,
                                   api: apiFiles,
                                   callback: widget.nestedCallback,
+                                  addInset:
+                                      widget.viewPadding ?? EdgeInsets.zero,
                                   dirName: AppLocalizations.of(context)!
                                       .galleryDirectoriesFavorites,
                                   bucketId: "favorites",
                                 ),
                               "trash" => GalleryFiles(
-                                  viewPadding: widget.viewPadding,
                                   api: apiFiles,
                                   generateGlue: state.settings.buddhaMode
                                       ? null
                                       : generate,
                                   callback: widget.nestedCallback,
+                                  addInset:
+                                      widget.viewPadding ?? EdgeInsets.zero,
                                   dirName: AppLocalizations.of(context)!
                                       .galleryDirectoryTrash,
                                   bucketId: "trash",
                                 ),
                               String() => GalleryFiles(
-                                  viewPadding: widget.viewPadding,
                                   generateGlue: state.settings.buddhaMode
                                       ? null
                                       : generate,
                                   api: apiFiles,
                                   dirName: d.name,
+                                  addInset:
+                                      widget.viewPadding ?? EdgeInsets.zero,
                                   callback: widget.nestedCallback,
                                   bucketId: d.bucketId,
                                 )
@@ -419,8 +423,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                               SystemGalleryDirectoriesActions.joinedDirectories(
                                 context,
                                 extra,
-                                widget.viewPadding ?? EdgeInsets.zero,
                                 widget.nestedCallback,
+                                widget.viewPadding ?? EdgeInsets.zero,
                                 state.settings.buddhaMode ? null : generate,
                               )
                           ]
@@ -456,8 +460,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                             SystemGalleryDirectoriesActions.joinedDirectories(
                               context,
                               extra,
-                              widget.viewPadding ?? EdgeInsets.zero,
                               widget.nestedCallback,
+                              widget.viewPadding ?? EdgeInsets.zero,
                               state.settings.buddhaMode ? null : generate,
                             )
                           ],

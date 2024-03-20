@@ -29,9 +29,7 @@ class _RefreshEntryIconState extends State<RefreshEntryIcon> {
           : () {
               _refreshingProgress = widget.entry.site.api.info(widget.entry.id)
                 ..then((value) {
-                  if (value != null) {
-                    widget.save(value);
-                  }
+                  widget.save(value);
                 }).whenComplete(() {
                   _refreshingProgress = null;
 

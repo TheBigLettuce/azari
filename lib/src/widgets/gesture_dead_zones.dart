@@ -41,9 +41,7 @@ class GestureDeadZones extends StatelessWidget {
           Align(
             alignment: Alignment.bottomLeft,
             child: Padding(
-              padding: EdgeInsets.only(
-                  top: kToolbarHeight +
-                      MediaQuery.systemGestureInsetsOf(context).top),
+              padding: EdgeInsets.only(top: kToolbarHeight + systemInsets.top),
               child: Stack(
                 alignment: Alignment.centerLeft,
                 children: [
@@ -71,9 +69,7 @@ class GestureDeadZones extends StatelessWidget {
           Align(
             alignment: Alignment.bottomRight,
             child: Padding(
-              padding: EdgeInsets.only(
-                  top: kToolbarHeight +
-                      MediaQuery.systemGestureInsetsOf(context).top),
+              padding: EdgeInsets.only(top: kToolbarHeight + systemInsets.top),
               child: Stack(
                 alignment: Alignment.centerRight,
                 children: [
@@ -97,15 +93,15 @@ class GestureDeadZones extends StatelessWidget {
               ),
             ),
           ),
-        // Align(
-        //   alignment: Alignment.bottomCenter,
-        //   child: AbsorbPointer(
-        //     child: SizedBox(
-        //       height: systemInsets.bottom,
-        //       child: Container(),
-        //     ),
-        //   ),
-        // )
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: AbsorbPointer(
+            child: SizedBox(
+              height: systemInsets.bottom,
+              child: Container(),
+            ),
+          ),
+        )
       ],
     );
   }

@@ -46,7 +46,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 
 import '../../db/schemas/settings/settings.dart';
-import '../../db/schemas/gallery/system_gallery_directory.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
 import '../../plugs/gallery.dart';
 import '../../widgets/copy_move_preview.dart';
@@ -66,7 +65,7 @@ class GalleryFiles extends StatefulWidget {
   final GalleryAPIFiles api;
   final CallbackDescriptionNested? callback;
   final SelectionGlue<J> Function<J extends Cell>()? generateGlue;
-  final EdgeInsets? viewPadding;
+  final EdgeInsets addInset;
 
   const GalleryFiles({
     super.key,
@@ -75,7 +74,7 @@ class GalleryFiles extends StatefulWidget {
     required this.dirName,
     required this.bucketId,
     required this.generateGlue,
-    this.viewPadding,
+    required this.addInset,
   });
 
   @override
@@ -256,7 +255,7 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
 
   @override
   Widget build(BuildContext context) {
-    final insets = widget.viewPadding ?? MediaQuery.viewPaddingOf(context);
+    final insets = MediaQuery.viewPaddingOf(context) + widget.addInset;
 
     return WrapGridPage<SystemGalleryDirectoryFile>(
         provided: widget.generateGlue,

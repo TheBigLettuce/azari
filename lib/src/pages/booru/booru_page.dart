@@ -12,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
-import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_booru_paging.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state.dart';
@@ -47,14 +46,12 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.
 import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/page_description.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart';
-import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/pages/booru/bookmark_button.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:isar/isar.dart';
-import 'package:jikan_api/jikan_api.dart';
 
 import 'booru_grid_actions.dart';
 import '../../net/downloader.dart';

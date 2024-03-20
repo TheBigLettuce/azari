@@ -14,7 +14,6 @@ import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 
 import 'files.dart';
 import '../../db/schemas/gallery/blacklisted_directory.dart';
@@ -36,8 +35,8 @@ class SystemGalleryDirectoriesActions {
   static GridAction<SystemGalleryDirectory> joinedDirectories(
     BuildContext context,
     GalleryDirectoriesExtra extra,
-    EdgeInsets viewPadding,
     CallbackDescriptionNested? callback,
+    EdgeInsets addInset,
     SelectionGlue<J> Function<J extends Cell>()? generate,
   ) {
     return GridAction(
@@ -50,8 +49,8 @@ class SystemGalleryDirectoriesActions {
               : "${selected.length} ${AppLocalizations.of(context)!.directoriesPlural}",
           selected,
           extra,
-          viewPadding,
           callback,
+          addInset,
           generate,
         );
       },
@@ -64,8 +63,8 @@ class SystemGalleryDirectoriesActions {
     String label,
     List<SystemGalleryDirectory> dirs,
     GalleryDirectoriesExtra extra,
-    EdgeInsets viewPadding,
     CallbackDescriptionNested? callback,
+    EdgeInsets addInset,
     SelectionGlue<J> Function<J extends Cell>()? generate,
   ) {
     StatisticsGallery.addJoined();
@@ -75,9 +74,9 @@ class SystemGalleryDirectoriesActions {
     Navigator.push(context, MaterialPageRoute(
       builder: (context) {
         return GalleryFiles(
-            viewPadding: viewPadding,
             generateGlue: generate,
             api: joined,
+            addInset: addInset,
             callback: callback,
             dirName: label,
             bucketId: "joinedDir");

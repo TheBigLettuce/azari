@@ -404,6 +404,8 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
 
     favoritesWatcher = FavoriteBooru.watch((event) {
       search.performSearch(search.searchTextController.text, true);
+
+      state.gridKey.currentState?.selection.reset();
     });
 
     search.prewarmResults();
@@ -432,24 +434,29 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
   }
 
   GridAction<FavoriteBooru> _groupButton(BuildContext context) {
-    return FavoritesActions.addToGroup(context, (selected) {
-      final g = selected.first.group;
-      for (final e in selected.skip(1)) {
-        if (g != e.group) {
-          return null;
+    return FavoritesActions.addToGroup(
+      context,
+      (selected) {
+        final g = selected.first.group;
+        for (final e in selected.skip(1)) {
+          if (g != e.group) {
+            return null;
+          }
         }
-      }
 
-      return g;
-    }, (selected, value, toPin) {
-      for (final e in selected) {
-        e.group = value.isEmpty ? null : value;
-      }
+        return g;
+      },
+      (selected, value, toPin) {
+        for (final e in selected) {
+          e.group = value.isEmpty ? null : value;
+        }
 
-      FavoriteBooru.addAllFileUrl(selected);
+        FavoriteBooru.addAllFileUrl(selected);
 
-      Navigator.of(context, rootNavigator: true).pop();
-    }, false);
+        Navigator.of(context, rootNavigator: true).pop();
+      },
+      false,
+    );
   }
 
   List<GridAction<FavoriteBooru>> gridActions() {

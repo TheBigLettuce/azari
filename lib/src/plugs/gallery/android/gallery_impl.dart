@@ -122,7 +122,8 @@ class _GalleryImpl implements GalleryApi {
     _currentApi?.callback
         ?.call(db.systemGalleryDirectorys.countSync(), inRefresh, false);
     for (final api in _temporaryApis) {
-      api.temporarySet?.call(db.systemGalleryDirectorys.countSync(), false);
+      api.temporarySet
+          ?.call(db.systemGalleryDirectorys.countSync(), !inRefresh);
     }
   }
 

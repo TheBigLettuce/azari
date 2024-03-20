@@ -210,10 +210,13 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Text(
-              widget.title,
-              style: Theme.of(context).textTheme.bodyLarge,
+            padding: const EdgeInsets.only(bottom: 8, top: 4),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                widget.title,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
             ),
           ),
           Align(
@@ -364,7 +367,8 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
             _columns(context, gridSettings.columns, (c) {
               button.selectGridColumn(c, gridSettings);
               button.onChanged();
-            })
+            }),
+            const Padding(padding: EdgeInsets.only(bottom: 8))
           ],
         ),
       ),

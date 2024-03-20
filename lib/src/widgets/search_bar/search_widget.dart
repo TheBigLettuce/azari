@@ -202,7 +202,8 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
                   : widget.enabledSorting.map((e) =>
                       SegmentedButtonValue(e, e.translatedString(context))),
               title: AppLocalizations.of(context)!.sortingModesLabel,
-            )
+            ),
+            const Padding(padding: EdgeInsets.only(bottom: 8))
           ],
         ),
       ),
