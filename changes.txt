@@ -1,3 +1,9 @@
+1.7.3+17:
+— Add Buddha Mode.
+
+1.7.2+16:
+— Add welcome page.
+
 1.7.1+15:
 — Remove notes for now,
 — Change details.
