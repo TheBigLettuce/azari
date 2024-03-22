@@ -552,7 +552,7 @@ class __SearchOptionsState<I, G> extends State<_SearchOptions<I, G>> {
                       ),
                       const Padding(padding: EdgeInsets.only(right: 4)),
                       Text(
-                        "Using ${widget.info}",
+                        AppLocalizations.of(context)!.usingApi(widget.info),
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
                               color: Theme.of(context)
                                   .colorScheme

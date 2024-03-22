@@ -1300,5 +1300,14 @@
     "mangaUnpinned": "Unpinned",
     "@mangaUnpinned": {
         "description": "Manga page, showed when manga pinned"
+    },
+    "usingApi": "Using {apiName}",
+    "@usingApi": {
+        "description": "Shown as the name of API used when searching",
+        "placeholders": {
+            "apiName": {
+                "type": "String"
+            }
+        }
     }
 }

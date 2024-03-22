@@ -107,7 +107,7 @@ class CardPanel extends StatefulWidget {
                   children: [
                     Center(
                       child: Text(
-                        "News",
+                        AppLocalizations.of(context)!.newsTab,
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ),
