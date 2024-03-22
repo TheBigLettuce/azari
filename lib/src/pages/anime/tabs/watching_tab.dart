@@ -179,9 +179,10 @@ class __WatchingTabState extends State<_WatchingTab> {
                   selected.map((e) => e.isarId!).toList(),
                 );
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text("Deleted from backlog"),
+                  content:
+                      Text(AppLocalizations.of(context)!.deletedFromBacklog),
                   action: SnackBarAction(
-                      label: "Undo",
+                      label: AppLocalizations.of(context)!.undoLabel,
                       onPressed: () {
                         SavedAnimeEntry.reAdd(selected);
                       }),
@@ -378,9 +379,9 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
             selected.map((e) => e.isarId!).toList(),
           );
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text("Deleted from backlog"),
+            content: Text(AppLocalizations.of(context)!.deletedFromBacklog),
             action: SnackBarAction(
-                label: "Undo",
+                label: AppLocalizations.of(context)!.undoLabel,
                 onPressed: () {
                   SavedAnimeEntry.reAdd(selected);
                 }),

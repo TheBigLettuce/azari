@@ -97,7 +97,12 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     return GridAction(
       Icons.broken_image_outlined,
       (selected) {
-        loadNetworkThumb(selected.first.name, selected.first.id).then((value) {
+        loadNetworkThumb(
+                selected.first.name,
+                selected.first.id,
+                AppLocalizations.of(context)!.netThumbnailLoader,
+                AppLocalizations.of(context)!.loadingThumbnail)
+            .then((value) {
           try {
             setState(() {});
           } catch (_) {}

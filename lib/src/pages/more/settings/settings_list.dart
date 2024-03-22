@@ -103,7 +103,13 @@ class _SettingsListState extends State<SettingsList> {
             title: Text(AppLocalizations.of(context)!.downloadDirectorySetting),
             subtitle: Text(_settings!.path.pathDisplay),
             onTap: () async {
-              await Settings.chooseDirectory(showDialog);
+              await Settings.chooseDirectory(
+                showDialog,
+                emptyResult: AppLocalizations.of(context)!.emptyResult,
+                pickDirectory: AppLocalizations.of(context)!.pickDirectory,
+                validDirectory:
+                    AppLocalizations.of(context)!.chooseValidDirectory,
+              );
             },
           ),
         ),
@@ -123,7 +129,7 @@ class _SettingsListState extends State<SettingsList> {
           title: Text(AppLocalizations.of(context)!.settingsTheme),
           onTap: () => radioDialog(
             context,
-            ThemeType.values.map((e) => (e, e.string)),
+            ThemeType.values.map((e) => (e, e.translatedString(context))),
             _miscSettings!.themeType,
             (value) {
               if (value != null) {
@@ -132,7 +138,7 @@ class _SettingsListState extends State<SettingsList> {
             },
             title: AppLocalizations.of(context)!.settingsTheme,
           ),
-          subtitle: Text(_miscSettings!.themeType.string),
+          subtitle: Text(_miscSettings!.themeType.translatedString(context)),
         ),
         ListTile(
           title: Text(AppLocalizations.of(context)!.imageDisplayQualitySetting),
@@ -386,7 +392,7 @@ class _SettingsListState extends State<SettingsList> {
           title: Text(AppLocalizations.of(context)!.animeAlwaysOnline),
         ),
         ListTile(
-          title: Text("Open welcome page"),
+          title: Text(AppLocalizations.of(context)!.openWelcomePageSetting),
           onTap: () {
             Navigator.push(context, MaterialPageRoute(
               builder: (context) {
@@ -398,25 +404,15 @@ class _SettingsListState extends State<SettingsList> {
           },
         ),
         SwitchListTile(
-          title: Text("Buddha Mode"),
+          title: Text(AppLocalizations.of(context)!.buddhaModeSetting),
           value: _settings!.buddhaMode,
           onChanged: (value) {
             themeChangeStart();
-            // restartStart();
 
             _settings!.copy(buddhaMode: value).save();
 
             RestartWidget.restartApp(context);
           },
-          // onTap: () {
-          //   Navigator.push(context, MaterialPageRoute(
-          //     builder: (context) {
-          //       return const WelcomePage(
-          //         doNotLaunchHome: true,
-          //       );
-          //     },
-          //   ));
-          // },
         )
       ];
 

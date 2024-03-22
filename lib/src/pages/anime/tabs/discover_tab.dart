@@ -35,6 +35,7 @@ class DiscoverTab extends StatefulWidget {
       ];
 
   const DiscoverTab({
+    super.key,
     required this.procPop,
     required this.entries,
     required this.pagingContainer,

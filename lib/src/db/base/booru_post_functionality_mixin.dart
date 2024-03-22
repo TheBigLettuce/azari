@@ -185,7 +185,7 @@ class _PostInfoState extends State<PostInfo> {
             MenuWrapper(
               title: post.fileDownloadUrl(),
               child: ListTile(
-                title: Text(AppLocalizations.of(context)!.pathInfoPage),
+                title: Text(AppLocalizations.of(context)!.urlInfoPage),
                 subtitle: Text(post.fileDownloadUrl()),
                 onTap: () => launchUrl(Uri.parse(post.fileDownloadUrl()),
                     mode: LaunchMode.externalApplication),
@@ -193,11 +193,11 @@ class _PostInfoState extends State<PostInfo> {
             ),
             ListTile(
               title: Text(AppLocalizations.of(context)!.widthInfoPage),
-              subtitle: Text("${post.width}px"),
+              subtitle: Text(AppLocalizations.of(context)!.pixels(post.width)),
             ),
             ListTile(
               title: Text(AppLocalizations.of(context)!.heightInfoPage),
-              subtitle: Text("${post.height}px"),
+              subtitle: Text(AppLocalizations.of(context)!.pixels(post.height)),
             ),
             ListTile(
               title: Text(AppLocalizations.of(context)!.createdAtInfoPage),

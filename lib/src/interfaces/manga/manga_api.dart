@@ -173,7 +173,7 @@ class MangaEntry implements Cell {
   @override
   List<Sticker> stickers(BuildContext context) => [
         if (PinnedManga.exist(id.toString(), site))
-          Sticker(Icons.push_pin_rounded),
+          const Sticker(Icons.push_pin_rounded),
       ];
 
   @override

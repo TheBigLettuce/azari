@@ -74,8 +74,9 @@ class FavoriteBooruPage extends StatelessWidget {
       overrideController: conroller,
       imageViewDescription: ImageViewDescription(
         addIconsImage: (p) => state.iconsImage(p),
-        overrideDrawerLabel:
-            state.state.settings.buddhaMode ? "Tags" : null, // TODO: change
+        overrideDrawerLabel: state.state.settings.buddhaMode
+            ? AppLocalizations.of(context)!.buddhaModeTags
+            : null,
         imageViewKey: state.state.imageViewKey,
       ),
       functionality: GridFunctionality(

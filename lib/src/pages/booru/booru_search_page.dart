@@ -284,8 +284,9 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                     BooruGridActions.download(context, api.booru)
                   ],
                   imageViewKey: state.imageViewKey,
-                  overrideDrawerLabel:
-                      state.settings.buddhaMode ? "Tags" : null, // TODO: change
+                  overrideDrawerLabel: state.settings.buddhaMode
+                      ? AppLocalizations.of(context)!.buddhaModeTags
+                      : null,
                   statistics: const ImageViewStatistics(
                     swiped: StatisticsBooru.addSwiped,
                     viewed: StatisticsBooru.addViewed,

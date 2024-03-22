@@ -8,37 +8,9 @@
     "@refresh": {
         "description": "Keybinding key info, refreshes content"
     },
-    "selectSuggestion": "Select highlighted suggestion",
-    "@selectSuggestion": {
-        "description": "Keybinding key info, selects highlighted autocomplete suggestion"
-    },
-    "focusSearch": "Focus search",
-    "@focusSearch": {
-        "description": "Keybinding key info, focuses tag search field"
-    },
     "back": "Back",
     "@back": {
         "description": "Keybinding key info, goes back a page"
-    },
-    "goBooruGrid": "Go to the booru grid",
-    "@goBooruGrid": {
-        "description": "Keybinding key info, goes to the *booru grid"
-    },
-    "goGallery": "Go to the gallery",
-    "@goGallery": {
-        "description": "Keybinding key info, goes to the gallery"
-    },
-    "goTags": "Go to the tags page",
-    "@goTags": {
-        "description": "Keybinding key info, goes to the tags page"
-    },
-    "goDownloads": "Go to the downloads",
-    "@goDownloads": {
-        "description": "Keybinding key info, goes to the downloads page"
-    },
-    "goSettings": "Open settings page",
-    "@goSettings": {
-        "description": "Keybinding key info, opens settings page"
     },
     "keybindsFor": "Keybinds for: {keybind}",
     "@keybindsFor": {
@@ -73,31 +45,19 @@
     },
     "galleryLabel": "Gallery",
     "@galleryLabel": {
-        "description": "Drawer destination, gallery page"
-    },
-    "tagsLabel": "Tags",
-    "@tagsLabel": {
-        "description": "Drawer destination, tags page"
-    },
-    "downloadsLabel": "Downloads",
-    "@downloadsLabel": {
-        "description": "Drawer destination, downloads page"
+        "description": "Navigation destination, gallery page"
     },
     "settingsLabel": "Settings",
     "@settingsLabel": {
-        "description": "Drawer destination, settings page"
+        "description": "Arbitrary settings"
     },
     "booruGridPageName": "Booru grid",
     "@booruGridPageName": {
-        "description": "Keybinding key info, *booru grid page name"
-    },
-    "refreshStaleDownloads": "Refresh and mark stale downloads",
-    "@refreshStaleDownloads": {
-        "description": "Keybinding key info, sorts out stale downloads"
+        "description": "Booru grid page name"
     },
     "downloadsPageName": "Downloads",
     "@downloadsPageName": {
-        "description": "Keybinding key info, downloads page name"
+        "description": "Downloads page name"
     },
     "yes": "yes",
     "@yes": {
@@ -106,42 +66,6 @@
     "no": "no",
     "@no": {
         "description": "Dialog button, to dismiss the dialog"
-    },
-    "moveImageRight": "Move image right",
-    "@moveImageRight": {
-        "description": "Keybinding key info, moves image right in the image view"
-    },
-    "moveImageLeft": "Move image left",
-    "@moveImageLeft": {
-        "description": "Keybinding key info, moves image left in the image view"
-    },
-    "rotateImageRight": "Rotate image right",
-    "@rotateImageRight": {
-        "description": "Keybinding key info, rotates image right in the image view "
-    },
-    "rotateImageLeft": "Rotate image left",
-    "@rotateImageLeft": {
-        "description": "Keybinding key info, rotates image left in the image view"
-    },
-    "moveImageUp": "Move image up",
-    "@moveImageUp": {
-        "description": "Keybinding key info, moves image up in the image view"
-    },
-    "moveImageDown": "Move image down",
-    "@moveImageDown": {
-        "description": "Keybinding key info, moves image down in the image view"
-    },
-    "zoomImageIn": "Zoom in",
-    "@zoomImageIn": {
-        "description": "Keybinding key info, zooms image in in the image view"
-    },
-    "zoomImageOut": "Zoom out",
-    "@zoomImageOut": {
-        "description": "Keybinding key info, zooms image out in the image view "
-    },
-    "enterFullscreen": "Go fullscreen",
-    "@enterFullscreen": {
-        "description": "Keybinding key info, enters fullscreen image view on desktop"
     },
     "showImageInfo": "Show info",
     "@showImageInfo": {
@@ -167,34 +91,6 @@
     "@imageViewPageName": {
         "description": "Image view page name"
     },
-    "focusSinglePost": "Focus single post",
-    "@focusSinglePost": {
-        "description": "Keybinding key info, focus go to single post text field"
-    },
-    "focusExcludedSearch": "Focus excluded search",
-    "@focusExcludedSearch": {
-        "description": "Keybinding key info, focus excluded tags search text field"
-    },
-    "tagsPageAppbarTitle": "Search",
-    "@tagsPageAppbarTitle": {
-        "description": "Tags page app bar title"
-    },
-    "singlePostTitle": "Single post",
-    "@singlePostTitle": {
-        "description": "Tags page, displayed above the single post text field"
-    },
-    "recentTagsTitle": "Recent Tags",
-    "@recentTagsTitle": {
-        "description": "Tags page, displayed above recent tags list"
-    },
-    "tagsDeletionDialogTitle": "Are you sure you want to delete all the tags?",
-    "@tagsDeletionDialogTitle": {
-        "description": "Tags page, delete all the recent tags"
-    },
-    "excludedTagsTitle": "Excluded Tags",
-    "@excludedTagsTitle": {
-        "description": "Tags page, displayed above excluded tags list"
-    },
     "tagDeleteDialogTitle": "Do you want to delete",
     "@tagDeleteDialogTitle": {
         "description": "Tags page, tag deletion dialog. Can be either recent tag or excluded"
@@ -206,10 +102,6 @@
     "downloadDirectorySetting": "Download directory",
     "@downloadDirectorySetting": {
         "description": "Settings, download directory"
-    },
-    "pickNewDownloadDirectory": "pick new",
-    "@pickNewDownloadDirectory": {
-        "description": "Settings, button to choose new directory"
     },
     "selectedBooruSetting": "Selected booru",
     "@selectedBooruSetting": {
@@ -223,19 +115,11 @@
     "@imageDisplayQualityInfo": {
         "description": "Settings, image display quality's additional information"
     },
-    "nPerElementsSetting": "Number of elements per row",
-    "@nPerElementsSetting": {
-        "description": "Settings, grid column number"
-    },
-    "nPerElementsInfo": "Number of elements per refresh starts at 20. If number of elements per row is more than two, number of elements per refresh increases by 10 per increase. So, if number of elements per row is three, then number of elements per refresh will be 30.",
-    "@nPerElementsInfo": {
-        "description": "Settings, number of elements info "
-    },
     "safeModeSetting": "Safe mode",
     "@safeModeSetting": {
         "description": "Settings, safe mode"
     },
-    "licenseSetting": "License:",
+    "licenseSetting": "License",
     "@licenseSetting": {
         "description": "Settings, license"
     },
@@ -243,8 +127,8 @@
     "@tagsInfoPage": {
         "description": "Image view, displayed in info above the image's tag list"
     },
-    "pathInfoPage": "Path",
-    "@pathInfoPage": {
+    "urlInfoPage": "URL",
+    "@urlInfoPage": {
         "description": "Image view, title of an URL or a path to a file in info"
     },
     "widthInfoPage": "Width",
@@ -281,14 +165,6 @@
             }
         }
     },
-    "galleryInnerPageName": "Inner directory grid",
-    "@galleryInnerPageName": {
-        "description": "Inside folder page name"
-    },
-    "addFiles": "Add files",
-    "@addFiles": {
-        "description": "Choose files for upload"
-    },
     "delete": "Delete",
     "@delete": {
         "description": "Delete label"
@@ -312,10 +188,6 @@
     "nameTitle": "Name",
     "@nameTitle": {
         "description": "Image info, name of the image"
-    },
-    "addTagToExcluded": "Add tag to exclueded?",
-    "@addTagToExcluded": {
-        "description": "Dialog title when adding tag to excluded from image view tags"
     },
     "directoriesHint": "Directories",
     "@directoriesHint": {
@@ -381,14 +253,6 @@
     "@booruLabel": {
         "description": "Settings, booru settings group label"
     },
-    "cloudflareBlock": "403: Likely Cloudflare",
-    "@cloudflareBlock": {
-        "description": "Showed when access is blocked by Cloudflare"
-    },
-    "solveCaptcha": "Solve captcha",
-    "@solveCaptcha": {
-        "description": "Button which should open open a web view to solve the Cloudflare challenge"
-    },
     "filterHint": "Filter",
     "@filterHint": {
         "description": "Filter hint in the filter bar"
@@ -400,10 +264,6 @@
     "itemPlural": "items",
     "@itemPlural": {
         "description": "Delete item plural"
-    },
-    "cannotBeReversed": "This cannot be reversed",
-    "@cannotBeReversed": {
-        "description": "Showed when deleting a file, permanently"
     },
     "chooseMoveDestination": "Choose move destination",
     "@chooseMoveDestination": {
@@ -692,7 +552,7 @@
     "@miscLabel": {
         "description": "Settings, misc title"
     },
-    "loadingPlaceholder": "Save",
+    "loadingPlaceholder": "...",
     "@loadingPlaceholder": {
         "description": "Settings, thumbnail cache size placeholder"
     },
@@ -724,10 +584,6 @@
     "@group": {
         "description": "Group feature title"
     },
-    "noBookmarks": "No bookmarks",
-    "@noBookmarks": {
-        "description": "Booru grid, no bookmarks snackbar text"
-    },
     "bookmarked": "Bookmarked",
     "@bookmarked": {
         "description": "Booru grid, bookmarked snackbar text"
@@ -735,15 +591,6 @@
     "notesPage": "Notes",
     "@notesPage": {
         "description": "Notes page name"
-    },
-    "showingResults": "Showing {number} results",
-    "@showingResults": {
-        "description": "Notes page, search results count",
-        "placeholders": {
-            "number": {
-                "type": "int"
-            }
-        }
     },
     "dashboardPage": "Dashboard",
     "@dashboardPage": {
@@ -1289,5 +1136,169 @@
     "animeSearchGenres": "Genres",
     "@animeSearchGenres": {
         "description": "Displayed above genre options"
+    },
+    "enumGridLayoutTypeGrid": "Grid",
+    "@enumGridLayoutTypeGrid": {
+        "description": "GridLayoutType.grid"
+    },
+    "enumGridLayoutTypeList": "List",
+    "@enumGridLayoutTypeList": {
+        "description": "GridLayoutType.list"
+    },
+    "enumGridLayoutTypeGridQuilted": "Quilted grid",
+    "@enumGridLayoutTypeGridQuilted": {
+        "description": "GridLayoutType.gridQuilted"
+    },
+    "enumGridLayoutTypeGridMasonry": "Masonry grid",
+    "@enumGridLayoutTypeGridMasonry": {
+        "description": "GridLayoutType.gridMasonry"
+    },
+    "enumThemeTypeSystemAccent": "System Accent",
+    "@enumThemeTypeSystemAccent": {
+        "description": "ThemeType.systemAccent"
+    },
+    "enumThemeTypeSecretPink": "Secret Pink",
+    "@enumThemeTypeSecretPink": {
+        "description": "ThemeType.secretPink"
+    },
+    "sizeInfoPage": "Size",
+    "@sizeInfoPage": {
+        "description": "Image info, size of the image"
+    },
+    "pixels": "{number} px",
+    "@pixels": {
+        "description": "Pixels of one of the axis",
+        "placeholders": {
+            "number": {
+                "type": "int"
+            }
+        }
+    },
+    "kilobytes": "{number} KB",
+    "@kilobytes": {
+        "description": "Kilobytes",
+        "placeholders": {
+            "number": {
+                "type": "double",
+                "format": "decimalPatternDigits",
+                "optionalParameters": {
+                    "decimalDigits": 2
+                }
+            }
+        }
+    },
+    "dateSimple": "{date}",
+    "@dateSimple": {
+        "description": "Arbitrary date",
+        "placeholders": {
+            "date": {
+                "type": "DateTime",
+                "format": "yMd"
+            }
+        }
+    },
+    "netThumbnailLoader": "Thumbnail loader",
+    "@netThumbnailLoader": {
+        "description": "Notifications, loading thumbnail from net"
+    },
+    "loadingThumbnail": "Loading thumbnail",
+    "@loadingThumbnail": {
+        "description": "Notifications, loading thumbnail from net"
+    },
+    "emptyResult": "Empty result",
+    "@emptyResult": {
+        "description": "Picking directory error"
+    },
+    "chooseValidDirectory": "Please choose a valid directory",
+    "@chooseValidDirectory": {
+        "description": "Picking directory error"
+    },
+    "pickDirectory": "Pick a directory for downloads",
+    "@pickDirectory": {
+        "description": "Picking directory label"
+    },
+    "openWelcomePageSetting": "Open welcome page",
+    "@openWelcomePageSetting": {
+        "description": "Settings, open welcome page"
+    },
+    "buddhaModeSetting": "Buddha Mode",
+    "@buddhaModeSetting": {
+        "description": "Settings, buddha mode"
+    },
+    "deletedFromWatched": "Deleted from watched",
+    "@deletedFromWatched": {
+        "description": "Anime page, showed when anime deleted from watched"
+    },
+    "deletedFromBacklog": "Deleted from backlog",
+    "@deletedFromBacklog": {
+        "description": "Manga page, showed when manga deleted from backlog"
+    },
+    "buddhaModeTags": "Tags",
+    "@buddhaModeTags": {
+        "description": "Buddha mode replacement of end drawer app bar title"
+    },
+    "bookmarksPageName": "Bookmarks",
+    "@bookmarksPageName": {
+        "description": "Bookmarks page name"
+    },
+    "welcomePermissions": "Permissions",
+    "@welcomePermissions": {
+        "description": "Welcome page, permissions page title"
+    },
+    "welcomePermissionsExplanation": "Photos and videos are needed for the gallery to work",
+    "@welcomePermissionsExplanation": {
+        "description": "Welcome page, permissions page explanation"
+    },
+    "permissionsPhotosVideos": "Photos and videos",
+    "@permissionsPhotosVideos": {
+        "description": "Welcome page, permissions label"
+    },
+    "permissionsManageMedia": "Manage media",
+    "@permissionsManageMedia": {
+        "description": "Welcome page, permissions label"
+    },
+    "permissionsNotifications": "Notifications",
+    "@permissionsNotifications": {
+        "description": "Welcome page, permissions label"
+    },
+    "permissionsMediaLocation": "Media location",
+    "@permissionsMediaLocation": {
+        "description": "Welcome page, permissions label"
+    },
+    "welcomeNextLabel": "Next",
+    "@welcomeNextLabel": {
+        "description": "Welcome page. next screen button label"
+    },
+    "welcomeWelcome": "Welcome",
+    "@welcomeWelcome": {
+        "description": "Welcome page, first page title"
+    },
+    "welcomeSomeSettings": "Some settings before you continue... 🛠️",
+    "@welcomeSomeSettings": {
+        "description": "Welcome page, first page body text"
+    },
+    "welcomeFinishLabel": "Finish",
+    "@welcomeFinish": {
+        "description": "Welcome page, finish button label"
+    },
+    "welcomeFinishBody": "Enjoy using Azari 🥳",
+    "@welcomeFinishBody": {
+        "description": "Welcome page, finish page body text"
+    },
+    "welcomeDone": "Done",
+    "@welcomeDone": {
+        "description": "Welcome page, done page title"
+    },
+    "welcomeInitalSettings": "Inital settings",
+    "@welcomeInitalSettings": {
+        "description": "Welcome page. inital settings page title"
+    },
+    "welcomeInitalSettingsExplanation": "Download directory is used for multiple purposes",
+    "@welcomeInitalSettingsExplanation": {
+        "description": "Welcome page, inital page inital page explanation"
+    },
+    "mangaUnpinned": "Unpinned",
+    "@mangaUnpinned": {
+        "description": "Manga page, showed when manga pinned"
     }
 }

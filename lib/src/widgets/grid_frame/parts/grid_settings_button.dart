@@ -256,7 +256,8 @@ Widget _gridLayout(BuildContext context, GridLayoutType selectGridLayout,
   return SegmentedButtonGroup(
     select: select,
     selected: selectGridLayout,
-    values: GridLayoutType.values.map((e) => SegmentedButtonValue(e, e.text)),
+    values: GridLayoutType.values
+        .map((e) => SegmentedButtonValue(e, e.translatedString(context))),
     title: AppLocalizations.of(context)!.layoutLabel,
   );
 }

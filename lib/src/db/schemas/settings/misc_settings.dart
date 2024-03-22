@@ -7,19 +7,26 @@
 
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/filtering/filtering_mode.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:isar/isar.dart';
 
 part 'misc_settings.g.dart';
 
 enum ThemeType {
-  systemAccent("System Accent"),
-  secretPink("Secret Pink");
+  systemAccent(),
+  secretPink();
 
-  final String string;
+  String translatedString(BuildContext context) => switch (this) {
+        ThemeType.systemAccent =>
+          AppLocalizations.of(context)!.enumThemeTypeSystemAccent,
+        ThemeType.secretPink =>
+          AppLocalizations.of(context)!.enumThemeTypeSecretPink,
+      };
 
-  const ThemeType(this.string);
+  const ThemeType();
 }
 
 @collection

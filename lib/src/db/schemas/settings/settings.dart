@@ -118,21 +118,26 @@ class Settings {
 
   /// Pick an operating system directory.
   /// Calls [onError] in case of any error and resolves to false.
-  static Future<bool> chooseDirectory(void Function(String) onError) async {
+  static Future<bool> chooseDirectory(
+    void Function(String) onError, {
+    required String emptyResult,
+    required String pickDirectory,
+    required String validDirectory,
+  }) async {
     late final SettingsPath resp;
 
     if (Platform.isAndroid) {
       try {
         resp = (await PlatformFunctions.chooseDirectory())!;
       } catch (e) {
-        onError("Empty result"); // TODO: change
+        onError(emptyResult);
         return false;
       }
     } else {
-      final r = await FilePicker.platform.getDirectoryPath(
-          dialogTitle: "Pick a directory for downloads"); // TODO: change
+      final r = await FilePicker.platform
+          .getDirectoryPath(dialogTitle: pickDirectory);
       if (r == null) {
-        onError("Please choose a valid directory"); // TODO: change
+        onError(validDirectory);
         return false;
       }
       resp = SettingsPath(path: r, pathDisplay: r);

@@ -149,9 +149,10 @@ class __FinishedTabState extends State<_FinishedTab> {
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text("Deleted from finished"),
+                    content:
+                        Text(AppLocalizations.of(context)!.deletedFromWatched),
                     action: SnackBarAction(
-                        label: "Undo",
+                        label: AppLocalizations.of(context)!.undoLabel,
                         onPressed: () {
                           WatchedAnimeEntry.reAdd(selected);
                         }),

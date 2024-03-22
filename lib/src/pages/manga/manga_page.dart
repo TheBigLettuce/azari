@@ -463,9 +463,9 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
         PinnedManga.deleteAll(selected.map((e) => e.isarId!).toList());
 
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("Unpinned"),
+          content: Text(AppLocalizations.of(context)!.mangaUnpinned),
           action: SnackBarAction(
-              label: "Undo",
+              label: AppLocalizations.of(context)!.undoLabel,
               onPressed: () {
                 PinnedManga.addAll(selected, true);
               }),

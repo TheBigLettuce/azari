@@ -496,8 +496,9 @@ class _BooruPageState extends State<BooruPage> {
                   state.settings.buddhaMode ? null : scrollController,
               imageViewDescription: ImageViewDescription(
                 imageViewKey: state.imageViewKey,
-                overrideDrawerLabel:
-                    state.settings.buddhaMode ? "Tags" : null, // TODO: change
+                overrideDrawerLabel: state.settings.buddhaMode
+                    ? AppLocalizations.of(context)!.buddhaModeTags
+                    : null,
                 statistics: const ImageViewStatistics(
                   swiped: StatisticsBooru.addSwiped,
                   viewed: StatisticsBooru.addViewed,
@@ -748,7 +749,7 @@ class _BuddhaModeMenu extends StatelessWidget {
             const Padding(padding: EdgeInsets.only(bottom: 16)),
             ListTile(
               leading: const Icon(Icons.collections),
-              title: Text("Gallery"),
+              title: Text(AppLocalizations.of(context)!.galleryLabel),
               onTap: () {
                 controller.close();
                 Navigator.push(context, MaterialPageRoute(
@@ -764,7 +765,7 @@ class _BuddhaModeMenu extends StatelessWidget {
             const Divider(),
             ListTile(
               leading: const Icon(Icons.favorite_outline_rounded),
-              title: Text("Favorites"),
+              title: Text(AppLocalizations.of(context)!.favoritesLabel),
               onTap: () {
                 controller.close();
                 Navigator.push(context, MaterialPageRoute(
@@ -782,7 +783,7 @@ class _BuddhaModeMenu extends StatelessWidget {
             const Divider(),
             ListTile(
               leading: const Icon(Icons.bookmark_outline),
-              title: Text("Bookmarks"),
+              title: Text(AppLocalizations.of(context)!.bookmarksPageName),
               onTap: () {
                 controller.close();
                 Navigator.push(context, MaterialPageRoute(
@@ -793,7 +794,8 @@ class _BuddhaModeMenu extends StatelessWidget {
                           return CustomScrollView(
                             slivers: [
                               SliverAppBar.large(
-                                title: Text("Bookmarks"),
+                                title: Text(AppLocalizations.of(context)!
+                                    .bookmarksPageName),
                               ),
                               BookmarkPage(
                                 saveSelectedPage: saveSelectedPage,
@@ -818,7 +820,7 @@ class _BuddhaModeMenu extends StatelessWidget {
             const Divider(),
             ListTile(
               leading: const Icon(Icons.settings_outlined),
-              title: Text("Settings"),
+              title: Text(AppLocalizations.of(context)!.settingsPageName),
               onTap: () {
                 controller.close();
                 Navigator.push(context, MaterialPageRoute(

@@ -9,7 +9,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:gallery/main.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
@@ -20,6 +19,7 @@ import 'package:gallery/src/pages/home.dart';
 import 'package:gallery/src/pages/more/settings/radio_dialog.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class AndroidPermissionsPage extends StatefulWidget {
   final bool doNotLaunchHome;
@@ -75,8 +75,8 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
   @override
   Widget build(BuildContext context) {
     return _WrapPadding(
-      title: "Permissions",
-      explanation: "Photos and videos are needed for the gallery to work",
+      title: AppLocalizations.of(context)!.welcomePermissions,
+      explanation: AppLocalizations.of(context)!.welcomePermissionsExplanation,
       body: Align(
         alignment: Alignment.centerLeft,
         child: SingleChildScrollView(
@@ -94,7 +94,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
                         resultVideos.isGranted && resultPhotos.isGranted;
                   });
                 },
-                label: "Photos and videos",
+                label: AppLocalizations.of(context)!.permissionsPhotosVideos,
                 variant: photoAndVideos
                     ? ButtonVariant.selected
                     : ButtonVariant.normal,
@@ -108,7 +108,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
                     mediaLocation = result.isGranted;
                   });
                 },
-                label: "Media location",
+                label: AppLocalizations.of(context)!.permissionsMediaLocation,
                 variant: mediaLocation
                     ? ButtonVariant.selected
                     : ButtonVariant.secondary,
@@ -123,7 +123,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
                       manageMedia = result;
                     });
                   },
-                  label: "Manage media",
+                  label: AppLocalizations.of(context)!.permissionsManageMedia,
                   variant: manageMedia
                       ? ButtonVariant.selected
                       : ButtonVariant.secondary,
@@ -137,7 +137,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
                     notifications = result.isGranted;
                   });
                 },
-                label: "Notifications",
+                label: AppLocalizations.of(context)!.permissionsNotifications,
                 variant: notifications
                     ? ButtonVariant.selected
                     : ButtonVariant.secondary,
@@ -160,7 +160,7 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
                     },
                   ));
                 },
-          label: Text("Next"),
+          label: Text(AppLocalizations.of(context)!.welcomeNextLabel),
         ),
       ],
     );
@@ -189,10 +189,10 @@ class _WelcomePageState extends State<WelcomePage> {
   @override
   Widget build(BuildContext context) {
     return _WrapPadding(
-      title: "Welcome",
+      title: AppLocalizations.of(context)!.welcomeWelcome,
       addCenteredIcon: true,
       body: Text(
-        "Some settings before you continue... 🛠️",
+        AppLocalizations.of(context)!.welcomeSomeSettings,
         style: Theme.of(context).textTheme.bodyLarge,
       ),
       buttons: [
@@ -207,7 +207,7 @@ class _WelcomePageState extends State<WelcomePage> {
               },
             ));
           },
-          label: Text("Next"),
+          label: Text(AppLocalizations.of(context)!.welcomeNextLabel),
         )
       ],
     );
@@ -229,15 +229,17 @@ class CongratulationPage extends StatelessWidget {
     return Stack(
       children: [
         _WrapPadding(
+          title: AppLocalizations.of(context)!.welcomeDone,
           addCenteredIcon: true,
           body: Center(
             child: Text(
-              "Enjoy using Azari 🥳",
+              AppLocalizations.of(context)!.welcomeFinishBody,
               style: theme.textTheme.bodyLarge,
             ),
           ),
           buttons: [
             FilledButton.icon(
+              label: Text(AppLocalizations.of(context)!.welcomeFinishLabel),
               icon: const Icon(Icons.check_rounded),
               onPressed: () {
                 Settings.fromDb().copy(showWelcomePage: false).save();
@@ -258,10 +260,8 @@ class CongratulationPage extends StatelessWidget {
                   ),
                 );
               },
-              label: Text("Finish"),
             )
           ],
-          title: "Done",
         )
       ],
     );
@@ -329,8 +329,9 @@ class _InitalSettingsState extends State<InitalSettings> {
   @override
   Widget build(BuildContext context) {
     return _WrapPadding(
-      title: "Inital settings",
-      explanation: "Download directory is used for multiple purposes",
+      title: AppLocalizations.of(context)!.welcomeInitalSettings,
+      explanation:
+          AppLocalizations.of(context)!.welcomeInitalSettingsExplanation,
       body: Align(
         alignment: Alignment.centerLeft,
         child: Column(
@@ -341,14 +342,20 @@ class _InitalSettingsState extends State<InitalSettings> {
                   ? const Icon(Icons.check_rounded)
                   : const Icon(Icons.folder),
               onPressed: () {
-                Settings.chooseDirectory((e) {
-                  error = e;
+                Settings.chooseDirectory(
+                  (e) {
+                    error = e;
 
-                  setState(() {});
-                });
+                    setState(() {});
+                  },
+                  emptyResult: AppLocalizations.of(context)!.emptyResult,
+                  pickDirectory: AppLocalizations.of(context)!.pickDirectory,
+                  validDirectory:
+                      AppLocalizations.of(context)!.chooseValidDirectory,
+                );
               },
               label: Text(settings.path.isEmpty
-                  ? "Download directory"
+                  ? AppLocalizations.of(context)!.downloadDirectorySetting
                   : settings.path.pathDisplay),
             ),
             if (error != null)
@@ -372,10 +379,11 @@ class _InitalSettingsState extends State<InitalSettings> {
                   (value) {
                     settings.copy(selectedBooru: value).save();
                   },
-                  title: "Booru",
+                  title: AppLocalizations.of(context)!.booruLabel,
                 );
               },
-              label: "Booru: ${settings.selectedBooru.string}",
+              label:
+                  "${AppLocalizations.of(context)!.booruLabel}: ${settings.selectedBooru.string}",
               variant: ButtonVariant.secondary,
             ),
             _ButtonWithPadding(
@@ -389,11 +397,12 @@ class _InitalSettingsState extends State<InitalSettings> {
                   (value) {
                     settings.copy(quality: value).save();
                   },
-                  title: "Display quality",
+                  title:
+                      AppLocalizations.of(context)!.imageDisplayQualitySetting,
                 );
               },
               label:
-                  "Image display quality: ${settings.quality.translatedString(context)}",
+                  "${AppLocalizations.of(context)!.imageDisplayQualitySetting}: ${settings.quality.translatedString(context)}",
               variant: ButtonVariant.secondary,
             ),
             _ButtonWithPadding(
@@ -406,11 +415,11 @@ class _InitalSettingsState extends State<InitalSettings> {
                   (value) {
                     settings.copy(safeMode: value).save();
                   },
-                  title: "Safe mode",
+                  title: AppLocalizations.of(context)!.safeModeSetting,
                 );
               },
               label:
-                  "Safe mode: ${settings.safeMode.translatedString(context)}",
+                  "${AppLocalizations.of(context)!.safeModeSetting}: ${settings.safeMode.translatedString(context)}",
               variant: ButtonVariant.secondary,
             )
           ],
@@ -420,7 +429,7 @@ class _InitalSettingsState extends State<InitalSettings> {
         FilledButton.icon(
           icon: const Icon(Icons.navigate_next_rounded),
           onPressed: settings.path.isEmpty ? null : _nextPage,
-          label: const Text("Next"),
+          label: Text(AppLocalizations.of(context)!.welcomeNextLabel),
         )
       ],
     );

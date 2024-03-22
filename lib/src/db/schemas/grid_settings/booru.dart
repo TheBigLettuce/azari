@@ -8,6 +8,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
@@ -17,6 +18,7 @@ import 'package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/grid_frame/layouts/grid_masonry_layout.dart';
 import 'package:gallery/src/widgets/grid_frame/layouts/grid_quilted.dart';
 import 'package:gallery/src/widgets/grid_frame/layouts/list_layout.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:isar/isar.dart';
 
 import '../../base/grid_settings_base.dart';
@@ -24,14 +26,23 @@ import '../../base/grid_settings_base.dart';
 part 'booru.g.dart';
 
 enum GridLayoutType {
-  grid("Grid"),
-  list("List"),
-  gridQuilted("Quilted grid"),
-  gridMasonry("Masonry grid");
+  grid(),
+  list(),
+  gridQuilted(),
+  gridMasonry();
 
-  const GridLayoutType(this.text);
+  const GridLayoutType();
 
-  final String text;
+  String translatedString(BuildContext context) => switch (this) {
+        GridLayoutType.grid =>
+          AppLocalizations.of(context)!.enumGridLayoutTypeGrid,
+        GridLayoutType.list =>
+          AppLocalizations.of(context)!.enumGridLayoutTypeList,
+        GridLayoutType.gridQuilted =>
+          AppLocalizations.of(context)!.enumGridLayoutTypeGridQuilted,
+        GridLayoutType.gridMasonry =>
+          AppLocalizations.of(context)!.enumGridLayoutTypeGridMasonry,
+      };
 
   GridLayouter<T> layout<T extends Cell>() => switch (this) {
         GridLayoutType.list => ListLayout<T>(),

@@ -22,6 +22,7 @@ import 'package:gallery/src/pages/more/settings/global_progress.dart';
 import 'package:gallery/src/plugs/notifications.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/widgets/translation_notes.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:logging/logging.dart';
 
 mixin SystemGalleryDirectoryFileFunctionalityMixin {
@@ -114,20 +115,21 @@ mixin SystemGalleryDirectoryFileFunctionalityMixin {
     }
   }
 
-  String kbMbSize(int bytes) {
+  String kbMbSize(BuildContext context, int bytes) {
     if (bytes == 0) {
       return "0";
     }
     final res = bytes / 1000;
     if (res > 1000) {
-      return "${(res / 1000).toStringAsFixed(1)} MB";
+      return AppLocalizations.of(context)!.megabytes(res / 1000);
     }
 
-    return "${res.toStringAsFixed(1)} KB";
+    return AppLocalizations.of(context)!.kilobytes(res);
   }
 }
 
-Future<void> loadNetworkThumb(String filename, int id,
+Future<void> loadNetworkThumb(
+    String filename, int id, String groupNotifString, String notifChannelName,
     [bool addToPinned = true]) async {
   if (GlobalProgress.isThumbLoadingLocked()) {
     return;
@@ -142,7 +144,7 @@ Future<void> loadNetworkThumb(String filename, int id,
   final plug = chooseNotificationPlug();
 
   final notif = await plug.newProgress(
-      "", savingThumbNotifId, "Loading thumbnail", "Thumbnail loader");
+      "", savingThumbNotifId, groupNotifString, notifChannelName);
   notif.update(0, filename);
 
   try {

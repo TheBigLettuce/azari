@@ -29,7 +29,15 @@ mixin _BeforeYouContinueDialogMixin {
                         child: Text(AppLocalizations.of(context)!.later)),
                     TextButton(
                         onPressed: () {
-                          Settings.chooseDirectory((e) {});
+                          Settings.chooseDirectory(
+                            (e) {},
+                            emptyResult:
+                                AppLocalizations.of(context)!.emptyResult,
+                            pickDirectory:
+                                AppLocalizations.of(context)!.pickDirectory,
+                            validDirectory: AppLocalizations.of(context)!
+                                .chooseValidDirectory,
+                          );
                           Navigator.pop(context);
                         },
                         child: Text(AppLocalizations.of(context)!.choose))

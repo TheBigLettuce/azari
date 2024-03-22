@@ -340,19 +340,21 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
             ),
             addInfoTile(
               title: AppLocalizations.of(context)!.dateModified,
-              subtitle: file.lastModified.toString(),
+              subtitle: AppLocalizations.of(context)!.date(
+                DateTime.fromMillisecondsSinceEpoch(file.lastModified * 1000),
+              ),
             ),
             addInfoTile(
               title: AppLocalizations.of(context)!.widthInfoPage,
-              subtitle: "${file.width}px",
+              subtitle: AppLocalizations.of(context)!.pixels(file.width),
             ),
             addInfoTile(
               title: AppLocalizations.of(context)!.heightInfoPage,
-              subtitle: "${file.height}px",
+              subtitle: AppLocalizations.of(context)!.pixels(file.height),
             ),
             addInfoTile(
-              title: "Size",
-              subtitle: kbMbSize(file.size),
+              title: AppLocalizations.of(context)!.sizeInfoPage,
+              subtitle: kbMbSize(context, file.size),
             ),
             if (res != null && file.tagsFlat.contains("translated"))
               TranslationNotes.tile(context, res!.id, res!.booru),

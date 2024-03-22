@@ -34,7 +34,8 @@ class TimeLabel extends StatelessWidget {
       );
     } else {
       return SettingsLabel(
-        "${time.$1}/${time.$2}/${time.$3.toString().substring(2)}",
+        AppLocalizations.of(context)!
+            .dateSimple(DateTime(time.$3, time.$2, time.$1)),
         titleStyle,
         removePadding: removePadding,
       );
