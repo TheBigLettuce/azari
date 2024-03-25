@@ -6,8 +6,9 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 // This file was generated using the following command and may be overwritten.
-// dart-dbus generate-remote-object dbus_services/kf5_org.kde.JobView.xml
+// dart-dbus generate-remote-object /usr/share/dbus-1/interfaces/kf5_org.kde.JobView.xml
 
+import 'dart:io';
 import 'package:dbus/dbus.dart';
 
 /// Signal data for org.kde.JobViewV2.suspendRequested.

@@ -27,6 +27,7 @@ import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru_tagging.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/pages/gallery/directories.dart';
+import 'package:gallery/src/pages/manga/manga_page.dart';
 import 'package:gallery/src/pages/more/tags/single_post.dart';
 import 'package:gallery/src/widgets/azari_icon.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart';
@@ -243,6 +244,7 @@ class _BooruPageState extends State<BooruPage> {
               state.settings.autoRefreshMicroseconds.microseconds)) {
         final gridState = state.gridKey.currentState;
         if (gridState != null) {
+          gridState.controller.jumpTo(0);
           pagingState.refreshingStatus.refresh(gridState.widget.functionality);
         }
 
@@ -667,7 +669,10 @@ class _BooruPageState extends State<BooruPage> {
               initalScrollPosition: pagingState.offset,
             ),
             canPop: state.settings.buddhaMode,
-            overrideOnPop: (pop, hideAppBar) {
+            secondarySelectionHide: () {
+              favoriteBooruState.state.gridKey.currentState?.selection.reset();
+            },
+            overrideOnPop: (pop) {
               final gridState = state.gridKey.currentState;
               if (gridState != null && gridState.currentPage == 1) {
                 if (favoriteBooruState
@@ -675,11 +680,6 @@ class _BooruPageState extends State<BooruPage> {
                   favoriteBooruState.search.performSearch("");
                   return;
                 }
-              }
-
-              if (hideAppBar()) {
-                setState(() {});
-                return;
               }
 
               final s = state.gridKey.currentState;
@@ -697,7 +697,7 @@ class _BooruPageState extends State<BooruPage> {
   }
 }
 
-class _BuddhaModeMenu extends StatelessWidget {
+class _BuddhaModeMenu extends StatefulWidget {
   final MenuController controller;
   final ScrollController scrollController;
 
@@ -715,6 +715,20 @@ class _BuddhaModeMenu extends StatelessWidget {
   });
 
   @override
+  State<_BuddhaModeMenu> createState() => __BuddhaModeMenuState();
+}
+
+class __BuddhaModeMenuState extends State<_BuddhaModeMenu> {
+  final _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
@@ -722,6 +736,7 @@ class _BuddhaModeMenu extends StatelessWidget {
       data: theme.copyWith(
         iconTheme: theme.iconTheme.copyWith(size: 20),
         listTileTheme: theme.listTileTheme.copyWith(
+          iconColor: theme.colorScheme.primary.withOpacity(0.8),
           titleTextStyle: theme.textTheme.titleSmall,
           contentPadding: const EdgeInsets.symmetric(horizontal: 8),
           visualDensity: VisualDensity.compact,
@@ -730,6 +745,7 @@ class _BuddhaModeMenu extends StatelessWidget {
       ),
       child: SizedBox(
         width: 140,
+        height: 200,
         child: Column(
           children: [
             Padding(
@@ -738,7 +754,7 @@ class _BuddhaModeMenu extends StatelessWidget {
                 top: 16,
               ),
               child: AzariIcon(
-                color: theme.colorScheme.onSurface.withOpacity(0.8),
+                color: theme.colorScheme.primary.withOpacity(0.8),
               ),
             ),
             Text(
@@ -747,88 +763,119 @@ class _BuddhaModeMenu extends StatelessWidget {
                   color: theme.colorScheme.onSurface.withOpacity(0.8)),
             ),
             const Padding(padding: EdgeInsets.only(bottom: 16)),
-            ListTile(
-              leading: const Icon(Icons.collections),
-              title: Text(AppLocalizations.of(context)!.galleryLabel),
-              onTap: () {
-                controller.close();
-                Navigator.push(context, MaterialPageRoute(
-                  builder: (context) {
-                    return GalleryDirectories(
-                      procPop: (pop) {},
-                      wrapGridPage: true,
-                    );
-                  },
-                ));
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.favorite_outline_rounded),
-              title: Text(AppLocalizations.of(context)!.favoritesLabel),
-              onTap: () {
-                controller.close();
-                Navigator.push(context, MaterialPageRoute(
-                  builder: (context) {
-                    return FavoriteBooruPage(
-                      state: state,
-                      conroller: scrollController,
-                      asSliver: false,
-                      wrapGridPage: true,
-                    );
-                  },
-                ));
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.bookmark_outline),
-              title: Text(AppLocalizations.of(context)!.bookmarksPageName),
-              onTap: () {
-                controller.close();
-                Navigator.push(context, MaterialPageRoute(
-                  builder: (context) {
-                    return Scaffold(
-                      body: Builder(
-                        builder: (context) {
-                          return CustomScrollView(
-                            slivers: [
-                              SliverAppBar.large(
-                                title: Text(AppLocalizations.of(context)!
-                                    .bookmarksPageName),
+            Expanded(
+              child: SingleChildScrollView(
+                controller: _scroll,
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.collections),
+                      title: Text(AppLocalizations.of(context)!.galleryLabel),
+                      onTap: () {
+                        widget.controller.close();
+                        Navigator.push(context, MaterialPageRoute(
+                          builder: (context) {
+                            return GalleryDirectories(
+                              procPop: (pop) {},
+                              wrapGridPage: true,
+                            );
+                          },
+                        ));
+                      },
+                    ),
+                    const Divider(),
+                    ListTile(
+                      leading: const Icon(Icons.book_rounded),
+                      title: Text(AppLocalizations.of(context)!.mangaPage),
+                      onTap: () {
+                        widget.controller.close();
+                        Navigator.push(context, MaterialPageRoute(
+                          builder: (context) {
+                            return MangaPage(
+                              wrapGridPage: true,
+                              procPop: (pop) {},
+                              viewPadding: null,
+                            );
+                          },
+                        ));
+                      },
+                    ),
+                    const Divider(),
+                    ListTile(
+                      leading: const Icon(Icons.favorite_outline_rounded),
+                      title: Text(AppLocalizations.of(context)!.favoritesLabel),
+                      onTap: () {
+                        widget.controller.close();
+                        Navigator.push(context, MaterialPageRoute(
+                          builder: (context) {
+                            return FavoriteBooruPage(
+                              state: widget.state,
+                              conroller: widget.scrollController,
+                              asSliver: false,
+                              wrapGridPage: true,
+                            );
+                          },
+                        ));
+                      },
+                    ),
+                    const Divider(),
+                    ListTile(
+                      leading: const Icon(Icons.bookmark_outline),
+                      title:
+                          Text(AppLocalizations.of(context)!.bookmarksPageName),
+                      onTap: () {
+                        widget.controller.close();
+                        Navigator.push(context, MaterialPageRoute(
+                          builder: (context) {
+                            return Scaffold(
+                              body: Builder(
+                                builder: (context) {
+                                  return CustomScrollView(
+                                    slivers: [
+                                      SliverAppBar.large(
+                                        title: Text(
+                                            AppLocalizations.of(context)!
+                                                .bookmarksPageName),
+                                      ),
+                                      BookmarkPage(
+                                        saveSelectedPage:
+                                            widget.saveSelectedPage,
+                                        generateGlue: null,
+                                        pagingRegistry: widget.pagingRegistry,
+                                      ),
+                                      SliverPadding(
+                                        padding: EdgeInsets.only(
+                                          bottom: 8 +
+                                              MediaQuery.viewPaddingOf(context)
+                                                  .bottom,
+                                        ),
+                                      )
+                                    ],
+                                  );
+                                },
                               ),
-                              BookmarkPage(
-                                saveSelectedPage: saveSelectedPage,
-                                generateGlue: null,
-                                pagingRegistry: pagingRegistry,
-                              ),
-                              SliverPadding(
-                                padding: EdgeInsets.only(
-                                  bottom: 8 +
-                                      MediaQuery.viewPaddingOf(context).bottom,
-                                ),
-                              )
-                            ],
-                          );
-                        },
-                      ),
-                    );
-                  },
-                ));
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.settings_outlined),
-              title: Text(AppLocalizations.of(context)!.settingsPageName),
-              onTap: () {
-                controller.close();
-                Navigator.push(context, MaterialPageRoute(
-                  builder: (context) {
-                    return const SettingsWidget();
-                  },
-                ));
-              },
+                            );
+                          },
+                        ));
+                      },
+                    ),
+                    const Divider(),
+                    ListTile(
+                      leading: const Icon(Icons.settings_outlined),
+                      title:
+                          Text(AppLocalizations.of(context)!.settingsPageName),
+                      onTap: () {
+                        widget.controller.close();
+                        Navigator.push(context, MaterialPageRoute(
+                          builder: (context) {
+                            return const SettingsWidget();
+                          },
+                        ));
+                      },
+                    ),
+                  ],
+                ),
+              ),
             )
           ],
         ),

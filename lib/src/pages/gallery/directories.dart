@@ -525,16 +525,11 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                 state.settings.buddhaMode
             ? search.currentFilteringMode() == FilteringMode.noFilter &&
                 search.searchTextController.text.isEmpty
-            : false, overrideOnPop: (pop, hideAppBar) {
+            : false, overrideOnPop: (pop) {
       final filterMode = search.currentFilteringMode();
       if (filterMode != FilteringMode.noFilter ||
           search.searchTextController.text.isNotEmpty) {
         search.resetSearch();
-        return;
-      }
-
-      if (hideAppBar()) {
-        setState(() {});
         return;
       }
 

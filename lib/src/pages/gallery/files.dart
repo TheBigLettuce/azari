@@ -452,18 +452,13 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
           ),
           canPop: search.currentFilteringMode() == FilteringMode.noFilter &&
               search.searchTextController.text.isEmpty,
-          overrideOnPop: (pop, hideAppBar) {
+          overrideOnPop: (pop) {
             final filterMode = search.currentFilteringMode();
             if (search.searchTextController.text.isNotEmpty) {
               search.performSearch("");
               return;
             } else if (filterMode != FilteringMode.noFilter) {
               search.resetSearch();
-            }
-
-            if (hideAppBar()) {
-              setState(() {});
-              return;
             }
           },
         ));

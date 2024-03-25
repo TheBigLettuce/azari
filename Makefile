@@ -1,6 +1,6 @@
 GIT_REV = $(shell git rev-parse --short HEAD)
 
-.PHONY: release android_install regenerate
+.PHONY: release android_install regenerate generate_dbus
 release:
 	flutter build apk --split-per-abi --no-tree-shake-icons
 	git archive --format=tar.gz -o source.tar.gz HEAD
@@ -18,3 +18,7 @@ regenerate:
 	mkdir -p test
 	flutter pub run pigeon --input pigeons/gallery.dart
 	dart run build_runner build
+
+generate_dbus:
+	dart-dbus generate-remote-object /usr/share/dbus-1/interfaces/kf5_org.kde.JobViewServer.xml -o lib/dbus/job_view_server.g.dart
+	dart-dbus generate-remote-object /usr/share/dbus-1/interfaces/kf5_org.kde.JobView.xml -o lib/dbus/job_view.g.dart

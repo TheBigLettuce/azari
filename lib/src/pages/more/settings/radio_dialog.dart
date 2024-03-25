@@ -30,22 +30,24 @@ void radioDialog<T>(
                 child: Text(AppLocalizations.of(context)!.back))
           ],
           title: Text(title),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: values
-                .map((e) => RadioListTile(
-                    shape: const BeveledRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(5)),
-                    ),
-                    value: e.$1,
-                    title: Text(e.$2),
-                    groupValue: groupValue,
-                    toggleable: allowSingle,
-                    onChanged: (value) {
-                      Navigator.pop(context);
-                      onChanged(allowSingle ? value ?? groupValue : value);
-                    }))
-                .toList(),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: values
+                  .map((e) => RadioListTile(
+                      shape: const BeveledRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(5)),
+                      ),
+                      value: e.$1,
+                      title: Text(e.$2),
+                      groupValue: groupValue,
+                      toggleable: allowSingle,
+                      onChanged: (value) {
+                        Navigator.pop(context);
+                        onChanged(allowSingle ? value ?? groupValue : value);
+                      }))
+                  .toList(),
+            ),
           ),
         );
       },

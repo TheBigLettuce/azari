@@ -29,9 +29,14 @@ class GlueBottomAppBar extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Wrap(
-                spacing: 4,
-                children: glue.actions?.$1 ?? [],
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Wrap(
+                    spacing: 4,
+                    children: glue.actions?.$1 ?? [],
+                  ),
+                ),
               ),
               Row(
                 children: [

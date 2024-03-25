@@ -165,6 +165,7 @@ class _PostInfoState extends State<PostInfo> {
           ? DrawerTagsWidget(
               tags,
               filename,
+              showDeleteButton: false,
               showLabel: false,
               launchGrid: _launchGrid,
               excluded: tagManager.excluded,
@@ -233,7 +234,6 @@ class _PostInfoState extends State<PostInfo> {
           child: SearchTextField(
             filterData,
             filename,
-            false,
             key: ValueKey(filename),
           ),
         ),
@@ -243,6 +243,7 @@ class _PostInfoState extends State<PostInfo> {
         launchGrid: _launchGrid,
         excluded: tagManager.excluded,
         pinnedTags: pinnedTags,
+        showDeleteButton: false,
         res: res,
       )
     ]);

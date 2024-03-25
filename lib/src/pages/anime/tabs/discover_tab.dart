@@ -149,14 +149,7 @@ class _DiscoverTabState extends State<DiscoverTab> {
         ),
       ),
       canPop: false,
-      overrideOnPop: (pop, hideAppBar) {
-        if (hideAppBar()) {
-          setState(() {});
-          return;
-        }
-
-        widget.procPop(pop);
-      },
+      overrideOnPop: widget.procPop,
     );
   }
 }

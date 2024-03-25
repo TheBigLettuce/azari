@@ -150,10 +150,15 @@ void mainPickfile() async {
     theme: buildTheme(Brightness.light, accentColor),
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
-    home: Home(
-      callback: CallbackDescriptionNested("Choose file", (chosen) {
-        PlatformFunctions.returnUri(chosen.originalUri);
-      }),
+    home: Builder(
+      builder: (context) {
+        return Home(
+          callback: CallbackDescriptionNested(
+              AppLocalizations.of(context)!.chooseFileNotice, (chosen) {
+            PlatformFunctions.returnUri(chosen.originalUri);
+          }),
+        );
+      },
     ),
   ));
 }

@@ -15,6 +15,7 @@ import 'package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_noti
 import 'package:gallery/src/pages/more/settings/radio_dialog.dart';
 import 'package:gallery/src/pages/more/settings/settings_label.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/widgets/notifiers/tag_refresh.dart';
 
 import '../db/tags/post_tags.dart';
 import 'load_tags.dart';
@@ -49,6 +50,7 @@ class DrawerTagsWidget extends StatelessWidget {
   final BooruTagging? excluded;
   final DisassembleResult? res;
   final bool showLabel;
+  final bool showDeleteButton;
 
   const DrawerTagsWidget(
     this.tags,
@@ -58,6 +60,7 @@ class DrawerTagsWidget extends StatelessWidget {
     this.launchGrid,
     this.excluded,
     this.showLabel = true,
+    required this.showDeleteButton,
     required this.res,
   });
 
@@ -151,11 +154,29 @@ class DrawerTagsWidget extends StatelessWidget {
     return SliverList.list(
       children: [
         if (showLabel)
-          SettingsLabel(
-              AppLocalizations.of(context)!.tagsInfoPage,
-              Theme.of(context).textTheme.titleSmall!.copyWith(
-                    color: Theme.of(context).listTileTheme.textColor,
-                  ))
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              SettingsLabel(
+                AppLocalizations.of(context)!.tagsInfoPage,
+                Theme.of(context).textTheme.titleSmall!.copyWith(
+                      color: Theme.of(context).listTileTheme.textColor,
+                    ),
+              ),
+              if (showDeleteButton)
+                IconButton(
+                  onPressed: () {
+                    final notifier = TagRefreshNotifier.maybeOf(context);
+                    PostTags.g.deletePostTags(filename);
+                    notifier?.call();
+                  },
+                  icon: const Icon(Icons.delete),
+                  visualDensity: VisualDensity.compact,
+                  iconSize: 18,
+                )
+            ],
+          )
         else
           const Padding(padding: EdgeInsets.only(top: 8)),
         Padding(

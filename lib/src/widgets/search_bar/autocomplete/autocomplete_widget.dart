@@ -195,60 +195,66 @@ Widget makeSearchBar(
   required void Function(String) onSubmit,
   required bool swapSearchIcon,
   required bool disable,
+  bool darkenColors = false,
+  double maxWidth = double.infinity,
 }) {
+  final theme = Theme.of(context);
+
   final notifier = FocusNotifier.of(context);
-  final onPrimary = Theme.of(context).colorScheme.onPrimary;
-  final onSurface = Theme.of(context).colorScheme.onSurface;
-  final surface = Theme.of(context).colorScheme.surface;
-  final surfaceTint = Theme.of(context).colorScheme.surfaceTint;
-  final primaryContainer = Theme.of(context).colorScheme.primaryContainer;
-  final onPrimaryContainer = Theme.of(context).colorScheme.onPrimaryContainer;
+  final onPrimary = theme.colorScheme.onPrimary;
+  final onSurface = theme.colorScheme.onSurface;
+  final surface = theme.colorScheme.surface;
+  final surfaceTint = darkenColors
+      ? theme.colorScheme.secondary
+      : theme.colorScheme.surfaceTint;
+  final primaryContainer = theme.colorScheme.primaryContainer;
+  final onPrimaryContainer = theme.colorScheme.onPrimaryContainer;
 
   return AbsorbPointer(
     absorbing: disable,
     child: DefaultSelectionStyle(
       cursorColor: onPrimary.withOpacity(0.8),
       child: Theme(
-        data: Theme.of(context).copyWith(
-            searchBarTheme: SearchBarThemeData(
-              overlayColor:
-                  MaterialStatePropertyAll(onPrimary.withOpacity(0.05)),
-              textStyle: MaterialStatePropertyAll(
-                TextStyle(
-                  color: disable ? onSurface.withOpacity(0.4) : onPrimary,
-                ),
-              ),
-              elevation: const MaterialStatePropertyAll(0),
-              backgroundColor: MaterialStatePropertyAll(disable
-                  ? surface.withOpacity(0.4)
-                  : surfaceTint.withOpacity(0.8)),
-              hintStyle: MaterialStatePropertyAll(
-                TextStyle(
-                  color: onPrimary.withOpacity(0.5),
-                ),
+        data: theme.copyWith(
+          searchBarTheme: SearchBarThemeData(
+            overlayColor: MaterialStatePropertyAll(onPrimary.withOpacity(0.05)),
+            textStyle: MaterialStatePropertyAll(
+              TextStyle(
+                color: disable ? onSurface.withOpacity(0.4) : onPrimary,
               ),
             ),
-            badgeTheme: BadgeThemeData(
-              backgroundColor: primaryContainer,
-              textColor: onPrimaryContainer.withOpacity(0.8),
+            elevation: const MaterialStatePropertyAll(0),
+            backgroundColor: MaterialStatePropertyAll(disable
+                ? surface.withOpacity(0.4)
+                : surfaceTint.withOpacity(0.8)),
+            hintStyle: MaterialStatePropertyAll(
+              TextStyle(
+                color: onPrimary.withOpacity(0.5),
+              ),
             ),
-            inputDecorationTheme: InputDecorationTheme(
-              iconColor: disable ? onSurface.withOpacity(0.4) : onPrimary,
-              prefixIconColor: disable ? onSurface.withOpacity(0.4) : onPrimary,
-              suffixIconColor: disable ? onSurface.withOpacity(0.4) : onPrimary,
-            ),
-            iconTheme: IconThemeData(
-              size: 18,
-              color: disable ? onSurface.withOpacity(0.4) : onPrimary,
-            ),
-            iconButtonTheme: IconButtonThemeData(
-              style: ButtonStyle(
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
-                  padding: const MaterialStatePropertyAll(EdgeInsets.all(0)),
-                  iconColor: MaterialStatePropertyAll(onPrimary)),
-            ),
-            hintColor: onPrimary.withOpacity(0.5)),
+          ),
+          badgeTheme: BadgeThemeData(
+            backgroundColor: primaryContainer,
+            textColor: onPrimaryContainer.withOpacity(0.8),
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            iconColor: disable ? onSurface.withOpacity(0.4) : onPrimary,
+            prefixIconColor: disable ? onSurface.withOpacity(0.4) : onPrimary,
+            suffixIconColor: disable ? onSurface.withOpacity(0.4) : onPrimary,
+          ),
+          iconTheme: IconThemeData(
+            size: 18,
+            color: disable ? onSurface.withOpacity(0.4) : onPrimary,
+          ),
+          iconButtonTheme: IconButtonThemeData(
+            style: ButtonStyle(
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+                padding: const MaterialStatePropertyAll(EdgeInsets.all(0)),
+                iconColor: MaterialStatePropertyAll(onPrimary)),
+          ),
+          hintColor: onPrimary.withOpacity(0.5),
+        ),
         child: SearchBar(
           side: const MaterialStatePropertyAll(BorderSide.none),
           leading: !notifier.hasFocus
@@ -257,14 +263,15 @@ Widget makeSearchBar(
                   : const Icon(Icons.search_rounded)
               : BackButton(
                   onPressed: () {
-                    notifier.unfocus();
+                    FocusNotifier.of(context).unfocus();
                   },
                 ),
-          constraints: BoxConstraints.expand(
-              height: 38,
-              width: !notifier.hasFocus || disable
+          constraints: BoxConstraints(
+              maxHeight: 38,
+              minHeight: 38,
+              maxWidth: !notifier.hasFocus || disable
                   ? 114 + (count != null ? 38 : 0)
-                  : null),
+                  : maxWidth),
           hintText: notifier.hasFocus && !disable
               ? "${searchTextOverride ?? AppLocalizations.of(context)!.searchHint} ${customHint ?? ''}"
               : customHint ??

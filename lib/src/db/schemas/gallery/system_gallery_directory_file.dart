@@ -11,6 +11,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/system_gallery_directory_file_functionality_mixin.dart';
 import 'package:gallery/src/db/base/system_gallery_thumbnail_provider.dart';
+import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
 import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
@@ -135,7 +136,7 @@ class SystemGalleryDirectoryFile
     } catch (_) {}
 
     return [
-      if (size == 0 && res != null)
+      if (res != null && MiscSettings.current.filesExtendedActions)
         IconButton(
             onPressed: () {
               final dio = BooruAPI.defaultClientForBooru(res!.booru);
@@ -366,13 +367,13 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
           child: SearchTextField(
             filterData,
             filename,
-            true,
             key: ValueKey(filename),
           ),
         ),
       DrawerTagsWidget(
         tags,
         filename,
+        showDeleteButton: true,
         launchGrid: _launchGrid,
         excluded: tagManager?.excluded,
         pinnedTags: pinnedTags,

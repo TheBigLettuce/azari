@@ -35,6 +35,7 @@ import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/segment_label.dart';
+import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/skeletons/grid.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
@@ -42,11 +43,13 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class MangaPage extends StatefulWidget {
   final void Function(bool) procPop;
-  final EdgeInsets viewPadding;
+  final EdgeInsets? viewPadding;
+  final bool wrapGridPage;
 
   const MangaPage({
     super.key,
     required this.procPop,
+    this.wrapGridPage = false,
     required this.viewPadding,
   });
 
@@ -152,76 +155,84 @@ class _MangaPageState extends State<MangaPage> {
 
   @override
   Widget build(BuildContext context) {
+    final viewPadding = widget.viewPadding ?? MediaQuery.viewPaddingOf(context);
+
+    final child = GridSkeleton<CompactMangaDataBase>(
+      state,
+      (context) => GridFrame<CompactMangaDataBase>(
+        key: state.gridKey,
+        layout: _ReadingLayout(
+          startReading: _startReading,
+          pinnedMangaKey: _pinnedKey,
+        ),
+        refreshingStatus: state.refreshingStatus,
+        imageViewDescription: ImageViewDescription(
+          imageViewKey: state.imageViewKey,
+        ),
+        functionality: GridFunctionality(
+            onPressed: OverrideGridOnCellPressBehaviour(
+              onPressed: (context, idx, overrideCell) {
+                final cell = overrideCell as CompactMangaDataBase? ??
+                    CellProvider.getOf<CompactMangaDataBase>(context, idx);
+                inInner = true;
+
+                Navigator.of(context, rootNavigator: true)
+                    .push(MaterialPageRoute(
+                  builder: (context) {
+                    return MangaInfoPage(
+                      id: MangaStringId(cell.mangaId),
+                      api: api,
+                    );
+                  },
+                )).then((value) {
+                  _procReload();
+                });
+              },
+            ),
+            selectionGlue: GlueProvider.of(context),
+            refresh: AsyncGridRefresh(
+              refresh,
+              pullToRefresh: false,
+            ),
+            fab: OverrideGridFab(
+              (scrollController) {
+                return ReadingFab(
+                  viewPadding: viewPadding,
+                  api: api,
+                  controller: scrollController,
+                );
+              },
+            )),
+        getCell: (i) => data[i],
+        initalScrollPosition: 0,
+        systemNavigationInsets: viewPadding,
+        mainFocus: state.mainFocus,
+        description: GridDescription(
+          risingAnimation: !state.settings.buddhaMode,
+          actions: const [],
+          appBarSnap: !state.settings.buddhaMode,
+          ignoreEmptyWidgetOnNoContent: true,
+          ignoreSwipeSelectGesture: true,
+          showAppBar: state.settings.buddhaMode,
+          keybindsDescription: AppLocalizations.of(context)!.mangaPage,
+          gridSeed: state.gridSeed,
+        ),
+      ),
+      canPop: state.settings.buddhaMode,
+      secondarySelectionHide: () {
+        _pinnedKey.currentState?.selection.reset();
+      },
+      overrideOnPop: widget.procPop,
+    );
+
     return SafeArea(
       bottom: false,
-      child: GridSkeleton<CompactMangaDataBase>(
-        state,
-        (context) => GridFrame<CompactMangaDataBase>(
-          key: state.gridKey,
-          layout: _ReadingLayout(
-            startReading: _startReading,
-            pinnedMangaKey: _pinnedKey,
-          ),
-          refreshingStatus: state.refreshingStatus,
-          imageViewDescription: ImageViewDescription(
-            imageViewKey: state.imageViewKey,
-          ),
-          functionality: GridFunctionality(
-              onPressed: OverrideGridOnCellPressBehaviour(
-                onPressed: (context, idx, overrideCell) {
-                  final cell = overrideCell as CompactMangaDataBase? ??
-                      CellProvider.getOf<CompactMangaDataBase>(context, idx);
-                  inInner = true;
-
-                  Navigator.of(context, rootNavigator: true)
-                      .push(MaterialPageRoute(
-                    builder: (context) {
-                      return MangaInfoPage(
-                        id: MangaStringId(cell.mangaId),
-                        api: api,
-                      );
-                    },
-                  )).then((value) {
-                    _procReload();
-                  });
-                },
-              ),
-              selectionGlue: GlueProvider.of(context),
-              refresh: AsyncGridRefresh(
-                refresh,
-                pullToRefresh: false,
-              ),
-              fab: OverrideGridFab(
-                (scrollController) {
-                  return ReadingFab(
-                    viewPadding: widget.viewPadding,
-                    api: api,
-                    controller: scrollController,
-                  );
-                },
-              )),
-          getCell: (i) => data[i],
-          initalScrollPosition: 0,
-          systemNavigationInsets: widget.viewPadding,
-          mainFocus: state.mainFocus,
-          description: GridDescription(
-            risingAnimation: true,
-            actions: const [],
-            ignoreEmptyWidgetOnNoContent: true,
-            ignoreSwipeSelectGesture: true,
-            showAppBar: false,
-            keybindsDescription: AppLocalizations.of(context)!.mangaPage,
-            gridSeed: state.gridSeed,
-          ),
-        ),
-        canPop: false,
-        secondarySelectionHide: () {
-          _pinnedKey.currentState?.selection.reset();
-        },
-        overrideOnPop: (pop, _) {
-          widget.procPop(pop);
-        },
-      ),
+      child: widget.wrapGridPage
+          ? WrapGridPage<CompactMangaDataBase>(
+              scaffoldKey: state.scaffoldKey,
+              child: child,
+            )
+          : child,
     );
   }
 }

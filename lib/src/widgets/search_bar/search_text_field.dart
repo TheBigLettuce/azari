@@ -6,50 +6,42 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/widgets/notifiers/focus.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../db/tags/post_tags.dart';
 import '../notifiers/filter.dart';
-import '../notifiers/tag_refresh.dart';
 
 class SearchTextField extends StatelessWidget {
   final FilterNotifierData data;
   final String filename;
-  final bool showDeleteButton;
 
   const SearchTextField(
     this.data,
-    this.filename,
-    this.showDeleteButton, {
+    this.filename, {
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
+    final notifData = FocusNotifier.of(context);
+
     return Padding(
       padding: const EdgeInsets.all(8),
       child: SearchBar(
           focusNode: data.searchFocus,
-          leading: FocusNotifier.of(context).hasFocus
+          leading: notifData.hasFocus
               ? BackButton(
-                  onPressed: () {
-                    data.searchController.clear();
-                    FocusNotifier.of(context).unfocus();
-                  },
+                  onPressed: notifData.unfocus,
                 )
               : const Icon(Icons.search),
-          trailing: showDeleteButton
-              ? [
-                  IconButton(
-                      onPressed: () {
-                        final notifier = TagRefreshNotifier.maybeOf(context);
-                        PostTags.g.deletePostTags(filename);
-                        notifier?.call();
-                      },
-                      icon: const Icon(Icons.delete))
-                ]
-              : null,
+          trailing: [
+            if (notifData.hasFocus)
+              IconButton(
+                onPressed: data.searchController.clear,
+                icon: const Icon(Icons.close_rounded),
+              ).animate().fadeIn()
+          ],
           hintText: AppLocalizations.of(context)!.filterHint,
           elevation: const MaterialStatePropertyAll(0),
           controller: data.searchController,

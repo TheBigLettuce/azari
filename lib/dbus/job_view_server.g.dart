@@ -6,8 +6,9 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 // This file was generated using the following command and may be overwritten.
-// dart-dbus generate-remote-object dbus_services/kf5_org.kde.JobViewServer.xml
+// dart-dbus generate-remote-object /usr/share/dbus-1/interfaces/kf5_org.kde.JobViewServer.xml
 
+import 'dart:io';
 import 'package:dbus/dbus.dart';
 
 class OrgKdeJobViewServer extends DBusRemoteObject {
@@ -16,7 +17,7 @@ class OrgKdeJobViewServer extends DBusRemoteObject {
       : super(client, name: destination, path: path);
 
   /// Invokes org.kde.JobViewServer.requestView()
-  Future<String> callrequestView(
+  Future<DBusObjectPath> callrequestView(
       String appName, String appIconName, int capabilities,
       {bool noAutoStart = false,
       bool allowInteractiveAuthorization = false}) async {
@@ -25,6 +26,6 @@ class OrgKdeJobViewServer extends DBusRemoteObject {
         replySignature: DBusSignature('o'),
         noAutoStart: noAutoStart,
         allowInteractiveAuthorization: allowInteractiveAuthorization);
-    return result.returnValues[0].asObjectPath().value;
+    return result.returnValues[0].asObjectPath();
   }
 }

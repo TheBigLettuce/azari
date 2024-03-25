@@ -138,55 +138,50 @@ class _DownloadsState extends State<Downloads> {
   @override
   Widget build(BuildContext context) {
     return WrapGridPage<DownloadFile>(
-        scaffoldKey: state.scaffoldKey,
-        provided: widget.generateGlue,
-        child: GridSkeleton(
-          state,
-          (context) => GridFrame<DownloadFile>(
-            key: state.gridKey,
-            layout: SegmentLayout(_makeSegments(context), _gridSettingsBase),
-            refreshingStatus: state.refreshingStatus,
-            getCell: loader.getCell,
-            initalScrollPosition: 0,
-            systemNavigationInsets: MediaQuery.viewPaddingOf(context),
-            imageViewDescription: ImageViewDescription(
-              imageViewKey: state.imageViewKey,
-            ),
-            functionality: GridFunctionality(
-              search: OverrideGridSearchWidget(
-                SearchAndFocus(
-                  search.searchWidget(context,
-                      hint: AppLocalizations.of(context)!.downloadsPageName),
-                  search.searchFocus,
-                ),
-              ),
-              selectionGlue: GlueProvider.of(context),
-              refresh: SynchronousGridRefresh(() => loader.count()),
-            ),
-            mainFocus: state.mainFocus,
-            description: GridDescription(
-              actions: [
-                delete(context),
-              ],
-              menuButtonItems: [
-                IconButton(
-                  onPressed: Downloader.g.removeAll,
-                  icon: const Icon(Icons.close),
-                ),
-              ],
-              keybindsDescription:
-                  AppLocalizations.of(context)!.downloadsPageName,
-              inlineMenuButtonItems: true,
-              gridSeed: state.gridSeed,
-            ),
+      scaffoldKey: state.scaffoldKey,
+      provided: widget.generateGlue,
+      child: GridSkeleton(
+        state,
+        (context) => GridFrame<DownloadFile>(
+          key: state.gridKey,
+          layout: SegmentLayout(_makeSegments(context), _gridSettingsBase),
+          refreshingStatus: state.refreshingStatus,
+          getCell: loader.getCell,
+          initalScrollPosition: 0,
+          systemNavigationInsets: MediaQuery.viewPaddingOf(context),
+          imageViewDescription: ImageViewDescription(
+            imageViewKey: state.imageViewKey,
           ),
-          canPop: true,
-          overrideOnPop: (pop, hideAppBar) {
-            if (hideAppBar()) {
-              setState(() {});
-              return;
-            }
-          },
-        ));
+          functionality: GridFunctionality(
+            search: OverrideGridSearchWidget(
+              SearchAndFocus(
+                search.searchWidget(context,
+                    hint: AppLocalizations.of(context)!.downloadsPageName),
+                search.searchFocus,
+              ),
+            ),
+            selectionGlue: GlueProvider.of(context),
+            refresh: SynchronousGridRefresh(() => loader.count()),
+          ),
+          mainFocus: state.mainFocus,
+          description: GridDescription(
+            actions: [
+              delete(context),
+            ],
+            menuButtonItems: [
+              IconButton(
+                onPressed: Downloader.g.removeAll,
+                icon: const Icon(Icons.close),
+              ),
+            ],
+            keybindsDescription:
+                AppLocalizations.of(context)!.downloadsPageName,
+            inlineMenuButtonItems: true,
+            gridSeed: state.gridSeed,
+          ),
+        ),
+        canPop: true,
+      ),
+    );
   }
 }

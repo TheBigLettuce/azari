@@ -239,17 +239,26 @@ class __VideoTimeState extends State<_VideoTime> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(8),
-      child: RichText(
-        text: TextSpan(children: [
-          TextSpan(
-              text: _minutesSeconds(widget.controller.value.position),
-              style: TextStyle(
-                  color: Theme.of(context).iconTheme.color?.withOpacity(0.6))),
-          TextSpan(
-              text: "\n${_minutesSeconds(widget.controller.value.duration)}",
-              style: TextStyle(
-                  color: Theme.of(context).iconTheme.color?.withOpacity(0.2)))
-        ]),
+      child: SizedBox(
+        width: 44,
+        height: 44,
+        child: FittedBox(
+          child: RichText(
+            text: TextSpan(children: [
+              TextSpan(
+                  text: _minutesSeconds(widget.controller.value.position),
+                  style: TextStyle(
+                      color:
+                          Theme.of(context).iconTheme.color?.withOpacity(0.6))),
+              TextSpan(
+                  text:
+                      "\n${_minutesSeconds(widget.controller.value.duration)}",
+                  style: TextStyle(
+                      color:
+                          Theme.of(context).iconTheme.color?.withOpacity(0.2)))
+            ]),
+          ),
+        ),
       ),
     );
   }

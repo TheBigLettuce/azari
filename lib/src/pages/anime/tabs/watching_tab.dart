@@ -207,14 +207,7 @@ class __WatchingTabState extends State<_WatchingTab> {
       secondarySelectionHide: () {
         watchingKey.currentState?.selection.reset();
       },
-      overrideOnPop: (pop, hideAppBar) {
-        if (hideAppBar()) {
-          setState(() {});
-          return;
-        }
-
-        widget.procPop(pop);
-      },
+      overrideOnPop: widget.procPop,
     );
   }
 }

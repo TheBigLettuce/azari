@@ -15,7 +15,7 @@ import '../grid_frame/grid_frame.dart';
 
 class GridSkeleton<T extends Cell> extends StatelessWidget {
   final bool canPop;
-  final void Function(bool, bool Function())? overrideOnPop;
+  final void Function(bool)? overrideOnPop;
   final GridSkeletonState<T> state;
   final GridFrame<T> Function(BuildContext context) grid;
   final void Function()? secondarySelectionHide;
@@ -33,30 +33,15 @@ class GridSkeleton<T extends Cell> extends StatelessWidget {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: canPop && !GlueProvider.of<T>(context).isOpen(),
-      onPopInvoked: overrideOnPop == null
-          ? null
-          : (pop) {
-              if (GlueProvider.of<T>(context).isOpen()) {
-                state.gridKey.currentState?.selection.reset();
-                secondarySelectionHide?.call();
-                return;
-              }
+      onPopInvoked: (pop) {
+        if (GlueProvider.of<T>(context).isOpen()) {
+          state.gridKey.currentState?.selection.reset();
+          secondarySelectionHide?.call();
+          return;
+        }
 
-              overrideOnPop!(pop, () {
-                final s = state.gridKey.currentState;
-                if (s != null) {
-                  // if (s.showSearchBar) {
-                  //   s.showSearchBar = false;
-                  //   // ignore: invalid_use_of_protected_member
-                  //   s.setState(() {});
-
-                  //   return true;
-                  // }
-                }
-
-                return false;
-              });
-            },
+        overrideOnPop?.call(pop);
+      },
       child: GestureDeadZones(
         left: true,
         right: true,

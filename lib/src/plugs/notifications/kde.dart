@@ -53,8 +53,7 @@ class KDENotifications implements NotificationPlug {
           _client, "org.kde.kuiserver", DBusObjectPath("/JobViewServer"));
       final id = await object.callrequestView("Ācārya", "", 0);
 
-      final notif =
-          OrgKdeJobViewV2(_client, "org.kde.kuiserver", DBusObjectPath(id));
+      final notif = OrgKdeJobViewV2(_client, "org.kde.kuiserver", id);
 
       notif.callsetInfoMessage(name);
 

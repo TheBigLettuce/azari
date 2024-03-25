@@ -432,12 +432,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                 ),
               ),
               canPop: true,
-              overrideOnPop: (pop, hideAppBar) {
-                if (hideAppBar()) {
-                  setState(() {});
-                  return;
-                }
-              },
             ),
           );
         },

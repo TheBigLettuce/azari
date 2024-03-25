@@ -457,7 +457,6 @@ class _SearchAnimePageState<T extends Cell, I, G>
               ),
             ),
             canPop: true,
-            overrideOnPop: (_, __) {},
           ),
         );
 
@@ -511,59 +510,65 @@ class __SearchOptionsState<I, G> extends State<_SearchOptions<I, G>> {
   Widget build(BuildContext context) {
     return WrapFutureRestartable<Map<I, G>>(
       builder: (context, value) {
-        return SizedBox(
-          width: double.infinity,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  AppLocalizations.of(context)!.animeSearchSearching,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                SegmentedButtonGroup<(I, G)>(
-                  allowUnselect: true,
-                  select: (genre) {
-                    currentGenre = genre?.$1;
-
-                    widget.setCurrentGenre(genre?.$1);
-
-                    setState(() {});
-                  },
-                  selected: currentGenre == null
-                      ? null
-                      : (currentGenre!, value[currentGenre!]!),
-                  values: value.entries.map((e) => SegmentedButtonValue(
-                      (e.key, e.value), widget.idFromGenre(e.value).$2)),
-                  title: AppLocalizations.of(context)!.animeSearchGenres,
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 16, bottom: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.info_outline_rounded,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.4),
-                      ),
-                      const Padding(padding: EdgeInsets.only(right: 4)),
-                      Text(
-                        AppLocalizations.of(context)!.usingApi(widget.info),
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.4),
-                            ),
-                      )
-                    ],
+        return Padding(
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+          child: SizedBox(
+            width: double.infinity,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    AppLocalizations.of(context)!.animeSearchSearching,
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
-                ),
-              ],
+                  SegmentedButtonGroup<(I, G)>(
+                    allowUnselect: true,
+                    select: (genre) {
+                      currentGenre = genre?.$1;
+
+                      widget.setCurrentGenre(genre?.$1);
+
+                      setState(() {});
+                    },
+                    enableFilter: true,
+                    selected: currentGenre == null
+                        ? null
+                        : (currentGenre!, value[currentGenre!]!),
+                    values: value.entries.map((e) => SegmentedButtonValue(
+                        (e.key, e.value), widget.idFromGenre(e.value).$2)),
+                    title: AppLocalizations.of(context)!.animeSearchGenres,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16, bottom: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.info_outline_rounded,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.4),
+                        ),
+                        const Padding(padding: EdgeInsets.only(right: 4)),
+                        Text(
+                          AppLocalizations.of(context)!.usingApi(widget.info),
+                          style:
+                              Theme.of(context).textTheme.labelLarge?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.4),
+                                  ),
+                        )
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );

@@ -47,6 +47,7 @@ class _TagsWidgetState extends State<TagsWidget> {
 
     watcher = widget.tagging.watch((_) {
       _tags.clear();
+      setState(() {});
 
       _tags.addAll(widget.tagging.get(30));
 
@@ -155,7 +156,6 @@ class SingleTagWidget extends StatelessWidget {
         onPressed: onPress == null
             ? null
             : () {
-                tagging.add(tag);
                 onPress!(tag, null);
               },
       ),

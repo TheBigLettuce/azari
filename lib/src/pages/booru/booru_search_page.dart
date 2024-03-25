@@ -411,12 +411,6 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                 ),
               ),
               canPop: true,
-              overrideOnPop: (pop, hideAppBar) {
-                if (hideAppBar()) {
-                  setState(() {});
-                  return;
-                }
-              },
             ),
           );
         },

@@ -8,14 +8,18 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
+import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/pages/more/settings/radio_dialog.dart';
+import 'package:gallery/src/widgets/notifiers/focus.dart';
+import 'package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart';
 
 class GridSettingsButton extends StatefulWidget {
   const GridSettingsButton(
@@ -89,6 +93,7 @@ class SegmentedButtonGroup<T> extends StatefulWidget {
   final void Function(T?) select;
   final String title;
   final bool allowUnselect;
+  final bool enableFilter;
 
   const SegmentedButtonGroup({
     super.key,
@@ -97,6 +102,7 @@ class SegmentedButtonGroup<T> extends StatefulWidget {
     required this.values,
     required this.title,
     this.allowUnselect = false,
+    this.enableFilter = false,
   });
 
   @override
@@ -105,10 +111,16 @@ class SegmentedButtonGroup<T> extends StatefulWidget {
 
 class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
   final controller = ScrollController();
+  final searchFocus = FocusNode();
+  final textController = TextEditingController();
+
+  final List<SegmentedButtonValue<T>> _filter = [];
 
   @override
   void dispose() {
     controller.dispose();
+    searchFocus.dispose();
+    textController.dispose();
 
     super.dispose();
   }
@@ -130,10 +142,11 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final newValues = widget.values.toList()
-      ..sort((e1, e2) {
-        return e1.label.compareTo(e2.label);
-      });
+    final newValues =
+        textController.text.isNotEmpty ? _filter : widget.values.toList()
+          ..sort((e1, e2) {
+            return e1.label.compareTo(e2.label);
+          });
     final selectedSegment =
         newValues.indexWhere((element) => element.value == widget.selected);
     if (selectedSegment != -1) {
@@ -141,68 +154,72 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
       newValues.insert(0, s);
     }
 
-    final child = newValues.length <= 5
-        ? SingleChildScrollView(
-            controller: controller,
-            scrollDirection: Axis.horizontal,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: SegmentedButton<T>(
-                emptySelectionAllowed:
-                    widget.selected == null || widget.allowUnselect,
-                onSelectionChanged:
-                    newValues.length == 1 && !widget.allowUnselect
-                        ? null
-                        : select,
-                segments: newValues
-                    .map(
-                      (e) => ButtonSegment(
-                        value: e.value,
-                        label: Text(e.label),
-                        icon: e.icon != null ? Icon(e.icon) : null,
-                      ),
-                    )
-                    .toList(),
-                selected: widget.selected != null ? {widget.selected as T} : {},
-              ),
-            ),
-          )
-        : SizedBox(
-            height: 40,
-            child: ListView.builder(
-              controller: controller,
-              shrinkWrap: true,
-              itemCount: newValues.length,
-              scrollDirection: Axis.horizontal,
-              itemBuilder: (context, index) {
-                final e = newValues[index];
-
-                return Padding(
-                  padding: EdgeInsets.only(
-                      right: index == newValues.length - 1 ? 8 : 4),
-                  child: ChoiceChip(
-                    selected: e.value == widget.selected,
-                    avatar: e.icon != null ? Icon(e.icon) : null,
-                    label: Text(e.label),
-                    onSelected: newValues.length == 1 && !widget.allowUnselect
-                        ? null
-                        : (_) {
-                            if (e.value == widget.selected) {
-                              if (!widget.allowUnselect) {
-                                return;
-                              }
-
-                              select({});
-                              return;
-                            }
-
-                            select({e.value});
-                          },
+    final child = newValues.isEmpty
+        ? const EmptyWidget(gridSeed: 0, mini: true)
+        : newValues.length <= 5
+            ? SingleChildScrollView(
+                controller: controller,
+                scrollDirection: Axis.horizontal,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: SegmentedButton<T>(
+                    emptySelectionAllowed:
+                        widget.selected == null || widget.allowUnselect,
+                    onSelectionChanged:
+                        newValues.length == 1 && !widget.allowUnselect
+                            ? null
+                            : select,
+                    segments: newValues
+                        .map(
+                          (e) => ButtonSegment(
+                            value: e.value,
+                            label: Text(e.label),
+                            icon: e.icon != null ? Icon(e.icon) : null,
+                          ),
+                        )
+                        .toList(),
+                    selected:
+                        widget.selected != null ? {widget.selected as T} : {},
                   ),
-                );
-              },
-            ),
-          );
+                ),
+              )
+            : SizedBox(
+                height: 40,
+                child: ListView.builder(
+                  controller: controller,
+                  shrinkWrap: true,
+                  itemCount: newValues.length,
+                  scrollDirection: Axis.horizontal,
+                  itemBuilder: (context, index) {
+                    final e = newValues[index];
+
+                    return Padding(
+                      padding: EdgeInsets.only(
+                          right: index == newValues.length - 1 ? 8 : 4),
+                      child: ChoiceChip(
+                        selected: e.value == widget.selected,
+                        avatar: e.icon != null ? Icon(e.icon) : null,
+                        label: Text(e.label),
+                        onSelected:
+                            newValues.length == 1 && !widget.allowUnselect
+                                ? null
+                                : (_) {
+                                    if (e.value == widget.selected) {
+                                      if (!widget.allowUnselect) {
+                                        return;
+                                      }
+
+                                      select({});
+                                      return;
+                                    }
+
+                                    select({e.value});
+                                  },
+                      ),
+                    );
+                  },
+                ),
+              );
 
     return Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 4),
@@ -210,13 +227,63 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(bottom: 8, top: 4),
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(
-                widget.title,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
+            padding: const EdgeInsets.only(bottom: 8, top: 4, right: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    widget.title,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ),
+                if (widget.enableFilter)
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: FocusNotifier(
+                        notifier: searchFocus,
+                        focusMain: searchFocus.unfocus,
+                        child: Builder(
+                          builder: (context) {
+                            return makeSearchBar(
+                              context,
+                              searchTextOverride:
+                                  AppLocalizations.of(context)!.filterHint,
+                              focusNode: searchFocus,
+                              addItems: const [],
+                              textController: textController,
+                              onChanged: () {
+                                if (textController.text.isEmpty) {
+                                  _filter.clear();
+                                } else {
+                                  final t = textController.text.toLowerCase();
+
+                                  _filter.clear();
+                                  _filter.addAll(
+                                    widget.values.where(
+                                      (element) => element.label
+                                          .toLowerCase()
+                                          .contains(t),
+                                    ),
+                                  );
+                                }
+
+                                setState(() {});
+                              },
+                              onSubmit: (s) {},
+                              swapSearchIcon: false,
+                              disable: false,
+                              darkenColors: true,
+                              maxWidth: 200,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           Align(
@@ -336,41 +403,43 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
       width: double.infinity,
       child: Padding(
         padding: const EdgeInsets.only(left: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Center(
-              child: Text(
-                AppLocalizations.of(context)!.settingsLabel,
-                style: Theme.of(context).textTheme.titleLarge,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Text(
+                  AppLocalizations.of(context)!.settingsLabel,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
               ),
-            ),
-            if (button.safeMode != null)
-              _safeMode(context, button.safeMode!, selectSafeMode: (s) {
-                button.selectSafeMode!(s, gridSettings);
+              if (button.safeMode != null)
+                _safeMode(context, button.safeMode!, selectSafeMode: (s) {
+                  button.selectSafeMode!(s, gridSettings);
+                  button.onChanged();
+                }),
+              if (button.selectHideName != null)
+                _hideName(context, gridSettings.hideName, (n) {
+                  button.selectHideName!(n, gridSettings);
+                  button.onChanged();
+                }),
+              if (button.selectGridLayout != null)
+                _gridLayout(context, gridSettings.layoutType, (t) {
+                  button.selectGridLayout!(t, gridSettings);
+                  button.onChanged();
+                }),
+              if (button.selectRatio != null)
+                _ratio(context, gridSettings.aspectRatio, (r) {
+                  button.selectRatio!(r, gridSettings);
+                  button.onChanged();
+                }),
+              _columns(context, gridSettings.columns, (c) {
+                button.selectGridColumn(c, gridSettings);
                 button.onChanged();
               }),
-            if (button.selectHideName != null)
-              _hideName(context, gridSettings.hideName, (n) {
-                button.selectHideName!(n, gridSettings);
-                button.onChanged();
-              }),
-            if (button.selectGridLayout != null)
-              _gridLayout(context, gridSettings.layoutType, (t) {
-                button.selectGridLayout!(t, gridSettings);
-                button.onChanged();
-              }),
-            if (button.selectRatio != null)
-              _ratio(context, gridSettings.aspectRatio, (r) {
-                button.selectRatio!(r, gridSettings);
-                button.onChanged();
-              }),
-            _columns(context, gridSettings.columns, (c) {
-              button.selectGridColumn(c, gridSettings);
-              button.onChanged();
-            }),
-            const Padding(padding: EdgeInsets.only(bottom: 8))
-          ],
+              const Padding(padding: EdgeInsets.only(bottom: 8))
+            ],
+          ),
         ),
       ),
     );

@@ -28,6 +28,7 @@ import 'package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart';
 import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
+import 'package:gallery/src/widgets/skeletons/grid.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -54,7 +55,7 @@ class FavoriteBooruPage extends StatelessWidget {
     this.wrapGridPage = false,
   });
 
-  Widget child(BuildContext context, EdgeInsets insets) {
+  GridFrame<FavoriteBooru> child(BuildContext context, EdgeInsets insets) {
     final glue = GlueProvider.of<FavoriteBooru>(context);
 
     return GridFrame<FavoriteBooru>(
@@ -120,8 +121,10 @@ class FavoriteBooruPage extends StatelessWidget {
     return wrapGridPage
         ? WrapGridPage<FavoriteBooru>(
             scaffoldKey: state.state.scaffoldKey,
-            child: Builder(
-              builder: (context) => child(context, insets),
+            child: GridSkeleton<FavoriteBooru>(
+              state.state,
+              (context) => child(context, insets),
+              canPop: true,
             ),
           )
         : child(context, insets);
