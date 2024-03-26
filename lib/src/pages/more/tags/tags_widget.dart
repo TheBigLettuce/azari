@@ -77,22 +77,22 @@ class _TagsWidgetState extends State<TagsWidget> {
               ),
             ],
           )
-        : Padding(
-            padding: const EdgeInsets.only(left: 2, top: 2),
-            child: SizedBox(
-              height: 38,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (widget.leading != null) widget.leading!,
-                  Expanded(
+        : SizedBox(
+            height: 38,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (widget.leading != null) widget.leading!,
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(25),
                     child: ListView.builder(
                       key: ValueKey(refreshes),
                       itemCount: _tags.length,
                       scrollDirection: Axis.horizontal,
                       itemBuilder: (context, index) {
                         return Padding(
-                          padding: const EdgeInsets.only(right: 2),
+                          padding: const EdgeInsets.only(right: 4),
                           child: SingleTagWidget(
                             tag: _tags[index],
                             tagging: widget.tagging,
@@ -102,9 +102,9 @@ class _TagsWidgetState extends State<TagsWidget> {
                         );
                       },
                     ),
-                  )
-                ],
-              ),
+                  ),
+                )
+              ],
             ),
           );
   }
@@ -145,19 +145,23 @@ class SingleTagWidget extends StatelessWidget {
           child: Text(AppLocalizations.of(context)!.delete),
         )
       ],
-      child: RawChip(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-        side: redBackground ? BorderSide(color: Colors.pink.shade200) : null,
-        backgroundColor: redBackground ? Colors.pink : null,
-        label: Text(tag.tag,
-            style: redBackground
-                ? TextStyle(color: Colors.white.withOpacity(0.8))
-                : null),
+      child: FilledButton.tonal(
+        style: ButtonStyle(
+          visualDensity: VisualDensity.comfortable,
+          backgroundColor: MaterialStatePropertyAll(
+              redBackground ? Colors.pink.shade300 : null),
+        ),
         onPressed: onPress == null
             ? null
             : () {
                 onPress!(tag, null);
               },
+        child: Text(
+          tag.tag,
+          style: redBackground
+              ? TextStyle(color: Colors.black.withOpacity(0.8))
+              : null,
+        ),
       ),
     );
   }

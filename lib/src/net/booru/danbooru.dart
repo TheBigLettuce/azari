@@ -64,7 +64,7 @@ class Danbooru implements BooruAPI {
         Uri.https(booru.url, "/tags.json", {
           "search[name_matches]": "$tag*",
           "search[order]": "count",
-          "limit": "10",
+          "limit": "30",
         }),
         LogReq(LogReq.completeTag(booru, tag), _log));
 

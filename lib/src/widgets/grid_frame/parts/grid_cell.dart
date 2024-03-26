@@ -41,7 +41,6 @@ class GridCell<T extends Cell> extends StatefulWidget {
   final bool ignoreStickers;
 
   final bool labelAtBottom;
-  // final double?
 
   final int? lines;
 
@@ -265,6 +264,7 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                         },
                         image: widget._data.thumbnail() ??
                             MemoryImage(kTransparentImage),
+                        isAntiAlias: true,
                         alignment: widget.imageAlign,
                         color: isSelected
                             ? Theme.of(context)

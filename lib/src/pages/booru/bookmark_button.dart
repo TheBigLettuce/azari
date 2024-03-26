@@ -292,105 +292,84 @@ class _BookmarkListTile extends StatefulWidget {
 class __BookmarkListTileState extends State<_BookmarkListTile> {
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final singleHeight = (size.width / 5) - (12 / 5) - (18 / 5) - (12 / 5);
+    final size = MediaQuery.sizeOf(context).longestSide * 0.2;
 
-    Iterable<Widget> addDividers(
-        Iterable<Widget> l, double height, int len, Color? dividerColor) sync* {
-      for (final e in l.indexed) {
-        yield e.$2;
-        if (e.$1 != len - 1) {
-          yield VerticalDivider(
-            width: 1,
-            color: dividerColor,
-          );
-        }
-      }
-    }
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
+    return GestureDetector(
       onTap: () {
         widget.onPressed(context, widget.state);
       },
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color:
-              Theme.of(context).colorScheme.primaryContainer.withOpacity(0.25),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding:
-                  const EdgeInsets.only(left: 6, right: 6, top: 6, bottom: 3),
-              child: Container(
-                clipBehavior: Clip.antiAlias,
-                decoration:
-                    BoxDecoration(borderRadius: BorderRadius.circular(20)),
-                foregroundDecoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Wrap(
-                  children: addDividers(
-                    widget.posts.indexed.map((e) => SizedBox(
-                          height:
-                              singleHeight / GridAspectRatio.zeroSeven.value,
-                          width: e.$1 != widget.posts.length - 1
-                              ? singleHeight - 0.5
-                              : singleHeight,
-                          child: Image(
-                            frameBuilder: (
-                              context,
-                              child,
-                              frame,
-                              wasSynchronouslyLoaded,
-                            ) {
-                              if (wasSynchronouslyLoaded) {
-                                return child;
-                              }
-
-                              return frame == null
-                                  ? const ShimmerLoadingIndicator()
-                                  : child.animate().fadeIn();
-                            },
-                            colorBlendMode: BlendMode.hue,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .primaryContainer
-                                .withOpacity(0.5),
-                            image: e.$2.thumbnail()!,
-                            fit: BoxFit.cover,
-                          ),
-                        )),
-                    singleHeight,
-                    widget.posts.length,
-                    Theme.of(context).colorScheme.background,
-                  ).toList(),
-                ),
-              ),
-            ),
-            const Padding(padding: EdgeInsets.only(top: 3)),
-            Divider(
-              height: 0,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
               color: Theme.of(context)
                   .colorScheme
-                  .primaryContainer
-                  .withOpacity(0.8),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primaryContainer
-                    .withOpacity(0.25),
+                  .surfaceVariant
+                  .withOpacity(0.25),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(25),
+                bottomRight: Radius.circular(25),
               ),
+            ),
+            child: SizedBox(
+              height: size,
               width: double.infinity,
-              child: Padding(
-                padding: const EdgeInsets.only(
-                    top: 8, bottom: 8, left: 12, right: 12),
+            ),
+          ),
+          Column(
+            children: [
+              SizedBox(
+                height: size,
+                child: ClipPath.shape(
+                  clipBehavior: Clip.antiAlias,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Row(
+                        children: List.generate(
+                          5,
+                          (index) {
+                            final e = widget.posts[index];
+
+                            return SizedBox(
+                              width: constraints.maxWidth / 5,
+                              height: double.infinity,
+                              child: Image(
+                                frameBuilder: (
+                                  context,
+                                  child,
+                                  frame,
+                                  wasSynchronouslyLoaded,
+                                ) {
+                                  if (wasSynchronouslyLoaded) {
+                                    return child;
+                                  }
+
+                                  return frame == null
+                                      ? const ShimmerLoadingIndicator()
+                                      : child.animate().fadeIn();
+                                },
+                                colorBlendMode: BlendMode.color,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer
+                                    .withOpacity(0.4),
+                                image: e.thumbnail()!,
+                                fit: BoxFit.cover,
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(25),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -423,7 +402,7 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
                         )
                       ],
                     ),
-                    IconButton(
+                    IconButton.filledTonal(
                       onPressed: () {
                         Navigator.push(
                             context,
@@ -474,9 +453,9 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
                   ],
                 ),
               ),
-            )
-          ],
-        ),
+            ],
+          )
+        ],
       ),
     );
   }

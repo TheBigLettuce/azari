@@ -219,6 +219,8 @@ class _BooruPageState extends State<BooruPage> {
 
   final menuController = MenuController();
 
+  final _tagsWidgetKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -262,6 +264,7 @@ class _BooruPageState extends State<BooruPage> {
       completeTag: pagingState.api.completeTag,
       mainFocus: state.mainFocus,
       header: _LatestAndExcluded(
+        key: _tagsWidgetKey,
         api: pagingState.api,
         tagManager: pagingState.tagManager,
         onPressed: (tag, safeMode) {
@@ -910,10 +913,13 @@ class __LatestAndExcludedState extends State<_LatestAndExcluded> {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        const Padding(padding: EdgeInsets.only(top: 8)),
         TagsWidget(
           tagging: latest,
           onPress: widget.onPressed,
-          leading: IconButton(
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 8, right: 8),
+            child: IconButton.filled(
               onPressed: () {
                 Navigator.push(
                     context,
@@ -928,15 +934,19 @@ class __LatestAndExcludedState extends State<_LatestAndExcluded> {
                       },
                     ));
               },
-              icon: const Icon(Icons.search)),
+              icon: const Icon(Icons.search),
+            ),
+          ),
         ),
-        const Padding(padding: EdgeInsets.only(bottom: 4)),
+        const Padding(padding: EdgeInsets.only(bottom: 6)),
         showExcluded
             ? TagsWidget(
                 tagging: excluded,
                 onPress: null,
                 redBackground: true,
-                leading: IconButton(
+                leading: Padding(
+                  padding: const EdgeInsets.only(left: 8, right: 8),
+                  child: IconButton.filled(
                     onPressed: () {
                       Navigator.push(
                           context,
@@ -968,7 +978,9 @@ class __LatestAndExcludedState extends State<_LatestAndExcluded> {
                             },
                           ));
                     },
-                    icon: const Icon(Icons.add)),
+                    icon: const Icon(Icons.add),
+                  ),
+                ),
               )
             : TextButton(
                 onPressed: () {

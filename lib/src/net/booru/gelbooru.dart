@@ -159,7 +159,7 @@ class Gelbooru implements BooruAPI {
         "page": "dapi",
         "s": "tag",
         "q": "index",
-        "limit": "10",
+        "limit": "30",
         "json": "1",
         "name_pattern": "$t%",
         "orderby": "count"

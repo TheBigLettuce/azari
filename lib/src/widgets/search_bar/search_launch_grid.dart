@@ -105,42 +105,53 @@ class SearchLaunchGrid<T extends Cell> {
                   key: ValueKey(previousSearch!.$2),
                   future: previousSearch!.$1,
                   builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return Column(
-                        children: [
-                          const LinearProgressIndicator(),
-                          _state.header,
-                        ],
-                      );
-                    }
-
                     return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _state.header,
-                        ListBody(
-                          children: snapshot.data!
-                              .map((e) => ListTile(
-                                    title: Text(e),
-                                    onTap: () {
-                                      final tags =
-                                          List.from(controller.text.split(" "));
+                        if (!snapshot.hasData)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.only(top: 40),
+                              child: SizedBox(
+                                height: 4,
+                                width: 40,
+                                child: LinearProgressIndicator(),
+                              ),
+                            ),
+                          )
+                        else ...[
+                          const Divider(indent: 8, endIndent: 8),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8, left: 8),
+                            child: Wrap(
+                              spacing: 8,
+                              children: snapshot.data!
+                                  .map((e) => ActionChip(
+                                        label: Text(e),
+                                        onPressed: () {
+                                          final tags = List.from(
+                                              controller.text.split(" "));
 
-                                      if (tags.isNotEmpty) {
-                                        tags.removeLast();
-                                        tags.remove(e);
-                                      }
+                                          if (tags.isNotEmpty) {
+                                            tags.removeLast();
+                                            tags.remove(e);
+                                          }
 
-                                      tags.add(e);
+                                          tags.add(e);
 
-                                      final tagsString = tags.reduce(
-                                          (value, element) =>
-                                              "$value $element");
+                                          final tagsString = tags.reduce(
+                                              (value, element) =>
+                                                  "$value $element");
 
-                                      searchController.text = tagsString + " ";
-                                    },
-                                  ))
-                              .toList(),
-                        )
+                                          searchController.text =
+                                              tagsString + " ";
+                                        },
+                                      ))
+                                  .toList(),
+                            ),
+                          )
+                        ]
                       ],
                     );
                   },
