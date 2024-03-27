@@ -7,11 +7,18 @@
 
 part of '../anime.dart';
 
+class DiscoverExtra {
+  String searchText = "";
+  List<AnimeEntry> entries = [];
+  int? genreId;
+  AnimeSafeMode mode = AnimeSafeMode.safe;
+  Future<Map<int, AnimeGenre>>? future;
+}
+
 class DiscoverTab extends StatefulWidget {
   final EdgeInsets viewInsets;
   final void Function(bool) procPop;
-  final List<AnimeEntry> entries;
-  final PagingContainer<AnimeEntry> pagingContainer;
+  final PagingContainer<AnimeEntry, DiscoverExtra> pagingContainer;
   final AnimeAPI api;
 
   static List<GridAction<AnimeEntry>> actions() => [
@@ -37,7 +44,6 @@ class DiscoverTab extends StatefulWidget {
   const DiscoverTab({
     super.key,
     required this.procPop,
-    required this.entries,
     required this.pagingContainer,
     required this.api,
     required this.viewInsets,
@@ -54,12 +60,16 @@ class _DiscoverTabState extends State<DiscoverTab> {
 
   GridSettingsAnimeDiscovery gridSettings = GridSettingsAnimeDiscovery.current;
 
+  PagingContainer<AnimeEntry, DiscoverExtra> get container =>
+      widget.pagingContainer;
+  List<AnimeEntry> get entries => container.extra.entries;
+
   @override
   void initState() {
     super.initState();
 
     state = GridSkeletonState<AnimeEntry>(
-      initalCellCount: widget.entries.length,
+      initalCellCount: entries.length,
     );
 
     gridSettingsWatcher = GridSettingsAnimeDiscovery.watch((e) {
@@ -77,6 +87,79 @@ class _DiscoverTabState extends State<DiscoverTab> {
     super.dispose();
   }
 
+  void openSearchSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: SearchOptions<int, AnimeGenre>(
+            info: widget.api.site.name,
+            setCurrentGenre: (g) {
+              container.extra.genreId = g;
+
+              state.gridKey.currentState?.refreshSequence();
+            },
+            initalGenreId: container.extra.genreId,
+            header: _SearchBar(
+              pagingContainer: container,
+              gridKey: state.gridKey,
+            ),
+            genreFuture: () {
+              if (container.extra.future != null) {
+                return container.extra.future!;
+              }
+
+              return widget.api.genres(AnimeSafeMode.safe).then((value) {
+                container.extra.future = Future.value(value);
+
+                return value;
+              });
+            },
+            idFromGenre: (genre) => (genre.id, genre.title),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<int> _loadNext() async {
+    final p = await widget.api.search(
+      container.extra.searchText,
+      container.page + 1,
+      container.extra.genreId,
+      container.extra.mode,
+    );
+
+    container.page += 1;
+
+    if (p.isEmpty) {
+      container.reachedEnd = true;
+    }
+    entries.addAll(p);
+
+    return entries.length;
+  }
+
+  Future<int> _refresh() async {
+    entries.clear();
+    container.page = 0;
+    container.reachedEnd = false;
+
+    final p = await widget.api.search(
+      container.extra.searchText,
+      container.page,
+      container.extra.genreId,
+      container.extra.mode,
+    );
+
+    entries.addAll(p);
+
+    return entries.length;
+  }
+
   GridSettingsBase _settings() => GridSettingsBase(
         aspectRatio: GridAspectRatio.zeroSeven,
         columns: gridSettings.columns,
@@ -92,35 +175,14 @@ class _DiscoverTabState extends State<DiscoverTab> {
         key: state.gridKey,
         layout: GridSettingsLayoutBehaviour(_settings),
         refreshingStatus: widget.pagingContainer.refreshingStatus,
-        getCell: (i) => widget.entries[i],
+        getCell: (i) => entries[i],
         initalScrollPosition: widget.pagingContainer.scrollPos,
         functionality: GridFunctionality(
-          loadNext: () async {
-            final p = await widget.api.top(widget.pagingContainer.page + 1);
-
-            widget.pagingContainer.page += 1;
-
-            if (p.isEmpty) {
-              widget.pagingContainer.reachedEnd = true;
-            }
-            widget.entries.addAll(p);
-
-            return widget.entries.length;
-          },
+          loadNext: _loadNext,
           updateScrollPosition: widget.pagingContainer.updateScrollPos,
           selectionGlue:
               GlueProvider.generateOf<AnimeEntry, AnimeEntry>(context),
-          refresh: AsyncGridRefresh(() async {
-            widget.entries.clear();
-            widget.pagingContainer.page = 0;
-            widget.pagingContainer.reachedEnd = false;
-
-            final p = await widget.api.top(widget.pagingContainer.page);
-
-            widget.entries.addAll(p);
-
-            return widget.entries.length;
-          }),
+          refresh: AsyncGridRefresh(_refresh),
           onPressed:
               OverrideGridOnCellPressBehaviour(onPressed: (context, idx, _) {
             final cell = CellProvider.getOf<AnimeEntry>(context, idx);
@@ -150,6 +212,83 @@ class _DiscoverTabState extends State<DiscoverTab> {
       ),
       canPop: false,
       overrideOnPop: widget.procPop,
+    );
+  }
+}
+
+class _SearchBar extends StatefulWidget {
+  final PagingContainer<AnimeEntry, DiscoverExtra> pagingContainer;
+  final GlobalKey<GridFrameState> gridKey;
+
+  const _SearchBar({
+    super.key,
+    required this.pagingContainer,
+    required this.gridKey,
+  });
+
+  @override
+  State<_SearchBar> createState() => __SearchBarState();
+}
+
+class __SearchBarState extends State<_SearchBar> {
+  late final TextEditingController controller;
+
+  PagingContainer<AnimeEntry, DiscoverExtra> get container =>
+      widget.pagingContainer;
+
+  @override
+  void initState() {
+    super.initState();
+
+    controller = TextEditingController(text: container.extra.searchText);
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SearchBar(
+      onSubmitted: (value) {
+        if (value == container.extra.searchText) {
+          return;
+        }
+
+        container.extra.searchText = value;
+
+        widget.gridKey.currentState?.refreshSequence();
+
+        Navigator.pop(context);
+      },
+      controller: controller,
+      elevation: const MaterialStatePropertyAll(0),
+      hintText: AppLocalizations.of(context)!.searchHint,
+      leading: const Icon(Icons.search_rounded),
+      trailing: [
+        StatefulBuilder(
+          builder: (context, setState) {
+            return SafetyButton(
+                mode: container.extra.mode,
+                set: (m) {
+                  container.extra.mode = m;
+
+                  widget.gridKey.currentState?.refreshSequence();
+
+                  setState(() {});
+                });
+          },
+        ),
+        IconButton(
+          onPressed: () {
+            controller.text = "";
+          },
+          icon: const Icon(Icons.close_rounded),
+        ),
+      ],
     );
   }
 }

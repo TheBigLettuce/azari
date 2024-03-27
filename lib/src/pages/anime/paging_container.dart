@@ -8,8 +8,10 @@
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart';
 
-class PagingContainer<T extends Cell> {
-  PagingContainer();
+class PagingContainer<T extends Cell, J> {
+  PagingContainer(this.extra);
+
+  final J extra;
 
   int page = 0;
   double scrollPos = 0;

@@ -220,6 +220,10 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
     });
   }
 
+  void refreshSequence() {
+    widget.refreshingStatus.refresh(widget.functionality);
+  }
+
   @override
   void dispose() {
     _mutationEvents.cancel();

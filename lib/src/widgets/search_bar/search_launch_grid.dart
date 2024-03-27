@@ -78,7 +78,56 @@ class SearchLaunchGrid<T extends Cell> {
               ),
               hintColor:
                   Theme.of(context).colorScheme.onPrimary.withOpacity(0.5)),
-          child: SearchAnchor.bar(
+          child: SearchAnchor(
+            builder: (context, controller) {
+              return InkWell(
+                splashColor:
+                    Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                hoverColor:
+                    Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                onTap: controller.openView,
+                borderRadius: BorderRadius.circular(25),
+                child: AbsorbPointer(
+                  child: SearchBar(
+                    side: const MaterialStatePropertyAll(BorderSide.none),
+                    leading: _state.swapSearchIconWithAddItems &&
+                            addItems.length == 1
+                        ? addItems.first
+                        : Icon(
+                            Icons.search_rounded,
+                            size: 18,
+                            color: _state.disabled
+                                ? Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.4)
+                                : Theme.of(context).colorScheme.onPrimary,
+                          ),
+                    constraints: const BoxConstraints.expand(
+                      height: 38,
+                      width: 114,
+                    ),
+                    hintText: AppLocalizations.of(context)!.searchHint,
+                    onChanged: null,
+                    onSubmitted: _state.disabled
+                        ? null
+                        : (value) {
+                            searchController.closeView(null);
+                            _state.onSubmit(context, value);
+                          },
+                  ),
+                ),
+              );
+            },
+            viewTrailing: [
+              ...addItems,
+              IconButton(
+                onPressed: searchController.clear,
+                icon: const Icon(Icons.close),
+              )
+            ],
+            viewHintText:
+                "${AppLocalizations.of(context)!.searchHint} ${hint ?? ''}",
             searchController: searchController,
             suggestionsBuilder: (suggestionsContext, controller) {
               if (controller.text.isEmpty) {
@@ -158,41 +207,6 @@ class SearchLaunchGrid<T extends Cell> {
                 )
               ];
             },
-            barSide: const MaterialStatePropertyAll(BorderSide.none),
-            barLeading:
-                _state.swapSearchIconWithAddItems && addItems.length == 1
-                    ? addItems.first
-                    : Icon(
-                        Icons.search_rounded,
-                        size: 18,
-                        color: _state.disabled
-                            ? Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.4)
-                            : Theme.of(context).colorScheme.onPrimary,
-                      ),
-            constraints: const BoxConstraints.expand(
-              height: 38,
-              width: 114 + 38,
-            ),
-            viewHintText:
-                "${AppLocalizations.of(context)!.searchHint} ${hint ?? ''}",
-            barHintText: AppLocalizations.of(context)!.searchHint,
-            viewTrailing: [
-              ...addItems,
-              IconButton(
-                onPressed: searchController.clear,
-                icon: const Icon(Icons.close),
-              )
-            ],
-            onChanged: null,
-            onSubmitted: _state.disabled
-                ? null
-                : (value) {
-                    searchController.closeView(null);
-                    _state.onSubmit(context, value);
-                  },
           ),
         ),
       ),

@@ -18,7 +18,6 @@ import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/pages/home.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/pages/booru/booru_restored_page.dart';
 import 'package:gallery/src/pages/more/settings/settings_widget.dart';
@@ -32,12 +31,14 @@ class BookmarkPage extends StatefulWidget {
   final void Function(String? e) saveSelectedPage;
   final PagingStateRegistry pagingRegistry;
   final SelectionGlue<J> Function<J extends Cell>()? generateGlue;
+  final void Function() scrollUp;
 
   const BookmarkPage({
     super.key,
     required this.saveSelectedPage,
     required this.generateGlue,
     required this.pagingRegistry,
+    required this.scrollUp,
   });
 
   @override
@@ -132,6 +133,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
     inInner = false;
 
     if (dirty) {
+      widget.scrollUp();
       _updateDirectly();
     }
   }

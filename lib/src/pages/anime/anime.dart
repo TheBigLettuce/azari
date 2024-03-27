@@ -76,6 +76,7 @@ class _AnimePageState extends State<AnimePage>
   final watchingKey = GlobalKey<__WatchingTabState>();
   final tabKey = GlobalKey<_TabBarWrapperState>();
   final finishedKey = GlobalKey<__FinishedTabState>();
+  final discoverKey = GlobalKey<_DiscoverTabState>();
 
   final _textController = TextEditingController();
   final state = SkeletonState();
@@ -85,15 +86,14 @@ class _AnimePageState extends State<AnimePage>
   late final tabController =
       TabController(initialIndex: kWatchingTabIndx, length: 3, vsync: this);
 
-  final List<AnimeEntry> _discoverEntries = [];
-
   int savedCount = 0;
 
   int readingCount = ReadMangaChapter.countDistinct();
 
   final api = const Jikan();
 
-  final discoverContainer = PagingContainer<AnimeEntry>();
+  final discoverContainer =
+      PagingContainer<AnimeEntry, DiscoverExtra>(DiscoverExtra());
 
   @override
   void initState() {
@@ -137,7 +137,7 @@ class _AnimePageState extends State<AnimePage>
     if (tabController.offset.isNegative
         ? offsetIndex <= 1.5 && offsetIndex > 0.5
         : offsetIndex >= 0.5 && offsetIndex < 1.5) {
-      SearchAnimePage.launchAnimeApi(context, api);
+      discoverKey.currentState?.openSearchSheet();
 
       return true;
     }
@@ -216,8 +216,8 @@ class _AnimePageState extends State<AnimePage>
             ),
             DiscoverTab(
               api: api,
+              key: discoverKey,
               procPop: widget.procPop,
-              entries: _discoverEntries,
               viewInsets: widget.viewPadding,
               pagingContainer: discoverContainer,
             ),

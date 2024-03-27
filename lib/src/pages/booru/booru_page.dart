@@ -636,6 +636,15 @@ class _BooruPageState extends State<BooruPage> {
                                     ]),
                               1 => PageDescription(slivers: [
                                   BookmarkPage(
+                                    scrollUp: () {
+                                      state.gridKey.currentState?.controller
+                                          .animateTo(
+                                        0,
+                                        duration:
+                                            const Duration(milliseconds: 180),
+                                        curve: Easing.standardAccelerate,
+                                      );
+                                    },
                                     pagingRegistry: widget.pagingRegistry,
                                     generateGlue: widget.generateGlue,
                                     saveSelectedPage: (s) =>
@@ -841,6 +850,7 @@ class __BuddhaModeMenuState extends State<_BuddhaModeMenu> {
                                                 .bookmarksPageName),
                                       ),
                                       BookmarkPage(
+                                        scrollUp: () {},
                                         saveSelectedPage:
                                             widget.saveSelectedPage,
                                         generateGlue: null,

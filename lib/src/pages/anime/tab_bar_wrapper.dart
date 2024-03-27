@@ -144,9 +144,6 @@ class _TabBarWrapperState extends State<TabBarWrapper> {
             child: SizedBox(
                 width: 24 + 24 + (rightPadding <= 0 ? 8 : rightPadding / 2),
                 child: GestureDetector(
-                  onLongPress: () {
-                    widget.onPressed(true);
-                  },
                   onTap: () {
                     if (!widget.onPressed(false)) {
                       _showSearchField = !_showSearchField;

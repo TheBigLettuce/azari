@@ -293,6 +293,9 @@ class _SearchAnimePageState<T extends Cell, I, G>
 
   @override
   Widget build(BuildContext context) {
+    final insets = widget.viewInsets ??
+        (MediaQuery.viewPaddingOf(context) + const EdgeInsets.only(bottom: 4));
+
     String title(G? genre) {
       if (genre == null) {
         return "";
@@ -357,51 +360,28 @@ class _SearchAnimePageState<T extends Cell, I, G>
                       searchFocus,
                     ),
                   )),
-              systemNavigationInsets: widget.viewInsets ??
-                  (MediaQuery.viewPaddingOf(context) +
-                      const EdgeInsets.only(bottom: 4)),
+              systemNavigationInsets: insets,
               mainFocus: state.mainFocus,
               description: GridDescription(
                 actions: widget.actions,
                 inlineMenuButtonItems: true,
                 menuButtonItems: [
-                  TextButton(
-                    onPressed: () {
-                      mode = switch (mode) {
-                        AnimeSafeMode.safe => AnimeSafeMode.ecchi,
-                        AnimeSafeMode.h => AnimeSafeMode.safe,
-                        AnimeSafeMode.ecchi => AnimeSafeMode.h,
-                      };
+                  SafetyButton(
+                      mode: mode,
+                      set: (m) {
+                        mode = m;
 
-                      if (_results.isNotEmpty) {
-                        _load();
-                      }
+                        if (_results.isNotEmpty) {
+                          _load();
+                        }
 
-                      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-                        changeSystemUiOverlay(context);
-                      });
+                        WidgetsBinding.instance
+                            .addPostFrameCallback((timeStamp) {
+                          changeSystemUiOverlay(context);
+                        });
 
-                      setState(() {});
-                    },
-                    child: Text(
-                      mode == AnimeSafeMode.ecchi
-                          ? "E"
-                          : mode == AnimeSafeMode.h
-                              ? "H"
-                              : "S",
-                      style: TextStyle(
-                        color: mode == AnimeSafeMode.h
-                            ? Colors.red
-                                .harmonizeWith(Theme.of(context).primaryColor)
-                            : mode == AnimeSafeMode.ecchi
-                                ? Colors.red
-                                    .harmonizeWith(
-                                        Theme.of(context).primaryColor)
-                                    .withOpacity(0.5)
-                                : null,
-                      ),
-                    ),
-                  ),
+                        setState(() {});
+                      }),
                   IconButton(
                     onPressed: () {
                       showModalBottomSheet(
@@ -411,7 +391,7 @@ class _SearchAnimePageState<T extends Cell, I, G>
                         showDragHandle: true,
                         builder: (context) {
                           return SafeArea(
-                            child: _SearchOptions<I, G>(
+                            child: SearchOptions<I, G>(
                               info: widget.info,
                               setCurrentGenre: (g) {
                                 currentGenre = g;
@@ -472,28 +452,72 @@ class _SearchAnimePageState<T extends Cell, I, G>
   }
 }
 
-class _SearchOptions<I, G> extends StatefulWidget {
+class SafetyButton extends StatelessWidget {
+  final AnimeSafeMode mode;
+  final void Function(AnimeSafeMode) set;
+
+  const SafetyButton({
+    super.key,
+    required this.mode,
+    required this.set,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: () {
+        final newMode = switch (mode) {
+          AnimeSafeMode.safe => AnimeSafeMode.ecchi,
+          AnimeSafeMode.h => AnimeSafeMode.safe,
+          AnimeSafeMode.ecchi => AnimeSafeMode.h,
+        };
+
+        set(newMode);
+      },
+      child: Text(
+        mode == AnimeSafeMode.ecchi
+            ? "E"
+            : mode == AnimeSafeMode.h
+                ? "H"
+                : "S",
+        style: TextStyle(
+          color: mode == AnimeSafeMode.h
+              ? Colors.red.harmonizeWith(Theme.of(context).primaryColor)
+              : mode == AnimeSafeMode.ecchi
+                  ? Colors.red
+                      .harmonizeWith(Theme.of(context).primaryColor)
+                      .withOpacity(0.5)
+                  : null,
+        ),
+      ),
+    );
+  }
+}
+
+class SearchOptions<I, G> extends StatefulWidget {
   final I? initalGenreId;
   final Future<Map<I, G>> Function() genreFuture;
   final (I, String) Function(G) idFromGenre;
   final String info;
+  final Widget? header;
 
   final void Function(I?) setCurrentGenre;
 
-  const _SearchOptions({
+  const SearchOptions({
     super.key,
     required this.initalGenreId,
     required this.setCurrentGenre,
     required this.genreFuture,
     required this.idFromGenre,
     required this.info,
+    this.header,
   });
 
   @override
-  State<_SearchOptions<I, G>> createState() => __SearchOptionsState();
+  State<SearchOptions<I, G>> createState() => _SearchOptionsState();
 }
 
-class __SearchOptionsState<I, G> extends State<_SearchOptions<I, G>> {
+class _SearchOptionsState<I, G> extends State<SearchOptions<I, G>> {
   late I? currentGenre = widget.initalGenreId;
 
   @override
@@ -524,6 +548,12 @@ class __SearchOptionsState<I, G> extends State<_SearchOptions<I, G>> {
                     AppLocalizations.of(context)!.animeSearchSearching,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
+                  if (widget.header != null)
+                    Padding(
+                      padding:
+                          const EdgeInsets.only(right: 8, top: 8, bottom: 8),
+                      child: widget.header!,
+                    ),
                   SegmentedButtonGroup<(I, G)>(
                     allowUnselect: true,
                     select: (genre) {
