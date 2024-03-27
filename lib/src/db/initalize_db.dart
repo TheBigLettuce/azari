@@ -14,6 +14,7 @@ import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/db/schemas/gallery/blacklisted_directory.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
+import 'package:gallery/src/db/schemas/gallery/directory_metadata.dart';
 import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/grid_settings/directories.dart';
@@ -120,6 +121,7 @@ Future initalizeDb(bool temporary) async {
     BlacklistedDirectorySchema,
     PinnedDirectoriesSchema,
     FavoriteBooruPostSchema,
+    DirectoryMetadataSchema,
     NoteBooruSchema
   ], directory: directoryPath, inspector: false, name: "androidBlacklistedDir");
 

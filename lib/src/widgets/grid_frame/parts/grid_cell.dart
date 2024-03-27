@@ -5,6 +5,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -52,6 +54,8 @@ class GridCell<T extends Cell> extends StatefulWidget {
   final bool alignTitleToTopLeft;
   final Alignment imageAlign;
 
+  final bool blur;
+
   const GridCell({
     super.key,
     required T cell,
@@ -72,6 +76,7 @@ class GridCell<T extends Cell> extends StatefulWidget {
     this.ignoreStickers = false,
     this.alignTitleToTopLeft = false,
     this.onLongPress,
+    this.blur = false,
   }) : _data = cell;
 
   static GridCell<T> frameDefault<T extends Cell>(
@@ -84,6 +89,7 @@ class GridCell<T extends Cell> extends StatefulWidget {
     Alignment imageAlign = Alignment.center,
     T? overrideCell,
     bool animated = false,
+    bool blur = false,
   }) {
     final functionality = state.widget.functionality;
     final description = state.widget.description;
@@ -103,6 +109,7 @@ class GridCell<T extends Cell> extends StatefulWidget {
       tight: description.tightMode,
       imageAlign: imageAlign,
       animate: animated,
+      blur: blur,
       labelAtBottom: description.cellTitleAtBottom,
       onPressed: (context) => functionality.onPressed.launch(
         context,
@@ -236,7 +243,9 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                   children: [
                     Center(
                         child: LayoutBuilder(builder: (context, constraints) {
-                      return Image(
+                      final blurSigma = constraints.biggest.longestSide * 0.069;
+
+                      final image = Image(
                         key:
                             ValueKey((widget._data.thumbnail.hashCode, _tries)),
                         errorBuilder: (context, error, stackTrace) =>
@@ -266,21 +275,47 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                             MemoryImage(kTransparentImage),
                         isAntiAlias: true,
                         alignment: widget.imageAlign,
-                        color: isSelected
+                        color: widget.blur
                             ? Theme.of(context)
                                 .colorScheme
-                                .onPrimary
+                                .surface
                                 .withOpacity(0.2)
-                            : widget.shadowOnTop
-                                ? Colors.black.withOpacity(0.5)
-                                : null,
-                        colorBlendMode:
-                            isSelected ? BlendMode.srcATop : BlendMode.darken,
+                            : isSelected
+                                ? Theme.of(context)
+                                    .colorScheme
+                                    .onPrimary
+                                    .withOpacity(0.2)
+                                : widget.shadowOnTop
+                                    ? Colors.black.withOpacity(0.5)
+                                    : null,
+                        colorBlendMode: widget.blur
+                            ? BlendMode.darken
+                            : isSelected
+                                ? BlendMode.srcATop
+                                : BlendMode.darken,
                         fit: BoxFit.cover,
-                        filterQuality: FilterQuality.medium,
+                        filterQuality: widget.blur
+                            ? FilterQuality.none
+                            : FilterQuality.medium,
                         width: constraints.maxWidth,
                         height: constraints.maxHeight,
                       );
+
+                      return widget.blur
+                          ? ImageFiltered(
+                              enabled: true,
+                              imageFilter: ImageFilter.compose(
+                                outer: ImageFilter.blur(
+                                  sigmaX: blurSigma,
+                                  sigmaY: blurSigma,
+                                  tileMode: TileMode.mirror,
+                                ),
+                                inner: ImageFilter.dilate(
+                                    radiusX: 0.5, radiusY: 0.5),
+                              ),
+                              child: image,
+                            )
+                          : image;
                     })),
                     if (stickers.isNotEmpty && !widget.ignoreStickers) ...[
                       Align(

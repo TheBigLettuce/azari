@@ -17,6 +17,7 @@ class SearchLaunchGridData {
 
   final bool disabled;
   final Widget header;
+  final bool searchTextAsLabel;
 
   const SearchLaunchGridData({
     required this.mainFocus,
@@ -27,5 +28,6 @@ class SearchLaunchGridData {
     this.swapSearchIconWithAddItems = true,
     this.disabled = false,
     required this.onSubmit,
+    this.searchTextAsLabel = false,
   });
 }

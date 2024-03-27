@@ -19,6 +19,9 @@ class Segments<T> {
     this.unsegmentedLabel, {
     this.addToSticky,
     this.segment,
+    this.blur,
+    this.isBlur,
+    this.isSticky,
     this.limitLabelChildren,
     this.prebuiltSegments,
     this.onLabelPressed,
@@ -43,7 +46,7 @@ class Segments<T> {
   /// Segmentation function.
   /// If [sticky] is true, then even if the cell is single standing it will appear
   /// as a single element segment on the grid.
-  final (String? segment, bool sticky) Function(T cell)? segment;
+  final String? Function(T cell)? segment;
 
   final Map<SegmentKey, int>? prebuiltSegments;
   final int? limitLabelChildren;
@@ -55,6 +58,10 @@ class Segments<T> {
   final bool Function(String seg, {bool? unsticky})? addToSticky;
 
   final void Function(String label, List<T> children)? onLabelPressed;
+
+  final void Function(String seg)? blur;
+  final bool Function(String seg)? isBlur;
+  final bool Function(String seg)? isSticky;
 
   final bool hidePinnedIcon;
   final bool displayFirstCellInSpecial;

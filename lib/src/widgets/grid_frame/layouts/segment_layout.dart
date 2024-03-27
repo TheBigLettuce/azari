@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
+import 'package:gallery/src/db/schemas/gallery/pinned_directories.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
@@ -62,13 +63,14 @@ class SegmentLayout<T extends Cell>
         aspectRatio: settings.aspectRatio.value,
         refreshingStatus: state.refreshingStatus,
         gridSeed: state.widget.description.gridSeed,
-        gridCell: (context, idx) {
+        gridCell: (context, idx, blur) {
           return GridCell.frameDefault(
             context,
             idx,
             hideTitle: settings.hideName,
             isList: isList,
             state: state,
+            blur: blur,
           );
         },
         gridCellT: (context, idx, cell) {
@@ -95,11 +97,12 @@ class SegmentLayout<T extends Cell>
       aspectRatio: settings.aspectRatio.value,
       refreshingStatus: state.refreshingStatus,
       suggestionPrefix: suggestionPrefix,
-      gridCell: (context, idx) {
+      gridCell: (context, idx, blur) {
         return GridCell.frameDefault(
           context,
           idx,
           isList: isList,
+          blur: blur,
           imageAlign: Alignment.topCenter,
           hideTitle: settings.hideName,
           animated: PlayAnimationNotifier.maybeOf(context) ?? false,
@@ -132,7 +135,7 @@ class SegmentLayout<T extends Cell>
     GridColumn columns, {
     required GridRefreshingStatus<T> refreshingStatus,
     required GridFunctionality<T> functionality,
-    required MakeCellFunc<T> gridCell,
+    required GridCell<T> Function(BuildContext, int idx, bool blur) gridCell,
     required GridCell<T> Function(BuildContext, int idx, T) gridCellT,
     required double aspectRatio,
     required int gridSeed,
@@ -156,7 +159,8 @@ class SegmentLayout<T extends Cell>
 
     int prevCount = 0;
     for (final e in segments.prebuiltSegments!.entries) {
-      segRows.add(_HeaderWithIdx(
+      segRows.add(
+        _HeaderWithIdx(
           _SegSticky(
             e.key.translatedString(context),
             true,
@@ -189,7 +193,10 @@ class SegmentLayout<T extends Cell>
                     segments.onLabelPressed!(e.key.toString(), cells);
                   },
           ),
-          List.generate(e.value, (index) => index + prevCount)));
+          _Idxs(List.generate(e.value, (index) => index + prevCount), false,
+              false),
+        ),
+      );
 
       prevCount += e.value;
     }
@@ -219,7 +226,7 @@ class SegmentLayout<T extends Cell>
     GridColumn columns, {
     required GridRefreshingStatus<T> refreshingStatus,
     required GridFunctionality<T> functionality,
-    required MakeCellFunc<T> gridCell,
+    required GridCell<T> Function(BuildContext, int idx, bool blur) gridCell,
     required GridCell<T> Function(BuildContext, int idx, T) gridCellT,
     required double systemNavigationInsets,
     required int gridSeed,
@@ -231,8 +238,7 @@ class SegmentLayout<T extends Cell>
     }
 
     final segRows = <_SegmentType>[];
-    final segMap = <String, List<int>>{};
-    final stickySegs = <String, List<int>>{};
+    final segMap = <String, _Idxs>{};
 
     final getCell = CellProvider.of<T>(context);
 
@@ -266,30 +272,22 @@ class SegmentLayout<T extends Cell>
         }
       }
 
-      final (res, sticky) = segments.segment!(cell);
+      final (res) = segments.segment!(cell);
       if (res == null) {
         unsegmented.add(i);
       } else {
-        if (sticky) {
-          final previous = (stickySegs[res]) ?? [];
-          previous.add(i);
-          stickySegs[res] = previous;
-        } else {
-          final previous = (segMap[res]) ?? [];
-          previous.add(i);
-          segMap[res] = previous;
-        }
+        final previous = (segMap[res]) ?? _Idxs([], false, false);
+        previous.list.add(i);
+        segMap[res] = previous;
+        // if (sticky) {
+        //   final previous = (stickySegs[res]) ?? _Idxs([], blur);
+        //   previous.list.add(i);
+        //   stickySegs[res] = previous;
+        // } else {
+
+        // }
       }
     }
-
-    segMap.removeWhere((key, value) {
-      if (value.length == 1) {
-        unsegmented.add(value[0]);
-        return true;
-      }
-
-      return false;
-    });
 
     if (segments.displayFirstCellInSpecial) {
       segRows.add(_HeaderWithCells(
@@ -334,31 +332,66 @@ class SegmentLayout<T extends Cell>
       segments.onLabelPressed!(key, value.map((e) => getCell(e)).toList());
     }
 
-    stickySegs.forEach((key, value) {
-      segRows.add(_HeaderWithIdx(
-        _SegSticky(
-          key,
-          true,
-          segments.onLabelPressed == null
-              ? null
-              : () => onLabelPressed(key, value),
-        ),
-        value,
-      ));
+    if (segments.isSticky != null) {
+      for (final e in segMap.entries) {
+        if (segments.isSticky!(e.key)) {
+          e.value.sticky = true;
+        }
+      }
+    }
+
+    if (segments.isBlur != null) {
+      for (final e in segMap.entries) {
+        if (segments.isBlur!(e.key)) {
+          e.value.blur = true;
+        }
+      }
+    }
+
+    segMap.removeWhere((key, value) {
+      if (value.list.length == 1 && !value.sticky) {
+        unsegmented.add(value.list[0]);
+        return true;
+      }
+
+      return false;
+    });
+
+    final List<int> predefined = [];
+
+    segMap.forEach((key, value) {
+      if (value.sticky) {
+        segRows.add(_HeaderWithIdx(
+          _SegSticky(
+            key,
+            true,
+            segments.onLabelPressed == null
+                ? null
+                : () => onLabelPressed(key, value.list),
+          ),
+          value,
+        ));
+
+        predefined.addAll(value.list);
+      }
     });
 
     segMap.forEach(
       (key, value) {
-        segRows.add(_HeaderWithIdx(
-          _SegSticky(
-            key,
-            false,
-            segments.onLabelPressed == null
-                ? null
-                : () => onLabelPressed(key, value),
-          ),
-          value,
-        ));
+        if (!value.sticky) {
+          segRows.add(_HeaderWithIdx(
+            _SegSticky(
+              key,
+              false,
+              segments.onLabelPressed == null
+                  ? null
+                  : () => onLabelPressed(key, value.list),
+            ),
+            value,
+          ));
+
+          predefined.addAll(value.list);
+        }
       },
     );
 
@@ -371,18 +404,8 @@ class SegmentLayout<T extends Cell>
               ? null
               : () => onLabelPressed(segments.unsegmentedLabel, unsegmented),
         ),
-        unsegmented,
+        _Idxs(unsegmented, false, false),
       ));
-    }
-
-    final List<int> predefined = [];
-
-    for (final segs in stickySegs.values) {
-      predefined.addAll(segs);
-    }
-
-    for (final segs in segMap.values) {
-      predefined.addAll(segs);
     }
 
     predefined.addAll(unsegmented);
@@ -413,7 +436,7 @@ class SegmentLayout<T extends Cell>
     List<int>? predefined, {
     required GridRefreshingStatus<T> refreshingStatus,
     required GridFunctionality<T> functionality,
-    required MakeCellFunc<T> gridCell,
+    required GridCell<T> Function(BuildContext, int idx, bool blur) gridCell,
     required Segments<T> segments,
     required GridColumn columns,
     required GridSelection<T> selection,
@@ -467,7 +490,7 @@ class SegmentLayout<T extends Cell>
     GridMutationInterface<T> state,
     GridSelection<T> selection,
     _HeaderWithIdx val,
-    GridCell<T> Function(BuildContext, int idx) gridCell, {
+    GridCell<T> Function(BuildContext, int idx, bool blur) gridCell, {
     required GridColumn columns,
     List<int>? predefined,
     required GridRefreshingStatus<T> refreshingStatus,
@@ -488,15 +511,16 @@ class SegmentLayout<T extends Cell>
       systemNavigationInsets: systemNavigationInsets,
       aspectRatio: aspectRatio,
       segmentLabel: val.header,
+      blur: val.idxs.blur,
       sliver: SliverGrid.builder(
-        itemCount: val.idxs.length,
+        itemCount: val.idxs.list.length,
         gridDelegate: SliverQuiltedGridDelegate(
           crossAxisCount: columns.number,
           repeatPattern: QuiltedGridRepeatPattern.inverted,
           pattern: columns.pattern(gridSeed),
         ),
         itemBuilder: (context, index) {
-          final realIdx = val.idxs[index];
+          final realIdx = val.idxs.list[index];
 
           return WrapSelection(
             actionsAreEmpty: selection.addActions.isEmpty,
@@ -509,7 +533,7 @@ class SegmentLayout<T extends Cell>
                 selectFrom: predefined),
             selectUnselect: () => selection.selectOrUnselect(context, realIdx),
             isSelected: selection.isSelected(realIdx),
-            child: gridCell(context, realIdx),
+            child: gridCell(context, realIdx, val.idxs.blur),
           );
         },
       ),
@@ -540,6 +564,7 @@ class SegmentLayout<T extends Cell>
       systemNavigationInsets: systemNavigationInsets,
       aspectRatio: aspectRatio,
       segmentLabel: val.header,
+      blur: false,
       sliver: SliverGrid.builder(
         itemCount: val.cells.length,
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -577,6 +602,7 @@ class SegmentLayout<T extends Cell>
     required GridRefreshingStatus<T> refreshingStatus,
     required GridFunctionality<T> gridFunctionality,
     required Segments<T> segments,
+    required bool blur,
     required _SegSticky segmentLabel,
     required Widget sliver,
   }) {
@@ -596,19 +622,32 @@ class SegmentLayout<T extends Cell>
                   hidePinnedIcon: segments.hidePinnedIcon,
                   onPress: segmentLabel.onLabelPressed,
                   sticky: segmentLabel.sticky,
-                  onLongPress: !segmentLabel.unstickable
-                      ? null
-                      : segments.addToSticky != null &&
-                              segmentLabel.seg != segments.unsegmentedLabel
-                          ? () {
-                              if (segments.addToSticky!(segmentLabel.seg,
-                                  unsticky:
-                                      segmentLabel.sticky ? true : null)) {
-                                HapticFeedback.vibrate();
-                                refreshingStatus.refresh(gridFunctionality);
-                              }
-                            }
-                          : null,
+                  menuItems: [
+                    if (segmentLabel.unstickable &&
+                        segments.addToSticky != null &&
+                        segmentLabel.seg != segments.unsegmentedLabel)
+                      PopupMenuItem(
+                        onTap: () {
+                          if (segments.addToSticky!(segmentLabel.seg,
+                              unsticky: segmentLabel.sticky ? true : null)) {
+                            HapticFeedback.vibrate();
+                            refreshingStatus.refresh(gridFunctionality);
+                          }
+                        },
+                        child: Text(
+                          segmentLabel.sticky ? "Unsticky" : "Sticky",
+                        ), // TODO: change
+                      ),
+                    if (segments.blur != null)
+                      PopupMenuItem(
+                        onTap: () {
+                          segments.blur!(segmentLabel.seg);
+                          HapticFeedback.vibrate();
+                          refreshingStatus.refresh(gridFunctionality);
+                        },
+                        child: Text(blur ? "Unblur" : "Blur"), // TODO: change
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -653,6 +692,14 @@ class _HeaderWithCells<T extends Cell> implements _SegmentType {
 class _HeaderWithIdx implements _SegmentType {
   const _HeaderWithIdx(this.header, this.idxs);
 
-  final List<int> idxs;
+  final _Idxs idxs;
   final _SegSticky header;
+}
+
+class _Idxs {
+  _Idxs(this.list, this.blur, this.sticky);
+
+  final List<int> list;
+  bool blur;
+  bool sticky;
 }

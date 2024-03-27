@@ -197,6 +197,7 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
                       padding: EdgeInsets.only(
                           right: index == newValues.length - 1 ? 8 : 4),
                       child: ChoiceChip(
+                        showCheckmark: false,
                         selected: e.value == widget.selected,
                         avatar: e.icon != null ? Icon(e.icon) : null,
                         label: Text(e.label),

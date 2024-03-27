@@ -8,6 +8,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/schemas/gallery/directory_metadata.dart';
 import 'package:gallery/src/db/schemas/grid_settings/directories.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
@@ -214,23 +215,36 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       injectedLabel: AppLocalizations.of(context)!.segmentsSpecial,
       displayFirstCellInSpecial:
           widget.callback != null || widget.nestedCallback != null,
+      blur: (seg) {
+        DirectoryMetadata.add(
+          seg,
+          !(DirectoryMetadata.get(seg)?.blur ?? false),
+        );
+      },
+      isBlur: (seg) {
+        return DirectoryMetadata.get(seg)?.blur ?? false;
+      },
+      isSticky: (seg) {
+        if (seg == "Booru") {
+          return true;
+        }
+
+        return PinnedDirectories.exist(seg);
+      },
       segment: (cell) {
         for (final booru in Booru.values) {
           if (booru.url == cell.name) {
-            return ("Booru", true);
+            return "Booru";
           }
         }
 
         final dirTag = PostTags.g.directoryTag(cell.bucketId);
         if (dirTag != null) {
-          return (dirTag, PinnedDirectories.exist(dirTag));
+          return dirTag;
         }
 
         final name = cell.name.split(" ");
-        return (
-          name.first.toLowerCase(),
-          PinnedDirectories.exist(name.first.toLowerCase())
-        );
+        return name.first.toLowerCase();
       },
       addToSticky: (seg, {unsticky}) {
         if (seg == "Booru" ||
@@ -240,7 +254,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
         if (unsticky == true) {
           PinnedDirectories.delete(seg);
         } else {
-          PinnedDirectories.add(seg);
+          PinnedDirectories.add(seg, false);
         }
 
         return true;

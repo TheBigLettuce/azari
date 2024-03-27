@@ -9,11 +9,11 @@ import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:isar/isar.dart';
 
-part 'pinned_directories.g.dart';
+part 'directory_metadata.g.dart';
 
 @collection
-class PinnedDirectories {
-  const PinnedDirectories(this.categoryName, this.time);
+class DirectoryMetadata {
+  const DirectoryMetadata(this.categoryName, this.time, this.blur);
 
   Id get isarId => fastHash(categoryName);
 
@@ -22,24 +22,23 @@ class PinnedDirectories {
   @Index()
   final DateTime time;
 
-  static PinnedDirectories? get(String id) =>
-      Dbs.g.blacklisted.pinnedDirectories.getSync(fastHash(id));
+  final bool blur;
 
-  static bool exist(String id) =>
-      Dbs.g.blacklisted.pinnedDirectories.getSync(fastHash(id)) != null;
+  static DirectoryMetadata? get(String id) =>
+      Dbs.g.blacklisted.directoryMetadatas.getByCategoryNameSync(id);
 
-  static bool notExist(String id) => !exist(id);
+  // static void delete(String id) {
+  //   Dbs.g.blacklisted.writeTxnSync(() {
+  //     Dbs.g.blacklisted.pinnedDirectories.deleteSync(fastHash(id));
+  //   });
+  // }
 
-  static void delete(String id) {
-    Dbs.g.blacklisted.writeTxnSync(() {
-      Dbs.g.blacklisted.pinnedDirectories.deleteSync(fastHash(id));
-    });
-  }
-
-  static void add(String id, [bool silent = false]) {
-    Dbs.g.blacklisted.writeTxnSync(() {
-      Dbs.g.blacklisted.pinnedDirectories
-          .putSync(PinnedDirectories(id, DateTime.now()));
-    }, silent: silent);
+  static void add(String id, bool blur) {
+    Dbs.g.blacklisted.writeTxnSync(
+      () {
+        Dbs.g.blacklisted.directoryMetadatas
+            .putByCategoryNameSync(DirectoryMetadata(id, DateTime.now(), blur));
+      },
+    );
   }
 }

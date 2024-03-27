@@ -305,16 +305,14 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
       };
     };
 
-  Iterable<FavoriteBooru> _collector(Map<String, Set<String>>? data) {
-    return () sync* {
-      for (final ids in data!.values) {
-        for (final i in ids) {
-          final f = loader.instance.favoriteBoorus.getByFileUrlSync(i)!;
-          f.isarId = null;
-          yield f;
-        }
+  Iterable<FavoriteBooru> _collector(Map<String, Set<String>>? data) sync* {
+    for (final ids in data!.values) {
+      for (final i in ids) {
+        final f = loader.instance.favoriteBoorus.getByFileUrlSync(i)!;
+        f.isarId = null;
+        yield f;
       }
-    }();
+    }
   }
 
   static (Iterable<T>, dynamic) sameFavorites<T extends PostBase>(

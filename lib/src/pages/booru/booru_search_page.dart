@@ -110,12 +110,16 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
     search = SearchLaunchGrid(SearchLaunchGridData(
       completeTag: api.completeTag,
       mainFocus: state.mainFocus,
-      header: TagsWidget(
-        tagging: tagManager.latest,
-        onPress: (tag, safeMode) => _clearAndRefreshB(tag.tag),
+      header: Padding(
+        padding: const EdgeInsets.all(8),
+        child: TagsWidget(
+          tagging: tagManager.latest,
+          onPress: (tag, safeMode) => _clearAndRefreshB(tag.tag),
+        ),
       ),
       searchText: widget.tags,
       addItems: (_) => const [],
+      searchTextAsLabel: true,
       onSubmit: (context, tag) {
         _clearAndRefreshB(tag);
       },

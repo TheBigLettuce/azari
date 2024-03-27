@@ -62,10 +62,15 @@ class SearchLaunchGrid<T extends Cell> {
                         .withOpacity(0.8)),
                 hintStyle: MaterialStatePropertyAll(
                   TextStyle(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onPrimary
-                        .withOpacity(0.5),
+                    color: _state.disabled
+                        ? Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.5)
+                        : Theme.of(context)
+                            .colorScheme
+                            .onPrimary
+                            .withOpacity(0.5),
                   ),
                 ),
               ),
@@ -107,7 +112,9 @@ class SearchLaunchGrid<T extends Cell> {
                       height: 38,
                       width: 114,
                     ),
-                    hintText: AppLocalizations.of(context)!.searchHint,
+                    hintText: _state.disabled || _state.searchTextAsLabel
+                        ? searchController.text
+                        : AppLocalizations.of(context)!.searchHint,
                     onChanged: null,
                     onSubmitted: _state.disabled
                         ? null
@@ -126,6 +133,9 @@ class SearchLaunchGrid<T extends Cell> {
                 icon: const Icon(Icons.close),
               )
             ],
+            viewOnSubmitted: (value) {
+              _state.onSubmit(context, value);
+            },
             viewHintText:
                 "${AppLocalizations.of(context)!.searchHint} ${hint ?? ''}",
             searchController: searchController,

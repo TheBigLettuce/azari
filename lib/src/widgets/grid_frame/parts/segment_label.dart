@@ -6,10 +6,12 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/widgets/menu_wrapper.dart';
 
 class SegmentLabel extends StatelessWidget {
   final String text;
-  final void Function()? onLongPress;
+  final List<PopupMenuItem> menuItems;
+  // final void Function()? onLongPress;
   final void Function()? onPress;
   final bool sticky;
   final bool hidePinnedIcon;
@@ -19,7 +21,7 @@ class SegmentLabel extends StatelessWidget {
     this.text, {
     super.key,
     required this.hidePinnedIcon,
-    this.onLongPress,
+    this.menuItems = const [],
     required this.onPress,
     required this.sticky,
     this.overridePinnedIcon,
@@ -66,13 +68,15 @@ class SegmentLabel extends StatelessWidget {
       ],
     );
 
-    return Padding(
+    return MenuWrapper(
+      title: text,
+      items: menuItems,
+      child: Padding(
         padding: EdgeInsets.only(
             bottom: 8,
             top: 16,
             right: rightGesture == 0 ? 8 : rightGesture / 2),
         child: GestureDetector(
-          onLongPress: onLongPress,
           onTap: onPress,
           child: hidePinnedIcon && overridePinnedIcon == null
               ? row
@@ -84,7 +88,9 @@ class SegmentLabel extends StatelessWidget {
                           16),
                   child: row,
                 ),
-        ));
+        ),
+      ),
+    );
   }
 }
 
