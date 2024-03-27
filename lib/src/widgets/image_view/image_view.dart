@@ -72,7 +72,6 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final BuildContext? gridContext;
 
   final bool ignoreLoadingBuilder;
-  final bool switchPageOnTapEdges;
 
   final List<Widget> appBarItems;
   final void Function()? onRightSwitchPageEnd;
@@ -100,7 +99,6 @@ class ImageView<T extends Cell> extends StatefulWidget {
     this.onEmptyNotes,
     this.infoScrollOffset,
     this.download,
-    this.switchPageOnTapEdges = false,
     this.ignoreEndDrawer = false,
     this.registerNotifiers,
     this.addIcons,
@@ -383,10 +381,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
               mainFocus: mainFocus,
               child: ImageViewBody(
                 isPaletteNull: currentPalette == null,
-                onPressedLeft:
-                    widget.switchPageOnTapEdges ? _onPressedLeft : null,
-                onPressedRight:
-                    widget.switchPageOnTapEdges ? _onPressedRight : null,
+                onPressedLeft: _onPressedLeft,
+                onPressedRight: _onPressedRight,
                 onPageChanged: _onPageChanged,
                 onLongPress: _onLongPress,
                 pageController: controller,

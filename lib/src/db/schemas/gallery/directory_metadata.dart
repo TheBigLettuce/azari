@@ -34,6 +34,10 @@ class DirectoryMetadata {
   // }
 
   static void add(String id, bool blur) {
+    if (id.isEmpty) {
+      return;
+    }
+
     Dbs.g.blacklisted.writeTxnSync(
       () {
         Dbs.g.blacklisted.directoryMetadatas

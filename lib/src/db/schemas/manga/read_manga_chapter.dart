@@ -253,7 +253,6 @@ class ReadMangaChapter {
                   )
                 ],
               ],
-              switchPageOnTapEdges: true,
               onRightSwitchPageEnd: addNextChapterButton
                   ? () {
                       nextChapterKey.currentState?.findAndLaunchNext();

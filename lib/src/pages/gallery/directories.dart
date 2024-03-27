@@ -212,7 +212,9 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
     return Segments(
       AppLocalizations.of(context)!.segmentsUncategorized,
-      injectedLabel: AppLocalizations.of(context)!.segmentsSpecial,
+      injectedLabel: widget.callback != null || widget.nestedCallback != null
+          ? "Suggestions"
+          : AppLocalizations.of(context)!.segmentsSpecial, // TODO: change
       displayFirstCellInSpecial:
           widget.callback != null || widget.nestedCallback != null,
       blur: (seg) {
@@ -222,9 +224,17 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
         );
       },
       isBlur: (seg) {
+        if (seg.isEmpty) {
+          return false;
+        }
+
         return DirectoryMetadata.get(seg)?.blur ?? false;
       },
       isSticky: (seg) {
+        if (seg.isEmpty) {
+          return false;
+        }
+
         if (seg == "Booru") {
           return true;
         }

@@ -73,10 +73,11 @@ class SegmentLayout<T extends Cell>
             blur: blur,
           );
         },
-        gridCellT: (context, idx, cell) {
+        gridCellT: (context, idx, cell, blur) {
           return GridCell.frameDefault(
             context,
             idx,
+            blur: blur,
             hideTitle: settings.hideName,
             isList: isList,
             overrideCell: cell,
@@ -109,13 +110,14 @@ class SegmentLayout<T extends Cell>
           state: state,
         );
       },
-      gridCellT: (context, idx, cell) {
+      gridCellT: (context, idx, cell, blur) {
         return GridCell.frameDefault(
           context,
           idx,
           hideTitle: settings.hideName,
           isList: isList,
           overrideCell: cell,
+          blur: blur,
           animated: PlayAnimationNotifier.maybeOf(context) ?? false,
           state: state,
         );
@@ -136,7 +138,8 @@ class SegmentLayout<T extends Cell>
     required GridRefreshingStatus<T> refreshingStatus,
     required GridFunctionality<T> functionality,
     required GridCell<T> Function(BuildContext, int idx, bool blur) gridCell,
-    required GridCell<T> Function(BuildContext, int idx, T) gridCellT,
+    required GridCell<T> Function(BuildContext, int idx, T, bool blur)
+        gridCellT,
     required double aspectRatio,
     required int gridSeed,
     required double systemNavigationInsets,
@@ -146,14 +149,14 @@ class SegmentLayout<T extends Cell>
     final segRows = <_SegmentType>[];
 
     if (segments.injectedSegments.isNotEmpty) {
-      segRows.add(_HeaderWithCells(
+      segRows.add(_HeaderWithCells<T>(
         _SegSticky(
           segments.injectedLabel,
           true,
           null,
           unstickable: false,
         ),
-        segments.injectedSegments,
+        segments.injectedSegments.map((e) => (e, false)).toList(),
       ));
     }
 
@@ -227,7 +230,8 @@ class SegmentLayout<T extends Cell>
     required GridRefreshingStatus<T> refreshingStatus,
     required GridFunctionality<T> functionality,
     required GridCell<T> Function(BuildContext, int idx, bool blur) gridCell,
-    required GridCell<T> Function(BuildContext, int idx, T) gridCellT,
+    required GridCell<T> Function(BuildContext, int idx, T, bool blur)
+        gridCellT,
     required double systemNavigationInsets,
     required int gridSeed,
     required List<String> suggestionPrefix,
@@ -244,7 +248,7 @@ class SegmentLayout<T extends Cell>
 
     final unsegmented = <int>[];
 
-    final List<T> suggestionCells = [];
+    final List<(T, bool)> suggestionCells = [];
 
     for (var i = 0; i < state.cellCount; i++) {
       final cell = getCell(i);
@@ -260,13 +264,19 @@ class SegmentLayout<T extends Cell>
               if (cell
                   .alias(false)
                   .startsWith(e.length <= 4 ? e : e.substring(0, 5))) {
-                suggestionCells.add(cell);
+                suggestionCells.add((
+                  cell,
+                  segments.isBlur?.call(segments.segment!(cell) ?? "") ?? false
+                ));
               }
             }
           } else {
             if (cell.alias(false).startsWith(
                 alias.length <= 4 ? alias : alias.substring(0, 5))) {
-              suggestionCells.add(cell);
+              suggestionCells.add((
+                cell,
+                segments.isBlur?.call(segments.segment!(cell) ?? "") ?? false
+              ));
             }
           }
         }
@@ -289,8 +299,24 @@ class SegmentLayout<T extends Cell>
       }
     }
 
+    if (segments.isSticky != null) {
+      for (final e in segMap.entries) {
+        if (segments.isSticky!(e.key)) {
+          e.value.sticky = true;
+        }
+      }
+    }
+
+    if (segments.isBlur != null) {
+      for (final e in segMap.entries) {
+        if (segments.isBlur!(e.key)) {
+          e.value.blur = true;
+        }
+      }
+    }
+
     if (segments.displayFirstCellInSpecial) {
-      segRows.add(_HeaderWithCells(
+      segRows.add(_HeaderWithCells<T>(
         _SegSticky(
           segments.injectedLabel,
           true,
@@ -298,19 +324,31 @@ class SegmentLayout<T extends Cell>
           unstickable: false,
           firstIsSpecial: true,
         ),
-        (suggestionCells.isEmpty ? [getCell(0)] : suggestionCells) +
-            segments.injectedSegments,
+        (suggestionCells.isEmpty
+                ? [
+                    () {
+                      final cell = getCell(0);
+
+                      return (
+                        cell,
+                        segments.isBlur?.call(segments.segment!(cell) ?? "") ??
+                            false
+                      );
+                    }()
+                  ]
+                : suggestionCells) +
+            segments.injectedSegments.map((e) => (e, false)).toList(),
       ));
     } else {
       if (segments.injectedSegments.isNotEmpty) {
-        segRows.add(_HeaderWithCells(
+        segRows.add(_HeaderWithCells<T>(
           _SegSticky(
             segments.injectedLabel,
             true,
             null,
             unstickable: false,
           ),
-          segments.injectedSegments,
+          segments.injectedSegments.map((e) => (e, false)).toList(),
         ));
       }
     }
@@ -330,22 +368,6 @@ class SegmentLayout<T extends Cell>
       }
 
       segments.onLabelPressed!(key, value.map((e) => getCell(e)).toList());
-    }
-
-    if (segments.isSticky != null) {
-      for (final e in segMap.entries) {
-        if (segments.isSticky!(e.key)) {
-          e.value.sticky = true;
-        }
-      }
-    }
-
-    if (segments.isBlur != null) {
-      for (final e in segMap.entries) {
-        if (segments.isBlur!(e.key)) {
-          e.value.blur = true;
-        }
-      }
     }
 
     segMap.removeWhere((key, value) {
@@ -441,7 +463,8 @@ class SegmentLayout<T extends Cell>
     required GridColumn columns,
     required GridSelection<T> selection,
     required int gridSeed,
-    required GridCell<T> Function(BuildContext, int idx, T) gridCellT,
+    required GridCell<T> Function(BuildContext, int idx, T, bool blur)
+        gridCellT,
     required double systemNavigationInsets,
     required double aspectRatio,
   }) {
@@ -545,7 +568,7 @@ class SegmentLayout<T extends Cell>
     GridMutationInterface<T> state,
     GridSelection<T> selection,
     _HeaderWithCells<T> val,
-    GridCell<T> Function(BuildContext, int idx, T) gridCell, {
+    GridCell<T> Function(BuildContext, int idx, T, bool blur) gridCell, {
     required GridColumn columns,
     required GridRefreshingStatus<T> refreshingStatus,
     required GridFunctionality<T> gridFunctionality,
@@ -584,7 +607,7 @@ class SegmentLayout<T extends Cell>
             selectUntil: (i) => selection.selectUnselectUntil(context, i),
             selectUnselect: () => selection.selectOrUnselect(context, -1),
             isSelected: selection.isSelected(-1),
-            child: gridCell(context, -1, cell),
+            child: gridCell(context, -1, cell.$1, cell.$2),
           );
         },
       ),
@@ -685,7 +708,7 @@ sealed class _SegmentType {
 class _HeaderWithCells<T extends Cell> implements _SegmentType {
   const _HeaderWithCells(this.header, this.cells);
 
-  final List<T> cells;
+  final List<(T cell, bool blur)> cells;
   final _SegSticky header;
 }
 

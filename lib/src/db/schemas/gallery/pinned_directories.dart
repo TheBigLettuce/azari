@@ -37,6 +37,10 @@ class PinnedDirectories {
   }
 
   static void add(String id, [bool silent = false]) {
+    if (id.isEmpty) {
+      return;
+    }
+
     Dbs.g.blacklisted.writeTxnSync(() {
       Dbs.g.blacklisted.pinnedDirectories
           .putSync(PinnedDirectories(id, DateTime.now()));
