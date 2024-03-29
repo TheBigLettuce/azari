@@ -482,9 +482,11 @@ class _BooruPageState extends State<BooruPage> {
     }));
   }
 
+  void _close(SelectionGlue<Post> g) {}
+
   @override
   Widget build(BuildContext context) {
-    final glue = GlueProvider.of<Post>(context);
+    final glue = GlueProvider.of<Post>(context).chain(close: _close);
 
     return FavoriteBooruStateHolder(
       build: (context, favoriteBooruState) {

@@ -17,14 +17,11 @@ abstract class SegmentKey {
 class Segments<T> {
   const Segments(
     this.unsegmentedLabel, {
-    this.addToSticky,
     this.segment,
-    this.blur,
-    this.isBlur,
-    this.isSticky,
     this.limitLabelChildren,
     this.prebuiltSegments,
     this.onLabelPressed,
+    required this.caps,
     this.displayFirstCellInSpecial = false,
     this.hidePinnedIcon = false,
     this.injectedSegments = const [],
@@ -51,18 +48,38 @@ class Segments<T> {
   final Map<SegmentKey, int>? prebuiltSegments;
   final int? limitLabelChildren;
 
-  /// If [addToSticky] is not null. then it will be possible to make
-  /// segments sticky on the grid.
-  /// If [unsticky] is true, then instead of stickying, unstickying should happen.
-  /// If [addToSticky] returns true, calls [HapticFeedback.selectionClick].
-  final bool Function(String seg, {bool? unsticky})? addToSticky;
-
   final void Function(String label, List<T> children)? onLabelPressed;
-
-  final void Function(String seg)? blur;
-  final bool Function(String seg)? isBlur;
-  final bool Function(String seg)? isSticky;
 
   final bool hidePinnedIcon;
   final bool displayFirstCellInSpecial;
+
+  final SegmentCapability caps;
+}
+
+enum SegmentModifier {
+  blur,
+  auth,
+  sticky;
+}
+
+abstract interface class SegmentCapability {
+  Set<SegmentModifier> modifiersFor(String seg);
+
+  void addModifiers(List<String> segments, Set<SegmentModifier> m);
+  void removeModifiers(List<String> segments, Set<SegmentModifier> m);
+
+  static SegmentCapability empty() => const _SegmentCapabilityEmpty();
+}
+
+class _SegmentCapabilityEmpty implements SegmentCapability {
+  const _SegmentCapabilityEmpty();
+
+  @override
+  void addModifiers(List<String> segments, Set<SegmentModifier> m) {}
+
+  @override
+  Set<SegmentModifier> modifiersFor(String seg) => const {};
+
+  @override
+  void removeModifiers(List<String> segments, Set<SegmentModifier> m) {}
 }

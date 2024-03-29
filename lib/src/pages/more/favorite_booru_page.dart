@@ -65,6 +65,7 @@ class FavoriteBooruPage extends StatelessWidget {
               Segments(
                 AppLocalizations.of(context)!.segmentsUncategorized,
                 injectedLabel: '',
+                caps: SegmentCapability.empty(),
                 hidePinnedIcon: true,
                 prebuiltSegments: state.segments,
               ),

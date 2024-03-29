@@ -9,6 +9,7 @@ import 'dart:async';
 
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
@@ -53,7 +54,7 @@ class DrawerTagsWidget extends StatefulWidget {
   final BooruTagging? excluded;
   final DisassembleResult? res;
   final bool showLabel;
-  final bool showDeleteButton;
+  final bool showTagButtons;
 
   const DrawerTagsWidget(
     this.tags,
@@ -63,7 +64,7 @@ class DrawerTagsWidget extends StatefulWidget {
     this.launchGrid,
     this.excluded,
     this.showLabel = true,
-    required this.showDeleteButton,
+    required this.showTagButtons,
     required this.res,
   });
 
@@ -113,6 +114,13 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
           context,
           tag,
           widget.launchGrid!,
+        ),
+      if (widget.showTagButtons)
+        PopupMenuItem(
+          onTap: () {
+            PostTags.g.removeTag([widget.filename], tag);
+          },
+          child: Text("Delete"),
         ),
       PopupMenuItem(
         onTap: () {
@@ -207,17 +215,36 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
                       color: Theme.of(context).listTileTheme.textColor,
                     ),
               ),
-              if (widget.showDeleteButton)
-                IconButton(
-                  onPressed: () {
-                    final notifier = TagRefreshNotifier.maybeOf(context);
-                    PostTags.g.deletePostTags(filename);
-                    notifier?.call();
-                  },
-                  icon: const Icon(Icons.delete),
-                  visualDensity: VisualDensity.compact,
-                  iconSize: 18,
-                )
+              if (widget.showTagButtons)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        final notifier = TagRefreshNotifier.maybeOf(context);
+                        PostTags.g.deletePostTags(filename);
+                        notifier?.call();
+                      },
+                      icon: const Icon(Icons.delete_rounded),
+                      visualDensity: VisualDensity.compact,
+                      iconSize: 18,
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        openAddTagDialog(context, (v, delete) {
+                          if (delete) {
+                            PostTags.g.removeTag([filename], v);
+                          } else {
+                            PostTags.g.addTag([filename], v);
+                          }
+                        });
+                      },
+                      icon: const Icon(Icons.add_rounded),
+                      visualDensity: VisualDensity.compact,
+                      iconSize: 18,
+                    ),
+                  ],
+                ),
             ],
           )
         else
@@ -232,4 +259,73 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
       ],
     );
   }
+}
+
+void openAddTagDialog(
+    BuildContext context, void Function(String, bool) onSubmit) {
+  final regexp = RegExp(r"[^A-Za-z0-9_\(\)']");
+  bool delete = false;
+
+  Navigator.push(
+      context,
+      DialogRoute(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text("Add tag"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Form(
+                  autovalidateMode: AutovalidateMode.always,
+                  child: TextFormField(
+                    enabled: true,
+                    validator: (value) {
+                      if (value == null) {
+                        return "Value is null";
+                      }
+
+                      final v = value.trim();
+                      if (v.isEmpty) {
+                        return "Value is empty";
+                      }
+
+                      if (v.length <= 1) {
+                        return "Value is too short";
+                      }
+
+                      if (regexp.hasMatch(v)) {
+                        return "Only characters allowed are A-Z, a-z, 0-9, _, (, ), and ' .";
+                      }
+
+                      return null;
+                    },
+                    onFieldSubmitted: (value) {
+                      final v = value.trim();
+                      if (v.isEmpty || v.length <= 1 || regexp.hasMatch(v)) {
+                        return;
+                      }
+
+                      onSubmit(v, delete);
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+                StatefulBuilder(
+                  builder: (context, setState) {
+                    return SwitchListTile(
+                        title: Text("Delete"),
+                        value: delete,
+                        onChanged: (v) {
+                          delete = v;
+
+                          setState(() {});
+                        });
+                  },
+                )
+              ],
+            ),
+          );
+        },
+      ));
 }

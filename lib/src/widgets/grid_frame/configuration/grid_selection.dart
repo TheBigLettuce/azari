@@ -46,7 +46,6 @@ class GridSelection<T extends Cell> {
     lastSelected = null;
 
     _setState(() {});
-    // glue.updateCount(_selected.length);
   }
 
   bool isSelected(int indx) =>
@@ -57,7 +56,7 @@ class GridSelection<T extends Cell> {
       return;
     }
 
-    if (_selected.isEmpty) {
+    if (_selected.isEmpty || !glue.isOpen()) {
       glue.open(addActions, this);
     }
 
@@ -70,6 +69,10 @@ class GridSelection<T extends Cell> {
   }
 
   void remove(int id) {
+    if (_selected.isNotEmpty && !glue.isOpen()) {
+      glue.open(addActions, this);
+    }
+
     _setState(() {
       _selected.remove(id);
       if (_selected.isEmpty) {

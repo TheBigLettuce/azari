@@ -91,7 +91,6 @@ class _DownloadsState extends State<Downloads> {
         hidePinnedIcon: true,
         limitLabelChildren: 6,
         injectedLabel: "",
-        isSticky: (seg) => true,
         segment: (cell) {
           return (Downloader.g.downloadDescription(cell));
         },
@@ -117,6 +116,7 @@ class _DownloadsState extends State<Downloads> {
             }
           }
         },
+        caps: SegmentCapability.empty(),
       );
 
   GridSettingsBase _gridSettingsBase() => const GridSettingsBase(

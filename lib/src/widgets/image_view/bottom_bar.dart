@@ -24,17 +24,32 @@ class ImageViewBottomAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Animate(
         effects: const [
-          FadeEffect(begin: 1, end: 0, duration: Duration(milliseconds: 500))
+          SlideEffect(
+            delay: Duration(milliseconds: 500),
+            curve: Easing.emphasizedAccelerate,
+            begin: Offset(0, 0),
+            end: Offset(0, 1),
+          )
         ],
         autoPlay: false,
         target: AppBarVisibilityNotifier.of(context) ? 0 : 1,
         child: IgnorePointer(
           ignoring: !AppBarVisibilityNotifier.of(context),
-          child: BottomAppBar(
-            child: Wrap(
-              spacing: 4,
-              children: children,
-            ),
+          child: Stack(
+            fit: StackFit.passthrough,
+            children: [
+              const SizedBox(
+                  height: 80,
+                  child: AbsorbPointer(
+                    child: SizedBox.shrink(),
+                  )),
+              BottomAppBar(
+                child: Wrap(
+                  spacing: 4,
+                  children: children,
+                ),
+              )
+            ],
           ),
         ));
   }

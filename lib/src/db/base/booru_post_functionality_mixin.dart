@@ -165,7 +165,7 @@ class _PostInfoState extends State<PostInfo> {
           ? DrawerTagsWidget(
               tags,
               filename,
-              showDeleteButton: false,
+              showTagButtons: false,
               showLabel: false,
               launchGrid: _launchGrid,
               excluded: tagManager.excluded,
@@ -243,7 +243,7 @@ class _PostInfoState extends State<PostInfo> {
         launchGrid: _launchGrid,
         excluded: tagManager.excluded,
         pinnedTags: pinnedTags,
-        showDeleteButton: false,
+        showTagButtons: false,
         res: res,
       )
     ]);

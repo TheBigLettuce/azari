@@ -41,6 +41,7 @@ import 'package:gallery/src/plugs/notifications.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 import 'package:gallery/src/db/schemas/gallery/favorite_booru_post.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
+import 'package:gallery/src/widgets/make_tags.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
@@ -343,6 +344,9 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
                           if (MiscSettings.current.filesExtendedActions) ...[
                             _bulkRename(),
                             _saveTagsAction(plug),
+                            _addTag(context, () {
+                              state.gridKey.currentState?.refreshSequence();
+                            }),
                           ],
                           _addToFavoritesAction(null, plug),
                           _deleteAction(),

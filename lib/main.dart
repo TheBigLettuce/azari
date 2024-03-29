@@ -23,6 +23,7 @@ import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/widgets/fade_sideways_page_transition_builder.dart';
 import 'package:gallery/src/widgets/restart_widget.dart';
 import 'package:gallery/welcome_pages.dart';
+import 'package:local_auth/local_auth.dart';
 // import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -129,6 +130,14 @@ void mainPickfile() async {
   await initalizeDb(true);
   initalizeGalleryPlug(true);
 
+  if (Platform.isAndroid) {
+    final auth = LocalAuthentication();
+
+    _canUseAuth = await auth.isDeviceSupported() &&
+        await auth.canCheckBiometrics &&
+        (await auth.getAvailableBiometrics()).isNotEmpty;
+  }
+
   initalizeNetworkStatus(Platform.isAndroid
       ? await PlatformFunctions.currentNetworkStatus()
       : true);
@@ -171,6 +180,14 @@ void main() async {
   await initalizeDownloader();
 
   changeExceptionErrorColors();
+
+  if (Platform.isAndroid) {
+    final auth = LocalAuthentication();
+
+    _canUseAuth = await auth.isDeviceSupported() &&
+        await auth.canCheckBiometrics &&
+        (await auth.getAvailableBiometrics()).isNotEmpty;
+  }
 
   initalizeGalleryPlug(false);
   initalizeNetworkStatus(Platform.isAndroid
@@ -238,3 +255,7 @@ void changeSystemUiOverlay(BuildContext? context, [Color? override]) {
 
 @pragma('vm:entry-point')
 void notifBackground(NotificationResponse res) {}
+
+bool _canUseAuth = false;
+
+bool get canAuthBiometric => _canUseAuth;

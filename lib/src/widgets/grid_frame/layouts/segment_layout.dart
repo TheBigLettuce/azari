@@ -8,8 +8,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:gallery/main.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
-import 'package:gallery/src/db/schemas/gallery/pinned_directories.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
@@ -19,6 +19,7 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behavio
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/segment_label.dart';
+import 'package:local_auth/local_auth.dart';
 
 import '../grid_frame.dart';
 
@@ -152,11 +153,11 @@ class SegmentLayout<T extends Cell>
       segRows.add(_HeaderWithCells<T>(
         _SegSticky(
           segments.injectedLabel,
-          true,
           null,
           unstickable: false,
         ),
         segments.injectedSegments.map((e) => (e, false)).toList(),
+        const {SegmentModifier.sticky},
       ));
     }
 
@@ -166,7 +167,6 @@ class SegmentLayout<T extends Cell>
         _HeaderWithIdx(
           _SegSticky(
             e.key.translatedString(context),
-            true,
             segments.onLabelPressed == null
                 ? null
                 : () {
@@ -196,8 +196,8 @@ class SegmentLayout<T extends Cell>
                     segments.onLabelPressed!(e.key.toString(), cells);
                   },
           ),
-          _Idxs(List.generate(e.value, (index) => index + prevCount), false,
-              false),
+          List.generate(e.value, (index) => index + prevCount),
+          const {SegmentModifier.sticky},
         ),
       );
 
@@ -241,8 +241,10 @@ class SegmentLayout<T extends Cell>
       return (const [], const []);
     }
 
+    final caps = segments.caps;
+
     final segRows = <_SegmentType>[];
-    final segMap = <String, _Idxs>{};
+    final segMap = <String, (List<int>, Set<SegmentModifier>)>{};
 
     final getCell = CellProvider.of<T>(context);
 
@@ -266,7 +268,9 @@ class SegmentLayout<T extends Cell>
                   .startsWith(e.length <= 4 ? e : e.substring(0, 5))) {
                 suggestionCells.add((
                   cell,
-                  segments.isBlur?.call(segments.segment!(cell) ?? "") ?? false
+                  caps
+                      .modifiersFor(segments.segment!(cell) ?? "")
+                      .contains(SegmentModifier.blur)
                 ));
               }
             }
@@ -275,7 +279,9 @@ class SegmentLayout<T extends Cell>
                 alias.length <= 4 ? alias : alias.substring(0, 5))) {
               suggestionCells.add((
                 cell,
-                segments.isBlur?.call(segments.segment!(cell) ?? "") ?? false
+                caps
+                    .modifiersFor(segments.segment!(cell) ?? "")
+                    .contains(SegmentModifier.blur)
               ));
             }
           }
@@ -286,69 +292,50 @@ class SegmentLayout<T extends Cell>
       if (res == null) {
         unsegmented.add(i);
       } else {
-        final previous = (segMap[res]) ?? _Idxs([], false, false);
-        previous.list.add(i);
+        final previous = (segMap[res]) ?? ([], {});
+        previous.$1.add(i);
         segMap[res] = previous;
-        // if (sticky) {
-        //   final previous = (stickySegs[res]) ?? _Idxs([], blur);
-        //   previous.list.add(i);
-        //   stickySegs[res] = previous;
-        // } else {
-
-        // }
       }
     }
 
-    if (segments.isSticky != null) {
-      for (final e in segMap.entries) {
-        if (segments.isSticky!(e.key)) {
-          e.value.sticky = true;
-        }
-      }
-    }
-
-    if (segments.isBlur != null) {
-      for (final e in segMap.entries) {
-        if (segments.isBlur!(e.key)) {
-          e.value.blur = true;
-        }
-      }
+    for (final e in segMap.entries) {
+      e.value.$2.addAll(caps.modifiersFor(e.key));
     }
 
     if (segments.displayFirstCellInSpecial) {
       segRows.add(_HeaderWithCells<T>(
-        _SegSticky(
-          segments.injectedLabel,
-          true,
-          null,
-          unstickable: false,
-          firstIsSpecial: true,
-        ),
-        (suggestionCells.isEmpty
-                ? [
-                    () {
-                      final cell = getCell(0);
+          _SegSticky(
+            segments.injectedLabel,
+            null,
+            unstickable: false,
+            firstIsSpecial: true,
+          ),
+          (suggestionCells.isEmpty
+                  ? [
+                      () {
+                        final cell = getCell(0);
 
-                      return (
-                        cell,
-                        segments.isBlur?.call(segments.segment!(cell) ?? "") ??
-                            false
-                      );
-                    }()
-                  ]
-                : suggestionCells) +
-            segments.injectedSegments.map((e) => (e, false)).toList(),
-      ));
+                        return (
+                          cell,
+                          caps
+                              .modifiersFor(segments.segment!(cell) ?? "")
+                              .contains(SegmentModifier.blur)
+                        );
+                      }()
+                    ]
+                  : suggestionCells) +
+              segments.injectedSegments.map((e) => (e, false)).toList(),
+          const {SegmentModifier.sticky}));
     } else {
       if (segments.injectedSegments.isNotEmpty) {
         segRows.add(_HeaderWithCells<T>(
           _SegSticky(
             segments.injectedLabel,
-            true,
             null,
             unstickable: false,
           ),
           segments.injectedSegments.map((e) => (e, false)).toList(),
+          const {SegmentModifier.sticky},
         ));
       }
     }
@@ -371,8 +358,8 @@ class SegmentLayout<T extends Cell>
     }
 
     segMap.removeWhere((key, value) {
-      if (value.list.length == 1 && !value.sticky) {
-        unsegmented.add(value.list[0]);
+      if (value.$1.length == 1 && !value.$2.contains(SegmentModifier.sticky)) {
+        unsegmented.add(value.$1[0]);
         return true;
       }
 
@@ -382,37 +369,36 @@ class SegmentLayout<T extends Cell>
     final List<int> predefined = [];
 
     segMap.forEach((key, value) {
-      if (value.sticky) {
+      if (value.$2.contains(SegmentModifier.sticky)) {
         segRows.add(_HeaderWithIdx(
-          _SegSticky(
-            key,
-            true,
-            segments.onLabelPressed == null
-                ? null
-                : () => onLabelPressed(key, value.list),
-          ),
-          value,
-        ));
+            _SegSticky(
+              key,
+              segments.onLabelPressed == null
+                  ? null
+                  : () => onLabelPressed(key, value.$1),
+            ),
+            value.$1,
+            value.$2));
 
-        predefined.addAll(value.list);
+        predefined.addAll(value.$1);
       }
     });
 
     segMap.forEach(
       (key, value) {
-        if (!value.sticky) {
+        if (!value.$2.contains(SegmentModifier.sticky)) {
           segRows.add(_HeaderWithIdx(
             _SegSticky(
               key,
-              false,
               segments.onLabelPressed == null
                   ? null
-                  : () => onLabelPressed(key, value.list),
+                  : () => onLabelPressed(key, value.$1),
             ),
-            value,
+            value.$1,
+            value.$2,
           ));
 
-          predefined.addAll(value.list);
+          predefined.addAll(value.$1);
         }
       },
     );
@@ -421,12 +407,11 @@ class SegmentLayout<T extends Cell>
       segRows.add(_HeaderWithIdx(
         _SegSticky(
           segments.unsegmentedLabel,
-          false,
           segments.onLabelPressed == null
               ? null
               : () => onLabelPressed(segments.unsegmentedLabel, unsegmented),
         ),
-        _Idxs(unsegmented, false, false),
+        unsegmented,
       ));
     }
 
@@ -523,6 +508,8 @@ class SegmentLayout<T extends Cell>
     required double systemNavigationInsets,
     required double aspectRatio,
   }) {
+    final toBlur = val.modifiers.contains(SegmentModifier.blur);
+
     return _defaultSegmentCard(
       context,
       state,
@@ -534,16 +521,16 @@ class SegmentLayout<T extends Cell>
       systemNavigationInsets: systemNavigationInsets,
       aspectRatio: aspectRatio,
       segmentLabel: val.header,
-      blur: val.idxs.blur,
+      modifiers: val.modifiers,
       sliver: SliverGrid.builder(
-        itemCount: val.idxs.list.length,
+        itemCount: val.list.length,
         gridDelegate: SliverQuiltedGridDelegate(
           crossAxisCount: columns.number,
           repeatPattern: QuiltedGridRepeatPattern.inverted,
           pattern: columns.pattern(gridSeed),
         ),
         itemBuilder: (context, index) {
-          final realIdx = val.idxs.list[index];
+          final realIdx = val.list[index];
 
           return WrapSelection(
             actionsAreEmpty: selection.addActions.isEmpty,
@@ -556,7 +543,7 @@ class SegmentLayout<T extends Cell>
                 selectFrom: predefined),
             selectUnselect: () => selection.selectOrUnselect(context, realIdx),
             isSelected: selection.isSelected(realIdx),
-            child: gridCell(context, realIdx, val.idxs.blur),
+            child: gridCell(context, realIdx, toBlur),
           );
         },
       ),
@@ -587,7 +574,7 @@ class SegmentLayout<T extends Cell>
       systemNavigationInsets: systemNavigationInsets,
       aspectRatio: aspectRatio,
       segmentLabel: val.header,
-      blur: false,
+      modifiers: val.modifiers,
       sliver: SliverGrid.builder(
         itemCount: val.cells.length,
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -625,10 +612,14 @@ class SegmentLayout<T extends Cell>
     required GridRefreshingStatus<T> refreshingStatus,
     required GridFunctionality<T> gridFunctionality,
     required Segments<T> segments,
-    required bool blur,
     required _SegSticky segmentLabel,
+    required Set<SegmentModifier> modifiers,
     required Widget sliver,
   }) {
+    final toSticky = modifiers.contains(SegmentModifier.sticky);
+    final toBlur = modifiers.contains(SegmentModifier.blur);
+    final toAuth = modifiers.contains(SegmentModifier.auth);
+
     return SliverPadding(
       padding: const EdgeInsets.all(4),
       sliver: DecoratedSliver(
@@ -644,32 +635,93 @@ class SegmentLayout<T extends Cell>
                   segmentLabel.seg,
                   hidePinnedIcon: segments.hidePinnedIcon,
                   onPress: segmentLabel.onLabelPressed,
-                  sticky: segmentLabel.sticky,
+                  sticky: toSticky,
                   menuItems: [
                     if (segmentLabel.unstickable &&
-                        segments.addToSticky != null &&
                         segmentLabel.seg != segments.unsegmentedLabel)
                       PopupMenuItem(
-                        onTap: () {
-                          if (segments.addToSticky!(segmentLabel.seg,
-                              unsticky: segmentLabel.sticky ? true : null)) {
-                            HapticFeedback.vibrate();
-                            refreshingStatus.refresh(gridFunctionality);
+                        onTap: () async {
+                          if (toAuth && canAuthBiometric) {
+                            final success = await LocalAuthentication()
+                                .authenticate(
+                                    localizedReason: "Unsticky directory");
+
+                            if (!success) {
+                              return;
+                            }
                           }
-                        },
-                        child: Text(
-                          segmentLabel.sticky ? "Unsticky" : "Sticky",
-                        ), // TODO: change
-                      ),
-                    if (segments.blur != null)
-                      PopupMenuItem(
-                        onTap: () {
-                          segments.blur!(segmentLabel.seg);
+
+                          if (toSticky) {
+                            segments.caps.removeModifiers([segmentLabel.seg],
+                                const {SegmentModifier.sticky});
+                          } else {
+                            segments.caps.addModifiers([segmentLabel.seg],
+                                const {SegmentModifier.sticky});
+                          }
+
                           HapticFeedback.vibrate();
                           refreshingStatus.refresh(gridFunctionality);
                         },
-                        child: Text(blur ? "Unblur" : "Blur"), // TODO: change
+                        child: Text(
+                          toSticky ? "Unsticky" : "Sticky",
+                        ), // TODO: change
                       ),
+                    PopupMenuItem(
+                      onTap: () async {
+                        if (toAuth && canAuthBiometric) {
+                          final success = await LocalAuthentication()
+                              .authenticate(
+                                  localizedReason: "Unblur directory");
+
+                          if (!success) {
+                            return;
+                          }
+                        }
+
+                        if (toSticky) {
+                          segments.caps.removeModifiers(
+                              [segmentLabel.seg], const {SegmentModifier.blur});
+                        } else {
+                          segments.caps.addModifiers(
+                              [segmentLabel.seg], const {SegmentModifier.blur});
+                        }
+
+                        HapticFeedback.vibrate();
+                        refreshingStatus.refresh(gridFunctionality);
+                      },
+                      child: Text(toBlur ? "Unblur" : "Blur"), // TODO: change
+                    ),
+                    if (segmentLabel.seg != segments.unsegmentedLabel &&
+                        segments.unsegmentedLabel != segmentLabel.seg &&
+                        segmentLabel.seg != "Booru")
+                      PopupMenuItem(
+                        enabled: canAuthBiometric,
+                        onTap: !canAuthBiometric
+                            ? null
+                            : () async {
+                                final success = await LocalAuthentication()
+                                    .authenticate(
+                                        localizedReason:
+                                            "Lock directory group");
+
+                                if (!success) {
+                                  return;
+                                }
+
+                                if (toAuth) {
+                                  segments.caps.removeModifiers(
+                                      [segmentLabel.seg],
+                                      const {SegmentModifier.auth});
+                                } else {
+                                  segments.caps.addModifiers([segmentLabel.seg],
+                                      const {SegmentModifier.auth});
+                                }
+
+                                HapticFeedback.vibrate();
+                                refreshingStatus.refresh(gridFunctionality);
+                              },
+                        child: Text(toAuth ? "Unauth" : "Require auth"),
+                      )
                   ],
                 ),
               ),
@@ -687,14 +739,12 @@ class SegmentLayout<T extends Cell>
 
 class _SegSticky {
   final String seg;
-  final bool sticky;
   final void Function()? onLabelPressed;
   final bool unstickable;
   final bool firstIsSpecial;
 
   const _SegSticky(
     this.seg,
-    this.sticky,
     this.onLabelPressed, {
     this.firstIsSpecial = false,
     this.unstickable = true,
@@ -706,23 +756,17 @@ sealed class _SegmentType {
 }
 
 class _HeaderWithCells<T extends Cell> implements _SegmentType {
-  const _HeaderWithCells(this.header, this.cells);
+  const _HeaderWithCells(this.header, this.cells, this.modifiers);
 
-  final List<(T cell, bool blur)> cells;
+  final List<(T, bool)> cells;
   final _SegSticky header;
+  final Set<SegmentModifier> modifiers;
 }
 
 class _HeaderWithIdx implements _SegmentType {
-  const _HeaderWithIdx(this.header, this.idxs);
-
-  final _Idxs idxs;
-  final _SegSticky header;
-}
-
-class _Idxs {
-  _Idxs(this.list, this.blur, this.sticky);
+  const _HeaderWithIdx(this.header, this.list, [this.modifiers = const {}]);
 
   final List<int> list;
-  bool blur;
-  bool sticky;
+  final _SegSticky header;
+  final Set<SegmentModifier> modifiers;
 }

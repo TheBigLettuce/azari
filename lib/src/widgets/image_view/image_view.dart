@@ -251,8 +251,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   }
 
   void _onTap() {
-    fullscreenPlug.fullscreen();
     wrapNotifiersKey.currentState?.toggle();
+    fullscreenPlug.fullscreen();
   }
 
   void _onTagRefresh() {

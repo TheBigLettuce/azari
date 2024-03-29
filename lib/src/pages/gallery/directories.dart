@@ -8,6 +8,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:gallery/main.dart';
 import 'package:gallery/src/db/schemas/gallery/directory_metadata.dart';
 import 'package:gallery/src/db/schemas/grid_settings/directories.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
@@ -28,7 +29,6 @@ import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/pages/gallery/files.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 import 'package:gallery/src/db/schemas/gallery/favorite_booru_post.dart';
-import 'package:gallery/src/db/schemas/gallery/pinned_directories.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_on_cell_press_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
@@ -40,6 +40,7 @@ import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
+import 'package:local_auth/local_auth.dart';
 
 import '../../db/schemas/settings/settings.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
@@ -206,6 +207,22 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     galleryPlug.version.then((value) => galleryVersion = value);
   }
 
+  String _segmentFnc(SystemGalleryDirectory cell) {
+    for (final booru in Booru.values) {
+      if (booru.url == cell.name) {
+        return "Booru";
+      }
+    }
+
+    final dirTag = PostTags.g.directoryTag(cell.bucketId);
+    if (dirTag != null) {
+      return dirTag;
+    }
+
+    final name = cell.name.split(" ");
+    return name.first.toLowerCase();
+  }
+
   Segments<SystemGalleryDirectory> _makeSegments(BuildContext context) {
     SelectionGlue<J> generate<J extends Cell>() =>
         GlueProvider.generateOf<SystemGalleryDirectory, J>(context);
@@ -217,58 +234,10 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
           : AppLocalizations.of(context)!.segmentsSpecial, // TODO: change
       displayFirstCellInSpecial:
           widget.callback != null || widget.nestedCallback != null,
-      blur: (seg) {
-        DirectoryMetadata.add(
-          seg,
-          !(DirectoryMetadata.get(seg)?.blur ?? false),
-        );
-      },
-      isBlur: (seg) {
-        if (seg.isEmpty) {
-          return false;
-        }
+      caps:
+          DirectoryMetadata.caps(AppLocalizations.of(context)!.segmentsSpecial),
+      segment: _segmentFnc,
 
-        return DirectoryMetadata.get(seg)?.blur ?? false;
-      },
-      isSticky: (seg) {
-        if (seg.isEmpty) {
-          return false;
-        }
-
-        if (seg == "Booru") {
-          return true;
-        }
-
-        return PinnedDirectories.exist(seg);
-      },
-      segment: (cell) {
-        for (final booru in Booru.values) {
-          if (booru.url == cell.name) {
-            return "Booru";
-          }
-        }
-
-        final dirTag = PostTags.g.directoryTag(cell.bucketId);
-        if (dirTag != null) {
-          return dirTag;
-        }
-
-        final name = cell.name.split(" ");
-        return name.first.toLowerCase();
-      },
-      addToSticky: (seg, {unsticky}) {
-        if (seg == "Booru" ||
-            seg == AppLocalizations.of(context)!.segmentsSpecial) {
-          return false;
-        }
-        if (unsticky == true) {
-          PinnedDirectories.delete(seg);
-        } else {
-          PinnedDirectories.add(seg, false);
-        }
-
-        return true;
-      },
       injectedSegments: [
         if (FavoriteBooruPost.isNotEmpty())
           SystemGalleryDirectory(
@@ -317,6 +286,79 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     g.close();
   }
 
+  void _addToGroup(BuildContext context, List<SystemGalleryDirectory> selected,
+      String value, bool toPin) async {
+    final requireAuth = <SystemGalleryDirectory>[];
+    final noAuth = <SystemGalleryDirectory>[];
+
+    for (final e in selected) {
+      final m = DirectoryMetadata.get(_segmentFnc(e));
+      if (m != null && m.requireAuth) {
+        requireAuth.add(e);
+      } else {
+        noAuth.add(e);
+      }
+    }
+
+    if (noAuth.isEmpty && requireAuth.isNotEmpty && canAuthBiometric) {
+      final success = await LocalAuthentication()
+          .authenticate(localizedReason: "Change directories group");
+      if (!success) {
+        return;
+      }
+    }
+
+    if (value.isEmpty) {
+      PostTags.g.removeDirectoriesTag(
+          (noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth)
+              .map((e) => e.bucketId));
+    } else {
+      PostTags.g.setDirectoriesTag(
+          (noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth)
+              .map((e) => e.bucketId),
+          value);
+
+      if (toPin) {
+        if (await DirectoryMetadata.canAuth(value, "Sticky directory")) {
+          final m = (DirectoryMetadata.get(value) ??
+                  DirectoryMetadata(value, DateTime.now(),
+                      blur: false, sticky: false, requireAuth: false))
+              .copyBools(sticky: true);
+          m.save();
+        }
+      }
+    }
+
+    if (noAuth.isNotEmpty && requireAuth.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Some directories require authentication"),
+        action: SnackBarAction(
+            label: "Auth",
+            onPressed: () async {
+              final success = await LocalAuthentication()
+                  .authenticate(localizedReason: "Change group on directories");
+              if (!success) {
+                return;
+              }
+
+              if (value.isEmpty) {
+                PostTags.g
+                    .removeDirectoriesTag(requireAuth.map((e) => e.bucketId));
+              } else {
+                PostTags.g.setDirectoriesTag(
+                    requireAuth.map((e) => e.bucketId), value);
+              }
+
+              _refresh();
+            }),
+      ));
+    }
+
+    _refresh();
+
+    Navigator.of(context, rootNavigator: true).pop();
+  }
+
   Widget child(BuildContext context, EdgeInsets insets) {
     final glue = GlueProvider.of<SystemGalleryDirectory>(context)
         .chain(close: _closeIfNotInner);
@@ -337,7 +379,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
               getCell: (i) => api.directCell(i),
               functionality: GridFunctionality(
                   onPressed: OverrideGridOnCellPressBehaviour(
-                      onPressed: (context, idx, providedCell) {
+                      onPressed: (context, idx, providedCell) async {
                     final cell = providedCell as SystemGalleryDirectory? ??
                         CellProvider.getOf<SystemGalleryDirectory>(
                             context, idx);
@@ -348,6 +390,11 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                       Navigator.pop(context);
                       widget.callback!.c(cell, null);
                     } else {
+                      if (!await DirectoryMetadata.canAuth(
+                          _segmentFnc(cell), "Open directory")) {
+                        return;
+                      }
+
                       StatisticsGallery.addViewedDirectories();
                       final d = cell;
 
@@ -439,56 +486,42 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                 risingAnimation: !state.settings.buddhaMode &&
                     widget.nestedCallback == null &&
                     widget.callback == null,
-                actions:
-                    widget.callback != null || widget.nestedCallback != null
-                        ? [
-                            if (widget.callback == null ||
-                                widget.callback!.joinable)
-                              SystemGalleryDirectoriesActions.joinedDirectories(
-                                context,
-                                extra,
-                                widget.nestedCallback,
-                                widget.viewPadding ?? EdgeInsets.zero,
-                                state.settings.buddhaMode ? null : generate,
-                              )
-                          ]
-                        : [
-                            FavoritesActions.addToGroup(context, (selected) {
-                              final t = selected.first.tag;
-                              for (final e in selected.skip(1)) {
-                                if (t != e.tag) {
-                                  return null;
-                                }
-                              }
+                actions: widget.callback != null ||
+                        widget.nestedCallback != null
+                    ? [
+                        if (widget.callback == null ||
+                            widget.callback!.joinable)
+                          SystemGalleryDirectoriesActions.joinedDirectories(
+                            context,
+                            extra,
+                            widget.nestedCallback,
+                            widget.viewPadding ?? EdgeInsets.zero,
+                            state.settings.buddhaMode ? null : generate,
+                            _segmentFnc,
+                          )
+                      ]
+                    : [
+                        FavoritesActions.addToGroup(context, (selected) {
+                          final t = selected.first.tag;
+                          for (final e in selected.skip(1)) {
+                            if (t != e.tag) {
+                              return null;
+                            }
+                          }
 
-                              return t;
-                            }, (selected, value, toPin) {
-                              if (value.isEmpty) {
-                                PostTags.g.removeDirectoriesTag(
-                                    selected.map((e) => e.bucketId));
-                              } else {
-                                PostTags.g.setDirectoriesTag(
-                                    selected.map((e) => e.bucketId), value);
-
-                                if (toPin) {
-                                  PinnedDirectories.add(value, true);
-                                }
-                              }
-
-                              _refresh();
-
-                              Navigator.of(context, rootNavigator: true).pop();
-                            }, true),
-                            SystemGalleryDirectoriesActions.blacklist(
-                                context, extra),
-                            SystemGalleryDirectoriesActions.joinedDirectories(
-                              context,
-                              extra,
-                              widget.nestedCallback,
-                              widget.viewPadding ?? EdgeInsets.zero,
-                              state.settings.buddhaMode ? null : generate,
-                            )
-                          ],
+                          return t;
+                        }, (s, v, t) => _addToGroup(context, s, v, t), true),
+                        SystemGalleryDirectoriesActions.blacklist(
+                            context, extra, _segmentFnc),
+                        SystemGalleryDirectoriesActions.joinedDirectories(
+                          context,
+                          extra,
+                          widget.nestedCallback,
+                          widget.viewPadding ?? EdgeInsets.zero,
+                          state.settings.buddhaMode ? null : generate,
+                          _segmentFnc,
+                        )
+                      ],
                 footer: widget.callback?.preview,
                 menuButtonItems: [
                   if (widget.callback != null)

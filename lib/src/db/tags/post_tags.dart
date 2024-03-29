@@ -147,7 +147,11 @@ class PostTags {
     }
 
     return DisassembleResult(
-        id: id, booru: booru, ext: hashAndExt.last, hash: hashAndExt.first);
+      id: id,
+      booru: booru,
+      ext: hashAndExt.last,
+      hash: hashAndExt.first,
+    );
   }
 
   /// Adds tags to the db.
@@ -222,6 +226,50 @@ class PostTags {
   /// Returns tags for the [filename], or empty list if there are none.
   List<String> getTagsPost(String filename) {
     return tagsDb.localTags.getSync(fastHash(filename))?.tags ?? [];
+  }
+
+  void removeTag(List<String> filenames, String tag) {
+    final List<LocalTags> newTags = [];
+
+    for (final e
+        in tagsDb.localTags.getAllByFilenameSync(filenames).cast<LocalTags>()) {
+      final idx = e.tags.indexWhere((element) => element == tag);
+      if (idx.isNegative) {
+        continue;
+      }
+
+      newTags.add(LocalTags(e.filename, e.tags.toList()..removeAt(idx)));
+    }
+
+    return tagsDb
+        .writeTxnSync(() => tagsDb.localTags.putAllByFilenameSync(newTags));
+  }
+
+  List<String> _addAndSort(List<String> tags, String addTag) {
+    final l = tags.toList() + [addTag];
+    l.sort();
+
+    return l;
+  }
+
+  void addTag(List<String> filenames, String tag) {
+    if (filenames.isEmpty || tag.isEmpty) {
+      return;
+    }
+
+    final newTags = tagsDb.localTags
+        .getAllByFilenameSync(filenames)
+        .where((element) => element != null && !element.tags.contains(tag))
+        .cast<LocalTags>()
+        .map((e) => LocalTags(e.filename, _addAndSort(e.tags, tag)))
+        .toList();
+
+    if (newTags.isEmpty) {
+      return;
+    }
+
+    return tagsDb
+        .writeTxnSync(() => tagsDb.localTags.putAllByFilenameSync(newTags));
   }
 
   /// Returns true if tags for the [filename] includes [tag],

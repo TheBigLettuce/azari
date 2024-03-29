@@ -71,6 +71,25 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
+  GridAction<SystemGalleryDirectoryFile> _addTag(
+      BuildContext context, void Function() refresh) {
+    return GridAction(
+      Icons.new_label_rounded,
+      (selected) {
+        openAddTagDialog(context, (v, delete) {
+          if (delete) {
+            PostTags.g.removeTag(selected.map((e) => e.name).toList(), v);
+          } else {
+            PostTags.g.addTag(selected.map((e) => e.name).toList(), v);
+          }
+
+          refresh();
+        });
+      },
+      false,
+    );
+  }
+
   GridAction<SystemGalleryDirectoryFile> _addToFavoritesAction(
       SystemGalleryDirectoryFile? f, GalleryPlug plug) {
     final isFavorites = f != null && f.isFavorite;

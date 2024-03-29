@@ -19,8 +19,11 @@ class ImageViewAppBar<T extends Cell> extends StatelessWidget {
   final List<Widget> stickers;
   final List<Widget> actions;
 
-  const ImageViewAppBar(
-      {super.key, required this.stickers, required this.actions});
+  const ImageViewAppBar({
+    super.key,
+    required this.stickers,
+    required this.actions,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +31,12 @@ class ImageViewAppBar<T extends Cell> extends StatelessWidget {
 
     return Animate(
         effects: const [
-          FadeEffect(begin: 1, end: 0, duration: Duration(milliseconds: 500))
+          SlideEffect(
+            delay: Duration(milliseconds: 500),
+            curve: Easing.emphasizedAccelerate,
+            begin: Offset(0, 0),
+            end: Offset(0, -1),
+          )
         ],
         autoPlay: false,
         target: AppBarVisibilityNotifier.of(context) ? 0 : 1,

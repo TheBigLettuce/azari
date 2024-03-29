@@ -22,6 +22,7 @@ import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.lifecycleScope
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,9 +48,13 @@ data class ThumbOp(
     val callback: ((String, Long) -> Unit)
 )
 
-class MainActivity : FlutterActivity() {
+class MainActivity : FlutterFragmentActivity() {
     private val engineBindings: EngineBindings by lazy {
-        EngineBindings(activity = this, "main", getSystemService(ConnectivityManager::class.java))
+        EngineBindings(
+            activity = this,
+            "main",
+            getSystemService(ConnectivityManager::class.java)
+        )
     }
 
     private fun copyFile(
@@ -102,7 +107,7 @@ class MainActivity : FlutterActivity() {
                         return
                     }
 
-                    DocumentFile.fromTreeUri(context, Uri.parse(dest))
+                    DocumentFile.fromTreeUri(this, Uri.parse(dest))
                         ?.run {
                             if (this.isFile || !this.canWrite()) {
                                 return@use
@@ -267,7 +272,7 @@ class MainActivity : FlutterActivity() {
 
         if (requestCode == 99) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                engineBindings.manageMediaCallback!!(MediaStore.canManageMedia(context))
+                engineBindings.manageMediaCallback!!(MediaStore.canManageMedia(this))
             } else {
                 engineBindings.manageMediaCallback!!(false);
             }
@@ -406,7 +411,7 @@ class MainActivity : FlutterActivity() {
 
 class Manager(
     private val galleryApi: GalleryApi,
-    private val context: FlutterActivity,
+    private val context: FlutterFragmentActivity,
 ) : ConnectivityManager.NetworkCallback() {
     override fun onLost(network: Network) {
         context.runOnUiThread { galleryApi.notifyNetworkStatus(false) {} }

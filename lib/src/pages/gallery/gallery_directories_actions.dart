@@ -6,6 +6,8 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/main.dart';
+import 'package:gallery/src/db/schemas/gallery/directory_metadata.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_api_directories.dart';
@@ -14,19 +16,62 @@ import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:local_auth/local_auth.dart';
 
 import 'files.dart';
 import '../../db/schemas/gallery/blacklisted_directory.dart';
 
 class SystemGalleryDirectoriesActions {
   static GridAction<SystemGalleryDirectory> blacklist(
-      BuildContext context, GalleryDirectoriesExtra extra) {
+      BuildContext context,
+      GalleryDirectoriesExtra extra,
+      String Function(SystemGalleryDirectory) segment) {
     return GridAction(
       Icons.hide_image_outlined,
-      (selected) {
-        extra.addBlacklisted(selected
-            .map((e) => BlacklistedDirectory(e.bucketId, e.name))
-            .toList());
+      (selected) async {
+        final requireAuth = <SystemGalleryDirectory>[];
+        final noAuth = <SystemGalleryDirectory>[];
+
+        for (final e in selected) {
+          final m = DirectoryMetadata.get(segment(e));
+          if (m != null && m.requireAuth) {
+            requireAuth.add(e);
+          } else {
+            noAuth.add(e);
+          }
+        }
+
+        if (noAuth.isEmpty && requireAuth.isNotEmpty && canAuthBiometric) {
+          final success = await LocalAuthentication()
+              .authenticate(localizedReason: "Hide directory");
+          if (!success) {
+            return;
+          }
+        }
+
+        extra.addBlacklisted(
+            (noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth)
+                .map((e) => BlacklistedDirectory(e.bucketId, e.name))
+                .toList());
+
+        if (noAuth.isNotEmpty && requireAuth.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("Some directories require authentication"),
+            action: SnackBarAction(
+                label: "Auth",
+                onPressed: () async {
+                  final success = await LocalAuthentication()
+                      .authenticate(localizedReason: "Hide directory");
+                  if (!success) {
+                    return;
+                  }
+
+                  extra.addBlacklisted(requireAuth
+                      .map((e) => BlacklistedDirectory(e.bucketId, e.name))
+                      .toList());
+                }),
+          ));
+        }
       },
       true,
     );
@@ -38,10 +83,30 @@ class SystemGalleryDirectoriesActions {
     CallbackDescriptionNested? callback,
     EdgeInsets addInset,
     SelectionGlue<J> Function<J extends Cell>()? generate,
+    String Function(SystemGalleryDirectory) segment,
   ) {
     return GridAction(
       Icons.merge_rounded,
-      (selected) {
+      (selected) async {
+        bool requireAuth = false;
+
+        for (final e in selected) {
+          final auth = DirectoryMetadata.get(segment(e))?.requireAuth ?? false;
+          if (auth) {
+            requireAuth = true;
+            break;
+          }
+        }
+
+        if (requireAuth && canAuthBiometric) {
+          final success = await LocalAuthentication()
+              .authenticate(localizedReason: "Join directories");
+
+          if (!success) {
+            return;
+          }
+        }
+
         joinedDirectoriesFnc(
           context,
           selected.length == 1

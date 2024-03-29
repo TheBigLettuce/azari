@@ -11,9 +11,10 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.os.Bundle
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 
-class PickFileActivity : FlutterActivity() {
+class PickFileActivity : FlutterFragmentActivity() {
     private val engineBindings: EngineBindings by lazy {
         EngineBindings(
             activity = this, entrypoint = "mainPickfile", getSystemService(

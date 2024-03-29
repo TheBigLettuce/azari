@@ -373,7 +373,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
       DrawerTagsWidget(
         tags,
         filename,
-        showDeleteButton: true,
+        showTagButtons: true,
         launchGrid: _launchGrid,
         excluded: tagManager?.excluded,
         pinnedTags: pinnedTags,

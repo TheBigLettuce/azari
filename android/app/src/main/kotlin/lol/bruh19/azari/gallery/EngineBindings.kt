@@ -25,6 +25,7 @@ import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import io.flutter.FlutterInjector
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.plugin.common.MethodChannel
@@ -39,12 +40,12 @@ data class RenameOp(val uri: Uri, val newName: String, val notify: Boolean)
 data class MoveInternalOp(val dest: String, val uris: List<Uri>, val callback: (Boolean) -> Unit)
 
 class EngineBindings(
-    activity: FlutterActivity,
+    activity: FlutterFragmentActivity,
     entrypoint: String,
     val connectivityManager: ConnectivityManager
 ) {
     private val channel: MethodChannel
-    private val context: FlutterActivity
+    private val context: FlutterFragmentActivity
     internal val mover: Mover
     private val galleryApi: GalleryApi
     val netStatus: Manager
