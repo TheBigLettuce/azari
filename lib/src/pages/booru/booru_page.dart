@@ -183,13 +183,10 @@ class BooruPage extends StatefulWidget {
 
   final EdgeInsets viewPadding;
 
-  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
-
   const BooruPage({
     super.key,
     required this.procPop,
     required this.viewPadding,
-    required this.generateGlue,
     required this.pagingRegistry,
   });
 
@@ -331,8 +328,9 @@ class _BooruPageState extends State<BooruPage> {
                 }
               },
               state: e,
-              generateGlue:
-                  state.settings.buddhaMode ? null : widget.generateGlue,
+              generateGlue: state.settings.buddhaMode
+                  ? null
+                  : GlueProvider.generateOf(context),
             );
           },
         ));
@@ -476,7 +474,8 @@ class _BooruPageState extends State<BooruPage> {
       return BooruSearchPage(
         booru: booru,
         tags: tag,
-        generateGlue: state.settings.buddhaMode ? null : widget.generateGlue,
+        generateGlue:
+            state.settings.buddhaMode ? null : GlueProvider.generateOf(context),
         overrideSafeMode: safeMode,
       );
     }));
@@ -484,8 +483,6 @@ class _BooruPageState extends State<BooruPage> {
 
   @override
   Widget build(BuildContext context) {
-    final glue = GlueProvider.of<Post>(context);
-
     return FavoriteBooruStateHolder(
       build: (context, favoriteBooruState) {
         return BooruAPINotifier(
@@ -494,39 +491,12 @@ class _BooruPageState extends State<BooruPage> {
             state,
             (context) => GridFrame<Post>(
               key: state.gridKey,
-              refreshingStatus: pagingState.refreshingStatus,
               layout:
                   const GridSettingsLayoutBehaviour(GridSettingsBooru.current),
               overrideController:
                   state.settings.buddhaMode ? null : scrollController,
-              imageViewDescription: ImageViewDescription(
-                imageViewKey: state.imageViewKey,
-                overrideDrawerLabel: state.settings.buddhaMode
-                    ? AppLocalizations.of(context)!.buddhaModeTags
-                    : null,
-                statistics: const ImageViewStatistics(
-                  swiped: StatisticsBooru.addSwiped,
-                  viewed: StatisticsBooru.addViewed,
-                ),
-                addIconsImage: (post) => [
-                  BooruGridActions.favorites(context, post),
-                  BooruGridActions.download(context, pagingState.api.booru),
-                  BooruGridActions.hide(context, () {
-                    setState(() {});
-
-                    final imgState = state.imageViewKey.currentState;
-                    if (imgState == null) {
-                      return;
-                    }
-
-                    imgState.loadCells(
-                        imgState.currentPage, imgState.cellCount);
-                    imgState.setState(() {});
-                  }, post: post),
-                ],
-              ),
               functionality: GridFunctionality(
-                selectionGlue: glue,
+                selectionGlue: GlueProvider.generateOf(context)(),
                 loadNext: _addLast,
                 backButton: state.settings.buddhaMode
                     ? OverrideGridBackButton(
@@ -564,6 +534,33 @@ class _BooruPageState extends State<BooruPage> {
                     : const EmptyGridBackButton(inherit: true),
                 watchLayoutSettings: GridSettingsBooru.watch,
                 refresh: AsyncGridRefresh(_clearAndRefresh),
+                refreshingStatus: pagingState.refreshingStatus,
+                imageViewDescription: ImageViewDescription(
+                  imageViewKey: state.imageViewKey,
+                  overrideDrawerLabel: state.settings.buddhaMode
+                      ? AppLocalizations.of(context)!.buddhaModeTags
+                      : null,
+                  statistics: const ImageViewStatistics(
+                    swiped: StatisticsBooru.addSwiped,
+                    viewed: StatisticsBooru.addViewed,
+                  ),
+                  addIconsImage: (post) => [
+                    BooruGridActions.favorites(context, post),
+                    BooruGridActions.download(context, pagingState.api.booru),
+                    BooruGridActions.hide(context, () {
+                      setState(() {});
+
+                      final imgState = state.imageViewKey.currentState;
+                      if (imgState == null) {
+                        return;
+                      }
+
+                      imgState.loadCells(
+                          imgState.currentPage, imgState.cellCount);
+                      imgState.setState(() {});
+                    }, post: post),
+                  ],
+                ),
                 download: _download,
                 search: OverrideGridSearchWidget(
                   SearchAndFocus(
@@ -625,9 +622,9 @@ class _BooruPageState extends State<BooruPage> {
                                     settingsButton:
                                         favoriteBooruState.gridSettingsButton(),
                                     slivers: [
-                                      GlueProvider<FavoriteBooru>(
-                                        glue: widget.generateGlue(),
-                                        generate: widget.generateGlue,
+                                      GlueProvider(
+                                        generate:
+                                            GlueProvider.generateOf(context),
                                         child: FavoriteBooruPage(
                                           conroller: scrollController,
                                           state: favoriteBooruState,
@@ -646,7 +643,8 @@ class _BooruPageState extends State<BooruPage> {
                                       );
                                     },
                                     pagingRegistry: widget.pagingRegistry,
-                                    generateGlue: widget.generateGlue,
+                                    generateGlue:
+                                        GlueProvider.generateOf(context),
                                     saveSelectedPage: (s) =>
                                         pagingState.restoreSecondaryGrid = s,
                                   ),

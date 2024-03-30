@@ -40,7 +40,7 @@ class GridDescription<T extends Cell> {
   final String? pageName;
 
   /// Actions of the grid on selected cells.
-  final List<GridAction<T>> actions;
+  final List<GridAction> actions;
 
   /// Displayed in the app bar bottom widget.
   final PreferredSizeWidget? bottomWidget;

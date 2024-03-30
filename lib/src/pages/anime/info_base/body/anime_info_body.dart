@@ -144,22 +144,17 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
                   children: snapshot.data!.indexed
                       .map((e) => SizedBox(
                             width: MediaQuery.sizeOf(context).longestSide * 0.2,
-                            child: GridCell(
-                              cell: e.$2,
-                              indx: e.$1,
+                            child: CustomGridCellWrapper(
                               onPressed: (context) {
                                 Navigator.push(context, MaterialPageRoute(
                                   builder: (context) {
                                     return ImageView(
-                                      updateTagScrollPos:
-                                          (pos, selectedCell) {},
                                       cellCount: snapshot.data!.length,
                                       scrollUntill: (_) {},
                                       startingCell: e.$1,
                                       onExit: () {},
                                       getCell: (i) => snapshot.data![i],
                                       onNearEnd: null,
-                                      focusMain: () {},
                                       systemOverlayRestoreColor:
                                           widget.overlayColor ??
                                               Theme.of(context)
@@ -169,9 +164,12 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
                                   },
                                 ));
                               },
-                              tight: false,
-                              download: null,
-                              isList: false,
+                              child: GridCell(
+                                cell: e.$2,
+                                indx: e.$1,
+                                tight: false,
+                                isList: false,
+                              ),
                             ),
                           ))
                       .toList(),

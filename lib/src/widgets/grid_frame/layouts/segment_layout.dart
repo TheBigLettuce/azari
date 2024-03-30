@@ -533,16 +533,10 @@ class SegmentLayout<T extends Cell>
           final realIdx = val.list[index];
 
           return WrapSelection(
-            actionsAreEmpty: selection.addActions.isEmpty,
-            selectionEnabled: selection.isNotEmpty,
             thisIndx: realIdx,
-            ignoreSwipeGesture: selection.ignoreSwipe,
-            bottomPadding: systemNavigationInsets,
-            currentScroll: selection.controller,
-            selectUntil: (i) => selection.selectUnselectUntil(context, i,
-                selectFrom: predefined),
-            selectUnselect: () => selection.selectOrUnselect(context, realIdx),
-            isSelected: selection.isSelected(realIdx),
+            selectFrom: predefined,
+            functionality: gridFunctionality,
+            selection: selection,
             child: gridCell(context, realIdx, toBlur),
           );
         },
@@ -585,15 +579,10 @@ class SegmentLayout<T extends Cell>
           final cell = val.cells[index];
 
           return WrapSelection(
-            actionsAreEmpty: selection.addActions.isEmpty,
-            selectionEnabled: selection.isNotEmpty,
+            selection: selection,
+            functionality: gridFunctionality,
+            selectFrom: null,
             thisIndx: -1,
-            ignoreSwipeGesture: selection.ignoreSwipe,
-            bottomPadding: systemNavigationInsets,
-            currentScroll: selection.controller,
-            selectUntil: (i) => selection.selectUnselectUntil(context, i),
-            selectUnselect: () => selection.selectOrUnselect(context, -1),
-            isSelected: selection.isSelected(-1),
             child: gridCell(context, -1, cell.$1, cell.$2),
           );
         },

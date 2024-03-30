@@ -52,18 +52,13 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
       child: SizedBox(
         height: widget.size,
         width: widget.size,
-        child: GridCell(
-          cell: cellData,
-          isList: false,
-          indx: id,
-          ignoreStickers: true,
-          onPressed: (context) {
+        child: GestureDetector(
+          onTap: () {
             Navigator.push(context, MaterialPageRoute(builder: (context) {
               return ImageView<Cell>(
                   key: key,
                   systemOverlayRestoreColor:
                       Theme.of(context).colorScheme.background.withOpacity(0.5),
-                  updateTagScrollPos: (_, __) {},
                   scrollUntill: (_) {},
                   onExit: () {},
                   addIcons: (_) {
@@ -86,18 +81,22 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
                       )
                     ];
                   },
-                  focusMain: () {},
                   getCell: (i) => widget.files[i],
                   cellCount: widget.files.length,
                   startingCell: id,
                   onNearEnd: null);
             }));
           },
-          tight: true,
-          download: null,
-          hideAlias: true,
-          shadowOnTop: shadow,
-          circle: true,
+          child: GridCell(
+            cell: cellData,
+            isList: false,
+            indx: id,
+            ignoreStickers: true,
+            tight: true,
+            hideAlias: true,
+            shadowOnTop: shadow,
+            circle: true,
+          ),
         ),
       ),
     );

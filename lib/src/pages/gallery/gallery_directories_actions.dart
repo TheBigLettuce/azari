@@ -22,7 +22,7 @@ import 'files.dart';
 import '../../db/schemas/gallery/blacklisted_directory.dart';
 
 class SystemGalleryDirectoriesActions {
-  static GridAction<SystemGalleryDirectory> blacklist(
+  static GridAction blacklist(
       BuildContext context,
       GalleryDirectoriesExtra extra,
       String Function(SystemGalleryDirectory) segment) {
@@ -32,7 +32,7 @@ class SystemGalleryDirectoriesActions {
         final requireAuth = <SystemGalleryDirectory>[];
         final noAuth = <SystemGalleryDirectory>[];
 
-        for (final e in selected) {
+        for (final SystemGalleryDirectory e in selected.cast()) {
           final m = DirectoryMetadata.get(segment(e));
           if (m != null && m.requireAuth) {
             requireAuth.add(e);
@@ -77,12 +77,12 @@ class SystemGalleryDirectoriesActions {
     );
   }
 
-  static GridAction<SystemGalleryDirectory> joinedDirectories(
+  static GridAction joinedDirectories(
     BuildContext context,
     GalleryDirectoriesExtra extra,
     CallbackDescriptionNested? callback,
     EdgeInsets addInset,
-    SelectionGlue<J> Function<J extends Cell>()? generate,
+    SelectionGlue Function()? generate,
     String Function(SystemGalleryDirectory) segment,
   ) {
     return GridAction(
@@ -91,9 +91,9 @@ class SystemGalleryDirectoriesActions {
         joinedDirectoriesFnc(
           context,
           selected.length == 1
-              ? selected.first.name
+              ? (selected.first as SystemGalleryDirectory).name
               : "${selected.length} ${AppLocalizations.of(context)!.directoriesPlural}",
-          selected,
+          selected.cast(),
           extra,
           callback,
           addInset,
@@ -112,7 +112,7 @@ class SystemGalleryDirectoriesActions {
     GalleryDirectoriesExtra extra,
     CallbackDescriptionNested? callback,
     EdgeInsets addInset,
-    SelectionGlue<J> Function<J extends Cell>()? generate,
+    SelectionGlue Function()? generate,
     String Function(SystemGalleryDirectory) segment,
   ) async {
     bool requireAuth = false;

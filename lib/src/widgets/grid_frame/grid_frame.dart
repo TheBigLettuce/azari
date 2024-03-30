@@ -28,6 +28,7 @@ import 'package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provide
 import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/page_switching_widget.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
+import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 import '../../interfaces/cell/cell.dart';
 import 'configuration/grid_mutation_interface.dart';
 import '../keybinds/describe_keys.dart';
@@ -50,7 +51,7 @@ part 'parts/body_padding.dart';
 part 'parts/bottom_widget.dart';
 part 'parts/mutation_interface_provider.dart';
 
-typedef MakeCellFunc<T extends Cell> = GridCell<T> Function(BuildContext, int);
+typedef MakeCellFunc<T extends Cell> = Widget Function(BuildContext, int);
 
 /// The grid of images.
 class GridFrame<T extends Cell> extends StatefulWidget {
@@ -72,15 +73,11 @@ class GridFrame<T extends Cell> extends StatefulWidget {
   /// Some additional metadata about the grid.
   final GridDescription<T> description;
 
-  final ImageViewDescription<T> imageViewDescription;
-
   /// If [belowMainFocus] is not null, then when the grid gets disposed
   /// [belowMainFocus.requestFocus] get called.
   final FocusNode? belowMainFocus;
 
   final void Function()? onDispose;
-
-  final GridRefreshingStatus<T> refreshingStatus;
 
   final ScrollController? overrideController;
 
@@ -91,13 +88,11 @@ class GridFrame<T extends Cell> extends StatefulWidget {
     required this.getCell,
     this.initalScrollPosition = 0,
     required this.functionality,
-    required this.imageViewDescription,
     required this.systemNavigationInsets,
     this.onDispose,
     required this.layout,
     required this.mainFocus,
     this.belowMainFocus,
-    required this.refreshingStatus,
     this.overrideController,
     required this.description,
   });
@@ -117,7 +112,6 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
   late GridSettingsBase _layoutSettings = widget.layout.defaultSettings();
 
   late final selection = GridSelection<T>(
-    setState,
     widget.description.actions,
     widget.functionality.selectionGlue,
     () => controller,
@@ -125,7 +119,8 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
     ignoreSwipe: widget.description.ignoreSwipeSelectGesture,
   );
 
-  GridRefreshingStatus<T> get refreshingStatus => widget.refreshingStatus;
+  GridRefreshingStatus<T> get refreshingStatus =>
+      widget.functionality.refreshingStatus;
   GridMutationInterface<T> get mutation => refreshingStatus.mutation;
 
   bool inImageView = false;
@@ -142,8 +137,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
   void initState() {
     super.initState();
 
-    _mutationEvents =
-        widget.refreshingStatus.mutation.registerStatusUpdate((_) {
+    _mutationEvents = refreshingStatus.mutation.registerStatusUpdate((_) {
       setState(() {});
     });
     _gridSettingsWatcher =
@@ -160,7 +154,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
         ? widget.overrideController!
         : ScrollController(initialScrollOffset: widget.initalScrollPosition);
 
-    _restoreState(widget.imageViewDescription);
+    _restoreState(widget.functionality.imageViewDescription);
 
     if (mutation.cellCount == 0) {
       refreshingStatus.refresh(widget.functionality);
@@ -221,7 +215,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
   }
 
   void refreshSequence() {
-    widget.refreshingStatus.refresh(widget.functionality);
+    refreshingStatus.refresh(widget.functionality);
   }
 
   @override
@@ -620,12 +614,18 @@ class _RisingAnimation extends StatelessWidget {
     return Animate(
       autoPlay: true,
       effects: [
-        FadeEffect(begin: 0, end: 1, duration: 400.ms, curve: Easing.standard),
-        MoveEffect(
-            begin: const Offset(0, 60),
-            end: const Offset(0, 0),
-            duration: 400.ms,
-            curve: Easing.standard),
+        FadeEffect(
+          begin: 0,
+          end: 1,
+          duration: 220.ms,
+          curve: Easing.emphasizedAccelerate,
+        ),
+        SlideEffect(
+          begin: const Offset(-0.25, 0.25),
+          end: const Offset(0, 0),
+          duration: 280.ms,
+          curve: Easing.standard,
+        ),
       ],
       child: child,
     );

@@ -33,7 +33,7 @@ class ImageViewDescription<T extends Cell> {
   final GlobalKey<ImageViewState<T>> imageViewKey;
 
   /// Supplied to [ImageView.addIcons].
-  final List<GridAction<T>> Function(T)? addIconsImage;
+  final List<GridAction> Function(T)? addIconsImage;
 
   /// Supplied to [ImageView.pageChange].
   final void Function(ImageViewState<T> state)? pageChangeImage;

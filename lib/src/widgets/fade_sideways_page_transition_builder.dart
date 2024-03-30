@@ -7,16 +7,17 @@
 
 import 'package:flutter/material.dart';
 
-// shamelessly stolen from the Flutter source
-
 class FadeSidewaysPageTransitionBuilder implements PageTransitionsBuilder {
   // Fractional offset from 1/4 screen below the top to fully on screen.
   static final Tween<Offset> _bottomUpTween = Tween<Offset>(
-    begin: const Offset(0.25, 0.0),
+    begin: const Offset(0.25, -0.25),
     end: Offset.zero,
   );
-  static final Animatable<double> _fastOutSlowInTween =
-      CurveTween(curve: Curves.fastOutSlowIn);
+  static final Animatable<double> _standardTween =
+      CurveTween(curve: Easing.standard);
+
+  static final Animatable<double> _emphasizedTween =
+      CurveTween(curve: Easing.emphasizedAccelerate);
 
   @override
   Widget buildTransitions<T>(
@@ -26,9 +27,9 @@ class FadeSidewaysPageTransitionBuilder implements PageTransitionsBuilder {
       Animation<double> secondaryAnimation,
       Widget child) {
     return SlideTransition(
-      position: animation.drive(_bottomUpTween.chain(_fastOutSlowInTween)),
+      position: animation.drive(_bottomUpTween.chain(_standardTween)),
       child: FadeTransition(
-        opacity: animation.drive(_fastOutSlowInTween),
+        opacity: animation.drive(_emphasizedTween),
         child: child,
       ),
     );

@@ -9,8 +9,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
+import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 
 import '../grid_frame.dart';
 
@@ -33,6 +35,7 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
       blueprint<T>(
         context,
         state.mutation,
+        state.widget.functionality,
         state.selection,
         state.widget.systemNavigationInsets.bottom,
         hideThumbnails: hideThumbnails,
@@ -42,7 +45,7 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
                 state.widget.functionality.onPressed.launch(
                   context,
                   idx,
-                  state,
+                  state.widget.functionality,
                 );
               },
       )
@@ -52,6 +55,7 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
   static Widget blueprint<T extends Cell>(
     BuildContext context,
     GridMutationInterface<T> state,
+    GridFunctionality<T> functionality,
     GridSelection<T> selection,
     double systemNavigationInsets, {
     required bool hideThumbnails,
@@ -64,6 +68,7 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
         itemCount: state.cellCount,
         itemBuilder: (context, index) => _tile(
           context,
+          functionality,
           selection,
           index: index,
           systemNavigationInsets: systemNavigationInsets,
@@ -74,7 +79,7 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
 
   static Widget _tile<T extends Cell>(
     BuildContext context,
-    // GridMutationInterface<T> state,
+    GridFunctionality<T> functionality,
     GridSelection<T> selection, {
     required int index,
     required double systemNavigationInsets,
@@ -82,35 +87,38 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
     required void Function(BuildContext, T, int)? onPressed,
   }) {
     final cell = CellProvider.getOf<T>(context, index);
-    final selected = selection.isSelected(index);
 
     return WrapSelection(
-      actionsAreEmpty: selection.addActions.isEmpty,
-      selectUntil: (i) => selection.selectUnselectUntil(context, i),
+      selection: selection,
+      selectFrom: null,
+      functionality: functionality,
       thisIndx: index,
-      isSelected: selected,
-      ignoreSwipeGesture: selection.ignoreSwipe,
-      selectionEnabled: selection.isNotEmpty,
-      currentScroll: selection.controller,
-      bottomPadding: systemNavigationInsets,
-      selectUnselect: () => selection.selectOrUnselect(context, index),
-      child: ListTile(
-        textColor:
-            selected ? Theme.of(context).colorScheme.inversePrimary : null,
-        onLongPress: () => selection.selectOrUnselect(context, index),
-        onTap: onPressed == null ? null : () => onPressed(context, cell, index),
-        leading: !hideThumbnails && cell.thumbnail() != null
-            ? CircleAvatar(
-                backgroundColor: Theme.of(context).colorScheme.background,
-                foregroundImage: cell.thumbnail(),
-                onForegroundImageError: (_, __) {},
-              )
-            : null,
-        title: Text(
-          cell.alias(true),
-          softWrap: false,
-          overflow: TextOverflow.ellipsis,
-        ),
+      child: Builder(
+        builder: (context) {
+          SelectionCountNotifier.countOf(context);
+
+          return ListTile(
+            textColor: selection.isSelected(index)
+                ? Theme.of(context).colorScheme.inversePrimary
+                : null,
+            onLongPress: () => selection.selectOrUnselect(context, index),
+            onTap: onPressed == null
+                ? null
+                : () => onPressed(context, cell, index),
+            leading: !hideThumbnails && cell.thumbnail() != null
+                ? CircleAvatar(
+                    backgroundColor: Theme.of(context).colorScheme.background,
+                    foregroundImage: cell.thumbnail(),
+                    onForegroundImageError: (_, __) {},
+                  )
+                : null,
+            title: Text(
+              cell.alias(true),
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+            ),
+          );
+        },
       ),
     ).animate(key: cell.uniqueKey()).fadeIn();
   }

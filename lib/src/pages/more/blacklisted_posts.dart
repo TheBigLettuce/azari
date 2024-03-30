@@ -26,7 +26,7 @@ import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BlacklistedPostsPage extends StatefulWidget {
-  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
+  final SelectionGlue Function([Set<GluePreferences>]) generateGlue;
 
   const BlacklistedPostsPage({
     super.key,
@@ -56,30 +56,27 @@ class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
         hideName: false,
       );
 
-  late final glue = widget.generateGlue<HiddenBooruPost>();
-
   @override
   Widget build(BuildContext context) {
     return GlueProvider(
-      glue: glue,
       generate: widget.generateGlue,
       child: GridFrame<HiddenBooruPost>(
         key: state.gridKey,
         getCell: (i) => list[i],
         layout: _ListLayout(
             HideBlacklistedImagesNotifier.of(context), _gridSettingsBase),
-        refreshingStatus: state.refreshingStatus,
         functionality: GridFunctionality(
-          selectionGlue: glue,
+          selectionGlue: widget.generateGlue(),
           onPressed: const OverrideGridOnCellPressBehaviour(),
           refresh: SynchronousGridRefresh(() {
             list = HiddenBooruPost.getAll();
 
             return list.length;
           }),
-        ),
-        imageViewDescription: ImageViewDescription(
-          imageViewKey: state.imageViewKey,
+          refreshingStatus: state.refreshingStatus,
+          imageViewDescription: ImageViewDescription(
+            imageViewKey: state.imageViewKey,
+          ),
         ),
         systemNavigationInsets: MediaQuery.viewPaddingOf(context),
         mainFocus: state.mainFocus,
@@ -88,8 +85,10 @@ class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
           asSliver: true,
           actions: [
             GridAction(Icons.photo, (selected) {
-              HiddenBooruPost.removeAll(
-                  selected.map((e) => (e.postId, e.booru)).toList());
+              HiddenBooruPost.removeAll(selected
+                  .cast<HiddenBooruPost>()
+                  .map((e) => (e.postId, e.booru))
+                  .toList());
 
               list = HiddenBooruPost.getAll();
 

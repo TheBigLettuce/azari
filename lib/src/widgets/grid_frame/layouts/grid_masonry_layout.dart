@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
@@ -28,6 +29,7 @@ class GridMasonryLayout<T extends Cell> implements GridLayouter<T> {
       blueprint<T>(
         context,
         state.mutation,
+        state.widget.functionality,
         state.selection,
         columns: settings.columns.number,
         gridCell: (context, idx) => GridCell.frameDefault(
@@ -47,6 +49,7 @@ class GridMasonryLayout<T extends Cell> implements GridLayouter<T> {
   static Widget blueprint<T extends Cell>(
     BuildContext context,
     GridMutationInterface<T> state,
+    GridFunctionality<T> functionality,
     GridSelection<T> selection, {
     required MakeCellFunc<T> gridCell,
     required double systemNavigationInsets,
@@ -91,15 +94,10 @@ class GridMasonryLayout<T extends Cell> implements GridLayouter<T> {
                   (rem * (size * (0.037 + (columns / 100) - rem * 0.01)))
                       .toInt()),
           child: WrapSelection(
-            actionsAreEmpty: selection.addActions.isEmpty,
-            selectionEnabled: selection.isNotEmpty,
+            selection: selection,
             thisIndx: indx,
-            ignoreSwipeGesture: selection.ignoreSwipe,
-            bottomPadding: systemNavigationInsets,
-            currentScroll: selection.controller,
-            selectUntil: (i) => selection.selectUnselectUntil(context, i),
-            selectUnselect: () => selection.selectOrUnselect(context, indx),
-            isSelected: selection.isSelected(indx),
+            functionality: functionality,
+            selectFrom: null,
             child: gridCell(context, indx),
           ),
         );

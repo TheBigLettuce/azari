@@ -10,14 +10,13 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 
-import '../../../interfaces/cell/cell.dart';
 import '../../../pages/glue_bottom_app_bar.dart';
 import '../configuration/selection_glue.dart';
 import '../configuration/selection_glue_state.dart';
 
-class WrapGridPage<T extends Cell> extends StatefulWidget {
+class WrapGridPage extends StatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
-  final SelectionGlue<J> Function<J extends Cell>()? provided;
+  final SelectionGlue Function()? provided;
   final int navBarHeight;
   final Widget child;
 
@@ -30,38 +29,42 @@ class WrapGridPage<T extends Cell> extends StatefulWidget {
   });
 
   @override
-  State<WrapGridPage<T>> createState() => _WrapGridPageState();
+  State<WrapGridPage> createState() => _WrapGridPageState();
 }
 
-class _WrapGridPageState<T extends Cell> extends State<WrapGridPage<T>>
+class _WrapGridPageState extends State<WrapGridPage>
     with SingleTickerProviderStateMixin {
   final glueState = SelectionGlueState(
     hide: (_) {},
   );
-  late SelectionGlue<T> glue = widget.provided?.call() ??
-      glueState.glue<T>(() => MediaQuery.viewInsetsOf(context).bottom != 0,
-          (f) {
+  late SelectionGlue glue = widget.provided?.call() ??
+      glueState.glue(() => MediaQuery.viewInsetsOf(context).bottom != 0, (f) {
         glue = _generate();
 
         setState(f);
       }, () => widget.navBarHeight, false);
 
-  SelectionGlue<J> _generate<J extends Cell>() {
+  SelectionGlue _generate([Set<GluePreferences> set = const {}]) {
     return widget.provided?.call() ??
-        glueState.glue(() => MediaQuery.viewInsetsOf(context).bottom != 0, (f) {
-          glue = _generate();
+        glueState.glue(
+          () => MediaQuery.viewInsetsOf(context).bottom != 0,
+          (f) {
+            glue = _generate();
 
-          setState(f);
-        }, () => widget.navBarHeight, false);
+            setState(f);
+          },
+          () => widget.navBarHeight,
+          false,
+        );
   }
 
   @override
   Widget build(BuildContext context) {
     return SelectionCountNotifier(
       count: glueState.count,
-      child: GlueProvider<T>(
+      countUpdateTimes: glueState.countUpdateTimes,
+      child: GlueProvider(
         generate: _generate,
-        glue: glue,
         child: Scaffold(
           key: widget.scaffoldKey,
           extendBody: true,

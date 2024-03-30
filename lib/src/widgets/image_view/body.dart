@@ -19,7 +19,6 @@ class ImageViewBody extends StatelessWidget {
   final void Function() onLongPress;
   final int itemCount;
   final Widget Function(BuildContext, ImageChunkEvent?, int)? loadingBuilder;
-  final bool isPaletteNull;
 
   final void Function()? onPressedRight;
   final void Function()? onPressedLeft;
@@ -36,7 +35,6 @@ class ImageViewBody extends StatelessWidget {
     required this.onTap,
     required this.onPressedLeft,
     required this.onPressedRight,
-    required this.isPaletteNull,
   });
 
   @override
@@ -54,9 +52,7 @@ class ImageViewBody extends StatelessWidget {
             loadingBuilder: loadingBuilder,
             enableRotation: true,
             backgroundDecoration: BoxDecoration(
-              color: isPaletteNull
-                  ? Theme.of(context).colorScheme.surface
-                  : Theme.of(context).colorScheme.surfaceTint.withOpacity(0.2),
+              color: Theme.of(context).colorScheme.surface,
             ),
             onPageChanged: onPageChanged,
             pageController: pageController,

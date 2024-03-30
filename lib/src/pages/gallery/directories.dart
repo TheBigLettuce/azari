@@ -224,9 +224,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   }
 
   Segments<SystemGalleryDirectory> _makeSegments(BuildContext context) {
-    SelectionGlue<J> generate<J extends Cell>() =>
-        GlueProvider.generateOf<SystemGalleryDirectory, J>(context);
-
     return Segments(
       AppLocalizations.of(context)!.segmentsUncategorized,
       injectedLabel: widget.callback != null || widget.nestedCallback != null
@@ -273,13 +270,15 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                 extra,
                 widget.nestedCallback,
                 widget.viewPadding ?? EdgeInsets.zero,
-                state.settings.buddhaMode ? null : generate,
+                state.settings.buddhaMode
+                    ? null
+                    : GlueProvider.generateOf(context),
                 _segmentFnc,
               ),
     );
   }
 
-  void _closeIfNotInner(SelectionGlue<SystemGalleryDirectory> g) {
+  void _closeIfNotInner(SelectionGlue g) {
     if (extra.currentlyHostingFiles) {
       return;
     }
@@ -361,12 +360,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   }
 
   Widget child(BuildContext context, EdgeInsets insets) {
-    final glue = GlueProvider.of<SystemGalleryDirectory>(context)
-        .chain(close: _closeIfNotInner);
-
-    SelectionGlue<J> generate<J extends Cell>() =>
-        GlueProvider.generateOf<SystemGalleryDirectory, J>(context);
-
     return GridSkeleton<SystemGalleryDirectory>(
         state,
         (context) => GridFrame(
@@ -376,7 +369,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                 GridSettingsDirectories.current,
                 suggestionPrefix: widget.callback?.suggestFor ?? const [],
               ),
-              refreshingStatus: state.refreshingStatus,
               getCell: (i) => api.directCell(i),
               functionality: GridFunctionality(
                   onPressed: OverrideGridOnCellPressBehaviour(
@@ -399,10 +391,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                       StatisticsGallery.addViewedDirectories();
                       final d = cell;
 
-                      SelectionGlue<J> generate<J extends Cell>() =>
-                          GlueProvider.generateOf<SystemGalleryDirectory, J>(
-                              context);
-
                       final apiFiles = switch (cell.bucketId) {
                         "trash" => extra.trash(),
                         "favorites" => extra.favorites(),
@@ -416,7 +404,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                               "favorites" => GalleryFiles(
                                   generateGlue: state.settings.buddhaMode
                                       ? null
-                                      : generate,
+                                      : GlueProvider.generateOf(context),
                                   api: apiFiles,
                                   callback: widget.nestedCallback,
                                   addInset:
@@ -429,7 +417,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                                   api: apiFiles,
                                   generateGlue: state.settings.buddhaMode
                                       ? null
-                                      : generate,
+                                      : GlueProvider.generateOf(context),
                                   callback: widget.nestedCallback,
                                   addInset:
                                       widget.viewPadding ?? EdgeInsets.zero,
@@ -440,7 +428,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                               String() => GalleryFiles(
                                   generateGlue: state.settings.buddhaMode
                                       ? null
-                                      : generate,
+                                      : GlueProvider.generateOf(context),
                                   api: apiFiles,
                                   dirName: d.name,
                                   addInset:
@@ -452,7 +440,11 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                           ));
                     }
                   }),
-                  selectionGlue: glue,
+                  selectionGlue: GlueProvider.generateOf(context)(),
+                  refreshingStatus: state.refreshingStatus,
+                  imageViewDescription: ImageViewDescription(
+                    imageViewKey: state.imageViewKey,
+                  ),
                   watchLayoutSettings: GridSettingsDirectories.watch,
                   refresh: widget.callback != null
                       ? SynchronousGridRefresh(() {
@@ -477,9 +469,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                                 AppLocalizations.of(context)!.directoriesHint),
                         search.searchFocus),
                   )),
-              imageViewDescription: ImageViewDescription(
-                imageViewKey: state.imageViewKey,
-              ),
               systemNavigationInsets: insets,
               mainFocus: state.mainFocus,
               description: GridDescription(
@@ -497,21 +486,26 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                             extra,
                             widget.nestedCallback,
                             widget.viewPadding ?? EdgeInsets.zero,
-                            state.settings.buddhaMode ? null : generate,
+                            state.settings.buddhaMode
+                                ? null
+                                : GlueProvider.generateOf(context),
                             _segmentFnc,
                           )
                       ]
                     : [
                         FavoritesActions.addToGroup(context, (selected) {
-                          final t = selected.first.tag;
-                          for (final e in selected.skip(1)) {
+                          final t =
+                              (selected.first as SystemGalleryDirectory).tag;
+                          for (final SystemGalleryDirectory e
+                              in selected.skip(1).cast()) {
                             if (t != e.tag) {
                               return null;
                             }
                           }
 
                           return t;
-                        }, (s, v, t) => _addToGroup(context, s, v, t), true),
+                        }, (s, v, t) => _addToGroup(context, s.cast(), v, t),
+                            true),
                         SystemGalleryDirectoriesActions.blacklist(
                             context, extra, _segmentFnc),
                         SystemGalleryDirectoriesActions.joinedDirectories(
@@ -519,7 +513,9 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                           extra,
                           widget.nestedCallback,
                           widget.viewPadding ?? EdgeInsets.zero,
-                          state.settings.buddhaMode ? null : generate,
+                          state.settings.buddhaMode
+                              ? null
+                              : GlueProvider.generateOf(context),
                           _segmentFnc,
                         )
                       ],
@@ -600,7 +596,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     final viewPadding = widget.viewPadding ?? MediaQuery.viewPaddingOf(context);
 
     return widget.wrapGridPage
-        ? WrapGridPage<SystemGalleryDirectory>(
+        ? WrapGridPage(
             scaffoldKey: state.scaffoldKey,
             child: Builder(
               builder: (context) => child(context, viewPadding),

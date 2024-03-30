@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue_state.dart';
+import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 
 class GlueBottomAppBar extends StatelessWidget {
   final SelectionGlueState glue;
@@ -16,6 +17,8 @@ class GlueBottomAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final actions = glue.actions?.$1 ?? [];
+
     return Stack(
       fit: StackFit.passthrough,
       children: [
@@ -29,12 +32,37 @@ class GlueBottomAppBar extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              if (actions.length > 4)
+                PopupMenuButton(
+                  icon: const Icon(Icons.more_vert_rounded),
+                  position: PopupMenuPosition.under,
+                  itemBuilder: (context) {
+                    return actions
+                        .getRange(0, actions.length - 3)
+                        .map(
+                          (e) => PopupMenuItem(
+                            onTap: e.$2,
+                            child: AbsorbPointer(child: e.$1),
+                          ),
+                        )
+                        .toList();
+                  },
+                ),
               Expanded(
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Wrap(
                     spacing: 4,
-                    children: glue.actions?.$1 ?? [],
+                    children: actions.length < 4
+                        ? actions.map((e) => e.$1).toList()
+                        : actions
+                            .getRange(
+                                actions.length != 4
+                                    ? actions.length - 3
+                                    : actions.length - 3 - 1,
+                                actions.length)
+                            .map((e) => e.$1)
+                            .toList(),
                   ),
                 ),
               ),

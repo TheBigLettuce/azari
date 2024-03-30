@@ -53,10 +53,7 @@ class _SimilarAnimeState extends State<SimilarAnime> {
                               width: MediaQuery.sizeOf(context).longestSide *
                                   0.2 *
                                   GridAspectRatio.zeroFive.value,
-                              child: GridCell(
-                                cell: e.$2,
-                                indx: e.$1,
-                                lines: 2,
+                              child: CustomGridCellWrapper(
                                 onPressed: (context) {
                                   Navigator.push(context, MaterialPageRoute(
                                     builder: (context) {
@@ -65,10 +62,14 @@ class _SimilarAnimeState extends State<SimilarAnime> {
                                     },
                                   ));
                                 },
-                                tight: false,
-                                download: null,
-                                isList: false,
-                                labelAtBottom: true,
+                                child: GridCell(
+                                  cell: e.$2,
+                                  indx: e.$1,
+                                  lines: 2,
+                                  tight: false,
+                                  isList: false,
+                                  labelAtBottom: true,
+                                ),
                               ),
                             ))
                         .toList(),

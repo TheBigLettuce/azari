@@ -6,35 +6,30 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 
-class GlueProvider<T extends Cell> extends InheritedWidget {
-  final SelectionGlue<T> glue;
-  final SelectionGlue<J> Function<J extends Cell>() generate;
+class GlueProvider extends InheritedWidget {
+  final SelectionGlue Function([Set<GluePreferences> preferences]) generate;
 
   const GlueProvider({
     super.key,
-    required this.glue,
     required this.generate,
     required super.child,
   });
 
-  static SelectionGlue<T> of<T extends Cell>(BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<GlueProvider<T>>();
-
-    return widget!.glue;
-  }
-
-  static SelectionGlue<J> generateOf<T extends Cell, J extends Cell>(
+  static SelectionGlue Function([Set<GluePreferences>]) generateOf(
       BuildContext context) {
-    final widget =
-        context.dependOnInheritedWidgetOfExactType<GlueProvider<T>>();
+    final widget = context.dependOnInheritedWidgetOfExactType<GlueProvider>();
 
-    return widget!.generate();
+    return widget!.generate;
   }
 
   @override
-  bool updateShouldNotify(GlueProvider<T> oldWidget) => glue != oldWidget.glue;
+  bool updateShouldNotify(GlueProvider oldWidget) =>
+      generate != oldWidget.generate;
+}
+
+enum GluePreferences {
+  persistentBarHeight,
+  zeroSize;
 }

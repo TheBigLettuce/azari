@@ -571,6 +571,8 @@ internal class Mover(
 
                 if (list.isNotEmpty()) {
                     closure(list, false, !inRefreshAtEnd)
+                } else {
+                    closure(list, false, false)
                 }
             } catch (e: java.lang.Exception) {
                 Log.e("refreshDirectoryFiles", "cursor block fail", e)
@@ -699,7 +701,7 @@ internal class Mover(
                         CoroutineScope(coContext).launch {
                             galleryApi.updateDirectories(
                                 copy,
-                                inRefreshArg = !cursor.isLast, emptyArg = false
+                                inRefreshArg = true, emptyArg = false
                             ) {}
                         }.join()
                     }
@@ -707,15 +709,13 @@ internal class Mover(
                     cursor.moveToNext()
                 )
 
-                if (list.isNotEmpty()) {
-                    CoroutineScope(coContext).launch {
-                        galleryApi.updateDirectories(
-                            list,
-                            inRefreshArg = false,
-                            emptyArg = false
-                        ) {}
-                    }.join()
-                }
+                CoroutineScope(coContext).launch {
+                    galleryApi.updateDirectories(
+                        list,
+                        inRefreshArg = false,
+                        emptyArg = false
+                    ) {}
+                }.join()
             } catch (e: java.lang.Exception) {
                 Log.e("refreshMediastore", "cursor block fail", e)
             }

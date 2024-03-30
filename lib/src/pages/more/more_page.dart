@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
+import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 
 import '../../widgets/azari_icon.dart';
 import 'dashboard/dashboard.dart';
@@ -16,12 +17,16 @@ import 'downloads.dart';
 import 'blacklisted_page.dart';
 import 'settings/settings_widget.dart';
 
-class MorePage extends StatelessWidget {
-  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
+extension GlueTransformerExt on SelectionGlue Function([Set<GluePreferences>]) {
+  SelectionGlue persistentZero([Set<GluePreferences> set = const {}]) {
+    return this(
+        {GluePreferences.persistentBarHeight, GluePreferences.zeroSize});
+  }
+}
 
+class MorePage extends StatelessWidget {
   const MorePage({
     super.key,
-    required this.generateGlue,
   });
 
   @override
@@ -56,10 +61,12 @@ class MorePage extends StatelessWidget {
             ),
             title: Text(AppLocalizations.of(context)!.downloadsPageName),
             onTap: () {
+              final g = GlueProvider.generateOf(context);
+
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) {
                   return Downloads(
-                    generateGlue: generateGlue,
+                    generateGlue: g.persistentZero,
                   );
                 },
               ));
@@ -73,11 +80,13 @@ class MorePage extends StatelessWidget {
             ),
             title: Text(AppLocalizations.of(context)!.blacklistedPage),
             onTap: () {
+              final g = GlueProvider.generateOf(context);
+
               Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => BlacklistedPage(
-                      generateGlue: generateGlue,
+                      generateGlue: g.persistentZero,
                     ),
                   ));
             },

@@ -136,34 +136,6 @@ class SystemGalleryDirectoryFile
     } catch (_) {}
 
     return [
-      if (res != null && MiscSettings.current.filesExtendedActions)
-        IconButton(
-            onPressed: () {
-              final dio = BooruAPI.defaultClientForBooru(res!.booru);
-              final api = BooruAPI.fromEnum(res.booru, dio, EmptyPageSaver());
-
-              api.singlePost(res.id).then((post) {
-                PlatformFunctions.deleteFiles([this]);
-
-                PostTags.g.addTagsPost(post.filename(), post.tags, true);
-
-                Downloader.g.add(
-                    DownloadFile.d(
-                        url: post.fileDownloadUrl(),
-                        site: api.booru.url,
-                        name: post.filename(),
-                        thumbUrl: post.previewUrl),
-                    Settings.fromDb());
-              }).onError((error, stackTrace) {
-                log("loading post for download",
-                    level: Level.SEVERE.value,
-                    error: error,
-                    stackTrace: stackTrace);
-              }).whenComplete(() {
-                dio.close(force: true);
-              });
-            },
-            icon: const Icon(Icons.download_outlined)),
       if (res != null)
         IconButton(
             onPressed: () {
@@ -211,6 +183,8 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
   late final StreamSubscription<void> watcher;
 
   SystemGalleryDirectoryFile get file => widget.file;
+
+  final filesExtended = MiscSettings.current.filesExtendedActions;
 
   final List<String> postTags = [];
   final plug = chooseGalleryPlug();
@@ -359,6 +333,8 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
             ),
             if (res != null && file.tagsFlat.contains("translated"))
               TranslationNotes.tile(context, res!.id, res!.booru),
+            if (res != null && filesExtended)
+              RedownloadTile(key: file.uniqueKey(), file: file, res: res),
             if (!file.isVideo && !file.isGif) SetWallpaperTile(id: file.id),
           ],
         ),
@@ -380,5 +356,70 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
         res: res,
       )
     ]);
+  }
+}
+
+class RedownloadTile extends StatefulWidget {
+  final SystemGalleryDirectoryFile file;
+  final DisassembleResult? res;
+
+  const RedownloadTile({super.key, required this.file, required this.res});
+
+  @override
+  State<RedownloadTile> createState() => _RedownloadTileState();
+}
+
+class _RedownloadTileState extends State<RedownloadTile> {
+  Future? _status;
+
+  @override
+  void dispose() {
+    _status?.ignore();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final res = widget.res;
+
+    return RawChip(
+      isEnabled: _status == null,
+      onPressed: _status != null
+          ? null
+          : () {
+              final dio = BooruAPI.defaultClientForBooru(res!.booru);
+              final api = BooruAPI.fromEnum(res.booru, dio, EmptyPageSaver());
+
+              _status = api.singlePost(res.id).then((post) {
+                PlatformFunctions.deleteFiles([widget.file]);
+
+                PostTags.g.addTagsPost(post.filename(), post.tags, true);
+
+                Downloader.g.add(
+                    DownloadFile.d(
+                        url: post.fileDownloadUrl(),
+                        site: api.booru.url,
+                        name: post.filename(),
+                        thumbUrl: post.previewUrl),
+                    Settings.fromDb());
+
+                return null;
+              }).onError((error, stackTrace) {
+                log("loading post for download",
+                    level: Level.SEVERE.value,
+                    error: error,
+                    stackTrace: stackTrace);
+
+                return null;
+              }).whenComplete(() {
+                dio.close(force: true);
+              });
+
+              setState(() {});
+            },
+      avatar: const Icon(Icons.download_outlined),
+      label: Text("Redownload"),
+    );
   }
 }

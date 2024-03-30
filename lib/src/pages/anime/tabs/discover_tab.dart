@@ -21,12 +21,12 @@ class DiscoverTab extends StatefulWidget {
   final PagingContainer<AnimeEntry, DiscoverExtra> pagingContainer;
   final AnimeAPI api;
 
-  static List<GridAction<AnimeEntry>> actions() => [
+  static List<GridAction> actions() => [
         GridAction(Icons.add, (selected) {
           final toDelete = <AnimeEntry>[];
           final toAdd = <AnimeEntry>[];
 
-          for (final e in selected) {
+          for (final AnimeEntry e in selected.cast()) {
             final entry = SavedAnimeEntry.maybeGet(e.id, e.site);
             if (entry == null) {
               toAdd.add(e);
@@ -174,20 +174,22 @@ class _DiscoverTabState extends State<DiscoverTab> {
       (context) => GridFrame<AnimeEntry>(
         key: state.gridKey,
         layout: GridSettingsLayoutBehaviour(_settings),
-        refreshingStatus: widget.pagingContainer.refreshingStatus,
         getCell: (i) => entries[i],
         initalScrollPosition: widget.pagingContainer.scrollPos,
         functionality: GridFunctionality(
           loadNext: _loadNext,
           updateScrollPosition: widget.pagingContainer.updateScrollPos,
-          selectionGlue:
-              GlueProvider.generateOf<AnimeEntry, AnimeEntry>(context),
+          selectionGlue: GlueProvider.generateOf(context)(),
+          refreshingStatus: widget.pagingContainer.refreshingStatus,
+          imageViewDescription: ImageViewDescription(
+            imageViewKey: state.imageViewKey,
+          ),
           refresh: AsyncGridRefresh(_refresh),
           onPressed:
               OverrideGridOnCellPressBehaviour(onPressed: (context, idx, _) {
             final cell = CellProvider.getOf<AnimeEntry>(context, idx);
 
-            Navigator.push(context, MaterialPageRoute(
+            return Navigator.push(context, MaterialPageRoute(
               builder: (context) {
                 return DiscoverAnimeInfoPage(
                   entry: cell,
@@ -205,9 +207,6 @@ class _DiscoverTabState extends State<DiscoverTab> {
           keybindsDescription: AppLocalizations.of(context)!.discoverTab,
           ignoreSwipeSelectGesture: true,
           gridSeed: state.gridSeed,
-        ),
-        imageViewDescription: ImageViewDescription(
-          imageViewKey: state.imageViewKey,
         ),
       ),
       canPop: false,

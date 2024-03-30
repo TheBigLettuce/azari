@@ -7,59 +7,51 @@
 
 part of '../grid_frame.dart';
 
-class WrapSelection extends StatelessWidget {
-  final bool isSelected;
-  final bool selectionEnabled;
+class WrapSelection<T extends Cell> extends StatelessWidget {
+  final GridSelection<T> selection;
+  final List<int>? selectFrom;
   final int thisIndx;
-  final double bottomPadding;
-  final ScrollController Function() currentScroll;
-  final void Function() selectUnselect;
-  final void Function(int indx) selectUntil;
 
-  final bool ignoreSwipeGesture;
-  final bool actionsAreEmpty;
+  final GridFunctionality<T> functionality;
 
   final Widget child;
 
   const WrapSelection({
     super.key,
-    required this.isSelected,
-    required this.ignoreSwipeGesture,
-    required this.selectUnselect,
     required this.thisIndx,
-    required this.bottomPadding,
-    required this.currentScroll,
-    required this.selectionEnabled,
-    required this.selectUntil,
-    required this.actionsAreEmpty,
+    required this.selectFrom,
+    required this.selection,
+    required this.functionality,
     required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (actionsAreEmpty) {
+    SelectionCountNotifier.countOf(context);
+
+    if (selection.addActions.isEmpty) {
       return child;
     }
 
-    return thisIndx.isNegative || ignoreSwipeGesture
-        ? _WrappedSelectionCore(
-            isSelected: isSelected,
-            selectUnselect: selectUnselect,
+    return thisIndx.isNegative || selection.ignoreSwipe
+        ? _WrappedSelectionCore<T>(
+            selection: selection,
+            functionality: functionality,
+            selectFrom: selectFrom,
             thisIndx: thisIndx,
-            selectionEnabled: selectionEnabled,
-            selectUntil: selectUntil,
             child: child,
           )
         : DragTarget(
             onAcceptWithDetails: (data) {
-              selectUnselect();
+              selection.selectOrUnselect(context, thisIndx);
             },
             onLeave: (data) {
-              if (currentScroll().position.isScrollingNotifier.value &&
-                  isSelected) {
+              if (selection.controller().position.isScrollingNotifier.value &&
+                  selection.isSelected(thisIndx)) {
                 return;
               }
-              selectUnselect();
+
+              selection.selectOrUnselect(context, thisIndx);
             },
             onWillAcceptWithDetails: (data) => true,
             builder: (context, _, __) {
@@ -68,11 +60,10 @@ class WrapSelection extends StatelessWidget {
                 affinity: Axis.horizontal,
                 feedback: const SizedBox(),
                 child: _WrappedSelectionCore(
-                  isSelected: isSelected,
-                  selectUnselect: selectUnselect,
+                  functionality: functionality,
                   thisIndx: thisIndx,
-                  selectionEnabled: selectionEnabled,
-                  selectUntil: selectUntil,
+                  selectFrom: selectFrom,
+                  selection: selection,
                   child: child,
                 ),
               );
@@ -81,20 +72,19 @@ class WrapSelection extends StatelessWidget {
   }
 }
 
-class _WrappedSelectionCore extends StatelessWidget {
+class _WrappedSelectionCore<T extends Cell> extends StatelessWidget {
   final int thisIndx;
-  final bool isSelected;
-  final void Function() selectUnselect;
-  final void Function(int indx) selectUntil;
-  final bool selectionEnabled;
+  final GridSelection<T> selection;
+  final List<int>? selectFrom;
+  final GridFunctionality<T> functionality;
+
   final Widget child;
 
   const _WrappedSelectionCore({
-    required this.isSelected,
-    required this.selectUnselect,
     required this.thisIndx,
-    required this.selectionEnabled,
-    required this.selectUntil,
+    required this.selectFrom,
+    required this.selection,
+    required this.functionality,
     required this.child,
   });
 
@@ -108,59 +98,61 @@ class _WrappedSelectionCore extends StatelessWidget {
               padding: const EdgeInsets.all(0.5),
               child: AnimatedContainer(
                 decoration: BoxDecoration(
-                  color: isSelected
+                  color: selection.isSelected(thisIndx)
                       ? Theme.of(context).colorScheme.primary
                       : Theme.of(context).colorScheme.primary.withOpacity(0),
                   borderRadius: BorderRadius.circular(15),
                 ),
                 duration: const Duration(milliseconds: 160),
                 curve: Easing.emphasizedAccelerate,
-                child: GestureDetector(
-                  onTap: thisIndx.isNegative
-                      ? null
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(15),
+                  onTap: thisIndx.isNegative || selection.isEmpty
+                      ? () {
+                          functionality.onPressed.launch<T>(
+                            context,
+                            thisIndx,
+                            functionality,
+                            useCellInsteadIdx: null,
+                          );
+                        }
                       : () {
-                          selectUnselect();
+                          selection.selectOrUnselect(context, thisIndx);
                         },
-                  onLongPress: thisIndx.isNegative
-                      ? null
+                  onLongPress: selection.isEmpty
+                      ? thisIndx.isNegative || selection.addActions.isEmpty
+                          ? null
+                          : () {
+                              selection.selectOrUnselect(context, thisIndx);
+                            }
                       : () {
-                          selectUntil(thisIndx);
+                          selection.selectUnselectUntil(context, thisIndx,
+                              selectFrom: selectFrom);
                           HapticFeedback.vibrate();
                         },
-                  child: AbsorbPointer(
-                    absorbing: selectionEnabled,
-                    child: child,
-                  ),
+                  child: child,
                 ),
               )),
         ),
-        if (isSelected) ...[
-          GestureDetector(
-            onTap: thisIndx.isNegative
-                ? null
-                : () {
-                    selectUnselect();
-                  },
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Align(
-                alignment: Alignment.topRight,
-                child: SizedBox(
-                  width: Theme.of(context).iconTheme.size,
-                  height: Theme.of(context).iconTheme.size,
-                  child: Container(
-                    decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        shape: BoxShape.circle),
-                    child: Icon(
-                      Icons.check_outlined,
-                      color: Theme.of(context).brightness != Brightness.light
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.primaryContainer,
-                      shadows: const [
-                        Shadow(blurRadius: 0, color: Colors.black)
-                      ],
-                    ),
+        if (selection.isSelected(thisIndx))
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Align(
+              alignment: Alignment.topRight,
+              child: SizedBox(
+                width: Theme.of(context).iconTheme.size,
+                height: Theme.of(context).iconTheme.size,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.check_outlined,
+                    color: Theme.of(context).brightness != Brightness.light
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.primaryContainer,
+                    shadows: const [Shadow(blurRadius: 0, color: Colors.black)],
                   ),
                 ),
               ),
@@ -168,9 +160,36 @@ class _WrappedSelectionCore extends StatelessWidget {
           ).animate().fadeIn(
                 duration: const Duration(milliseconds: 160),
                 curve: Easing.emphasizedAccelerate,
-              )
-        ],
+              ),
       ],
     );
   }
 }
+
+
+//     final isSelected = widget.selection?.isSelected(widget.indx) ?? false;
+
+//  InkWell(
+//           borderRadius: BorderRadius.circular(15.0),
+//           onTap: widget.onPressed == null
+//               ? null
+//               : () {
+//                   widget.onPressed!(context);
+//                 },
+//           focusColor: Theme.of(context).colorScheme.primary,
+//           onLongPress: widget.onLongPress,
+//           onDoubleTap: widget.download != null
+//               ? () {
+//                   controller.reset();
+//                   controller.forward().then((value) => controller.reverse());
+//                   HapticFeedback.selectionClick();
+//                   widget.download!(widget.indx);
+//                 }
+//               : null,
+//           child:,
+//         );
+
+    // onPressed: (context) => ,
+      // onLongPress: idx.isNegative || selection.addActions.isEmpty
+      //     ? null
+        

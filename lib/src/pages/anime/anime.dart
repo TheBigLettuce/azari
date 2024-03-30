@@ -100,7 +100,7 @@ class _AnimePageState extends State<AnimePage>
     super.initState();
 
     tabController.addListener(() {
-      GlueProvider.of<AnimeEntry>(context).close();
+      GlueProvider.generateOf(context)().close();
 
       setState(() {});
     });

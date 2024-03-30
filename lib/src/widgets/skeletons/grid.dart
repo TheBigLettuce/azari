@@ -31,10 +31,12 @@ class GridSkeleton<T extends Cell> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final glue = GlueProvider.generateOf(context)();
+
     return PopScope(
-      canPop: canPop && !GlueProvider.of<T>(context).isOpen(),
+      canPop: canPop && !glue.isOpen(),
       onPopInvoked: (pop) {
-        if (GlueProvider.of<T>(context).isOpen()) {
+        if (glue.isOpen()) {
           state.gridKey.currentState?.selection.reset();
           secondarySelectionHide?.call();
           return;

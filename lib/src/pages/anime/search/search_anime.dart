@@ -48,18 +48,18 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
   final Future<List<T>> Function(String, int, I?, AnimeSafeMode) search;
   final Future<Map<I, G>> Function(AnimeSafeMode) genres;
   final (I, String) Function(G) idFromGenre;
-  final void Function(T) onPressed;
-  final SelectionGlue<J> Function<J extends Cell>()? generateGlue;
+  final Future<void> Function(T) onPressed;
+  final SelectionGlue Function()? generateGlue;
   final EdgeInsets? viewInsets;
   final String info;
   final Uri siteUri;
-  final List<GridAction<T>> actions;
+  final List<GridAction> actions;
 
   static void launchMangaApi(
     BuildContext context,
     MangaAPI api, {
     EdgeInsets? viewInsets,
-    SelectionGlue<J> Function<J extends Cell>()? generateGlue,
+    SelectionGlue Function()? generateGlue,
     String? search,
     AnimeSafeMode safeMode = AnimeSafeMode.safe,
     MangaId? initalGenreId,
@@ -76,7 +76,7 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
               final toDelete = <MangaEntry>[];
               final toAdd = <MangaEntry>[];
 
-              for (final e in selected) {
+              for (final MangaEntry e in selected.cast()) {
                 if (PinnedManga.exist(e.id.toString(), e.site)) {
                   toDelete.add(e);
                 } else {
@@ -105,7 +105,8 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
             return (genre.id, genre.name);
           },
           onPressed: (cell) {
-            Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+            return Navigator.of(context, rootNavigator: true)
+                .push(MaterialPageRoute(
               builder: (context) {
                 return MangaInfoPage(
                   id: cell.id,
@@ -160,7 +161,7 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
             return (genre.id, genre.title);
           },
           onPressed: (cell) {
-            Navigator.push(context, MaterialPageRoute(
+            return Navigator.push(context, MaterialPageRoute(
               builder: (context) {
                 return DiscoverAnimeInfoPage(entry: cell);
               },
@@ -304,7 +305,7 @@ class _SearchAnimePageState<T extends Cell, I, G>
       return widget.idFromGenre(genre).$2;
     }
 
-    Widget body(BuildContext context) => WrapGridPage<T>(
+    Widget body(BuildContext context) => WrapGridPage(
           provided: widget.generateGlue,
           scaffoldKey: state.scaffoldKey,
           child: GridSkeleton<T>(
@@ -312,10 +313,7 @@ class _SearchAnimePageState<T extends Cell, I, G>
             (context) => GridFrame<T>(
               key: state.gridKey,
               layout: GridSettingsLayoutBehaviour(_settings),
-              refreshingStatus: state.refreshingStatus,
               getCell: (i) => _results[i],
-              imageViewDescription:
-                  ImageViewDescription(imageViewKey: state.imageViewKey),
               functionality: GridFunctionality(
                   onError: (error) {
                     return FilledButton.icon(
@@ -330,11 +328,14 @@ class _SearchAnimePageState<T extends Cell, I, G>
                     );
                   },
                   loadNext: _loadNext,
-                  selectionGlue: GlueProvider.of(context),
+                  selectionGlue: GlueProvider.generateOf(context)(),
+                  refreshingStatus: state.refreshingStatus,
+                  imageViewDescription:
+                      ImageViewDescription(imageViewKey: state.imageViewKey),
                   refresh: AsyncGridRefresh(_load),
                   onPressed: OverrideGridOnCellPressBehaviour(
                     onPressed: (context, idx, _) {
-                      widget.onPressed(_results[idx]);
+                      return widget.onPressed(_results[idx]);
                     },
                   ),
                   search: OverrideGridSearchWidget(

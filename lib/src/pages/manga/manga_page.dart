@@ -29,6 +29,7 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behavio
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_on_cell_press_behaviour.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
@@ -36,6 +37,7 @@ import 'package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/segment_label.dart';
 import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
+import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/skeletons/grid.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
@@ -165,10 +167,6 @@ class _MangaPageState extends State<MangaPage> {
           startReading: _startReading,
           pinnedMangaKey: _pinnedKey,
         ),
-        refreshingStatus: state.refreshingStatus,
-        imageViewDescription: ImageViewDescription(
-          imageViewKey: state.imageViewKey,
-        ),
         functionality: GridFunctionality(
             onPressed: OverrideGridOnCellPressBehaviour(
               onPressed: (context, idx, overrideCell) {
@@ -176,7 +174,7 @@ class _MangaPageState extends State<MangaPage> {
                     CellProvider.getOf<CompactMangaDataBase>(context, idx);
                 inInner = true;
 
-                Navigator.of(context, rootNavigator: true)
+                return Navigator.of(context, rootNavigator: true)
                     .push(MaterialPageRoute(
                   builder: (context) {
                     return MangaInfoPage(
@@ -186,10 +184,16 @@ class _MangaPageState extends State<MangaPage> {
                   },
                 )).then((value) {
                   _procReload();
+
+                  return value;
                 });
               },
             ),
-            selectionGlue: GlueProvider.of(context),
+            selectionGlue: GlueProvider.generateOf(context)(),
+            refreshingStatus: state.refreshingStatus,
+            imageViewDescription: ImageViewDescription(
+              imageViewKey: state.imageViewKey,
+            ),
             refresh: AsyncGridRefresh(
               refresh,
               pullToRefresh: false,
@@ -228,7 +232,7 @@ class _MangaPageState extends State<MangaPage> {
     return SafeArea(
       bottom: false,
       child: widget.wrapGridPage
-          ? WrapGridPage<CompactMangaDataBase>(
+          ? WrapGridPage(
               scaffoldKey: state.scaffoldKey,
               child: child,
             )
@@ -255,10 +259,6 @@ class ReadingFab extends StatefulWidget {
 
 class _ReadingFabState extends State<ReadingFab>
     with SingleTickerProviderStateMixin {
-  SelectionGlue<J> _generateGlue<J extends Cell>() {
-    return GlueProvider.generateOf<CompactMangaDataBase, J>(context);
-  }
-
   late final AnimationController animation;
 
   bool extended = true;
@@ -326,7 +326,7 @@ class _ReadingFabState extends State<ReadingFab>
           widget.api,
           search: "",
           viewInsets: widget.viewPadding,
-          generateGlue: _generateGlue,
+          generateGlue: GlueProvider.generateOf(context),
         );
       },
       label: Text(AppLocalizations.of(context)!.searchHint),
@@ -364,7 +364,8 @@ class _ReadingLayout
   List<Widget> call(BuildContext context, GridSettingsBase settings,
       GridFrameState<CompactMangaDataBase> state) {
     void onPressed(CompactMangaDataBase e, int idx) {
-      state.widget.functionality.onPressed.launch(context, idx, state);
+      state.widget.functionality.onPressed
+          .launch(context, idx, state.widget.functionality);
     }
 
     void onLongPressed(CompactMangaDataBase e, int idx) {
@@ -432,11 +433,11 @@ class _ReadingLayout
         key: pinnedMangaKey,
         controller: state.controller,
         onPress: (context, cell) {
-          state.widget.functionality.onPressed
-              .launch(context, -1, state, useCellInsteadIdx: cell);
+          return state.widget.functionality.onPressed.launch(
+              context, -1, state.widget.functionality,
+              useCellInsteadIdx: cell);
         },
-        glue:
-            GlueProvider.generateOf<CompactMangaDataBase, PinnedManga>(context),
+        glue: GlueProvider.generateOf(context)(),
       )
     ];
   }
@@ -446,9 +447,9 @@ class _ReadingLayout
 }
 
 class _PinnedMangaWidget extends StatefulWidget {
-  final SelectionGlue<PinnedManga> glue;
+  final SelectionGlue glue;
   final ScrollController controller;
-  final void Function(BuildContext, PinnedManga) onPress;
+  final Future<void> Function(BuildContext, PinnedManga) onPress;
 
   const _PinnedMangaWidget({
     super.key,
@@ -463,12 +464,12 @@ class _PinnedMangaWidget extends StatefulWidget {
 
 class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
   late final StreamSubscription<void> watcher;
-  final data = PinnedManga.getAll(-1);
+  final List<PinnedManga> data = [];
 
-  late final GridMutationInterface<PinnedManga> mutationInterface =
-      DefaultMutationInterface(data.length);
+  final imageViewKey = GlobalKey<ImageViewState<PinnedManga>>();
+
+  late final GridRefreshingStatus<PinnedManga> refreshingStatus;
   late final GridSelection<PinnedManga> selection = GridSelection(
-    setState,
     [
       GridAction(Icons.push_pin_rounded, (selected) {
         PinnedManga.deleteAll(selected.map((e) => e.isarId!).toList());
@@ -478,7 +479,7 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
           action: SnackBarAction(
               label: AppLocalizations.of(context)!.undoLabel,
               onPressed: () {
-                PinnedManga.addAll(selected, true);
+                PinnedManga.addAll(selected.cast(), true);
               }),
         ));
       }, true),
@@ -493,11 +494,15 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
   void initState() {
     super.initState();
 
+    data.addAll(PinnedManga.getAll(-1));
+
+    refreshingStatus = GridRefreshingStatus(data.length, () => true);
+
     watcher = PinnedManga.watch((_) {
       data.clear();
       data.addAll(PinnedManga.getAll(-1));
 
-      mutationInterface.cellCount = data.length;
+      refreshingStatus.mutation.cellCount = data.length;
       setState(() {});
     });
   }
@@ -505,7 +510,7 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
   @override
   void dispose() {
     watcher.cancel();
-    mutationInterface.dispose();
+    refreshingStatus.dispose();
 
     super.dispose();
   }
@@ -524,7 +529,22 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
                 builder: (context) {
                   return GridLayout.blueprint<PinnedManga>(
                     context,
-                    mutationInterface,
+                    GridFunctionality(
+                      selectionGlue: selection.glue,
+                      refresh: SynchronousGridRefresh(() => data.length),
+                      onPressed: OverrideGridOnCellPressBehaviour(
+                        onPressed: (context, idx, overrideCell) {
+                          return widget.onPress(
+                            context,
+                            overrideCell as PinnedManga? ??
+                                CellProvider.getOf<PinnedManga>(context, idx),
+                          );
+                        },
+                      ),
+                      imageViewDescription:
+                          ImageViewDescription(imageViewKey: imageViewKey),
+                      refreshingStatus: refreshingStatus,
+                    ),
                     selection,
                     gridCell: (context, idx) {
                       final cell = data[data.length - 1 - idx];
@@ -534,14 +554,7 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
                         indx: idx,
                         imageAlign: Alignment.topCenter,
                         alignTitleToTopLeft: true,
-                        onPressed: (context) {
-                          widget.onPress(context, cell);
-                        },
-                        onLongPress: () {
-                          selection.selectOrUnselect(context, idx);
-                        },
                         tight: false,
-                        download: null,
                         isList: false,
                         hideAlias: false,
                       );

@@ -16,7 +16,6 @@ import 'package:gallery/src/db/schemas/booru/post.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/pages/home.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/pages/booru/booru_restored_page.dart';
@@ -30,7 +29,7 @@ import '../../widgets/time_label.dart';
 class BookmarkPage extends StatefulWidget {
   final void Function(String? e) saveSelectedPage;
   final PagingStateRegistry pagingRegistry;
-  final SelectionGlue<J> Function<J extends Cell>()? generateGlue;
+  final SelectionGlue Function()? generateGlue;
   final void Function() scrollUp;
 
   const BookmarkPage({

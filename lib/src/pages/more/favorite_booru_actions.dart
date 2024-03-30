@@ -11,7 +11,7 @@ import '../../widgets/grid_frame/grid_frame.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 abstract class FavoritesActions {
-  static GridAction<T> addToGroup<T>(
+  static GridAction addToGroup<T>(
       BuildContext context,
       String? Function(List<T>) initalValue,
       void Function(List<T>, String, bool) onSubmitted,
@@ -29,7 +29,7 @@ abstract class FavoritesActions {
             return _GroupDialogWidget<T>(
               initalValue: initalValue,
               onSubmitted: onSubmitted,
-              selected: selected,
+              selected: selected.cast(),
               showPinButton: showPinButton,
             );
           },

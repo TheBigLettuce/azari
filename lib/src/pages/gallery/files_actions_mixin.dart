@@ -40,47 +40,58 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     ));
   }
 
-  GridAction<SystemGalleryDirectoryFile> _restoreFromTrash() {
+  GridAction _restoreFromTrash() {
     return GridAction(
       Icons.restore_from_trash,
       (selected) {
-        PlatformFunctions.removeFromTrash(
-            selected.map((e) => e.originalUri).toList());
+        PlatformFunctions.removeFromTrash(selected
+            .cast<SystemGalleryDirectoryFile>()
+            .map((e) => e.originalUri)
+            .toList());
       },
       false,
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> _bulkRename() {
+  GridAction _bulkRename() {
     return GridAction(
       Icons.edit,
       (selected) {
-        _changeName(context, selected);
+        _changeName(context, selected.cast());
       },
       false,
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> _saveTagsAction(GalleryPlug plug) {
+  GridAction _saveTagsAction(GalleryPlug plug) {
     return GridAction(
       Icons.tag_rounded,
       (selected) {
-        _saveTags(context, selected, plug);
+        _saveTags(context, selected.cast(), plug);
       },
       true,
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> _addTag(
-      BuildContext context, void Function() refresh) {
+  GridAction _addTag(BuildContext context, void Function() refresh) {
     return GridAction(
       Icons.new_label_rounded,
       (selected) {
         openAddTagDialog(context, (v, delete) {
           if (delete) {
-            PostTags.g.removeTag(selected.map((e) => e.name).toList(), v);
+            PostTags.g.removeTag(
+                selected
+                    .cast<SystemGalleryDirectoryFile>()
+                    .map((e) => e.name)
+                    .toList(),
+                v);
           } else {
-            PostTags.g.addTag(selected.map((e) => e.name).toList(), v);
+            PostTags.g.addTag(
+                selected
+                    .cast<SystemGalleryDirectoryFile>()
+                    .map((e) => e.name)
+                    .toList(),
+                v);
           }
 
           refresh();
@@ -90,35 +101,38 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> _addToFavoritesAction(
+  GridAction _addToFavoritesAction(
       SystemGalleryDirectoryFile? f, GalleryPlug plug) {
     final isFavorites = f != null && f.isFavorite;
 
     return GridAction(
         isFavorites ? Icons.star_rounded : Icons.star_border_rounded,
         (selected) {
-      _favoriteOrUnfavorite(context, selected, plug);
+      _favoriteOrUnfavorite(context, selected.cast(), plug);
     }, false,
         color: isFavorites ? Colors.yellow.shade900 : null,
         animate: f != null,
         play: !isFavorites);
   }
 
-  GridAction<SystemGalleryDirectoryFile> _setFavoritesThumbnailAction() {
+  GridAction _setFavoritesThumbnailAction() {
     return GridAction(Icons.image_outlined, (selected) {
-      MiscSettings.setFavoritesThumbId(selected.first.id);
+      MiscSettings.setFavoritesThumbId(
+          (selected.first as SystemGalleryDirectoryFile).id);
       setState(() {});
     }, true, showOnlyWhenSingle: true);
   }
 
-  GridAction<SystemGalleryDirectoryFile> _loadVideoThumbnailAction(
+  GridAction _loadVideoThumbnailAction(
       GridSkeletonStateFilter<SystemGalleryDirectoryFile> state) {
     return GridAction(
       Icons.broken_image_outlined,
       (selected) {
+        final first = selected.first as SystemGalleryDirectoryFile;
+
         loadNetworkThumb(
-                selected.first.name,
-                selected.first.id,
+                first.name,
+                first.id,
                 AppLocalizations.of(context)!.netThumbnailLoader,
                 AppLocalizations.of(context)!.loadingThumbnail)
             .then((value) {
@@ -132,12 +146,14 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
       true,
       showOnlyWhenSingle: true,
       onLongPress: (selected) {
-        PlatformFunctions.deleteCachedThumbs([selected.first.id], true);
+        final first = selected.first as SystemGalleryDirectoryFile;
+
+        PlatformFunctions.deleteCachedThumbs([first.id], true);
 
         final t = selected.first.thumbnail();
         t?.evict();
 
-        final deleted = PinnedThumbnail.delete(selected.first.id);
+        final deleted = PinnedThumbnail.delete(first.id);
 
         if (t != null) {
           PaintingBinding.instance.imageCache.evict(t, includeLive: true);
@@ -154,45 +170,45 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> _deleteAction() {
+  GridAction _deleteAction() {
     return GridAction(
       Icons.delete,
       (selected) {
-        _deleteDialog(context, selected);
+        _deleteDialog(context, selected.cast());
       },
       false,
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> _copyAction(
+  GridAction _copyAction(
       GridSkeletonStateFilter<SystemGalleryDirectoryFile> state,
       GalleryPlug plug) {
     return GridAction(
       Icons.copy,
       (selected) {
-        _moveOrCopy(context, selected, false, state, plug);
+        _moveOrCopy(context, selected.cast(), false, state, plug);
       },
       false,
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> _moveAction(
+  GridAction _moveAction(
       GridSkeletonStateFilter<SystemGalleryDirectoryFile> state,
       GalleryPlug plug) {
     return GridAction(
-      Icons.forward,
+      Icons.forward_rounded,
       (selected) {
-        _moveOrCopy(context, selected, true, state, plug);
+        _moveOrCopy(context, selected.cast(), true, state, plug);
       },
       false,
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> _chooseAction() {
+  GridAction _chooseAction() {
     return GridAction(
       Icons.check,
       (selected) {
-        widget.callback!(selected.first);
+        widget.callback!(selected.first as SystemGalleryDirectoryFile);
         if (widget.callback!.returnBack) {
           Navigator.pop(context);
           Navigator.pop(context);

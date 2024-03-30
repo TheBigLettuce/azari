@@ -33,7 +33,7 @@ import '../../widgets/grid_frame/wrappers/wrap_grid_page.dart';
 import '../../widgets/skeletons/grid.dart';
 
 class BlacklistedPage extends StatefulWidget {
-  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
+  final SelectionGlue Function([Set<GluePreferences>]) generateGlue;
 
   const BlacklistedPage({
     super.key,
@@ -86,7 +86,7 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
 
   @override
   Widget build(BuildContext context) {
-    return WrapGridPage<BlacklistedDirectory>(
+    return WrapGridPage(
       provided: widget.generateGlue,
       scaffoldKey: state.scaffoldKey,
       child: GridSkeleton(
@@ -94,7 +94,6 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
         (context) => GridFrame<BlacklistedDirectory>(
           key: state.gridKey,
           layout: const GridSettingsLayoutBehaviour(GridSettingsBase.list),
-          refreshingStatus: state.refreshingStatus,
           getCell: loader.getCell,
           systemNavigationInsets: MediaQuery.viewPaddingOf(context),
           functionality: GridFunctionality(
@@ -108,11 +107,12 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
                       hint: AppLocalizations.of(context)!.blacklistedPage),
                   search.searchFocus),
             ),
-            selectionGlue: GlueProvider.of(context),
+            selectionGlue: GlueProvider.generateOf(context)(),
+            refreshingStatus: state.refreshingStatus,
+            imageViewDescription: ImageViewDescription(
+              imageViewKey: state.imageViewKey,
+            ),
             refresh: SynchronousGridRefresh(() => loader.count()),
-          ),
-          imageViewDescription: ImageViewDescription(
-            imageViewKey: state.imageViewKey,
           ),
           mainFocus: state.mainFocus,
           description: GridDescription(
@@ -142,8 +142,10 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
               GridAction(
                 Icons.restore_page,
                 (selected) {
-                  BlacklistedDirectory.deleteAll(
-                      selected.map((e) => e.bucketId).toList());
+                  BlacklistedDirectory.deleteAll(selected
+                      .cast<BlacklistedDirectory>()
+                      .map((e) => e.bucketId)
+                      .toList());
                 },
                 true,
               )

@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 
 class SelectionCountNotifier extends InheritedWidget {
   final int count;
+  final int countUpdateTimes;
 
   static int countOf(BuildContext context) {
     final widget =
@@ -17,11 +18,16 @@ class SelectionCountNotifier extends InheritedWidget {
     return widget!.count;
   }
 
-  const SelectionCountNotifier(
-      {super.key, required this.count, required super.child});
+  const SelectionCountNotifier({
+    super.key,
+    required this.count,
+    required this.countUpdateTimes,
+    required super.child,
+  });
 
   @override
   bool updateShouldNotify(SelectionCountNotifier oldWidget) {
-    return count != oldWidget.count;
+    return count != oldWidget.count ||
+        countUpdateTimes != oldWidget.countUpdateTimes;
   }
 }

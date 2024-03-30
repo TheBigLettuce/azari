@@ -41,9 +41,12 @@ class _GalleryImpl implements GalleryApi {
       _currentApi?.currentImages?.callback
           ?.call(db.systemGalleryDirectoryFiles.countSync(), inRefresh, true);
       return;
-    }
+    } else if (f.isEmpty && !inRefresh) {
+      _currentApi?.currentImages?.callback
+          ?.call(db.systemGalleryDirectoryFiles.countSync(), false, false);
 
-    if (f.isEmpty) {
+      return;
+    } else if (f.isEmpty) {
       return;
     }
 
@@ -92,8 +95,21 @@ class _GalleryImpl implements GalleryApi {
       for (final api in _temporaryApis) {
         api.temporarySet?.call(db.systemGalleryDirectorys.countSync(), true);
       }
+
+      return;
+    } else if (d.isEmpty && !inRefresh) {
+      _currentApi?.callback
+          ?.call(db.systemGalleryDirectorys.countSync(), false, false);
+      for (final api in _temporaryApis) {
+        api.temporarySet
+            ?.call(db.systemGalleryDirectorys.countSync(), !inRefresh);
+      }
+
+      return;
+    } else if (d.isEmpty) {
       return;
     }
+
     final blacklisted = Dbs.g.blacklisted.blacklistedDirectorys
         .where()
         .anyOf(d.cast<Directory>(),

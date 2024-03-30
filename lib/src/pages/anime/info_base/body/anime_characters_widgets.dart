@@ -92,25 +92,17 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
                               width: MediaQuery.sizeOf(context).longestSide *
                                   0.2 *
                                   GridAspectRatio.zeroFive.value,
-                              child: GridCell(
-                                cell: e.$2,
-                                indx: e.$1,
-                                forceAlias: e.$2.role,
-                                alignTitleToTopLeft: true,
-                                imageAlign: Alignment.topCenter,
+                              child: CustomGridCellWrapper(
                                 onPressed: (context) {
                                   Navigator.push(context, MaterialPageRoute(
                                     builder: (context) {
                                       return ImageView(
-                                        updateTagScrollPos:
-                                            (pos, selectedCell) {},
                                         cellCount: list.length,
                                         scrollUntill: (_) {},
                                         startingCell: e.$1,
                                         onExit: () {},
                                         getCell: (i) => list[i],
                                         onNearEnd: null,
-                                        focusMain: () {},
                                         systemOverlayRestoreColor:
                                             widget.overlayColor ??
                                                 Theme.of(context)
@@ -120,10 +112,16 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
                                     },
                                   ));
                                 },
-                                tight: false,
-                                download: null,
-                                isList: false,
-                                labelAtBottom: true,
+                                child: GridCell(
+                                  cell: e.$2,
+                                  indx: e.$1,
+                                  forceAlias: e.$2.role,
+                                  alignTitleToTopLeft: true,
+                                  imageAlign: Alignment.topCenter,
+                                  tight: false,
+                                  isList: false,
+                                  labelAtBottom: true,
+                                ),
                               ),
                             ))
                         .toList(),

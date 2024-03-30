@@ -8,7 +8,6 @@
 part of '../home.dart';
 
 mixin _ChangePageMixin on State<Home> {
-  late final SelectionGlueState glueState;
   late final Isar mainGrid;
 
   final pagingRegistry = PagingStateRegistry();
@@ -24,20 +23,6 @@ mixin _ChangePageMixin on State<Home> {
 
   void initChangePage(_AnimatedIconsMixin icons, Settings settings) {
     mainGrid = DbsOpen.primaryGrid(settings.selectedBooru);
-
-    glueState = SelectionGlueState(
-      hide: (hide) {
-        if (Settings.fromDb().buddhaMode) {
-          return;
-        }
-
-        if (hide) {
-          icons.controllerNavBar.animateTo(1);
-        } else {
-          icons.controllerNavBar.animateBack(0);
-        }
-      },
-    );
   }
 
   void disposeChangePage() {
@@ -48,14 +33,6 @@ mixin _ChangePageMixin on State<Home> {
       themeChangeOver();
     }
   }
-
-  bool keyboardVisible() => MediaQuery.viewInsetsOf(context).bottom != 0;
-
-  SelectionGlue<T> _generateGlue<T extends Cell>() =>
-      glueState.glue(keyboardVisible, setState, () => 80, true);
-
-  SelectionGlue<T> _generateGlueB<T extends Cell>() =>
-      glueState.glue(keyboardVisible, setState, () => 0, true);
 
   void _switchPage(_AnimatedIconsMixin icons, int to) {
     if (to == currentRoute) {
@@ -126,39 +103,19 @@ mixin _ChangePageMixin on State<Home> {
 
   Widget _currentPage(
       BuildContext context, _AnimatedIconsMixin icons, EdgeInsets padding) {
-    SelectionGlue<T> generateGluePadding<T extends Cell>() {
-      return glueState.glue(
-        keyboardVisible,
-        setState,
-        () => 80 + MediaQuery.viewPaddingOf(this.context).bottom.toInt(),
-        true,
-      );
-    }
-
-    SelectionGlue<T> generateGlueC<T extends Cell>() =>
-        glueState.glue(keyboardVisible, setState, () => 80, false);
-
     if (widget.callback != null) {
-      return WrapGridPage<SystemGalleryDirectory>(
-        scaffoldKey: GlobalKey(),
-        child: GalleryDirectories(
-          viewPadding: padding,
-          nestedCallback: widget.callback,
-          procPop: (pop) => _procPop(icons, pop),
-        ),
+      return GalleryDirectories(
+        viewPadding: padding,
+        nestedCallback: widget.callback,
+        procPop: (pop) => _procPop(icons, pop),
       );
     }
 
     if (Settings.fromDb().buddhaMode) {
-      return GlueProvider<Post>(
-        generate: generateGlueC,
-        glue: generateGlueC(),
-        child: BooruPage(
-          pagingRegistry: pagingRegistry,
-          generateGlue: generateGlueC,
-          viewPadding: padding,
-          procPop: (pop) {},
-        ),
+      return BooruPage(
+        pagingRegistry: pagingRegistry,
+        viewPadding: padding,
+        procPop: (pop) {},
       );
     }
 
@@ -172,48 +129,31 @@ mixin _ChangePageMixin on State<Home> {
           kBooruPageRoute => _NavigatorShell(
               navigatorKey: mainKey,
               pop: _popGallery,
-              child: GlueProvider<Post>(
-                generate: generateGluePadding,
-                glue: _generateGlue(),
-                child: BooruPage(
-                  pagingRegistry: pagingRegistry,
-                  generateGlue: generateGluePadding,
-                  viewPadding: padding,
-                  procPop: (pop) => _procPopA(icons, pop),
-                ),
+              child: BooruPage(
+                pagingRegistry: pagingRegistry,
+                viewPadding: padding,
+                procPop: (pop) => _procPopA(icons, pop),
               ),
             ),
           kGalleryPageRoute => _NavigatorShell(
               navigatorKey: galleryKey,
               pop: _popGallery,
-              child: GlueProvider<SystemGalleryDirectory>(
-                generate: _generateGlue,
-                glue: _generateGlue(),
-                child: GalleryDirectories(
-                  procPop: (pop) => _procPop(icons, pop),
-                  viewPadding: padding,
-                ),
+              child: GalleryDirectories(
+                procPop: (pop) => _procPop(icons, pop),
+                viewPadding: padding,
               ),
             ),
           kMangaPageRoute => _NavigatorShell(
               navigatorKey: mangaKey,
               pop: _popGallery,
-              child: GlueProvider<CompactMangaDataBase>(
-                generate: _generateGlue,
-                glue: _generateGlue(),
-                child: MangaPage(
-                  procPop: (pop) => _procPop(icons, pop),
-                  viewPadding: padding,
-                ),
-              ),
-            ),
-          kAnimePageRoute => GlueProvider<AnimeEntry>(
-              generate: _generateGlue,
-              glue: _generateGlue(),
-              child: AnimePage(
+              child: MangaPage(
                 procPop: (pop) => _procPop(icons, pop),
                 viewPadding: padding,
               ),
+            ),
+          kAnimePageRoute => AnimePage(
+              procPop: (pop) => _procPop(icons, pop),
+              viewPadding: padding,
             ),
           kMorePageRoute => _NavigatorShell(
               navigatorKey: moreKey,
@@ -221,9 +161,7 @@ mixin _ChangePageMixin on State<Home> {
               child: PopScope(
                 canPop: currentRoute == kBooruPageRoute,
                 onPopInvoked: (pop) => _procPop(icons, pop),
-                child: MorePage(
-                  generateGlue: _generateGlueB,
-                ).animate(),
+                child: const MorePage().animate(),
               ),
             ),
           int() => throw "unimpl",

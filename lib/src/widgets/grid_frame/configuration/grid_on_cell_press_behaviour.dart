@@ -7,16 +7,17 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 
 abstract class GridOnCellPressedBehaviour {
   const GridOnCellPressedBehaviour();
 
-  void launch<T extends Cell>(
+  Future<void> launch<T extends Cell>(
     BuildContext gridContext,
     int startingCell,
-    GridFrameState<T> state, {
+    GridFunctionality<T> state, {
     double? startingOffset,
     T? useCellInsteadIdx,
   });
@@ -27,28 +28,29 @@ class OverrideGridOnCellPressBehaviour implements GridOnCellPressedBehaviour {
     this.onPressed = _doNothing,
   });
 
-  static void _doNothing(
+  static Future<void> _doNothing(
     BuildContext context,
     int idx,
     Cell? overrideCell,
-  ) {}
+  ) {
+    return Future.value();
+  }
 
-  final void Function(
+  final Future<void> Function(
     BuildContext context,
     int idx,
     Cell? overrideCell,
   ) onPressed;
 
   @override
-  void launch<T extends Cell>(
+  Future<void> launch<T extends Cell>(
     BuildContext gridContext,
     int startingCell,
-    GridFrameState<T> state, {
+    GridFunctionality<T> functionality, {
     double? startingOffset,
     T? useCellInsteadIdx,
   }) {
-    state.widget.mainFocus.requestFocus();
-    onPressed(gridContext, startingCell, useCellInsteadIdx);
+    return onPressed(gridContext, startingCell, useCellInsteadIdx);
   }
 }
 
@@ -56,29 +58,31 @@ class DefaultGridOnCellPressBehaviour implements GridOnCellPressedBehaviour {
   const DefaultGridOnCellPressBehaviour();
 
   @override
-  void launch<T extends Cell>(
+  Future<void> launch<T extends Cell>(
     BuildContext gridContext,
     int startingCell,
-    GridFrameState<T> state, {
+    GridFunctionality<T> functionality, {
     double? startingOffset,
     T? useCellInsteadIdx,
   }) {
-    final functionality = state.widget.functionality;
-    final imageDesctipion = state.widget.imageViewDescription;
-    final mutation = state.mutation;
+    final imageDesctipion = functionality.imageViewDescription;
 
-    state.inImageView = true;
+    // state.inImageView = true;
 
-    state.widget.mainFocus.requestFocus();
+    // state.widget.mainFocus.requestFocus();
 
-    final offsetGrid =
-        state.controller.hasClients ? state.controller.offset : 0.0;
+    // functionality.
+
+    // final offsetGrid =
+    //     state.controller.hasClients ? state.controller.offset : 0.0;
     final overlayColor =
         Theme.of(gridContext).colorScheme.background.withOpacity(0.5);
 
     functionality.selectionGlue.hideNavBar(true);
 
-    Navigator.of(gridContext, rootNavigator: true)
+    final getCell = CellProvider.of<T>(gridContext);
+
+    return Navigator.of(gridContext, rootNavigator: true)
         .push(MaterialPageRoute(builder: (context) {
       return ImageView<T>(
         key: imageDesctipion.imageViewKey,
@@ -87,25 +91,27 @@ class DefaultGridOnCellPressBehaviour implements GridOnCellPressedBehaviour {
         registerNotifiers: functionality.registerNotifiers,
         systemOverlayRestoreColor: overlayColor,
         overrideDrawerLabel: imageDesctipion.overrideDrawerLabel,
-        updateTagScrollPos: (pos, selectedCell) =>
-            functionality.updateScrollPosition?.call(offsetGrid),
-        scrollUntill: state.tryScrollUntil,
+        scrollUntill: (_) {}, // TODO: change this
         pageChange: imageDesctipion.pageChangeImage,
         onExit: () {
-          state.inImageView = false;
+          // state.inImageView = false;
           imageDesctipion.onExitImageView?.call();
         },
         ignoreEndDrawer: imageDesctipion.ignoreImageViewEndDrawer,
         addIcons: imageDesctipion.addIconsImage,
-        focusMain: state.widget.mainFocus.requestFocus,
+        // focusMain: state.widget.mainFocus.requestFocus,
         infoScrollOffset: startingOffset,
-        getCell: state.widget.getCell,
-        cellCount: mutation.cellCount,
+        getCell: getCell,
+        cellCount: functionality.refreshingStatus.mutation.cellCount,
         download: functionality.download,
         startingCell: startingCell,
         onNearEnd: () =>
-            state.refreshingStatus.onNearEnd(state.widget.functionality),
+            functionality.refreshingStatus.onNearEnd(functionality),
       );
-    })).then((value) => functionality.selectionGlue.hideNavBar(false));
+    })).then((value) {
+      functionality.selectionGlue.hideNavBar(false);
+
+      return value;
+    });
   }
 }

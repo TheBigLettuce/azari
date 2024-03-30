@@ -18,8 +18,7 @@ import '../../db/schemas/settings/settings.dart';
 import '../../widgets/grid_frame/grid_frame.dart';
 
 class BooruGridActions {
-  static GridAction<T> hide<T extends PostBase>(
-      BuildContext context, void Function() setState,
+  static GridAction hide(BuildContext context, void Function() setState,
       {PostBase? post}) {
     return GridAction(Icons.hide_image_rounded, (selected) {
       if (selected.isEmpty) {
@@ -29,9 +28,9 @@ class BooruGridActions {
       final toDelete = <(int, Booru)>[];
       final toAdd = <HiddenBooruPost>[];
 
-      final booru = selected.first.booru;
+      final booru = (selected.first as PostBase).booru;
 
-      for (final cell in selected) {
+      for (final PostBase cell in selected.cast()) {
         if (HiddenBooruPost.isHidden(cell.id, booru)) {
           toDelete.add((cell.id, booru));
         } else {
@@ -49,14 +48,14 @@ class BooruGridActions {
             : null);
   }
 
-  static GridAction<T> download<T extends PostBase>(
-      BuildContext context, Booru booru) {
+  static GridAction download(BuildContext context, Booru booru) {
     return GridAction(Icons.download, (selected) {
       final settings = Settings.fromDb();
 
-      PostTags.g.addTagsPostAll(selected.map((e) => (e.filename(), e.tags)));
+      PostTags.g.addTagsPostAll(
+          selected.cast<PostBase>().map((e) => (e.filename(), e.tags)));
       Downloader.g.addAll(
-          selected.map((e) => DownloadFile.d(
+          selected.cast<PostBase>().map((e) => DownloadFile.d(
               url: e.fileUrl,
               site: booru.url,
               name: e.filename(),
@@ -65,14 +64,15 @@ class BooruGridActions {
     }, true, animate: true);
   }
 
-  static GridAction<T> favorites<T extends PostBase>(BuildContext context, T? p,
+  static GridAction favorites(BuildContext context, PostBase? p,
       {bool showDeleteSnackbar = false}) {
     final isFavorite = p != null && Settings.isFavorite(p.id, p.booru);
     return GridAction(
       isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
       (selected) {
-        Settings.addRemoveFavorites(context, selected, showDeleteSnackbar);
-        for (final post in selected) {
+        Settings.addRemoveFavorites(
+            context, selected.cast(), showDeleteSnackbar);
+        for (final PostBase post in selected.cast()) {
           LocalTagDictionary.addAll(post.tags);
         }
       },

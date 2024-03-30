@@ -10,9 +10,8 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 
 import '../grid_frame.dart';
 
-class SelectionGlue<T extends Cell> {
-  final void Function(List<GridAction<T>> actions, GridSelection<T> selection)
-      open;
+class SelectionGlue {
+  final void Function(List<GridAction> actions, GridSelection selection) open;
   final void Function(int) updateCount;
   final void Function() close;
   final bool Function() isOpen;
@@ -21,7 +20,7 @@ class SelectionGlue<T extends Cell> {
   final int Function() barHeight;
   final bool persistentBarHeight;
 
-  static SelectionGlue<T> empty<T extends Cell>(BuildContext context) =>
+  static SelectionGlue empty<T extends Cell>(BuildContext context) =>
       SelectionGlue(
         close: () {},
         updateCount: (_) {},
@@ -33,8 +32,8 @@ class SelectionGlue<T extends Cell> {
         keyboardVisible: () => MediaQuery.viewInsetsOf(context).bottom != 0,
       );
 
-  SelectionGlue<T> chain({
-    void Function(SelectionGlue<T> parent)? close,
+  SelectionGlue chain({
+    void Function(SelectionGlue parent)? close,
   }) {
     return SelectionGlue(
       close: close != null

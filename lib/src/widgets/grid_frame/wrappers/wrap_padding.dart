@@ -9,7 +9,7 @@ part of '../grid_frame.dart';
 
 class _WrapPadding<T extends Cell> extends StatelessWidget {
   final PreferredSizeWidget? footer;
-  final SelectionGlue<T> selectionGlue;
+  final SelectionGlue selectionGlue;
   final double systemNavigationInsets;
   final bool sliver;
   final bool addFabPadding;

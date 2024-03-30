@@ -49,15 +49,14 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final T? Function(int i) getCell;
   final int cellCount;
   final void Function(int post) scrollUntill;
-  final void Function(double? pos, int? selectedCell) updateTagScrollPos;
   final Future<int> Function()? onNearEnd;
-  final List<GridAction<T>> Function(T)? addIcons;
+  final List<GridAction> Function(T)? addIcons;
   final void Function(int i)? download;
   final double? infoScrollOffset;
   final Color systemOverlayRestoreColor;
   final void Function(ImageViewState<T> state)? pageChange;
   final void Function() onExit;
-  final void Function() focusMain;
+  // final void Function() focusMain;
 
   final List<int>? predefinedIndexes;
 
@@ -81,7 +80,6 @@ class ImageView<T extends Cell> extends StatefulWidget {
 
   const ImageView({
     super.key,
-    required this.updateTagScrollPos,
     required this.cellCount,
     required this.scrollUntill,
     required this.startingCell,
@@ -92,7 +90,7 @@ class ImageView<T extends Cell> extends StatefulWidget {
     this.ignoreLoadingBuilder = false,
     required this.getCell,
     required this.onNearEnd,
-    required this.focusMain,
+    // required this.focusMain,
     required this.systemOverlayRestoreColor,
     this.pageChange,
     this.overrideDrawerLabel,
@@ -160,7 +158,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
       _loadNext(widget.startingCell);
     });
 
-    widget.updateTagScrollPos(null, widget.startingCell);
+    // widget.updateTagScrollPos(null, widget.startingCell);
 
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
       final b = makeImageViewBindings(context, key, controller,
@@ -170,8 +168,8 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
           onTap: _onTap);
       bindings = {
         ...b,
-        ...keybindDescription(context, describeKeys(b),
-            AppLocalizations.of(context)!.imageViewPageName, widget.focusMain)
+        // ...keybindDescription(context, describeKeys(b),
+        //     AppLocalizations.of(context)!.imageViewPageName, widget.focusMain)
       };
 
       setState(() {});
@@ -185,7 +183,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     fullscreenPlug.unfullscreen();
 
     WakelockPlus.disable();
-    widget.updateTagScrollPos(null, null);
+    // widget.updateTagScrollPos(null, null);
     controller.dispose();
 
     widget.onExit();
@@ -270,7 +268,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     currentPage = index;
     widget.pageChange?.call(this);
     _loadNext(index);
-    widget.updateTagScrollPos(null, index);
+    // widget.updateTagScrollPos(null, index);
 
     widget.scrollUntill(index);
 
@@ -380,7 +378,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                           const []),
               mainFocus: mainFocus,
               child: ImageViewBody(
-                isPaletteNull: currentPalette == null,
                 onPressedLeft: _onPressedLeft,
                 onPressedRight: _onPressedRight,
                 onPageChanged: _onPageChanged,
@@ -390,13 +387,13 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
                 loadingBuilder: widget.ignoreLoadingBuilder
                     ? null
                     : (context, event, idx) => loadingBuilder(
-                        context,
-                        event,
-                        idx,
-                        currentPage,
-                        wrapNotifiersKey,
-                        currentPalette,
-                        drawCell),
+                          context,
+                          event,
+                          idx,
+                          currentPage,
+                          wrapNotifiersKey,
+                          drawCell,
+                        ),
                 itemCount: cellCount,
                 onTap: _onTap,
                 builder: galleryBuilder,

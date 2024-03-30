@@ -33,7 +33,7 @@ import '../../widgets/grid_frame/wrappers/wrap_grid_page.dart';
 import '../../widgets/skeletons/grid.dart';
 
 class Downloads extends StatefulWidget {
-  final SelectionGlue<J> Function<J extends Cell>() generateGlue;
+  final SelectionGlue Function() generateGlue;
 
   const Downloads({
     super.key,
@@ -126,19 +126,19 @@ class _DownloadsState extends State<Downloads> {
         hideName: false,
       );
 
-  static GridAction<DownloadFile> delete(BuildContext context) {
+  static GridAction delete(BuildContext context) {
     return GridAction(Icons.remove, (selected) {
       if (selected.isEmpty) {
         return;
       }
 
-      Downloader.g.remove(selected);
+      Downloader.g.remove(selected.cast());
     }, true);
   }
 
   @override
   Widget build(BuildContext context) {
-    return WrapGridPage<DownloadFile>(
+    return WrapGridPage(
       scaffoldKey: state.scaffoldKey,
       provided: widget.generateGlue,
       child: GridSkeleton(
@@ -146,13 +146,9 @@ class _DownloadsState extends State<Downloads> {
         (context) => GridFrame<DownloadFile>(
           key: state.gridKey,
           layout: SegmentLayout(_makeSegments(context), _gridSettingsBase),
-          refreshingStatus: state.refreshingStatus,
           getCell: loader.getCell,
           initalScrollPosition: 0,
           systemNavigationInsets: MediaQuery.viewPaddingOf(context),
-          imageViewDescription: ImageViewDescription(
-            imageViewKey: state.imageViewKey,
-          ),
           functionality: GridFunctionality(
             search: OverrideGridSearchWidget(
               SearchAndFocus(
@@ -161,7 +157,11 @@ class _DownloadsState extends State<Downloads> {
                 search.searchFocus,
               ),
             ),
-            selectionGlue: GlueProvider.of(context),
+            selectionGlue: GlueProvider.generateOf(context)(),
+            refreshingStatus: state.refreshingStatus,
+            imageViewDescription: ImageViewDescription(
+              imageViewKey: state.imageViewKey,
+            ),
             refresh: SynchronousGridRefresh(() => loader.count()),
           ),
           mainFocus: state.mainFocus,

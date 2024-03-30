@@ -65,7 +65,7 @@ class GalleryFiles extends StatefulWidget {
   final String bucketId;
   final GalleryAPIFiles api;
   final CallbackDescriptionNested? callback;
-  final SelectionGlue<J> Function<J extends Cell>()? generateGlue;
+  final SelectionGlue Function()? generateGlue;
   final EdgeInsets addInset;
 
   const GalleryFiles({
@@ -258,7 +258,7 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
   Widget build(BuildContext context) {
     final insets = MediaQuery.viewPaddingOf(context) + widget.addInset;
 
-    return WrapGridPage<SystemGalleryDirectoryFile>(
+    return WrapGridPage(
         provided: widget.generateGlue,
         scaffoldKey: state.scaffoldKey,
         child: GridSkeleton<SystemGalleryDirectoryFile>(
@@ -267,69 +267,70 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
             key: state.gridKey,
             layout:
                 const GridSettingsLayoutBehaviour(GridSettingsFiles.current),
-            refreshingStatus: state.refreshingStatus,
             getCell: (i) => state.transform(widget.api.directCell(i)),
             functionality: GridFunctionality(
-                registerNotifiers: (child) {
-                  return OnBooruTagPressed(
-                    onPressed: _onBooruTagPressed,
-                    child: child,
-                  );
-                },
-                watchLayoutSettings: GridSettingsFiles.watch,
-                backButton: CallbackGridBackButton(
-                  onPressed: () {
-                    final filterMode = search.currentFilteringMode();
-                    if (filterMode != FilteringMode.noFilter) {
-                      search.resetSearch();
-                      return;
-                    }
-                    Navigator.pop(context);
-                  },
-                ),
-                selectionGlue: GlueProvider.of(context),
-                refresh: extra.supportsDirectRefresh
-                    ? AsyncGridRefresh(() async {
-                        final i = await widget.api.refresh();
-
-                        search.performSearch(search.searchTextController.text);
-
-                        return i;
-                      })
-                    : RetainedGridRefresh(_refresh),
-                search: OverrideGridSearchWidget(
-                  SearchAndFocus(
-                    search.searchWidget(context, hint: widget.dirName),
-                    search.searchFocus,
-                  ),
-                )),
-            systemNavigationInsets: insets,
-            imageViewDescription: ImageViewDescription(
-              imageViewKey: state.imageViewKey,
-              statistics: const ImageViewStatistics(
-                swiped: StatisticsGallery.addFilesSwiped,
-                viewed: StatisticsGallery.addViewedFiles,
-              ),
-              addIconsImage: (cell) {
-                return widget.callback != null
-                    ? [
-                        _chooseAction(),
-                      ]
-                    : extra.isTrash
-                        ? [
-                            _restoreFromTrash(),
-                          ]
-                        : [
-                            if (MiscSettings.current.filesExtendedActions &&
-                                cell.isVideo)
-                              _loadVideoThumbnailAction(state),
-                            _addToFavoritesAction(cell, plug),
-                            _deleteAction(),
-                            _copyAction(state, plug),
-                            _moveAction(state, plug)
-                          ];
+              registerNotifiers: (child) {
+                return OnBooruTagPressed(
+                  onPressed: _onBooruTagPressed,
+                  child: child,
+                );
               },
+              watchLayoutSettings: GridSettingsFiles.watch,
+              backButton: CallbackGridBackButton(
+                onPressed: () {
+                  final filterMode = search.currentFilteringMode();
+                  if (filterMode != FilteringMode.noFilter) {
+                    search.resetSearch();
+                    return;
+                  }
+                  Navigator.pop(context);
+                },
+              ),
+              selectionGlue: GlueProvider.generateOf(context)(),
+              refreshingStatus: state.refreshingStatus,
+              imageViewDescription: ImageViewDescription(
+                imageViewKey: state.imageViewKey,
+                statistics: const ImageViewStatistics(
+                  swiped: StatisticsGallery.addFilesSwiped,
+                  viewed: StatisticsGallery.addViewedFiles,
+                ),
+                addIconsImage: (cell) {
+                  return widget.callback != null
+                      ? [
+                          _chooseAction(),
+                        ]
+                      : extra.isTrash
+                          ? [
+                              _restoreFromTrash(),
+                            ]
+                          : [
+                              if (MiscSettings.current.filesExtendedActions &&
+                                  cell.isVideo)
+                                _loadVideoThumbnailAction(state),
+                              _addToFavoritesAction(cell, plug),
+                              _deleteAction(),
+                              _copyAction(state, plug),
+                              _moveAction(state, plug)
+                            ];
+                },
+              ),
+              refresh: extra.supportsDirectRefresh
+                  ? AsyncGridRefresh(() async {
+                      final i = await widget.api.refresh();
+
+                      search.performSearch(search.searchTextController.text);
+
+                      return i;
+                    })
+                  : RetainedGridRefresh(_refresh),
+              search: OverrideGridSearchWidget(
+                SearchAndFocus(
+                  search.searchWidget(context, hint: widget.dirName),
+                  search.searchFocus,
+                ),
+              ),
             ),
+            systemNavigationInsets: insets,
             mainFocus: state.mainFocus,
             description: GridDescription(
               appBarSnap: !state.settings.buddhaMode,

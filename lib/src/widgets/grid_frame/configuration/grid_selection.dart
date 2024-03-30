@@ -9,7 +9,6 @@ part of '../grid_frame.dart';
 
 class GridSelection<T extends Cell> {
   GridSelection(
-    this._setState,
     this.addActions,
     this.glue,
     this.controller, {
@@ -17,43 +16,40 @@ class GridSelection<T extends Cell> {
     required this.ignoreSwipe,
   });
 
+  final SelectionGlue glue;
+  final ScrollController Function() controller;
+
   final _selected = <int, T>{};
-  final List<GridAction<T>> addActions;
+  final List<GridAction> addActions;
   final bool noAppBar;
   final bool ignoreSwipe;
 
   int? lastSelected;
-
-  void use(void Function(List<T> l) f, bool closeOnPress) {
-    f(_selected.values.toList());
-    if (closeOnPress) {
-      reset();
-    }
-  }
-
-  final void Function(Function()) _setState;
-  final SelectionGlue<T> glue;
-  final ScrollController Function() controller;
 
   bool get isEmpty => _selected.isEmpty;
   bool get isNotEmpty => _selected.isNotEmpty;
 
   int get count => _selected.length;
 
+  void use(void Function(List<Cell> l) f, bool closeOnPress) {
+    f(_selected.values.toList());
+    if (closeOnPress) {
+      reset();
+    }
+  }
+
   void reset() {
     if (_selected.isNotEmpty) {
       _selected.clear();
       glue.close();
       lastSelected = null;
-
-      _setState(() {});
     }
   }
 
   bool isSelected(int indx) =>
       indx.isNegative ? false : _selected.containsKey(indx);
 
-  void add(BuildContext context, int id, T selection) {
+  void _add(BuildContext context, int id, T selection) {
     if (id.isNegative) {
       return;
     }
@@ -62,24 +58,20 @@ class GridSelection<T extends Cell> {
       glue.open(addActions, this);
     }
 
-    _setState(() {
-      _selected[id] = selection;
-      lastSelected = id;
-    });
+    _selected[id] = selection;
+    lastSelected = id;
 
     glue.updateCount(_selected.length);
   }
 
-  void remove(int id) {
-    _setState(() {
-      _selected.remove(id);
-      if (_selected.isEmpty) {
-        glue.close();
-        lastSelected = null;
-      } else if (_selected.isNotEmpty && !glue.isOpen()) {
-        glue.open(addActions, this);
-      }
-    });
+  void _remove(int id) {
+    _selected.remove(id);
+    if (_selected.isEmpty) {
+      glue.close();
+      lastSelected = null;
+    } else if (_selected.isNotEmpty && !glue.isOpen()) {
+      glue.open(addActions, this);
+    }
 
     glue.updateCount(_selected.length);
   }
@@ -101,21 +93,19 @@ class GridSelection<T extends Cell> {
           if (selection) {
             _selected[selectFrom?[i] ?? i] = getCell(selectFrom?[i] ?? i);
           } else {
-            remove(selectFrom?[i] ?? i);
+            _remove(selectFrom?[i] ?? i);
           }
           lastSelected = selectFrom?[i] ?? i;
         }
-        _setState(() {});
       } else if (indx > last) {
         for (var i = last; i <= indx; i++) {
           if (selection) {
             _selected[selectFrom?[i] ?? i] = getCell(selectFrom?[i] ?? i);
           } else {
-            remove(selectFrom?[i] ?? i);
+            _remove(selectFrom?[i] ?? i);
           }
           lastSelected = selectFrom?[i] ?? i;
         }
-        _setState(() {});
       }
 
       glue.updateCount(_selected.length);
@@ -134,9 +124,9 @@ class GridSelection<T extends Cell> {
     if (!isSelected(index)) {
       final cell = CellProvider.getOf<T>(context, index);
 
-      add(context, index, cell);
+      _add(context, index, cell);
     } else {
-      remove(index);
+      _remove(index);
     }
 
     HapticFeedback.selectionClick();

@@ -73,7 +73,7 @@ class BooruRestoredPage extends StatefulWidget {
   final PagingStateRegistry pagingRegistry;
   final SafeMode? overrideSafeMode;
   final void Function()? onDispose;
-  final SelectionGlue<J> Function<J extends Cell>()? generateGlue;
+  final SelectionGlue Function()? generateGlue;
 
   const BooruRestoredPage({
     super.key,
@@ -241,7 +241,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
 
       pagingState.currentSkipped = list.$2;
       instance.writeTxnSync(() {
-        instance.posts.clear();
+        instance.posts.clearSync();
         return instance.posts.putAllByIdBooruSync(list.$1);
       });
 
@@ -330,39 +330,22 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
   Widget build(BuildContext context) {
     final viewPadding = MediaQuery.of(context).viewPadding;
 
-    return WrapGridPage<Post>(
+    return WrapGridPage(
       provided: widget.generateGlue,
       scaffoldKey: state.scaffoldKey,
       child: Builder(
         builder: (context) {
-          final glue = GlueProvider.of<Post>(context);
-
           return BooruAPINotifier(
             api: api,
             child: GridSkeleton(
               state,
               (context) => GridFrame<Post>(
                 key: state.gridKey,
-                refreshingStatus: state.refreshingStatus,
                 layout: const GridSettingsLayoutBehaviour(
                     GridSettingsBooru.current),
                 mainFocus: state.mainFocus,
                 getCell: (i) => instance.posts.getSync(i + 1)!,
                 initalScrollPosition: pagingState.offset,
-                imageViewDescription: ImageViewDescription(
-                  addIconsImage: (post) => [
-                    BooruGridActions.favorites(context, post),
-                    BooruGridActions.download(context, api.booru)
-                  ],
-                  imageViewKey: state.imageViewKey,
-                  overrideDrawerLabel: state.settings.buddhaMode
-                      ? AppLocalizations.of(context)!.buddhaModeTags
-                      : null,
-                  statistics: const ImageViewStatistics(
-                    swiped: StatisticsBooru.addSwiped,
-                    viewed: StatisticsBooru.addViewed,
-                  ),
-                ),
                 functionality: GridFunctionality(
                   watchLayoutSettings: GridSettingsBooru.watch,
                   updateScrollPosition: pagingState.setOffset,
@@ -377,7 +360,22 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                     );
                   },
                   download: _download,
-                  selectionGlue: glue,
+                  selectionGlue: GlueProvider.generateOf(context)(),
+                  refreshingStatus: state.refreshingStatus,
+                  imageViewDescription: ImageViewDescription(
+                    addIconsImage: (post) => [
+                      BooruGridActions.favorites(context, post),
+                      BooruGridActions.download(context, api.booru)
+                    ],
+                    imageViewKey: state.imageViewKey,
+                    overrideDrawerLabel: state.settings.buddhaMode
+                        ? AppLocalizations.of(context)!.buddhaModeTags
+                        : null,
+                    statistics: const ImageViewStatistics(
+                      swiped: StatisticsBooru.addSwiped,
+                      viewed: StatisticsBooru.addViewed,
+                    ),
+                  ),
                   search: OverrideGridSearchWidget(
                     SearchAndFocus(
                         search.searchWidget(context, hint: api.booru.name),

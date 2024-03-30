@@ -274,14 +274,12 @@ class ReadMangaChapter {
                     state.currentPage, state.drawCell(state.currentPage, true));
               },
               ignoreEndDrawer: true,
-              updateTagScrollPos: (_, __) {},
               cellCount: chapters.length,
               scrollUntill: (_) {},
               startingCell: p != null ? p - 1 : 0,
               onExit: () {},
               getCell: (i) => chapters[i],
               onNearEnd: null,
-              focusMain: () {},
               systemOverlayRestoreColor: overlayColor,
             );
           },

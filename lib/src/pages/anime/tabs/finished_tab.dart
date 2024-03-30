@@ -115,21 +115,20 @@ class __FinishedTabState extends State<_FinishedTab> {
       (context) => GridFrame<WatchedAnimeEntry>(
         key: state.gridKey,
         layout: const GridSettingsLayoutBehaviour(_settings),
-        refreshingStatus: state.refreshingStatus,
         getCell: _getCell,
-        imageViewDescription: ImageViewDescription(
-          imageViewKey: state.imageViewKey,
-        ),
         functionality: GridFunctionality(
-            selectionGlue:
-                GlueProvider.generateOf<AnimeEntry, WatchedAnimeEntry>(context),
+            selectionGlue: GlueProvider.generateOf(context)(),
+            refreshingStatus: state.refreshingStatus,
+            imageViewDescription: ImageViewDescription(
+              imageViewKey: state.imageViewKey,
+            ),
             refresh: SynchronousGridRefresh(() => _list.length),
             onPressed: OverrideGridOnCellPressBehaviour(
               onPressed: (context, idx, _) {
                 final cell =
                     CellProvider.getOf<WatchedAnimeEntry>(context, idx);
 
-                Navigator.push(context, MaterialPageRoute(
+                return Navigator.push(context, MaterialPageRoute(
                   builder: (context) {
                     return FinishedAnimeInfoPage(entry: cell);
                   },
@@ -154,7 +153,7 @@ class __FinishedTabState extends State<_FinishedTab> {
                     action: SnackBarAction(
                         label: AppLocalizations.of(context)!.undoLabel,
                         onPressed: () {
-                          WatchedAnimeEntry.reAdd(selected);
+                          WatchedAnimeEntry.reAdd(selected.cast());
                         }),
                   ),
                 );

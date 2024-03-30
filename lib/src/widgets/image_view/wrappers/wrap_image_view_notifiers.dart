@@ -93,13 +93,10 @@ class WrapImageViewNotifiersState<T extends Cell>
     setState(() {});
   }
 
-  SelectionGlue<J> _generate<J extends Cell>() =>
-      GlueProvider.generateOf<T, J>(widget.gridContext ?? context);
-
   @override
   Widget build(BuildContext context) {
     return OriginalGridContext(
-      generate: _generate,
+      generate: GlueProvider.generateOf(widget.gridContext ?? context),
       gridContext: widget.gridContext ?? context,
       child: ReloadImageNotifier(
           reload: widget.hardRefresh,
@@ -143,7 +140,7 @@ class WrapImageViewNotifiersState<T extends Cell>
 
 class OriginalGridContext extends InheritedWidget {
   final BuildContext gridContext;
-  final SelectionGlue<J> Function<J extends Cell>() generate;
+  final SelectionGlue Function() generate;
 
   const OriginalGridContext({
     super.key,
@@ -159,8 +156,7 @@ class OriginalGridContext extends InheritedWidget {
     return widget?.gridContext;
   }
 
-  static SelectionGlue<T> Function<T extends Cell>()? generateOf(
-      BuildContext context) {
+  static SelectionGlue Function()? generateOf(BuildContext context) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<OriginalGridContext>();
 

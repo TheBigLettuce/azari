@@ -283,12 +283,12 @@ void openAddTagDialog(
                     enabled: true,
                     validator: (value) {
                       if (value == null) {
-                        return "Value is null";
+                        return AppLocalizations.of(context)!.valueIsNull;
                       }
 
                       final v = value.trim();
                       if (v.isEmpty) {
-                        return "Value is empty";
+                        return AppLocalizations.of(context)!.valueIsEmpty;
                       }
 
                       if (v.length <= 1) {
@@ -315,7 +315,7 @@ void openAddTagDialog(
                 StatefulBuilder(
                   builder: (context, setState) {
                     return SwitchListTile(
-                        title: Text("Delete"),
+                        title: Text(AppLocalizations.of(context)!.delete),
                         value: delete,
                         onChanged: (v) {
                           delete = v;

@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
@@ -23,7 +24,7 @@ class GridLayout<T extends Cell> implements GridLayouter<T> {
     return [
       blueprint<T>(
         context,
-        state.mutation,
+        state.widget.functionality,
         state.selection,
         systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
         aspectRatio: settings.aspectRatio.value,
@@ -44,7 +45,7 @@ class GridLayout<T extends Cell> implements GridLayouter<T> {
 
   static Widget blueprint<T extends Cell>(
     BuildContext context,
-    GridMutationInterface<T> state,
+    GridFunctionality<T> functionality,
     GridSelection<T> selection, {
     required int columns,
     required MakeCellFunc<T> gridCell,
@@ -54,18 +55,13 @@ class GridLayout<T extends Cell> implements GridLayouter<T> {
     return SliverGrid.builder(
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           childAspectRatio: aspectRatio, crossAxisCount: columns),
-      itemCount: state.cellCount,
+      itemCount: functionality.refreshingStatus.mutation.cellCount,
       itemBuilder: (context, indx) {
         return WrapSelection(
-          actionsAreEmpty: selection.addActions.isEmpty,
-          selectionEnabled: selection.isNotEmpty,
+          selection: selection,
           thisIndx: indx,
-          ignoreSwipeGesture: selection.ignoreSwipe,
-          bottomPadding: systemNavigationInsets,
-          currentScroll: selection.controller,
-          selectUntil: (i) => selection.selectUnselectUntil(context, i),
-          selectUnselect: () => selection.selectOrUnselect(context, indx),
-          isSelected: selection.isSelected(indx),
+          functionality: functionality,
+          selectFrom: null,
           child: gridCell(context, indx),
         );
       },

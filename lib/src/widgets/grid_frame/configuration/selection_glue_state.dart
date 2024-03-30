@@ -17,8 +17,10 @@ class SelectionGlueState {
     Future Function(bool backward)? playAnimation,
   }) : _playAnimation = playAnimation;
 
-  (List<Widget> actions, void Function() reset)? actions;
+  (List<(Widget, void Function())> actions, void Function() reset)? actions;
   int count = 0;
+  int countUpdateTimes = 0;
+
   final void Function(bool) hide;
   final Future Function(bool backward)? _playAnimation;
 
@@ -42,46 +44,50 @@ class SelectionGlueState {
     } catch (_) {}
   }
 
-  SelectionGlue<T> glue<T extends Cell>(
+  SelectionGlue glue(
     bool Function() keyboardVisible,
     void Function(Function()) setState,
     int Function() barHeight,
     bool persistentBarHeight,
   ) =>
-      SelectionGlue<T>(
+      SelectionGlue(
         persistentBarHeight: persistentBarHeight,
         barHeight: barHeight,
         updateCount: (c) {
-          if (c != count) {
-            count = c;
+          count = c;
 
-            setState(() {});
-          }
+          countUpdateTimes += 1;
+
+          setState(() {});
         },
         close: () => _close(setState),
         open: (addActions, selection) {
           if (actions != null || addActions.isEmpty) {
             return;
           }
-          final a = addActions
-              .map((e) => WrapGridActionButton(
-                    e.icon,
-                    () {
-                      selection.use(e.onPress, e.closeOnPress);
-                    },
-                    false,
-                    animate: e.animate,
-                    color: e.color,
-                    onLongPress: e.onLongPress == null
-                        ? null
-                        : () {
-                            selection.use(e.onLongPress!, e.closeOnPress);
-                          },
-                    play: e.play,
-                    // backgroundColor: e.backgroundColor,
-                    showOnlyWhenSingle: e.showOnlyWhenSingle,
-                  ))
-              .toList();
+          final a = addActions.map((e) {
+            void c() {
+              selection.use(e.onPress, e.closeOnPress);
+            }
+
+            return (
+              WrapGridActionButton(
+                e.icon,
+                c,
+                false,
+                animate: e.animate,
+                color: e.color,
+                onLongPress: e.onLongPress == null
+                    ? null
+                    : () {
+                        selection.use(e.onLongPress!, e.closeOnPress);
+                      },
+                play: e.play,
+                showOnlyWhenSingle: e.showOnlyWhenSingle,
+              ),
+              c
+            );
+          }).toList();
 
           if (_playAnimation != null) {
             _playAnimation(false).then((value) => setState(() {

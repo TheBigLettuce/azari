@@ -57,8 +57,6 @@ class FavoriteBooruPage extends StatelessWidget {
   });
 
   GridFrame<FavoriteBooru> child(BuildContext context, EdgeInsets insets) {
-    final glue = GlueProvider.of<FavoriteBooru>(context);
-
     return GridFrame<FavoriteBooru>(
       key: state.state.gridKey,
       layout: state.segments != null
@@ -73,15 +71,7 @@ class FavoriteBooruPage extends StatelessWidget {
               GridSettingsFavorites.current,
             )
           : const GridSettingsLayoutBehaviour(GridSettingsFavorites.current),
-      refreshingStatus: state.state.refreshingStatus,
       overrideController: conroller,
-      imageViewDescription: ImageViewDescription(
-        addIconsImage: (p) => state.iconsImage(p),
-        overrideDrawerLabel: state.state.settings.buddhaMode
-            ? AppLocalizations.of(context)!.buddhaModeTags
-            : null,
-        imageViewKey: state.state.imageViewKey,
-      ),
       functionality: GridFunctionality(
         search: asSliver
             ? const EmptyGridSearchWidget()
@@ -93,9 +83,17 @@ class FavoriteBooruPage extends StatelessWidget {
                     ),
                     state.search.searchFocus),
               ),
-        selectionGlue: glue,
+        selectionGlue: GlueProvider.generateOf(context)(),
         watchLayoutSettings: GridSettingsFavorites.watch,
         download: state.download,
+        refreshingStatus: state.state.refreshingStatus,
+        imageViewDescription: ImageViewDescription(
+          addIconsImage: (p) => state.iconsImage(p),
+          overrideDrawerLabel: state.state.settings.buddhaMode
+              ? AppLocalizations.of(context)!.buddhaModeTags
+              : null,
+          imageViewKey: state.state.imageViewKey,
+        ),
         refresh: SynchronousGridRefresh(() => state.loader.count()),
       ),
       getCell: state.loader.getCell,
@@ -121,7 +119,7 @@ class FavoriteBooruPage extends StatelessWidget {
     final insets = viewInsets ?? MediaQuery.viewPaddingOf(context);
 
     return wrapGridPage
-        ? WrapGridPage<FavoriteBooru>(
+        ? WrapGridPage(
             scaffoldKey: state.state.scaffoldKey,
             child: GridSkeleton<FavoriteBooru>(
               state.state,
@@ -416,7 +414,7 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
     search.prewarmResults();
   }
 
-  List<GridAction<FavoriteBooru>> iconsImage(FavoriteBooru p) {
+  List<GridAction> iconsImage(FavoriteBooru p) {
     return [
       BooruGridActions.favorites(context, p, showDeleteSnackbar: true),
       BooruGridActions.download(context, booru),
@@ -438,12 +436,13 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
         state.settings);
   }
 
-  GridAction<FavoriteBooru> _groupButton(BuildContext context) {
+  GridAction _groupButton(BuildContext context) {
     return FavoritesActions.addToGroup(
       context,
       (selected) {
-        final g = selected.first.group;
-        for (final e in selected.skip(1)) {
+        final g = (selected.first as FavoriteBooru).group;
+
+        for (final FavoriteBooru e in selected.skip(1).cast()) {
           if (g != e.group) {
             return null;
           }
@@ -452,11 +451,11 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
         return g;
       },
       (selected, value, toPin) {
-        for (final e in selected) {
+        for (final FavoriteBooru e in selected.cast()) {
           e.group = value.isEmpty ? null : value;
         }
 
-        FavoriteBooru.addAllFileUrl(selected);
+        FavoriteBooru.addAllFileUrl(selected.cast());
 
         Navigator.of(context, rootNavigator: true).pop();
       },
@@ -464,7 +463,7 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
     );
   }
 
-  List<GridAction<FavoriteBooru>> gridActions() {
+  List<GridAction> gridActions() {
     return [
       BooruGridActions.download(context, booru),
       _groupButton(context),

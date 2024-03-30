@@ -12,7 +12,6 @@ import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart';
 import 'package:gallery/src/widgets/notifiers/loading_progress.dart';
 import 'package:logging/logging.dart';
-import 'package:palette_generator/palette_generator.dart';
 
 import '../../../interfaces/cell/cell.dart';
 
@@ -23,7 +22,6 @@ mixin ImageViewLoadingBuilderMixin<T extends Cell> on State<ImageView<T>> {
     int idx,
     int currentPage,
     GlobalKey<WrapImageViewNotifiersState> key,
-    PaletteGenerator? currentPalette,
     T Function(int) drawCell,
   ) {
     final expectedBytes = event?.expectedTotalBytes;
@@ -50,32 +48,11 @@ mixin ImageViewLoadingBuilderMixin<T extends Cell> on State<ImageView<T>> {
         return const SizedBox.shrink();
       }
 
-      final theme = Theme.of(context);
-
-      final tween = ColorTween(
-        begin: Theme.of(context).colorScheme.background,
-        end: theme.colorScheme.primary,
-      );
-
-      final valueTransformed = value ?? 0;
-
-      return Container(
-        decoration: BoxDecoration(
-            gradient: LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: [
-              tween.lerp(valueTransformed)!.withOpacity(0.2),
-              tween.lerp(valueTransformed)!.withOpacity(0.16),
-              tween.lerp(valueTransformed)!.withOpacity(0.12),
-              tween.lerp(valueTransformed)!.withOpacity(0.08),
-            ])),
-        child: _Image(
-            t: t,
-            reset: () {
-              key.currentState?.setLoadingProgress(1.0);
-            }),
-      );
+      return _Image(
+          t: t,
+          reset: () {
+            key.currentState?.setLoadingProgress(1.0);
+          });
     } catch (e, stackTrace) {
       log("_loadingBuilder",
           error: e, stackTrace: stackTrace, level: Level.WARNING.value);

@@ -37,8 +37,9 @@ late final String azariVersion;
 ThemeData buildTheme(Brightness brightness, Color accentColor) {
   final type = MiscSettings.current.themeType;
   final pageTransition = PageTransitionsTheme(
-      builders: Map.from(const PageTransitionsTheme().builders)
-        ..[TargetPlatform.android] = const FadeSidewaysPageTransitionBuilder());
+    builders: Map.from(const PageTransitionsTheme().builders)
+      ..[TargetPlatform.android] = const FadeSidewaysPageTransitionBuilder(),
+  );
 
   const menuTheme = MenuThemeData(
       style: MenuStyle(

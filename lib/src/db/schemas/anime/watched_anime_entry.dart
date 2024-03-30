@@ -10,6 +10,7 @@ import 'dart:async';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:isar/isar.dart';
 
 import 'saved_anime_entry.dart';
@@ -158,18 +159,19 @@ class WatchedAnimeEntry extends AnimeEntry {
   static WatchedAnimeEntry? maybeGet(int id, AnimeMetadata site) =>
       Dbs.g.anime.watchedAnimeEntrys.getBySiteIdSync(site, id);
 
-  static void moveAllReversed(List<WatchedAnimeEntry> entries) {
+  static void moveAllReversed(List<Cell> entries) {
     WatchedAnimeEntry.deleteAll(entries.map((e) => e.isarId!).toList());
 
-    SavedAnimeEntry.addAll(entries);
+    SavedAnimeEntry.addAll(entries.cast());
   }
 
-  static void moveAll(List<SavedAnimeEntry> entries) {
+  static void moveAll(List<Cell> entries) {
     SavedAnimeEntry.deleteAll(entries.map((e) => e.isarId!).toList());
 
     Dbs.g.anime
         .writeTxnSync(() => Dbs.g.anime.watchedAnimeEntrys.putAllBySiteIdSync(
               entries
+                  .cast<SavedAnimeEntry>()
                   .map((entry) => WatchedAnimeEntry(
                         type: entry.type,
                         explicit: entry.explicit,

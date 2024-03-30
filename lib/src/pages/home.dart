@@ -9,18 +9,13 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
-import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
-import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/pages/anime/anime.dart';
 import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
 import 'package:gallery/src/pages/manga/manga_page.dart';
 import 'package:gallery/src/pages/more/settings/network_status.dart';
 import 'package:gallery/src/pages/glue_bottom_app_bar.dart';
-import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 import 'package:isar/isar.dart';
@@ -29,7 +24,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../main.dart';
 import '../db/initalize_db.dart';
 import '../db/tags/post_tags.dart';
-import '../db/schemas/booru/post.dart';
 import '../db/schemas/settings/settings.dart';
 import '../widgets/grid_frame/configuration/selection_glue_state.dart';
 import '../widgets/skeletons/home.dart';
@@ -107,73 +101,192 @@ class _HomeState extends State<Home>
   Widget build(BuildContext context) {
     final edgeInsets = MediaQuery.viewPaddingOf(context);
 
-    return SelectionCountNotifier(
-      count: glueState.count,
+    return _SelectionHolder(
+      hide: hide,
       child: HomeSkeleton(
         AppLocalizations.of(context)!.homePage,
         state,
         (context) => _currentPage(context, this, edgeInsets),
         navBar: widget.callback != null
             ? null
-            : settings.buddhaMode
-                ? Animate(
-                    target: glueState.actions?.$1 == null ? 0 : 1,
-                    effects: [
-                      MoveEffect(
-                        duration: 220.ms,
-                        curve: Easing.emphasizedDecelerate,
-                        end: Offset.zero,
-                        begin: Offset(
-                            0, 100 + MediaQuery.viewPaddingOf(context).bottom),
-                      ),
-                    ],
-                    child: GlueBottomAppBar(glueState),
-                  )
-                : Animate(
-                    controller: controllerNavBar,
-                    target: glueState.actions != null ? 1 : 0,
-                    effects: [
-                      MoveEffect(
-                        curve: Easing.emphasizedAccelerate,
-                        begin: Offset.zero,
-                        end: Offset(0, 100 + edgeInsets.bottom),
-                      ),
-                      SwapEffect(
-                        builder: (context, _) {
-                          return glueState.actions != null
-                              ? Animate(
-                                  effects: [
-                                    MoveEffect(
-                                      duration: 100.ms,
-                                      curve: Easing.emphasizedDecelerate,
-                                      begin: Offset(0, 100 + edgeInsets.bottom),
-                                      end: Offset.zero,
-                                    ),
-                                  ],
-                                  child: GlueBottomAppBar(glueState),
-                                )
-                              : Padding(
-                                  padding: EdgeInsets.only(
-                                      bottom: edgeInsets.bottom));
-                        },
-                      )
-                    ],
-                    child: NavigationBar(
-                      labelBehavior:
-                          NavigationDestinationLabelBehavior.onlyShowSelected,
-                      backgroundColor: Theme.of(context)
-                          .colorScheme
-                          .surface
-                          .withOpacity(0.95),
-                      selectedIndex: currentRoute,
-                      onDestinationSelected: (route) =>
-                          _switchPage(this, route),
-                      destinations: widget.callback != null
-                          ? iconsGalleryNotes(context)
-                          : icons(context, currentRoute),
-                    )),
+            : _NavBar(
+                settings: settings,
+                icons: this,
+                edgeInsets: edgeInsets,
+                child: NavigationBar(
+                  labelBehavior:
+                      NavigationDestinationLabelBehavior.onlyShowSelected,
+                  backgroundColor:
+                      Theme.of(context).colorScheme.surface.withOpacity(0.95),
+                  selectedIndex: currentRoute,
+                  onDestinationSelected: (route) => _switchPage(this, route),
+                  destinations: widget.callback != null
+                      ? iconsGalleryNotes(context)
+                      : icons(context, currentRoute),
+                ),
+              ),
         selectedRoute: currentRoute,
       ),
     );
+  }
+}
+
+class _NavBar extends StatelessWidget {
+  final Settings settings;
+  final _AnimatedIconsMixin icons;
+  final EdgeInsets edgeInsets;
+  final Widget child;
+
+  const _NavBar({
+    super.key,
+    required this.edgeInsets,
+    required this.icons,
+    required this.settings,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final glueState = _GlueStateProvider.of(context);
+    SelectionCountNotifier.countOf(context);
+
+    return settings.buddhaMode
+        ? Animate(
+            target: glueState.actions?.$1 == null ? 0 : 1,
+            effects: [
+              MoveEffect(
+                duration: 220.ms,
+                curve: Easing.emphasizedDecelerate,
+                end: Offset.zero,
+                begin:
+                    Offset(0, 100 + MediaQuery.viewPaddingOf(context).bottom),
+              ),
+            ],
+            child: GlueBottomAppBar(glueState),
+          )
+        : Animate(
+            controller: icons.controllerNavBar,
+            target: glueState.actions != null ? 1 : 0,
+            effects: [
+              MoveEffect(
+                curve: Easing.emphasizedAccelerate,
+                begin: Offset.zero,
+                end: Offset(0, 100 + edgeInsets.bottom),
+              ),
+              SwapEffect(
+                builder: (context, _) {
+                  return glueState.actions != null
+                      ? Animate(
+                          effects: [
+                            MoveEffect(
+                              duration: 100.ms,
+                              curve: Easing.emphasizedDecelerate,
+                              begin: Offset(0, 100 + edgeInsets.bottom),
+                              end: Offset.zero,
+                            ),
+                          ],
+                          child: GlueBottomAppBar(glueState),
+                        )
+                      : Padding(
+                          padding: EdgeInsets.only(bottom: edgeInsets.bottom));
+                },
+              )
+            ],
+            child: child,
+          );
+  }
+}
+
+class _SelectionHolder extends StatefulWidget {
+  final Widget child;
+  final void Function(bool backward) hide;
+
+  const _SelectionHolder({
+    super.key,
+    required this.hide,
+    required this.child,
+  });
+
+  @override
+  State<_SelectionHolder> createState() => __SelectionHolderState();
+}
+
+class __SelectionHolderState extends State<_SelectionHolder> {
+  late final SelectionGlueState glueState;
+
+  @override
+  void initState() {
+    super.initState();
+
+    glueState = SelectionGlueState(hide: widget.hide);
+  }
+
+  //     SelectionGlue generateGlueC() =>
+  //       glueState.glue(keyboardVisible, setState, () => 80, false);
+
+  // SelectionGlue _generateGlue() =>
+  //     glueState.glue(keyboardVisible, setState, () => 80, true);
+
+  // SelectionGlue _generateGlueB() =>
+  //     glueState.glue(keyboardVisible, setState, () => 0, true);
+
+  // SelectionGlue generateGluePadding() {
+  //     return glueState.glue(
+  //       keyboardVisible,
+  //       setState,
+  //       () => 80 + MediaQuery.viewPaddingOf(this.context).bottom.toInt(),
+  //       true,
+  //     );
+  //   }
+
+  SelectionGlue _generate(
+      [Set<GluePreferences> set = const {
+        GluePreferences.persistentBarHeight
+      }]) {
+    return glueState.glue(
+      keyboardVisible,
+      setState,
+      () => set.contains(GluePreferences.zeroSize) ? 0 : 80,
+      set.contains(GluePreferences.persistentBarHeight),
+    );
+  }
+
+  bool keyboardVisible() => MediaQuery.viewInsetsOf(context).bottom != 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlueStateProvider(
+      state: glueState,
+      child: SelectionCountNotifier(
+        count: glueState.count,
+        countUpdateTimes: glueState.countUpdateTimes,
+        child: GlueProvider(
+          generate: _generate,
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+}
+
+class _GlueStateProvider extends InheritedWidget {
+  final SelectionGlueState state;
+
+  static SelectionGlueState of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<_GlueStateProvider>();
+
+    return widget!.state;
+  }
+
+  const _GlueStateProvider({
+    super.key,
+    required this.state,
+    required super.child,
+  });
+
+  @override
+  bool updateShouldNotify(_GlueStateProvider oldWidget) {
+    return state != oldWidget.state;
   }
 }

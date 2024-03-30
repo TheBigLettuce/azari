@@ -17,6 +17,18 @@ mixin _AnimatedIconsMixin on State<Home> {
 
   final menuController = MenuController();
 
+  void hide(bool hide) {
+    if (Settings.fromDb().buddhaMode) {
+      return;
+    }
+
+    if (hide) {
+      controllerNavBar.animateTo(1);
+    } else {
+      controllerNavBar.animateBack(0);
+    }
+  }
+
   void initIcons(TickerProviderStateMixin ticker) {
     controllerNavBar = AnimationController(vsync: ticker);
     controller = AnimationController(vsync: ticker);

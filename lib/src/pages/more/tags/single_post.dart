@@ -113,7 +113,6 @@ class _SinglePostState extends State<SinglePost> {
         builder: (context) {
           return ImageView(
             key: key,
-            updateTagScrollPos: (_, __) {},
             download: (_) {
               Downloader.g.add(
                   DownloadFile.d(
@@ -130,7 +129,6 @@ class _SinglePostState extends State<SinglePost> {
             ],
             scrollUntill: (_) {},
             onExit: () {},
-            focusMain: () {},
             startingCell: 0,
             getCell: (_) => value,
             onNearEnd: () {

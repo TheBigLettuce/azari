@@ -92,14 +92,12 @@ class _AnimeInfoAppBarState extends State<AnimeInfoAppBar>
               builder: (context) {
                 return ImageView(
                   ignoreEndDrawer: false,
-                  updateTagScrollPos: (_, __) {},
                   cellCount: 1,
                   scrollUntill: (_) {},
                   startingCell: 0,
                   onExit: () {},
                   getCell: (_) => widget.cell,
                   onNearEnd: null,
-                  focusMain: () {},
                   systemOverlayRestoreColor: overlayColor,
                 );
               },

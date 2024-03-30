@@ -8,7 +8,7 @@
 part of '../grid_frame.dart';
 
 /// Action which can be taken upon a selected group of cells.
-class GridAction<T> {
+class GridAction {
   const GridAction(
     this.icon,
     this.onPress,
@@ -27,9 +27,9 @@ class GridAction<T> {
   /// [onPress] is called when the button gets pressed,
   /// if [showOnlyWhenSingle] is true then this is guranteed to be called
   /// with [selected] elements zero or one.
-  final void Function(List<T> selected) onPress;
+  final void Function(List<Cell> selected) onPress;
 
-  final void Function(List<T> selected)? onLongPress;
+  final void Function(List<Cell> selected)? onLongPress;
 
   /// If [closeOnPress] is true, then the bottom sheet will be closed immediately after this
   /// button has been pressed.

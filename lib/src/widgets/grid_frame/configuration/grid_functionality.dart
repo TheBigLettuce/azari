@@ -10,6 +10,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_on_cell_press_behaviour.dart';
 
@@ -28,12 +30,18 @@ class GridFunctionality<T extends Cell> {
     this.updateScrollPosition,
     this.download,
     this.watchLayoutSettings,
+    required this.imageViewDescription,
+    required this.refreshingStatus,
     this.onPressed = const DefaultGridOnCellPressBehaviour(),
     this.fab = const DefaultGridFab(),
     this.backButton = const EmptyGridBackButton(inherit: true),
     this.refreshBehaviour = const DefaultGridRefreshBehaviour(),
     this.search = const EmptyGridSearchWidget(),
   });
+
+  final GridRefreshingStatus<T> refreshingStatus;
+
+  final ImageViewDescription<T> imageViewDescription;
 
   /// [loadNext] gets called when the grid is scrolled around the end of the viewport.
   /// If this is null, then the grid is assumed to be not able to incrementally add posts
@@ -59,7 +67,7 @@ class GridFunctionality<T extends Cell> {
       void Function(GridSettingsBase s) f)? watchLayoutSettings;
 
   final GridFabType fab;
-  final SelectionGlue<T> selectionGlue;
+  final SelectionGlue selectionGlue;
   final GridBackButtonBehaviour backButton;
   final GridRefreshBehaviour refreshBehaviour;
   final GridSearchWidget search;

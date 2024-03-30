@@ -21,13 +21,10 @@ import 'sticker_widget.dart';
 class GridCell<T extends Cell> extends StatefulWidget {
   final T _data;
   final int indx;
-  final void Function(BuildContext context)? onPressed;
   final bool hideAlias;
 
   /// If [tight] is true, margin between the [GridCell]s on the grid is tight.
   final bool tight;
-  final void Function()? onLongPress;
-  final void Function(int)? download;
 
   /// If [shadowOnTop] is true, then on top of the [GridCell] painted [Colors.black],
   /// with 0.5 opacity.
@@ -49,7 +46,6 @@ class GridCell<T extends Cell> extends StatefulWidget {
   final String? forceAlias;
 
   final bool animate;
-  final GridSelection<T>? selection;
 
   final bool alignTitleToTopLeft;
   final Alignment imageAlign;
@@ -60,9 +56,7 @@ class GridCell<T extends Cell> extends StatefulWidget {
     super.key,
     required T cell,
     required this.indx,
-    required this.onPressed,
     required this.tight,
-    required this.download,
     this.forceAlias,
     this.hideAlias = false,
     this.animate = false,
@@ -71,11 +65,9 @@ class GridCell<T extends Cell> extends StatefulWidget {
     this.labelAtBottom = false,
     required this.isList,
     this.lines,
-    this.selection,
     this.imageAlign = Alignment.center,
     this.ignoreStickers = false,
     this.alignTitleToTopLeft = false,
-    this.onLongPress,
     this.blur = false,
   }) : _data = cell;
 
@@ -91,9 +83,7 @@ class GridCell<T extends Cell> extends StatefulWidget {
     bool animated = false,
     bool blur = false,
   }) {
-    final functionality = state.widget.functionality;
     final description = state.widget.description;
-    final selection = state.selection;
 
     final cell = overrideCell ?? CellProvider.getOf<T>(context, idx);
 
@@ -103,25 +93,12 @@ class GridCell<T extends Cell> extends StatefulWidget {
       isList: isList,
       indx: idx,
       alignTitleToTopLeft: alignTitleToTopLeft,
-      selection: state.selection,
-      download: functionality.download,
       lines: description.titleLines,
       tight: description.tightMode,
       imageAlign: imageAlign,
       animate: animated,
       blur: blur,
       labelAtBottom: description.cellTitleAtBottom,
-      onPressed: (context) => functionality.onPressed.launch(
-        context,
-        idx,
-        state,
-        useCellInsteadIdx: overrideCell,
-      ),
-      onLongPress: idx.isNegative || selection.addActions.isEmpty
-          ? null
-          : () {
-              selection.selectOrUnselect(context, idx);
-            }, //extend: maxExtend,
     );
   }
 
@@ -151,7 +128,6 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
   @override
   Widget build(BuildContext context) {
     final stickers = widget._data.stickers(context);
-    final isSelected = widget.selection?.isSelected(widget.indx) ?? false;
 
     Widget topAlignAlias() {
       return SizedBox(
@@ -211,133 +187,101 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
             );
     }
 
-    Widget card() => InkWell(
-          borderRadius: BorderRadius.circular(15.0),
-          onTap: widget.onPressed == null
-              ? null
-              : () {
-                  widget.onPressed!(context);
-                },
-          focusColor: Theme.of(context).colorScheme.primary,
-          onLongPress: widget.onLongPress,
-          onDoubleTap: widget.download != null
-              ? () {
-                  controller.reset();
-                  controller.forward().then((value) => controller.reverse());
-                  HapticFeedback.selectionClick();
-                  widget.download!(widget.indx);
-                }
-              : null,
-          child: Card(
-              margin: widget.tight ? const EdgeInsets.all(0.5) : null,
-              elevation: 0,
-              color: Theme.of(context).cardColor.withOpacity(0),
-              child: ClipPath(
-                clipper: ShapeBorderClipper(
-                    shape: widget.circle
-                        ? const CircleBorder()
-                        : RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15.0))),
-                child: Stack(
-                  fit: StackFit.loose,
-                  children: [
-                    Center(
-                        child: LayoutBuilder(builder: (context, constraints) {
-                      final blurSigma = constraints.biggest.longestSide * 0.069;
+    Widget card() => Card(
+          margin: widget.tight ? const EdgeInsets.all(0.5) : null,
+          elevation: 0,
+          color: Theme.of(context).cardColor.withOpacity(0),
+          child: ClipPath(
+            clipper: ShapeBorderClipper(
+                shape: widget.circle
+                    ? const CircleBorder()
+                    : RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15.0))),
+            child: Stack(
+              fit: StackFit.loose,
+              children: [
+                Center(child: LayoutBuilder(builder: (context, constraints) {
+                  final blurSigma = constraints.biggest.longestSide * 0.069;
 
-                      final image = Image(
-                        key:
-                            ValueKey((widget._data.thumbnail.hashCode, _tries)),
-                        errorBuilder: (context, error, stackTrace) =>
-                            LoadingErrorWidget(
-                          error: error.toString(),
-                          refresh: () {
-                            _tries += 1;
+                  final image = Image(
+                    key: ValueKey((widget._data.thumbnail.hashCode, _tries)),
+                    errorBuilder: (context, error, stackTrace) =>
+                        LoadingErrorWidget(
+                      error: error.toString(),
+                      refresh: () {
+                        _tries += 1;
 
-                            setState(() {});
-                          },
-                        ),
-                        frameBuilder: (
-                          context,
-                          child,
-                          frame,
-                          wasSynchronouslyLoaded,
-                        ) {
-                          if (wasSynchronouslyLoaded) {
-                            return child;
-                          }
+                        setState(() {});
+                      },
+                    ),
+                    frameBuilder: (
+                      context,
+                      child,
+                      frame,
+                      wasSynchronouslyLoaded,
+                    ) {
+                      if (wasSynchronouslyLoaded) {
+                        return child;
+                      }
 
-                          return frame == null
-                              ? const ShimmerLoadingIndicator()
-                              : child.animate().fadeIn();
-                        },
-                        image: widget._data.thumbnail() ??
-                            MemoryImage(kTransparentImage),
-                        isAntiAlias: true,
-                        alignment: widget.imageAlign,
-                        color: widget.blur
-                            ? Theme.of(context)
-                                .colorScheme
-                                .surface
-                                .withOpacity(0.2)
-                            : isSelected
-                                ? Theme.of(context)
-                                    .colorScheme
-                                    .onPrimary
-                                    .withOpacity(0.2)
-                                : widget.shadowOnTop
-                                    ? Colors.black.withOpacity(0.5)
-                                    : null,
-                        colorBlendMode: widget.blur
-                            ? BlendMode.darken
-                            : isSelected
-                                ? BlendMode.srcATop
-                                : BlendMode.darken,
-                        fit: BoxFit.cover,
-                        filterQuality: widget.blur
-                            ? FilterQuality.none
-                            : FilterQuality.medium,
-                        width: constraints.maxWidth,
-                        height: constraints.maxHeight,
-                      );
+                      return frame == null
+                          ? const ShimmerLoadingIndicator()
+                          : child.animate().fadeIn();
+                    },
+                    image: widget._data.thumbnail() ??
+                        MemoryImage(kTransparentImage),
+                    isAntiAlias: true,
+                    alignment: widget.imageAlign,
+                    color: widget.blur
+                        ? Theme.of(context).colorScheme.surface.withOpacity(0.2)
+                        : widget.shadowOnTop
+                            ? Colors.black.withOpacity(0.5)
+                            : null,
+                    colorBlendMode:
+                        widget.blur ? BlendMode.darken : BlendMode.darken,
+                    fit: BoxFit.cover,
+                    filterQuality:
+                        widget.blur ? FilterQuality.none : FilterQuality.medium,
+                    width: constraints.maxWidth,
+                    height: constraints.maxHeight,
+                  );
 
-                      return widget.blur
-                          ? ImageFiltered(
-                              enabled: true,
-                              imageFilter: ImageFilter.compose(
-                                outer: ImageFilter.blur(
-                                  sigmaX: blurSigma,
-                                  sigmaY: blurSigma,
-                                  tileMode: TileMode.mirror,
-                                ),
-                                inner: ImageFilter.dilate(
-                                    radiusX: 0.5, radiusY: 0.5),
-                              ),
-                              child: image,
-                            )
-                          : image;
-                    })),
-                    if (stickers.isNotEmpty && !widget.ignoreStickers) ...[
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Wrap(
-                              direction: Axis.vertical,
-                              children: stickers
-                                  .map((e) => StickerWidget(e))
-                                  .toList(),
-                            )),
-                      ),
-                    ],
-                    if ((!widget.hideAlias &&
-                            !widget.shadowOnTop &&
-                            !widget.labelAtBottom) ||
-                        widget.forceAlias != null)
-                      alias(),
-                  ],
-                ),
-              )),
+                  return widget.blur
+                      ? ImageFiltered(
+                          enabled: true,
+                          imageFilter: ImageFilter.compose(
+                            outer: ImageFilter.blur(
+                              sigmaX: blurSigma,
+                              sigmaY: blurSigma,
+                              tileMode: TileMode.mirror,
+                            ),
+                            inner:
+                                ImageFilter.dilate(radiusX: 0.5, radiusY: 0.5),
+                          ),
+                          child: image,
+                        )
+                      : image;
+                })),
+                if (stickers.isNotEmpty && !widget.ignoreStickers) ...[
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Wrap(
+                          direction: Axis.vertical,
+                          children:
+                              stickers.map((e) => StickerWidget(e)).toList(),
+                        )),
+                  ),
+                ],
+                if ((!widget.hideAlias &&
+                        !widget.shadowOnTop &&
+                        !widget.labelAtBottom) ||
+                    widget.forceAlias != null)
+                  alias(),
+              ],
+            ),
+          ),
         );
 
     return Animate(
@@ -386,6 +330,34 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
                 ))
         ],
       ),
+    );
+  }
+}
+
+class CustomGridCellWrapper extends StatelessWidget {
+  final void Function(BuildContext) onPressed;
+  final void Function(BuildContext)? onLongPress;
+  final Widget child;
+
+  const CustomGridCellWrapper({
+    super.key,
+    this.onLongPress,
+    required this.onPressed,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onLongPress: onLongPress == null
+          ? null
+          : () {
+              onLongPress!(context);
+            },
+      onTap: () {
+        onPressed(context);
+      },
+      child: child,
     );
   }
 }
