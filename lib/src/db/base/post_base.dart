@@ -74,7 +74,7 @@ class PostBase with BooruPostFunctionalityMixin implements Cell {
   @override
   Id? isarId;
 
-  @Index()
+  @Index(unique: true, replace: true, composite: [CompositeIndex("booru")])
   final int id;
 
   final String md5;
@@ -85,7 +85,7 @@ class PostBase with BooruPostFunctionalityMixin implements Cell {
   final int width;
   final int height;
 
-  @Index(unique: true, replace: true)
+  @Index()
   final String fileUrl;
   final String previewUrl;
   final String sampleUrl;
@@ -207,7 +207,7 @@ class PostBase with BooruPostFunctionalityMixin implements Cell {
 
     return [
       if (isHidden) const Sticker(Icons.hide_image_rounded),
-      if (this is! FavoriteBooru && Settings.isFavorite(fileUrl))
+      if (this is! FavoriteBooru && Settings.isFavorite(id, booru))
         const Sticker(Icons.favorite_rounded, important: true),
       if (NoteBooru.hasNotes(id, booru))
         const Sticker(Icons.sticky_note_2_outlined),

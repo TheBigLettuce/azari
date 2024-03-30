@@ -274,6 +274,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                 widget.nestedCallback,
                 widget.viewPadding ?? EdgeInsets.zero,
                 state.settings.buddhaMode ? null : generate,
+                _segmentFnc,
               ),
     );
   }

@@ -190,9 +190,9 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
       final list = await api.page(0, tags, tagManager.excluded,
           overrideSafeMode: _safeMode());
       currentSkipped = list.$2;
-      await instance.writeTxn(() {
+      instance.writeTxnSync(() {
         instance.posts.clear();
-        return instance.posts.putAllByFileUrl(list.$1);
+        return instance.posts.putAllByIdBooruSync(list.$1);
       });
 
       reachedEnd = false;
@@ -244,7 +244,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
         currentSkipped = list.$2;
         final oldCount = instance.posts.countSync();
         instance
-            .writeTxnSync(() => instance.posts.putAllByFileUrlSync(list.$1));
+            .writeTxnSync(() => instance.posts.putAllByIdBooruSync(list.$1));
 
         if (instance.posts.countSync() - oldCount < 3) {
           return await _addLast(repeatCount + 1);

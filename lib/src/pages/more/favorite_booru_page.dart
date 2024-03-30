@@ -12,6 +12,7 @@ import 'package:gallery/src/db/base/post_base.dart';
 import 'package:gallery/src/db/schemas/grid_settings/favorites.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
+import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart';
 import 'package:gallery/src/pages/more/favorite_booru_actions.dart';
 import 'package:gallery/src/net/downloader.dart';
@@ -306,10 +307,11 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
       };
     };
 
-  Iterable<FavoriteBooru> _collector(Map<String, Set<String>>? data) sync* {
+  Iterable<FavoriteBooru> _collector(
+      Map<String, Set<(int, Booru)>>? data) sync* {
     for (final ids in data!.values) {
       for (final i in ids) {
-        final f = loader.instance.favoriteBoorus.getByFileUrlSync(i)!;
+        final f = loader.instance.favoriteBoorus.getByIdBooruSync(i.$1, i.$2)!;
         f.isarId = null;
         yield f;
       }
@@ -318,18 +320,18 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
 
   static (Iterable<T>, dynamic) sameFavorites<T extends PostBase>(
       Iterable<T> cells,
-      Map<String, Set<String>>? data,
+      Map<String, Set<(int, Booru)>>? data,
       bool end,
-      Iterable<T> Function(Map<String, Set<String>>? data) collect) {
+      Iterable<T> Function(Map<String, Set<(int, Booru)>>? data) collect) {
     data = data ?? {};
 
     T? prevCell;
     for (final e in cells) {
       if (prevCell != null) {
         if (prevCell.md5 == e.md5) {
-          final prev = data[e.md5] ?? {prevCell.fileUrl};
+          final prev = data[e.md5] ?? {};
 
-          data[e.md5] = {...prev, e.fileUrl};
+          data[e.md5] = {...prev, ((e.id, e.booru))};
         }
       }
 

@@ -678,7 +678,7 @@ class SegmentLayout<T extends Cell>
                           }
                         }
 
-                        if (toSticky) {
+                        if (toBlur) {
                           segments.caps.removeModifiers(
                               [segmentLabel.seg], const {SegmentModifier.blur});
                         } else {

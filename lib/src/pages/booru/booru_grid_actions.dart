@@ -67,7 +67,7 @@ class BooruGridActions {
 
   static GridAction<T> favorites<T extends PostBase>(BuildContext context, T? p,
       {bool showDeleteSnackbar = false}) {
-    final isFavorite = p != null && Settings.isFavorite(p.fileUrl);
+    final isFavorite = p != null && Settings.isFavorite(p.id, p.booru);
     return GridAction(
       isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
       (selected) {

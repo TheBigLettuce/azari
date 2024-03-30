@@ -217,9 +217,6 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
       if (PinnedTag.isPinned(tag)) {
         searchPrefix.add(tag);
       }
-      if (searchPrefix.length == 2) {
-        break;
-      }
     }
 
     Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(

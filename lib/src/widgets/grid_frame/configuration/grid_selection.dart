@@ -41,11 +41,13 @@ class GridSelection<T extends Cell> {
   int get count => _selected.length;
 
   void reset() {
-    _selected.clear();
-    glue.close();
-    lastSelected = null;
+    if (_selected.isNotEmpty) {
+      _selected.clear();
+      glue.close();
+      lastSelected = null;
 
-    _setState(() {});
+      _setState(() {});
+    }
   }
 
   bool isSelected(int indx) =>
@@ -69,15 +71,13 @@ class GridSelection<T extends Cell> {
   }
 
   void remove(int id) {
-    if (_selected.isNotEmpty && !glue.isOpen()) {
-      glue.open(addActions, this);
-    }
-
     _setState(() {
       _selected.remove(id);
       if (_selected.isEmpty) {
         glue.close();
         lastSelected = null;
+      } else if (_selected.isNotEmpty && !glue.isOpen()) {
+        glue.open(addActions, this);
       }
     });
 

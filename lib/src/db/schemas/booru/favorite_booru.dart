@@ -47,6 +47,6 @@ class FavoriteBooru extends PostBase {
 
   static void addAllFileUrl(List<FavoriteBooru> favorites) {
     Dbs.g.main.writeTxnSync(
-        () => Dbs.g.main.favoriteBoorus.putAllByFileUrlSync(favorites));
+        () => Dbs.g.main.favoriteBoorus.putAllByIdBooruSync(favorites));
   }
 }

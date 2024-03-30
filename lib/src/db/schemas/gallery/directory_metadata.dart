@@ -194,7 +194,16 @@ class _DirectoryMetadataCap implements SegmentCapability {
 
     final l = Dbs.g.blacklisted.directoryMetadatas
         .getAllByCategoryNameSync(segments)
-        .cast<DirectoryMetadata>();
+        .indexed
+        .map((e) =>
+            e.$2 ??
+            DirectoryMetadata(
+              segments[e.$1],
+              DateTime.now(),
+              blur: false,
+              sticky: false,
+              requireAuth: false,
+            ));
     final toUpdate = <DirectoryMetadata>[];
 
     for (var seg in l) {

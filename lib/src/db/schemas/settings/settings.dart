@@ -151,10 +151,11 @@ class Settings {
   static void addRemoveFavorites(
       BuildContext context, List<PostBase> posts, bool showDeleteSnackbar) {
     final toAdd = <FavoriteBooru>[];
-    final toRemove = <String>[];
+    final toRemoveInts = <int>[];
+    final toRemoveBoorus = <Booru>[];
 
     for (final post in posts) {
-      if (!isFavorite(post.fileUrl)) {
+      if (!isFavorite(post.id, post.booru)) {
         toAdd.add(FavoriteBooru(
             height: post.height,
             id: post.id,
@@ -171,22 +172,24 @@ class Settings {
             score: post.score,
             createdAt: post.createdAt));
       } else {
-        toRemove.add(post.fileUrl);
+        toRemoveInts.add(post.id);
+        toRemoveBoorus.add(post.booru);
       }
     }
 
-    if (toAdd.isEmpty && toRemove.isEmpty) {
+    if (toAdd.isEmpty && toRemoveInts.isEmpty) {
       return;
     }
 
-    final deleteCopy = toRemove.isEmpty
+    final deleteCopy = toRemoveInts.isEmpty
         ? null
-        : Dbs.g.main.favoriteBoorus.getAllByFileUrlSync(toRemove);
+        : Dbs.g.main.favoriteBoorus
+            .getAllByIdBooruSync(toRemoveInts, toRemoveBoorus);
 
     Dbs.g.main.writeTxnSync(() {
-      Dbs.g.main.favoriteBoorus.putAllSync(toAdd);
+      Dbs.g.main.favoriteBoorus.putAllByIdBooruSync(toAdd);
       Dbs.g.main.favoriteBoorus
-          .deleteAllByFileUrlSync(toRemove.map((e) => e).toList());
+          .deleteAllByIdBooruSync(toRemoveInts, toRemoveBoorus);
     });
 
     if (deleteCopy != null && showDeleteSnackbar) {
@@ -203,8 +206,8 @@ class Settings {
     }
   }
 
-  static bool isFavorite(String fileUrl) {
-    return Dbs.g.main.favoriteBoorus.getByFileUrlSync(fileUrl) != null;
+  static bool isFavorite(int id, Booru booru) {
+    return Dbs.g.main.favoriteBoorus.getByIdBooruSync(id, booru) != null;
   }
 
   static StreamSubscription<Settings?> watch(void Function(Settings? s) f,

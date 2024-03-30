@@ -381,7 +381,7 @@ class _BooruPageState extends State<BooruPage> {
       currentSkipped = list.$2;
       mainGrid.writeTxnSync(() {
         mainGrid.posts.clearSync();
-        return mainGrid.posts.putAllByFileUrlSync(
+        return mainGrid.posts.putAllByIdBooruSync(
           list.$1
               .where(
                   (element) => !HiddenBooruPost.isHidden(element.id, api.booru))
@@ -445,7 +445,7 @@ class _BooruPageState extends State<BooruPage> {
       } else {
         currentSkipped = list.$2;
         final oldCount = mainGrid.posts.countSync();
-        mainGrid.writeTxnSync(() => mainGrid.posts.putAllByFileUrlSync(
+        mainGrid.writeTxnSync(() => mainGrid.posts.putAllByIdBooruSync(
               list.$1
                   .where((element) =>
                       !HiddenBooruPost.isHidden(element.id, api.booru))
@@ -482,11 +482,9 @@ class _BooruPageState extends State<BooruPage> {
     }));
   }
 
-  void _close(SelectionGlue<Post> g) {}
-
   @override
   Widget build(BuildContext context) {
-    final glue = GlueProvider.of<Post>(context).chain(close: _close);
+    final glue = GlueProvider.of<Post>(context);
 
     return FavoriteBooruStateHolder(
       build: (context, favoriteBooruState) {

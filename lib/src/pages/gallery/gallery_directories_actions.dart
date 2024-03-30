@@ -87,26 +87,7 @@ class SystemGalleryDirectoriesActions {
   ) {
     return GridAction(
       Icons.merge_rounded,
-      (selected) async {
-        bool requireAuth = false;
-
-        for (final e in selected) {
-          final auth = DirectoryMetadata.get(segment(e))?.requireAuth ?? false;
-          if (auth) {
-            requireAuth = true;
-            break;
-          }
-        }
-
-        if (requireAuth && canAuthBiometric) {
-          final success = await LocalAuthentication()
-              .authenticate(localizedReason: "Join directories");
-
-          if (!success) {
-            return;
-          }
-        }
-
+      (selected) {
         joinedDirectoriesFnc(
           context,
           selected.length == 1
@@ -117,6 +98,7 @@ class SystemGalleryDirectoriesActions {
           callback,
           addInset,
           generate,
+          segment,
         );
       },
       true,
@@ -131,7 +113,27 @@ class SystemGalleryDirectoriesActions {
     CallbackDescriptionNested? callback,
     EdgeInsets addInset,
     SelectionGlue<J> Function<J extends Cell>()? generate,
-  ) {
+    String Function(SystemGalleryDirectory) segment,
+  ) async {
+    bool requireAuth = false;
+
+    for (final e in dirs) {
+      final auth = DirectoryMetadata.get(segment(e))?.requireAuth ?? false;
+      if (auth) {
+        requireAuth = true;
+        break;
+      }
+    }
+
+    if (requireAuth && canAuthBiometric) {
+      final success = await LocalAuthentication()
+          .authenticate(localizedReason: "Join directories");
+
+      if (!success) {
+        return;
+      }
+    }
+
     StatisticsGallery.addJoined();
 
     final joined = extra.joinedDir(dirs.map((e) => e.bucketId).toList());
