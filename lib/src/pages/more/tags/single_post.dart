@@ -109,37 +109,26 @@ class _SinglePostState extends State<SinglePost> {
       });
 
       // ignore: use_build_context_synchronously
-      Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
-        builder: (context) {
-          return ImageView(
-            key: key,
-            download: (_) {
-              Downloader.g.add(
-                  DownloadFile.d(
-                      url: value.fileDownloadUrl(),
-                      site: booru.booru.url,
-                      name: value.filename(),
-                      thumbUrl: value.previewUrl),
-                  Settings.fromDb());
-            },
-            cellCount: 1,
-            addIcons: (p) => [
-              BooruGridActions.favorites(context, p),
-              BooruGridActions.download(context, booru.booru)
-            ],
-            scrollUntill: (_) {},
-            onExit: () {},
-            startingCell: 0,
-            getCell: (_) => value,
-            onNearEnd: () {
-              return Future.value(1);
-            },
-            systemOverlayRestoreColor: overlayColor,
-          );
+      ImageView.launchWrapped(
+        context,
+        1,
+        (_) => value,
+        overlayColor,
+        key: key,
+        download: (_) {
+          Downloader.g.add(
+              DownloadFile.d(
+                  url: value.fileDownloadUrl(),
+                  site: booru.booru.url,
+                  name: value.filename(),
+                  thumbUrl: value.previewUrl),
+              Settings.fromDb());
         },
-      )).then((_) {
-        favoritesWatcher.cancel();
-      });
+        actions: (p) => [
+          BooruGridActions.favorites(context, p),
+          BooruGridActions.download(context, booru.booru)
+        ],
+      ).then((value) => favoritesWatcher.cancel());
     } catch (e, trace) {
       try {
         // ignore: use_build_context_synchronously

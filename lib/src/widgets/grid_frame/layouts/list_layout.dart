@@ -17,13 +17,9 @@ import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 import '../grid_frame.dart';
 
 class ListLayout<T extends Cell> implements GridLayouter<T> {
-  const ListLayout({
-    this.hideThumbnails = false,
-    this.unpressable = false,
-  });
+  const ListLayout({this.hideThumbnails = false});
 
   final bool hideThumbnails;
-  final bool unpressable;
 
   @override
   bool get isList => true;
@@ -37,17 +33,7 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
         state.mutation,
         state.widget.functionality,
         state.selection,
-        state.widget.systemNavigationInsets.bottom,
         hideThumbnails: hideThumbnails,
-        onPressed: unpressable
-            ? null
-            : (context, cell, idx) {
-                state.widget.functionality.onPressed.launch(
-                  context,
-                  idx,
-                  state.widget.functionality,
-                );
-              },
       )
     ];
   }
@@ -56,10 +42,8 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
     BuildContext context,
     GridMutationInterface<T> state,
     GridFunctionality<T> functionality,
-    GridSelection<T> selection,
-    double systemNavigationInsets, {
+    GridSelection<T> selection, {
     required bool hideThumbnails,
-    required void Function(BuildContext, T, int)? onPressed,
   }) =>
       SliverList.separated(
         separatorBuilder: (context, index) => const Divider(
@@ -71,9 +55,7 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
           functionality,
           selection,
           index: index,
-          systemNavigationInsets: systemNavigationInsets,
           hideThumbnails: hideThumbnails,
-          onPressed: onPressed,
         ),
       );
 
@@ -82,9 +64,7 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
     GridFunctionality<T> functionality,
     GridSelection<T> selection, {
     required int index,
-    required double systemNavigationInsets,
     required bool hideThumbnails,
-    required void Function(BuildContext, T, int)? onPressed,
   }) {
     final cell = CellProvider.getOf<T>(context, index);
 
@@ -101,10 +81,6 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
             textColor: selection.isSelected(index)
                 ? Theme.of(context).colorScheme.inversePrimary
                 : null,
-            onLongPress: () => selection.selectOrUnselect(context, index),
-            onTap: onPressed == null
-                ? null
-                : () => onPressed(context, cell, index),
             leading: !hideThumbnails && cell.thumbnail() != null
                 ? CircleAvatar(
                     backgroundColor: Theme.of(context).colorScheme.background,

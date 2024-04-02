@@ -27,7 +27,6 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_fab_type.dart'
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_on_cell_press_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
@@ -45,14 +44,12 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class MangaPage extends StatefulWidget {
   final void Function(bool) procPop;
-  final EdgeInsets? viewPadding;
   final bool wrapGridPage;
 
   const MangaPage({
     super.key,
     required this.procPop,
     this.wrapGridPage = false,
-    required this.viewPadding,
   });
 
   @override
@@ -157,8 +154,6 @@ class _MangaPageState extends State<MangaPage> {
 
   @override
   Widget build(BuildContext context) {
-    final viewPadding = widget.viewPadding ?? MediaQuery.viewPaddingOf(context);
-
     final child = GridSkeleton<CompactMangaDataBase>(
       state,
       (context) => GridFrame<CompactMangaDataBase>(
@@ -201,7 +196,6 @@ class _MangaPageState extends State<MangaPage> {
             fab: OverrideGridFab(
               (scrollController) {
                 return ReadingFab(
-                  viewPadding: viewPadding,
                   api: api,
                   controller: scrollController,
                 );
@@ -209,7 +203,6 @@ class _MangaPageState extends State<MangaPage> {
             )),
         getCell: (i) => data[i],
         initalScrollPosition: 0,
-        systemNavigationInsets: viewPadding,
         mainFocus: state.mainFocus,
         description: GridDescription(
           risingAnimation: !state.settings.buddhaMode,
@@ -226,14 +219,13 @@ class _MangaPageState extends State<MangaPage> {
       secondarySelectionHide: () {
         _pinnedKey.currentState?.selection.reset();
       },
-      overrideOnPop: widget.procPop,
+      onPop: widget.procPop,
     );
 
     return SafeArea(
       bottom: false,
       child: widget.wrapGridPage
           ? WrapGridPage(
-              scaffoldKey: state.scaffoldKey,
               child: child,
             )
           : child,
@@ -243,13 +235,11 @@ class _MangaPageState extends State<MangaPage> {
 
 class ReadingFab extends StatefulWidget {
   final MangaAPI api;
-  final EdgeInsets viewPadding;
   final ScrollController controller;
 
   const ReadingFab({
     super.key,
     required this.api,
-    required this.viewPadding,
     required this.controller,
   });
 
@@ -325,7 +315,6 @@ class _ReadingFabState extends State<ReadingFab>
           context,
           widget.api,
           search: "",
-          viewInsets: widget.viewPadding,
           generateGlue: GlueProvider.generateOf(context),
         );
       },
@@ -560,7 +549,6 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
                       );
                     },
                     columns: GridColumn.three.number,
-                    systemNavigationInsets: 0,
                     aspectRatio: GridAspectRatio.one.value,
                   );
                 },

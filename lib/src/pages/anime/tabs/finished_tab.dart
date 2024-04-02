@@ -9,11 +9,9 @@ part of '../anime.dart';
 
 class _FinishedTab extends StatefulWidget {
   final void Function() onDispose;
-  final EdgeInsets viewInsets;
   final void Function(bool) procPop;
 
-  const _FinishedTab(
-    this.viewInsets, {
+  const _FinishedTab({
     required this.procPop,
     required super.key,
     required this.onDispose,
@@ -135,7 +133,6 @@ class __FinishedTabState extends State<_FinishedTab> {
                 ));
               },
             )),
-        systemNavigationInsets: widget.viewInsets,
         mainFocus: state.mainFocus,
         description: GridDescription(
           risingAnimation: true,
@@ -173,7 +170,7 @@ class __FinishedTabState extends State<_FinishedTab> {
         ),
       ),
       canPop: false,
-      overrideOnPop: widget.procPop,
+      onPop: widget.procPop,
     );
   }
 }

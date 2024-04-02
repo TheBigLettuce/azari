@@ -10,7 +10,12 @@ package lol.bruh19.azari.gallery
 import android.app.Application
 import android.content.pm.ApplicationInfo
 import android.os.StrictMode
+import io.flutter.FlutterInjector
+import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.embedding.engine.FlutterEngineGroup
+import io.flutter.embedding.engine.dart.DartExecutor
+import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.StandardMethodCodec
 
 class App : Application() {
     lateinit var engines: FlutterEngineGroup
@@ -26,7 +31,23 @@ class App : Application() {
                 StrictMode.VmPolicy.Builder().detectAll().build()
             )
         }
-        
+
         engines = FlutterEngineGroup(this)
+
+        prewarmEngine(this, "main")
+//        prewarmEngine(engines, this, "mainPickfile")
     }
+}
+
+fun prewarmEngine(app: App, entrypoint: String) {
+    val dartEntrypoint =
+        DartExecutor.DartEntrypoint(
+            FlutterInjector.instance().flutterLoader().findAppBundlePath(), entrypoint
+        )
+    val engine = app.engines.createAndRunEngine(app, dartEntrypoint)
+    engine.platformViewsController.registry.registerViewFactory(
+        "imageview",
+        NativeViewFactory()
+    )
+    FlutterEngineCache.getInstance().put(entrypoint, engine)
 }

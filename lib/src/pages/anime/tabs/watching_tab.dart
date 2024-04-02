@@ -8,12 +8,10 @@
 part of '../anime.dart';
 
 class _WatchingTab extends StatefulWidget {
-  final EdgeInsets viewInsets;
   final void Function() onDispose;
   final void Function(bool) procPop;
 
-  const _WatchingTab(
-    this.viewInsets, {
+  const _WatchingTab({
     required super.key,
     required this.procPop,
     required this.onDispose,
@@ -152,7 +150,6 @@ class __WatchingTabState extends State<_WatchingTab> {
             ));
           }),
         ),
-        systemNavigationInsets: widget.viewInsets,
         mainFocus: state.mainFocus,
         description: GridDescription(
           risingAnimation: true,
@@ -206,7 +203,7 @@ class __WatchingTabState extends State<_WatchingTab> {
       secondarySelectionHide: () {
         watchingKey.currentState?.selection.reset();
       },
-      overrideOnPop: widget.procPop,
+      onPop: widget.procPop,
     );
   }
 }
@@ -311,7 +308,6 @@ class _WatchingLayout
             context,
             state.widget.functionality,
             state.selection,
-            systemNavigationInsets: 0,
             aspectRatio: gridSettings.aspectRatio.value,
             columns: gridSettings.columns.number,
             gridCell: (context, idx) {
@@ -416,9 +412,9 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
                             cell: e.$2,
                             idx: e.$1,
                             onPressed: onPressed,
-                            onLongPressed: (cell, idx) {
-                              selection.selectOrUnselect(context, idx);
-                            },
+                            // onLongPressed: (cell, idx) {
+                            //   selection.selectOrUnselect(context, idx);
+                            // },
                           ).animate(key: ValueKey(e)).fadeIn())
                       .toList()
                   : widget.currentlyWatching.indexed
@@ -427,10 +423,10 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
                           cell: e.$2,
                           idx: e.$1,
                           onPressed: onPressed,
-                          onLongPressed: (cell, idx) {
-                            selection.selectOrUnselect(context, idx);
-                          },
-                        ).animate(key: ValueKey(e)).fadeIn(), // wrap it back
+                          // onLongPressed: (cell, idx) {
+                          //   selection.selectOrUnselect(context, idx);
+                          // },
+                        ).animate(key: ValueKey(e)).fadeIn(),
                       )
                       .toList(),
             );

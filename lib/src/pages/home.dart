@@ -9,7 +9,6 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/pages/anime/anime.dart';
 import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
@@ -23,7 +22,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../main.dart';
 import '../db/initalize_db.dart';
-import '../db/tags/post_tags.dart';
 import '../db/schemas/settings/settings.dart';
 import '../widgets/grid_frame/configuration/selection_glue_state.dart';
 import '../widgets/skeletons/home.dart';
@@ -73,7 +71,6 @@ class _HomeState extends State<Home>
 
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
       changeSystemUiOverlay(context);
-      initPostTags(context);
     });
 
     maybeBeforeYouContinueDialog(context, settings);
@@ -99,49 +96,52 @@ class _HomeState extends State<Home>
 
   @override
   Widget build(BuildContext context) {
-    final edgeInsets = MediaQuery.viewPaddingOf(context);
-
-    return _SelectionHolder(
-      hide: hide,
-      child: HomeSkeleton(
-        AppLocalizations.of(context)!.homePage,
-        state,
-        (context) => _currentPage(context, this, edgeInsets),
-        navBar: widget.callback != null
-            ? null
-            : _NavBar(
-                settings: settings,
-                icons: this,
-                edgeInsets: edgeInsets,
-                child: NavigationBar(
-                  labelBehavior:
-                      NavigationDestinationLabelBehavior.onlyShowSelected,
-                  backgroundColor:
-                      Theme.of(context).colorScheme.surface.withOpacity(0.95),
-                  selectedIndex: currentRoute,
-                  onDestinationSelected: (route) => _switchPage(this, route),
-                  destinations: widget.callback != null
-                      ? iconsGalleryNotes(context)
-                      : icons(context, currentRoute),
+    return PopScope(
+        canPop: widget.callback != null,
+        onPopInvoked: (pop) => _procPopAll(this, pop),
+        child: Builder(
+          builder: (context) {
+            return _SelectionHolder(
+              hide: hide,
+              defaultPreferences: widget.callback != null || settings.buddhaMode
+                  ? {}
+                  : {GluePreferences.persistentBarHeight},
+              child: HomeSkeleton(
+                state,
+                (context) => _currentPage(context, this),
+                navBar: _NavBar(
+                  noNavigationIcons:
+                      settings.buddhaMode || widget.callback != null,
+                  icons: this,
+                  child: NavigationBar(
+                    labelBehavior:
+                        NavigationDestinationLabelBehavior.onlyShowSelected,
+                    backgroundColor:
+                        Theme.of(context).colorScheme.surface.withOpacity(0.95),
+                    selectedIndex: currentRoute,
+                    onDestinationSelected: (route) => _switchPage(this, route),
+                    destinations: widget.callback != null
+                        ? iconsGalleryNotes(context)
+                        : icons(context, currentRoute),
+                  ),
                 ),
+                selectedRoute: currentRoute,
               ),
-        selectedRoute: currentRoute,
-      ),
-    );
+            );
+          },
+        ));
   }
 }
 
 class _NavBar extends StatelessWidget {
-  final Settings settings;
+  final bool noNavigationIcons;
   final _AnimatedIconsMixin icons;
-  final EdgeInsets edgeInsets;
   final Widget child;
 
   const _NavBar({
     super.key,
-    required this.edgeInsets,
     required this.icons,
-    required this.settings,
+    required this.noNavigationIcons,
     required this.child,
   });
 
@@ -150,8 +150,9 @@ class _NavBar extends StatelessWidget {
     final glueState = _GlueStateProvider.of(context);
     SelectionCountNotifier.countOf(context);
 
-    return settings.buddhaMode
+    return noNavigationIcons
         ? Animate(
+            controller: icons.controllerNavBar,
             target: glueState.actions?.$1 == null ? 0 : 1,
             effects: [
               MoveEffect(
@@ -168,10 +169,10 @@ class _NavBar extends StatelessWidget {
             controller: icons.controllerNavBar,
             target: glueState.actions != null ? 1 : 0,
             effects: [
-              MoveEffect(
+              const MoveEffect(
                 curve: Easing.emphasizedAccelerate,
                 begin: Offset.zero,
-                end: Offset(0, 100 + edgeInsets.bottom),
+                end: Offset(0, 100),
               ),
               SwapEffect(
                 builder: (context, _) {
@@ -181,14 +182,13 @@ class _NavBar extends StatelessWidget {
                             MoveEffect(
                               duration: 100.ms,
                               curve: Easing.emphasizedDecelerate,
-                              begin: Offset(0, 100 + edgeInsets.bottom),
+                              begin: const Offset(0, 100),
                               end: Offset.zero,
                             ),
                           ],
                           child: GlueBottomAppBar(glueState),
                         )
-                      : Padding(
-                          padding: EdgeInsets.only(bottom: edgeInsets.bottom));
+                      : const Padding(padding: EdgeInsets.only(bottom: 0));
                 },
               )
             ],
@@ -199,11 +199,14 @@ class _NavBar extends StatelessWidget {
 
 class _SelectionHolder extends StatefulWidget {
   final Widget child;
+  final Set<GluePreferences> defaultPreferences;
+
   final void Function(bool backward) hide;
 
   const _SelectionHolder({
     super.key,
     required this.hide,
+    required this.defaultPreferences,
     required this.child,
   });
 
@@ -221,33 +224,14 @@ class __SelectionHolderState extends State<_SelectionHolder> {
     glueState = SelectionGlueState(hide: widget.hide);
   }
 
-  //     SelectionGlue generateGlueC() =>
-  //       glueState.glue(keyboardVisible, setState, () => 80, false);
+  SelectionGlue _generate([Set<GluePreferences> set = const {}]) {
+    final s = set.isNotEmpty ? set : widget.defaultPreferences;
 
-  // SelectionGlue _generateGlue() =>
-  //     glueState.glue(keyboardVisible, setState, () => 80, true);
-
-  // SelectionGlue _generateGlueB() =>
-  //     glueState.glue(keyboardVisible, setState, () => 0, true);
-
-  // SelectionGlue generateGluePadding() {
-  //     return glueState.glue(
-  //       keyboardVisible,
-  //       setState,
-  //       () => 80 + MediaQuery.viewPaddingOf(this.context).bottom.toInt(),
-  //       true,
-  //     );
-  //   }
-
-  SelectionGlue _generate(
-      [Set<GluePreferences> set = const {
-        GluePreferences.persistentBarHeight
-      }]) {
     return glueState.glue(
       keyboardVisible,
       setState,
-      () => set.contains(GluePreferences.zeroSize) ? 0 : 80,
-      set.contains(GluePreferences.persistentBarHeight),
+      () => s.contains(GluePreferences.zeroSize) ? 0 : 80,
+      s.contains(GluePreferences.persistentBarHeight),
     );
   }
 

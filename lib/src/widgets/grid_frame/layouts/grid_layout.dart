@@ -10,7 +10,6 @@ import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
 
 import '../grid_frame.dart';
@@ -26,7 +25,6 @@ class GridLayout<T extends Cell> implements GridLayouter<T> {
         context,
         state.widget.functionality,
         state.selection,
-        systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
         aspectRatio: settings.aspectRatio.value,
         columns: settings.columns.number,
         gridCell: (context, idx) {
@@ -49,7 +47,6 @@ class GridLayout<T extends Cell> implements GridLayouter<T> {
     GridSelection<T> selection, {
     required int columns,
     required MakeCellFunc<T> gridCell,
-    required double systemNavigationInsets,
     required double aspectRatio,
   }) {
     return SliverGrid.builder(

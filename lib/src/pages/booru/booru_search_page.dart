@@ -57,7 +57,7 @@ class BooruSearchPage extends StatefulWidget {
   final Booru booru;
   final String tags;
   final SafeMode? overrideSafeMode;
-  final SelectionGlue Function()? generateGlue;
+  final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
 
   const BooruSearchPage({
     super.key,
@@ -86,8 +86,6 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
 
   SafeMode? safeMode;
 
-  late String tags = widget.tags;
-
   int? currentSkipped;
 
   bool reachedEnd = false;
@@ -114,13 +112,19 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
         padding: const EdgeInsets.all(8),
         child: TagsWidget(
           tagging: tagManager.latest,
-          onPress: (tag, safeMode) => _clearAndRefreshB(tag.tag),
+          onPress: (tag, safeMode) {
+            Navigator.pop(context);
+
+            _clearAndRefreshB(tag.tag);
+          },
         ),
       ),
       searchText: widget.tags,
       addItems: (_) => const [],
       searchTextAsLabel: true,
       onSubmit: (context, tag) {
+        Navigator.pop(context);
+
         _clearAndRefreshB(tag);
       },
     ));
@@ -168,8 +172,10 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
     mutation.cellCount = 0;
     mutation.isRefreshing = true;
 
+    search.searchController.text = tag;
+
     setState(() {
-      tags = tag;
+      search.tags = tag;
     });
 
     _clearAndRefresh().whenComplete(() {
@@ -187,7 +193,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
 
       instance.writeTxnSync(() => instance.posts.clearSync());
 
-      final list = await api.page(0, tags, tagManager.excluded,
+      final list = await api.page(0, search.tags, tagManager.excluded,
           overrideSafeMode: _safeMode());
       currentSkipped = list.$2;
       instance.writeTxnSync(() {
@@ -235,7 +241,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
           currentSkipped != null && currentSkipped! < p.id
               ? currentSkipped!
               : p.id,
-          tags,
+          search.tags,
           tagManager.excluded,
           overrideSafeMode: _safeMode());
       if (list.$1.isEmpty && currentSkipped == null) {
@@ -262,11 +268,8 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
 
   @override
   Widget build(BuildContext context) {
-    final viewPadding = MediaQuery.viewPaddingOf(context);
-
     return WrapGridPage(
       provided: widget.generateGlue,
-      scaffoldKey: state.scaffoldKey,
       child: Builder(
         builder: (context) {
           return BooruAPINotifier(
@@ -328,7 +331,6 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                     child: BooruAPINotifier(api: api, child: child),
                   ),
                 ),
-                systemNavigationInsets: viewPadding,
                 description: GridDescription(
                   appBarSnap: !state.settings.buddhaMode,
                   actions: [
@@ -340,7 +342,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                     AddToBookmarksButton(
                         state: state,
                         f: () {
-                          if (tags.isEmpty) {
+                          if (search.tags.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(AppLocalizations.of(context)!
@@ -367,7 +369,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                             Dbs.g.main.writeTxnSync(
                                 () => Dbs.g.main.gridStateBoorus.putSync(
                                       GridStateBooru(api.booru,
-                                          tags: tags,
+                                          tags: search.tags,
                                           scrollOffset: _currentScroll ?? 0,
                                           safeMode: safeMode ??
                                               state.settings.safeMode,

@@ -25,15 +25,14 @@ import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart'
 import 'package:gallery/src/widgets/grid_frame/parts/grid_app_bar_leading.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_app_bar_title.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart';
-import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/page_switching_widget.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
+import 'package:gallery/src/widgets/keybinds/describe_keys.dart';
+import 'package:gallery/src/widgets/keybinds/keybind_description.dart';
+import 'package:gallery/src/widgets/keybinds/single_activator_description.dart';
 import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 import '../../interfaces/cell/cell.dart';
 import 'configuration/grid_mutation_interface.dart';
-import '../keybinds/describe_keys.dart';
-import '../keybinds/keybind_description.dart';
-import '../keybinds/single_activator_description.dart';
 import '../notifiers/focus.dart';
 
 import 'configuration/selection_glue.dart';
@@ -62,9 +61,6 @@ class GridFrame<T extends Cell> extends StatefulWidget {
   /// If [initalScrollPosition] is not 0, then it is set as the starting scrolling position.
   final double initalScrollPosition;
 
-  /// Padding of the system navigation, like the system bottom navigation bar.
-  final EdgeInsets systemNavigationInsets;
-
   /// The main focus node of the grid.
   final FocusNode mainFocus;
 
@@ -88,7 +84,6 @@ class GridFrame<T extends Cell> extends StatefulWidget {
     required this.getCell,
     this.initalScrollPosition = 0,
     required this.functionality,
-    required this.systemNavigationInsets,
     this.onDispose,
     required this.layout,
     required this.mainFocus,
@@ -107,13 +102,18 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
   late final StreamSubscription<void> _mutationEvents;
 
   late ScrollController controller;
-  // bool swappedController = false;
+  final _holderKey = GlobalKey<__GridSelectionCountHolderState>();
 
   late GridSettingsBase _layoutSettings = widget.layout.defaultSettings();
 
   late final selection = GridSelection<T>(
     widget.description.actions,
-    widget.functionality.selectionGlue,
+    widget.functionality.selectionGlue.chain(
+      updateCount: (parent, count) {
+        parent.updateCount(count);
+        _holderKey.currentState?.update();
+      },
+    ),
     () => controller,
     noAppBar: !widget.description.showAppBar,
     ignoreSwipe: widget.description.ignoreSwipeSelectGesture,
@@ -422,7 +422,6 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
             context, _layoutSettings, this),
       ],
       _WrapPadding<T>(
-        systemNavigationInsets: widget.systemNavigationInsets.bottom,
         footer: description.footer,
         selectionGlue: functionality.selectionGlue,
         child: null,
@@ -442,14 +441,14 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
         ),
       );
 
-  double _calculateBottomPadding() {
+  double _d(BuildContext context) {
     final functionality = widget.functionality;
     final selectionGlue = functionality.selectionGlue;
     final description = widget.description;
 
     return (functionality.selectionGlue.keyboardVisible()
             ? 0
-            : widget.systemNavigationInsets.bottom +
+            : MediaQuery.viewPaddingOf(context).bottom +
                 (selectionGlue.isOpen()
                     ? selectionGlue.barHeight()
                     : selectionGlue.persistentBarHeight
@@ -479,11 +478,13 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
     if (description.asSliver) {
       return PlayAnimationNotifier(
         play: _enableAnimations,
-        child: GridBottomPaddingProvider(
-          padding: _calculateBottomPadding(),
-          child: FocusNotifier(
-            notifier: searchFocus,
-            focusMain: widget.mainFocus.requestFocus,
+        child: FocusNotifier(
+          notifier: searchFocus,
+          focusMain: widget.mainFocus.requestFocus,
+          child: _GridSelectionCountHolder(
+            calculatePadding: _d,
+            key: _holderKey,
+            selection: selection,
             child: CellProvider<T>(
               getCell: widget.getCell,
               child: Builder(
@@ -517,38 +518,51 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
           if (description.footer != null)
             Align(
               alignment: Alignment.bottomLeft,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: widget.systemNavigationInsets.bottom,
-                ),
-                child: description.footer!,
+              child: Builder(
+                builder: (context) {
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.viewPaddingOf(context).bottom,
+                    ),
+                    child: description.footer!,
+                  );
+                },
               ),
             ),
           if (!widget.description.showAppBar ||
               widget.description.pages != null)
             Align(
               alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: _calculateBottomPadding(),
-                ),
-                child: PreferredSize(
-                  preferredSize: const Size.fromHeight(4),
-                  child: !mutation.isRefreshing
-                      ? const Padding(
-                          padding: EdgeInsets.only(top: 4),
-                          child: SizedBox(),
-                        )
-                      : const LinearProgressIndicator(),
-                ),
+              child: Builder(
+                builder: (context) {
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      bottom: GridBottomPaddingProvider.of(context),
+                    ),
+                    child: PreferredSize(
+                      preferredSize: const Size.fromHeight(4),
+                      child: !mutation.isRefreshing
+                          ? const Padding(
+                              padding: EdgeInsets.only(top: 4),
+                              child: SizedBox(),
+                            )
+                          : const LinearProgressIndicator(),
+                    ),
+                  );
+                },
               ),
             ),
           Align(
             alignment: Alignment.bottomRight,
-            child: Padding(
-              padding: EdgeInsets.only(
-                  right: 4, bottom: _calculateBottomPadding() + 4),
-              child: fab.widget(context, controller),
+            child: Builder(
+              builder: (context) {
+                return Padding(
+                  padding: EdgeInsets.only(
+                      right: 4,
+                      bottom: GridBottomPaddingProvider.of(context) + 4),
+                  child: fab.widget(context, controller),
+                );
+              },
             ),
           ),
         ],
@@ -566,17 +580,69 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
 
     return PlayAnimationNotifier(
       play: _enableAnimations,
-      child: GridBottomPaddingProvider(
-        padding: _calculateBottomPadding(),
-        child: FocusNotifier(
-          notifier: searchFocus,
-          focusMain: widget.mainFocus.requestFocus,
+      child: FocusNotifier(
+        notifier: searchFocus,
+        focusMain: widget.mainFocus.requestFocus,
+        child: _GridSelectionCountHolder(
+          key: _holderKey,
+          calculatePadding: _d,
+          selection: selection,
           child: CellProvider<T>(
             getCell: widget.getCell,
             child: Builder(
               builder: child,
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GridSelectionCountHolder<T extends Cell> extends StatefulWidget {
+  final GridSelection<T> selection;
+  final double Function(BuildContext) calculatePadding;
+
+  final Widget child;
+
+  const _GridSelectionCountHolder({
+    required super.key,
+    required this.selection,
+    required this.calculatePadding,
+    required this.child,
+  });
+
+  @override
+  State<_GridSelectionCountHolder> createState() =>
+      __GridSelectionCountHolderState();
+}
+
+class __GridSelectionCountHolderState extends State<_GridSelectionCountHolder> {
+  int _updateCount = 0;
+
+  void update() {
+    _updateCount += 1;
+
+    setState(() {});
+  }
+
+  void _onPop(bool _) {
+    if (widget.selection.isNotEmpty) {
+      widget.selection.reset();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: widget.selection.isEmpty,
+      onPopInvoked: _onPop,
+      child: GridBottomPaddingProvider(
+        padding: widget.calculatePadding(context),
+        child: SelectionCountNotifier(
+          count: widget.selection.count,
+          countUpdateTimes: _updateCount,
+          child: widget.child,
         ),
       ),
     );
@@ -621,7 +687,7 @@ class _RisingAnimation extends StatelessWidget {
           curve: Easing.emphasizedAccelerate,
         ),
         SlideEffect(
-          begin: const Offset(-0.25, 0.25),
+          begin: const Offset(-0.35, 0.15),
           end: const Offset(0, 0),
           duration: 280.ms,
           curve: Easing.standard,

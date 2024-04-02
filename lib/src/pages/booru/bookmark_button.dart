@@ -21,6 +21,7 @@ import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart
 import 'package:gallery/src/pages/booru/booru_restored_page.dart';
 import 'package:gallery/src/pages/more/settings/settings_widget.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
+import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/shimmer_loading_indicator.dart';
 import 'package:isar/isar.dart';
 
@@ -29,7 +30,7 @@ import '../../widgets/time_label.dart';
 class BookmarkPage extends StatefulWidget {
   final void Function(String? e) saveSelectedPage;
   final PagingStateRegistry pagingRegistry;
-  final SelectionGlue Function()? generateGlue;
+  final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
   final void Function() scrollUp;
 
   const BookmarkPage({

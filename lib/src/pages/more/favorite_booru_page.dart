@@ -44,7 +44,6 @@ class FavoriteBooruPage extends StatelessWidget {
   final FavoriteBooruPageState state;
   final ScrollController conroller;
   final bool asSliver;
-  final EdgeInsets? viewInsets;
   final bool wrapGridPage;
 
   const FavoriteBooruPage({
@@ -52,11 +51,10 @@ class FavoriteBooruPage extends StatelessWidget {
     required this.state,
     required this.conroller,
     this.asSliver = true,
-    this.viewInsets,
     this.wrapGridPage = false,
   });
 
-  GridFrame<FavoriteBooru> child(BuildContext context, EdgeInsets insets) {
+  GridFrame<FavoriteBooru> child(BuildContext context) {
     return GridFrame<FavoriteBooru>(
       key: state.state.gridKey,
       layout: state.segments != null
@@ -97,7 +95,6 @@ class FavoriteBooruPage extends StatelessWidget {
         refresh: SynchronousGridRefresh(() => state.loader.count()),
       ),
       getCell: state.loader.getCell,
-      systemNavigationInsets: insets,
       mainFocus: state.state.mainFocus,
       description: GridDescription(
         appBarSnap: !state.state.settings.buddhaMode,
@@ -116,18 +113,15 @@ class FavoriteBooruPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final insets = viewInsets ?? MediaQuery.viewPaddingOf(context);
-
     return wrapGridPage
         ? WrapGridPage(
-            scaffoldKey: state.state.scaffoldKey,
             child: GridSkeleton<FavoriteBooru>(
               state.state,
-              (context) => child(context, insets),
+              (context) => child(context),
               canPop: true,
             ),
           )
-        : child(context, insets);
+        : child(context);
   }
 }
 

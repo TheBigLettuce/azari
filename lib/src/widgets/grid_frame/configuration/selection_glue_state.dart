@@ -7,7 +7,6 @@
 
 import 'package:flutter/material.dart';
 
-import '../../../interfaces/cell/cell.dart';
 import 'selection_glue.dart';
 import '../wrappers/wrap_grid_action_button.dart';
 
@@ -55,12 +54,14 @@ class SelectionGlueState {
         barHeight: barHeight,
         updateCount: (c) {
           count = c;
-
           countUpdateTimes += 1;
 
-          setState(() {});
+          if (c == 0) {
+            _close(setState);
+          } else {
+            setState(() {});
+          }
         },
-        close: () => _close(setState),
         open: (addActions, selection) {
           if (actions != null || addActions.isEmpty) {
             return;

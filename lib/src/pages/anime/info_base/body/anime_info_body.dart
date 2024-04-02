@@ -146,23 +146,16 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
                             width: MediaQuery.sizeOf(context).longestSide * 0.2,
                             child: CustomGridCellWrapper(
                               onPressed: (context) {
-                                Navigator.push(context, MaterialPageRoute(
-                                  builder: (context) {
-                                    return ImageView(
-                                      cellCount: snapshot.data!.length,
-                                      scrollUntill: (_) {},
-                                      startingCell: e.$1,
-                                      onExit: () {},
-                                      getCell: (i) => snapshot.data![i],
-                                      onNearEnd: null,
-                                      systemOverlayRestoreColor:
-                                          widget.overlayColor ??
-                                              Theme.of(context)
-                                                  .colorScheme
-                                                  .background,
-                                    );
-                                  },
-                                ));
+                                final overlayColor = widget.overlayColor ??
+                                    Theme.of(context).colorScheme.background;
+
+                                ImageView.launchWrapped(
+                                  context,
+                                  snapshot.data!.length,
+                                  (i) => snapshot.data![i],
+                                  overlayColor,
+                                  startingCell: e.$1,
+                                );
                               },
                               child: GridCell(
                                 cell: e.$2,

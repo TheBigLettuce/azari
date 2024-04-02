@@ -25,13 +25,11 @@ import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru_tagging.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/pages/gallery/directories.dart';
 import 'package:gallery/src/pages/manga/manga_page.dart';
 import 'package:gallery/src/pages/more/tags/single_post.dart';
 import 'package:gallery/src/widgets/azari_icon.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/pages/booru/booru_restored_page.dart';
 import 'package:gallery/src/pages/booru/booru_search_page.dart';
@@ -181,12 +179,9 @@ class BooruPage extends StatefulWidget {
 
   final void Function(bool) procPop;
 
-  final EdgeInsets viewPadding;
-
   const BooruPage({
     super.key,
     required this.procPop,
-    required this.viewPadding,
     required this.pagingRegistry,
   });
 
@@ -587,7 +582,6 @@ class _BooruPageState extends State<BooruPage> {
                   ),
                 ),
               ),
-              systemNavigationInsets: widget.viewPadding,
               description: GridDescription(
                 appBarSnap: !state.settings.buddhaMode,
                 risingAnimation: true,
@@ -682,7 +676,7 @@ class _BooruPageState extends State<BooruPage> {
             secondarySelectionHide: () {
               favoriteBooruState.state.gridKey.currentState?.selection.reset();
             },
-            overrideOnPop: (pop) {
+            onPop: (pop) {
               final gridState = state.gridKey.currentState;
               if (gridState != null && gridState.currentPage == 1) {
                 if (favoriteBooruState
@@ -804,7 +798,6 @@ class __BuddhaModeMenuState extends State<_BuddhaModeMenu> {
                             return MangaPage(
                               wrapGridPage: true,
                               procPop: (pop) {},
-                              viewPadding: null,
                             );
                           },
                         ));

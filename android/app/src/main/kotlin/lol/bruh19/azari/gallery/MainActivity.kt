@@ -24,6 +24,7 @@ import androidx.lifecycle.lifecycleScope
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.FlutterEngineCache
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -400,6 +401,10 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun provideFlutterEngine(context: Context): FlutterEngine? {
         return engineBindings.engine
+    }
+
+    override fun getCachedEngineId(): String {
+        return "main"
     }
 
     override fun onDestroy() {

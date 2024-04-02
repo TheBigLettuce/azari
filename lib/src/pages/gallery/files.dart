@@ -19,7 +19,6 @@ import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/filtering/filtering_interface.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_api_files.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
@@ -65,8 +64,7 @@ class GalleryFiles extends StatefulWidget {
   final String bucketId;
   final GalleryAPIFiles api;
   final CallbackDescriptionNested? callback;
-  final SelectionGlue Function()? generateGlue;
-  final EdgeInsets addInset;
+  final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
 
   const GalleryFiles({
     super.key,
@@ -75,7 +73,6 @@ class GalleryFiles extends StatefulWidget {
     required this.dirName,
     required this.bucketId,
     required this.generateGlue,
-    required this.addInset,
   });
 
   @override
@@ -256,11 +253,9 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
 
   @override
   Widget build(BuildContext context) {
-    final insets = MediaQuery.viewPaddingOf(context) + widget.addInset;
-
     return WrapGridPage(
+        addScaffold: widget.callback != null,
         provided: widget.generateGlue,
-        scaffoldKey: state.scaffoldKey,
         child: GridSkeleton<SystemGalleryDirectoryFile>(
           state,
           (context) => GridFrame(
@@ -330,7 +325,6 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
                 ),
               ),
             ),
-            systemNavigationInsets: insets,
             mainFocus: state.mainFocus,
             description: GridDescription(
               appBarSnap: !state.settings.buddhaMode,
@@ -457,7 +451,7 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
           ),
           canPop: search.currentFilteringMode() == FilteringMode.noFilter &&
               search.searchTextController.text.isEmpty,
-          overrideOnPop: (pop) {
+          onPop: (pop) {
             final filterMode = search.currentFilteringMode();
             if (search.searchTextController.text.isNotEmpty) {
               search.performSearch("");

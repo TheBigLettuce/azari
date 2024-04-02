@@ -243,7 +243,6 @@ class CongratulationPage extends StatelessWidget {
               icon: const Icon(Icons.check_rounded),
               onPressed: () {
                 Settings.fromDb().copy(showWelcomePage: false).save();
-                initPostTags(context);
 
                 if (doNotLaunchHome) {
                   Navigator.pop(context);

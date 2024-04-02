@@ -59,12 +59,10 @@ const int kWatchedTabIndx = 2;
 
 class AnimePage extends StatefulWidget {
   final void Function(bool) procPop;
-  final EdgeInsets viewPadding;
 
   const AnimePage({
     super.key,
     required this.procPop,
-    required this.viewPadding,
   });
 
   @override
@@ -100,7 +98,7 @@ class _AnimePageState extends State<AnimePage>
     super.initState();
 
     tabController.addListener(() {
-      GlueProvider.generateOf(context)().close();
+      GlueProvider.generateOf(context)().updateCount(0);
 
       setState(() {});
     });
@@ -194,12 +192,10 @@ class _AnimePageState extends State<AnimePage>
         AppLocalizations.of(context)!.animePage,
         state,
         appBar: PreferredSize(
-          preferredSize:
-              tabBar.preferredSize + Offset(0, widget.viewPadding.top),
+          preferredSize: tabBar.preferredSize + Offset(0, 0),
           child: TabBarWrapper(
             key: tabKey,
             tabBar: tabBar,
-            viewPadding: widget.viewPadding,
             controller: _textController,
             onPressed: _launchSearch,
             filter: _filter,
@@ -209,7 +205,6 @@ class _AnimePageState extends State<AnimePage>
           controller: tabController,
           children: [
             _WatchingTab(
-              widget.viewPadding,
               procPop: widget.procPop,
               key: watchingKey,
               onDispose: _hideResetSelection,
@@ -218,11 +213,9 @@ class _AnimePageState extends State<AnimePage>
               api: api,
               key: discoverKey,
               procPop: widget.procPop,
-              viewInsets: widget.viewPadding,
               pagingContainer: discoverContainer,
             ),
             _FinishedTab(
-              widget.viewPadding,
               key: finishedKey,
               onDispose: _hideResetSelection,
               procPop: widget.procPop,

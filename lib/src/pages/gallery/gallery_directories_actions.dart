@@ -9,13 +9,13 @@ import 'package:flutter/material.dart';
 import 'package:gallery/main.dart';
 import 'package:gallery/src/db/schemas/gallery/directory_metadata.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_api_directories.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:local_auth/local_auth.dart';
 
 import 'files.dart';
@@ -81,8 +81,7 @@ class SystemGalleryDirectoriesActions {
     BuildContext context,
     GalleryDirectoriesExtra extra,
     CallbackDescriptionNested? callback,
-    EdgeInsets addInset,
-    SelectionGlue Function()? generate,
+    SelectionGlue Function([Set<GluePreferences>])? generate,
     String Function(SystemGalleryDirectory) segment,
   ) {
     return GridAction(
@@ -96,7 +95,6 @@ class SystemGalleryDirectoriesActions {
           selected.cast(),
           extra,
           callback,
-          addInset,
           generate,
           segment,
         );
@@ -111,8 +109,7 @@ class SystemGalleryDirectoriesActions {
     List<SystemGalleryDirectory> dirs,
     GalleryDirectoriesExtra extra,
     CallbackDescriptionNested? callback,
-    EdgeInsets addInset,
-    SelectionGlue Function()? generate,
+    SelectionGlue Function([Set<GluePreferences>])? generate,
     String Function(SystemGalleryDirectory) segment,
   ) async {
     bool requireAuth = false;
@@ -143,7 +140,6 @@ class SystemGalleryDirectoriesActions {
         return GalleryFiles(
             generateGlue: generate,
             api: joined,
-            addInset: addInset,
             callback: callback,
             dirName: label,
             bucketId: "joinedDir");

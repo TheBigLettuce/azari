@@ -59,7 +59,6 @@ class SegmentLayout<T extends Cell>
         state.mutation,
         state.selection,
         settings.columns,
-        systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
         functionality: state.widget.functionality,
         aspectRatio: settings.aspectRatio.value,
         refreshingStatus: state.refreshingStatus,
@@ -94,7 +93,6 @@ class SegmentLayout<T extends Cell>
       state.selection,
       settings.columns,
       gridSeed: 1,
-      systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
       functionality: state.widget.functionality,
       aspectRatio: settings.aspectRatio.value,
       refreshingStatus: state.refreshingStatus,
@@ -143,7 +141,6 @@ class SegmentLayout<T extends Cell>
         gridCellT,
     required double aspectRatio,
     required int gridSeed,
-    required double systemNavigationInsets,
   }) {
     final getCell = CellProvider.of<T>(context);
 
@@ -216,7 +213,6 @@ class SegmentLayout<T extends Cell>
       selection: selection,
       gridSeed: gridSeed,
       gridCellT: gridCellT,
-      systemNavigationInsets: systemNavigationInsets,
       aspectRatio: aspectRatio,
     );
   }
@@ -232,7 +228,6 @@ class SegmentLayout<T extends Cell>
     required GridCell<T> Function(BuildContext, int idx, bool blur) gridCell,
     required GridCell<T> Function(BuildContext, int idx, T, bool blur)
         gridCellT,
-    required double systemNavigationInsets,
     required int gridSeed,
     required List<String> suggestionPrefix,
     required double aspectRatio,
@@ -430,7 +425,6 @@ class SegmentLayout<T extends Cell>
         segments: segments,
         selection: selection,
         gridCellT: gridCellT,
-        systemNavigationInsets: systemNavigationInsets,
         aspectRatio: aspectRatio,
       ),
       predefined
@@ -450,7 +444,6 @@ class SegmentLayout<T extends Cell>
     required int gridSeed,
     required GridCell<T> Function(BuildContext, int idx, T, bool blur)
         gridCellT,
-    required double systemNavigationInsets,
     required double aspectRatio,
   }) {
     final slivers = <Widget>[];
@@ -469,7 +462,6 @@ class SegmentLayout<T extends Cell>
             refreshingStatus: refreshingStatus,
             segments: segments,
             columns: columns,
-            systemNavigationInsets: systemNavigationInsets,
             aspectRatio: aspectRatio,
           ),
         _HeaderWithCells<T>() => _segmentedRowHeaderCells<T>(
@@ -482,7 +474,6 @@ class SegmentLayout<T extends Cell>
             refreshingStatus: refreshingStatus,
             segments: segments,
             columns: columns,
-            systemNavigationInsets: systemNavigationInsets,
             aspectRatio: aspectRatio,
           ),
         // _CellsProvided<Cell>() => throw UnimplementedError(),
@@ -505,7 +496,6 @@ class SegmentLayout<T extends Cell>
     required GridFunctionality<T> gridFunctionality,
     required Segments<T> segments,
     required int gridSeed,
-    required double systemNavigationInsets,
     required double aspectRatio,
   }) {
     final toBlur = val.modifiers.contains(SegmentModifier.blur);
@@ -518,7 +508,6 @@ class SegmentLayout<T extends Cell>
       gridFunctionality: gridFunctionality,
       refreshingStatus: refreshingStatus,
       segments: segments,
-      systemNavigationInsets: systemNavigationInsets,
       aspectRatio: aspectRatio,
       segmentLabel: val.header,
       modifiers: val.modifiers,
@@ -532,8 +521,9 @@ class SegmentLayout<T extends Cell>
         itemBuilder: (context, index) {
           final realIdx = val.list[index];
 
-          return WrapSelection(
+          return WrapSelection<T>(
             thisIndx: realIdx,
+            overrideCell: null,
             selectFrom: predefined,
             functionality: gridFunctionality,
             selection: selection,
@@ -554,7 +544,6 @@ class SegmentLayout<T extends Cell>
     required GridRefreshingStatus<T> refreshingStatus,
     required GridFunctionality<T> gridFunctionality,
     required Segments<T> segments,
-    required double systemNavigationInsets,
     required double aspectRatio,
   }) {
     return _defaultSegmentCard(
@@ -565,7 +554,6 @@ class SegmentLayout<T extends Cell>
       gridFunctionality: gridFunctionality,
       refreshingStatus: refreshingStatus,
       segments: segments,
-      systemNavigationInsets: systemNavigationInsets,
       aspectRatio: aspectRatio,
       segmentLabel: val.header,
       modifiers: val.modifiers,
@@ -578,8 +566,9 @@ class SegmentLayout<T extends Cell>
         itemBuilder: (context, index) {
           final cell = val.cells[index];
 
-          return WrapSelection(
+          return WrapSelection<T>(
             selection: selection,
+            overrideCell: cell.$1,
             functionality: gridFunctionality,
             selectFrom: null,
             thisIndx: -1,
@@ -596,7 +585,6 @@ class SegmentLayout<T extends Cell>
     GridMutationInterface<T> state,
     GridSelection<T> selection, {
     required GridColumn columns,
-    required double systemNavigationInsets,
     required double aspectRatio,
     required GridRefreshingStatus<T> refreshingStatus,
     required GridFunctionality<T> gridFunctionality,

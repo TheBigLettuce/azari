@@ -54,38 +54,36 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
         width: widget.size,
         child: GestureDetector(
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) {
-              return ImageView<Cell>(
-                  key: key,
-                  systemOverlayRestoreColor:
-                      Theme.of(context).colorScheme.background.withOpacity(0.5),
-                  scrollUntill: (_) {},
-                  onExit: () {},
-                  addIcons: (_) {
-                    return [
-                      GridAction(
-                        Icons.close_rounded,
-                        (_) {
-                          widget.files.removeAt(key.currentState!.currentPage);
+            final overlayColor =
+                Theme.of(context).colorScheme.background.withOpacity(0.5);
 
-                          key.currentState!
-                              .update(context, widget.files.length);
+            ImageView.launchWrapped(
+              context,
+              widget.files.length,
+              (i) => widget.files[i],
+              overlayColor,
+              startingCell: id,
+              key: key,
+              actions: (_) {
+                return [
+                  GridAction(
+                    Icons.close_rounded,
+                    (_) {
+                      widget.files.removeAt(key.currentState!.currentPage);
 
-                          if (widget.files.isEmpty) {
-                            Navigator.pop(context);
-                          }
+                      key.currentState!.update(context, widget.files.length);
 
-                          setState(() {});
-                        },
-                        false,
-                      )
-                    ];
-                  },
-                  getCell: (i) => widget.files[i],
-                  cellCount: widget.files.length,
-                  startingCell: id,
-                  onNearEnd: null);
-            }));
+                      if (widget.files.isEmpty) {
+                        Navigator.pop(context);
+                      }
+
+                      setState(() {});
+                    },
+                    false,
+                  )
+                ];
+              },
+            );
           },
           child: GridCell(
             cell: cellData,

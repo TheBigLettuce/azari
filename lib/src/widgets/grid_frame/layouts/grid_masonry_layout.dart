@@ -39,7 +39,6 @@ class GridMasonryLayout<T extends Cell> implements GridLayouter<T> {
           isList: isList,
           state: state,
         ),
-        systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
         aspectRatio: settings.aspectRatio.value,
         randomNumber: state.widget.description.gridSeed,
       )
@@ -52,7 +51,6 @@ class GridMasonryLayout<T extends Cell> implements GridLayouter<T> {
     GridFunctionality<T> functionality,
     GridSelection<T> selection, {
     required MakeCellFunc<T> gridCell,
-    required double systemNavigationInsets,
     required double aspectRatio,
     required int randomNumber,
     required int columns,

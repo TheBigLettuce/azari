@@ -78,7 +78,6 @@ class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
             imageViewKey: state.imageViewKey,
           ),
         ),
-        systemNavigationInsets: MediaQuery.viewPaddingOf(context),
         mainFocus: state.mainFocus,
         description: GridDescription(
           showAppBar: false,

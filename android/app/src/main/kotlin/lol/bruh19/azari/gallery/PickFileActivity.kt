@@ -13,11 +13,12 @@ import android.os.Bundle
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.FlutterEngineCache
 
 class PickFileActivity : FlutterFragmentActivity() {
     private val engineBindings: EngineBindings by lazy {
         EngineBindings(
-            activity = this, entrypoint = "mainPickfile", getSystemService(
+            activity = this, "mainPickfile", getSystemService(
                 ConnectivityManager::class.java
             )
         )
@@ -25,12 +26,22 @@ class PickFileActivity : FlutterFragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val app = this.applicationContext as App
+        prewarmEngine(app, "mainPickfile")
+
         engineBindings.attach()
+    }
+
+    override fun getCachedEngineId(): String? {
+        return "mainPickfile"
     }
 
     override fun onDestroy() {
         super.onDestroy()
         engineBindings.detach()
+        engineBindings.engine.destroy()
+        FlutterEngineCache.getInstance().remove("mainPickfile")
     }
 
     override fun provideFlutterEngine(context: Context): FlutterEngine? {

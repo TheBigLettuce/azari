@@ -16,7 +16,6 @@ class DiscoverExtra {
 }
 
 class DiscoverTab extends StatefulWidget {
-  final EdgeInsets viewInsets;
   final void Function(bool) procPop;
   final PagingContainer<AnimeEntry, DiscoverExtra> pagingContainer;
   final AnimeAPI api;
@@ -46,7 +45,6 @@ class DiscoverTab extends StatefulWidget {
     required this.procPop,
     required this.pagingContainer,
     required this.api,
-    required this.viewInsets,
   });
 
   @override
@@ -198,7 +196,6 @@ class _DiscoverTabState extends State<DiscoverTab> {
             ));
           }),
         ),
-        systemNavigationInsets: widget.viewInsets,
         mainFocus: state.mainFocus,
         description: GridDescription(
           risingAnimation: true,
@@ -210,7 +207,7 @@ class _DiscoverTabState extends State<DiscoverTab> {
         ),
       ),
       canPop: false,
-      overrideOnPop: widget.procPop,
+      onPop: widget.procPop,
     );
   }
 }

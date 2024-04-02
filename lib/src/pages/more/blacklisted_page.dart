@@ -88,14 +88,12 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
   Widget build(BuildContext context) {
     return WrapGridPage(
       provided: widget.generateGlue,
-      scaffoldKey: state.scaffoldKey,
       child: GridSkeleton(
         state,
         (context) => GridFrame<BlacklistedDirectory>(
           key: state.gridKey,
           layout: const GridSettingsLayoutBehaviour(GridSettingsBase.list),
           getCell: loader.getCell,
-          systemNavigationInsets: MediaQuery.viewPaddingOf(context),
           functionality: GridFunctionality(
             registerNotifiers: (child) => HideBlacklistedImagesNotifier(
               hiding: hideBlacklistedImages,

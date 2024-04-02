@@ -17,6 +17,14 @@ class GlueProvider extends InheritedWidget {
     required super.child,
   });
 
+  static Widget empty(BuildContext context, {required Widget child}) {
+    return GlueProvider(
+      generate: ([Set<GluePreferences> set = const {}]) =>
+          SelectionGlue.empty(context),
+      child: child,
+    );
+  }
+
   static SelectionGlue Function([Set<GluePreferences>]) generateOf(
       BuildContext context) {
     final widget = context.dependOnInheritedWidgetOfExactType<GlueProvider>();

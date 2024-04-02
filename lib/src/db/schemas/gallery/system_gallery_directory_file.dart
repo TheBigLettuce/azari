@@ -298,7 +298,8 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
                                                 .dissassembleFilename(value);
                                             return null;
                                           } catch (e) {
-                                            return e.toString();
+                                            return (e as DisassembleResultError)
+                                                .translatedString(context);
                                           }
                                         },
                                         onFieldSubmitted: (value) {

@@ -15,15 +15,15 @@ import '../configuration/selection_glue.dart';
 import '../configuration/selection_glue_state.dart';
 
 class WrapGridPage extends StatefulWidget {
-  final GlobalKey<ScaffoldState> scaffoldKey;
-  final SelectionGlue Function()? provided;
+  final SelectionGlue Function([Set<GluePreferences>])? provided;
   final int navBarHeight;
+  final bool addScaffold;
   final Widget child;
 
   const WrapGridPage({
     super.key,
-    required this.scaffoldKey,
     this.provided,
+    this.addScaffold = false,
     this.navBarHeight = 80,
     required this.child,
   });
@@ -37,20 +37,11 @@ class _WrapGridPageState extends State<WrapGridPage>
   final glueState = SelectionGlueState(
     hide: (_) {},
   );
-  late SelectionGlue glue = widget.provided?.call() ??
-      glueState.glue(() => MediaQuery.viewInsetsOf(context).bottom != 0, (f) {
-        glue = _generate();
-
-        setState(f);
-      }, () => widget.navBarHeight, false);
-
   SelectionGlue _generate([Set<GluePreferences> set = const {}]) {
-    return widget.provided?.call() ??
+    return widget.provided?.call(set) ??
         glueState.glue(
           () => MediaQuery.viewInsetsOf(context).bottom != 0,
           (f) {
-            glue = _generate();
-
             setState(f);
           },
           () => widget.navBarHeight,
@@ -60,32 +51,15 @@ class _WrapGridPageState extends State<WrapGridPage>
 
   @override
   Widget build(BuildContext context) {
-    return SelectionCountNotifier(
+    final child = SelectionCountNotifier(
       count: glueState.count,
       countUpdateTimes: glueState.countUpdateTimes,
       child: GlueProvider(
         generate: _generate,
-        child: Scaffold(
-          key: widget.scaffoldKey,
-          extendBody: true,
-          bottomNavigationBar: widget.provided != null
-              ? null
-              : Animate(
-                  target: glueState.actions?.$1 == null ? 0 : 1,
-                  effects: [
-                    MoveEffect(
-                      duration: 220.ms,
-                      curve: Easing.emphasizedDecelerate,
-                      end: Offset.zero,
-                      begin: Offset(
-                          0, 100 + MediaQuery.viewPaddingOf(context).bottom),
-                    ),
-                  ],
-                  child: GlueBottomAppBar(glueState),
-                ),
-          body: widget.child,
-        ),
+        child: widget.child,
       ),
     );
+
+    return widget.addScaffold ? Scaffold(body: child) : child;
   }
 }

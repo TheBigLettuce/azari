@@ -10,12 +10,10 @@ part of '../../home.dart';
 class _BooruIcon extends StatelessWidget {
   final bool isSelected;
   final AnimationController controller;
-  final MenuController menuController;
 
   const _BooruIcon({
     required this.controller,
     required this.isSelected,
-    required this.menuController,
   });
 
   @override
@@ -25,27 +23,9 @@ class _BooruIcon extends StatelessWidget {
         autoPlay: true,
         controller: controller,
         effects: const [ShakeEffect(curve: Easing.standardAccelerate)],
-        child: MenuAnchor(
-          consumeOutsideTap: true,
-          alignmentOffset: const Offset(8, 8),
-          controller: menuController,
-          menuChildren: Booru.values
-              .map((e) => ListTile(
-                    title: Text(e.string),
-                    onTap: () {
-                      selectBooru(context, Settings.fromDb(), e);
-                    },
-                  ))
-              .toList(),
-          child: GestureDetector(
-            onLongPress: () {
-              menuController.open();
-            },
-            child: Icon(
-              Icons.image,
-              color: isSelected ? Theme.of(context).colorScheme.primary : null,
-            ),
-          ),
+        child: Icon(
+          Icons.image,
+          color: isSelected ? Theme.of(context).colorScheme.primary : null,
         ),
       ),
       label: Settings.fromDb().selectedBooru.string,

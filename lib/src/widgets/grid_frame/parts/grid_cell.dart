@@ -106,24 +106,8 @@ class GridCell<T extends Cell> extends StatefulWidget {
   State<GridCell> createState() => _GridCellState();
 }
 
-class _GridCellState<T extends Cell> extends State<GridCell<T>>
-    with SingleTickerProviderStateMixin {
+class _GridCellState<T extends Cell> extends State<GridCell<T>> {
   int _tries = 0;
-  late final AnimationController controller;
-
-  @override
-  void initState() {
-    super.initState();
-
-    controller = AnimationController(vsync: this);
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -284,52 +268,34 @@ class _GridCellState<T extends Cell> extends State<GridCell<T>>
           ),
         );
 
-    return Animate(
-      autoPlay: false,
-      controller: controller,
-      effects: [
-        MoveEffect(
-          duration: 220.ms,
-          curve: Easing.emphasizedAccelerate,
-          begin: Offset.zero,
-          end: const Offset(0, -10),
-        ),
-        TintEffect(
-            duration: 220.ms,
-            begin: 0,
-            end: 0.1,
-            curve: Easing.standardAccelerate,
-            color: Theme.of(context).colorScheme.primary)
-      ],
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Expanded(
+            flex: 2,
+            child: widget.animate
+                ? card().animate(key: widget._data.uniqueKey()).fadeIn()
+                : card()),
+        if (widget.labelAtBottom)
           Expanded(
-              flex: 2,
-              child: widget.animate
-                  ? card().animate(key: widget._data.uniqueKey()).fadeIn()
-                  : card()),
-          if (widget.labelAtBottom)
-            Expanded(
-                flex: 1,
-                child: Padding(
-                  padding: widget.tight
-                      ? const EdgeInsets.only(left: 0.5, right: 0.5)
-                      : const EdgeInsets.only(right: 4, left: 4),
-                  child: Text(
-                    widget._data.alias(false),
-                    maxLines: widget.lines,
-                    style: TextStyle(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.8),
-                        overflow: TextOverflow.fade),
-                  ),
-                ))
-        ],
-      ),
+              flex: 1,
+              child: Padding(
+                padding: widget.tight
+                    ? const EdgeInsets.only(left: 0.5, right: 0.5)
+                    : const EdgeInsets.only(right: 4, left: 4),
+                child: Text(
+                  widget._data.alias(false),
+                  maxLines: widget.lines,
+                  style: TextStyle(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.8),
+                      overflow: TextOverflow.fade),
+                ),
+              ))
+      ],
     );
   }
 }
@@ -349,6 +315,7 @@ class CustomGridCellWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
+      borderRadius: BorderRadius.circular(15),
       onLongPress: onLongPress == null
           ? null
           : () {

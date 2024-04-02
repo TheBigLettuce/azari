@@ -94,12 +94,12 @@ class PostTags {
     if (suppliedBooru == null) {
       final split = filename.split("_");
       if (split.isEmpty || split.length != 2) {
-        throw _disassembleNoPrefix;
+        throw DisassembleResultError.noPrefix;
       }
 
       final newbooru = Booru.fromPrefix(split.first);
       if (newbooru == null) {
-        throw _disassemblePrefixNotRegistred;
+        throw DisassembleResultError.prefixNotRegistred;
       }
 
       booru = newbooru;
@@ -115,35 +115,35 @@ class PostTags {
 
     final numbersAndHash = filename.split(" - ");
     if (numbersAndHash.isEmpty || numbersAndHash.length != 2) {
-      throw _disassembleNumbersAndHash;
+      throw DisassembleResultError.numbersAndHash;
     }
 
     final id = int.tryParse(numbersAndHash.first);
     if (id == null) {
-      throw _disassembleInvalidPostNumber;
+      throw DisassembleResultError.invalidPostNumber;
     }
 
     final hashAndExt = numbersAndHash.last.split(".");
     if (hashAndExt.isEmpty || hashAndExt.length != 2) {
-      throw _disassembleNoExtension;
+      throw DisassembleResultError.noExtension;
     }
 
     final numbersLetters = RegExp(r'^[a-z0-9]+$');
     if (!numbersLetters.hasMatch(hashAndExt.first)) {
-      throw _disassembleHashIsInvalid;
+      throw DisassembleResultError.hashIsInvalid;
     }
 
     if (hashAndExt.last.length > 6) {
-      throw _disassembleExtensionTooLong;
+      throw DisassembleResultError.extensionTooLong;
     }
 
     if (hashAndExt.first.length != 32) {
-      throw _disassembleHashIsnt32;
+      throw DisassembleResultError.hashIsnt32;
     }
 
     final lettersAndNumbers = RegExp(r'^[a-zA-Z0-9]+$');
     if (!lettersAndNumbers.hasMatch(hashAndExt.last)) {
-      throw _disassembleExtensionInvalid;
+      throw DisassembleResultError.extensionInvalid;
     }
 
     return DisassembleResult(
@@ -424,41 +424,47 @@ class PostTags {
 
   PostTags._new(this.tagsDb);
 
-  static PostTags get g => _global;
+  static PostTags get g {
+    if (_isInitalized) {
+      return _global;
+    }
+
+    _isInitalized = true;
+    _global = PostTags._new(DbsOpen.localTags());
+
+    return _global;
+  }
 }
 
-late final String _disassembleExtensionInvalid;
-late final String _disassembleNoPrefix;
-late final String _disassembleNumbersAndHash;
-late final String _disassemblePrefixNotRegistred;
-late final String _disassembleInvalidPostNumber;
-late final String _disassembleNoExtension;
-late final String _disassembleHashIsInvalid;
-late final String _disassembleExtensionTooLong;
-late final String _disassembleHashIsnt32;
+enum DisassembleResultError {
+  extensionInvalid,
+  noPrefix,
+  numbersAndHash,
+  prefixNotRegistred,
+  invalidPostNumber,
+  noExtension,
+  hashIsInvalid,
+  extensionTooLong,
+  hashIsnt32;
 
-void initPostTags(BuildContext context) {
-  if (_isInitalized) {
-    return;
-  }
-
-  _isInitalized = true;
-  _global = PostTags._new(DbsOpen.localTags());
-
-  _disassembleExtensionInvalid =
-      AppLocalizations.of(context)!.disassembleExtensionInvalid;
-  _disassembleNoPrefix = AppLocalizations.of(context)!.disassembleNoPrefix;
-  _disassembleNumbersAndHash =
-      AppLocalizations.of(context)!.disassembleNumbersAndHash;
-  _disassemblePrefixNotRegistred =
-      AppLocalizations.of(context)!.disassemblePrefixNotRegistred;
-  _disassembleInvalidPostNumber =
-      AppLocalizations.of(context)!.disassembleInvalidPostNumber;
-  _disassembleNoExtension =
-      AppLocalizations.of(context)!.disassembleNoExtension;
-  _disassembleHashIsInvalid =
-      AppLocalizations.of(context)!.disassembleHashIsInvalid;
-  _disassembleExtensionTooLong =
-      AppLocalizations.of(context)!.disassembleExtensionTooLong;
-  _disassembleHashIsnt32 = AppLocalizations.of(context)!.disassembleHashIsnt32;
+  String translatedString(BuildContext context) => switch (this) {
+        DisassembleResultError.extensionInvalid =>
+          AppLocalizations.of(context)!.disassembleExtensionInvalid,
+        DisassembleResultError.noPrefix =>
+          AppLocalizations.of(context)!.disassembleNoPrefix,
+        DisassembleResultError.numbersAndHash =>
+          AppLocalizations.of(context)!.disassembleNumbersAndHash,
+        DisassembleResultError.prefixNotRegistred =>
+          AppLocalizations.of(context)!.disassemblePrefixNotRegistred,
+        DisassembleResultError.invalidPostNumber =>
+          AppLocalizations.of(context)!.disassembleInvalidPostNumber,
+        DisassembleResultError.noExtension =>
+          AppLocalizations.of(context)!.disassembleNoExtension,
+        DisassembleResultError.hashIsInvalid =>
+          AppLocalizations.of(context)!.disassembleHashIsInvalid,
+        DisassembleResultError.extensionTooLong =>
+          AppLocalizations.of(context)!.disassembleExtensionTooLong,
+        DisassembleResultError.hashIsnt32 =>
+          AppLocalizations.of(context)!.disassembleHashIsnt32,
+      };
 }

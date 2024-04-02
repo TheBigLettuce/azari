@@ -26,7 +26,6 @@ import 'package:gallery/welcome_pages.dart';
 import 'package:local_auth/local_auth.dart';
 // import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -143,11 +142,11 @@ void mainPickfile() async {
       ? await PlatformFunctions.currentNetworkStatus()
       : true);
 
-  await Permission.photos.request();
-  await Permission.videos.request();
-  await Permission.storage.request();
-  await Permission.accessMediaLocation.request();
-  PlatformFunctions.requestManageMedia();
+  // await Permission.photos.request();
+  // await Permission.videos.request();
+  // await Permission.storage.request();
+  // await Permission.accessMediaLocation.request();
+  // PlatformFunctions.requestManageMedia();
 
   changeExceptionErrorColors();
 

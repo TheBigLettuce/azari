@@ -13,7 +13,6 @@ import '../grid_frame.dart';
 class SelectionGlue {
   final void Function(List<GridAction> actions, GridSelection selection) open;
   final void Function(int) updateCount;
-  final void Function() close;
   final bool Function() isOpen;
   final bool Function() keyboardVisible;
   final void Function(bool hide) hideNavBar;
@@ -22,7 +21,6 @@ class SelectionGlue {
 
   static SelectionGlue empty<T extends Cell>(BuildContext context) =>
       SelectionGlue(
-        close: () {},
         updateCount: (_) {},
         open: (_, __) {},
         hideNavBar: (_) {},
@@ -33,15 +31,14 @@ class SelectionGlue {
       );
 
   SelectionGlue chain({
-    void Function(SelectionGlue parent)? close,
+    void Function(SelectionGlue parent, int count)? updateCount,
   }) {
     return SelectionGlue(
-      close: close != null
-          ? () {
-              close(this);
+      updateCount: updateCount != null
+          ? (i) {
+              updateCount(this, i);
             }
-          : this.close,
-      updateCount: updateCount,
+          : this.updateCount,
       open: open,
       barHeight: barHeight,
       isOpen: isOpen,
@@ -52,7 +49,6 @@ class SelectionGlue {
   }
 
   const SelectionGlue({
-    required this.close,
     required this.updateCount,
     required this.open,
     required this.barHeight,

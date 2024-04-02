@@ -49,8 +49,7 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
   final Future<Map<I, G>> Function(AnimeSafeMode) genres;
   final (I, String) Function(G) idFromGenre;
   final Future<void> Function(T) onPressed;
-  final SelectionGlue Function()? generateGlue;
-  final EdgeInsets? viewInsets;
+  final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
   final String info;
   final Uri siteUri;
   final List<GridAction> actions;
@@ -58,8 +57,7 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
   static void launchMangaApi(
     BuildContext context,
     MangaAPI api, {
-    EdgeInsets? viewInsets,
-    SelectionGlue Function()? generateGlue,
+    SelectionGlue Function([Set<GluePreferences>])? generateGlue,
     String? search,
     AnimeSafeMode safeMode = AnimeSafeMode.safe,
     MangaId? initalGenreId,
@@ -68,7 +66,6 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
       builder: (context) {
         return SearchAnimePage<MangaEntry, MangaId, MangaGenre>(
           generateGlue: generateGlue,
-          viewInsets: viewInsets,
           initalText: search,
           explicit: safeMode,
           actions: [
@@ -183,7 +180,6 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
     this.initalGenreId,
     this.initalText,
     this.generateGlue,
-    this.viewInsets,
     this.explicit = AnimeSafeMode.safe,
     required this.info,
     required this.actions,
@@ -294,9 +290,6 @@ class _SearchAnimePageState<T extends Cell, I, G>
 
   @override
   Widget build(BuildContext context) {
-    final insets = widget.viewInsets ??
-        (MediaQuery.viewPaddingOf(context) + const EdgeInsets.only(bottom: 4));
-
     String title(G? genre) {
       if (genre == null) {
         return "";
@@ -307,7 +300,6 @@ class _SearchAnimePageState<T extends Cell, I, G>
 
     Widget body(BuildContext context) => WrapGridPage(
           provided: widget.generateGlue,
-          scaffoldKey: state.scaffoldKey,
           child: GridSkeleton<T>(
             state,
             (context) => GridFrame<T>(
@@ -361,7 +353,6 @@ class _SearchAnimePageState<T extends Cell, I, G>
                       searchFocus,
                     ),
                   )),
-              systemNavigationInsets: insets,
               mainFocus: state.mainFocus,
               description: GridDescription(
                 actions: widget.actions,

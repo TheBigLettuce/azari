@@ -27,6 +27,7 @@ import io.flutter.FlutterInjector
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.StandardMethodCodec
@@ -41,7 +42,7 @@ data class MoveInternalOp(val dest: String, val uris: List<Uri>, val callback: (
 
 class EngineBindings(
     activity: FlutterFragmentActivity,
-    entrypoint: String,
+    engineId: String,
     val connectivityManager: ConnectivityManager
 ) {
     private val channel: MethodChannel
@@ -63,15 +64,8 @@ class EngineBindings(
     val moveInternalMux = Mutex()
     var moveInternal: MoveInternalOp? = null
 
-
     init {
-        val app = activity.applicationContext as App
-        // This has to be lazy to avoid creation before the FlutterEngineGroup.
-        val dartEntrypoint =
-            DartExecutor.DartEntrypoint(
-                FlutterInjector.instance().flutterLoader().findAppBundlePath(), entrypoint
-            )
-        engine = app.engines.createAndRunEngine(activity, dartEntrypoint)
+        engine = FlutterEngineCache.getInstance()[engineId]!!
         context = activity
         channel = MethodChannel(
             engine.dartExecutor.binaryMessenger,
@@ -82,10 +76,6 @@ class EngineBindings(
         galleryApi = GalleryApi(engine.dartExecutor.binaryMessenger)
         netStatus = Manager(galleryApi, context)
         mover = Mover(context.lifecycleScope.coroutineContext, context, galleryApi)
-        engine.platformViewsController.registry.registerViewFactory(
-            "imageview",
-            NativeViewFactory()
-        )
     }
 
     fun attach() {
@@ -663,7 +653,6 @@ class EngineBindings(
     }
 
     fun detach() {
-        engine.destroy()
         channel.setMethodCallHandler(null)
     }
 }

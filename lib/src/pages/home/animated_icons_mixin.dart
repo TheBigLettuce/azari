@@ -9,13 +9,11 @@ part of '../home.dart';
 
 mixin _AnimatedIconsMixin on State<Home> {
   late final AnimationController controllerNavBar;
-  late final AnimationController controller;
+  late final AnimationController pageFadeAnimation;
   late final AnimationController booruIconController;
   late final AnimationController galleryIconController;
   late final AnimationController favoritesIconController;
   late final AnimationController animeIconController;
-
-  final menuController = MenuController();
 
   void hide(bool hide) {
     if (Settings.fromDb().buddhaMode) {
@@ -31,7 +29,8 @@ mixin _AnimatedIconsMixin on State<Home> {
 
   void initIcons(TickerProviderStateMixin ticker) {
     controllerNavBar = AnimationController(vsync: ticker);
-    controller = AnimationController(vsync: ticker);
+    pageFadeAnimation = AnimationController(
+        vsync: ticker, duration: const Duration(milliseconds: 200));
     booruIconController = AnimationController(vsync: ticker);
 
     galleryIconController = AnimationController(vsync: ticker);
@@ -41,7 +40,7 @@ mixin _AnimatedIconsMixin on State<Home> {
 
   void disposeIcons() {
     controllerNavBar.dispose();
-    controller.dispose();
+    pageFadeAnimation.dispose();
     booruIconController.dispose();
 
     galleryIconController.dispose();
@@ -53,7 +52,6 @@ mixin _AnimatedIconsMixin on State<Home> {
         _BooruIcon(
           isSelected: currentRoute == _ChangePageMixin.kBooruPageRoute,
           controller: booruIconController,
-          menuController: menuController,
         ),
         _GalleryIcon(
           isSelected: currentRoute == _ChangePageMixin.kGalleryPageRoute,

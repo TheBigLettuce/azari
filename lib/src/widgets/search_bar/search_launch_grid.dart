@@ -16,6 +16,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 class SearchLaunchGrid<T extends Cell> {
   SearchLaunchGrid(this._state) {
     searchController.text = _state.searchText;
+    tags = _state.searchText;
   }
 
   final searchController = SearchController();
@@ -23,6 +24,8 @@ class SearchLaunchGrid<T extends Cell> {
 
   final _ScrollHack _scrollHack = _ScrollHack();
   final SearchLaunchGridData _state;
+
+  String tags = "";
 
   void dispose() {
     searchController.dispose();
@@ -113,7 +116,7 @@ class SearchLaunchGrid<T extends Cell> {
                       width: 114,
                     ),
                     hintText: _state.disabled || _state.searchTextAsLabel
-                        ? searchController.text
+                        ? tags
                         : AppLocalizations.of(context)!.searchHint,
                     onChanged: null,
                     onSubmitted: _state.disabled

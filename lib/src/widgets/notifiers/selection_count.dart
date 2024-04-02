@@ -18,6 +18,13 @@ class SelectionCountNotifier extends InheritedWidget {
     return widget!.count;
   }
 
+  static int maybeCountOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<SelectionCountNotifier>();
+
+    return widget?.count ?? 0;
+  }
+
   const SelectionCountNotifier({
     super.key,
     required this.count,

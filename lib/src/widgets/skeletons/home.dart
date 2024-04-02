@@ -11,21 +11,15 @@ import 'package:gallery/src/pages/more/settings/network_status.dart';
 import 'package:gallery/src/widgets/gesture_dead_zones.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../keybinds/describe_keys.dart';
-import '../keybinds/keybind_description.dart';
-import '../keybinds/single_activator_description.dart';
-
 import 'skeleton_state.dart';
 
 class HomeSkeleton extends StatelessWidget {
-  final String pageDescription;
   final SkeletonState state;
   final Widget Function(BuildContext) f;
   final int selectedRoute;
   final Widget? navBar;
 
   const HomeSkeleton(
-    this.pageDescription,
     this.state,
     this.f, {
     super.key,
@@ -35,35 +29,48 @@ class HomeSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Map<SingleActivatorDescription, Null Function()> bindings = {};
-
-    return CallbackShortcuts(
-      bindings: {
-        ...bindings,
-        ...keybindDescription(context, describeKeys(bindings), pageDescription,
-            () {
-          state.mainFocus.requestFocus();
-        })
-      },
-      child: Focus(
-        autofocus: true,
-        focusNode: state.mainFocus,
-        child: Scaffold(
-          extendBody: selectedRoute == 4 ? false : true,
-          appBar: null,
-          drawerEnableOpenDragGesture:
-              MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,
-          key: state.scaffoldKey,
-          bottomNavigationBar: navBar,
-          body: GestureDeadZones(
-              child: Stack(
+    return Scaffold(
+      extendBody: false,
+      appBar: null,
+      resizeToAvoidBottomInset: false,
+      key: state.scaffoldKey,
+      body: GestureDeadZones(
+          right: true,
+          left: true,
+          child: Stack(
+            alignment: Alignment.bottomCenter,
             children: [
               AnimatedPadding(
                 duration: const Duration(milliseconds: 200),
                 curve: Easing.standard,
                 padding:
                     EdgeInsets.only(top: NetworkStatus.g.hasInternet ? 0 : 24),
-                child: Builder(builder: f),
+                child: Builder(
+                  builder: (context) {
+                    // final data = MediaQuery./of(context);
+                    final bottomPadding =
+                        MediaQuery.viewInsetsOf(context).bottom;
+
+                    var data = MediaQuery.of(context)
+                        .removeViewInsets(removeBottom: true);
+
+                    if (bottomPadding == 0) {
+                      data = data.copyWith(
+                          padding: const EdgeInsets.only(bottom: 80) +
+                              data.viewPadding);
+                    }
+
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        bottom: bottomPadding,
+                      ),
+                      child: MediaQuery(
+                        data: data,
+                        child: Builder(builder: f),
+                      ),
+                    );
+                  },
+                ),
               ),
               if (!NetworkStatus.g.hasInternet)
                 Animate(
@@ -119,10 +126,17 @@ class HomeSkeleton extends StatelessWidget {
                     ),
                   ),
                 ),
+              if (navBar != null)
+                MediaQuery.removeViewPadding(
+                  removeTop: true,
+                  removeBottom: false,
+                  removeLeft: true,
+                  removeRight: true,
+                  context: context,
+                  child: navBar!,
+                ),
             ],
           )),
-        ),
-      ),
     );
   }
 }

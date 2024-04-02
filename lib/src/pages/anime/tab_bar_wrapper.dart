@@ -9,7 +9,6 @@ part of 'anime.dart';
 
 class TabBarWrapper extends StatefulWidget {
   final TextEditingController controller;
-  final EdgeInsets viewPadding;
   final TabBar tabBar;
   final void Function(String? value) filter;
   final bool Function(bool forceSearchPage) onPressed;
@@ -19,7 +18,6 @@ class TabBarWrapper extends StatefulWidget {
     required this.tabBar,
     required this.controller,
     required this.filter,
-    required this.viewPadding,
     required this.onPressed,
   });
 
@@ -67,7 +65,7 @@ class _TabBarWrapperState extends State<TabBarWrapper> {
     final rightPadding = MediaQuery.systemGestureInsetsOf(context).right;
 
     return Padding(
-      padding: EdgeInsets.only(top: widget.viewPadding.top),
+      padding: EdgeInsets.only(top: 0),
       child: Stack(
         alignment: Alignment.topRight,
         children: [

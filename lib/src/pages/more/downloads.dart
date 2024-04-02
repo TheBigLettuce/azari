@@ -33,7 +33,7 @@ import '../../widgets/grid_frame/wrappers/wrap_grid_page.dart';
 import '../../widgets/skeletons/grid.dart';
 
 class Downloads extends StatefulWidget {
-  final SelectionGlue Function() generateGlue;
+  final SelectionGlue Function([Set<GluePreferences>]) generateGlue;
 
   const Downloads({
     super.key,
@@ -139,7 +139,6 @@ class _DownloadsState extends State<Downloads> {
   @override
   Widget build(BuildContext context) {
     return WrapGridPage(
-      scaffoldKey: state.scaffoldKey,
       provided: widget.generateGlue,
       child: GridSkeleton(
         state,
@@ -148,7 +147,6 @@ class _DownloadsState extends State<Downloads> {
           layout: SegmentLayout(_makeSegments(context), _gridSettingsBase),
           getCell: loader.getCell,
           initalScrollPosition: 0,
-          systemNavigationInsets: MediaQuery.viewPaddingOf(context),
           functionality: GridFunctionality(
             search: OverrideGridSearchWidget(
               SearchAndFocus(

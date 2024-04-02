@@ -15,7 +15,6 @@ import '../../notifiers/current_cell.dart';
 import '../app_bar/app_bar.dart';
 
 class WrapImageViewSkeleton<T extends Cell> extends StatelessWidget {
-  final Map<ShortcutActivator, void Function()> bindings;
   final Widget child;
   final FocusNode mainFocus;
   final Widget? bottomAppBar;
@@ -26,7 +25,6 @@ class WrapImageViewSkeleton<T extends Cell> extends StatelessWidget {
 
   const WrapImageViewSkeleton({
     super.key,
-    required this.bindings,
     required this.mainFocus,
     required this.scaffoldKey,
     required this.currentPalette,
@@ -49,29 +47,23 @@ class WrapImageViewSkeleton<T extends Cell> extends StatelessWidget {
             ))
         .toList();
 
-    return CallbackShortcuts(
-        bindings: bindings,
-        child: Focus(
-          autofocus: true,
-          focusNode: mainFocus,
-          child: Scaffold(
-            key: scaffoldKey,
-            extendBodyBehindAppBar: true,
-            extendBody: true,
-            endDrawerEnableOpenDragGesture: false,
-            resizeToAvoidBottomInset: false,
-            bottomNavigationBar: bottomAppBar,
-            endDrawer: endDrawer,
-            appBar: PreferredSize(
-                preferredSize: currentStickers == null
-                    ? const Size.fromHeight(kToolbarHeight + 4)
-                    : const Size.fromHeight(kToolbarHeight + 36 + 4),
-                child: ImageViewAppBar<T>(
-                  stickers: currentStickers ?? const [],
-                  actions: addAppBarActions + (b ?? const []),
-                )),
-            body: child,
-          ),
-        ));
+    return Scaffold(
+      key: scaffoldKey,
+      extendBodyBehindAppBar: true,
+      extendBody: true,
+      endDrawerEnableOpenDragGesture: false,
+      resizeToAvoidBottomInset: false,
+      bottomNavigationBar: bottomAppBar,
+      endDrawer: endDrawer,
+      appBar: PreferredSize(
+          preferredSize: currentStickers == null
+              ? const Size.fromHeight(kToolbarHeight + 4)
+              : const Size.fromHeight(kToolbarHeight + 36 + 4),
+          child: ImageViewAppBar<T>(
+            stickers: currentStickers ?? const [],
+            actions: addAppBarActions + (b ?? const []),
+          )),
+      body: child,
+    );
   }
 }

@@ -14,21 +14,19 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_action_button.dart';
 import 'package:gallery/src/widgets/image_view/mixins/loading_builder.dart';
-import 'package:gallery/src/widgets/image_view/make_image_view_bindings.dart';
 import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart';
 import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_skeleton.dart';
 import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_theme.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/notifiers/focus.dart';
+import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart';
 import 'package:logging/logging.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../keybinds/keybind_description.dart';
 import '../../interfaces/cell/cell.dart';
-import '../keybinds/describe_keys.dart';
 import 'body.dart';
 import 'bottom_bar.dart';
 import 'app_bar/end_drawer.dart';
@@ -56,7 +54,6 @@ class ImageView<T extends Cell> extends StatefulWidget {
   final Color systemOverlayRestoreColor;
   final void Function(ImageViewState<T> state)? pageChange;
   final void Function() onExit;
-  // final void Function() focusMain;
 
   final List<int>? predefinedIndexes;
 
@@ -78,6 +75,38 @@ class ImageView<T extends Cell> extends StatefulWidget {
 
   final String? overrideDrawerLabel;
 
+  static Future<void> launchWrapped<T extends Cell>(
+    BuildContext context,
+    int cellCount,
+    T Function(int) cell,
+    Color overlayColor, {
+    int startingCell = 0,
+    void Function(int)? download,
+    Key? key,
+    List<GridAction> Function(T)? actions,
+  }) {
+    return Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        return GlueProvider.empty(
+          context,
+          child: ImageView<T>(
+            key: key,
+            ignoreEndDrawer: false,
+            cellCount: cellCount,
+            download: download,
+            scrollUntill: (_) {},
+            startingCell: startingCell,
+            onExit: () {},
+            addIcons: actions,
+            getCell: cell,
+            onNearEnd: null,
+            systemOverlayRestoreColor: overlayColor,
+          ),
+        );
+      },
+    ));
+  }
+
   const ImageView({
     super.key,
     required this.cellCount,
@@ -90,7 +119,6 @@ class ImageView<T extends Cell> extends StatefulWidget {
     this.ignoreLoadingBuilder = false,
     required this.getCell,
     required this.onNearEnd,
-    // required this.focusMain,
     required this.systemOverlayRestoreColor,
     this.pageChange,
     this.overrideDrawerLabel,
@@ -135,8 +163,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
   bool refreshing = false;
 
-  Map<ShortcutActivator, void Function()>? bindings;
-
   int _incr = 0;
 
   @override
@@ -161,19 +187,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     // widget.updateTagScrollPos(null, widget.startingCell);
 
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      final b = makeImageViewBindings(context, key, controller,
-          download: widget.download == null
-              ? null
-              : () => widget.download!(currentPage),
-          onTap: _onTap);
-      bindings = {
-        ...b,
-        // ...keybindDescription(context, describeKeys(b),
-        //     AppLocalizations.of(context)!.imageViewPageName, widget.focusMain)
-      };
-
-      setState(() {});
-
       refreshPalette();
     });
   }
@@ -335,7 +348,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
           child: WrapImageViewSkeleton<T>(
               scaffoldKey: key,
               addAppBarActions: widget.appBarItems,
-              bindings: bindings ?? {},
               currentPalette: currentPalette,
               endDrawer: widget.ignoreEndDrawer
                   ? null

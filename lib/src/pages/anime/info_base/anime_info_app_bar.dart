@@ -88,20 +88,12 @@ class _AnimeInfoAppBarState extends State<AnimeInfoAppBar>
           onPressed: () {
             final overlayColor = Theme.of(context).colorScheme.background;
 
-            Navigator.push(context, MaterialPageRoute(
-              builder: (context) {
-                return ImageView(
-                  ignoreEndDrawer: false,
-                  cellCount: 1,
-                  scrollUntill: (_) {},
-                  startingCell: 0,
-                  onExit: () {},
-                  getCell: (_) => widget.cell,
-                  onNearEnd: null,
-                  systemOverlayRestoreColor: overlayColor,
-                );
-              },
-            ));
+            ImageView.launchWrapped(
+              context,
+              1,
+              (_) => widget.cell,
+              overlayColor,
+            );
           },
           icon: const Icon(Icons.image),
         )

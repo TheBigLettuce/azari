@@ -15,7 +15,7 @@ import '../grid_frame/grid_frame.dart';
 
 class GridSkeleton<T extends Cell> extends StatelessWidget {
   final bool canPop;
-  final void Function(bool)? overrideOnPop;
+  final void Function(bool)? onPop;
   final GridSkeletonState<T> state;
   final GridFrame<T> Function(BuildContext context) grid;
   final void Function()? secondarySelectionHide;
@@ -26,7 +26,7 @@ class GridSkeleton<T extends Cell> extends StatelessWidget {
     super.key,
     required this.canPop,
     this.secondarySelectionHide,
-    this.overrideOnPop,
+    this.onPop,
   });
 
   @override
@@ -42,13 +42,9 @@ class GridSkeleton<T extends Cell> extends StatelessWidget {
           return;
         }
 
-        overrideOnPop?.call(pop);
+        onPop?.call(pop);
       },
-      child: GestureDeadZones(
-        left: true,
-        right: true,
-        child: grid(context),
-      ),
+      child: grid(context),
     );
   }
 }

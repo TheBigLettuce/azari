@@ -21,6 +21,25 @@ mixin _ChangePageMixin on State<Home> {
 
   String? restoreBookmarksPage;
 
+  void _procPopAll(_AnimatedIconsMixin icons, bool _) {
+    final f = mainKey.currentState?.maybePop();
+    if (widget.callback != null) {
+      f?.then((value) {
+        if (!value) {
+          Navigator.of(context);
+        }
+      });
+    }
+
+    galleryKey.currentState?.maybePop();
+    moreKey.currentState?.maybePop().then((value) {
+      if (!value) {
+        _procPop(icons, false);
+      }
+    });
+    mangaKey.currentState?.maybePop();
+  }
+
   void initChangePage(_AnimatedIconsMixin icons, Settings settings) {
     mainGrid = DbsOpen.primaryGrid(settings.selectedBooru);
   }
@@ -45,11 +64,13 @@ mixin _ChangePageMixin on State<Home> {
       restartStart();
     }
 
-    icons.controller.animateTo(1).then((value) {
+    icons.pageFadeAnimation.animateTo(1).then((value) {
       currentRoute = to;
 
-      icons.controller.reset();
+      icons.pageFadeAnimation.reset();
       setState(() {});
+
+      _animateIcons(icons);
     });
   }
 
@@ -101,11 +122,9 @@ mixin _ChangePageMixin on State<Home> {
     }
   }
 
-  Widget _currentPage(
-      BuildContext context, _AnimatedIconsMixin icons, EdgeInsets padding) {
+  Widget _currentPage(BuildContext context, _AnimatedIconsMixin icons) {
     if (widget.callback != null) {
       return GalleryDirectories(
-        viewPadding: padding,
         nestedCallback: widget.callback,
         procPop: (pop) => _procPop(icons, pop),
       );
@@ -114,55 +133,40 @@ mixin _ChangePageMixin on State<Home> {
     if (Settings.fromDb().buddhaMode) {
       return BooruPage(
         pagingRegistry: pagingRegistry,
-        viewPadding: padding,
         procPop: (pop) {},
       );
     }
 
-    _animateIcons(icons);
-
     return Animate(
         target: 0,
         effects: [FadeEffect(duration: 50.ms, begin: 1, end: 0)],
-        controller: icons.controller,
+        controller: icons.pageFadeAnimation,
         child: switch (currentRoute) {
           kBooruPageRoute => _NavigatorShell(
               navigatorKey: mainKey,
-              pop: _popGallery,
               child: BooruPage(
                 pagingRegistry: pagingRegistry,
-                viewPadding: padding,
                 procPop: (pop) => _procPopA(icons, pop),
               ),
             ),
           kGalleryPageRoute => _NavigatorShell(
               navigatorKey: galleryKey,
-              pop: _popGallery,
               child: GalleryDirectories(
                 procPop: (pop) => _procPop(icons, pop),
-                viewPadding: padding,
               ),
             ),
           kMangaPageRoute => _NavigatorShell(
               navigatorKey: mangaKey,
-              pop: _popGallery,
               child: MangaPage(
                 procPop: (pop) => _procPop(icons, pop),
-                viewPadding: padding,
               ),
             ),
           kAnimePageRoute => AnimePage(
               procPop: (pop) => _procPop(icons, pop),
-              viewPadding: padding,
             ),
           kMorePageRoute => _NavigatorShell(
               navigatorKey: moreKey,
-              pop: _popGallery,
-              child: PopScope(
-                canPop: currentRoute == kBooruPageRoute,
-                onPopInvoked: (pop) => _procPop(icons, pop),
-                child: const MorePage().animate(),
-              ),
+              child: const MorePage(),
             ),
           int() => throw "unimpl",
         });

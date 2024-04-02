@@ -10,7 +10,6 @@ part of '../grid_frame.dart';
 class _WrapPadding<T extends Cell> extends StatelessWidget {
   final PreferredSizeWidget? footer;
   final SelectionGlue selectionGlue;
-  final double systemNavigationInsets;
   final bool sliver;
   final bool addFabPadding;
 
@@ -20,7 +19,6 @@ class _WrapPadding<T extends Cell> extends StatelessWidget {
     super.key,
     required this.footer,
     required this.selectionGlue,
-    required this.systemNavigationInsets,
     this.sliver = true,
     this.addFabPadding = true,
     required this.child,
@@ -32,7 +30,7 @@ class _WrapPadding<T extends Cell> extends StatelessWidget {
         bottom: (addFabPadding ? kFloatingActionButtonMargin * 2 + 24 + 8 : 0) +
             (selectionGlue.keyboardVisible()
                 ? 0
-                : systemNavigationInsets +
+                : MediaQuery.viewPaddingOf(context).bottom +
                     (selectionGlue.isOpen() //&&
                         ? selectionGlue.barHeight()
                         : selectionGlue.persistentBarHeight

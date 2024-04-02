@@ -33,7 +33,6 @@ class GridQuiltedLayout<T extends Cell> implements GridLayouter<T> {
         state.widget.functionality,
         state.selection,
         randomNumber: state.widget.description.gridSeed,
-        systemNavigationInsets: state.widget.systemNavigationInsets.bottom,
         gridCell: (context, idx) => GridCell.frameDefault(
           context,
           idx,
@@ -54,7 +53,6 @@ class GridQuiltedLayout<T extends Cell> implements GridLayouter<T> {
     GridFunctionality<T> functionality,
     GridSelection<T> selection, {
     required MakeCellFunc<T> gridCell,
-    required double systemNavigationInsets,
     required int randomNumber,
     required GridColumn columns,
   }) {

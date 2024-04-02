@@ -94,23 +94,16 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
                                   GridAspectRatio.zeroFive.value,
                               child: CustomGridCellWrapper(
                                 onPressed: (context) {
-                                  Navigator.push(context, MaterialPageRoute(
-                                    builder: (context) {
-                                      return ImageView(
-                                        cellCount: list.length,
-                                        scrollUntill: (_) {},
-                                        startingCell: e.$1,
-                                        onExit: () {},
-                                        getCell: (i) => list[i],
-                                        onNearEnd: null,
-                                        systemOverlayRestoreColor:
-                                            widget.overlayColor ??
-                                                Theme.of(context)
-                                                    .colorScheme
-                                                    .background,
-                                      );
-                                    },
-                                  ));
+                                  final overlayColor = widget.overlayColor ??
+                                      Theme.of(context).colorScheme.background;
+
+                                  ImageView.launchWrapped(
+                                    context,
+                                    list.length,
+                                    (i) => list[i],
+                                    overlayColor,
+                                    startingCell: e.$1,
+                                  );
                                 },
                                 child: GridCell(
                                   cell: e.$2,

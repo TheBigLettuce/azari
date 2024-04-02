@@ -18,7 +18,6 @@ import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/pages/booru/booru_page.dart';
 import 'package:gallery/src/pages/booru/booru_search_page.dart';
 import 'package:gallery/src/pages/home.dart';
@@ -73,7 +72,7 @@ class BooruRestoredPage extends StatefulWidget {
   final PagingStateRegistry pagingRegistry;
   final SafeMode? overrideSafeMode;
   final void Function()? onDispose;
-  final SelectionGlue Function()? generateGlue;
+  final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
 
   const BooruRestoredPage({
     super.key,
@@ -328,11 +327,8 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
 
   @override
   Widget build(BuildContext context) {
-    final viewPadding = MediaQuery.of(context).viewPadding;
-
     return WrapGridPage(
       provided: widget.generateGlue,
-      scaffoldKey: state.scaffoldKey,
       child: Builder(
         builder: (context) {
           return BooruAPINotifier(
@@ -388,7 +384,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                     child: BooruAPINotifier(api: api, child: child),
                   ),
                 ),
-                systemNavigationInsets: viewPadding,
                 description: GridDescription(
                   appBarSnap: !state.settings.buddhaMode,
                   actions: [
