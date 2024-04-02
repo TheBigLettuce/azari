@@ -130,13 +130,6 @@ mixin _ChangePageMixin on State<Home> {
       );
     }
 
-    if (Settings.fromDb().buddhaMode) {
-      return BooruPage(
-        pagingRegistry: pagingRegistry,
-        procPop: (pop) {},
-      );
-    }
-
     return Animate(
         target: 0,
         effects: [FadeEffect(duration: 50.ms, begin: 1, end: 0)],

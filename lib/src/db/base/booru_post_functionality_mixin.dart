@@ -17,7 +17,6 @@ import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/interfaces/filtering/filtering_mode.dart';
 import 'package:gallery/src/pages/booru/booru_page.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
-import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/make_tags.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:gallery/src/widgets/notifiers/filter.dart';
@@ -159,23 +158,6 @@ class _PostInfoState extends State<PostInfo> {
     }
 
     final filename = post.filename();
-
-    if (settings.buddhaMode) {
-      return tags.isNotEmpty
-          ? DrawerTagsWidget(
-              tags,
-              filename,
-              showTagButtons: false,
-              showLabel: false,
-              launchGrid: _launchGrid,
-              excluded: tagManager.excluded,
-              pinnedTags: pinnedTags,
-              res: res,
-            )
-          : const SliverToBoxAdapter(
-              child: EmptyWidget(gridSeed: 0),
-            );
-    }
 
     final filterData = FilterNotifier.maybeOf(context);
 

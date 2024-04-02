@@ -25,10 +25,7 @@ import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru_tagging.dart';
-import 'package:gallery/src/pages/gallery/directories.dart';
-import 'package:gallery/src/pages/manga/manga_page.dart';
 import 'package:gallery/src/pages/more/tags/single_post.dart';
-import 'package:gallery/src/widgets/azari_icon.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/pages/booru/booru_restored_page.dart';
@@ -323,9 +320,7 @@ class _BooruPageState extends State<BooruPage> {
                 }
               },
               state: e,
-              generateGlue: state.settings.buddhaMode
-                  ? null
-                  : GlueProvider.generateOf(context),
+              generateGlue: GlueProvider.generateOf(context),
             );
           },
         ));
@@ -469,8 +464,7 @@ class _BooruPageState extends State<BooruPage> {
       return BooruSearchPage(
         booru: booru,
         tags: tag,
-        generateGlue:
-            state.settings.buddhaMode ? null : GlueProvider.generateOf(context),
+        generateGlue: GlueProvider.generateOf(context),
         overrideSafeMode: safeMode,
       );
     }));
@@ -488,53 +482,16 @@ class _BooruPageState extends State<BooruPage> {
               key: state.gridKey,
               layout:
                   const GridSettingsLayoutBehaviour(GridSettingsBooru.current),
-              overrideController:
-                  state.settings.buddhaMode ? null : scrollController,
+              overrideController: scrollController,
               functionality: GridFunctionality(
                 selectionGlue: GlueProvider.generateOf(context)(),
                 loadNext: _addLast,
-                backButton: state.settings.buddhaMode
-                    ? OverrideGridBackButton(
-                        MenuAnchor(
-                          style: const MenuStyle(
-                              visualDensity: VisualDensity.compact),
-                          alignmentOffset: const Offset(2, 0),
-                          menuChildren: [
-                            _BuddhaModeMenu(
-                              state: favoriteBooruState,
-                              scrollController: scrollController,
-                              controller: menuController,
-                              pagingRegistry: widget.pagingRegistry,
-                              saveSelectedPage: (s) =>
-                                  pagingState.restoreSecondaryGrid = s,
-                            )
-                          ],
-                          builder: (context, controller, _) {
-                            return IconButton(
-                              icon: const Icon(Icons.account_circle_outlined),
-                              onPressed: () {
-                                if (controller.isOpen) {
-                                  controller.close();
-                                  return;
-                                }
-
-                                controller.open();
-                              },
-                            );
-                          },
-                          consumeOutsideTap: true,
-                          controller: menuController,
-                        ),
-                      )
-                    : const EmptyGridBackButton(inherit: true),
+                backButton: const EmptyGridBackButton(inherit: true),
                 watchLayoutSettings: GridSettingsBooru.watch,
                 refresh: AsyncGridRefresh(_clearAndRefresh),
                 refreshingStatus: pagingState.refreshingStatus,
                 imageViewDescription: ImageViewDescription(
                   imageViewKey: state.imageViewKey,
-                  overrideDrawerLabel: state.settings.buddhaMode
-                      ? AppLocalizations.of(context)!.buddhaModeTags
-                      : null,
                   statistics: const ImageViewStatistics(
                     swiped: StatisticsBooru.addSwiped,
                     viewed: StatisticsBooru.addViewed,
@@ -583,7 +540,6 @@ class _BooruPageState extends State<BooruPage> {
                 ),
               ),
               description: GridDescription(
-                appBarSnap: !state.settings.buddhaMode,
                 risingAnimation: true,
                 actions: [
                   BooruGridActions.download(context, pagingState.api.booru),
@@ -591,60 +547,54 @@ class _BooruPageState extends State<BooruPage> {
                       showDeleteSnackbar: true),
                   BooruGridActions.hide(context, () => setState(() {})),
                 ],
-                pages: state.settings.buddhaMode
-                    ? null
-                    : PageSwitcher(
-                        [
-                            PageIcon(
-                              Icons.favorite_rounded,
-                              count: FavoriteBooru.count,
-                            ),
-                            PageIcon(
-                              Icons.bookmarks_rounded,
-                              count: Dbs.g.main.gridStateBoorus.countSync(),
-                            ),
-                          ],
-                        (i) => switch (i) {
-                              0 => PageDescription(
-                                    search: SearchAndFocus(
-                                      favoriteBooruState.search.searchWidget(
-                                          favoriteBooruState.context,
-                                          count: favoriteBooruState.loader
-                                              .count()),
-                                      favoriteBooruState.search.searchFocus,
+                pages: PageSwitcher(
+                    [
+                      PageIcon(
+                        Icons.favorite_rounded,
+                        count: FavoriteBooru.count,
+                      ),
+                      PageIcon(
+                        Icons.bookmarks_rounded,
+                        count: Dbs.g.main.gridStateBoorus.countSync(),
+                      ),
+                    ],
+                    (i) => switch (i) {
+                          0 => PageDescription(
+                                search: SearchAndFocus(
+                                  favoriteBooruState.search.searchWidget(
+                                      favoriteBooruState.context,
+                                      count: favoriteBooruState.loader.count()),
+                                  favoriteBooruState.search.searchFocus,
+                                ),
+                                settingsButton:
+                                    favoriteBooruState.gridSettingsButton(),
+                                slivers: [
+                                  GlueProvider(
+                                    generate: GlueProvider.generateOf(context),
+                                    child: FavoriteBooruPage(
+                                      conroller: scrollController,
+                                      state: favoriteBooruState,
                                     ),
-                                    settingsButton:
-                                        favoriteBooruState.gridSettingsButton(),
-                                    slivers: [
-                                      GlueProvider(
-                                        generate:
-                                            GlueProvider.generateOf(context),
-                                        child: FavoriteBooruPage(
-                                          conroller: scrollController,
-                                          state: favoriteBooruState,
-                                        ),
-                                      ),
-                                    ]),
-                              1 => PageDescription(slivers: [
-                                  BookmarkPage(
-                                    scrollUp: () {
-                                      state.gridKey.currentState?.controller
-                                          .animateTo(
-                                        0,
-                                        duration:
-                                            const Duration(milliseconds: 180),
-                                        curve: Easing.standardAccelerate,
-                                      );
-                                    },
-                                    pagingRegistry: widget.pagingRegistry,
-                                    generateGlue:
-                                        GlueProvider.generateOf(context),
-                                    saveSelectedPage: (s) =>
-                                        pagingState.restoreSecondaryGrid = s,
                                   ),
                                 ]),
-                              int() => const PageDescription(slivers: []),
-                            }),
+                          1 => PageDescription(slivers: [
+                              BookmarkPage(
+                                scrollUp: () {
+                                  state.gridKey.currentState?.controller
+                                      .animateTo(
+                                    0,
+                                    duration: const Duration(milliseconds: 180),
+                                    curve: Easing.standardAccelerate,
+                                  );
+                                },
+                                pagingRegistry: widget.pagingRegistry,
+                                generateGlue: GlueProvider.generateOf(context),
+                                saveSelectedPage: (s) =>
+                                    pagingState.restoreSecondaryGrid = s,
+                              ),
+                            ]),
+                          int() => const PageDescription(slivers: []),
+                        }),
                 inlineMenuButtonItems: true,
                 settingsButton: GridFrameSettingsButton(
                   selectSafeMode: (safeMode, _) =>
@@ -672,7 +622,7 @@ class _BooruPageState extends State<BooruPage> {
               getCell: (i) => pagingState.mainGrid.posts.getSync(i + 1)!,
               initalScrollPosition: pagingState.offset,
             ),
-            canPop: state.settings.buddhaMode,
+            canPop: false,
             secondarySelectionHide: () {
               favoriteBooruState.state.gridKey.currentState?.selection.reset();
             },
@@ -697,193 +647,6 @@ class _BooruPageState extends State<BooruPage> {
           ),
         );
       },
-    );
-  }
-}
-
-class _BuddhaModeMenu extends StatefulWidget {
-  final MenuController controller;
-  final ScrollController scrollController;
-
-  final FavoriteBooruPageState state;
-  final void Function(String? e) saveSelectedPage;
-  final PagingStateRegistry pagingRegistry;
-
-  const _BuddhaModeMenu({
-    super.key,
-    required this.controller,
-    required this.pagingRegistry,
-    required this.saveSelectedPage,
-    required this.state,
-    required this.scrollController,
-  });
-
-  @override
-  State<_BuddhaModeMenu> createState() => __BuddhaModeMenuState();
-}
-
-class __BuddhaModeMenuState extends State<_BuddhaModeMenu> {
-  final _scroll = ScrollController();
-
-  @override
-  void dispose() {
-    _scroll.dispose();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Theme(
-      data: theme.copyWith(
-        iconTheme: theme.iconTheme.copyWith(size: 20),
-        listTileTheme: theme.listTileTheme.copyWith(
-          iconColor: theme.colorScheme.primary.withOpacity(0.8),
-          titleTextStyle: theme.textTheme.titleSmall,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-          visualDensity: VisualDensity.compact,
-        ),
-        dividerTheme: const DividerThemeData(thickness: 1, space: 0),
-      ),
-      child: SizedBox(
-        width: 140,
-        height: 200,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(
-                bottom: 8,
-                top: 16,
-              ),
-              child: AzariIcon(
-                color: theme.colorScheme.primary.withOpacity(0.8),
-              ),
-            ),
-            Text(
-              "Azari",
-              style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.8)),
-            ),
-            const Padding(padding: EdgeInsets.only(bottom: 16)),
-            Expanded(
-              child: SingleChildScrollView(
-                controller: _scroll,
-                child: Column(
-                  children: [
-                    ListTile(
-                      leading: const Icon(Icons.collections),
-                      title: Text(AppLocalizations.of(context)!.galleryLabel),
-                      onTap: () {
-                        widget.controller.close();
-                        Navigator.push(context, MaterialPageRoute(
-                          builder: (context) {
-                            return GalleryDirectories(
-                              procPop: (pop) {},
-                              wrapGridPage: true,
-                            );
-                          },
-                        ));
-                      },
-                    ),
-                    const Divider(),
-                    ListTile(
-                      leading: const Icon(Icons.book_rounded),
-                      title: Text(AppLocalizations.of(context)!.mangaPage),
-                      onTap: () {
-                        widget.controller.close();
-                        Navigator.push(context, MaterialPageRoute(
-                          builder: (context) {
-                            return MangaPage(
-                              wrapGridPage: true,
-                              procPop: (pop) {},
-                            );
-                          },
-                        ));
-                      },
-                    ),
-                    const Divider(),
-                    ListTile(
-                      leading: const Icon(Icons.favorite_outline_rounded),
-                      title: Text(AppLocalizations.of(context)!.favoritesLabel),
-                      onTap: () {
-                        widget.controller.close();
-                        Navigator.push(context, MaterialPageRoute(
-                          builder: (context) {
-                            return FavoriteBooruPage(
-                              state: widget.state,
-                              conroller: widget.scrollController,
-                              asSliver: false,
-                              wrapGridPage: true,
-                            );
-                          },
-                        ));
-                      },
-                    ),
-                    const Divider(),
-                    ListTile(
-                      leading: const Icon(Icons.bookmark_outline),
-                      title:
-                          Text(AppLocalizations.of(context)!.bookmarksPageName),
-                      onTap: () {
-                        widget.controller.close();
-                        Navigator.push(context, MaterialPageRoute(
-                          builder: (context) {
-                            return Scaffold(
-                              body: Builder(
-                                builder: (context) {
-                                  return CustomScrollView(
-                                    slivers: [
-                                      SliverAppBar.large(
-                                        title: Text(
-                                            AppLocalizations.of(context)!
-                                                .bookmarksPageName),
-                                      ),
-                                      BookmarkPage(
-                                        scrollUp: () {},
-                                        saveSelectedPage:
-                                            widget.saveSelectedPage,
-                                        generateGlue: null,
-                                        pagingRegistry: widget.pagingRegistry,
-                                      ),
-                                      SliverPadding(
-                                        padding: EdgeInsets.only(
-                                          bottom: 8 +
-                                              MediaQuery.viewPaddingOf(context)
-                                                  .bottom,
-                                        ),
-                                      )
-                                    ],
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        ));
-                      },
-                    ),
-                    const Divider(),
-                    ListTile(
-                      leading: const Icon(Icons.settings_outlined),
-                      title:
-                          Text(AppLocalizations.of(context)!.settingsPageName),
-                      onTap: () {
-                        widget.controller.close();
-                        Navigator.push(context, MaterialPageRoute(
-                          builder: (context) {
-                            return const SettingsWidget();
-                          },
-                        ));
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            )
-          ],
-        ),
-      ),
     );
   }
 }

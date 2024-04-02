@@ -57,8 +57,6 @@ class Settings {
 
   final bool showWelcomePage;
 
-  final bool buddhaMode;
-
   const Settings({
     required this.path,
     required this.selectedBooru,
@@ -67,7 +65,6 @@ class Settings {
     required this.autoRefreshMicroseconds,
     required this.safeMode,
     required this.showWelcomePage,
-    required this.buddhaMode,
   });
 
   Settings copy({
@@ -83,7 +80,6 @@ class Settings {
     SafeMode? safeMode,
     GridAspectRatio? ratio,
     bool? showWelcomePage,
-    bool? buddhaMode,
   }) {
     return Settings(
       showWelcomePage: showWelcomePage ?? this.showWelcomePage,
@@ -91,7 +87,6 @@ class Settings {
       selectedBooru: selectedBooru ?? this.selectedBooru,
       quality: quality ?? this.quality,
       autoRefresh: autoRefresh ?? this.autoRefresh,
-      buddhaMode: buddhaMode ?? this.buddhaMode,
       autoRefreshMicroseconds:
           autoRefreshMicroseconds ?? this.autoRefreshMicroseconds,
       safeMode: safeMode ?? this.safeMode,
@@ -100,7 +95,6 @@ class Settings {
 
   Settings.empty()
       : showWelcomePage = true,
-        buddhaMode = true,
         path = const SettingsPath(),
         autoRefresh = false,
         autoRefreshMicroseconds = 1.hours.inMicroseconds,

@@ -403,17 +403,17 @@ class _SettingsListState extends State<SettingsList> {
             ));
           },
         ),
-        SwitchListTile(
-          title: Text(AppLocalizations.of(context)!.buddhaModeSetting),
-          value: _settings!.buddhaMode,
-          onChanged: (value) {
-            themeChangeStart();
+        // SwitchListTile(
+        //   title: Text(AppLocalizations.of(context)!.buddhaModeSetting),
+        //   value: _settings!.buddhaMode,
+        //   onChanged: (value) {
+        //     themeChangeStart();
 
-            _settings!.copy(buddhaMode: value).save();
+        //     _settings!.copy(buddhaMode: value).save();
 
-            RestartWidget.restartApp(context);
-          },
-        )
+        //     RestartWidget.restartApp(context);
+        //   },
+        // )
       ];
 
   String _calculateMBSize(int i) {

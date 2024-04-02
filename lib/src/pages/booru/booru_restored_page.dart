@@ -364,9 +364,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                       BooruGridActions.download(context, api.booru)
                     ],
                     imageViewKey: state.imageViewKey,
-                    overrideDrawerLabel: state.settings.buddhaMode
-                        ? AppLocalizations.of(context)!.buddhaModeTags
-                        : null,
                     statistics: const ImageViewStatistics(
                       swiped: StatisticsBooru.addSwiped,
                       viewed: StatisticsBooru.addViewed,
@@ -385,7 +382,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                   ),
                 ),
                 description: GridDescription(
-                  appBarSnap: !state.settings.buddhaMode,
                   actions: [
                     BooruGridActions.download(context, api.booru),
                     BooruGridActions.favorites(context, null,

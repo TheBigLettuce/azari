@@ -16,10 +16,6 @@ mixin _AnimatedIconsMixin on State<Home> {
   late final AnimationController animeIconController;
 
   void hide(bool hide) {
-    if (Settings.fromDb().buddhaMode) {
-      return;
-    }
-
     if (hide) {
       controllerNavBar.animateTo(1);
     } else {

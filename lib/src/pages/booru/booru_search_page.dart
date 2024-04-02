@@ -19,7 +19,6 @@ import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/pages/booru/booru_page.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
@@ -306,9 +305,6 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                       BooruGridActions.download(context, api.booru)
                     ],
                     imageViewKey: state.imageViewKey,
-                    overrideDrawerLabel: state.settings.buddhaMode
-                        ? AppLocalizations.of(context)!.buddhaModeTags
-                        : null,
                     statistics: const ImageViewStatistics(
                       swiped: StatisticsBooru.addSwiped,
                       viewed: StatisticsBooru.addViewed,
@@ -332,7 +328,6 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                   ),
                 ),
                 description: GridDescription(
-                  appBarSnap: !state.settings.buddhaMode,
                   actions: [
                     BooruGridActions.download(context, api.booru),
                     BooruGridActions.favorites(context, null,

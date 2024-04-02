@@ -87,9 +87,6 @@ class FavoriteBooruPage extends StatelessWidget {
         refreshingStatus: state.state.refreshingStatus,
         imageViewDescription: ImageViewDescription(
           addIconsImage: (p) => state.iconsImage(p),
-          overrideDrawerLabel: state.state.settings.buddhaMode
-              ? AppLocalizations.of(context)!.buddhaModeTags
-              : null,
           imageViewKey: state.state.imageViewKey,
         ),
         refresh: SynchronousGridRefresh(() => state.loader.count()),
@@ -97,7 +94,6 @@ class FavoriteBooruPage extends StatelessWidget {
       getCell: state.loader.getCell,
       mainFocus: state.state.mainFocus,
       description: GridDescription(
-        appBarSnap: !state.state.settings.buddhaMode,
         actions: state.gridActions(),
         settingsButton: !asSliver ? state.gridSettingsButton() : null,
         showAppBar: !asSliver,

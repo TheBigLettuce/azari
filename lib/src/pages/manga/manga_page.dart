@@ -205,17 +205,16 @@ class _MangaPageState extends State<MangaPage> {
         initalScrollPosition: 0,
         mainFocus: state.mainFocus,
         description: GridDescription(
-          risingAnimation: !state.settings.buddhaMode,
+          risingAnimation: true,
           actions: const [],
-          appBarSnap: !state.settings.buddhaMode,
           ignoreEmptyWidgetOnNoContent: true,
           ignoreSwipeSelectGesture: true,
-          showAppBar: state.settings.buddhaMode,
+          showAppBar: false,
           keybindsDescription: AppLocalizations.of(context)!.mangaPage,
           gridSeed: state.gridSeed,
         ),
       ),
-      canPop: state.settings.buddhaMode,
+      canPop: false,
       secondarySelectionHide: () {
         _pinnedKey.currentState?.selection.reset();
       },

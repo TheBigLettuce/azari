@@ -327,7 +327,6 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
             ),
             mainFocus: state.mainFocus,
             description: GridDescription(
-              appBarSnap: !state.settings.buddhaMode,
               actions: widget.callback != null
                   ? const []
                   : extra.isTrash

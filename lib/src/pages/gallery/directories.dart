@@ -265,9 +265,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                 children,
                 extra,
                 widget.nestedCallback,
-                state.settings.buddhaMode
-                    ? null
-                    : GlueProvider.generateOf(context),
+                GlueProvider.generateOf(context),
                 _segmentFnc,
               ),
     );
@@ -383,9 +381,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                   String() => api.files(d),
                 };
 
-                final glue = state.settings.buddhaMode
-                    ? null
-                    : GlueProvider.generateOf(context);
+                final glue = GlueProvider.generateOf(context);
 
                 Navigator.push(
                     context,
@@ -448,10 +444,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
             )),
         mainFocus: state.mainFocus,
         description: GridDescription(
-          appBarSnap: !state.settings.buddhaMode,
-          risingAnimation: !state.settings.buddhaMode &&
-              widget.nestedCallback == null &&
-              widget.callback == null,
+          risingAnimation:
+              widget.nestedCallback == null && widget.callback == null,
           actions: widget.callback != null || widget.nestedCallback != null
               ? [
                   if (widget.callback == null || widget.callback!.joinable)
@@ -459,9 +453,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                       context,
                       extra,
                       widget.nestedCallback,
-                      state.settings.buddhaMode
-                          ? null
-                          : GlueProvider.generateOf(context),
+                      GlueProvider.generateOf(context),
                       _segmentFnc,
                     )
                 ]
@@ -483,9 +475,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     context,
                     extra,
                     widget.nestedCallback,
-                    state.settings.buddhaMode
-                        ? null
-                        : GlueProvider.generateOf(context),
+                    GlueProvider.generateOf(context),
                     _segmentFnc,
                   )
                 ],
@@ -541,9 +531,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
           gridSeed: state.gridSeed,
         ),
       ),
-      canPop: widget.callback != null ||
-              widget.nestedCallback != null ||
-              state.settings.buddhaMode
+      canPop: widget.callback != null || widget.nestedCallback != null
           ? search.currentFilteringMode() == FilteringMode.noFilter &&
               search.searchTextController.text.isEmpty
           : false,

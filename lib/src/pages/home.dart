@@ -103,15 +103,14 @@ class _HomeState extends State<Home>
           builder: (context) {
             return _SelectionHolder(
               hide: hide,
-              defaultPreferences: widget.callback != null || settings.buddhaMode
+              defaultPreferences: widget.callback != null
                   ? {}
                   : {GluePreferences.persistentBarHeight},
               child: HomeSkeleton(
                 state,
                 (context) => _currentPage(context, this),
                 navBar: _NavBar(
-                  noNavigationIcons:
-                      settings.buddhaMode || widget.callback != null,
+                  noNavigationIcons: widget.callback != null,
                   icons: this,
                   child: NavigationBar(
                     labelBehavior:

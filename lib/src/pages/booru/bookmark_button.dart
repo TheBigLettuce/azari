@@ -152,7 +152,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
           state: e,
           pagingRegistry: widget.pagingRegistry,
           onDispose: () {
-            if (!isRestart || settings.buddhaMode) {
+            if (!isRestart) {
               widget.saveSelectedPage(null);
               widget.pagingRegistry.remove(e.name);
             }
