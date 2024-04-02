@@ -78,6 +78,7 @@ class EngineBindings(
         mover = Mover(context.lifecycleScope.coroutineContext, context, galleryApi)
     }
 
+
     fun attach() {
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
