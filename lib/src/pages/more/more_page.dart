@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/widgets/azari_icon.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 
@@ -31,6 +32,14 @@ class MorePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       children: [
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: AzariIcon(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ),
         ListTile(
           style: ListTileStyle.drawer,
           leading: Icon(

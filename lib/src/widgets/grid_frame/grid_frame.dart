@@ -7,6 +7,8 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -115,6 +117,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
       },
     ),
     () => controller,
+    mutation: widget.functionality.refreshingStatus.mutation,
     noAppBar: !widget.description.showAppBar,
     ignoreSwipe: widget.description.ignoreSwipeSelectGesture,
   );
@@ -648,6 +651,38 @@ class __GridSelectionCountHolderState extends State<_GridSelectionCountHolder> {
     );
   }
 }
+
+// class SelectionCountNotifier extends InheritedWidget {
+//   final int count;
+//   final int countUpdateTimes;
+
+//   static int countOf(BuildContext context) {
+//     final widget =
+//         context.dependOnInheritedWidgetOfExactType<SelectionCountNotifier>();
+
+//     return widget!.count;
+//   }
+
+//   static int maybeCountOf(BuildContext context) {
+//     final widget =
+//         context.dependOnInheritedWidgetOfExactType<SelectionCountNotifier>();
+
+//     return widget?.count ?? 0;
+//   }
+
+//   const SelectionCountNotifier({
+//     super.key,
+//     required this.count,
+//     required this.countUpdateTimes,
+//     required super.child,
+//   });
+
+//   @override
+//   bool updateShouldNotify(SelectionCountNotifier oldWidget) {
+//     return count != oldWidget.count ||
+//         countUpdateTimes != oldWidget.countUpdateTimes;
+//   }
+// }
 
 class PlayAnimationNotifier extends InheritedWidget {
   final bool play;

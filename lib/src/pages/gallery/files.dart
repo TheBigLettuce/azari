@@ -65,6 +65,7 @@ class GalleryFiles extends StatefulWidget {
   final GalleryAPIFiles api;
   final CallbackDescriptionNested? callback;
   final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
+  final bool secure;
 
   const GalleryFiles({
     super.key,
@@ -72,6 +73,7 @@ class GalleryFiles extends StatefulWidget {
     this.callback,
     required this.dirName,
     required this.bucketId,
+    required this.secure,
     required this.generateGlue,
   });
 
@@ -89,11 +91,7 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
   late final GalleryFilesExtra extra = widget.api.getExtra()
     ..setRefreshingStatusCallback((i, inRefresh, empty) {
       if (empty) {
-        state.imageViewKey.currentState?.key.currentState?.closeEndDrawer();
-        final imageViewContext = state.imageViewKey.currentContext;
-        if (imageViewContext != null) {
-          Navigator.of(imageViewContext).pop();
-        }
+        state.imageViewKey.currentState?.update(context, 0);
 
         Navigator.of(context).pop();
 
@@ -106,7 +104,7 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
         mutation.isRefreshing = false;
 
         search.performSearch(search.searchTextController.text);
-        state.imageViewKey.currentState?.update(context, i, pop: false);
+        // state.imageViewKey.currentState?.update(context, i);
 
         setState(() {});
       }
@@ -199,6 +197,9 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
 
   late final SearchFilterGrid<SystemGalleryDirectoryFile> search;
 
+  AppLifecycleListener? _listener;
+  StreamSubscription? _subscription;
+
   @override
   void initState() {
     super.initState();
@@ -210,15 +211,46 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
     });
 
     search = SearchFilterGrid(state, null);
+
+    if (widget.secure) {
+      _listener = AppLifecycleListener(
+        onHide: () {
+          _subscription?.cancel();
+          _subscription =
+              Stream.periodic(const Duration(seconds: 10)).listen((event) {
+            state.imageViewKey.currentState?.key.currentState?.closeEndDrawer();
+            final imageViewContext = state.imageViewKey.currentContext;
+            if (imageViewContext != null) {
+              Navigator.of(imageViewContext).pop();
+            }
+
+            Navigator.of(context).pop();
+
+            return;
+          });
+        },
+        onShow: () {
+          _subscription?.cancel();
+          _subscription = null;
+        },
+      );
+
+      PlatformFunctions.hideRecents(true);
+    }
   }
 
   @override
   void dispose() {
+    _subscription?.cancel();
+    _listener?.dispose();
     settingsWatcher.cancel();
 
     widget.api.close();
     search.dispose();
     state.dispose();
+
+    PlatformFunctions.hideRecents(false);
+
     super.dispose();
   }
 
@@ -299,9 +331,6 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
                               _restoreFromTrash(),
                             ]
                           : [
-                              if (MiscSettings.current.filesExtendedActions &&
-                                  cell.isVideo)
-                                _loadVideoThumbnailAction(state),
                               _addToFavoritesAction(cell, plug),
                               _deleteAction(),
                               _copyAction(state, plug),

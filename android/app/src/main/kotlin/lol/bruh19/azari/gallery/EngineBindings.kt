@@ -21,6 +21,7 @@ import android.provider.Settings
 import android.util.Log
 import android.util.TypedValue
 import android.view.ContextThemeWrapper
+import android.view.WindowManager
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import io.flutter.FlutterInjector
@@ -478,6 +479,20 @@ class EngineBindings(
                                 NetworkCapabilities.NET_CAPABILITY_INTERNET
                             ) and caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
                         )
+                    }
+                }
+
+                "hideRecents" -> {
+                    val hide = call.arguments as Boolean;
+
+                    context.runOnUiThread {
+                        if (hide) {
+                            context.window.addFlags(
+                                WindowManager.LayoutParams.FLAG_SECURE
+                            );
+                        } else {
+                            context.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        }
                     }
                 }
 

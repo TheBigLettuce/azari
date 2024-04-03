@@ -25,7 +25,7 @@ class WrapImageViewNotifiers<T extends Cell> extends StatefulWidget {
   final T currentCell;
   final FocusNode mainFocus;
   final InheritedWidget Function(Widget child)? registerNotifiers;
-  final void Function() hardRefresh;
+  final void Function([bool refreshPalette]) hardRefresh;
   final Widget child;
   final BuildContext? gridContext;
 

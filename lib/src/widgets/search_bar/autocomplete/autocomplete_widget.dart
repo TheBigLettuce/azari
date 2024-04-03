@@ -8,6 +8,7 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/widgets/notifiers/focus.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -19,7 +20,7 @@ class AutocompleteWidget extends StatelessWidget {
   final void Function(String) highlightChanged;
   final void Function(String) onSubmit;
   final void Function() focusMain;
-  final Future<List<String>> Function(String) complF;
+  final Future<List<BooruTag>> Function(String) complF;
   final FocusNode? focus;
   final ScrollController? scrollHack;
   final bool noSticky;
@@ -171,7 +172,8 @@ class AutocompleteWidget extends StatelessWidget {
         }
 
         try {
-          return await autocompleteTag(textEditingValue.text, complF);
+          return (await autocompleteTag(textEditingValue.text, complF))
+              .map((e) => e.tag);
         } catch (e, trace) {
           log("autocomplete in search, excluded tags",
               level: Level.WARNING.value, error: e, stackTrace: trace);

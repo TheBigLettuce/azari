@@ -10,6 +10,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/pages/more/settings/network_status.dart';
 import 'package:gallery/src/widgets/gesture_dead_zones.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue_state.dart';
+import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 
 import 'skeleton_state.dart';
 
@@ -17,6 +20,7 @@ class HomeSkeleton extends StatelessWidget {
   final SkeletonState state;
   final Widget Function(BuildContext) f;
   final int selectedRoute;
+
   final Widget? navBar;
 
   const HomeSkeleton(
@@ -30,8 +34,10 @@ class HomeSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: false,
+      extendBody: true,
       appBar: null,
+      extendBodyBehindAppBar: true,
+      bottomNavigationBar: navBar!,
       resizeToAvoidBottomInset: false,
       key: state.scaffoldKey,
       body: GestureDeadZones(
@@ -46,28 +52,17 @@ class HomeSkeleton extends StatelessWidget {
                 padding:
                     EdgeInsets.only(top: NetworkStatus.g.hasInternet ? 0 : 24),
                 child: Builder(
-                  builder: (context) {
-                    // final data = MediaQuery./of(context);
+                  builder: (buildContext) {
                     final bottomPadding =
-                        MediaQuery.viewInsetsOf(context).bottom;
+                        MediaQuery.viewPaddingOf(context).bottom;
 
-                    var data = MediaQuery.of(context)
-                        .removeViewInsets(removeBottom: true);
+                    final data = MediaQuery.of(buildContext);
 
-                    if (bottomPadding == 0) {
-                      data = data.copyWith(
-                          padding: const EdgeInsets.only(bottom: 80) +
-                              data.viewPadding);
-                    }
-
-                    return Padding(
-                      padding: EdgeInsets.only(
-                        bottom: bottomPadding,
-                      ),
-                      child: MediaQuery(
-                        data: data,
-                        child: Builder(builder: f),
-                      ),
+                    return MediaQuery(
+                      data: data.copyWith(
+                          viewPadding: data.viewPadding +
+                              EdgeInsets.only(bottom: bottomPadding)),
+                      child: Builder(builder: f),
                     );
                   },
                 ),
@@ -125,15 +120,6 @@ class HomeSkeleton extends StatelessWidget {
                       ),
                     ),
                   ),
-                ),
-              if (navBar != null)
-                MediaQuery.removeViewPadding(
-                  removeTop: true,
-                  removeBottom: false,
-                  removeLeft: true,
-                  removeRight: true,
-                  context: context,
-                  child: navBar!,
                 ),
             ],
           )),

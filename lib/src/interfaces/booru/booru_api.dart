@@ -58,7 +58,7 @@ abstract class BooruAPI {
       {SafeMode? overrideSafeMode});
 
   /// Tag completition, this shouldn't present more than 10 at a time.
-  Future<List<String>> completeTag(String tag);
+  Future<List<BooruTag>> completeTag(String tag);
 
   /// Sets the cookies for all the requests done with the [client].
   /// This is useful with Cloudlfare, but currently is usesless.
@@ -96,6 +96,13 @@ abstract class BooruAPI {
 
     return 15 * settings.columns.number;
   }
+}
+
+class BooruTag {
+  const BooruTag(this.tag, this.count);
+
+  final String tag;
+  final int count;
 }
 
 abstract class PageSaver {

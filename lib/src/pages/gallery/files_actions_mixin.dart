@@ -123,53 +123,6 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     }, true, showOnlyWhenSingle: true);
   }
 
-  GridAction _loadVideoThumbnailAction(
-      GridSkeletonStateFilter<SystemGalleryDirectoryFile> state) {
-    return GridAction(
-      Icons.broken_image_outlined,
-      (selected) {
-        final first = selected.first as SystemGalleryDirectoryFile;
-
-        loadNetworkThumb(
-                first.name,
-                first.id,
-                AppLocalizations.of(context)!.netThumbnailLoader,
-                AppLocalizations.of(context)!.loadingThumbnail)
-            .then((value) {
-          try {
-            setState(() {});
-          } catch (_) {}
-
-          state.imageViewKey.currentState?.refreshPalette();
-        });
-      },
-      true,
-      showOnlyWhenSingle: true,
-      onLongPress: (selected) {
-        final first = selected.first as SystemGalleryDirectoryFile;
-
-        PlatformFunctions.deleteCachedThumbs([first.id], true);
-
-        final t = selected.first.thumbnail();
-        t?.evict();
-
-        final deleted = PinnedThumbnail.delete(first.id);
-
-        if (t != null) {
-          PaintingBinding.instance.imageCache.evict(t, includeLive: true);
-        }
-
-        if (deleted) {
-          try {
-            setState(() {});
-          } catch (_) {}
-
-          state.imageViewKey.currentState?.refreshPalette();
-        }
-      },
-    );
-  }
-
   GridAction _deleteAction() {
     return GridAction(
       Icons.delete,

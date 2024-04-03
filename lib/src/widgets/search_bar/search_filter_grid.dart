@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
+import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/interfaces/filtering/filtering_interface.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart';
 import 'package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart';
@@ -32,7 +33,7 @@ class SearchFilterGrid<T extends Cell> {
 
   late FilteringMode _currentFilterMode = _state.defaultMode;
   bool _searchVirtual = false;
-  Future<List<String>> Function(String string) _localTagCompleteFunc =
+  Future<List<BooruTag>> Function(String string) _localTagCompleteFunc =
       PostTags.g.completeLocalTag;
 
   void _onChanged(String value, bool direct) {
@@ -99,7 +100,7 @@ class SearchFilterGrid<T extends Cell> {
     }
   }
 
-  void setLocalTagCompleteF(Future<List<String>> Function(String string) f) {
+  void setLocalTagCompleteF(Future<List<BooruTag>> Function(String string) f) {
     _localTagCompleteFunc = f;
   }
 

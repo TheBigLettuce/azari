@@ -11,6 +11,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/system_gallery_directory_file_functionality_mixin.dart';
 import 'package:gallery/src/db/base/system_gallery_thumbnail_provider.dart';
+import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
 import 'package:gallery/src/db/tags/booru_tagging.dart';
@@ -26,6 +27,7 @@ import 'package:gallery/src/db/schemas/downloader/download_file.dart';
 import 'package:gallery/src/widgets/make_tags.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:gallery/src/widgets/notifiers/filter.dart';
+import 'package:gallery/src/widgets/notifiers/reload_image.dart';
 import 'package:gallery/src/widgets/search_bar/search_text_field.dart';
 import 'package:gallery/src/widgets/set_wallpaper_tile.dart';
 import 'package:isar/isar.dart';
@@ -332,6 +334,9 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
               title: AppLocalizations.of(context)!.sizeInfoPage,
               subtitle: kbMbSize(context, file.size),
             ),
+            // if (MiscSettings.current.filesExtendedActions &&
+            //     widget.file.isVideo)
+            //   LoadVideoThumbnailTile(file: file),
             if (res != null && file.tagsFlat.contains("translated"))
               TranslationNotes.tile(context, res!.id, res!.booru),
             if (res != null && filesExtended)
@@ -359,6 +364,68 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
     ]);
   }
 }
+
+// class LoadVideoThumbnailTile extends StatefulWidget {
+//   final SystemGalleryDirectoryFile file;
+
+//   const LoadVideoThumbnailTile({
+//     super.key,
+//     required this.file,
+//   });
+
+//   @override
+//   State<LoadVideoThumbnailTile> createState() => _LoadVideoThumbnailTileState();
+// }
+
+// class _LoadVideoThumbnailTileState extends State<LoadVideoThumbnailTile> {
+//   @override
+//   Widget build(BuildContext context) {
+//     return GestureDetector(
+//       onLongPress: () {
+//         final file = widget.file;
+
+//         PlatformFunctions.deleteCachedThumbs([file.id], true);
+
+//         final t = file.thumbnail();
+//         t?.evict();
+
+//         final deleted = PinnedThumbnail.delete(file.id);
+
+//         if (t != null) {
+//           PaintingBinding.instance.imageCache.evict(t, includeLive: true);
+//         }
+
+//         if (deleted) {
+//           try {
+//             setState(() {});
+//           } catch (_) {}
+
+//           ReloadImageNotifier.of(context, true);
+//         }
+//       },
+//       child: RawChip(
+//         onPressed: () {
+//           final file = widget.file;
+
+//           loadNetworkThumb(
+//             file.name,
+//             file.id,
+//             AppLocalizations.of(context)!.netThumbnailLoader,
+//             AppLocalizations.of(context)!.loadingThumbnail,
+//           ).then((value) {
+//             try {
+//               setState(() {});
+//             } catch (_) {}
+
+//             ReloadImageNotifier.of(context, true);
+//           });
+//         },
+//         avatar: const Icon(Icons.broken_image_outlined),
+//         label: Text("Load thumbnail"),
+//       ),
+//     );
+//   }
+// }
 
 class RedownloadTile extends StatefulWidget {
   final SystemGalleryDirectoryFile file;

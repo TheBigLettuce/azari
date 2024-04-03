@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/widgets/search_bar/autocomplete/autocomplete_tag.dart';
 
 import '../../interfaces/cell/cell.dart';
@@ -33,7 +34,7 @@ class SearchLaunchGrid<T extends Cell> {
     _scrollHack.dispose();
   }
 
-  (Future<List<String>>, String)? previousSearch;
+  (Future<List<BooruTag>>, String)? previousSearch;
 
   Widget searchWidget(BuildContext context, {String? hint, int? count}) {
     final addItems = _state.addItems(context);
@@ -188,26 +189,42 @@ class SearchLaunchGrid<T extends Cell> {
                             padding: const EdgeInsets.only(right: 8, left: 8),
                             child: Wrap(
                               spacing: 8,
+                              runSpacing: -4,
                               children: snapshot.data!
                                   .map((e) => ActionChip(
-                                        label: Text(e),
+                                        label: RichText(
+                                            text: TextSpan(children: [
+                                          TextSpan(text: e.tag),
+                                          TextSpan(
+                                            text: "  ${e.count.toString()}",
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurface
+                                                      .withOpacity(0.25),
+                                                ),
+                                          )
+                                        ])),
                                         onPressed: () {
-                                          final tags = List.from(
+                                          final tags = List<String>.from(
                                               controller.text.split(" "));
 
                                           if (tags.isNotEmpty) {
                                             tags.removeLast();
-                                            tags.remove(e);
+                                            tags.remove(e.tag);
                                           }
 
-                                          tags.add(e);
+                                          tags.add(e.tag);
 
                                           final tagsString = tags.reduce(
                                               (value, element) =>
                                                   "$value $element");
 
                                           searchController.text =
-                                              tagsString + " ";
+                                              "$tagsString ";
                                         },
                                       ))
                                   .toList(),

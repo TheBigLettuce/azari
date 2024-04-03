@@ -8,18 +8,18 @@
 import 'package:flutter/material.dart';
 
 class ReloadImageNotifier extends InheritedWidget {
-  final void Function() reload;
+  final void Function([bool refreshPalette]) reload;
 
   @override
   bool updateShouldNotify(ReloadImageNotifier oldWidget) {
     return reload != oldWidget.reload;
   }
 
-  static void of(BuildContext context) {
+  static void of(BuildContext context, [bool refreshPalette = false]) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<ReloadImageNotifier>();
 
-    widget!.reload();
+    widget!.reload(refreshPalette);
   }
 
   const ReloadImageNotifier({

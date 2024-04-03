@@ -216,12 +216,11 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     wrapThemeKey.currentState?.resetAnimation();
   }
 
-  void update(BuildContext? context, int count, {bool pop = true}) {
-    if (count == 0) {
-      if (pop) {
-        key.currentState?.closeEndDrawer();
-        Navigator.pop(context ?? this.context);
-      }
+  void update(BuildContext? context, int count) {
+    if (count <= 0) {
+      key.currentState?.closeEndDrawer();
+      Navigator.pop(context ?? this.context);
+
       return;
     }
 
@@ -255,8 +254,12 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     }
   }
 
-  void refreshImage() {
+  void refreshImage([bool refreshPalette = false]) {
     refreshTries += 1;
+
+    if (refreshPalette) {
+      this.refreshPalette();
+    }
 
     setState(() {});
   }

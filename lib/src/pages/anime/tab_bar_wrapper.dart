@@ -65,7 +65,7 @@ class _TabBarWrapperState extends State<TabBarWrapper> {
     final rightPadding = MediaQuery.systemGestureInsetsOf(context).right;
 
     return Padding(
-      padding: EdgeInsets.only(top: 0),
+      padding: EdgeInsets.only(top: MediaQuery.viewPaddingOf(context).top),
       child: Stack(
         alignment: Alignment.topRight,
         children: [

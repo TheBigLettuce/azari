@@ -138,11 +138,13 @@ class SystemGalleryDirectoriesActions {
     Navigator.push(context, MaterialPageRoute(
       builder: (context) {
         return GalleryFiles(
-            generateGlue: generate,
-            api: joined,
-            callback: callback,
-            dirName: label,
-            bucketId: "joinedDir");
+          secure: requireAuth,
+          generateGlue: generate,
+          api: joined,
+          callback: callback,
+          dirName: label,
+          bucketId: "joinedDir",
+        );
       },
     ));
   }

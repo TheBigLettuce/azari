@@ -38,6 +38,7 @@ import 'package:gallery/src/widgets/grid_frame/parts/segment_label.dart';
 import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
+import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 import 'package:gallery/src/widgets/skeletons/grid.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -422,8 +423,11 @@ class _ReadingLayout
         controller: state.controller,
         onPress: (context, cell) {
           return state.widget.functionality.onPressed.launch(
-              context, -1, state.widget.functionality,
-              useCellInsteadIdx: cell);
+            context,
+            -1,
+            state.widget.functionality,
+            useCellInsteadIdx: cell,
+          );
         },
         glue: GlueProvider.generateOf(context)(),
       )
@@ -459,21 +463,32 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
   late final GridRefreshingStatus<PinnedManga> refreshingStatus;
   late final GridSelection<PinnedManga> selection = GridSelection(
     [
-      GridAction(Icons.push_pin_rounded, (selected) {
-        PinnedManga.deleteAll(selected.map((e) => e.isarId!).toList());
+      GridAction(
+        Icons.push_pin_rounded,
+        (selected) {
+          PinnedManga.deleteAll(selected.map((e) => e.isarId!).toList());
 
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(AppLocalizations.of(context)!.mangaUnpinned),
-          action: SnackBarAction(
-              label: AppLocalizations.of(context)!.undoLabel,
-              onPressed: () {
-                PinnedManga.addAll(selected.cast(), true);
-              }),
-        ));
-      }, true),
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(AppLocalizations.of(context)!.mangaUnpinned),
+            action: SnackBarAction(
+                label: AppLocalizations.of(context)!.undoLabel,
+                onPressed: () {
+                  PinnedManga.addAll(selected.cast(), true);
+                }),
+          ));
+        },
+        true,
+      ),
     ],
-    widget.glue,
+    widget.glue.chain(
+      updateCount: (parent, count) {
+        setState(() {});
+
+        parent.updateCount(count);
+      },
+    ),
     () => widget.controller,
+    mutation: refreshingStatus.mutation,
     noAppBar: true,
     ignoreSwipe: false,
   );

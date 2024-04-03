@@ -29,21 +29,22 @@ abstract class BooruRespDecoder {
 
   (List<Post>, int?) posts(dynamic m, Booru booru);
   Iterable<String> notes(dynamic data);
-  List<String> tags(dynamic l);
+  List<BooruTag> tags(dynamic l);
 }
 
 class GelbooruRespDecoder implements BooruRespDecoder {
   const GelbooruRespDecoder();
 
   @override
-  List<String> tags(dynamic data) {
+  List<BooruTag> tags(dynamic data) {
     final l = data["tag"];
     if (l == null) {
       return const [];
     }
 
     return (l as List<dynamic>)
-        .map((e) => HtmlUnescape().convert(e["name"] as String))
+        .map((e) =>
+            BooruTag(HtmlUnescape().convert(e["name"] as String), e["count"]))
         .toList();
   }
 
@@ -149,7 +150,7 @@ class Gelbooru implements BooruAPI {
   }
 
   @override
-  Future<List<String>> completeTag(String t) async {
+  Future<List<BooruTag>> completeTag(String t) async {
     if (t.isEmpty) {
       return const [];
     }

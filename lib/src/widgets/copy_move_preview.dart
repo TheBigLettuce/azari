@@ -73,10 +73,6 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
 
                       key.currentState!.update(context, widget.files.length);
 
-                      if (widget.files.isEmpty) {
-                        Navigator.pop(context);
-                      }
-
                       setState(() {});
                     },
                     false,

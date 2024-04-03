@@ -386,6 +386,7 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
     ],
     widget.glue,
     () => widget.controller,
+    mutation: StaticNumberGridMutation(() => widget.currentlyWatching.length),
     noAppBar: true,
     ignoreSwipe: true,
   );

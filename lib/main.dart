@@ -154,7 +154,9 @@ void mainPickfile() async {
   azariVersion = (await PackageInfo.fromPlatform()).version;
 
   runApp(MaterialApp(
-    title: 'Ācārya',
+    title: 'Azari',
+    themeAnimationCurve: Easing.standard,
+    themeAnimationDuration: const Duration(milliseconds: 300),
     darkTheme: buildTheme(Brightness.dark, accentColor),
     theme: buildTheme(Brightness.light, accentColor),
     localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -219,12 +221,13 @@ void main() async {
       accentColor: accentColor,
       key: restartKey,
       child: (d, l) => MaterialApp(
-        debugShowCheckedModeBanner: false,
-        themeAnimationCurve: Easing.emphasizedAccelerate,
         title: 'Azari',
+        themeAnimationCurve: Easing.standard,
+        themeAnimationDuration: const Duration(milliseconds: 300),
         darkTheme: d,
         theme: l,
         home: settings.showWelcomePage ? const WelcomePage() : const Home(),
+        debugShowCheckedModeBanner: false,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
       ),

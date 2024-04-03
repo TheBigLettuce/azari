@@ -21,3 +21,33 @@ abstract class GridMutationInterface<T extends Cell> {
   void dispose();
   void reset();
 }
+
+class StaticNumberGridMutation<T extends Cell>
+    implements GridMutationInterface<T> {
+  const StaticNumberGridMutation(this.currentCount);
+
+  final int Function() currentCount;
+
+  @override
+  int get cellCount => currentCount();
+
+  @override
+  bool get isRefreshing => false;
+
+  @override
+  void dispose() {}
+
+  @override
+  StreamSubscription<void> registerStatusUpdate(void Function(void p1) f) {
+    throw UnimplementedError();
+  }
+
+  @override
+  void reset() {}
+
+  @override
+  set cellCount(int c) {}
+
+  @override
+  set isRefreshing(bool b) {}
+}

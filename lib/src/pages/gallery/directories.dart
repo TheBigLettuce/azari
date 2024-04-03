@@ -367,9 +367,19 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                 Navigator.pop(context);
                 widget.callback!.c(cell, null);
               } else {
-                if (!await DirectoryMetadata.canAuth(
-                    _segmentFnc(cell), "Open directory")) {
+                if (!canAuthBiometric) {
                   return;
+                }
+
+                final requireAuth =
+                    DirectoryMetadata.get(_segmentFnc(cell))?.requireAuth ??
+                        false;
+                if (requireAuth) {
+                  final success = await LocalAuthentication()
+                      .authenticate(localizedReason: "Open directory");
+                  if (!success) {
+                    return;
+                  }
                 }
 
                 StatisticsGallery.addViewedDirectories();
@@ -390,6 +400,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                         "favorites" => GalleryFiles(
                             generateGlue: glue,
                             api: apiFiles,
+                            secure: requireAuth,
                             callback: widget.nestedCallback,
                             dirName: AppLocalizations.of(context)!
                                 .galleryDirectoriesFavorites,
@@ -398,6 +409,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                         "trash" => GalleryFiles(
                             api: apiFiles,
                             generateGlue: glue,
+                            secure: requireAuth,
                             callback: widget.nestedCallback,
                             dirName: AppLocalizations.of(context)!
                                 .galleryDirectoryTrash,
@@ -406,6 +418,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                         String() => GalleryFiles(
                             generateGlue: glue,
                             api: apiFiles,
+                            secure: requireAuth,
                             dirName: d.name,
                             callback: widget.nestedCallback,
                             bucketId: d.bucketId,

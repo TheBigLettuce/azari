@@ -33,6 +33,7 @@ import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_on_cell_press_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
@@ -192,7 +193,8 @@ class _AnimePageState extends State<AnimePage>
         AppLocalizations.of(context)!.animePage,
         state,
         appBar: PreferredSize(
-          preferredSize: tabBar.preferredSize + Offset(0, 0),
+          preferredSize: tabBar.preferredSize +
+              Offset(0, MediaQuery.viewPaddingOf(context).top),
           child: TabBarWrapper(
             key: tabKey,
             tabBar: tabBar,

@@ -14,10 +14,12 @@ class GridSelection<T extends Cell> {
     this.controller, {
     required this.noAppBar,
     required this.ignoreSwipe,
+    required this.mutation,
   });
 
   final SelectionGlue glue;
   final ScrollController Function() controller;
+  final GridMutationInterface<T> mutation;
 
   final _selected = <int, T>{};
   final List<GridAction> addActions;
@@ -46,6 +48,27 @@ class GridSelection<T extends Cell> {
     }
   }
 
+  void selectAll(BuildContext context) {
+    final m = mutation.cellCount;
+
+    if (m <= _selected.length) {
+      return;
+    }
+
+    if (!glue.isOpen()) {
+      glue.open(context, addActions, this);
+    }
+
+    _selected.clear();
+    final getCell = CellProvider.of<T>(context);
+
+    for (var i = 0; i != m; i++) {
+      _selected[i] = getCell(i);
+    }
+
+    glue.updateCount(_selected.length);
+  }
+
   bool isSelected(int indx) =>
       indx.isNegative ? false : _selected.containsKey(indx);
 
@@ -55,7 +78,7 @@ class GridSelection<T extends Cell> {
     }
 
     if (_selected.isEmpty || !glue.isOpen()) {
-      glue.open(addActions, this);
+      glue.open(context, addActions, this);
     }
 
     _selected[id] = selection;
@@ -64,13 +87,13 @@ class GridSelection<T extends Cell> {
     glue.updateCount(_selected.length);
   }
 
-  void _remove(int id) {
+  void _remove(BuildContext context, int id) {
     _selected.remove(id);
     if (_selected.isEmpty) {
       _selected.clear();
       lastSelected = null;
     } else if (_selected.isNotEmpty && !glue.isOpen()) {
-      glue.open(addActions, this);
+      glue.open(context, addActions, this);
     }
 
     glue.updateCount(_selected.length);
@@ -93,7 +116,7 @@ class GridSelection<T extends Cell> {
           if (selection) {
             _selected[selectFrom?[i] ?? i] = getCell(selectFrom?[i] ?? i);
           } else {
-            _remove(selectFrom?[i] ?? i);
+            _remove(context, selectFrom?[i] ?? i);
           }
           lastSelected = selectFrom?[i] ?? i;
         }
@@ -102,7 +125,7 @@ class GridSelection<T extends Cell> {
           if (selection) {
             _selected[selectFrom?[i] ?? i] = getCell(selectFrom?[i] ?? i);
           } else {
-            _remove(selectFrom?[i] ?? i);
+            _remove(context, selectFrom?[i] ?? i);
           }
           lastSelected = selectFrom?[i] ?? i;
         }
@@ -126,7 +149,7 @@ class GridSelection<T extends Cell> {
 
       _add(context, index, cell);
     } else {
-      _remove(index);
+      _remove(context, index);
     }
 
     HapticFeedback.selectionClick();

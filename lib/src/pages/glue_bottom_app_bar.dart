@@ -72,7 +72,7 @@ class GlueBottomAppBar extends StatelessWidget {
                       maxHeight: 28,
                       minWidth: 28,
                     ),
-                    child: Container(
+                    child: DecoratedBox(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(6),
                         color: Theme.of(context)

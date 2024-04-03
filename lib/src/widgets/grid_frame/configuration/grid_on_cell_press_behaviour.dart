@@ -67,14 +67,8 @@ class DefaultGridOnCellPressBehaviour implements GridOnCellPressedBehaviour {
   }) {
     final imageDesctipion = functionality.imageViewDescription;
 
-    // state.inImageView = true;
-
     // state.widget.mainFocus.requestFocus();
 
-    // functionality.
-
-    // final offsetGrid =
-    //     state.controller.hasClients ? state.controller.offset : 0.0;
     final overlayColor =
         Theme.of(gridContext).colorScheme.background.withOpacity(0.5);
 

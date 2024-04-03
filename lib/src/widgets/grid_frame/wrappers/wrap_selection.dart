@@ -177,67 +177,77 @@ class __WrappedSelectionCoreState<T extends Cell>
                 ),
                 duration: const Duration(milliseconds: 160),
                 curve: Easing.emphasizedAccelerate,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(15),
-                  onDoubleTap: widget.functionality.download != null &&
-                          widget.selection!.isEmpty
-                      ? () {
-                          controller.reset();
-                          controller
-                              .forward()
-                              .then((value) => controller.reverse());
-                          HapticFeedback.selectionClick();
-                          widget.functionality.download!(thisIndx);
-                        }
-                      : null,
-                  onTap: selection.isEmpty
-                      ? thisIndx.isNegative && widget.overrideCell == null
-                          ? null
-                          : () {
-                              functionality.onPressed.launch<T>(
-                                context,
-                                thisIndx,
-                                functionality,
-                                useCellInsteadIdx: widget.overrideCell,
-                              );
+                child: _LongPressMoveGesture(
+                  selection: widget.selection!,
+                  thisIndx: widget.thisIndx,
+                  selectFrom: widget.selectFrom,
+                  child: GestureDetector(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(15),
+                      onDoubleTap: widget.functionality.download != null &&
+                              widget.selection!.isEmpty
+                          ? () {
+                              controller.reset();
+                              controller
+                                  .forward()
+                                  .then((value) => controller.reverse());
+                              HapticFeedback.selectionClick();
+                              widget.functionality.download!(thisIndx);
                             }
-                      : () {
-                          selection.selectOrUnselect(context, thisIndx);
-                        },
-                  onLongPress: selection.isEmpty
-                      ? thisIndx.isNegative || selection.addActions.isEmpty
-                          ? null
+                          : null,
+                      onTap: selection.isEmpty
+                          ? thisIndx.isNegative && widget.overrideCell == null
+                              ? null
+                              : () {
+                                  functionality.onPressed.launch<T>(
+                                    context,
+                                    thisIndx,
+                                    functionality,
+                                    useCellInsteadIdx: widget.overrideCell,
+                                  );
+                                }
                           : () {
                               selection.selectOrUnselect(context, thisIndx);
-                            }
-                      : () {
-                          selection.selectUnselectUntil(context, thisIndx,
-                              selectFrom: widget.selectFrom);
-                          HapticFeedback.vibrate();
-                        },
-                  child: widget.child,
+                            },
+                      // onLongPress: ,
+                      child: widget.child,
+                    ),
+                  ),
                 ),
               )),
         ),
-        if (selection.isSelected(thisIndx))
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Align(
-              alignment: Alignment.topRight,
-              child: SizedBox(
-                width: Theme.of(context).iconTheme.size,
-                height: Theme.of(context).iconTheme.size,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.check_outlined,
-                    color: Theme.of(context).brightness != Brightness.light
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.primaryContainer,
-                    shadows: const [Shadow(blurRadius: 0, color: Colors.black)],
+        if (selection.isSelected(thisIndx)) ...[
+          IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+              ),
+              child: const SizedBox.expand(),
+            ),
+          ),
+          IgnorePointer(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Align(
+                alignment: Alignment.topRight,
+                child: SizedBox(
+                  width: Theme.of(context).iconTheme.size,
+                  height: Theme.of(context).iconTheme.size,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.check_outlined,
+                      color: Theme.of(context).brightness != Brightness.light
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.primaryContainer,
+                      shadows: const [
+                        Shadow(blurRadius: 0, color: Colors.black)
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -246,6 +256,7 @@ class __WrappedSelectionCoreState<T extends Cell>
                 duration: const Duration(milliseconds: 160),
                 curve: Easing.emphasizedAccelerate,
               ),
+        ],
       ],
     );
 
@@ -267,6 +278,61 @@ class __WrappedSelectionCoreState<T extends Cell>
             color: Theme.of(context).colorScheme.primary)
       ],
       child: child,
+    );
+  }
+}
+
+class _LongPressMoveGesture<T extends Cell> extends StatefulWidget {
+  final GridSelection<T> selection;
+  final int thisIndx;
+  final List<int>? selectFrom;
+
+  final Widget child;
+
+  const _LongPressMoveGesture({
+    super.key,
+    required this.selection,
+    required this.thisIndx,
+    required this.selectFrom,
+    required this.child,
+  });
+
+  @override
+  State<_LongPressMoveGesture> createState() => __LongPressMoveGestureState();
+}
+
+class __LongPressMoveGestureState extends State<_LongPressMoveGesture> {
+  @override
+  Widget build(BuildContext context) {
+    final selection = widget.selection;
+
+    return RawGestureDetector(
+      gestures: {
+        LongPressGestureRecognizer:
+            GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
+                () => LongPressGestureRecognizer(
+                    debugOwner: this, postAcceptSlopTolerance: 30),
+                (LongPressGestureRecognizer instance) {
+          instance
+            ..onLongPress = selection.isEmpty
+                ? widget.thisIndx.isNegative || selection.addActions.isEmpty
+                    ? null
+                    : () {
+                        selection.selectOrUnselect(context, widget.thisIndx);
+                      }
+                : () {
+                    selection.selectUnselectUntil(context, widget.thisIndx,
+                        selectFrom: widget.selectFrom);
+                    HapticFeedback.vibrate();
+                  }
+            ..onLongPressMoveUpdate = (details) {
+              if (details.offsetFromOrigin.dy >= 18) {
+                widget.selection.selectAll(context);
+              }
+            };
+        })
+      },
+      child: widget.child,
     );
   }
 }

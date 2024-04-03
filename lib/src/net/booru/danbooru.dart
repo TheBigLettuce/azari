@@ -19,8 +19,12 @@ import '../../interfaces/booru/booru_api.dart';
 import '../../interfaces/booru_tagging.dart';
 import '../cloudflare_exception.dart';
 
-List<String> _fromDanbooruTags(List<dynamic> l) =>
-    l.map((e) => e["name"] as String).toList();
+List<BooruTag> _fromDanbooruTags(List<dynamic> l) => l
+    .map((e) => BooruTag(
+          e["name"] as String,
+          e["post_count"],
+        ))
+    .toList();
 
 class Danbooru implements BooruAPI {
   const Danbooru(
@@ -55,7 +59,7 @@ class Danbooru implements BooruAPI {
   }
 
   @override
-  Future<List<String>> completeTag(String tag) async {
+  Future<List<BooruTag>> completeTag(String tag) async {
     if (tag.isEmpty) {
       return const [];
     }

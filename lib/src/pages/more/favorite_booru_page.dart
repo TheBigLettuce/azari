@@ -13,6 +13,7 @@ import 'package:gallery/src/db/schemas/grid_settings/favorites.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
+import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart';
 import 'package:gallery/src/pages/more/favorite_booru_actions.dart';
 import 'package:gallery/src/net/downloader.dart';
@@ -384,7 +385,8 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
           .limit(10)
           .findAllSync();
 
-      return Future.value(result.map((e) => e.tag).toList());
+      return Future.value(
+          result.map((e) => BooruTag(e.tag, e.frequency)).toList());
     });
 
     setState(() {});

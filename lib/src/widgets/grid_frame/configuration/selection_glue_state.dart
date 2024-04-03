@@ -62,7 +62,7 @@ class SelectionGlueState {
             setState(() {});
           }
         },
-        open: (addActions, selection) {
+        open: (context, addActions, selection) {
           if (actions != null || addActions.isEmpty) {
             return;
           }
@@ -94,18 +94,14 @@ class SelectionGlueState {
             _playAnimation(false).then((value) => setState(() {
                   actions = (
                     a,
-                    () {
-                      selection.reset();
-                    }
+                    selection.reset,
                   );
                 }));
           } else {
             setState(() {
               actions = (
                 a,
-                () {
-                  selection.reset();
-                }
+                selection.reset,
               );
             });
           }

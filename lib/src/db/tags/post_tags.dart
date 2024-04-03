@@ -308,7 +308,7 @@ class PostTags {
 
   int savedTagsCount() => tagsDb.localTags.countSync();
 
-  Future<List<String>> completeLocalTag(String string) async {
+  Future<List<BooruTag>> completeLocalTag(String string) async {
     final result = tagsDb.localTagDictionarys
         .filter()
         .tagContains(string)
@@ -316,7 +316,7 @@ class PostTags {
         .limit(10)
         .findAllSync();
 
-    return result.map((e) => e.tag).toList();
+    return result.map((e) => BooruTag(e.tag, e.frequency)).toList();
   }
 
   /// Disassembles the [filename] and load tags online from the booru.

@@ -8,7 +8,6 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:transparent_image/transparent_image.dart';
