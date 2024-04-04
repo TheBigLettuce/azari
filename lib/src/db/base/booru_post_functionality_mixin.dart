@@ -13,7 +13,6 @@ import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/interfaces/filtering/filtering_mode.dart';
 import 'package:gallery/src/pages/booru/booru_page.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
@@ -25,6 +24,13 @@ import 'package:gallery/src/widgets/translation_notes.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+enum PostContentType {
+  none,
+  video,
+  gif,
+  image;
+}
 
 mixin BooruPostFunctionalityMixin {
   void showQr(BuildContext context, String prefix, int id) {
@@ -71,15 +77,15 @@ mixin BooruPostFunctionalityMixin {
       );
 
   List<(IconData, void Function()?)> defaultStickers(
-    Contentable content,
+    PostContentType type,
     BuildContext? context,
     List<String> tags,
     int postId,
     Booru booru,
   ) {
     return [
-      if (content is NetVideo) (FilteringMode.video.icon, null),
-      if (content is NetGif) (FilteringMode.gif.icon, null),
+      if (type == PostContentType.video) (FilteringMode.video.icon, null),
+      if (type == PostContentType.gif) (FilteringMode.gif.icon, null),
       if (tags.contains("original")) (FilteringMode.original.icon, null),
       if (tags.contains("translated"))
         (

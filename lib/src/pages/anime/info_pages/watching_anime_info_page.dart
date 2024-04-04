@@ -128,7 +128,7 @@ class _WatchingAnimeInfoPageState extends State<WatchingAnimeInfoPage>
                   ),
                   IconButton(
                     onPressed: () {
-                      SavedAnimeEntry.deleteAll([entry.isarId!]);
+                      SavedAnimeEntry.deleteAll([entry]);
 
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text(
@@ -164,7 +164,7 @@ class _WatchingAnimeInfoPageState extends State<WatchingAnimeInfoPage>
                 padding: EdgeInsets.only(
                     bottom: MediaQuery.viewPaddingOf(context).bottom),
                 child: Stack(children: [
-                  BackgroundImage(image: entry.thumbnail()!),
+                  BackgroundImage(image: entry.thumbnail()),
                   Column(
                     children: [
                       CardShell(

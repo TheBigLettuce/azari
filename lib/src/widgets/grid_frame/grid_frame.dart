@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
+import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart';
@@ -21,7 +22,6 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behavio
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_subpage_state.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/page_description.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_app_bar_leading.dart';
@@ -50,12 +50,13 @@ part 'parts/app_bar.dart';
 part 'wrappers/wrap_padding.dart';
 part 'parts/body_padding.dart';
 part 'parts/bottom_widget.dart';
-part 'parts/mutation_interface_provider.dart';
+part 'parts/cell_provider.dart';
 
-typedef MakeCellFunc<T extends Cell> = Widget Function(BuildContext, int);
+typedef MakeCellFunc<T extends CellBase> = Widget Function(
+    BuildContext, T, int);
 
 /// The grid of images.
-class GridFrame<T extends Cell> extends StatefulWidget {
+class GridFrame<T extends CellBase> extends StatefulWidget {
   /// Grid gets the cell from [getCell].
   final T Function(int) getCell;
 
@@ -98,7 +99,7 @@ class GridFrame<T extends Cell> extends StatefulWidget {
   State<GridFrame<T>> createState() => GridFrameState<T>();
 }
 
-class GridFrameState<T extends Cell> extends State<GridFrame<T>>
+class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     with GridSubpageState<T> {
   StreamSubscription<void>? _gridSettingsWatcher;
   late final StreamSubscription<void> _mutationEvents;
@@ -119,20 +120,19 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
     () => controller,
     mutation: widget.functionality.refreshingStatus.mutation,
     noAppBar: !widget.description.showAppBar,
-    ignoreSwipe: widget.description.ignoreSwipeSelectGesture,
   );
 
   GridRefreshingStatus<T> get refreshingStatus =>
       widget.functionality.refreshingStatus;
-  GridMutationInterface<T> get mutation => refreshingStatus.mutation;
+  GridMutationInterface get mutation => refreshingStatus.mutation;
 
   bool inImageView = false;
 
   List<int>? segTranslation;
 
-  void _restoreState(ImageViewDescription<T> imageViewDescription) {
-    imageViewDescription.beforeImageViewRestore?.call();
-  }
+  // void _restoreState(ImageViewDescription<T> imageViewDescription) {
+  //   imageViewDescription.beforeImageViewRestore?.call();
+  // }
 
   late double lastOffset = widget.initalScrollPosition;
 
@@ -157,7 +157,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
         ? widget.overrideController!
         : ScrollController(initialScrollOffset: widget.initalScrollPosition);
 
-    _restoreState(widget.functionality.imageViewDescription);
+    // _restoreState(widget.functionality.imageViewDescription);
 
     if (mutation.cellCount == 0) {
       refreshingStatus.refresh(widget.functionality);
@@ -348,7 +348,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
 
       final bottomWidget = description.bottomWidget != null
           ? description.bottomWidget!
-          : _BottomWidget<T>(
+          : _BottomWidget(
               isRefreshing: mutation.isRefreshing,
               routeChanger: page != null && page.search == null
                   ? const SizedBox.shrink()
@@ -424,7 +424,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
         ...widget.layout.makeFor<T>(_layoutSettings)(
             context, _layoutSettings, this),
       ],
-      _WrapPadding<T>(
+      _WrapPadding(
         footer: description.footer,
         selectionGlue: functionality.selectionGlue,
         child: null,
@@ -602,7 +602,7 @@ class GridFrameState<T extends Cell> extends State<GridFrame<T>>
   }
 }
 
-class _GridSelectionCountHolder<T extends Cell> extends StatefulWidget {
+class _GridSelectionCountHolder<T extends CellBase> extends StatefulWidget {
   final GridSelection<T> selection;
   final double Function(BuildContext) calculatePadding;
 

@@ -12,7 +12,6 @@ import 'package:gallery/main.dart';
 import 'package:gallery/src/db/schemas/gallery/directory_metadata.dart';
 import 'package:gallery/src/db/schemas/grid_settings/directories.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
-import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
@@ -24,13 +23,10 @@ import 'package:gallery/src/pages/gallery/gallery_directories_actions.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
-import 'package:gallery/src/pages/gallery/files.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
 import 'package:gallery/src/db/schemas/gallery/favorite_booru_post.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_on_cell_press_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart';
 import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
@@ -77,8 +73,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   int galleryVersion = 0;
 
-  GridMutationInterface<SystemGalleryDirectory> get mutation =>
-      state.refreshingStatus.mutation;
+  GridMutationInterface get mutation => state.refreshingStatus.mutation;
 
   bool proceed = true;
   late final extra = api.getExtra()
@@ -356,82 +351,82 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
         ),
         getCell: (i) => api.directCell(i),
         functionality: GridFunctionality(
-            onPressed: OverrideGridOnCellPressBehaviour(
-                onPressed: (context, idx, providedCell) async {
-              final cell = providedCell as SystemGalleryDirectory? ??
-                  CellProvider.getOf<SystemGalleryDirectory>(context, idx);
+            // onPressed: OverrideGridOnCellPressBehaviour(
+            //     onPressed: (context, idx, providedCell) async {
+            //   final cell = providedCell as SystemGalleryDirectory? ??
+            //       CellProvider.getOf<SystemGalleryDirectory>(context, idx);
 
-              if (widget.callback != null) {
-                state.refreshingStatus.mutation.cellCount = 0;
+            //   if (widget.callback != null) {
+            //     state.refreshingStatus.mutation.cellCount = 0;
 
-                Navigator.pop(context);
-                widget.callback!.c(cell, null);
-              } else {
-                if (!canAuthBiometric) {
-                  return;
-                }
+            //     Navigator.pop(context);
+            //     widget.callback!.c(cell, null);
+            //   } else {
+            //     if (!canAuthBiometric) {
+            //       return;
+            //     }
 
-                final requireAuth =
-                    DirectoryMetadata.get(_segmentFnc(cell))?.requireAuth ??
-                        false;
-                if (requireAuth) {
-                  final success = await LocalAuthentication()
-                      .authenticate(localizedReason: "Open directory");
-                  if (!success) {
-                    return;
-                  }
-                }
+            //     final requireAuth =
+            //         DirectoryMetadata.get(_segmentFnc(cell))?.requireAuth ??
+            //             false;
+            //     if (requireAuth) {
+            //       final success = await LocalAuthentication()
+            //           .authenticate(localizedReason: "Open directory");
+            //       if (!success) {
+            //         return;
+            //       }
+            //     }
 
-                StatisticsGallery.addViewedDirectories();
-                final d = cell;
+            //     StatisticsGallery.addViewedDirectories();
+            //     final d = cell;
 
-                final apiFiles = switch (cell.bucketId) {
-                  "trash" => extra.trash(),
-                  "favorites" => extra.favorites(),
-                  String() => api.files(d),
-                };
+            //     final apiFiles = switch (cell.bucketId) {
+            //       "trash" => extra.trash(),
+            //       "favorites" => extra.favorites(),
+            //       String() => api.files(d),
+            //     };
 
-                final glue = GlueProvider.generateOf(context);
+            //     final glue = GlueProvider.generateOf(context);
 
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => switch (cell.bucketId) {
-                        "favorites" => GalleryFiles(
-                            generateGlue: glue,
-                            api: apiFiles,
-                            secure: requireAuth,
-                            callback: widget.nestedCallback,
-                            dirName: AppLocalizations.of(context)!
-                                .galleryDirectoriesFavorites,
-                            bucketId: "favorites",
-                          ),
-                        "trash" => GalleryFiles(
-                            api: apiFiles,
-                            generateGlue: glue,
-                            secure: requireAuth,
-                            callback: widget.nestedCallback,
-                            dirName: AppLocalizations.of(context)!
-                                .galleryDirectoryTrash,
-                            bucketId: "trash",
-                          ),
-                        String() => GalleryFiles(
-                            generateGlue: glue,
-                            api: apiFiles,
-                            secure: requireAuth,
-                            dirName: d.name,
-                            callback: widget.nestedCallback,
-                            bucketId: d.bucketId,
-                          )
-                      },
-                    ));
-              }
-            }),
+            //     Navigator.push(
+            //         context,
+            //         MaterialPageRoute(
+            //           builder: (context) => switch (cell.bucketId) {
+            //             "favorites" => GalleryFiles(
+            //                 generateGlue: glue,
+            //                 api: apiFiles,
+            //                 secure: requireAuth,
+            //                 callback: widget.nestedCallback,
+            //                 dirName: AppLocalizations.of(context)!
+            //                     .galleryDirectoriesFavorites,
+            //                 bucketId: "favorites",
+            //               ),
+            //             "trash" => GalleryFiles(
+            //                 api: apiFiles,
+            //                 generateGlue: glue,
+            //                 secure: requireAuth,
+            //                 callback: widget.nestedCallback,
+            //                 dirName: AppLocalizations.of(context)!
+            //                     .galleryDirectoryTrash,
+            //                 bucketId: "trash",
+            //               ),
+            //             String() => GalleryFiles(
+            //                 generateGlue: glue,
+            //                 api: apiFiles,
+            //                 secure: requireAuth,
+            //                 dirName: d.name,
+            //                 callback: widget.nestedCallback,
+            //                 bucketId: d.bucketId,
+            //               )
+            //           },
+            //         ));
+            //   }
+            // }),
             selectionGlue: GlueProvider.generateOf(context)(),
             refreshingStatus: state.refreshingStatus,
-            imageViewDescription: ImageViewDescription(
-              imageViewKey: state.imageViewKey,
-            ),
+            // imageViewDescription: ImageViewDescription(
+            //   imageViewKey: state.imageViewKey,
+            // ),
             watchLayoutSettings: GridSettingsDirectories.watch,
             refresh: widget.callback != null
                 ? SynchronousGridRefresh(() {
@@ -471,17 +466,21 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     )
                 ]
               : [
-                  FavoritesActions.addToGroup(context, (selected) {
-                    final t = (selected.first as SystemGalleryDirectory).tag;
-                    for (final SystemGalleryDirectory e
-                        in selected.skip(1).cast()) {
-                      if (t != e.tag) {
-                        return null;
+                  FavoritesActions.addToGroup(
+                    context,
+                    (selected) {
+                      final t = selected.first.tag;
+                      for (final e in selected.skip(1)) {
+                        if (t != e.tag) {
+                          return null;
+                        }
                       }
-                    }
 
-                    return t;
-                  }, (s, v, t) => _addToGroup(context, s.cast(), v, t), true),
+                      return t;
+                    },
+                    (s, v, t) => _addToGroup(context, s, v, t),
+                    true,
+                  ),
                   SystemGalleryDirectoriesActions.blacklist(
                       context, extra, _segmentFnc),
                   SystemGalleryDirectoriesActions.joinedDirectories(

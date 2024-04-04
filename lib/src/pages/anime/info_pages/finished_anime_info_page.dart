@@ -113,7 +113,7 @@ class _FinishedAnimeInfoPageState extends State<FinishedAnimeInfoPage>
               padding: EdgeInsets.only(
                   bottom: MediaQuery.viewPaddingOf(context).bottom),
               child: Stack(children: [
-                BackgroundImage(image: entry.thumbnail()!),
+                BackgroundImage(image: entry.thumbnail()),
                 Column(
                   children: [
                     CardShell(

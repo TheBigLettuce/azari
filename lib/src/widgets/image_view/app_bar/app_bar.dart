@@ -9,13 +9,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/widgets/notifiers/current_cell.dart';
+import 'package:gallery/src/widgets/notifiers/current_content.dart';
 import 'package:gallery/src/widgets/notifiers/loading_progress.dart';
 
-import '../../../interfaces/cell/cell.dart';
 import '../../notifiers/app_bar_visibility.dart';
 
-class ImageViewAppBar<T extends Cell> extends StatelessWidget {
+class ImageViewAppBar extends StatelessWidget {
   final List<Widget> stickers;
   final List<Widget> actions;
 
@@ -27,7 +26,7 @@ class ImageViewAppBar<T extends Cell> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentCell = CurrentCellNotifier.of<T>(context);
+    final currentCell = CurrentContentNotifier.of(context);
 
     return Animate(
         effects: const [
@@ -54,13 +53,13 @@ class ImageViewAppBar<T extends Cell> extends StatelessWidget {
                 leading: const BackButton(),
                 title: GestureDetector(
                   onLongPress: () {
-                    Clipboard.setData(
-                        ClipboardData(text: currentCell.alias(false)));
+                    Clipboard.setData(ClipboardData(
+                        text: currentCell.widgets.title(context)));
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text(
                             AppLocalizations.of(context)!.copiedClipboard)));
                   },
-                  child: Text(currentCell.alias(false)),
+                  child: Text(currentCell.widgets.title(context)),
                 ),
                 actions: Scaffold.of(context).hasEndDrawer
                     ? [

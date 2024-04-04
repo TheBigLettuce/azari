@@ -14,7 +14,7 @@ import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
 
 import '../grid_frame.dart';
 
-class GridLayout<T extends Cell> implements GridLayouter<T> {
+class GridLayout<T extends CellBase> implements GridLayouter<T> {
   const GridLayout();
 
   @override
@@ -27,10 +27,11 @@ class GridLayout<T extends Cell> implements GridLayouter<T> {
         state.selection,
         aspectRatio: settings.aspectRatio.value,
         columns: settings.columns.number,
-        gridCell: (context, idx) {
+        gridCell: (context, cell, idx) {
           return GridCell.frameDefault(
             context,
             idx,
+            cell,
             hideTitle: settings.hideName,
             isList: isList,
             animated: PlayAnimationNotifier.maybeOf(context) ?? false,
@@ -41,7 +42,7 @@ class GridLayout<T extends Cell> implements GridLayouter<T> {
     ];
   }
 
-  static Widget blueprint<T extends Cell>(
+  static Widget blueprint<T extends CellBase>(
     BuildContext context,
     GridFunctionality<T> functionality,
     GridSelection<T> selection, {
@@ -49,17 +50,28 @@ class GridLayout<T extends Cell> implements GridLayouter<T> {
     required MakeCellFunc<T> gridCell,
     required double aspectRatio,
   }) {
+    final getCell = CellProvider.of<T>(context);
+
     return SliverGrid.builder(
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           childAspectRatio: aspectRatio, crossAxisCount: columns),
       itemCount: functionality.refreshingStatus.mutation.cellCount,
       itemBuilder: (context, indx) {
+        final cell = getCell(indx);
+
         return WrapSelection(
           selection: selection,
           thisIndx: indx,
+          onPressed: cell is Pressable<T>
+              ? () {
+                  (cell as Pressable<T>)
+                      .onPress(context, functionality, cell, indx);
+                }
+              : null,
+          description: cell.description(),
           functionality: functionality,
           selectFrom: null,
-          child: gridCell(context, indx),
+          child: gridCell(context, cell, indx),
         );
       },
     );

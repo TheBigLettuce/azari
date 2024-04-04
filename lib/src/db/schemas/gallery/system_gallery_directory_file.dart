@@ -11,7 +11,6 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/system_gallery_directory_file_functionality_mixin.dart';
 import 'package:gallery/src/db/base/system_gallery_thumbnail_provider.dart';
-import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
 import 'package:gallery/src/db/tags/booru_tagging.dart';
@@ -24,10 +23,12 @@ import 'package:gallery/src/pages/booru/booru_page.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
+import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/widgets/make_tags.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:gallery/src/widgets/notifiers/filter.dart';
-import 'package:gallery/src/widgets/notifiers/reload_image.dart';
 import 'package:gallery/src/widgets/search_bar/search_text_field.dart';
 import 'package:gallery/src/widgets/set_wallpaper_tile.dart';
 import 'package:isar/isar.dart';
@@ -45,7 +46,12 @@ part 'system_gallery_directory_file.g.dart';
 @collection
 class SystemGalleryDirectoryFile
     with SystemGalleryDirectoryFileFunctionalityMixin
-    implements Cell {
+    implements
+        ContentableCell,
+        Pressable<SystemGalleryDirectoryFile>,
+        Thumbnailable,
+        IsarEntryId,
+        Stickerable {
   SystemGalleryDirectoryFile({
     required this.id,
     required this.bucketId,
@@ -63,28 +69,6 @@ class SystemGalleryDirectoryFile
     required this.lastModified,
     required this.originalUri,
   });
-
-  @override
-  Contentable content() {
-    final size = Size(width.toDouble(), height.toDouble());
-
-    if (isVideo) {
-      return AndroidVideo(uri: originalUri, size: size);
-    }
-
-    if (isGif) {
-      return AndroidGif(uri: originalUri, size: size);
-    }
-
-    return AndroidImage(uri: originalUri, size: size);
-  }
-
-  @override
-  ImageProvider<Object>? thumbnail() =>
-      SystemGalleryThumbnailProvider(id, isVideo);
-
-  @override
-  Key uniqueKey() => ValueKey(id);
 
   @override
   Id? isarId;
@@ -118,7 +102,49 @@ class SystemGalleryDirectoryFile
   final bool isFavorite;
 
   @override
+  CellStaticData description() => const CellStaticData(
+        tightMode: true,
+      );
+
+  @override
   String alias(bool isList) => name;
+
+  @override
+  Contentable content(BuildContext context) {
+    final size = Size(width.toDouble(), height.toDouble());
+
+    if (isVideo) {
+      return AndroidVideo(
+        this,
+        _FilesGalleryWidgets(this),
+        uri: originalUri,
+        size: size,
+      );
+    }
+
+    if (isGif) {
+      return AndroidGif(
+        this,
+        _FilesGalleryWidgets(this),
+        uri: originalUri,
+        size: size,
+      );
+    }
+
+    return AndroidImage(
+      this,
+      _FilesGalleryWidgets(this),
+      uri: originalUri,
+      size: size,
+    );
+  }
+
+  @override
+  ImageProvider<Object> thumbnail() =>
+      SystemGalleryThumbnailProvider(id, isVideo);
+
+  @override
+  Key uniqueKey() => ValueKey(id);
 
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) {
@@ -131,10 +157,36 @@ class SystemGalleryDirectoryFile
   }
 
   @override
-  List<Widget>? addButtons(BuildContext context) {
+  List<Sticker> stickers(BuildContext context) {
+    return [
+      ...injectedStickers,
+      ...defaultStickers(context, this).map((e) => Sticker(e.$1)),
+      if (isFavorite) const Sticker(Icons.star_rounded, important: true),
+      if (notesFlat.isNotEmpty) const Sticker(Icons.sticky_note_2_outlined)
+    ];
+  }
+
+  @override
+  void onPress(
+    BuildContext context,
+    GridFunctionality<SystemGalleryDirectoryFile> functionality,
+    SystemGalleryDirectoryFile cell,
+    int idx,
+  ) =>
+      ImageView.defaultForGrid(
+          context, functionality, const ImageViewDescription(), idx);
+}
+
+class _FilesGalleryWidgets implements ContentWidgets {
+  const _FilesGalleryWidgets(this.file);
+
+  final SystemGalleryDirectoryFile file;
+
+  @override
+  List<Widget> appBarButtons(BuildContext context) {
     DisassembleResult? res;
     try {
-      res = PostTags.g.dissassembleFilename(name);
+      res = PostTags.g.dissassembleFilename(file.name);
     } catch (_) {}
 
     return [
@@ -149,27 +201,23 @@ class SystemGalleryDirectoryFile
             icon: const Icon(Icons.public)),
       IconButton(
           onPressed: () {
-            PlatformFunctions.shareMedia(originalUri);
+            PlatformFunctions.shareMedia(file.originalUri);
           },
           icon: const Icon(Icons.share))
     ];
   }
 
   @override
-  Widget? contentInfo(BuildContext context) => GalleryFileInfo(file: this);
+  Widget? info(BuildContext context) => GalleryFileInfo(file: file);
 
   @override
-  String? fileDownloadUrl() => null;
+  List<ImageViewAction> actions(BuildContext context) => const [];
 
   @override
-  List<Sticker> stickers(BuildContext context) {
-    return [
-      ...injectedStickers,
-      ...defaultStickers(context, this).map((e) => Sticker(e.$1)),
-      if (isFavorite) const Sticker(Icons.star_rounded, important: true),
-      if (notesFlat.isNotEmpty) const Sticker(Icons.sticky_note_2_outlined)
-    ];
-  }
+  String title(BuildContext context) => file.alias(false);
+
+  @override
+  Key uniquieKey(BuildContext context) => file.uniqueKey();
 }
 
 class GalleryFileInfo extends StatefulWidget {

@@ -10,13 +10,11 @@ import 'package:gallery/src/db/base/system_gallery_thumbnail_provider.dart';
 import 'package:isar/isar.dart';
 
 import '../../../interfaces/cell/cell.dart';
-import '../../../interfaces/cell/contentable.dart';
-import '../../../interfaces/cell/sticker.dart';
 
 part 'system_gallery_directory.g.dart';
 
 @collection
-class SystemGalleryDirectory implements Cell {
+class SystemGalleryDirectory implements CellBase, IsarEntryId, Thumbnailable {
   SystemGalleryDirectory({
     required this.bucketId,
     required this.name,
@@ -47,32 +45,17 @@ class SystemGalleryDirectory implements Cell {
   final String tag;
 
   @override
-  Contentable content() => const EmptyContent();
+  CellStaticData description() => const CellStaticData();
 
   @override
-  ImageProvider<Object>? thumbnail() =>
+  ImageProvider<Object> thumbnail() =>
       SystemGalleryThumbnailProvider(thumbFileId, true);
 
   @override
   Key uniqueKey() => ValueKey(bucketId);
 
   @override
-  List<Widget>? addButtons(BuildContext context) => null;
-
-  @override
-  List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
-
-  @override
-  Widget? contentInfo(BuildContext context) => null;
-
-  @override
   String alias(bool isList) => name;
-
-  @override
-  String? fileDownloadUrl() => null;
-
-  @override
-  List<Sticker> stickers(BuildContext context) => const [];
 
   static SystemGalleryDirectory decode(Object result) {
     result as List<Object?>;

@@ -9,8 +9,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/cell/contentable.dart';
-import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:isar/isar.dart';
 
@@ -35,7 +33,7 @@ class CompactMangaData extends CompactMangaDataBase {
   }
 }
 
-class CompactMangaDataBase implements Cell {
+class CompactMangaDataBase implements CellBase, IsarEntryId, Thumbnailable {
   CompactMangaDataBase({
     required this.mangaId,
     required this.site,
@@ -56,28 +54,16 @@ class CompactMangaDataBase implements Cell {
   final String thumbUrl;
 
   @override
-  List<Widget>? addButtons(BuildContext context) => null;
-
-  @override
-  Widget? contentInfo(BuildContext context) => null;
-
-  @override
-  List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
+  CellStaticData description() => const CellStaticData();
 
   @override
   String alias(bool isList) => title;
 
-  @override
-  Contentable content() => NetImage(CachedNetworkImageProvider(thumbUrl));
+  // @override
+  // Contentable content() => NetImage(CachedNetworkImageProvider(thumbUrl));
 
   @override
-  String? fileDownloadUrl() => null;
-
-  @override
-  List<Sticker> stickers(BuildContext context) => const [];
-
-  @override
-  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(thumbUrl);
+  ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(thumbUrl);
 
   @override
   Key uniqueKey() => ValueKey(thumbUrl);

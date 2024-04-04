@@ -44,7 +44,7 @@ enum GridLayoutType {
           AppLocalizations.of(context)!.enumGridLayoutTypeGridMasonry,
       };
 
-  GridLayouter<T> layout<T extends Cell>() => switch (this) {
+  GridLayouter<T> layout<T extends CellBase>() => switch (this) {
         GridLayoutType.list => ListLayout<T>(),
         GridLayoutType.grid => GridLayout<T>(),
         GridLayoutType.gridQuilted => GridQuiltedLayout<T>(),

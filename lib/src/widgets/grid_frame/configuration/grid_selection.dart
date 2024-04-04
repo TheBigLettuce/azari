@@ -7,24 +7,22 @@
 
 part of '../grid_frame.dart';
 
-class GridSelection<T extends Cell> {
+class GridSelection<T extends CellBase> {
   GridSelection(
     this.addActions,
     this.glue,
     this.controller, {
     required this.noAppBar,
-    required this.ignoreSwipe,
     required this.mutation,
   });
 
   final SelectionGlue glue;
   final ScrollController Function() controller;
-  final GridMutationInterface<T> mutation;
+  final GridMutationInterface mutation;
 
   final _selected = <int, T>{};
-  final List<GridAction> addActions;
+  final List<GridAction<T>> addActions;
   final bool noAppBar;
-  final bool ignoreSwipe;
 
   int? lastSelected;
 
@@ -33,7 +31,7 @@ class GridSelection<T extends Cell> {
 
   int get count => _selected.length;
 
-  void use(void Function(List<Cell> l) f, bool closeOnPress) {
+  void use(void Function(List<CellBase> l) f, bool closeOnPress) {
     f(_selected.values.toList());
     if (closeOnPress) {
       reset();

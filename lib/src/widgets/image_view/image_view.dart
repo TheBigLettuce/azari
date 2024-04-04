@@ -11,7 +11,9 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_action_button.dart';
 import 'package:gallery/src/widgets/image_view/mixins/loading_builder.dart';
 import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart';
@@ -24,13 +26,13 @@ import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart';
 import 'package:logging/logging.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../interfaces/cell/cell.dart';
 import 'body.dart';
 import 'bottom_bar.dart';
 import 'app_bar/end_drawer.dart';
-import 'mixins/page_type.dart';
+import 'mixins/page_type_mixin.dart';
 import 'mixins/palette.dart';
 
 final Color kListTileColorInInfo = Colors.white60.withOpacity(0.8);
@@ -42,62 +44,81 @@ class ImageViewStatistics {
   const ImageViewStatistics({required this.swiped, required this.viewed});
 }
 
-class ImageView<T extends Cell> extends StatefulWidget {
-  final int startingCell;
-  final T? Function(int i) getCell;
-  final int cellCount;
-  final void Function(int post) scrollUntill;
-  final Future<int> Function()? onNearEnd;
-  final List<GridAction> Function(T)? addIcons;
-  final void Function(int i)? download;
-  final double? infoScrollOffset;
-  final Color systemOverlayRestoreColor;
-  final void Function(ImageViewState<T> state)? pageChange;
-  final void Function() onExit;
+abstract interface class ImageViewContentable {
+  Contentable content(BuildContext context);
+}
 
-  final List<int>? predefinedIndexes;
+class ImageViewDescription<T extends ContentableCell> {
+  const ImageViewDescription({
+    this.pageChangeImage,
+    this.beforeImageViewRestore,
+    this.onExitImageView,
+    this.statistics,
+    this.overrideDrawerLabel,
+  });
 
-  final InheritedWidget Function(Widget child)? registerNotifiers;
+  final void Function()? onExitImageView;
 
-  final void Function()? onEmptyNotes;
+  final void Function()? beforeImageViewRestore;
 
   final ImageViewStatistics? statistics;
 
-  final bool ignoreEndDrawer;
+  /// Supplied to [ImageView.pageChange].
+  final void Function(ImageViewState state)? pageChangeImage;
+
+  final String? overrideDrawerLabel;
+}
+
+abstract interface class ContentableCell
+    implements ImageViewContentable, CellBase {}
+
+class ImageView extends StatefulWidget {
+  final int startingCell;
+  final Contentable? Function(BuildContext context, int i) getCell;
+  final int cellCount;
+  final void Function(int post) scrollUntill;
+  final Future<int> Function()? onNearEnd;
+  // final List<GridAction> Function(T)? addIcons;
+  final void Function(int i)? download;
+  // final double? infoScrollOffset;
+  final Color systemOverlayRestoreColor;
+  final void Function(ImageViewState state)? pageChange;
+  final void Function() onExit;
+
+  final InheritedWidget Function(Widget child)? registerNotifiers;
+
+  final ImageViewStatistics? statistics;
+
+  // final bool ignoreEndDrawer;
 
   final BuildContext? gridContext;
 
   final bool ignoreLoadingBuilder;
 
-  final List<Widget> appBarItems;
+  // final List<Widget> appBarItems;
   final void Function()? onRightSwitchPageEnd;
   final void Function()? onLeftSwitchPageEnd;
 
-  final String? overrideDrawerLabel;
-
-  static Future<void> launchWrapped<T extends Cell>(
+  static Future<void> launchWrapped(
     BuildContext context,
     int cellCount,
-    T Function(int) cell,
+    Contentable Function(BuildContext, int) cell,
     Color overlayColor, {
     int startingCell = 0,
     void Function(int)? download,
     Key? key,
-    List<GridAction> Function(T)? actions,
   }) {
     return Navigator.push(context, MaterialPageRoute(
       builder: (context) {
         return GlueProvider.empty(
           context,
-          child: ImageView<T>(
+          child: ImageView(
             key: key,
-            ignoreEndDrawer: false,
             cellCount: cellCount,
             download: download,
             scrollUntill: (_) {},
             startingCell: startingCell,
             onExit: () {},
-            addIcons: actions,
             getCell: cell,
             onNearEnd: null,
             systemOverlayRestoreColor: overlayColor,
@@ -107,48 +128,85 @@ class ImageView<T extends Cell> extends StatefulWidget {
     ));
   }
 
+  static Future<void> defaultForGrid<T extends ContentableCell>(
+    BuildContext gridContext,
+    GridFunctionality<T> functionality,
+    ImageViewDescription<T> imageDesctipion,
+    int startingCell,
+  ) {
+    // state.widget.mainFocus.requestFocus();
+
+    final overlayColor =
+        Theme.of(gridContext).colorScheme.background.withOpacity(0.5);
+
+    functionality.selectionGlue.hideNavBar(true);
+
+    final getCell = CellProvider.of<T>(gridContext);
+
+    return Navigator.of(gridContext, rootNavigator: true)
+        .push(MaterialPageRoute(builder: (context) {
+      return ImageView(
+        gridContext: gridContext,
+        statistics: imageDesctipion.statistics,
+        registerNotifiers: functionality.registerNotifiers,
+        systemOverlayRestoreColor: overlayColor,
+        // overrideDrawerLabel: imageDesctipion.overrideDrawerLabel,
+        scrollUntill: (_) {}, // TODO: change this
+        pageChange: imageDesctipion.pageChangeImage,
+        onExit: () {
+          imageDesctipion.onExitImageView?.call();
+        },
+        getCell: (context, idx) => getCell(idx).content(context),
+        cellCount: functionality.refreshingStatus.mutation.cellCount,
+        download: functionality.download,
+        startingCell: startingCell,
+        onNearEnd: () =>
+            functionality.refreshingStatus.onNearEnd(functionality),
+      );
+    })).then((value) {
+      functionality.selectionGlue.hideNavBar(false);
+
+      return value;
+    });
+  }
+
   const ImageView({
     super.key,
     required this.cellCount,
     required this.scrollUntill,
     required this.startingCell,
     required this.onExit,
-    this.predefinedIndexes,
-    this.appBarItems = const [],
+    // this.appBarItems = const [],
     this.statistics,
     this.ignoreLoadingBuilder = false,
     required this.getCell,
     required this.onNearEnd,
     required this.systemOverlayRestoreColor,
     this.pageChange,
-    this.overrideDrawerLabel,
-    this.onEmptyNotes,
-    this.infoScrollOffset,
+    // this.infoScrollOffset,
     this.download,
-    this.ignoreEndDrawer = false,
+    // this.ignoreEndDrawer = false,
     this.registerNotifiers,
-    this.addIcons,
     this.onRightSwitchPageEnd,
     this.onLeftSwitchPageEnd,
     this.gridContext,
   });
 
   @override
-  State<ImageView<T>> createState() => ImageViewState<T>();
+  State<ImageView> createState() => ImageViewState();
 }
 
-class ImageViewState<T extends Cell> extends State<ImageView<T>>
+class ImageViewState extends State<ImageView>
     with
-        ImageViewPageTypeMixin<T>,
-        ImageViewPaletteMixin<T>,
-        ImageViewLoadingBuilderMixin<T> {
+        ImageViewPageTypeMixin,
+        ImageViewPaletteMixin,
+        ImageViewLoadingBuilderMixin {
   final mainFocus = FocusNode();
   final GlobalKey<ScaffoldState> key = GlobalKey();
   final GlobalKey<WrapImageViewNotifiersState> wrapNotifiersKey = GlobalKey();
   final GlobalKey<WrapImageViewThemeState> wrapThemeKey = GlobalKey();
 
-  late final ScrollController scrollController =
-      ScrollController(initialScrollOffset: widget.infoScrollOffset ?? 0);
+  final scrollController = ScrollController();
 
   late final PageController controller =
       PageController(initialPage: widget.startingCell);
@@ -176,15 +234,9 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     loadCells(currentPage, cellCount);
 
     WidgetsBinding.instance.scheduleFrameCallback((_) {
-      if (widget.infoScrollOffset != null) {
-        key.currentState?.openEndDrawer();
-      }
-
-      fullscreenPlug.setTitle(drawCell(currentPage).alias(true));
+      fullscreenPlug.setTitle(drawCell(currentPage).widgets.title(context));
       _loadNext(widget.startingCell);
     });
-
-    // widget.updateTagScrollPos(null, widget.startingCell);
 
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
       refreshPalette();
@@ -196,7 +248,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     fullscreenPlug.unfullscreen();
 
     WakelockPlus.disable();
-    // widget.updateTagScrollPos(null, null);
     controller.dispose();
 
     widget.onExit();
@@ -208,8 +259,14 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
   }
 
   void refreshPalette() {
-    extractPalette(context, widget.getCell(currentPage)!, key, scrollController,
-        currentPage, _resetAnimation);
+    extractPalette(
+      context,
+      drawCell(currentPage, true),
+      key,
+      scrollController,
+      currentPage,
+      _resetAnimation,
+    );
   }
 
   void _resetAnimation() {
@@ -284,7 +341,6 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     currentPage = index;
     widget.pageChange?.call(this);
     _loadNext(index);
-    // widget.updateTagScrollPos(null, index);
 
     widget.scrollUntill(index);
 
@@ -292,12 +348,11 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
 
     final c = drawCell(index);
 
-    fullscreenPlug.setTitle(c.alias(true));
+    fullscreenPlug.setTitle(c.widgets.title(context));
 
-    setState(() {
-      extractPalette(context, widget.getCell(currentPage)!, key,
-          scrollController, currentPage, _resetAnimation);
-    });
+    refreshPalette();
+
+    setState(() {});
   }
 
   void _onLongPress() {
@@ -336,7 +391,7 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
     return ImageViewInfoTilesRefreshNotifier(
       count: _incr,
       incr: _incrTiles,
-      child: WrapImageViewNotifiers<T>(
+      child: WrapImageViewNotifiers(
         hardRefresh: refreshImage,
         mainFocus: mainFocus,
         gridContext: widget.gridContext,
@@ -348,49 +403,47 @@ class ImageViewState<T extends Cell> extends State<ImageView<T>>
           key: wrapThemeKey,
           currentPalette: currentPalette,
           previousPallete: previousPallete,
-          child: WrapImageViewSkeleton<T>(
+          child: WrapImageViewSkeleton(
               scaffoldKey: key,
-              addAppBarActions: widget.appBarItems,
+              // addAppBarActions:
+              // drawCell(currentPage).widgets.appBarButtons(context),
               currentPalette: currentPalette,
-              endDrawer: widget.ignoreEndDrawer
-                  ? null
-                  : Builder(builder: (context) {
-                      FocusNotifier.of(context);
-                      ImageViewInfoTilesRefreshNotifier.of(context);
+              endDrawer: Builder(builder: (context) {
+                FocusNotifier.of(context);
+                ImageViewInfoTilesRefreshNotifier.of(context);
 
-                      final addInfo =
-                          drawCell(currentPage).contentInfo(context);
+                final widgets = drawCell(currentPage).widgets;
+                final info = widgets.info(context);
+                // final icons = widgets.appBarButtons(context);
 
-                      return addInfo == null
-                          ? const Drawer(child: EmptyWidget(gridSeed: 0))
-                          : ImageViewEndDrawer(
-                              overrideDrawerLabel: widget.overrideDrawerLabel,
-                              scrollController: scrollController,
-                              sliver: addInfo,
-                            );
-                    }),
-              bottomAppBar: widget.addIcons == null
-                  ? null
-                  : ImageViewBottomAppBar(
-                      textController: noteTextController,
-                      children: widget.addIcons
-                              ?.call(drawCell(currentPage))
-                              .map(
-                                (e) => WrapGridActionButton(e.icon, () {
-                                  e.onPress([drawCell(currentPage)]);
-                                }, false,
-                                    color: e.color,
-                                    play: e.play,
-                                    onLongPress: e.onLongPress == null
-                                        ? null
-                                        : () => e.onLongPress!(
-                                            [drawCell(currentPage)]),
-                                    backgroundColor: e.backgroundColor,
-                                    animate: e.animate,
-                                    showOnlyWhenSingle: false),
-                              )
-                              .toList() ??
-                          const []),
+                return info == null
+                    ? const Drawer(child: EmptyWidget(gridSeed: 0))
+                    : ImageViewEndDrawer(
+                        scrollController: scrollController,
+                        sliver: info,
+                      );
+              }),
+              bottomAppBar: ImageViewBottomAppBar(
+                textController: noteTextController,
+                children: drawCell(currentPage)
+                    .widgets
+                    .actions(context)
+                    .map(
+                      (e) => WrapGridActionButton(
+                        e.icon,
+                        () {
+                          e.onPress(drawCell(currentPage));
+                        },
+                        false,
+                        play: e.play,
+                        color: e.color,
+                        onLongPress: null,
+                        animate: e.animate,
+                        showOnlyWhenSingle: false,
+                      ),
+                    )
+                    .toList(),
+              ),
               mainFocus: mainFocus,
               child: ImageViewBody(
                 onPressedLeft: _onPressedLeft,

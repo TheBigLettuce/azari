@@ -6,7 +6,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 
 import '../interfaces/cell/cell.dart';
 import 'image_view/image_view.dart';
@@ -45,7 +44,7 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
     return widget.size.toInt() + (i * 14);
   }
 
-  Widget _thumbPadding(BuildContext context, int id, Cell cellData,
+  Widget _thumbPadding(BuildContext context, int id, CellBase cellData,
       {bool shadow = true}) {
     return Padding(
       padding: EdgeInsets.only(left: id * 14),
@@ -60,36 +59,36 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
             ImageView.launchWrapped(
               context,
               widget.files.length,
-              (i) => widget.files[i],
+              (context, i) => widget.files[i].content(context),
               overlayColor,
               startingCell: id,
               key: key,
-              actions: (_) {
-                return [
-                  GridAction(
-                    Icons.close_rounded,
-                    (_) {
-                      widget.files.removeAt(key.currentState!.currentPage);
+              // actions: (_) {
+              //   return [
+              //     GridAction(
+              //       Icons.close_rounded,
+              //       (_) {
+              //         widget.files.removeAt(key.currentState!.currentPage);
 
-                      key.currentState!.update(context, widget.files.length);
+              //         key.currentState!.update(context, widget.files.length);
 
-                      setState(() {});
-                    },
-                    false,
-                  )
-                ];
-              },
+              //         setState(() {});
+              //       },
+              //       false,
+              //     )
+              //   ];
+              // },
             );
           },
           child: GridCell(
             cell: cellData,
-            isList: false,
+            // isList: false,
             indx: id,
-            ignoreStickers: true,
-            tight: true,
-            hideAlias: true,
-            shadowOnTop: shadow,
-            circle: true,
+            // ignoreStickers: true,
+            // tight: true,
+            hideTitle: true,
+            // shadowOnTop: shadow,
+            // circle: true,
           ),
         ),
       ),

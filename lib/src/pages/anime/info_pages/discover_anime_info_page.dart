@@ -92,8 +92,7 @@ class _DiscoverAnimeInfoPageState extends State<DiscoverAnimeInfoPage>
                   if (_isWatchingBacklog.$2) {
                     SavedAnimeEntry.deleteAll([
                       SavedAnimeEntry.maybeGet(
-                              widget.entry.id, widget.entry.site)!
-                          .isarId!
+                          widget.entry.id, widget.entry.site)!
                     ]);
                   } else {
                     SavedAnimeEntry.addAll([widget.entry]);
@@ -128,7 +127,7 @@ class _DiscoverAnimeInfoPageState extends State<DiscoverAnimeInfoPage>
                 bottom: MediaQuery.viewPaddingOf(context).bottom),
             child: Stack(
               children: [
-                BackgroundImage(image: widget.entry.thumbnail()!),
+                BackgroundImage(image: widget.entry.thumbnail()),
                 Column(
                   children: [
                     CardPanel(

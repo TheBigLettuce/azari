@@ -14,7 +14,6 @@ import 'dart:math' as math;
 
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
-import 'package:gallery/src/widgets/image_view/image_view.dart';
 
 class SkeletonState {
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
@@ -28,9 +27,8 @@ class SkeletonState {
   SkeletonState();
 }
 
-class GridSkeletonState<T extends Cell> extends SkeletonState {
+class GridSkeletonState<T extends CellBase> extends SkeletonState {
   final GlobalKey<GridFrameState<T>> gridKey = GlobalKey();
-  final GlobalKey<ImageViewState<T>> imageViewKey = GlobalKey();
   Settings settings = Settings.fromDb();
   final GridRefreshingStatus<T> refreshingStatus;
 
@@ -50,7 +48,7 @@ class GridSkeletonState<T extends Cell> extends SkeletonState {
             GridRefreshingStatus<T>(initalCellCount, reachedEnd);
 }
 
-class GridSkeletonStateFilter<T extends Cell> extends GridSkeletonState<T> {
+class GridSkeletonStateFilter<T extends CellBase> extends GridSkeletonState<T> {
   final FilterInterface<T> filter;
   final Set<FilteringMode> filteringModes;
   final Set<SortingMode> sortingModes;

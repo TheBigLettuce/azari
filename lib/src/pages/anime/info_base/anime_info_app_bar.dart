@@ -8,11 +8,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/pages/anime/anime.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 
 class AnimeInfoAppBar extends StatefulWidget {
-  final Cell cell;
+  final AnimeCell cell;
   final ScrollController scrollController;
   final List<Widget> appBarActions;
 
@@ -91,7 +91,7 @@ class _AnimeInfoAppBarState extends State<AnimeInfoAppBar>
             ImageView.launchWrapped(
               context,
               1,
-              (_) => widget.cell,
+              (_, __) => widget.cell.openImage(context),
               overlayColor,
             );
           },

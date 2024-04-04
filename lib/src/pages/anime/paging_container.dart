@@ -8,7 +8,7 @@
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart';
 
-class PagingContainer<T extends Cell, J> {
+class PagingContainer<T extends CellBase, J> {
   PagingContainer(this.extra);
 
   final J extra;

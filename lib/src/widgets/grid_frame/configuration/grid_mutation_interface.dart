@@ -7,9 +7,7 @@
 
 import 'dart:async';
 
-import '../../../interfaces/cell/cell.dart';
-
-abstract class GridMutationInterface<T extends Cell> {
+abstract class GridMutationInterface {
   int get cellCount;
   set cellCount(int c);
 
@@ -22,8 +20,7 @@ abstract class GridMutationInterface<T extends Cell> {
   void reset();
 }
 
-class StaticNumberGridMutation<T extends Cell>
-    implements GridMutationInterface<T> {
+class StaticNumberGridMutation implements GridMutationInterface {
   const StaticNumberGridMutation(this.currentCount);
 
   final int Function() currentCount;

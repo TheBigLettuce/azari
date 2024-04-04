@@ -11,7 +11,7 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_refresh_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 
-class GridRefreshingStatus<T extends Cell> {
+class GridRefreshingStatus<T extends CellBase> {
   GridRefreshingStatus(
     int initalCellCount,
     this._reachedEnd,
@@ -22,7 +22,7 @@ class GridRefreshingStatus<T extends Cell> {
     updateProgress?.ignore();
   }
 
-  final GridMutationInterface<T> mutation;
+  final GridMutationInterface mutation;
 
   final bool Function() _reachedEnd;
 

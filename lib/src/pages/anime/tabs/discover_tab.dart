@@ -20,12 +20,12 @@ class DiscoverTab extends StatefulWidget {
   final PagingContainer<AnimeEntry, DiscoverExtra> pagingContainer;
   final AnimeAPI api;
 
-  static List<GridAction> actions() => [
+  static List<GridAction<AnimeEntry>> actions() => [
         GridAction(Icons.add, (selected) {
           final toDelete = <AnimeEntry>[];
           final toAdd = <AnimeEntry>[];
 
-          for (final AnimeEntry e in selected.cast()) {
+          for (final e in selected) {
             final entry = SavedAnimeEntry.maybeGet(e.id, e.site);
             if (entry == null) {
               toAdd.add(e);
@@ -179,22 +179,22 @@ class _DiscoverTabState extends State<DiscoverTab> {
           updateScrollPosition: widget.pagingContainer.updateScrollPos,
           selectionGlue: GlueProvider.generateOf(context)(),
           refreshingStatus: widget.pagingContainer.refreshingStatus,
-          imageViewDescription: ImageViewDescription(
-            imageViewKey: state.imageViewKey,
-          ),
+          // imageViewDescription: ImageViewDescription(
+          //   imageViewKey: state.imageViewKey,
+          // ),
           refresh: AsyncGridRefresh(_refresh),
-          onPressed:
-              OverrideGridOnCellPressBehaviour(onPressed: (context, idx, _) {
-            final cell = CellProvider.getOf<AnimeEntry>(context, idx);
+          // onPressed:
+          //     OverrideGridOnCellPressBehaviour(onPressed: (context, idx, _) {
+          //   final cell = CellProvider.getOf<AnimeEntry>(context, idx);
 
-            return Navigator.push(context, MaterialPageRoute(
-              builder: (context) {
-                return DiscoverAnimeInfoPage(
-                  entry: cell,
-                );
-              },
-            ));
-          }),
+          //   return Navigator.push(context, MaterialPageRoute(
+          //     builder: (context) {
+          //       return DiscoverAnimeInfoPage(
+          //         entry: cell,
+          //       );
+          //     },
+          //   ));
+          // }),
         ),
         mainFocus: state.mainFocus,
         description: GridDescription(
@@ -202,7 +202,6 @@ class _DiscoverTabState extends State<DiscoverTab> {
           actions: DiscoverTab.actions(),
           showAppBar: false,
           keybindsDescription: AppLocalizations.of(context)!.discoverTab,
-          ignoreSwipeSelectGesture: true,
           gridSeed: state.gridSeed,
         ),
       ),

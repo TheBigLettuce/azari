@@ -17,8 +17,6 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart'
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_on_cell_press_behaviour.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/grid_frame/layouts/list_layout.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
@@ -67,16 +65,16 @@ class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
             HideBlacklistedImagesNotifier.of(context), _gridSettingsBase),
         functionality: GridFunctionality(
           selectionGlue: widget.generateGlue(),
-          onPressed: const OverrideGridOnCellPressBehaviour(),
+          // onPressed: const OverrideGridOnCellPressBehaviour(),
           refresh: SynchronousGridRefresh(() {
             list = HiddenBooruPost.getAll();
 
             return list.length;
           }),
           refreshingStatus: state.refreshingStatus,
-          imageViewDescription: ImageViewDescription(
-            imageViewKey: state.imageViewKey,
-          ),
+          // imageViewDescription: ImageViewDescription(
+          //   imageViewKey: state.imageViewKey,
+          // ),
         ),
         mainFocus: state.mainFocus,
         description: GridDescription(
@@ -113,7 +111,7 @@ class _ListLayout implements GridLayoutBehaviour {
   GridSettingsBase Function() get defaultSettings => fnc;
 
   @override
-  GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings) {
+  GridLayouter<T> makeFor<T extends CellBase>(GridSettingsBase settings) {
     return ListLayout<T>(hideThumbnails: hideThumbnails);
   }
 }

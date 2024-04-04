@@ -7,8 +7,7 @@
 
 part of '../grid_frame.dart';
 
-class DefaultMutationInterface<T extends Cell>
-    implements GridMutationInterface<T> {
+class DefaultMutationInterface implements GridMutationInterface {
   DefaultMutationInterface(this._cellCount);
   final _updates = StreamController<void>.broadcast();
 

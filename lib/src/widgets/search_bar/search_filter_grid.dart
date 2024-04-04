@@ -20,7 +20,7 @@ import '../../interfaces/filtering/filtering_mode.dart';
 part 'search_widget.dart';
 
 /// Search mixin which filters the elements on a grid.
-class SearchFilterGrid<T extends Cell> {
+class SearchFilterGrid<T extends CellBase> {
   SearchFilterGrid(this._state, this.addItems);
 
   final TextEditingController searchTextController = TextEditingController();
@@ -39,17 +39,6 @@ class SearchFilterGrid<T extends Cell> {
   void _onChanged(String value, bool direct) {
     var interf = _state.refreshingStatus.mutation;
     _state.hook(_currentFilterMode);
-    // if (!direct) {
-    //   value = value.trim();
-    //   if (value.isEmpty) {
-    //     interf.restore();
-    //     widget.instance._state.filter.resetFilter();
-    //     setState(() {});
-    //     return;
-    //   }
-    // }
-
-    // _state.filter.setSortingMode(sorting);
 
     if (!_state.filter.empty) {
       _state.gridKey.currentState?.enableAnimationsFor();
@@ -59,8 +48,7 @@ class SearchFilterGrid<T extends Cell> {
         _state.filter.filter(_searchVirtual ? "" : value, _currentFilterMode);
 
     interf.cellCount = res.count;
-    _key.currentState?.update();
-    _state.imageViewKey.currentState?.update(null, res.count);
+    _key.currentState?.update(res.count);
   }
 
   void performSearch(String s, [bool orDirectly = false]) {
@@ -115,7 +103,8 @@ class SearchFilterGrid<T extends Cell> {
     }
     _onChanged(searchTextController.text, true);
 
-    _key.currentState?.update();
+    _key.currentState
+        ?.update(_state.gridKey.currentState?.mutation.cellCount ?? 0);
   }
 
   void markSearchVirtual() {

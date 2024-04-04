@@ -16,7 +16,7 @@ import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
 
 import '../grid_frame.dart';
 
-class GridMasonryLayout<T extends Cell> implements GridLayouter<T> {
+class GridMasonryLayout<T extends CellBase> implements GridLayouter<T> {
   const GridMasonryLayout();
 
   @override
@@ -32,9 +32,10 @@ class GridMasonryLayout<T extends Cell> implements GridLayouter<T> {
         state.widget.functionality,
         state.selection,
         columns: settings.columns.number,
-        gridCell: (context, idx) => GridCell.frameDefault(
+        gridCell: (context, cell, idx) => GridCell.frameDefault(
           context,
           idx,
+          cell,
           hideTitle: settings.hideName,
           isList: isList,
           state: state,
@@ -45,9 +46,9 @@ class GridMasonryLayout<T extends Cell> implements GridLayouter<T> {
     ];
   }
 
-  static Widget blueprint<T extends Cell>(
+  static Widget blueprint<T extends CellBase>(
     BuildContext context,
-    GridMutationInterface<T> state,
+    GridMutationInterface state,
     GridFunctionality<T> functionality,
     GridSelection<T> selection, {
     required MakeCellFunc<T> gridCell,
@@ -56,12 +57,15 @@ class GridMasonryLayout<T extends Cell> implements GridLayouter<T> {
     required int columns,
   }) {
     final size = (MediaQuery.sizeOf(context).shortestSide * 0.95) / columns;
+    final getCell = CellProvider.of<T>(context);
 
     return SliverMasonryGrid(
       mainAxisSpacing: 0,
       crossAxisSpacing: 0,
       delegate: SliverChildBuilderDelegate(childCount: state.cellCount,
           (context, indx) {
+        final cell = getCell(indx);
+
         // final cell = state.getCell(indx);
 
         // final n1 = switch (columns) {
@@ -94,9 +98,16 @@ class GridMasonryLayout<T extends Cell> implements GridLayouter<T> {
           child: WrapSelection(
             selection: selection,
             thisIndx: indx,
+            onPressed: cell is Pressable<T>
+                ? () {
+                    (cell as Pressable<T>)
+                        .onPress(context, functionality, cell, indx);
+                  }
+                : null,
+            description: cell.description(),
             functionality: functionality,
             selectFrom: null,
-            child: gridCell(context, indx),
+            child: gridCell(context, cell, indx),
           ),
         );
       }),

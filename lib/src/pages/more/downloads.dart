@@ -10,7 +10,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/net/downloader.dart';
@@ -18,7 +17,6 @@ import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
 import 'package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart';
@@ -126,14 +124,18 @@ class _DownloadsState extends State<Downloads> {
         hideName: false,
       );
 
-  static GridAction delete(BuildContext context) {
-    return GridAction(Icons.remove, (selected) {
-      if (selected.isEmpty) {
-        return;
-      }
+  static GridAction<DownloadFile> delete(BuildContext context) {
+    return GridAction(
+      Icons.remove,
+      (selected) {
+        if (selected.isEmpty) {
+          return;
+        }
 
-      Downloader.g.remove(selected.cast());
-    }, true);
+        Downloader.g.remove(selected);
+      },
+      true,
+    );
   }
 
   @override
@@ -157,9 +159,9 @@ class _DownloadsState extends State<Downloads> {
             ),
             selectionGlue: GlueProvider.generateOf(context)(),
             refreshingStatus: state.refreshingStatus,
-            imageViewDescription: ImageViewDescription(
-              imageViewKey: state.imageViewKey,
-            ),
+            // imageViewDescription: ImageViewDescription(
+            //   imageViewKey: state.imageViewKey,
+            // ),
             refresh: SynchronousGridRefresh(() => loader.count()),
           ),
           mainFocus: state.mainFocus,

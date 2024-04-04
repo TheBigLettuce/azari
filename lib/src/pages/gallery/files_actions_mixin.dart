@@ -40,58 +40,47 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     ));
   }
 
-  GridAction _restoreFromTrash() {
+  GridAction<SystemGalleryDirectoryFile> _restoreFromTrash() {
     return GridAction(
       Icons.restore_from_trash,
       (selected) {
-        PlatformFunctions.removeFromTrash(selected
-            .cast<SystemGalleryDirectoryFile>()
-            .map((e) => e.originalUri)
-            .toList());
+        PlatformFunctions.removeFromTrash(
+            selected.map((e) => e.originalUri).toList());
       },
       false,
     );
   }
 
-  GridAction _bulkRename() {
+  GridAction<SystemGalleryDirectoryFile> _bulkRename() {
     return GridAction(
       Icons.edit,
       (selected) {
-        _changeName(context, selected.cast());
+        _changeName(context, selected);
       },
       false,
     );
   }
 
-  GridAction _saveTagsAction(GalleryPlug plug) {
+  GridAction<SystemGalleryDirectoryFile> _saveTagsAction(GalleryPlug plug) {
     return GridAction(
       Icons.tag_rounded,
       (selected) {
-        _saveTags(context, selected.cast(), plug);
+        _saveTags(context, selected, plug);
       },
       true,
     );
   }
 
-  GridAction _addTag(BuildContext context, void Function() refresh) {
+  GridAction<SystemGalleryDirectoryFile> _addTag(
+      BuildContext context, void Function() refresh) {
     return GridAction(
       Icons.new_label_rounded,
       (selected) {
         openAddTagDialog(context, (v, delete) {
           if (delete) {
-            PostTags.g.removeTag(
-                selected
-                    .cast<SystemGalleryDirectoryFile>()
-                    .map((e) => e.name)
-                    .toList(),
-                v);
+            PostTags.g.removeTag(selected.map((e) => e.name).toList(), v);
           } else {
-            PostTags.g.addTag(
-                selected
-                    .cast<SystemGalleryDirectoryFile>()
-                    .map((e) => e.name)
-                    .toList(),
-                v);
+            PostTags.g.addTag(selected.map((e) => e.name).toList(), v);
           }
 
           refresh();
@@ -101,67 +90,73 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction _addToFavoritesAction(
+  GridAction<SystemGalleryDirectoryFile> _addToFavoritesAction(
       SystemGalleryDirectoryFile? f, GalleryPlug plug) {
     final isFavorites = f != null && f.isFavorite;
 
     return GridAction(
-        isFavorites ? Icons.star_rounded : Icons.star_border_rounded,
-        (selected) {
-      _favoriteOrUnfavorite(context, selected.cast(), plug);
-    }, false,
-        color: isFavorites ? Colors.yellow.shade900 : null,
-        animate: f != null,
-        play: !isFavorites);
+      isFavorites ? Icons.star_rounded : Icons.star_border_rounded,
+      (selected) {
+        _favoriteOrUnfavorite(context, selected, plug);
+      },
+      false,
+      color: isFavorites ? Colors.yellow.shade900 : null,
+      animate: f != null,
+      play: !isFavorites,
+    );
   }
 
-  GridAction _setFavoritesThumbnailAction() {
-    return GridAction(Icons.image_outlined, (selected) {
-      MiscSettings.setFavoritesThumbId(
-          (selected.first as SystemGalleryDirectoryFile).id);
-      setState(() {});
-    }, true, showOnlyWhenSingle: true);
+  GridAction<SystemGalleryDirectoryFile> _setFavoritesThumbnailAction() {
+    return GridAction(
+      Icons.image_outlined,
+      (selected) {
+        MiscSettings.setFavoritesThumbId(selected.first.id);
+        setState(() {});
+      },
+      true,
+      showOnlyWhenSingle: true,
+    );
   }
 
-  GridAction _deleteAction() {
+  GridAction<SystemGalleryDirectoryFile> _deleteAction() {
     return GridAction(
       Icons.delete,
       (selected) {
-        _deleteDialog(context, selected.cast());
+        _deleteDialog(context, selected);
       },
       false,
     );
   }
 
-  GridAction _copyAction(
+  GridAction<SystemGalleryDirectoryFile> _copyAction(
       GridSkeletonStateFilter<SystemGalleryDirectoryFile> state,
       GalleryPlug plug) {
     return GridAction(
       Icons.copy,
       (selected) {
-        _moveOrCopy(context, selected.cast(), false, state, plug);
+        _moveOrCopy(context, selected, false, state, plug);
       },
       false,
     );
   }
 
-  GridAction _moveAction(
+  GridAction<SystemGalleryDirectoryFile> _moveAction(
       GridSkeletonStateFilter<SystemGalleryDirectoryFile> state,
       GalleryPlug plug) {
     return GridAction(
       Icons.forward_rounded,
       (selected) {
-        _moveOrCopy(context, selected.cast(), true, state, plug);
+        _moveOrCopy(context, selected, true, state, plug);
       },
       false,
     );
   }
 
-  GridAction _chooseAction() {
+  GridAction<SystemGalleryDirectoryFile> _chooseAction() {
     return GridAction(
       Icons.check,
       (selected) {
-        widget.callback!(selected.first as SystemGalleryDirectoryFile);
+        widget.callback!(selected.first);
         if (widget.callback!.returnBack) {
           Navigator.pop(context);
           Navigator.pop(context);
@@ -178,8 +173,8 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
       bool move,
       GridSkeletonStateFilter<SystemGalleryDirectoryFile> state,
       GalleryPlug plug) {
-    state.imageViewKey.currentState?.wrapNotifiersKey.currentState
-        ?.pauseVideo();
+    // state.imageViewKey.currentState?.wrapNotifiersKey.currentState
+    //     ?.pauseVideo();
 
     final List<String> searchPrefix = [];
     for (final tag in selected.first.tagsFlat.split(" ")) {
@@ -249,9 +244,11 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
           ),
         );
       },
-    )).then((value) => state
-        .imageViewKey.currentState?.wrapNotifiersKey.currentState
-        ?.unpauseVideo());
+    )).then((value) {
+      // state
+      //   .imageViewKey.currentState?.wrapNotifiersKey.currentState
+      //   ?.unpauseVideo()
+    });
   }
 
   void _favoriteOrUnfavorite(BuildContext context,

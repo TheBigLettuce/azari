@@ -16,7 +16,7 @@ import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 
 import '../grid_frame.dart';
 
-class ListLayout<T extends Cell> implements GridLayouter<T> {
+class ListLayout<T extends CellBase> implements GridLayouter<T> {
   const ListLayout({this.hideThumbnails = false});
 
   final bool hideThumbnails;
@@ -38,39 +38,56 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
     ];
   }
 
-  static Widget blueprint<T extends Cell>(
+  static Widget blueprint<T extends CellBase>(
     BuildContext context,
-    GridMutationInterface<T> state,
+    GridMutationInterface state,
     GridFunctionality<T> functionality,
     GridSelection<T> selection, {
     required bool hideThumbnails,
-  }) =>
-      SliverList.separated(
-        separatorBuilder: (context, index) => const Divider(
-          height: 1,
-        ),
-        itemCount: state.cellCount,
-        itemBuilder: (context, index) => _tile(
+  }) {
+    final getCell = CellProvider.of<T>(context);
+
+    return SliverList.separated(
+      separatorBuilder: (context, index) => const Divider(
+        height: 1,
+      ),
+      itemCount: state.cellCount,
+      itemBuilder: (context, index) {
+        final cell = getCell(index);
+
+        return _tile(
           context,
           functionality,
           selection,
+          cell: cell,
           index: index,
           hideThumbnails: hideThumbnails,
-        ),
-      );
+        );
+      },
+    );
+  }
 
-  static Widget _tile<T extends Cell>(
+  static Widget _tile<T extends CellBase>(
     BuildContext context,
     GridFunctionality<T> functionality,
     GridSelection<T> selection, {
     required int index,
+    required T cell,
     required bool hideThumbnails,
   }) {
-    final cell = CellProvider.getOf<T>(context, index);
+    final thumbnail =
+        cell is Thumbnailable ? (cell as Thumbnailable).thumbnail() : null;
 
     return WrapSelection(
       selection: selection,
       selectFrom: null,
+      description: cell.description(),
+      onPressed: cell is Pressable<T>
+          ? () {
+              (cell as Pressable<T>)
+                  .onPress(context, functionality, cell, index);
+            }
+          : null,
       functionality: functionality,
       thisIndx: index,
       child: Builder(
@@ -81,10 +98,10 @@ class ListLayout<T extends Cell> implements GridLayouter<T> {
             textColor: selection.isSelected(index)
                 ? Theme.of(context).colorScheme.inversePrimary
                 : null,
-            leading: !hideThumbnails && cell.thumbnail() != null
+            leading: !hideThumbnails && thumbnail != null
                 ? CircleAvatar(
                     backgroundColor: Theme.of(context).colorScheme.background,
-                    foregroundImage: cell.thumbnail(),
+                    foregroundImage: thumbnail,
                     onForegroundImageError: (_, __) {},
                   )
                 : null,

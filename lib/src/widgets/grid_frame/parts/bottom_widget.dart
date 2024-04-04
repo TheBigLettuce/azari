@@ -7,7 +7,7 @@
 
 part of '../grid_frame.dart';
 
-class _BottomWidget<T extends Cell> extends PreferredSize {
+class _BottomWidget extends PreferredSize {
   final bool isRefreshing;
   final Widget? routeChanger;
 

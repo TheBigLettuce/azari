@@ -17,7 +17,7 @@ import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
 
 import '../grid_frame.dart';
 
-class GridQuiltedLayout<T extends Cell> implements GridLayouter<T> {
+class GridQuiltedLayout<T extends CellBase> implements GridLayouter<T> {
   const GridQuiltedLayout();
 
   @override
@@ -33,10 +33,10 @@ class GridQuiltedLayout<T extends Cell> implements GridLayouter<T> {
         state.widget.functionality,
         state.selection,
         randomNumber: state.widget.description.gridSeed,
-        gridCell: (context, idx) => GridCell.frameDefault(
+        gridCell: (context, cell, idx) => GridCell.frameDefault(
           context,
           idx,
-          imageAlign: Alignment.topCenter,
+          cell,
           hideTitle: settings.hideName,
           isList: isList,
           animated: PlayAnimationNotifier.maybeOf(context) ?? false,
@@ -47,15 +47,17 @@ class GridQuiltedLayout<T extends Cell> implements GridLayouter<T> {
     ];
   }
 
-  static Widget blueprint<T extends Cell>(
+  static Widget blueprint<T extends CellBase>(
     BuildContext context,
-    GridMutationInterface<T> state,
+    GridMutationInterface state,
     GridFunctionality<T> functionality,
     GridSelection<T> selection, {
     required MakeCellFunc<T> gridCell,
     required int randomNumber,
     required GridColumn columns,
   }) {
+    final getCell = CellProvider.of<T>(context);
+
     return SliverGrid.builder(
       itemCount: state.cellCount,
       gridDelegate: SliverQuiltedGridDelegate(
@@ -64,12 +66,21 @@ class GridQuiltedLayout<T extends Cell> implements GridLayouter<T> {
         pattern: columns.pattern(randomNumber),
       ),
       itemBuilder: (context, indx) {
+        final cell = getCell(indx);
+
         return WrapSelection(
           thisIndx: indx,
+          description: cell.description(),
           selection: selection,
+          onPressed: cell is Pressable<T>
+              ? () {
+                  (cell as Pressable<T>)
+                      .onPress(context, functionality, cell, indx);
+                }
+              : null,
           functionality: functionality,
           selectFrom: null,
-          child: gridCell(context, indx),
+          child: gridCell(context, cell, indx),
         );
       },
     );

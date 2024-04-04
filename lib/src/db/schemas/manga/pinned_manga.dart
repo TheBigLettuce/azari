@@ -7,8 +7,10 @@
 
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:isar/isar.dart';
 
@@ -22,6 +24,13 @@ class PinnedManga extends CompactMangaDataBase {
     required super.thumbUrl,
     required super.title,
   });
+
+  @override
+  CellStaticData description() => const CellStaticData(
+        imageAlign: Alignment.topCenter,
+        alignTitleToTopLeft: true,
+        tightMode: false,
+      );
 
   static bool exist(String mangaId, MangaMeta site) {
     return Dbs.g.anime.pinnedMangas.getByMangaIdSiteSync(mangaId, site) != null;

@@ -14,7 +14,7 @@ abstract class GridLayoutBehaviour {
 
   GridSettingsBase Function() get defaultSettings;
 
-  GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings);
+  GridLayouter<T> makeFor<T extends CellBase>(GridSettingsBase settings);
 }
 
 class GridSettingsLayoutBehaviour implements GridLayoutBehaviour {
@@ -24,6 +24,6 @@ class GridSettingsLayoutBehaviour implements GridLayoutBehaviour {
   final GridSettingsBase Function() defaultSettings;
 
   @override
-  GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings) =>
+  GridLayouter<T> makeFor<T extends CellBase>(GridSettingsBase settings) =>
       settings.layoutType.layout();
 }

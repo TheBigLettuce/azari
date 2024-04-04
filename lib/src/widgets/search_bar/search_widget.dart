@@ -7,7 +7,7 @@
 
 part of 'search_filter_grid.dart';
 
-class _SearchWidget<T extends Cell> extends StatefulWidget {
+class _SearchWidget<T extends CellBase> extends StatefulWidget {
   final SearchFilterGrid<T> instance;
   final String? hint;
   final int? count;
@@ -23,12 +23,11 @@ class _SearchWidget<T extends Cell> extends StatefulWidget {
   State<_SearchWidget<T>> createState() => __SearchWidgetState();
 }
 
-class __SearchWidgetState<T extends Cell> extends State<_SearchWidget<T>> {
+class __SearchWidgetState<T extends CellBase> extends State<_SearchWidget<T>> {
   late int count = widget.count ?? 0;
 
-  void update() {
-    count =
-        widget.instance._state.gridKey.currentState?.mutation.cellCount ?? 0;
+  void update(int count) {
+    this.count = count;
 
     setState(() {});
   }

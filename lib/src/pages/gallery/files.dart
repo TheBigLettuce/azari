@@ -10,12 +10,10 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
-import 'package:gallery/src/db/base/system_gallery_directory_file_functionality_mixin.dart';
 import 'package:gallery/src/db/schemas/grid_settings/files.dart';
 import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
-import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
@@ -32,8 +30,6 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_back_button_be
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
-import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/pages/gallery/directories.dart';
 import 'package:gallery/src/plugs/notifications.dart';
@@ -91,7 +87,7 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
   late final GalleryFilesExtra extra = widget.api.getExtra()
     ..setRefreshingStatusCallback((i, inRefresh, empty) {
       if (empty) {
-        state.imageViewKey.currentState?.update(context, 0);
+        // state.imageViewKey.currentState?.update(context, 0);
 
         Navigator.of(context).pop();
 
@@ -192,8 +188,7 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
     },
   );
 
-  GridMutationInterface<SystemGalleryDirectoryFile> get mutation =>
-      state.refreshingStatus.mutation;
+  GridMutationInterface get mutation => state.refreshingStatus.mutation;
 
   late final SearchFilterGrid<SystemGalleryDirectoryFile> search;
 
@@ -218,13 +213,13 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
           _subscription?.cancel();
           _subscription =
               Stream.periodic(const Duration(seconds: 10)).listen((event) {
-            state.imageViewKey.currentState?.key.currentState?.closeEndDrawer();
-            final imageViewContext = state.imageViewKey.currentContext;
-            if (imageViewContext != null) {
-              Navigator.of(imageViewContext).pop();
-            }
+            // state.imageViewKey.currentState?.key.currentState?.closeEndDrawer();
+            // final imageViewContext = state.imageViewKey.currentContext;
+            // if (imageViewContext != null) {
+            // Navigator.of(imageViewContext).pop();
+            // }
 
-            Navigator.of(context).pop();
+            // Navigator.of(context).pop();
 
             return;
           });
@@ -315,29 +310,29 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
               ),
               selectionGlue: GlueProvider.generateOf(context)(),
               refreshingStatus: state.refreshingStatus,
-              imageViewDescription: ImageViewDescription(
-                imageViewKey: state.imageViewKey,
-                statistics: const ImageViewStatistics(
-                  swiped: StatisticsGallery.addFilesSwiped,
-                  viewed: StatisticsGallery.addViewedFiles,
-                ),
-                addIconsImage: (cell) {
-                  return widget.callback != null
-                      ? [
-                          _chooseAction(),
-                        ]
-                      : extra.isTrash
-                          ? [
-                              _restoreFromTrash(),
-                            ]
-                          : [
-                              _addToFavoritesAction(cell, plug),
-                              _deleteAction(),
-                              _copyAction(state, plug),
-                              _moveAction(state, plug)
-                            ];
-                },
-              ),
+              // imageViewDescription: ImageViewDescription(
+              //   imageViewKey: state.imageViewKey,
+              //   statistics: const ImageViewStatistics(
+              //     swiped: StatisticsGallery.addFilesSwiped,
+              //     viewed: StatisticsGallery.addViewedFiles,
+              //   ),
+              //   addIconsImage: (cell) {
+              //     return widget.callback != null
+              //         ? [
+              //             _chooseAction(),
+              //           ]
+              //         : extra.isTrash
+              //             ? [
+              //                 _restoreFromTrash(),
+              //               ]
+              //             : [
+              //                 _addToFavoritesAction(cell, plug),
+              //                 _deleteAction(),
+              //                 _copyAction(state, plug),
+              //                 _moveAction(state, plug)
+              //               ];
+              //   },
+              // ),
               refresh: extra.supportsDirectRefresh
                   ? AsyncGridRefresh(() async {
                       final i = await widget.api.refresh();
@@ -467,7 +462,6 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
                         .copy(columns: columns)
                         .save(),
               ),
-              tightMode: true,
               inlineMenuButtonItems: true,
               bottomWidget: widget.callback != null
                   ? CopyMovePreview.hintWidget(

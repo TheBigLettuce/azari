@@ -336,7 +336,7 @@ List<MangaEntry> _fromJson(List<dynamic> l) {
           site: MangaMeta.mangaDex,
           id: MangaStringId(id),
           animeIds: const [],
-          description: _tagOrFirst("en", attr["description"]),
+          synopsis: _tagOrFirst("en", attr["description"]),
           demographics: attr["publicationDemographic"] ?? "",
           volumes: (volumes is String ? int.tryParse(volumes) : volumes) ?? -1,
         );

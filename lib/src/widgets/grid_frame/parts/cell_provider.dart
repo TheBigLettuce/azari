@@ -5,24 +5,32 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
+part of '../grid_frame.dart';
 
-import '../../interfaces/cell/cell.dart';
+class CellProvider<T extends CellBase> extends InheritedWidget {
+  final T Function(int i) getCell;
 
-class CurrentCellNotifier<T extends Cell> extends InheritedWidget {
-  final T cell;
+  const CellProvider({
+    super.key,
+    required this.getCell,
+    required super.child,
+  });
 
-  const CurrentCellNotifier(
-      {super.key, required this.cell, required super.child});
-
-  static T of<T extends Cell>(BuildContext context) {
+  static T getOf<T extends CellBase>(BuildContext context, int i) {
     final widget =
-        context.dependOnInheritedWidgetOfExactType<CurrentCellNotifier<T>>();
+        context.dependOnInheritedWidgetOfExactType<CellProvider<T>>();
 
-    return widget!.cell;
+    return widget!.getCell(i);
+  }
+
+  static T Function(int) of<T extends CellBase>(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<CellProvider<T>>();
+
+    return widget!.getCell;
   }
 
   @override
-  bool updateShouldNotify(CurrentCellNotifier<T> oldWidget) =>
-      cell.isarId != oldWidget.cell.isarId;
+  bool updateShouldNotify(CellProvider<T> oldWidget) =>
+      getCell != oldWidget.getCell;
 }

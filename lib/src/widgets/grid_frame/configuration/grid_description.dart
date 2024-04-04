@@ -8,7 +8,7 @@
 part of '../grid_frame.dart';
 
 /// Metadata about the grid.
-class GridDescription<T extends Cell> {
+class GridDescription<T extends CellBase> {
   const GridDescription({
     required this.actions,
     required this.gridSeed,
@@ -17,13 +17,9 @@ class GridDescription<T extends Cell> {
     this.risingAnimation = false,
     this.ignoreEmptyWidgetOnNoContent = false,
     this.bottomWidget,
-    this.ignoreSwipeSelectGesture = false,
-    this.cellTitleAtBottom = false,
     this.asSliver = false,
     this.settingsButton,
     this.inlineMenuButtonItems = false,
-    this.tightMode = false,
-    this.titleLines = 1,
     this.menuButtonItems,
     this.footer,
     this.pages,
@@ -40,27 +36,19 @@ class GridDescription<T extends Cell> {
   final String? pageName;
 
   /// Actions of the grid on selected cells.
-  final List<GridAction> actions;
+  final List<GridAction<T>> actions;
 
   /// Displayed in the app bar bottom widget.
   final PreferredSizeWidget? bottomWidget;
 
-  final int titleLines;
-
   final bool showAppBar;
 
-  final bool ignoreSwipeSelectGesture;
-
   final bool ignoreEmptyWidgetOnNoContent;
-
-  final bool cellTitleAtBottom;
 
   /// Makes [menuButtonItems] appear as app bar items.
   final bool inlineMenuButtonItems;
 
   final bool asSliver;
-
-  final bool tightMode;
 
   final bool appBarSnap;
 

@@ -27,7 +27,6 @@ import 'package:gallery/src/pages/more/tags/tags_widget.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/search_launch_grid.dart';
@@ -37,7 +36,6 @@ import 'package:isar/isar.dart';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../db/schemas/statistics/statistics_booru.dart';
 import '../../db/schemas/statistics/statistics_general.dart';
 import 'booru_grid_actions.dart';
 import '../../net/downloader.dart';
@@ -49,7 +47,6 @@ import '../../db/schemas/settings/settings.dart';
 import '../../widgets/skeletons/grid.dart';
 import '../../widgets/notifiers/booru_api.dart';
 import '../../widgets/grid_frame/grid_frame.dart';
-import '../../widgets/image_view/image_view.dart';
 import '../../widgets/grid_frame/configuration/grid_frame_settings_button.dart';
 
 class BooruSearchPage extends StatefulWidget {
@@ -139,7 +136,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
     favoritesWatcher = Dbs.g.main.favoriteBoorus
         .watchLazy(fireImmediately: false)
         .listen((event) {
-      state.imageViewKey.currentState?.setState(() {});
+      // state.imageViewKey.currentState?.setState(() {});
       setState(() {});
     });
   }
@@ -299,17 +296,17 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                   download: _download,
                   selectionGlue: GlueProvider.generateOf(context)(),
                   refreshingStatus: state.refreshingStatus,
-                  imageViewDescription: ImageViewDescription(
-                    addIconsImage: (post) => [
-                      BooruGridActions.favorites(context, post),
-                      BooruGridActions.download(context, api.booru)
-                    ],
-                    imageViewKey: state.imageViewKey,
-                    statistics: const ImageViewStatistics(
-                      swiped: StatisticsBooru.addSwiped,
-                      viewed: StatisticsBooru.addViewed,
-                    ),
-                  ),
+                  // imageViewDescription: ImageViewDescription(
+                  //   addIconsImage: (post) => [
+                  //     BooruGridActions.favorites(context, post),
+                  //     BooruGridActions.download(context, api.booru)
+                  //   ],
+                  //   imageViewKey: state.imageViewKey,
+                  //   statistics: const ImageViewStatistics(
+                  //     swiped: StatisticsBooru.addSwiped,
+                  //     viewed: StatisticsBooru.addViewed,
+                  //   ),
+                  // ),
                   search: OverrideGridSearchWidget(
                     SearchAndFocus(
                         search.searchWidget(context, hint: api.booru.name),

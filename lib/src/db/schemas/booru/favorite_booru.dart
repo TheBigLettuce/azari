@@ -9,6 +9,7 @@ import 'dart:async';
 
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:isar/isar.dart';
 
 import '../../base/post_base.dart';
@@ -34,6 +35,11 @@ class FavoriteBooru extends PostBase {
     required super.score,
     required super.createdAt,
   });
+
+  @override
+  CellStaticData description() => const CellStaticData(
+        ignoreSwipeSelectGesture: false,
+      );
 
   @Index()
   String? group;

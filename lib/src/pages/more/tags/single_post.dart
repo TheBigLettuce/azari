@@ -22,7 +22,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:qrscan/qrscan.dart';
 
 import '../../../db/schemas/booru/post.dart';
-import '../../booru/booru_grid_actions.dart';
 import '../../../interfaces/booru/booru_api.dart';
 import '../../../db/schemas/downloader/download_file.dart';
 import '../../../db/schemas/settings/settings.dart';
@@ -112,22 +111,23 @@ class _SinglePostState extends State<SinglePost> {
       ImageView.launchWrapped(
         context,
         1,
-        (_) => value,
+        (context, __) => value.content(context),
         overlayColor,
         key: key,
         download: (_) {
           Downloader.g.add(
-              DownloadFile.d(
-                  url: value.fileDownloadUrl(),
-                  site: booru.booru.url,
-                  name: value.filename(),
-                  thumbUrl: value.previewUrl),
-              Settings.fromDb());
+            DownloadFile.d(
+                url: value.fileDownloadUrl(),
+                site: booru.booru.url,
+                name: value.filename(),
+                thumbUrl: value.previewUrl),
+            Settings.fromDb(),
+          );
         },
-        actions: (p) => [
-          BooruGridActions.favorites(context, p),
-          BooruGridActions.download(context, booru.booru)
-        ],
+        // actions: (p) => [
+        //   BooruGridActions.favorites(context, p),
+        //   BooruGridActions.download(context, booru.booru)
+        // ],
       ).then((value) => favoritesWatcher.cancel());
     } catch (e, trace) {
       try {

@@ -115,24 +115,25 @@ class __FinishedTabState extends State<_FinishedTab> {
         layout: const GridSettingsLayoutBehaviour(_settings),
         getCell: _getCell,
         functionality: GridFunctionality(
-            selectionGlue: GlueProvider.generateOf(context)(),
-            refreshingStatus: state.refreshingStatus,
-            imageViewDescription: ImageViewDescription(
-              imageViewKey: state.imageViewKey,
-            ),
-            refresh: SynchronousGridRefresh(() => _list.length),
-            onPressed: OverrideGridOnCellPressBehaviour(
-              onPressed: (context, idx, _) {
-                final cell =
-                    CellProvider.getOf<WatchedAnimeEntry>(context, idx);
+          selectionGlue: GlueProvider.generateOf(context)(),
+          refreshingStatus: state.refreshingStatus,
+          // imageViewDescription: ImageViewDescription(
+          //   imageViewKey: state.imageViewKey,
+          // ),
+          refresh: SynchronousGridRefresh(() => _list.length),
+          // onPressed: OverrideGridOnCellPressBehaviour(
+          //   onPressed: (context, idx, _) {
+          //     final cell =
+          //         CellProvider.getOf<WatchedAnimeEntry>(context, idx);
 
-                return Navigator.push(context, MaterialPageRoute(
-                  builder: (context) {
-                    return FinishedAnimeInfoPage(entry: cell);
-                  },
-                ));
-              },
-            )),
+          //     return Navigator.push(context, MaterialPageRoute(
+          //       builder: (context) {
+          //         return FinishedAnimeInfoPage(entry: cell);
+          //       },
+          //     ));
+          //   },
+          // ),
+        ),
         mainFocus: state.mainFocus,
         description: GridDescription(
           risingAnimation: true,
@@ -140,8 +141,7 @@ class __FinishedTabState extends State<_FinishedTab> {
             GridAction(
               Icons.delete_rounded,
               (selected) {
-                WatchedAnimeEntry.deleteAll(
-                    selected.map((e) => e.isarId!).toList());
+                WatchedAnimeEntry.deleteAll(selected);
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -150,7 +150,7 @@ class __FinishedTabState extends State<_FinishedTab> {
                     action: SnackBarAction(
                         label: AppLocalizations.of(context)!.undoLabel,
                         onPressed: () {
-                          WatchedAnimeEntry.reAdd(selected.cast());
+                          WatchedAnimeEntry.reAdd(selected);
                         }),
                   ),
                 );
@@ -165,7 +165,6 @@ class __FinishedTabState extends State<_FinishedTab> {
           ],
           keybindsDescription: AppLocalizations.of(context)!.finishedTab,
           showAppBar: false,
-          ignoreSwipeSelectGesture: true,
           gridSeed: state.gridSeed,
         ),
       ),

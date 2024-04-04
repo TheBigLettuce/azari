@@ -10,94 +10,48 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:transparent_image/transparent_image.dart';
 import '../../loading_error_widget.dart';
 import '../../shimmer_loading_indicator.dart';
 import '../grid_frame.dart';
 import 'sticker_widget.dart';
 
 /// The cell of [GridFrame].
-class GridCell<T extends Cell> extends StatefulWidget {
+class GridCell<T extends CellBase> extends StatefulWidget {
   final T _data;
   final int indx;
-  final bool hideAlias;
 
-  /// If [tight] is true, margin between the [GridCell]s on the grid is tight.
-  final bool tight;
-
-  /// If [shadowOnTop] is true, then on top of the [GridCell] painted [Colors.black],
-  /// with 0.5 opacity.
-  final bool shadowOnTop;
-
-  /// [GridCell] is displayed in form as a beveled rectangle.
-  /// If [circle] is true, then it's displayed as a circle instead.
-  final bool circle;
-
-  final bool isList;
-
-  /// If [ignoreStickers] is true, then stickers aren't displayed on top of the cell.
-  final bool ignoreStickers;
-
-  final bool labelAtBottom;
-
-  final int? lines;
-
-  final String? forceAlias;
-
+  final bool longTitle;
+  final bool hideTitle;
   final bool animate;
-
-  final bool alignTitleToTopLeft;
-  final Alignment imageAlign;
-
   final bool blur;
 
   const GridCell({
     super.key,
     required T cell,
+    required this.hideTitle,
     required this.indx,
-    required this.tight,
-    this.forceAlias,
-    this.hideAlias = false,
     this.animate = false,
-    this.shadowOnTop = false,
-    this.circle = false,
-    this.labelAtBottom = false,
-    required this.isList,
-    this.lines,
-    this.imageAlign = Alignment.center,
-    this.ignoreStickers = false,
-    this.alignTitleToTopLeft = false,
+    this.longTitle = false,
     this.blur = false,
   }) : _data = cell;
 
-  static GridCell<T> frameDefault<T extends Cell>(
+  static GridCell<T> frameDefault<T extends CellBase>(
     BuildContext context,
-    int idx, {
+    int idx,
+    T cell, {
     required GridFrameState<T> state,
     required bool isList,
     required bool hideTitle,
-    bool alignTitleToTopLeft = false,
-    Alignment imageAlign = Alignment.center,
-    T? overrideCell,
     bool animated = false,
     bool blur = false,
   }) {
-    final description = state.widget.description;
-
-    final cell = overrideCell ?? CellProvider.getOf<T>(context, idx);
-
     return GridCell(
       cell: cell,
-      hideAlias: hideTitle,
-      isList: isList,
+      longTitle: isList,
       indx: idx,
-      alignTitleToTopLeft: alignTitleToTopLeft,
-      lines: description.titleLines,
-      tight: description.tightMode,
-      imageAlign: imageAlign,
+      hideTitle: hideTitle,
       animate: animated,
       blur: blur,
-      labelAtBottom: description.cellTitleAtBottom,
     );
   }
 
@@ -105,195 +59,224 @@ class GridCell<T extends Cell> extends StatefulWidget {
   State<GridCell> createState() => _GridCellState();
 }
 
-class _GridCellState<T extends Cell> extends State<GridCell<T>> {
+class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
   int _tries = 0;
+
+  Widget aliasWidget(
+      BuildContext context, CellStaticData description, String alias) {
+    return description.alignTitleToTopLeft
+        ? topAlignAlias(context, description, alias)
+        : Container(
+            alignment: Alignment.bottomCenter,
+            decoration: BoxDecoration(
+                gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                  Colors.black.withAlpha(50),
+                  Colors.black12,
+                  Colors.black45
+                ])),
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: Text(
+                alias,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                maxLines: description.titleLines,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                ),
+              ),
+            ),
+          );
+  }
+
+  Widget topAlignAlias(
+      BuildContext context, CellStaticData description, String alias) {
+    return SizedBox(
+      width: double.infinity,
+      child: Container(
+        decoration: BoxDecoration(
+            gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+              Colors.black.withOpacity(0.38),
+              Colors.black.withOpacity(0.3),
+              Colors.black.withOpacity(0.2),
+              Colors.black.withOpacity(0.05),
+              Colors.black.withOpacity(0),
+            ])),
+        child: Padding(
+          padding: const EdgeInsets.only(left: 8, right: 8, top: 6, bottom: 18),
+          child: Text(
+            alias,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+            maxLines: description.titleLines,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Colors.white.withOpacity(0.8),
+                ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final stickers = widget._data.stickers(context);
+    final data = widget._data;
+    final description = data.description();
+    final alias = widget.hideTitle ? "" : data.alias(widget.longTitle);
 
-    Widget topAlignAlias() {
-      return SizedBox(
-        width: double.infinity,
-        child: Container(
-          decoration: BoxDecoration(
-              gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                Colors.black.withOpacity(0.38),
-                Colors.black.withOpacity(0.3),
-                Colors.black.withOpacity(0.2),
-                Colors.black.withOpacity(0.05),
-                Colors.black.withOpacity(0),
-              ])),
-          child: Padding(
-            padding:
-                const EdgeInsets.only(left: 8, right: 8, top: 6, bottom: 18),
-            child: Text(
-              widget.forceAlias ?? widget._data.alias(widget.isList),
-              softWrap: false,
-              overflow: TextOverflow.ellipsis,
-              maxLines: widget.lines ?? 1,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: Colors.white.withOpacity(0.8),
-                  ),
-            ),
-          ),
+    final stickers =
+        data is Stickerable ? (data as Stickerable).stickers(context) : null;
+    final thumbnail =
+        data is Thumbnailable ? (data as Thumbnailable).thumbnail() : null;
+
+    if (alias.isEmpty &&
+        (stickers == null || stickers.isEmpty) &&
+        thumbnail == null) {
+      return const SizedBox.shrink();
+    }
+
+    final card = Card(
+      margin: description.tightMode ? const EdgeInsets.all(0.5) : null,
+      elevation: 0,
+      color: Theme.of(context).cardColor.withOpacity(0),
+      child: ClipPath(
+        clipper: ShapeBorderClipper(
+          shape: description.circle
+              ? const CircleBorder()
+              : RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.0)),
         ),
-      );
-    }
+        child: alias.isEmpty &&
+                thumbnail == null &&
+                (stickers == null || stickers.isEmpty)
+            ? null
+            : Stack(
+                fit: StackFit.loose,
+                children: [
+                  if (thumbnail != null)
+                    Center(
+                      child: LayoutBuilder(builder: (context, constraints) {
+                        final blurSigma =
+                            constraints.biggest.longestSide * 0.069;
 
-    Widget alias() {
-      return widget.alignTitleToTopLeft
-          ? topAlignAlias()
-          : Container(
-              alignment: Alignment.bottomCenter,
-              decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                    Colors.black.withAlpha(50),
-                    Colors.black12,
-                    Colors.black45
-                  ])),
-              child: Padding(
-                  padding: const EdgeInsets.all(6),
-                  child: Text(
-                    widget.forceAlias ?? widget._data.alias(widget.isList),
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: widget.lines ?? 1,
-                    style: TextStyle(color: Colors.white.withOpacity(0.7)),
-                  )),
-            );
-    }
+                        final image = Image(
+                          key: ValueKey((thumbnail.hashCode, _tries)),
+                          errorBuilder: (context, error, stackTrace) =>
+                              LoadingErrorWidget(
+                            error: error.toString(),
+                            refresh: () {
+                              _tries += 1;
 
-    Widget card() => Card(
-          margin: widget.tight ? const EdgeInsets.all(0.5) : null,
-          elevation: 0,
-          color: Theme.of(context).cardColor.withOpacity(0),
-          child: ClipPath(
-            clipper: ShapeBorderClipper(
-                shape: widget.circle
-                    ? const CircleBorder()
-                    : RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15.0))),
-            child: Stack(
-              fit: StackFit.loose,
-              children: [
-                Center(child: LayoutBuilder(builder: (context, constraints) {
-                  final blurSigma = constraints.biggest.longestSide * 0.069;
-
-                  final image = Image(
-                    key: ValueKey((widget._data.thumbnail.hashCode, _tries)),
-                    errorBuilder: (context, error, stackTrace) =>
-                        LoadingErrorWidget(
-                      error: error.toString(),
-                      refresh: () {
-                        _tries += 1;
-
-                        setState(() {});
-                      },
-                    ),
-                    frameBuilder: (
-                      context,
-                      child,
-                      frame,
-                      wasSynchronouslyLoaded,
-                    ) {
-                      if (wasSynchronouslyLoaded) {
-                        return child;
-                      }
-
-                      return frame == null
-                          ? const ShimmerLoadingIndicator()
-                          : child.animate().fadeIn();
-                    },
-                    image: widget._data.thumbnail() ??
-                        MemoryImage(kTransparentImage),
-                    isAntiAlias: true,
-                    alignment: widget.imageAlign,
-                    color: widget.blur
-                        ? Theme.of(context).colorScheme.surface.withOpacity(0.2)
-                        : widget.shadowOnTop
-                            ? Colors.black.withOpacity(0.5)
-                            : null,
-                    colorBlendMode:
-                        widget.blur ? BlendMode.darken : BlendMode.darken,
-                    fit: BoxFit.cover,
-                    filterQuality:
-                        widget.blur ? FilterQuality.none : FilterQuality.medium,
-                    width: constraints.maxWidth,
-                    height: constraints.maxHeight,
-                  );
-
-                  return widget.blur
-                      ? ImageFiltered(
-                          enabled: true,
-                          imageFilter: ImageFilter.compose(
-                            outer: ImageFilter.blur(
-                              sigmaX: blurSigma,
-                              sigmaY: blurSigma,
-                              tileMode: TileMode.mirror,
-                            ),
-                            inner:
-                                ImageFilter.dilate(radiusX: 0.5, radiusY: 0.5),
+                              setState(() {});
+                            },
                           ),
-                          child: image,
-                        )
-                      : image;
-                })),
-                if (stickers.isNotEmpty && !widget.ignoreStickers) ...[
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Wrap(
-                          direction: Axis.vertical,
-                          children:
-                              stickers.map((e) => StickerWidget(e)).toList(),
-                        )),
-                  ),
+                          frameBuilder: (
+                            context,
+                            child,
+                            frame,
+                            wasSynchronouslyLoaded,
+                          ) {
+                            if (wasSynchronouslyLoaded) {
+                              return child;
+                            }
+
+                            return frame == null
+                                ? const ShimmerLoadingIndicator()
+                                : child.animate().fadeIn();
+                          },
+                          image: thumbnail,
+                          isAntiAlias: true,
+                          alignment: description.imageAlign,
+                          color: widget.blur
+                              ? Theme.of(context)
+                                  .colorScheme
+                                  .surface
+                                  .withOpacity(0.2)
+                              : null,
+                          colorBlendMode:
+                              widget.blur ? BlendMode.darken : BlendMode.darken,
+                          fit: BoxFit.cover,
+                          filterQuality: widget.blur
+                              ? FilterQuality.none
+                              : FilterQuality.medium,
+                          width: constraints.maxWidth,
+                          height: constraints.maxHeight,
+                        );
+
+                        return widget.blur
+                            ? ImageFiltered(
+                                enabled: true,
+                                imageFilter: ImageFilter.compose(
+                                  outer: ImageFilter.blur(
+                                    sigmaX: blurSigma,
+                                    sigmaY: blurSigma,
+                                    tileMode: TileMode.mirror,
+                                  ),
+                                  inner: ImageFilter.dilate(
+                                      radiusX: 0.5, radiusY: 0.5),
+                                ),
+                                child: image,
+                              )
+                            : image;
+                      }),
+                    ),
+                  if (stickers != null && stickers.isNotEmpty) ...[
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Wrap(
+                            direction: Axis.vertical,
+                            children:
+                                stickers.map((e) => StickerWidget(e)).toList(),
+                          )),
+                    ),
+                  ],
+                  if (alias.isNotEmpty && !description.titleAtBottom)
+                    aliasWidget(
+                      context,
+                      description,
+                      alias,
+                    ),
                 ],
-                if ((!widget.hideAlias &&
-                        !widget.shadowOnTop &&
-                        !widget.labelAtBottom) ||
-                    widget.forceAlias != null)
-                  alias(),
-              ],
-            ),
-          ),
-        );
+              ),
+      ),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Expanded(
-            flex: 2,
-            child: widget.animate
-                ? card().animate(key: widget._data.uniqueKey()).fadeIn()
-                : card()),
-        if (widget.labelAtBottom)
+          flex: 2,
+          child: widget.animate
+              ? card.animate(key: widget._data.uniqueKey()).fadeIn()
+              : card,
+        ),
+        if (description.titleAtBottom && alias.isNotEmpty)
           Expanded(
-              flex: 1,
-              child: Padding(
-                padding: widget.tight
-                    ? const EdgeInsets.only(left: 0.5, right: 0.5)
-                    : const EdgeInsets.only(right: 4, left: 4),
-                child: Text(
-                  widget._data.alias(false),
-                  maxLines: widget.lines,
-                  style: TextStyle(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.8),
-                      overflow: TextOverflow.fade),
+            flex: 1,
+            child: Padding(
+              padding: description.tightMode
+                  ? const EdgeInsets.only(left: 0.5, right: 0.5)
+                  : const EdgeInsets.only(right: 4, left: 4),
+              child: Text(
+                alias,
+                maxLines: description.titleLines,
+                style: TextStyle(
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                  overflow: TextOverflow.fade,
                 ),
-              ))
+              ),
+            ),
+          )
       ],
     );
   }

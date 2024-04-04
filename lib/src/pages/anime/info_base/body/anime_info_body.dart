@@ -152,7 +152,8 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
                                 ImageView.launchWrapped(
                                   context,
                                   snapshot.data!.length,
-                                  (i) => snapshot.data![i],
+                                  (context, i) =>
+                                      snapshot.data![i].openImage(context),
                                   overlayColor,
                                   startingCell: e.$1,
                                 );
@@ -160,8 +161,7 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
                               child: GridCell(
                                 cell: e.$2,
                                 indx: e.$1,
-                                tight: false,
-                                isList: false,
+                                hideTitle: false,
                               ),
                             ),
                           ))

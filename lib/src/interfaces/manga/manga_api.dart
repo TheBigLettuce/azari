@@ -13,6 +13,8 @@ import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
+import 'package:gallery/src/pages/anime/anime.dart';
+import 'package:gallery/src/widgets/image_view/image_view.dart';
 
 abstract interface class MangaAPI {
   MangaMeta get site;
@@ -64,8 +66,8 @@ enum MangaChapterOrder {
   asc;
 }
 
-class MangaImage implements Cell {
-  MangaImage(
+class MangaImage implements CellBase, ImageViewContentable, Thumbnailable {
+  const MangaImage(
     this.url,
     this.order,
     this.maxPages,
@@ -75,39 +77,37 @@ class MangaImage implements Cell {
   final int order;
   final String url;
 
-  @override
-  int? isarId;
+  // @override
+  // List<Widget>? addButtons(BuildContext context) => null;
+
+  // @override
+  // Widget? contentInfo(BuildContext context) => null;
+
+  // @override
+  // Contentable content() => NetImage(CachedNetworkImageProvider(url));
 
   @override
-  List<Widget>? addButtons(BuildContext context) => null;
+  CellStaticData description() => const CellStaticData();
 
   @override
-  Widget? contentInfo(BuildContext context) => null;
+  ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(url);
 
   @override
-  List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
+  Contentable content(BuildContext context) => NetImage(
+        this,
+        ContentWidgets.empty(uniqueKey),
+        thumbnail(),
+      );
 
   @override
   String alias(bool isList) => "${order + 1} / $maxPages";
 
   @override
-  Contentable content() => NetImage(CachedNetworkImageProvider(url));
-
-  @override
-  String? fileDownloadUrl() => null;
-
-  @override
-  List<Sticker> stickers(BuildContext context) => const [];
-
-  @override
-  ImageProvider<Object>? thumbnail() => null;
-
-  @override
   Key uniqueKey() => ValueKey(url);
 }
 
-class MangaEntry implements Cell {
-  MangaEntry({
+class MangaEntry implements AnimeCell, Stickerable, Thumbnailable {
+  const MangaEntry({
     required this.demographics,
     required this.volumes,
     required this.status,
@@ -123,7 +123,7 @@ class MangaEntry implements Cell {
     required this.site,
     required this.id,
     required this.animeIds,
-    required this.description,
+    required this.synopsis,
     required this.thumbUrl,
   });
 
@@ -131,7 +131,7 @@ class MangaEntry implements Cell {
   final String titleEnglish;
   final String titleJapanese;
 
-  final String description;
+  final String synopsis;
   final String status;
   final String imageUrl;
   final String thumbUrl;
@@ -150,13 +150,14 @@ class MangaEntry implements Cell {
   final List<String> titleSynonyms;
 
   @override
-  int? isarId;
+  Contentable openImage(BuildContext context) => NetImage(
+        this,
+        ContentWidgets.empty(uniqueKey),
+        CachedNetworkImageProvider(imageUrl),
+      );
 
   @override
-  List<Widget>? addButtons(BuildContext context) => null;
-
-  @override
-  Widget? contentInfo(BuildContext context) => null;
+  CellStaticData description() => const CellStaticData();
 
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
@@ -165,19 +166,13 @@ class MangaEntry implements Cell {
   String alias(bool isList) => title;
 
   @override
-  Contentable content() => NetImage(CachedNetworkImageProvider(imageUrl));
-
-  @override
-  String? fileDownloadUrl() => null;
-
-  @override
   List<Sticker> stickers(BuildContext context) => [
         if (PinnedManga.exist(id.toString(), site))
           const Sticker(Icons.push_pin_rounded),
       ];
 
   @override
-  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(thumbUrl);
+  ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(thumbUrl);
 
   @override
   Key uniqueKey() => ValueKey(id);

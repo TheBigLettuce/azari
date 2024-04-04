@@ -10,14 +10,12 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/cell/contentable.dart';
-import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:isar/isar.dart';
 
 part 'blacklisted_directory.g.dart';
 
 @collection
-class BlacklistedDirectory implements Cell {
+class BlacklistedDirectory implements CellBase, IsarEntryId {
   BlacklistedDirectory(this.bucketId, this.name);
 
   @override
@@ -32,28 +30,10 @@ class BlacklistedDirectory implements Cell {
   final String name;
 
   @override
-  List<Widget>? addButtons(BuildContext context) => null;
-
-  @override
-  List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
-
-  @override
-  Widget? contentInfo(BuildContext context) => null;
+  CellStaticData description() => const CellStaticData();
 
   @override
   String alias(bool isList) => name;
-
-  @override
-  String? fileDownloadUrl() => null;
-
-  @override
-  Contentable content() => const EmptyContent();
-
-  @override
-  List<Sticker> stickers(BuildContext context) => const [];
-
-  @override
-  ImageProvider<Object>? thumbnail() => null;
 
   static StreamSubscription<void> watch(void Function(void) f,
       [bool fire = true]) {

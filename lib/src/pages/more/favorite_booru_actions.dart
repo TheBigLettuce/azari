@@ -6,12 +6,13 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
 
 import '../../widgets/grid_frame/grid_frame.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 abstract class FavoritesActions {
-  static GridAction addToGroup<T>(
+  static GridAction<T> addToGroup<T extends CellBase>(
       BuildContext context,
       String? Function(List<T>) initalValue,
       void Function(List<T>, String, bool) onSubmitted,
@@ -29,7 +30,7 @@ abstract class FavoritesActions {
             return _GroupDialogWidget<T>(
               initalValue: initalValue,
               onSubmitted: onSubmitted,
-              selected: selected.cast(),
+              selected: selected,
               showPinButton: showPinButton,
             );
           },

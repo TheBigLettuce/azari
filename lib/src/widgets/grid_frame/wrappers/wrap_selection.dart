@@ -7,11 +7,13 @@
 
 part of '../grid_frame.dart';
 
-class WrapSelection<T extends Cell> extends StatelessWidget {
+class WrapSelection<T extends CellBase> extends StatelessWidget {
   final GridSelection<T> selection;
   final List<int>? selectFrom;
   final int thisIndx;
-  final T? overrideCell;
+  final CellStaticData description;
+
+  final void Function()? onPressed;
 
   final GridFunctionality<T> functionality;
 
@@ -19,11 +21,12 @@ class WrapSelection<T extends Cell> extends StatelessWidget {
 
   const WrapSelection({
     super.key,
-    this.overrideCell,
     required this.thisIndx,
+    required this.description,
     required this.selectFrom,
     required this.selection,
     required this.functionality,
+    required this.onPressed,
     required this.child,
   });
 
@@ -34,20 +37,20 @@ class WrapSelection<T extends Cell> extends StatelessWidget {
     if (selection.addActions.isEmpty) {
       return _WrappedSelectionCore(
         thisIndx: thisIndx,
-        overrideCell: overrideCell,
         selectFrom: selectFrom,
         selection: null,
+        onPressed: onPressed,
         functionality: functionality,
         child: child,
       );
     }
 
-    return thisIndx.isNegative || selection.ignoreSwipe
+    return thisIndx.isNegative || description.ignoreSwipeSelectGesture
         ? _WrappedSelectionCore<T>(
             selection: selection,
-            overrideCell: overrideCell,
             functionality: functionality,
             selectFrom: selectFrom,
+            onPressed: onPressed,
             thisIndx: thisIndx,
             child: child,
           )
@@ -77,7 +80,7 @@ class WrapSelection<T extends Cell> extends StatelessWidget {
                 child: _WrappedSelectionCore(
                   functionality: functionality,
                   thisIndx: thisIndx,
-                  overrideCell: overrideCell,
+                  onPressed: onPressed,
                   selectFrom: selectFrom,
                   selection: selection,
                   child: child,
@@ -88,13 +91,13 @@ class WrapSelection<T extends Cell> extends StatelessWidget {
   }
 }
 
-class _WrappedSelectionCore<T extends Cell> extends StatefulWidget {
+class _WrappedSelectionCore<T extends CellBase> extends StatefulWidget {
   final int thisIndx;
   final GridSelection<T>? selection;
   final List<int>? selectFrom;
   final GridFunctionality<T> functionality;
 
-  final T? overrideCell;
+  final void Function()? onPressed;
 
   final Widget child;
 
@@ -102,8 +105,8 @@ class _WrappedSelectionCore<T extends Cell> extends StatefulWidget {
     required this.thisIndx,
     required this.selectFrom,
     required this.selection,
-    required this.overrideCell,
     required this.functionality,
+    required this.onPressed,
     required this.child,
   });
 
@@ -112,7 +115,7 @@ class _WrappedSelectionCore<T extends Cell> extends StatefulWidget {
       __WrappedSelectionCoreState<T>();
 }
 
-class __WrappedSelectionCoreState<T extends Cell>
+class __WrappedSelectionCoreState<T extends CellBase>
     extends State<_WrappedSelectionCore<T>>
     with SingleTickerProviderStateMixin {
   GridSelection<T> get selection => widget.selection!;
@@ -148,16 +151,9 @@ class __WrappedSelectionCoreState<T extends Cell>
                 widget.functionality.download!(thisIndx);
               }
             : null,
-        onTap: thisIndx.isNegative && widget.overrideCell == null
+        onTap: thisIndx.isNegative && widget.onPressed == null
             ? null
-            : () {
-                functionality.onPressed.launch<T>(
-                  context,
-                  thisIndx,
-                  functionality,
-                  useCellInsteadIdx: widget.overrideCell,
-                );
-              },
+            : widget.onPressed,
         child: widget.child,
       );
     }
@@ -196,16 +192,9 @@ class __WrappedSelectionCoreState<T extends Cell>
                             }
                           : null,
                       onTap: selection.isEmpty
-                          ? thisIndx.isNegative && widget.overrideCell == null
+                          ? thisIndx.isNegative && widget.onPressed == null
                               ? null
-                              : () {
-                                  functionality.onPressed.launch<T>(
-                                    context,
-                                    thisIndx,
-                                    functionality,
-                                    useCellInsteadIdx: widget.overrideCell,
-                                  );
-                                }
+                              : widget.onPressed
                           : () {
                               selection.selectOrUnselect(context, thisIndx);
                             },
@@ -282,7 +271,7 @@ class __WrappedSelectionCoreState<T extends Cell>
   }
 }
 
-class _LongPressMoveGesture<T extends Cell> extends StatefulWidget {
+class _LongPressMoveGesture<T extends CellBase> extends StatefulWidget {
   final GridSelection<T> selection;
   final int thisIndx;
   final List<int>? selectFrom;

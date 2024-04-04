@@ -7,17 +7,18 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/cell/contentable.dart';
-import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:isar/isar.dart';
 
-class NoteBase implements Cell {
+class NoteBase implements CellBase, IsarEntryId {
   NoteBase(
     this.text,
     this.time, {
     required this.backgroundColor,
     required this.textColor,
   });
+
+  @override
+  Id? isarId;
 
   @Index(caseSensitive: false, type: IndexType.hash)
   final List<String> text;
@@ -28,36 +29,13 @@ class NoteBase implements Cell {
   final int? textColor;
 
   @override
-  Contentable content() => const EmptyContent();
-
-  @override
-  ImageProvider<Object>? thumbnail() => null;
+  CellStaticData description() => const CellStaticData();
 
   @override
   Key uniqueKey() => throw UnimplementedError();
 
   @override
-  Widget? contentInfo(BuildContext context) => null;
-
-  @override
-  List<(IconData, void Function()?)>? addStickers(BuildContext context) {
-    return null;
-  }
-
-  @override
   String alias(bool isList) {
     return "";
   }
-
-  @override
-  String? fileDownloadUrl() => null;
-
-  @override
-  Id? isarId;
-
-  @override
-  List<Widget>? addButtons(BuildContext context) => null;
-
-  @override
-  List<Sticker> stickers(BuildContext context) => const [];
 }

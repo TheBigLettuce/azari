@@ -12,7 +12,7 @@ import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/net/anime/jikan.dart';
-import '../cell/sticker.dart';
+import 'package:gallery/src/pages/anime/anime.dart';
 import 'anime_entry.dart';
 
 abstract class AnimeAPI {
@@ -54,58 +54,47 @@ enum AnimeSafeMode {
   h;
 }
 
-class AnimePicture implements Cell {
+class AnimePicture implements AnimeCell, Thumbnailable, Downloadable {
   final String imageUrl;
   final String thumbUrl;
 
-  AnimePicture({
+  const AnimePicture({
     required this.imageUrl,
     required this.thumbUrl,
   });
 
   @override
-  Contentable content() => NetImage(CachedNetworkImageProvider(imageUrl));
+  Contentable openImage(BuildContext context) => NetImage(
+        this,
+        ContentWidgets.empty(uniqueKey),
+        thumbnail(),
+      );
 
   @override
-  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(thumbUrl);
+  CellStaticData description() => const CellStaticData();
+
+  @override
+  ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(thumbUrl);
 
   @override
   Key uniqueKey() => (ValueKey(thumbUrl));
-
-  @override
-  int? isarId;
-
-  @override
-  List<Widget>? addButtons(BuildContext context) => null;
-
-  @override
-  Widget? contentInfo(BuildContext context) => null;
-
-  @override
-  List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
 
   @override
   String alias(bool isList) => "";
 
   @override
   String fileDownloadUrl() => imageUrl;
-
-  @override
-  List<Sticker> stickers(BuildContext context) => const [];
 }
 
-class AnimeRecommendations implements Cell {
-  AnimeRecommendations({
+class AnimeRecommendations implements CellBase, Thumbnailable, Downloadable {
+  const AnimeRecommendations({
     required this.id,
     required this.thumbUrl,
     required this.title,
   });
 
   @override
-  Contentable content() => NetImage(CachedNetworkImageProvider(thumbUrl));
-
-  @override
-  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(thumbUrl);
+  ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(thumbUrl);
 
   @override
   Key uniqueKey() => ValueKey((thumbUrl, id));
@@ -115,25 +104,17 @@ class AnimeRecommendations implements Cell {
   final int id;
 
   @override
-  int? isarId;
-
-  @override
-  List<Widget>? addButtons(BuildContext context) => null;
-
-  @override
-  Widget? contentInfo(BuildContext context) => null;
-
-  @override
-  List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
-
-  @override
   String alias(bool isList) => title;
 
   @override
   String fileDownloadUrl() => thumbUrl;
 
   @override
-  List<Sticker> stickers(BuildContext context) => const [];
+  CellStaticData description() => const CellStaticData(
+        titleLines: 2,
+        tightMode: false,
+        titleAtBottom: true,
+      );
 }
 
 class AnimeNewsEntry {

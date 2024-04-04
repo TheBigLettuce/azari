@@ -8,19 +8,20 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/booru_post_functionality_mixin.dart';
-import 'package:gallery/src/db/base/system_gallery_thumbnail_provider.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
+import 'package:gallery/src/pages/anime/anime.dart';
 import 'package:isar/isar.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'anime_api.dart';
 
-class AnimeEntry with BooruPostFunctionalityMixin implements Cell {
-  AnimeEntry({
+class AnimeEntry
+    with BooruPostFunctionalityMixin
+    implements AnimeCell, Thumbnailable, Downloadable, Stickerable {
+  const AnimeEntry({
     required this.site,
     required this.type,
     required this.thumbUrl,
@@ -42,18 +43,6 @@ class AnimeEntry with BooruPostFunctionalityMixin implements Cell {
     required this.explicit,
     required this.staff,
   });
-
-  @override
-  Contentable content() => NetImage(CachedNetworkImageProvider(thumbUrl));
-
-  @override
-  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(thumbUrl);
-
-  @override
-  Key uniqueKey() => ValueKey((thumbUrl, id));
-
-  @override
-  Id? isarId;
 
   @Index(unique: true, replace: true, composite: [CompositeIndex("id")])
   @enumerated
@@ -87,22 +76,40 @@ class AnimeEntry with BooruPostFunctionalityMixin implements Cell {
   final AnimeSafeMode explicit;
 
   @override
-  List<Widget>? addButtons(BuildContext context) {
-    return [
-      openInBrowserButton(Uri.parse(thumbUrl)),
-      shareButton(context, thumbUrl),
-    ];
-  }
+  CellStaticData description() => const CellStaticData(
+        ignoreSwipeSelectGesture: true,
+      );
 
   @override
-  Widget? contentInfo(BuildContext context) {
-    return SliverList.list(children: [
-      addInfoTile(
-        title: AppLocalizations.of(context)!.sourceFileInfoPage,
-        subtitle: thumbUrl,
-      )
-    ]);
-  }
+  ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(thumbUrl);
+
+  @override
+  Key uniqueKey() => ValueKey((thumbUrl, id));
+
+  @override
+  Contentable openImage(BuildContext context) => NetImage(
+        this,
+        ContentWidgets.empty(uniqueKey),
+        CachedNetworkImageProvider(thumbUrl),
+      );
+
+  // @override
+  // List<Widget> appBarButtons(BuildContext context) {
+  //   return [
+  //     openInBrowserButton(Uri.parse(thumbUrl)),
+  //     shareButton(context, thumbUrl),
+  //   ];
+  // }
+
+  // @override
+  // Widget? info(BuildContext context) {
+  //   return SliverList.list(children: [
+  //     addInfoTile(
+  //       title: AppLocalizations.of(context)!.sourceFileInfoPage,
+  //       subtitle: thumbUrl,
+  //     )
+  //   ]);
+  // }
 
   @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;

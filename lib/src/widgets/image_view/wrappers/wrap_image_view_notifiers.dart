@@ -6,23 +6,23 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/widgets/notifiers/app_bar_visibility.dart';
-import 'package:gallery/src/widgets/notifiers/current_cell.dart';
+import 'package:gallery/src/widgets/notifiers/current_content.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/notifiers/loading_progress.dart';
 import 'package:gallery/src/widgets/notifiers/pause_video.dart';
 import 'package:gallery/src/widgets/notifiers/reload_image.dart';
 
-import '../../../interfaces/cell/cell.dart';
 import '../../notifiers/filter.dart';
 import '../../notifiers/filter_value.dart';
 import '../../notifiers/focus.dart';
 import '../../notifiers/tag_refresh.dart';
 
-class WrapImageViewNotifiers<T extends Cell> extends StatefulWidget {
+class WrapImageViewNotifiers extends StatefulWidget {
   final void Function() onTagRefresh;
-  final T currentCell;
+  final Contentable currentCell;
   final FocusNode mainFocus;
   final InheritedWidget Function(Widget child)? registerNotifiers;
   final void Function([bool refreshPalette]) hardRefresh;
@@ -41,12 +41,10 @@ class WrapImageViewNotifiers<T extends Cell> extends StatefulWidget {
   });
 
   @override
-  State<WrapImageViewNotifiers<T>> createState() =>
-      WrapImageViewNotifiersState<T>();
+  State<WrapImageViewNotifiers> createState() => WrapImageViewNotifiersState();
 }
 
-class WrapImageViewNotifiersState<T extends Cell>
-    extends State<WrapImageViewNotifiers<T>> {
+class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
   bool _isAppbarShown = true;
   bool _isPaused = false;
   double? _loadingProgress = 1.0;
@@ -120,8 +118,8 @@ class WrapImageViewNotifiersState<T extends Cell>
                       child: FocusNotifier(
                         notifier: _searchData.searchFocus,
                         focusMain: widget.mainFocus.requestFocus,
-                        child: CurrentCellNotifier(
-                            cell: widget.currentCell,
+                        child: CurrentContentNotifier(
+                            content: widget.currentCell,
                             child: LoadingProgressNotifier(
                               progress: _loadingProgress,
                               child: AppBarVisibilityNotifier(

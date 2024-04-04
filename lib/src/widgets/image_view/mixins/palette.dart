@@ -10,27 +10,24 @@ import 'dart:developer';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:logging/logging.dart';
 import 'package:palette_generator/palette_generator.dart';
 
 import '../image_view.dart';
 
-mixin ImageViewPaletteMixin<T extends Cell> on State<ImageView<T>> {
+mixin ImageViewPaletteMixin on State<ImageView> {
   PaletteGenerator? currentPalette;
   PaletteGenerator? previousPallete;
 
   void extractPalette(
       BuildContext context,
-      T currentCell,
+      Contentable currentCell,
       GlobalKey<ScaffoldState> scaffoldKey,
       ScrollController scrollController,
       int currentPage,
       void Function() resetAnimation) {
-    final t = currentCell.thumbnail();
-    if (t == null) {
-      return;
-    }
+    final t = currentCell.thumbnail.thumbnail();
 
     PaletteGenerator.fromImageProvider(t).then((value) {
       previousPallete = currentPalette;

@@ -19,7 +19,6 @@ import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:gallery/src/net/manga/manga_dex.dart';
 import 'package:gallery/src/pages/anime/anime.dart';
 import 'package:gallery/src/pages/anime/search/search_anime.dart';
-import 'package:gallery/src/pages/manga/manga_info_page.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
@@ -27,18 +26,14 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_fab_type.dart'
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_on_cell_press_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/segment_label.dart';
 import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
-import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 import 'package:gallery/src/widgets/skeletons/grid.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -164,32 +159,32 @@ class _MangaPageState extends State<MangaPage> {
           pinnedMangaKey: _pinnedKey,
         ),
         functionality: GridFunctionality(
-            onPressed: OverrideGridOnCellPressBehaviour(
-              onPressed: (context, idx, overrideCell) {
-                final cell = overrideCell as CompactMangaDataBase? ??
-                    CellProvider.getOf<CompactMangaDataBase>(context, idx);
-                inInner = true;
+            // onPressed: OverrideGridOnCellPressBehaviour(
+            //   onPressed: (context, idx, overrideCell) {
+            //     final cell = overrideCell as CompactMangaDataBase? ??
+            //         CellProvider.getOf<CompactMangaDataBase>(context, idx);
+            //     inInner = true;
 
-                return Navigator.of(context, rootNavigator: true)
-                    .push(MaterialPageRoute(
-                  builder: (context) {
-                    return MangaInfoPage(
-                      id: MangaStringId(cell.mangaId),
-                      api: api,
-                    );
-                  },
-                )).then((value) {
-                  _procReload();
+            //     return Navigator.of(context, rootNavigator: true)
+            //         .push(MaterialPageRoute(
+            //       builder: (context) {
+            //         return MangaInfoPage(
+            //           id: MangaStringId(cell.mangaId),
+            //           api: api,
+            //         );
+            //       },
+            //     )).then((value) {
+            //       _procReload();
 
-                  return value;
-                });
-              },
-            ),
+            //       return value;
+            //     });
+            //   },
+            // ),
             selectionGlue: GlueProvider.generateOf(context)(),
             refreshingStatus: state.refreshingStatus,
-            imageViewDescription: ImageViewDescription(
-              imageViewKey: state.imageViewKey,
-            ),
+            // imageViewDescription: ImageViewDescription(
+            //   imageViewKey: state.imageViewKey,
+            // ),
             refresh: AsyncGridRefresh(
               refresh,
               pullToRefresh: false,
@@ -209,7 +204,6 @@ class _MangaPageState extends State<MangaPage> {
           risingAnimation: true,
           actions: const [],
           ignoreEmptyWidgetOnNoContent: true,
-          ignoreSwipeSelectGesture: true,
           showAppBar: false,
           keybindsDescription: AppLocalizations.of(context)!.mangaPage,
           gridSeed: state.gridSeed,
@@ -345,17 +339,17 @@ class _ReadingLayout
   final GridSettingsBase Function() defaultSettings = _defaultSettings;
 
   @override
-  GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings) {
+  GridLayouter<T> makeFor<T extends CellBase>(GridSettingsBase settings) {
     return this as GridLayouter<T>;
   }
 
   @override
   List<Widget> call(BuildContext context, GridSettingsBase settings,
       GridFrameState<CompactMangaDataBase> state) {
-    void onPressed(CompactMangaDataBase e, int idx) {
-      state.widget.functionality.onPressed
-          .launch(context, idx, state.widget.functionality);
-    }
+    // void onPressed(CompactMangaDataBase e, int idx) {
+    //   state.widget.functionality.onPressed
+    //       .launch(context, idx, state.widget.functionality);
+    // }
 
     void onLongPressed(CompactMangaDataBase e, int idx) {
       startReading(idx);
@@ -398,11 +392,20 @@ class _ReadingLayout
                     width: (MediaQuery.sizeOf(context).shortestSide /
                             settings.columns.number) *
                         settings.aspectRatio.value,
-                    child: ImportantCard(
+                    child: ImportantCard<CompactMangaDataBase>(
                       cell: cell,
                       idx: index,
                       onLongPressed: onLongPressed,
-                      onPressed: onPressed,
+                      onPressed: cell is Pressable<CompactMangaDataBase>
+                          ? (cell, idx) {
+                              (cell as Pressable<CompactMangaDataBase>).onPress(
+                                context,
+                                state.widget.functionality,
+                                cell,
+                                idx,
+                              );
+                            }
+                          : null,
                     ),
                   );
                 },
@@ -421,14 +424,15 @@ class _ReadingLayout
       _PinnedMangaWidget(
         key: pinnedMangaKey,
         controller: state.controller,
-        onPress: (context, cell) {
-          return state.widget.functionality.onPressed.launch(
-            context,
-            -1,
-            state.widget.functionality,
-            useCellInsteadIdx: cell,
-          );
-        },
+        // onPress: (context, cell) {
+
+        //   return state.widget.functionality.onPressed.launch(
+        //     context,
+        //     -1,
+        //     state.widget.functionality,
+        //     useCellInsteadIdx: cell,
+        //   );
+        // },
         glue: GlueProvider.generateOf(context)(),
       )
     ];
@@ -441,13 +445,13 @@ class _ReadingLayout
 class _PinnedMangaWidget extends StatefulWidget {
   final SelectionGlue glue;
   final ScrollController controller;
-  final Future<void> Function(BuildContext, PinnedManga) onPress;
+  // final Future<void> Function(BuildContext, PinnedManga) onPress;
 
   const _PinnedMangaWidget({
     super.key,
     required this.glue,
     required this.controller,
-    required this.onPress,
+    // required this.onPress,
   });
 
   @override
@@ -457,8 +461,6 @@ class _PinnedMangaWidget extends StatefulWidget {
 class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
   late final StreamSubscription<void> watcher;
   final List<PinnedManga> data = [];
-
-  final imageViewKey = GlobalKey<ImageViewState<PinnedManga>>();
 
   late final GridRefreshingStatus<PinnedManga> refreshingStatus;
   late final GridSelection<PinnedManga> selection = GridSelection(
@@ -490,7 +492,7 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
     () => widget.controller,
     mutation: refreshingStatus.mutation,
     noAppBar: true,
-    ignoreSwipe: false,
+    // ignoreSwipe: false,
   );
 
   @override
@@ -535,31 +537,27 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
                     GridFunctionality(
                       selectionGlue: selection.glue,
                       refresh: SynchronousGridRefresh(() => data.length),
-                      onPressed: OverrideGridOnCellPressBehaviour(
-                        onPressed: (context, idx, overrideCell) {
-                          return widget.onPress(
-                            context,
-                            overrideCell as PinnedManga? ??
-                                CellProvider.getOf<PinnedManga>(context, idx),
-                          );
-                        },
-                      ),
-                      imageViewDescription:
-                          ImageViewDescription(imageViewKey: imageViewKey),
+                      // onPressed: OverrideGridOnCellPressBehaviour(
+                      //   onPressed: (context, idx, overrideCell) {
+                      //     return widget.onPress(
+                      //       context,
+                      //       overrideCell as PinnedManga? ??
+                      //           CellProvider.getOf<PinnedManga>(context, idx),
+                      //     );
+                      //   },
+                      // ),
+                      // imageViewDescription:
+                      //     ImageViewDescription(imageViewKey: imageViewKey),
                       refreshingStatus: refreshingStatus,
                     ),
                     selection,
-                    gridCell: (context, idx) {
+                    gridCell: (context, cell, idx) {
                       final cell = data[data.length - 1 - idx];
 
                       return GridCell(
                         cell: cell,
                         indx: idx,
-                        imageAlign: Alignment.topCenter,
-                        alignTitleToTopLeft: true,
-                        tight: false,
-                        isList: false,
-                        hideAlias: false,
+                        hideTitle: false,
                       );
                     },
                     columns: GridColumn.three.number,

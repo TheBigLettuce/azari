@@ -13,7 +13,7 @@ import '../../interfaces/filtering/filtering_mode.dart';
 import '../initalize_db.dart';
 import '../isar_filter.dart';
 
-class LinearIsarLoader<T extends Cell> {
+class LinearIsarLoader<T extends IsarEntryId> {
   final Isar instance;
 
   final IsarFilter<T> filter;
@@ -46,5 +46,8 @@ class LinearIsarLoader<T extends Cell> {
               FilteringMode mode)
           passFilter)
       : filter = IsarFilter(
-            instance, DbsOpen.temporarySchemas([schema]), passFilter);
+          instance,
+          DbsOpen.temporarySchemas([schema]),
+          passFilter,
+        );
 }

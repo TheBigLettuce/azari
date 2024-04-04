@@ -11,7 +11,7 @@ import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 
 import '../../../interfaces/cell/cell.dart';
 
-abstract class GridLayouter<T extends Cell> {
+abstract class GridLayouter<T extends CellBase> {
   const GridLayouter();
 
   List<Widget> call(

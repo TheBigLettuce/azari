@@ -14,7 +14,7 @@ import 'search_launch_grid_data.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 /// Search mixin which launches a new page with a grid.
-class SearchLaunchGrid<T extends Cell> {
+class SearchLaunchGrid<T extends CellBase> {
   SearchLaunchGrid(this._state) {
     searchController.text = _state.searchText;
     tags = _state.searchText;

@@ -135,52 +135,56 @@ class __WatchingTabState extends State<_WatchingTab> {
         functionality: GridFunctionality(
           selectionGlue: GlueProvider.generateOf(context)(),
           refreshingStatus: state.refreshingStatus,
-          imageViewDescription: ImageViewDescription(
-            imageViewKey: state.imageViewKey,
-          ),
+          // imageViewDescription: ImageViewDescription(
+          //   imageViewKey: state.imageViewKey,
+          // ),
           refresh: SynchronousGridRefresh(() => backlog.length),
-          onPressed:
-              OverrideGridOnCellPressBehaviour(onPressed: (context, idx, _) {
-            final cell = CellProvider.getOf<SavedAnimeEntry>(context, idx);
+          // onPressed:
+          //     OverrideGridOnCellPressBehaviour(onPressed: (context, idx, _) {
+          //   final cell = CellProvider.getOf<SavedAnimeEntry>(context, idx);
 
-            return Navigator.push(context, MaterialPageRoute(
-              builder: (context) {
-                return WatchingAnimeInfoPage(entry: cell);
-              },
-            ));
-          }),
+          //   return Navigator.push(context, MaterialPageRoute(
+          //     builder: (context) {
+          //       return WatchingAnimeInfoPage(entry: cell);
+          //     },
+          //   ));
+          // },
+          // ),
         ),
         mainFocus: state.mainFocus,
         description: GridDescription(
           risingAnimation: true,
           actions: [
-            GridAction(Icons.play_arrow_rounded, (selected) {
-              final entry = selected.first as SavedAnimeEntry;
+            GridAction(
+              Icons.play_arrow_rounded,
+              (selected) {
+                final entry = selected.first;
 
-              if (!entry.inBacklog) {
-                entry.unsetIsWatching();
-                return;
-              }
+                if (!entry.inBacklog) {
+                  entry.unsetIsWatching();
+                  return;
+                }
 
-              if (!entry.setCurrentlyWatching()) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content:
-                        Text(AppLocalizations.of(context)!.cantWatchThree)));
-              }
-            }, true, showOnlyWhenSingle: true),
+                if (!entry.setCurrentlyWatching()) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content:
+                          Text(AppLocalizations.of(context)!.cantWatchThree)));
+                }
+              },
+              true,
+              showOnlyWhenSingle: true,
+            ),
             GridAction(
               Icons.delete_rounded,
               (selected) {
-                SavedAnimeEntry.deleteAll(
-                  selected.map((e) => e.isarId!).toList(),
-                );
+                SavedAnimeEntry.deleteAll(selected);
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   content:
                       Text(AppLocalizations.of(context)!.deletedFromBacklog),
                   action: SnackBarAction(
                       label: AppLocalizations.of(context)!.undoLabel,
                       onPressed: () {
-                        SavedAnimeEntry.reAdd(selected.cast());
+                        SavedAnimeEntry.reAdd(selected);
                       }),
                 ));
               },
@@ -194,7 +198,6 @@ class __WatchingTabState extends State<_WatchingTab> {
           ],
           keybindsDescription: AppLocalizations.of(context)!.watchingTab,
           showAppBar: false,
-          ignoreSwipeSelectGesture: true,
           ignoreEmptyWidgetOnNoContent: true,
           gridSeed: state.gridSeed,
         ),
@@ -230,7 +233,7 @@ class _WatchingLayout
   final List<SavedAnimeEntry> currentlyWatching;
 
   @override
-  GridLayouter<T> makeFor<T extends Cell>(GridSettingsBase settings) {
+  GridLayouter<T> makeFor<T extends CellBase>(GridSettingsBase settings) {
     return this as GridLayouter<T>;
   }
 
@@ -310,10 +313,11 @@ class _WatchingLayout
             state.selection,
             aspectRatio: gridSettings.aspectRatio.value,
             columns: gridSettings.columns.number,
-            gridCell: (context, idx) {
+            gridCell: (context, cell, idx) {
               return GridCell.frameDefault(
                 context,
                 idx,
+                cell,
                 hideTitle: gridSettings.hideName,
                 isList: isList,
                 state: state,
@@ -362,9 +366,7 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
       GridAction(
         Icons.delete_rounded,
         (selected) {
-          SavedAnimeEntry.deleteAll(
-            selected.map((e) => e.isarId!).toList(),
-          );
+          SavedAnimeEntry.deleteAll(selected.cast());
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(AppLocalizations.of(context)!.deletedFromBacklog),
             action: SnackBarAction(
@@ -379,7 +381,7 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
       GridAction(
         Icons.check_rounded,
         (selected) {
-          WatchedAnimeEntry.moveAll(selected);
+          WatchedAnimeEntry.moveAll(selected.cast());
         },
         true,
       ),
@@ -388,7 +390,7 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
     () => widget.controller,
     mutation: StaticNumberGridMutation(() => widget.currentlyWatching.length),
     noAppBar: true,
-    ignoreSwipe: true,
+    // ignoreSwipe: true,
   );
 
   void onPressed(SavedAnimeEntry e, int _) {
@@ -436,10 +438,10 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
   }
 }
 
-class ImportantCard<T extends Cell> extends StatelessWidget {
+class ImportantCard<T extends CellBase> extends StatelessWidget {
   final T cell;
   final int idx;
-  final void Function(T cell, int idx) onPressed;
+  final void Function(T cell, int idx)? onPressed;
   final void Function(T cell, int idx)? onLongPressed;
 
   const ImportantCard({
@@ -461,22 +463,25 @@ class ImportantCard<T extends Cell> extends StatelessWidget {
         child: GridCell(
           cell: cell,
           indx: 0,
-          tight: true,
-          hideAlias: true,
-          isList: false,
-          circle: true,
+          // tight: true,
+          hideTitle: true,
+          // isList: false,
+          // circle: true,
         ),
       ),
-      backgroundImage: cell.thumbnail(),
+      backgroundImage:
+          cell is Thumbnailable ? (cell as Thumbnailable).thumbnail() : null,
       tooltip: cell.alias(false),
       onLongPressed: onLongPressed == null
           ? null
           : () {
               onLongPressed!(cell, idx);
             },
-      onPressed: () {
-        onPressed(cell, idx);
-      },
+      onPressed: onPressed == null
+          ? null
+          : () {
+              onPressed!(cell, idx);
+            },
     );
   }
 }

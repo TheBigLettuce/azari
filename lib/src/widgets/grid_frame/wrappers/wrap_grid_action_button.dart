@@ -15,7 +15,6 @@ class WrapGridActionButton extends StatefulWidget {
   final void Function()? onPressed;
   final void Function()? onLongPress;
   final bool addBadge;
-  // final bool? followColorTheme;
   final Color? backgroundColor;
   final Color? color;
   final bool animate;
@@ -27,7 +26,6 @@ class WrapGridActionButton extends StatefulWidget {
     this.onPressed,
     this.addBadge, {
     super.key,
-    // this.followColorTheme,
     this.backgroundColor,
     this.color,
     required this.onLongPress,

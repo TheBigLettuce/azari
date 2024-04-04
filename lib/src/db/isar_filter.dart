@@ -11,7 +11,7 @@ import '../interfaces/cell/cell.dart';
 import '../interfaces/filtering/filtering_interface.dart';
 import '../interfaces/filtering/filtering_mode.dart';
 
-class IsarFilter<T extends Cell> implements FilterInterface<T> {
+class IsarFilter<T extends IsarEntryId> implements FilterInterface<T> {
   Isar _from;
   final Isar _to;
   bool isFiltering = false;

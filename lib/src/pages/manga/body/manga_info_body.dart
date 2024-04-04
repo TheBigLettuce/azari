@@ -55,7 +55,7 @@ class MangaInfoBody extends StatelessWidget {
           SynopsisBackground(
             markdown: true,
             background: "",
-            synopsis: entry.description,
+            synopsis: entry.synopsis,
             search: (_) {},
             constraints: BoxConstraints(
                 minWidth: MediaQuery.sizeOf(context).width - 16 - 16,

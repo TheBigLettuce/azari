@@ -8,21 +8,20 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart';
 import 'package:gallery/src/widgets/notifiers/loading_progress.dart';
 import 'package:logging/logging.dart';
 
-import '../../../interfaces/cell/cell.dart';
-
-mixin ImageViewLoadingBuilderMixin<T extends Cell> on State<ImageView<T>> {
+mixin ImageViewLoadingBuilderMixin on State<ImageView> {
   Widget loadingBuilder(
     BuildContext context,
     ImageChunkEvent? event,
     int idx,
     int currentPage,
     GlobalKey<WrapImageViewNotifiersState> key,
-    T Function(int) drawCell,
+    Contentable Function(int) drawCell,
   ) {
     final expectedBytes = event?.expectedTotalBytes;
     final loadedBytes = event?.cumulativeBytesLoaded;
@@ -43,10 +42,7 @@ mixin ImageViewLoadingBuilderMixin<T extends Cell> on State<ImageView<T>> {
     }
 
     try {
-      final t = drawCell(idx).thumbnail();
-      if (t == null) {
-        return const SizedBox.shrink();
-      }
+      final t = drawCell(idx).thumbnail.thumbnail();
 
       return _Image(
           t: t,

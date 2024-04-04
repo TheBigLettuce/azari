@@ -7,17 +7,12 @@
 
 import 'dart:async';
 
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:isar/isar.dart';
-
-import '../../../interfaces/cell/sticker.dart';
 
 part 'saved_anime_entry.g.dart';
 
@@ -37,7 +32,7 @@ class AnimeGenre {
 }
 
 @embedded
-class Relation implements Cell {
+class Relation {
   final String thumbUrl;
   final String title;
   final String type;
@@ -56,40 +51,10 @@ class Relation implements Cell {
     this.type = "",
     this.id = 0,
   });
-
-  @override
-  int? isarId;
-
-  @override
-  Contentable content() => NetImage(CachedNetworkImageProvider(thumbUrl));
-
-  @override
-  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(thumbUrl);
-
-  @override
-  Key uniqueKey() => ValueKey(thumbUrl);
-
-  @override
-  List<Widget>? addButtons(BuildContext context) => null;
-
-  @override
-  Widget? contentInfo(BuildContext context) => null;
-
-  @override
-  List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
-
-  @override
-  String alias(bool isList) => title;
-
-  @override
-  String fileDownloadUrl() => thumbUrl;
-
-  @override
-  List<Sticker> stickers(BuildContext context) => const [];
 }
 
 @collection
-class SavedAnimeEntry extends AnimeEntry {
+class SavedAnimeEntry extends AnimeEntry implements IsarEntryId {
   SavedAnimeEntry({
     required super.id,
     required this.inBacklog,
@@ -115,6 +80,9 @@ class SavedAnimeEntry extends AnimeEntry {
   });
 
   final bool inBacklog;
+
+  @override
+  Id? isarId;
 
   void save() {
     Dbs.g.anime
@@ -257,9 +225,9 @@ class SavedAnimeEntry extends AnimeEntry {
     return (true, e.inBacklog);
   }
 
-  static void deleteAll(List<int> ids) {
-    Dbs.g.anime
-        .writeTxnSync(() => Dbs.g.anime.savedAnimeEntrys.deleteAllSync(ids));
+  static void deleteAll(List<IsarEntryId> ids) {
+    Dbs.g.anime.writeTxnSync(() => Dbs.g.anime.savedAnimeEntrys
+        .deleteAllSync(ids.map((e) => e.isarId!).toList()));
   }
 
   static void deleteAllIds(List<(int, AnimeMetadata)> ids) {

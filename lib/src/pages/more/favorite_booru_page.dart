@@ -24,7 +24,6 @@ import 'package:gallery/src/db/schemas/tags/local_tag_dictionary.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart';
 import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
@@ -86,10 +85,10 @@ class FavoriteBooruPage extends StatelessWidget {
         watchLayoutSettings: GridSettingsFavorites.watch,
         download: state.download,
         refreshingStatus: state.state.refreshingStatus,
-        imageViewDescription: ImageViewDescription(
-          addIconsImage: (p) => state.iconsImage(p),
-          imageViewKey: state.state.imageViewKey,
-        ),
+        // imageViewDescription: ImageViewDescription(
+        //   addIconsImage: (p) => state.iconsImage(p),
+        //   imageViewKey: state.state.imageViewKey,
+        // ),
         refresh: SynchronousGridRefresh(() => state.loader.count()),
       ),
       getCell: state.loader.getCell,
@@ -100,7 +99,7 @@ class FavoriteBooruPage extends StatelessWidget {
         showAppBar: !asSliver,
         asSliver: asSliver,
         ignoreEmptyWidgetOnNoContent: false,
-        ignoreSwipeSelectGesture: false,
+        // ignoreSwipeSelectGesture: false,
         keybindsDescription: AppLocalizations.of(context)!.favoritesLabel,
         pageName: AppLocalizations.of(context)!.favoritesLabel,
         gridSeed: state.state.gridSeed,
@@ -428,13 +427,13 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
         state.settings);
   }
 
-  GridAction _groupButton(BuildContext context) {
+  GridAction<FavoriteBooru> _groupButton(BuildContext context) {
     return FavoritesActions.addToGroup(
       context,
       (selected) {
-        final g = (selected.first as FavoriteBooru).group;
+        final g = selected.first.group;
 
-        for (final FavoriteBooru e in selected.skip(1).cast()) {
+        for (final e in selected.skip(1)) {
           if (g != e.group) {
             return null;
           }
@@ -443,11 +442,11 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
         return g;
       },
       (selected, value, toPin) {
-        for (final FavoriteBooru e in selected.cast()) {
+        for (final e in selected) {
           e.group = value.isEmpty ? null : value;
         }
 
-        FavoriteBooru.addAllFileUrl(selected.cast());
+        FavoriteBooru.addAllFileUrl(selected);
 
         Navigator.of(context, rootNavigator: true).pop();
       },
@@ -455,7 +454,7 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
     );
   }
 
-  List<GridAction> gridActions() {
+  List<GridAction<FavoriteBooru>> gridActions() {
     return [
       BooruGridActions.download(context, booru),
       _groupButton(context),

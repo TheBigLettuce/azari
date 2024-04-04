@@ -22,7 +22,7 @@ import 'files.dart';
 import '../../db/schemas/gallery/blacklisted_directory.dart';
 
 class SystemGalleryDirectoriesActions {
-  static GridAction blacklist(
+  static GridAction<SystemGalleryDirectory> blacklist(
       BuildContext context,
       GalleryDirectoriesExtra extra,
       String Function(SystemGalleryDirectory) segment) {
@@ -32,7 +32,7 @@ class SystemGalleryDirectoriesActions {
         final requireAuth = <SystemGalleryDirectory>[];
         final noAuth = <SystemGalleryDirectory>[];
 
-        for (final SystemGalleryDirectory e in selected.cast()) {
+        for (final e in selected) {
           final m = DirectoryMetadata.get(segment(e));
           if (m != null && m.requireAuth) {
             requireAuth.add(e);
@@ -50,9 +50,10 @@ class SystemGalleryDirectoriesActions {
         }
 
         extra.addBlacklisted(
-            (noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth)
-                .map((e) => BlacklistedDirectory(e.bucketId, e.name))
-                .toList());
+          (noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth)
+              .map((e) => BlacklistedDirectory(e.bucketId, e.name))
+              .toList(),
+        );
 
         if (noAuth.isNotEmpty && requireAuth.isNotEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -77,7 +78,7 @@ class SystemGalleryDirectoriesActions {
     );
   }
 
-  static GridAction joinedDirectories(
+  static GridAction<SystemGalleryDirectory> joinedDirectories(
     BuildContext context,
     GalleryDirectoriesExtra extra,
     CallbackDescriptionNested? callback,
@@ -90,9 +91,9 @@ class SystemGalleryDirectoriesActions {
         joinedDirectoriesFnc(
           context,
           selected.length == 1
-              ? (selected.first as SystemGalleryDirectory).name
+              ? selected.first.name
               : "${selected.length} ${AppLocalizations.of(context)!.directoriesPlural}",
-          selected.cast(),
+          selected,
           extra,
           callback,
           generate,

@@ -7,7 +7,7 @@
 
 part of '../grid_frame.dart';
 
-class _AppBar<T extends Cell> extends StatelessWidget {
+class _AppBar extends StatelessWidget {
   final Widget? title;
   final Widget? leading;
   final List<Widget> actions;

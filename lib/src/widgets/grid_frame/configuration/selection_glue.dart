@@ -6,7 +6,6 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/widgets.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
 
 import '../grid_frame.dart';
 
@@ -20,8 +19,7 @@ class SelectionGlue {
   final int Function() barHeight;
   final bool persistentBarHeight;
 
-  static SelectionGlue empty<T extends Cell>(BuildContext context) =>
-      SelectionGlue(
+  static SelectionGlue empty(BuildContext context) => SelectionGlue(
         updateCount: (_) {},
         open: (_, __, ___) {},
         hideNavBar: (_) {},

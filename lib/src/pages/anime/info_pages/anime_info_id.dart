@@ -96,7 +96,6 @@ class _AnimeInfoIdPageState extends State<AnimeInfoIdPage>
                             if (isWatchingBacklog.$2) {
                               SavedAnimeEntry.deleteAll([
                                 SavedAnimeEntry.maybeGet(entry.id, entry.site)!
-                                    .isarId!
                               ]);
                             } else {
                               SavedAnimeEntry.addAll([entry]);
@@ -128,7 +127,7 @@ class _AnimeInfoIdPageState extends State<AnimeInfoIdPage>
                           bottom: MediaQuery.viewPaddingOf(context).bottom),
                       child: Stack(
                         children: [
-                          BackgroundImage(image: entry.thumbnail()!),
+                          BackgroundImage(image: entry.thumbnail()),
                           Column(
                             children: [
                               CardPanel(

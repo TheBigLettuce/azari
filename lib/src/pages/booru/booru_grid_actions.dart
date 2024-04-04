@@ -7,6 +7,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/post_base.dart';
+import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
+import 'package:gallery/src/db/schemas/booru/post.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 
@@ -18,53 +20,67 @@ import '../../db/schemas/settings/settings.dart';
 import '../../widgets/grid_frame/grid_frame.dart';
 
 class BooruGridActions {
-  static GridAction hide(BuildContext context, void Function() setState,
+  static GridAction<Post> hide(BuildContext context, void Function() setState,
       {PostBase? post}) {
-    return GridAction(Icons.hide_image_rounded, (selected) {
-      if (selected.isEmpty) {
-        return;
-      }
-
-      final toDelete = <(int, Booru)>[];
-      final toAdd = <HiddenBooruPost>[];
-
-      final booru = (selected.first as PostBase).booru;
-
-      for (final PostBase cell in selected.cast()) {
-        if (HiddenBooruPost.isHidden(cell.id, booru)) {
-          toDelete.add((cell.id, booru));
-        } else {
-          toAdd.add(HiddenBooruPost(booru, cell.id, cell.previewUrl));
+    return GridAction(
+      Icons.hide_image_rounded,
+      (selected) {
+        if (selected.isEmpty) {
+          return;
         }
-      }
 
-      HiddenBooruPost.addAll(toAdd);
-      HiddenBooruPost.removeAll(toDelete);
+        final toDelete = <(int, Booru)>[];
+        final toAdd = <HiddenBooruPost>[];
 
-      setState();
-    }, true,
-        color: post != null && HiddenBooruPost.isHidden(post.id, post.booru)
-            ? Theme.of(context).colorScheme.primary
-            : null);
+        final booru = selected.first.booru;
+
+        for (final cell in selected) {
+          if (HiddenBooruPost.isHidden(cell.id, booru)) {
+            toDelete.add((cell.id, booru));
+          } else {
+            toAdd.add(HiddenBooruPost(booru, cell.id, cell.previewUrl));
+          }
+        }
+
+        HiddenBooruPost.addAll(toAdd);
+        HiddenBooruPost.removeAll(toDelete);
+
+        setState();
+      },
+      true,
+      color: post != null && HiddenBooruPost.isHidden(post.id, post.booru)
+          ? Theme.of(context).colorScheme.primary
+          : null,
+    );
   }
 
-  static GridAction download(BuildContext context, Booru booru) {
-    return GridAction(Icons.download, (selected) {
-      final settings = Settings.fromDb();
+  static GridAction<T> download<T extends PostBase>(
+      BuildContext context, Booru booru) {
+    return GridAction(
+      Icons.download,
+      (selected) {
+        final settings = Settings.fromDb();
 
-      PostTags.g.addTagsPostAll(
-          selected.cast<PostBase>().map((e) => (e.filename(), e.tags)));
-      Downloader.g.addAll(
-          selected.cast<PostBase>().map((e) => DownloadFile.d(
-              url: e.fileUrl,
-              site: booru.url,
-              name: e.filename(),
-              thumbUrl: e.previewUrl)),
-          settings);
-    }, true, animate: true);
+        PostTags.g.addTagsPostAll(
+          selected.map((e) => (e.filename(), e.tags)),
+        );
+        Downloader.g.addAll(
+          selected.map(
+            (e) => DownloadFile.d(
+                url: e.fileUrl,
+                site: booru.url,
+                name: e.filename(),
+                thumbUrl: e.previewUrl),
+          ),
+          settings,
+        );
+      },
+      true,
+      animate: true,
+    );
   }
 
-  static GridAction favorites(BuildContext context, PostBase? p,
+  static GridAction<T> favorites<T extends PostBase>(BuildContext context, T? p,
       {bool showDeleteSnackbar = false}) {
     final isFavorite = p != null && Settings.isFavorite(p.id, p.booru);
     return GridAction(
@@ -72,7 +88,7 @@ class BooruGridActions {
       (selected) {
         Settings.addRemoveFavorites(
             context, selected.cast(), showDeleteSnackbar);
-        for (final PostBase post in selected.cast()) {
+        for (final post in selected) {
           LocalTagDictionary.addAll(post.tags);
         }
       },

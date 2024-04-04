@@ -17,17 +17,16 @@ import 'package:gallery/src/widgets/grid_frame/parts/video/photo_gallery_page_vi
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 
-import '../../../interfaces/cell/cell.dart';
 import '../image_view.dart';
 
-mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
-  ImageProvider? fakeProvider;
+mixin ImageViewPageTypeMixin on State<ImageView> {
+  int refreshTries = 0;
 
-  (T, int)? _currentCell;
-  (T, int)? _previousCell;
-  (T, int)? _nextCell;
+  (Contentable, int)? _currentCell;
+  (Contentable, int)? _previousCell;
+  (Contentable, int)? _nextCell;
 
-  T drawCell(int i, [bool currentCellOnly = false]) {
+  Contentable drawCell(int i, [bool currentCellOnly = false]) {
     if (currentCellOnly) {
       return _currentCell!.$1;
     }
@@ -42,15 +41,15 @@ mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
   }
 
   void loadCells(int i, int maxCells) {
-    _currentCell = (widget.getCell(i)!, i);
+    _currentCell = (widget.getCell(context, i)!, i);
 
     if (i != 0 && !i.isNegative) {
-      final c2 = widget.getCell(i - 1);
+      final c2 = widget.getCell(context, i - 1);
 
       if (c2 != null) {
         _previousCell = (c2, i - 1);
 
-        final content = c2.content();
+        final content = c2;
         if (content is NetImage) {
           WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
             precacheImage(content.provider, context);
@@ -65,12 +64,12 @@ mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
     }
 
     if (maxCells != i + 1) {
-      final c3 = widget.getCell(i + 1);
+      final c3 = widget.getCell(context, i + 1);
 
       if (c3 != null) {
         _nextCell = (c3, i + 1);
 
-        final content = c3.content();
+        final content = c3;
         if (content is NetImage) {
           WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
             precacheImage(content.provider, context);
@@ -86,68 +85,45 @@ mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
   }
 
   PhotoViewGalleryPageOptions galleryBuilder(BuildContext context, int i) {
-    final content = drawCell(i).content();
-
-    // final fileContent = widget.predefinedIndexes != null
-    //     ? widget.getCell(widget.predefinedIndexes![indx]).fileDisplay()
-    //     : widget.getCell(indx).fileDisplay();
+    final cell = drawCell(i);
+    final content = cell;
+    final key = cell.widgets.uniquieKey(context);
 
     return switch (content) {
       AndroidImage() =>
-        _makeAndroidImage(context, content.size, content.uri, false),
+        _makeAndroidImage(context, key, content.size, content.uri, false),
       AndroidGif() =>
-        _makeAndroidImage(context, content.size, content.uri, true),
-      NetGif() => _makeNetImage(content.provider),
-      NetImage() => _makeNetImage(content.provider),
-      AndroidVideo() => _makeVideo(context, content.uri, true),
-      NetVideo() => _makeVideo(context, content.uri, false),
+        _makeAndroidImage(context, key, content.size, content.uri, true),
+      NetGif() => _makeNetImage(key, content.provider),
+      NetImage() => _makeNetImage(key, content.provider),
+      AndroidVideo() => _makeVideo(context, key, content.uri, true),
+      NetVideo() => _makeVideo(context, key, content.uri, false),
       EmptyContent() =>
         PhotoViewGalleryPageOptions.customChild(child: const SizedBox.shrink())
     };
   }
 
   PhotoViewGalleryPageOptions _makeVideo(
-          BuildContext context, String uri, bool local) =>
+          BuildContext context, Key key, String uri, bool local) =>
       PhotoViewGalleryPageOptions.customChild(
           disableGestures: true,
           tightMode: true,
           child: !Platform.isAndroid
               ? const Center(child: Icon(Icons.error_outline))
               : PhotoGalleryPageVideo(
+                  key: key,
                   url: uri,
                   localVideo: local,
-                  // loadingColor: ColorTween(
-                  //             begin: previousPallete?.dominantColor?.color
-                  //                 .harmonizeWith(
-                  //                     Theme.of(context).colorScheme.primary),
-                  //             end: currentPalette?.dominantColor?.color
-                  //                 .harmonizeWith(
-                  //                     Theme.of(context).colorScheme.primary))
-                  //         .transform(_animationController.value) ??
-                  //     Theme.of(context).colorScheme.background,
-                  // backgroundColor: ColorTween(
-                  //             begin: previousPallete?.mutedColor?.color
-                  //                 .harmonizeWith(
-                  //                     Theme.of(context).colorScheme.primary)
-                  //                 .withOpacity(0.7),
-                  //             end: currentPalette?.mutedColor?.color
-                  //                 .harmonizeWith(
-                  //                     Theme.of(context).colorScheme.primary)
-                  //                 .withOpacity(0.7))
-                  //         .transform(_animationController.value) ??
-                  //     Theme.of(context).colorScheme.primary,
                 ));
 
-  PhotoViewGalleryPageOptions _makeNetImage(ImageProvider provider) {
+  PhotoViewGalleryPageOptions _makeNetImage(Key key, ImageProvider provider) {
     final options = PhotoViewGalleryPageOptions(
-      // tightMode: true,
-      // gestureDetectorBehavior: HitTestBehavior.opaque,
+      key: ValueKey((key, refreshTries)),
       minScale: PhotoViewComputedScale.contained * 0.8,
       maxScale: PhotoViewComputedScale.covered * 1.8,
-      // basePosition: vertical ? Alignment.centerLeft : null,
       initialScale: PhotoViewComputedScale.contained,
       filterQuality: FilterQuality.high,
-      imageProvider: fakeProvider ?? provider,
+      imageProvider: provider,
       errorBuilder: (context, error, stackTrace) {
         return LoadingErrorWidget(
           error: error.toString(),
@@ -163,11 +139,13 @@ mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
   }
 
   PhotoViewGalleryPageOptions _makeAndroidImage(
-          BuildContext context, Size size, String uri, bool isGif) =>
+          BuildContext context, Key key, Size size, String uri, bool isGif) =>
       PhotoViewGalleryPageOptions.customChild(
-          gestureDetectorBehavior: HitTestBehavior.translucent,
-          disableGestures: true,
-          filterQuality: FilterQuality.high,
+        gestureDetectorBehavior: HitTestBehavior.translucent,
+        disableGestures: true,
+        filterQuality: FilterQuality.high,
+        child: KeyedSubtree(
+          key: key,
           child: Center(
             child: SizedBox(
                 height: MediaQuery.of(context).size.height,
@@ -181,22 +159,21 @@ mixin ImageViewPageTypeMixin<T extends Cell> on State<ImageView<T>> {
                         aspectRatio: size.aspectRatio == 0
                             ? MediaQuery.of(context).size.aspectRatio
                             : size.aspectRatio,
-                        child: fakeProvider != null
-                            ? Image(image: fakeProvider!)
-                            : AndroidView(
-                                viewType: "imageview",
-                                hitTestBehavior:
-                                    PlatformViewHitTestBehavior.transparent,
-                                creationParams: {
-                                  "uri": uri,
-                                  if (isGif) "gif": "",
-                                },
-                                creationParamsCodec:
-                                    const StandardMessageCodec(),
-                              ),
+                        child: AndroidView(
+                          viewType: "imageview",
+                          hitTestBehavior:
+                              PlatformViewHitTestBehavior.transparent,
+                          creationParams: {
+                            "uri": uri,
+                            if (isGif) "gif": "",
+                          },
+                          creationParamsCodec: const StandardMessageCodec(),
+                        ),
                       ),
                     ),
                   ),
                 )),
-          ));
+          ),
+        ),
+      );
 }

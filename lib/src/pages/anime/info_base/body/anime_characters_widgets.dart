@@ -100,7 +100,7 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
                                   ImageView.launchWrapped(
                                     context,
                                     list.length,
-                                    (i) => list[i],
+                                    (context, i) => list[i].openImage(context),
                                     overlayColor,
                                     startingCell: e.$1,
                                   );
@@ -108,12 +108,7 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
                                 child: GridCell(
                                   cell: e.$2,
                                   indx: e.$1,
-                                  forceAlias: e.$2.role,
-                                  alignTitleToTopLeft: true,
-                                  imageAlign: Alignment.topCenter,
-                                  tight: false,
-                                  isList: false,
-                                  labelAtBottom: true,
+                                  hideTitle: false,
                                 ),
                               ),
                             ))

@@ -23,7 +23,7 @@ import 'package:local_auth/local_auth.dart';
 
 import '../grid_frame.dart';
 
-class SegmentLayout<T extends Cell>
+class SegmentLayout<T extends CellBase>
     implements GridLayouter<T>, GridLayoutBehaviour {
   const SegmentLayout(
     this.segments,
@@ -41,7 +41,7 @@ class SegmentLayout<T extends Cell>
   final GridSettingsBase Function() defaultSettings;
 
   @override
-  GridLayouter<J> makeFor<J extends Cell>(GridSettingsBase settings) {
+  GridLayouter<J> makeFor<J extends CellBase>(GridSettingsBase settings) {
     return SegmentLayout(
       segments,
       defaultSettings,
@@ -63,82 +63,53 @@ class SegmentLayout<T extends Cell>
         aspectRatio: settings.aspectRatio.value,
         refreshingStatus: state.refreshingStatus,
         gridSeed: state.widget.description.gridSeed,
-        gridCell: (context, idx, blur) {
+        gridCell: (context, idx, cell, blur) {
           return GridCell.frameDefault(
             context,
             idx,
-            hideTitle: settings.hideName,
-            isList: isList,
-            state: state,
-            blur: blur,
-          );
-        },
-        gridCellT: (context, idx, cell, blur) {
-          return GridCell.frameDefault(
-            context,
-            idx,
+            cell,
             blur: blur,
             hideTitle: settings.hideName,
             isList: isList,
-            overrideCell: cell,
             state: state,
           );
         },
       );
     }
     final (s, t) = _segmentsFnc<T>(
-      context,
-      segments,
-      state.mutation,
-      state.selection,
-      settings.columns,
-      gridSeed: 1,
-      functionality: state.widget.functionality,
-      aspectRatio: settings.aspectRatio.value,
-      refreshingStatus: state.refreshingStatus,
-      suggestionPrefix: suggestionPrefix,
-      gridCell: (context, idx, blur) {
-        return GridCell.frameDefault(
-          context,
-          idx,
-          isList: isList,
-          blur: blur,
-          imageAlign: Alignment.topCenter,
-          hideTitle: settings.hideName,
-          animated: PlayAnimationNotifier.maybeOf(context) ?? false,
-          state: state,
-        );
-      },
-      gridCellT: (context, idx, cell, blur) {
-        return GridCell.frameDefault(
-          context,
-          idx,
-          hideTitle: settings.hideName,
-          isList: isList,
-          overrideCell: cell,
-          blur: blur,
-          animated: PlayAnimationNotifier.maybeOf(context) ?? false,
-          state: state,
-        );
-      },
-    );
+        context, segments, state.mutation, state.selection, settings.columns,
+        gridSeed: 1,
+        functionality: state.widget.functionality,
+        aspectRatio: settings.aspectRatio.value,
+        refreshingStatus: state.refreshingStatus,
+        suggestionPrefix: suggestionPrefix,
+        gridCell: (context, idx, cell, blur) {
+      return GridCell.frameDefault(
+        context,
+        idx, cell,
+        isList: isList,
+        blur: blur,
+        // imageAlign: Alignment.topCenter,
+        hideTitle: settings.hideName,
+        animated: PlayAnimationNotifier.maybeOf(context) ?? false,
+        state: state,
+      );
+    });
 
     // state.segTranslation = t;
 
     return s;
   }
 
-  static List<Widget> prototype<T extends Cell>(
+  static List<Widget> prototype<T extends CellBase>(
     BuildContext context,
     Segments<T> segments,
-    GridMutationInterface<T> state,
+    GridMutationInterface state,
     GridSelection<T> selection,
     GridColumn columns, {
     required GridRefreshingStatus<T> refreshingStatus,
     required GridFunctionality<T> functionality,
-    required GridCell<T> Function(BuildContext, int idx, bool blur) gridCell,
-    required GridCell<T> Function(BuildContext, int idx, T, bool blur)
-        gridCellT,
+    required GridCell<T> Function(BuildContext, int idx, T, bool blur) gridCell,
     required double aspectRatio,
     required int gridSeed,
   }) {
@@ -212,22 +183,20 @@ class SegmentLayout<T extends Cell>
       columns: columns,
       selection: selection,
       gridSeed: gridSeed,
-      gridCellT: gridCellT,
       aspectRatio: aspectRatio,
     );
   }
 
-  static (List<Widget>, List<int>) _segmentsFnc<T extends Cell>(
+  static (List<Widget>, List<int>) _segmentsFnc<T extends CellBase>(
     BuildContext context,
     Segments<T> segments,
-    GridMutationInterface<T> state,
+    GridMutationInterface state,
     GridSelection<T> selection,
     GridColumn columns, {
     required GridRefreshingStatus<T> refreshingStatus,
     required GridFunctionality<T> functionality,
-    required GridCell<T> Function(BuildContext, int idx, bool blur) gridCell,
-    required GridCell<T> Function(BuildContext, int idx, T, bool blur)
-        gridCellT,
+    required GridCell<T> Function(BuildContext, int idx, T cell, bool blur)
+        gridCell,
     required int gridSeed,
     required List<String> suggestionPrefix,
     required double aspectRatio,
@@ -424,26 +393,24 @@ class SegmentLayout<T extends Cell>
         gridSeed: gridSeed,
         segments: segments,
         selection: selection,
-        gridCellT: gridCellT,
         aspectRatio: aspectRatio,
       ),
       predefined
     );
   }
 
-  static List<Widget> _defaultBuilder<T extends Cell>(
+  static List<Widget> _defaultBuilder<T extends CellBase>(
     BuildContext context,
     List<_SegmentType> segmentList,
     List<int>? predefined, {
     required GridRefreshingStatus<T> refreshingStatus,
     required GridFunctionality<T> functionality,
-    required GridCell<T> Function(BuildContext, int idx, bool blur) gridCell,
     required Segments<T> segments,
     required GridColumn columns,
     required GridSelection<T> selection,
     required int gridSeed,
-    required GridCell<T> Function(BuildContext, int idx, T, bool blur)
-        gridCellT,
+    required GridCell<T> Function(BuildContext, int idx, T cell, bool blur)
+        gridCell,
     required double aspectRatio,
   }) {
     final slivers = <Widget>[];
@@ -469,7 +436,7 @@ class SegmentLayout<T extends Cell>
             refreshingStatus.mutation,
             selection,
             e,
-            gridCellT,
+            gridCell,
             gridFunctionality: functionality,
             refreshingStatus: refreshingStatus,
             segments: segments,
@@ -477,19 +444,19 @@ class SegmentLayout<T extends Cell>
             aspectRatio: aspectRatio,
           ),
         // _CellsProvided<Cell>() => throw UnimplementedError(),
-        _HeaderWithCells<Cell>() => throw UnimplementedError(),
+        _HeaderWithCells<CellBase>() => throw UnimplementedError(),
       });
     }
 
     return slivers;
   }
 
-  static Widget _segmentedRowHeaderIdxs<T extends Cell>(
+  static Widget _segmentedRowHeaderIdxs<T extends CellBase>(
     BuildContext context,
-    GridMutationInterface<T> state,
+    GridMutationInterface state,
     GridSelection<T> selection,
     _HeaderWithIdx val,
-    GridCell<T> Function(BuildContext, int idx, bool blur) gridCell, {
+    GridCell<T> Function(BuildContext, int idx, T cell, bool blur) gridCell, {
     required GridColumn columns,
     List<int>? predefined,
     required GridRefreshingStatus<T> refreshingStatus,
@@ -499,6 +466,7 @@ class SegmentLayout<T extends Cell>
     required double aspectRatio,
   }) {
     final toBlur = val.modifiers.contains(SegmentModifier.blur);
+    final getCell = CellProvider.of<T>(context);
 
     return _defaultSegmentCard(
       context,
@@ -520,26 +488,33 @@ class SegmentLayout<T extends Cell>
         ),
         itemBuilder: (context, index) {
           final realIdx = val.list[index];
+          final cell = getCell(realIdx);
 
           return WrapSelection<T>(
             thisIndx: realIdx,
-            overrideCell: null,
+            description: cell.description(),
             selectFrom: predefined,
+            onPressed: cell is Pressable<T>
+                ? () {
+                    (cell as Pressable<T>)
+                        .onPress(context, gridFunctionality, cell, index);
+                  }
+                : null,
             functionality: gridFunctionality,
             selection: selection,
-            child: gridCell(context, realIdx, toBlur),
+            child: gridCell(context, realIdx, cell, toBlur),
           );
         },
       ),
     );
   }
 
-  static Widget _segmentedRowHeaderCells<T extends Cell>(
+  static Widget _segmentedRowHeaderCells<T extends CellBase>(
     BuildContext context,
-    GridMutationInterface<T> state,
+    GridMutationInterface state,
     GridSelection<T> selection,
     _HeaderWithCells<T> val,
-    GridCell<T> Function(BuildContext, int idx, T, bool blur) gridCell, {
+    GridCell<T> Function(BuildContext, int idx, T cell, bool blur) gridCell, {
     required GridColumn columns,
     required GridRefreshingStatus<T> refreshingStatus,
     required GridFunctionality<T> gridFunctionality,
@@ -568,7 +543,13 @@ class SegmentLayout<T extends Cell>
 
           return WrapSelection<T>(
             selection: selection,
-            overrideCell: cell.$1,
+            description: cell.$1.description(),
+            onPressed: cell is Pressable<T>
+                ? () {
+                    (cell as Pressable<T>)
+                        .onPress(context, gridFunctionality, cell.$1, index);
+                  }
+                : null,
             functionality: gridFunctionality,
             selectFrom: null,
             thisIndx: -1,
@@ -580,9 +561,9 @@ class SegmentLayout<T extends Cell>
   }
   // Sliver;
 
-  static Widget _defaultSegmentCard<T extends Cell>(
+  static Widget _defaultSegmentCard<T extends CellBase>(
     BuildContext context,
-    GridMutationInterface<T> state,
+    GridMutationInterface state,
     GridSelection<T> selection, {
     required GridColumn columns,
     required double aspectRatio,
@@ -732,7 +713,7 @@ sealed class _SegmentType {
   const _SegmentType();
 }
 
-class _HeaderWithCells<T extends Cell> implements _SegmentType {
+class _HeaderWithCells<T extends CellBase> implements _SegmentType {
   const _HeaderWithCells(this.header, this.cells, this.modifiers);
 
   final List<(T, bool)> cells;

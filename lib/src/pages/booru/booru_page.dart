@@ -17,7 +17,6 @@ import 'package:gallery/src/db/schemas/grid_state/grid_booru_paging.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
-import 'package:gallery/src/db/schemas/statistics/statistics_booru.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:gallery/src/db/tags/booru_tagging.dart';
@@ -39,10 +38,8 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/page_description.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart';
-import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/pages/booru/bookmark_button.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart';
@@ -297,7 +294,7 @@ class _BooruPageState extends State<BooruPage> {
     favoritesWatcher = Dbs.g.main.favoriteBoorus
         .watchLazy(fireImmediately: false)
         .listen((event) {
-      state.imageViewKey.currentState?.setState(() {});
+      // state.imageViewKey.currentState?.setState(() {});
       setState(() {});
     });
 
@@ -490,29 +487,6 @@ class _BooruPageState extends State<BooruPage> {
                 watchLayoutSettings: GridSettingsBooru.watch,
                 refresh: AsyncGridRefresh(_clearAndRefresh),
                 refreshingStatus: pagingState.refreshingStatus,
-                imageViewDescription: ImageViewDescription(
-                  imageViewKey: state.imageViewKey,
-                  statistics: const ImageViewStatistics(
-                    swiped: StatisticsBooru.addSwiped,
-                    viewed: StatisticsBooru.addViewed,
-                  ),
-                  addIconsImage: (post) => [
-                    BooruGridActions.favorites(context, post),
-                    BooruGridActions.download(context, pagingState.api.booru),
-                    BooruGridActions.hide(context, () {
-                      setState(() {});
-
-                      final imgState = state.imageViewKey.currentState;
-                      if (imgState == null) {
-                        return;
-                      }
-
-                      imgState.loadCells(
-                          imgState.currentPage, imgState.cellCount);
-                      imgState.setState(() {});
-                    }, post: post),
-                  ],
-                ),
                 download: _download,
                 search: OverrideGridSearchWidget(
                   SearchAndFocus(

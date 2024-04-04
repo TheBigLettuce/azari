@@ -18,7 +18,7 @@ import 'saved_anime_entry.dart';
 part 'watched_anime_entry.g.dart';
 
 @collection
-class WatchedAnimeEntry extends AnimeEntry {
+class WatchedAnimeEntry extends AnimeEntry implements IsarEntryId {
   WatchedAnimeEntry({
     required this.date,
     required super.explicit,
@@ -44,6 +44,9 @@ class WatchedAnimeEntry extends AnimeEntry {
   });
 
   final DateTime date;
+
+  @override
+  Id? isarId;
 
   WatchedAnimeEntry copySuper(AnimeEntry e, [bool ignoreRelations = false]) {
     return WatchedAnimeEntry(
@@ -134,9 +137,10 @@ class WatchedAnimeEntry extends AnimeEntry {
         () => Dbs.g.anime.watchedAnimeEntrys.deleteBySiteIdSync(site, id));
   }
 
-  static void deleteAll(List<int> ids) {
+  static void deleteAll(List<IsarEntryId> ids) {
     Dbs.g.anime.writeTxnSync(
-      () => Dbs.g.anime.watchedAnimeEntrys.deleteAllSync(ids),
+      () => Dbs.g.anime.watchedAnimeEntrys
+          .deleteAllSync(ids.map((e) => e.isarId!).toList()),
     );
   }
 
@@ -159,14 +163,14 @@ class WatchedAnimeEntry extends AnimeEntry {
   static WatchedAnimeEntry? maybeGet(int id, AnimeMetadata site) =>
       Dbs.g.anime.watchedAnimeEntrys.getBySiteIdSync(site, id);
 
-  static void moveAllReversed(List<Cell> entries) {
-    WatchedAnimeEntry.deleteAll(entries.map((e) => e.isarId!).toList());
+  static void moveAllReversed(List<WatchedAnimeEntry> entries) {
+    WatchedAnimeEntry.deleteAll(entries);
 
     SavedAnimeEntry.addAll(entries.cast());
   }
 
-  static void moveAll(List<Cell> entries) {
-    SavedAnimeEntry.deleteAll(entries.map((e) => e.isarId!).toList());
+  static void moveAll(List<SavedAnimeEntry> entries) {
+    SavedAnimeEntry.deleteAll(entries);
 
     Dbs.g.anime
         .writeTxnSync(() => Dbs.g.anime.watchedAnimeEntrys.putAllBySiteIdSync(

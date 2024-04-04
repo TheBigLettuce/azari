@@ -6,12 +6,11 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'filtering_mode.dart';
 
-abstract class FilterInterface<T extends Cell> {
+abstract class FilterInterface<T> {
   FilterResult<T> filter(String s, FilteringMode mode);
   void setSortingMode(SortingMode mode);
 
@@ -37,7 +36,7 @@ enum SortingMode {
 }
 
 /// Result of the filter to provide to the [GridMutationInterface].
-class FilterResult<T extends Cell> {
+class FilterResult<T> {
   final int count;
   final T Function(int i) cell;
 

@@ -11,7 +11,7 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_subpage_state.
 import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 
-class PageSwitchingWidget<T extends Cell> extends StatelessWidget {
+class PageSwitchingWidget<T extends CellBase> extends StatelessWidget {
   final EdgeInsets padding;
   final GridSubpageState<T> state;
   final GridSelection<T> selection;

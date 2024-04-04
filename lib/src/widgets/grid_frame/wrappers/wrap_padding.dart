@@ -7,7 +7,7 @@
 
 part of '../grid_frame.dart';
 
-class _WrapPadding<T extends Cell> extends StatelessWidget {
+class _WrapPadding extends StatelessWidget {
   final PreferredSizeWidget? footer;
   final SelectionGlue selectionGlue;
   final bool sliver;

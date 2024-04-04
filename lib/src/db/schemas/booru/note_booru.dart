@@ -5,31 +5,25 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:io';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/booru_post_functionality_mixin.dart';
 import 'package:gallery/src/db/base/post_base.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/note_interface.dart';
-import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path_util;
-import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:isar/isar.dart';
-import 'package:transparent_image/transparent_image.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-import '../../../plugs/platform_functions.dart';
-import '../../../interfaces/booru/display_quality.dart';
 import '../../base/note_base.dart';
-import '../settings/settings.dart';
 
 part 'note_booru.g.dart';
 
 @collection
-class NoteBooru extends NoteBase with BooruPostFunctionalityMixin {
+class NoteBooru extends NoteBase
+    with BooruPostFunctionalityMixin
+    implements Thumbnailable, Downloadable {
   NoteBooru(
     super.text,
     super.time, {
@@ -42,12 +36,6 @@ class NoteBooru extends NoteBase with BooruPostFunctionalityMixin {
     required this.previewUrl,
   });
 
-  @override
-  Key uniqueKey() => ValueKey((postId, booru));
-
-  @override
-  ImageProvider thumbnail() => CachedNetworkImageProvider(previewUrl);
-
   @Index(unique: true, replace: true, composite: [CompositeIndex("booru")])
   final int postId;
   @enumerated
@@ -58,64 +46,73 @@ class NoteBooru extends NoteBase with BooruPostFunctionalityMixin {
   final String sampleUrl;
 
   @override
-  Contentable content() {
-    String url = switch (Settings.fromDb().quality) {
-      DisplayQuality.original => fileUrl,
-      DisplayQuality.sample => sampleUrl
-    };
-
-    var type = lookupMimeType(url);
-    if (type == null) {
-      return const EmptyContent();
-    }
-
-    var typeHalf = type.split("/");
-
-    if (typeHalf[0] == "image") {
-      ImageProvider provider;
-      try {
-        provider = NetworkImage(url);
-      } catch (e) {
-        provider = MemoryImage(kTransparentImage);
-      }
-
-      return typeHalf[1] == "gif" ? NetGif(provider) : NetImage(provider);
-    } else if (typeHalf[0] == "video") {
-      return NetVideo(url);
-    } else {
-      return const EmptyContent();
-    }
-  }
+  Key uniqueKey() => ValueKey((postId, booru));
 
   @override
-  List<Widget>? addButtons(BuildContext context) {
-    return [
-      IconButton(
-        icon: const Icon(Icons.public),
-        onPressed: () {
-          launchUrl(
-            booru.browserLink(postId),
-            mode: LaunchMode.externalApplication,
-          );
-        },
-      ),
-      if (Platform.isAndroid)
-        GestureDetector(
-          onLongPress: () => showQr(context, booru.prefix, postId),
-          child: IconButton(
-            onPressed: () {
-              PlatformFunctions.shareMedia(fileUrl, url: true);
-            },
-            icon: const Icon(Icons.share),
-          ),
-        )
-      else
-        IconButton(
-          onPressed: () => showQr(context, booru.prefix, postId),
-          icon: const Icon(Icons.qr_code_rounded),
-        )
-    ];
-  }
+  ImageProvider thumbnail() => CachedNetworkImageProvider(previewUrl);
+
+  // @override
+  // Contentable content() {
+  //   String url = switch (Settings.fromDb().quality) {
+  //     DisplayQuality.original => fileUrl,
+  //     DisplayQuality.sample => sampleUrl
+  //   };
+
+  //   var type = lookupMimeType(url);
+  //   if (type == null) {
+  //     return const EmptyContent();
+  //   }
+
+  //   var typeHalf = type.split("/");
+
+  //   if (typeHalf[0] == "image") {
+  //     ImageProvider provider;
+  //     try {
+  //       provider = NetworkImage(url);
+  //     } catch (e) {
+  //       provider = MemoryImage(kTransparentImage);
+  //     }
+
+  //     return typeHalf[1] == "gif" ? NetGif(provider) : NetImage(provider);
+  //   } else if (typeHalf[0] == "video") {
+  //     return NetVideo(url);
+  //   } else {
+  //     return const EmptyContent();
+  //   }
+  // }
+
+  // @override
+  // Widget? contentInfo(BuildContext context) => null;
+
+  // @override
+  // List<Widget>? addButtons(BuildContext context) {
+  //   return [
+  //     IconButton(
+  //       icon: const Icon(Icons.public),
+  //       onPressed: () {
+  //         launchUrl(
+  //           booru.browserLink(postId),
+  //           mode: LaunchMode.externalApplication,
+  //         );
+  //       },
+  //     ),
+  //     if (Platform.isAndroid)
+  //       GestureDetector(
+  //         onLongPress: () => showQr(context, booru.prefix, postId),
+  //         child: IconButton(
+  //           onPressed: () {
+  //             PlatformFunctions.shareMedia(fileUrl, url: true);
+  //           },
+  //           icon: const Icon(Icons.share),
+  //         ),
+  //       )
+  //     else
+  //       IconButton(
+  //         onPressed: () => showQr(context, booru.prefix, postId),
+  //         icon: const Icon(Icons.qr_code_rounded),
+  //       )
+  //   ];
+  // }
 
   @override
   String alias(bool isList) => postId.toString();

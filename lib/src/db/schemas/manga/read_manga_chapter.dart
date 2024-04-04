@@ -214,7 +214,7 @@ class ReadMangaChapter {
           builder: (context, chapters) {
             return GlueProvider.empty(
               context,
-              child: ImageView<MangaImage>(
+              child: ImageView(
                 ignoreLoadingBuilder: true,
                 download: (i) {
                   final image = chapters[i];
@@ -230,32 +230,32 @@ class ReadMangaChapter {
                     Settings.fromDb(),
                   );
                 },
-                appBarItems: [
-                  if (addNextChapterButton) ...[
-                    SkipChapterButton(
-                      mangaTitle: mangaTitle,
-                      key: prevChaterKey,
-                      overlayColor: overlayColor,
-                      mangaId: mangaId.toString(),
-                      startingChapterId: chapterId,
-                      api: api,
-                      reloadChapters: reloadChapters,
-                      onNextPage: onNextPage,
-                      direction: SkipDirection.left,
-                    ),
-                    SkipChapterButton(
-                      mangaTitle: mangaTitle,
-                      key: nextChapterKey,
-                      overlayColor: overlayColor,
-                      mangaId: mangaId.toString(),
-                      startingChapterId: chapterId,
-                      api: api,
-                      reloadChapters: reloadChapters,
-                      onNextPage: onNextPage,
-                      direction: SkipDirection.right,
-                    )
-                  ],
-                ],
+                // appBarItems: [
+                //   if (addNextChapterButton) ...[
+                //     SkipChapterButton(
+                //       mangaTitle: mangaTitle,
+                //       key: prevChaterKey,
+                //       overlayColor: overlayColor,
+                //       mangaId: mangaId.toString(),
+                //       startingChapterId: chapterId,
+                //       api: api,
+                //       reloadChapters: reloadChapters,
+                //       onNextPage: onNextPage,
+                //       direction: SkipDirection.left,
+                //     ),
+                //     SkipChapterButton(
+                //       mangaTitle: mangaTitle,
+                //       key: nextChapterKey,
+                //       overlayColor: overlayColor,
+                //       mangaId: mangaId.toString(),
+                //       startingChapterId: chapterId,
+                //       api: api,
+                //       reloadChapters: reloadChapters,
+                //       onNextPage: onNextPage,
+                //       direction: SkipDirection.right,
+                //     )
+                //   ],
+                // ],
                 onRightSwitchPageEnd: addNextChapterButton
                     ? () {
                         nextChapterKey.currentState?.findAndLaunchNext();
@@ -274,14 +274,14 @@ class ReadMangaChapter {
                   );
 
                   onNextPage(state.currentPage,
-                      state.drawCell(state.currentPage, true));
+                      state.drawCell(state.currentPage, true) as MangaImage);
                 },
-                ignoreEndDrawer: true,
+                // ignoreEndDrawer: true,
                 cellCount: chapters.length,
                 scrollUntill: (_) {},
                 startingCell: p != null ? p - 1 : 0,
                 onExit: () {},
-                getCell: (i) => chapters[i],
+                getCell: (context, i) => chapters[i].content(context),
                 onNearEnd: null,
                 systemOverlayRestoreColor: overlayColor,
               ),

@@ -10,15 +10,12 @@ import 'package:flutter/widgets.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:isar/isar.dart';
-
-import '../../../interfaces/cell/sticker.dart';
 
 part 'hidden_booru_post.g.dart';
 
 @collection
-class HiddenBooruPost implements Cell {
+class HiddenBooruPost implements CellBase, IsarEntryId, Thumbnailable {
   HiddenBooruPost(this.booru, this.postId, this.thumbUrl);
   @override
   Id? isarId;
@@ -29,6 +26,20 @@ class HiddenBooruPost implements Cell {
   final int postId;
   @enumerated
   final Booru booru;
+
+  @override
+  ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(thumbUrl);
+
+  @override
+  Key uniqueKey() => ValueKey((postId, booru));
+
+  @override
+  String alias(bool isList) {
+    return "${booru.string}($postId)";
+  }
+
+  @override
+  CellStaticData description() => const CellStaticData();
 
   static bool isHidden(int postId, Booru booru) {
     return Dbs.g.main.hiddenBooruPosts.getByPostIdBooruSync(postId, booru) !=
@@ -57,37 +68,4 @@ class HiddenBooruPost implements Cell {
         .deleteAllByPostIdBooruSync(
             booru.map((e) => e.$1).toList(), booru.map((e) => e.$2).toList()));
   }
-
-  @override
-  Contentable content() => const EmptyContent();
-
-  @override
-  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(thumbUrl);
-
-  @override
-  Key uniqueKey() => ValueKey((postId, booru));
-
-  @override
-  List<Widget>? addButtons(BuildContext context) {
-    return null;
-  }
-
-  @override
-  Widget? contentInfo(BuildContext context) => null;
-
-  @override
-  List<(IconData, void Function()?)>? addStickers(BuildContext context) {
-    return null;
-  }
-
-  @override
-  String alias(bool isList) {
-    return "${booru.string}($postId)";
-  }
-
-  @override
-  String? fileDownloadUrl() => null;
-
-  @override
-  List<Sticker> stickers(BuildContext context) => const [];
 }

@@ -27,9 +27,7 @@ import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
 import 'package:gallery/src/pages/manga/manga_info_page.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_on_cell_press_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart';
 import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
@@ -41,7 +39,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../info_pages/discover_anime_info_page.dart';
 
-class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
+class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
   final I? initalGenreId;
   final String? initalText;
   final AnimeSafeMode explicit;
@@ -52,7 +50,7 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
   final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
   final String info;
   final Uri siteUri;
-  final List<GridAction> actions;
+  final List<GridAction<T>> actions;
 
   static void launchMangaApi(
     BuildContext context,
@@ -73,7 +71,7 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
               final toDelete = <MangaEntry>[];
               final toAdd = <MangaEntry>[];
 
-              for (final MangaEntry e in selected.cast()) {
+              for (final e in selected) {
                 if (PinnedManga.exist(e.id.toString(), e.site)) {
                   toDelete.add(e);
                 } else {
@@ -191,7 +189,7 @@ class SearchAnimePage<T extends Cell, I, G> extends StatefulWidget {
       _SearchAnimePageState<T, I, G>();
 }
 
-class _SearchAnimePageState<T extends Cell, I, G>
+class _SearchAnimePageState<T extends CellBase, I, G>
     extends State<SearchAnimePage<T, I, G>> {
   final List<T> _results = [];
   late final StreamSubscription<void> watcher;
@@ -322,14 +320,14 @@ class _SearchAnimePageState<T extends Cell, I, G>
                   loadNext: _loadNext,
                   selectionGlue: GlueProvider.generateOf(context)(),
                   refreshingStatus: state.refreshingStatus,
-                  imageViewDescription:
-                      ImageViewDescription(imageViewKey: state.imageViewKey),
+                  // imageViewDescription:
+                  //     ImageViewDescription(imageViewKey: state.imageViewKey),
                   refresh: AsyncGridRefresh(_load),
-                  onPressed: OverrideGridOnCellPressBehaviour(
-                    onPressed: (context, idx, _) {
-                      return widget.onPressed(_results[idx]);
-                    },
-                  ),
+                  // onPressed: OverrideGridOnCellPressBehaviour(
+                  //   onPressed: (context, idx, _) {
+                  //     return widget.onPressed(_results[idx]);
+                  //   },
+                  // ),
                   search: OverrideGridSearchWidget(
                     SearchAndFocus(
                       TextFormField(
@@ -422,7 +420,6 @@ class _SearchAnimePageState<T extends Cell, I, G>
                             : null),
                   ),
                 ],
-                titleLines: 2,
                 keybindsDescription:
                     AppLocalizations.of(context)!.searchAnimePage,
                 gridSeed: state.gridSeed,

@@ -10,7 +10,7 @@ import 'package:gallery/src/db/base/note_base.dart';
 
 import 'cell/cell.dart';
 
-class NoteInterface<T extends Cell> {
+class NoteInterface<T extends CellBase> {
   final void Function(
       String text, T cell, Color? backgroundColor, Color? textColor) addNote;
   final NoteBase? Function(T cell) load;
@@ -18,10 +18,11 @@ class NoteInterface<T extends Cell> {
   final void Function(T cell, int indx) delete;
   final void Function(T cell, int from, int to) reorder;
 
-  const NoteInterface(
-      {required this.addNote,
-      required this.delete,
-      required this.load,
-      required this.replace,
-      required this.reorder});
+  const NoteInterface({
+    required this.addNote,
+    required this.delete,
+    required this.load,
+    required this.replace,
+    required this.reorder,
+  });
 }

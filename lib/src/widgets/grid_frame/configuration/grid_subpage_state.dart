@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 
-mixin GridSubpageState<T extends Cell> on State<GridFrame<T>> {
+mixin GridSubpageState<T extends CellBase> on State<GridFrame<T>> {
   int currentPage = 0;
   double savedOffset = 0;
 

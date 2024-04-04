@@ -10,8 +10,6 @@ import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/widgets.dart';
 import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/interfaces/cell/contentable.dart';
-import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:isar/isar.dart';
 
 import '../../../interfaces/cell/cell.dart';
@@ -19,7 +17,7 @@ import '../../../interfaces/cell/cell.dart';
 part 'download_file.g.dart';
 
 @collection
-class DownloadFile implements Cell {
+class DownloadFile implements CellBase, Thumbnailable, IsarEntryId {
   DownloadFile.d({
     this.isarId,
     required this.name,
@@ -41,19 +39,6 @@ class DownloadFile implements Cell {
   }) : date = DateTime.now();
 
   @override
-  Contentable content() => const EmptyContent();
-
-  @override
-  Key uniqueKey() => ValueKey(url);
-
-  @override
-  ImageProvider<Object>? thumbnail() => CachedNetworkImageProvider(thumbUrl);
-
-  @override
-  String toString() =>
-      "Download${isFailed ? '(failed)' : inProgress ? '(in progress)' : ''}: $name, url: $url";
-
-  @override
   Id? isarId;
 
   @Index(unique: true, replace: true)
@@ -73,6 +58,9 @@ class DownloadFile implements Cell {
   @Index()
   final bool inProgress;
 
+  @override
+  CellStaticData description() => const CellStaticData();
+
   bool isOnHold() => isFailed == false && inProgress == false;
 
   void save() {
@@ -87,22 +75,17 @@ class DownloadFile implements Cell {
       isarId: isarId, url: url, thumbUrl: thumbUrl, name: name, site: site);
 
   @override
-  List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
+  String toString() =>
+      "Download${isFailed ? '(failed)' : inProgress ? '(in progress)' : ''}: $name, url: $url";
 
   @override
-  List<Widget>? addButtons(BuildContext context) => null;
+  Key uniqueKey() => ValueKey(url);
 
   @override
-  Widget? contentInfo(BuildContext context) => null;
+  ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(thumbUrl);
 
   @override
   String alias(bool isList) => name;
-
-  @override
-  String? fileDownloadUrl() => null;
-
-  @override
-  List<Sticker> stickers(BuildContext context) => const [];
 
   static void saveAll(List<DownloadFile> l) {
     Dbs.g.main.writeTxnSync(() => Dbs.g.main.downloadFiles.putAllSync(l));

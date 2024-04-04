@@ -7,14 +7,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/note_base.dart';
-import 'package:gallery/src/db/base/system_gallery_thumbnail_provider.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 import 'package:gallery/src/interfaces/note_interface.dart';
 import 'package:isar/isar.dart';
-
-import '../../../interfaces/cell/contentable.dart';
-import '../../../plugs/platform_functions.dart';
 
 part 'note_gallery.g.dart';
 
@@ -33,24 +29,35 @@ class NoteGallery extends NoteBase {
     required this.isVideo,
   });
 
-  @override
-  Contentable content() {
-    final size = Size(width.toDouble(), height.toDouble());
+  // @override
+  // Contentable content() {
+  //   final size = Size(width.toDouble(), height.toDouble());
 
-    if (isVideo) {
-      return AndroidVideo(uri: originalUri, size: size);
-    }
+  //   if (isVideo) {
+  //     return AndroidVideo(uri: originalUri, size: size);
+  //   }
 
-    if (isGif) {
-      return AndroidGif(uri: originalUri, size: size);
-    }
+  //   if (isGif) {
+  //     return AndroidGif(uri: originalUri, size: size);
+  //   }
 
-    return AndroidImage(uri: originalUri, size: size);
-  }
+  //   return AndroidImage(uri: originalUri, size: size);
+  // }
 
-  @override
-  ImageProvider<Object>? thumbnail() =>
-      SystemGalleryThumbnailProvider(id, isVideo);
+  // @override
+  // ImageProvider<Object>? thumbnail() =>
+  //     SystemGalleryThumbnailProvider(id, isVideo);
+
+  //       @override
+  // List<Widget>? addButtons(BuildContext context) {
+  //   return [
+  //     IconButton(
+  //         onPressed: () {
+  //           PlatformFunctions.shareMedia(originalUri);
+  //         },
+  //         icon: const Icon(Icons.share))
+  //   ];
+  // }
 
   @override
   Key uniqueKey() => ValueKey(id);
@@ -225,16 +232,5 @@ class NoteGallery extends NoteBase {
     }
 
     return Dbs.g.main.noteGallerys.getByIdSync(id)!.text;
-  }
-
-  @override
-  List<Widget>? addButtons(BuildContext context) {
-    return [
-      IconButton(
-          onPressed: () {
-            PlatformFunctions.shareMedia(originalUri);
-          },
-          icon: const Icon(Icons.share))
-    ];
   }
 }

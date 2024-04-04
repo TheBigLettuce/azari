@@ -20,12 +20,11 @@ import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
 import 'package:gallery/src/net/anime/jikan.dart';
-import 'package:gallery/src/pages/anime/info_pages/finished_anime_info_page.dart';
-import 'package:gallery/src/pages/anime/info_pages/discover_anime_info_page.dart';
 import 'package:gallery/src/pages/anime/info_pages/watching_anime_info_page.dart';
 import 'package:gallery/src/pages/anime/paging_container.dart';
 import 'package:gallery/src/pages/more/tab_with_count.dart';
@@ -34,8 +33,6 @@ import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_on_cell_press_behaviour.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/image_view_description.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
@@ -57,6 +54,10 @@ part 'tab_bar_wrapper.dart';
 const int kWatchingTabIndx = 0;
 const int kDiscoverTabIndx = 1;
 const int kWatchedTabIndx = 2;
+
+abstract interface class AnimeCell implements CellBase {
+  Contentable openImage(BuildContext context);
+}
 
 class AnimePage extends StatefulWidget {
   final void Function(bool) procPop;

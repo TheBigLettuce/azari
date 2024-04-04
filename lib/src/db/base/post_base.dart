@@ -8,16 +8,25 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/booru_post_functionality_mixin.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/booru/note_booru.dart';
+import 'package:gallery/src/db/schemas/downloader/download_file.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
+import 'package:gallery/src/db/schemas/tags/local_tag_dictionary.dart';
+import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
+import 'package:gallery/src/net/downloader.dart';
+import 'package:gallery/src/pages/booru/booru_grid_actions.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
+import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:isar/isar.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path_util;
@@ -52,7 +61,14 @@ enum PostRating {
       };
 }
 
-class PostBase with BooruPostFunctionalityMixin implements Cell {
+class PostBase
+    with BooruPostFunctionalityMixin
+    implements
+        ContentableCell,
+        Thumbnailable,
+        Stickerable,
+        Downloadable,
+        IsarEntryId {
   PostBase({
     required this.id,
     required this.height,
@@ -102,7 +118,10 @@ class PostBase with BooruPostFunctionalityMixin implements Cell {
   final Booru booru;
 
   @override
-  ImageProvider<Object>? thumbnail() {
+  CellStaticData description() => const CellStaticData();
+
+  @override
+  ImageProvider<Object> thumbnail() {
     if (HiddenBooruPost.isHidden(id, booru)) {
       return _transparent;
     }
@@ -111,9 +130,9 @@ class PostBase with BooruPostFunctionalityMixin implements Cell {
   }
 
   @override
-  Contentable content() {
+  Contentable content(BuildContext context) {
     if (HiddenBooruPost.isHidden(id, booru)) {
-      return const EmptyContent();
+      return EmptyContent(this, _PostBaseContentWidgets(this));
     }
 
     String url = switch (Settings.fromDb().quality) {
@@ -123,7 +142,7 @@ class PostBase with BooruPostFunctionalityMixin implements Cell {
 
     var type = lookupMimeType(url);
     if (type == null) {
-      return const EmptyContent();
+      return EmptyContent(this, _PostBaseContentWidgets(this));
     }
 
     var typeHalf = type.split("/");
@@ -136,11 +155,17 @@ class PostBase with BooruPostFunctionalityMixin implements Cell {
         provider = MemoryImage(kTransparentImage);
       }
 
-      return typeHalf[1] == "gif" ? NetGif(provider) : NetImage(provider);
+      return typeHalf[1] == "gif"
+          ? NetGif(this, _PostBaseContentWidgets(this), provider)
+          : NetImage(this, _PostBaseContentWidgets(this), provider);
     } else if (typeHalf[0] == "video") {
-      return NetVideo(path_util.extension(url) == ".zip" ? sampleUrl : url);
+      return NetVideo(this, _PostBaseContentWidgets(this),
+          path_util.extension(url) == ".zip" ? sampleUrl : url);
     } else {
-      return const EmptyContent();
+      return EmptyContent(
+        this,
+        _PostBaseContentWidgets(this),
+      );
     }
   }
 
@@ -151,32 +176,9 @@ class PostBase with BooruPostFunctionalityMixin implements Cell {
       "${booru.prefix}_$id - $md5${ext != '.zip' ? ext : path_util.extension(sampleUrl)}";
 
   @override
-  List<Widget>? addButtons(BuildContext context) {
-    return [
-      openInBrowserButton(Uri.base, () {
-        launchUrl(
-          booru.browserLink(id),
-          mode: LaunchMode.externalApplication,
-        );
-      }),
-      if (Platform.isAndroid)
-        shareButton(context, fileUrl, () {
-          showQr(context, booru.prefix, id);
-        })
-      else
-        IconButton(
-          onPressed: () {
-            showQr(context, booru.prefix, id);
-          },
-          icon: const Icon(Icons.qr_code_rounded),
-        )
-    ];
-  }
-
-  @override
   List<(IconData, void Function()?)>? addStickers(BuildContext context) {
     final icons = defaultStickers(
-      content(),
+      _type(),
       context,
       tags,
       id,
@@ -187,9 +189,6 @@ class PostBase with BooruPostFunctionalityMixin implements Cell {
   }
 
   @override
-  Widget? contentInfo(BuildContext context) => PostInfo(post: this);
-
-  @override
   String alias(bool isList) => isList ? tags.join(" ") : id.toString();
 
   @override
@@ -198,6 +197,28 @@ class PostBase with BooruPostFunctionalityMixin implements Cell {
       return sampleUrl;
     } else {
       return fileUrl;
+    }
+  }
+
+  PostContentType _type() {
+    String url = switch (Settings.fromDb().quality) {
+      DisplayQuality.original => fileUrl,
+      DisplayQuality.sample => sampleUrl
+    };
+
+    var type = lookupMimeType(url);
+    if (type == null) {
+      return PostContentType.none;
+    }
+
+    var typeHalf = type.split("/");
+
+    if (typeHalf[0] == "image") {
+      return typeHalf[1] == "gif" ? PostContentType.gif : PostContentType.image;
+    } else if (typeHalf[0] == "video") {
+      return PostContentType.video;
+    } else {
+      return PostContentType.none;
     }
   }
 
@@ -212,12 +233,105 @@ class PostBase with BooruPostFunctionalityMixin implements Cell {
       if (NoteBooru.hasNotes(id, booru))
         const Sticker(Icons.sticky_note_2_outlined),
       ...defaultStickers(
-        content(),
+        _type(),
         context,
         tags,
         id,
         booru,
       ).map((e) => Sticker(e.$1))
+    ];
+  }
+}
+
+class _PostBaseContentWidgets implements ContentWidgets {
+  const _PostBaseContentWidgets(this.post);
+
+  final PostBase post;
+
+  @override
+  Widget info(BuildContext context) {
+    return PostInfo(post: post);
+  }
+
+  @override
+  List<Widget> appBarButtons(BuildContext context) {
+    return [
+      post.openInBrowserButton(Uri.base, () {
+        launchUrl(
+          post.booru.browserLink(post.id),
+          mode: LaunchMode.externalApplication,
+        );
+      }),
+      if (Platform.isAndroid)
+        post.shareButton(context, post.fileUrl, () {
+          post.showQr(context, post.booru.prefix, post.id);
+        })
+      else
+        IconButton(
+          onPressed: () {
+            post.showQr(context, post.booru.prefix, post.id);
+          },
+          icon: const Icon(Icons.qr_code_rounded),
+        )
+    ];
+  }
+
+  @override
+  String title(BuildContext context) => post.alias(false);
+
+  @override
+  Key uniquieKey(BuildContext context) => post.uniqueKey();
+
+  @override
+  List<ImageViewAction> actions(BuildContext context) {
+    final isFavorite = Settings.isFavorite(post.id, post.booru);
+
+    return [
+      ImageViewAction(
+        isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+        (_) {
+          Settings.addRemoveFavorites(context, [post], false);
+          LocalTagDictionary.addAll(post.tags);
+        },
+        play: !isFavorite,
+        color: isFavorite
+            ? Colors.red.harmonizeWith(Theme.of(context).colorScheme.primary)
+            : null,
+        animate: true,
+      ),
+      ImageViewAction(
+        Icons.download,
+        (_) {
+          final settings = Settings.fromDb();
+
+          PostTags.g.addTagsPostAll([(post.filename(), post.tags)]);
+          Downloader.g.add(
+            DownloadFile.d(
+              url: post.fileUrl,
+              site: post.booru.url,
+              name: post.filename(),
+              thumbUrl: post.previewUrl,
+            ),
+            settings,
+          );
+        },
+        animate: true,
+      ),
+      ImageViewAction(
+        Icons.hide_image_rounded,
+        (_) {
+          if (HiddenBooruPost.isHidden(post.id, post.booru)) {
+            HiddenBooruPost.removeAll([(post.id, post.booru)]);
+          } else {
+            HiddenBooruPost.addAll([
+              HiddenBooruPost(post.booru, post.id, post.previewUrl),
+            ]);
+          }
+        },
+        color: HiddenBooruPost.isHidden(post.id, post.booru)
+            ? Theme.of(context).colorScheme.primary
+            : null,
+      ),
     ];
   }
 }
