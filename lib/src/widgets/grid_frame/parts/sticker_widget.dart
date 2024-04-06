@@ -13,10 +13,14 @@ class StickerWidget extends StatelessWidget {
     this.e, {
     super.key,
     this.onPressed,
+    this.size = 28,
+    this.iconSize = 20,
   });
 
   final Sticker e;
   final void Function()? onPressed;
+  final double size;
+  final double iconSize;
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +29,8 @@ class StickerWidget extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: SizedBox(
-        height: 28,
-        width: 28,
+        height: size,
+        width: size,
         child: Container(
           alignment: Alignment.center,
           decoration: BoxDecoration(
@@ -35,15 +39,12 @@ class StickerWidget extends StatelessWidget {
                 ? colorScheme.onPrimary.withOpacity(0.9)
                 : colorScheme.surfaceVariant.withOpacity(0.8),
           ),
-          child: Transform.translate(
-            offset: const Offset(0, 0),
-            child: Icon(
-              e.icon,
-              size: 20,
-              color: e.important
-                  ? colorScheme.primary.withOpacity(0.9)
-                  : colorScheme.onSurfaceVariant.withOpacity(0.8),
-            ),
+          child: Icon(
+            e.icon,
+            size: iconSize,
+            color: e.important
+                ? colorScheme.primary.withOpacity(0.9)
+                : colorScheme.onSurfaceVariant.withOpacity(0.8),
           ),
         ),
       ),

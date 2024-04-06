@@ -16,7 +16,6 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_sta
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 
 class SkeletonState {
-  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey();
   final FocusNode mainFocus = FocusNode();
   final gridSeed = math.Random().nextInt(948512342);
 

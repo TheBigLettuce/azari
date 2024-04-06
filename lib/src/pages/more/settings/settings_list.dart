@@ -19,7 +19,6 @@ import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/display_quality.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
-import 'package:gallery/src/widgets/restart_widget.dart';
 import 'package:gallery/welcome_pages.dart';
 
 import '../../../db/tags/post_tags.dart';
@@ -30,12 +29,10 @@ import 'settings_widget.dart';
 
 class SettingsList extends StatefulWidget {
   final bool sliver;
-  final GlobalKey<ScaffoldState> scaffoldKey;
 
   const SettingsList({
     super.key,
     required this.sliver,
-    required this.scaffoldKey,
   });
 
   @override

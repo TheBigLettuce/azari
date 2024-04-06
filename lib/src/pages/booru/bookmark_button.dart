@@ -359,7 +359,7 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
                                     .colorScheme
                                     .primaryContainer
                                     .withOpacity(0.4),
-                                image: e.thumbnail()!,
+                                image: e.thumbnail(),
                                 fit: BoxFit.cover,
                               ),
                             );

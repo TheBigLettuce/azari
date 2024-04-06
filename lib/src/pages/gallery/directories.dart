@@ -13,6 +13,7 @@ import 'package:gallery/src/db/schemas/gallery/directory_metadata.dart';
 import 'package:gallery/src/db/schemas/grid_settings/directories.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
+import 'package:gallery/src/interfaces/gallery/gallery_api_directories.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart';
@@ -351,82 +352,15 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
         ),
         getCell: (i) => api.directCell(i),
         functionality: GridFunctionality(
-            // onPressed: OverrideGridOnCellPressBehaviour(
-            //     onPressed: (context, idx, providedCell) async {
-            //   final cell = providedCell as SystemGalleryDirectory? ??
-            //       CellProvider.getOf<SystemGalleryDirectory>(context, idx);
-
-            //   if (widget.callback != null) {
-            //     state.refreshingStatus.mutation.cellCount = 0;
-
-            //     Navigator.pop(context);
-            //     widget.callback!.c(cell, null);
-            //   } else {
-            //     if (!canAuthBiometric) {
-            //       return;
-            //     }
-
-            //     final requireAuth =
-            //         DirectoryMetadata.get(_segmentFnc(cell))?.requireAuth ??
-            //             false;
-            //     if (requireAuth) {
-            //       final success = await LocalAuthentication()
-            //           .authenticate(localizedReason: "Open directory");
-            //       if (!success) {
-            //         return;
-            //       }
-            //     }
-
-            //     StatisticsGallery.addViewedDirectories();
-            //     final d = cell;
-
-            //     final apiFiles = switch (cell.bucketId) {
-            //       "trash" => extra.trash(),
-            //       "favorites" => extra.favorites(),
-            //       String() => api.files(d),
-            //     };
-
-            //     final glue = GlueProvider.generateOf(context);
-
-            //     Navigator.push(
-            //         context,
-            //         MaterialPageRoute(
-            //           builder: (context) => switch (cell.bucketId) {
-            //             "favorites" => GalleryFiles(
-            //                 generateGlue: glue,
-            //                 api: apiFiles,
-            //                 secure: requireAuth,
-            //                 callback: widget.nestedCallback,
-            //                 dirName: AppLocalizations.of(context)!
-            //                     .galleryDirectoriesFavorites,
-            //                 bucketId: "favorites",
-            //               ),
-            //             "trash" => GalleryFiles(
-            //                 api: apiFiles,
-            //                 generateGlue: glue,
-            //                 secure: requireAuth,
-            //                 callback: widget.nestedCallback,
-            //                 dirName: AppLocalizations.of(context)!
-            //                     .galleryDirectoryTrash,
-            //                 bucketId: "trash",
-            //               ),
-            //             String() => GalleryFiles(
-            //                 generateGlue: glue,
-            //                 api: apiFiles,
-            //                 secure: requireAuth,
-            //                 dirName: d.name,
-            //                 callback: widget.nestedCallback,
-            //                 bucketId: d.bucketId,
-            //               )
-            //           },
-            //         ));
-            //   }
-            // }),
             selectionGlue: GlueProvider.generateOf(context)(),
+            registerNotifiers: (child) => DirectoriesDataNotifier(
+                  api: api,
+                  nestedCallback: widget.nestedCallback,
+                  callback: widget.callback,
+                  segmentFnc: _segmentFnc,
+                  child: child,
+                ),
             refreshingStatus: state.refreshingStatus,
-            // imageViewDescription: ImageViewDescription(
-            //   imageViewKey: state.imageViewKey,
-            // ),
             watchLayoutSettings: GridSettingsDirectories.watch,
             refresh: widget.callback != null
                 ? SynchronousGridRefresh(() {
@@ -452,8 +386,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
             )),
         mainFocus: state.mainFocus,
         description: GridDescription(
-          risingAnimation:
-              widget.nestedCallback == null && widget.callback == null,
           actions: widget.callback != null || widget.nestedCallback != null
               ? [
                   if (widget.callback == null || widget.callback!.joinable)
@@ -520,7 +452,10 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                   context,
                   widget.callback != null
                       ? widget.callback!.description
-                      : widget.nestedCallback!.description)
+                      : widget.nestedCallback!.description,
+                  widget.callback != null
+                      ? widget.callback!.icon
+                      : widget.nestedCallback!.icon)
               : null,
           settingsButton: GridFrameSettingsButton(
             selectRatio: (ratio, settings) =>
@@ -571,4 +506,44 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
           )
         : child(context);
   }
+}
+
+class DirectoriesDataNotifier extends InheritedWidget {
+  final GalleryAPIDirectories api;
+  final CallbackDescription? callback;
+  final CallbackDescriptionNested? nestedCallback;
+  final String Function(SystemGalleryDirectory cell) segmentFnc;
+
+  const DirectoriesDataNotifier({
+    super.key,
+    required this.api,
+    required this.nestedCallback,
+    required this.callback,
+    required this.segmentFnc,
+    required super.child,
+  });
+
+  static (
+    GalleryAPIDirectories,
+    CallbackDescription?,
+    CallbackDescriptionNested?,
+    String Function(SystemGalleryDirectory cell),
+  ) of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<DirectoriesDataNotifier>();
+
+    return (
+      widget!.api,
+      widget.callback,
+      widget.nestedCallback,
+      widget.segmentFnc,
+    );
+  }
+
+  @override
+  bool updateShouldNotify(DirectoriesDataNotifier oldWidget) =>
+      api != oldWidget.api ||
+      callback != oldWidget.callback ||
+      nestedCallback != oldWidget.nestedCallback ||
+      segmentFnc != oldWidget.segmentFnc;
 }

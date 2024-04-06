@@ -170,7 +170,7 @@ class _MangaInfoPageState extends State<MangaInfoPage>
                       bottom: MediaQuery.viewPaddingOf(context).bottom),
                   child: Stack(
                     children: [
-                      BackgroundImage(image: entry.thumbnail()!),
+                      BackgroundImage(image: entry.thumbnail()),
                       Column(
                         children: [
                           CardShell(

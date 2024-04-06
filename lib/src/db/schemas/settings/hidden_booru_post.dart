@@ -5,6 +5,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/widgets.dart';
 import 'package:gallery/src/db/initalize_db.dart';
@@ -57,6 +59,10 @@ class HiddenBooruPost implements CellBase, IsarEntryId, Thumbnailable {
 
     Dbs.g.main
         .writeTxnSync(() => Dbs.g.main.hiddenBooruPosts.putAllSync(booru));
+  }
+
+  static StreamSubscription<void> watch(void Function(void) f) {
+    return Dbs.g.main.hiddenBooruPosts.watchLazy().listen(f);
   }
 
   static void removeAll(List<(int, Booru)> booru) {

@@ -98,66 +98,81 @@ class _ChapterTileState extends State<ChapterTile> {
       includeCopy: false,
       title: AppLocalizations.of(context)!
           .mangaChapterName(widget.chapter.chapter),
-      child: ListTile(
-        enabled: widget.chapter.pages != 0,
-        onTap: widget.chapter.pages == 0
-            ? null
-            : () {
-                final overlayColor = Theme.of(context).colorScheme.background;
-
-                if (progress == null) {
-                  ReadMangaChapter.setProgress(
-                    1,
-                    siteMangaId: widget.entry.id.toString(),
-                    chapterId: widget.chapter.id,
-                  );
-                }
-
-                ReadMangaChapter.launchReader(
-                  context,
-                  mangaTitle: widget.entry.title,
-                  reloadChapters: widget.finishRead,
-                  widget.overlayColor ?? overlayColor,
-                  api: widget.api,
-                  onNextPage: (currentPage, cell) {
-                    if (currentPage + 1 == widget.chapter.pages) {
-                      widget.finishRead();
-                    }
-                  },
-                  mangaId: widget.entry.id,
-                  chapterId: widget.chapter.id,
-                );
-              },
-        contentPadding: EdgeInsets.zero,
-        subtitle: Text(
-            "${widget.chapter.title}${widget.chapter.translator.isNotEmpty ? ' (${widget.chapter.translator})' : ''}"),
-        title: Row(
-          children: [
-            Transform.rotate(
-              transformHitTests: false,
-              angle: 5 * (-pi / 180),
-              child: Text(
-                widget.chapter.chapter.toString(),
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
-              ),
+      child: Padding(
+        padding: const EdgeInsets.only(top: 4, bottom: 4),
+        child: DecoratedBox(
+          decoration: ShapeDecoration(
+              color:
+                  Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              )),
+          child: ListTile(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
             ),
-            const Padding(padding: EdgeInsets.only(left: 6)),
-            Text(
-              progress == widget.chapter.pages
-                  ? AppLocalizations.of(context)!.mangaProgressDone
-                  : progress == null
-                      ? widget.chapter.pages.toString()
-                      : "$progress / ${widget.chapter.pages}",
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.6),
+            enabled: widget.chapter.pages != 0,
+            onTap: widget.chapter.pages == 0
+                ? null
+                : () {
+                    final overlayColor =
+                        Theme.of(context).colorScheme.background;
+
+                    if (progress == null) {
+                      ReadMangaChapter.setProgress(
+                        1,
+                        siteMangaId: widget.entry.id.toString(),
+                        chapterId: widget.chapter.id,
+                      );
+                    }
+
+                    ReadMangaChapter.launchReader(
+                      context,
+                      mangaTitle: widget.entry.title,
+                      reloadChapters: widget.finishRead,
+                      widget.overlayColor ?? overlayColor,
+                      api: widget.api,
+                      onNextPage: (currentPage, cell) {
+                        if (currentPage + 1 == widget.chapter.pages) {
+                          widget.finishRead();
+                        }
+                      },
+                      mangaId: widget.entry.id,
+                      chapterId: widget.chapter.id,
+                    );
+                  },
+            contentPadding: EdgeInsets.only(right: 16, left: 16),
+            subtitle: Text(
+                "${widget.chapter.title}${widget.chapter.translator.isNotEmpty ? ' (${widget.chapter.translator})' : ''}"),
+            title: Row(
+              children: [
+                Transform.rotate(
+                  transformHitTests: false,
+                  angle: 5 * (-pi / 180),
+                  child: Text(
+                    widget.chapter.chapter.toString(),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
                   ),
-            )
-          ],
+                ),
+                const Padding(padding: EdgeInsets.only(left: 6)),
+                Text(
+                  progress == widget.chapter.pages
+                      ? AppLocalizations.of(context)!.mangaProgressDone
+                      : progress == null
+                          ? widget.chapter.pages.toString()
+                          : "$progress / ${widget.chapter.pages}",
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
+                      ),
+                )
+              ],
+            ),
+          ),
         ),
       ),
     );

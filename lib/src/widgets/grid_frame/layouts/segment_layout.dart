@@ -68,6 +68,7 @@ class SegmentLayout<T extends CellBase>
             context,
             idx,
             cell,
+            imageAlign: Alignment.topCenter,
             blur: blur,
             hideTitle: settings.hideName,
             isList: isList,
@@ -86,10 +87,11 @@ class SegmentLayout<T extends CellBase>
         gridCell: (context, idx, cell, blur) {
       return GridCell.frameDefault(
         context,
-        idx, cell,
+        idx,
+        cell,
         isList: isList,
         blur: blur,
-        // imageAlign: Alignment.topCenter,
+        imageAlign: Alignment.topCenter,
         hideTitle: settings.hideName,
         animated: PlayAnimationNotifier.maybeOf(context) ?? false,
         state: state,
@@ -494,12 +496,7 @@ class SegmentLayout<T extends CellBase>
             thisIndx: realIdx,
             description: cell.description(),
             selectFrom: predefined,
-            onPressed: cell is Pressable<T>
-                ? () {
-                    (cell as Pressable<T>)
-                        .onPress(context, gridFunctionality, cell, index);
-                  }
-                : null,
+            onPressed: cell.tryAsPressable(context, gridFunctionality, index),
             functionality: gridFunctionality,
             selection: selection,
             child: gridCell(context, realIdx, cell, toBlur),
@@ -544,12 +541,8 @@ class SegmentLayout<T extends CellBase>
           return WrapSelection<T>(
             selection: selection,
             description: cell.$1.description(),
-            onPressed: cell is Pressable<T>
-                ? () {
-                    (cell as Pressable<T>)
-                        .onPress(context, gridFunctionality, cell.$1, index);
-                  }
-                : null,
+            onPressed:
+                cell.$1.tryAsPressable<T>(context, gridFunctionality, index),
             functionality: gridFunctionality,
             selectFrom: null,
             thisIndx: -1,

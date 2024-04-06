@@ -33,7 +33,12 @@ class CompactMangaData extends CompactMangaDataBase {
   }
 }
 
-class CompactMangaDataBase implements CellBase, IsarEntryId, Thumbnailable {
+class CompactMangaDataBase
+    implements
+        CellBase,
+        // Pressable<CompactMangaDataBase>,
+        IsarEntryId,
+        Thumbnailable {
   CompactMangaDataBase({
     required this.mangaId,
     required this.site,
@@ -68,3 +73,10 @@ class CompactMangaDataBase implements CellBase, IsarEntryId, Thumbnailable {
   @override
   Key uniqueKey() => ValueKey(thumbUrl);
 }
+
+ // onPressed: OverrideGridOnCellPressBehaviour(
+            //   onPressed: (context, idx, overrideCell) {
+             
+            // ), // imageViewDescription: ImageViewDescription(
+            //   imageViewKey: state.imageViewKey,
+            // ),

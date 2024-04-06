@@ -7,7 +7,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/post_base.dart';
-import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/db/schemas/booru/post.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
@@ -20,8 +19,7 @@ import '../../db/schemas/settings/settings.dart';
 import '../../widgets/grid_frame/grid_frame.dart';
 
 class BooruGridActions {
-  static GridAction<Post> hide(BuildContext context, void Function() setState,
-      {PostBase? post}) {
+  static GridAction<Post> hide(BuildContext context) {
     return GridAction(
       Icons.hide_image_rounded,
       (selected) {
@@ -44,13 +42,9 @@ class BooruGridActions {
 
         HiddenBooruPost.addAll(toAdd);
         HiddenBooruPost.removeAll(toDelete);
-
-        setState();
       },
       true,
-      color: post != null && HiddenBooruPost.isHidden(post.id, post.booru)
-          ? Theme.of(context).colorScheme.primary
-          : null,
+      color: null,
     );
   }
 
@@ -80,22 +74,18 @@ class BooruGridActions {
     );
   }
 
-  static GridAction<T> favorites<T extends PostBase>(BuildContext context, T? p,
+  static GridAction<T> favorites<T extends PostBase>(BuildContext context,
       {bool showDeleteSnackbar = false}) {
-    final isFavorite = p != null && Settings.isFavorite(p.id, p.booru);
     return GridAction(
-      isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+      Icons.favorite_border_rounded,
       (selected) {
-        Settings.addRemoveFavorites(
-            context, selected.cast(), showDeleteSnackbar);
+        Settings.addRemoveFavorites(context, selected, showDeleteSnackbar);
         for (final post in selected) {
           LocalTagDictionary.addAll(post.tags);
         }
       },
       true,
-      color: isFavorite ? Colors.red.shade900 : null,
-      animate: p != null,
-      play: !isFavorite,
+      color: null,
     );
   }
 }

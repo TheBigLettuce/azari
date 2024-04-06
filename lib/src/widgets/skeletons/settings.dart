@@ -72,7 +72,6 @@ class SettingsSkeleton extends StatelessWidget {
             extendBodyBehindAppBar: extendBodyBehindAppBar,
             drawerEnableOpenDragGesture:
                 MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,
-            key: state.scaffoldKey,
             appBar: appBar,
             body: GestureDeadZones(
                 left: true,

@@ -7,7 +7,7 @@
 
 part of 'files.dart';
 
-mixin _FilesActionsMixin on State<GalleryFiles> {
+mixin FilesActionsMixin on State<GalleryFiles> {
   Future<void> _deleteDialog(
       BuildContext context, List<SystemGalleryDirectoryFile> selected) {
     return Navigator.of(context, rootNavigator: true).push(DialogRoute(
@@ -40,7 +40,7 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     ));
   }
 
-  GridAction<SystemGalleryDirectoryFile> _restoreFromTrash() {
+  GridAction<SystemGalleryDirectoryFile> restoreFromTrash() {
     return GridAction(
       Icons.restore_from_trash,
       (selected) {
@@ -51,7 +51,7 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> _bulkRename() {
+  GridAction<SystemGalleryDirectoryFile> bulkRename() {
     return GridAction(
       Icons.edit,
       (selected) {
@@ -61,7 +61,7 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> _saveTagsAction(GalleryPlug plug) {
+  GridAction<SystemGalleryDirectoryFile> saveTagsAction(GalleryPlug plug) {
     return GridAction(
       Icons.tag_rounded,
       (selected) {
@@ -71,7 +71,7 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> _addTag(
+  GridAction<SystemGalleryDirectoryFile> addTag(
       BuildContext context, void Function() refresh) {
     return GridAction(
       Icons.new_label_rounded,
@@ -90,7 +90,7 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> _addToFavoritesAction(
+  GridAction<SystemGalleryDirectoryFile> addToFavoritesAction(
       SystemGalleryDirectoryFile? f, GalleryPlug plug) {
     final isFavorites = f != null && f.isFavorite;
 
@@ -106,7 +106,7 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> _setFavoritesThumbnailAction() {
+  GridAction<SystemGalleryDirectoryFile> setFavoritesThumbnailAction() {
     return GridAction(
       Icons.image_outlined,
       (selected) {
@@ -118,7 +118,7 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> _deleteAction() {
+  GridAction<SystemGalleryDirectoryFile> deleteAction() {
     return GridAction(
       Icons.delete,
       (selected) {
@@ -128,7 +128,7 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> _copyAction(
+  GridAction<SystemGalleryDirectoryFile> copyAction(
       GridSkeletonStateFilter<SystemGalleryDirectoryFile> state,
       GalleryPlug plug) {
     return GridAction(
@@ -140,7 +140,7 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> _moveAction(
+  GridAction<SystemGalleryDirectoryFile> moveAction(
       GridSkeletonStateFilter<SystemGalleryDirectoryFile> state,
       GalleryPlug plug) {
     return GridAction(
@@ -152,7 +152,7 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  GridAction<SystemGalleryDirectoryFile> _chooseAction() {
+  GridAction<SystemGalleryDirectoryFile> chooseAction() {
     return GridAction(
       Icons.check,
       (selected) {
@@ -190,6 +190,7 @@ mixin _FilesActionsMixin on State<GalleryFiles> {
           procPop: (_) {},
           wrapGridPage: true,
           callback: CallbackDescription(
+            icon: move ? Icons.forward_rounded : Icons.copy_rounded,
             move
                 ? AppLocalizations.of(context)!.chooseMoveDestination
                 : AppLocalizations.of(context)!.chooseCopyDestination,

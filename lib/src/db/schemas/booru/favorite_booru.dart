@@ -7,9 +7,12 @@
 
 import 'dart:async';
 
+import 'package:flutter/src/widgets/framework.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:isar/isar.dart';
 
 import '../../base/post_base.dart';
@@ -17,7 +20,7 @@ import '../../base/post_base.dart';
 part 'favorite_booru.g.dart';
 
 @collection
-class FavoriteBooru extends PostBase {
+class FavoriteBooru extends PostBase implements Pressable<FavoriteBooru> {
   FavoriteBooru({
     required super.height,
     required super.id,
@@ -36,13 +39,27 @@ class FavoriteBooru extends PostBase {
     required super.createdAt,
   });
 
+  @Index()
+  String? group;
+
   @override
   CellStaticData description() => const CellStaticData(
         ignoreSwipeSelectGesture: false,
       );
 
-  @Index()
-  String? group;
+  @override
+  void onPress(
+    BuildContext context,
+    GridFunctionality<FavoriteBooru> functionality,
+    FavoriteBooru cell,
+    int idx,
+  ) =>
+      ImageView.defaultForGrid<FavoriteBooru>(
+        context,
+        functionality,
+        const ImageViewDescription(),
+        idx,
+      );
 
   static StreamSubscription<void> watch(void Function(void) f,
       [bool fire = false]) {

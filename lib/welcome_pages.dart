@@ -11,7 +11,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:gallery/main.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
-import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/display_quality.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';

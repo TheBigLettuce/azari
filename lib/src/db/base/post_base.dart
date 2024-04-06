@@ -23,8 +23,6 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:gallery/src/net/downloader.dart';
-import 'package:gallery/src/pages/booru/booru_grid_actions.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:isar/isar.dart';
@@ -176,19 +174,6 @@ class PostBase
       "${booru.prefix}_$id - $md5${ext != '.zip' ? ext : path_util.extension(sampleUrl)}";
 
   @override
-  List<(IconData, void Function()?)>? addStickers(BuildContext context) {
-    final icons = defaultStickers(
-      _type(),
-      context,
-      tags,
-      id,
-      booru,
-    );
-
-    return icons.isEmpty ? null : icons;
-  }
-
-  @override
   String alias(bool isList) => isList ? tags.join(" ") : id.toString();
 
   @override
@@ -223,7 +208,19 @@ class PostBase
   }
 
   @override
-  List<Sticker> stickers(BuildContext context) {
+  List<Sticker> stickers(BuildContext context, bool excludeDuplicate) {
+    if (excludeDuplicate) {
+      final icons = defaultStickers(
+        _type(),
+        context,
+        tags,
+        id,
+        booru,
+      );
+
+      return icons.isEmpty ? const [] : icons;
+    }
+
     final isHidden = HiddenBooruPost.isHidden(id, booru);
 
     return [
@@ -238,7 +235,7 @@ class PostBase
         tags,
         id,
         booru,
-      ).map((e) => Sticker(e.$1))
+      )
     ];
   }
 }
@@ -290,7 +287,7 @@ class _PostBaseContentWidgets implements ContentWidgets {
       ImageViewAction(
         isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
         (_) {
-          Settings.addRemoveFavorites(context, [post], false);
+          Settings.addRemoveFavorites(context, [post], true);
           LocalTagDictionary.addAll(post.tags);
         },
         play: !isFavorite,
@@ -317,23 +314,27 @@ class _PostBaseContentWidgets implements ContentWidgets {
         },
         animate: true,
       ),
-      ImageViewAction(
-        Icons.hide_image_rounded,
-        (_) {
-          if (HiddenBooruPost.isHidden(post.id, post.booru)) {
-            HiddenBooruPost.removeAll([(post.id, post.booru)]);
-          } else {
-            HiddenBooruPost.addAll([
-              HiddenBooruPost(post.booru, post.id, post.previewUrl),
-            ]);
-          }
-        },
-        color: HiddenBooruPost.isHidden(post.id, post.booru)
-            ? Theme.of(context).colorScheme.primary
-            : null,
-      ),
+      if (post is! FavoriteBooru)
+        ImageViewAction(
+          Icons.hide_image_rounded,
+          (_) {
+            if (HiddenBooruPost.isHidden(post.id, post.booru)) {
+              HiddenBooruPost.removeAll([(post.id, post.booru)]);
+            } else {
+              HiddenBooruPost.addAll([
+                HiddenBooruPost(post.booru, post.id, post.previewUrl),
+              ]);
+            }
+          },
+          color: HiddenBooruPost.isHidden(post.id, post.booru)
+              ? Theme.of(context).colorScheme.primary
+              : null,
+        ),
     ];
   }
+
+  @override
+  List<Sticker> stickers(BuildContext context) => post.stickers(context, true);
 }
 
 final _transparent = MemoryImage(kTransparentImage);

@@ -17,18 +17,18 @@ class WrapImageViewSkeleton extends StatelessWidget {
   final Widget? endDrawer;
   final PaletteGenerator? currentPalette;
   final GlobalKey<ScaffoldState> scaffoldKey;
-  // final List<Widget> addAppBarActions;
+  final AnimationController controller;
 
   final Widget child;
 
   const WrapImageViewSkeleton({
     super.key,
     required this.mainFocus,
+    required this.controller,
     required this.scaffoldKey,
     required this.currentPalette,
     required this.bottomAppBar,
     required this.endDrawer,
-    // required this.addAppBarActions,
     required this.child,
   });
 
@@ -63,6 +63,7 @@ class WrapImageViewSkeleton extends StatelessWidget {
         child: ImageViewAppBar(
           stickers: const [],
           actions: b,
+          controller: controller,
         ),
       ),
       body: child,

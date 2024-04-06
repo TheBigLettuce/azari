@@ -7,6 +7,13 @@
 
 import 'dart:async';
 
+extension GridMutationInterfaceTricks on GridMutationInterface {
+  /// Setting cellCount to itself triggers event on listenCount;
+  void notify() {
+    cellCount = cellCount;
+  }
+}
+
 abstract class GridMutationInterface {
   int get cellCount;
   set cellCount(int c);
@@ -14,7 +21,8 @@ abstract class GridMutationInterface {
   bool get isRefreshing;
   set isRefreshing(bool b);
 
-  StreamSubscription<void> registerStatusUpdate(void Function(void) f);
+  StreamSubscription<int> listenCount(void Function(int) f);
+  StreamSubscription<bool> listenRefresh(void Function(bool) f);
 
   void dispose();
   void reset();
@@ -35,11 +43,6 @@ class StaticNumberGridMutation implements GridMutationInterface {
   void dispose() {}
 
   @override
-  StreamSubscription<void> registerStatusUpdate(void Function(void p1) f) {
-    throw UnimplementedError();
-  }
-
-  @override
   void reset() {}
 
   @override
@@ -47,4 +50,14 @@ class StaticNumberGridMutation implements GridMutationInterface {
 
   @override
   set isRefreshing(bool b) {}
+
+  @override
+  StreamSubscription<int> listenCount(void Function(int p1) f) {
+    throw UnimplementedError();
+  }
+
+  @override
+  StreamSubscription<bool> listenRefresh(void Function(bool p1) f) {
+    throw UnimplementedError();
+  }
 }

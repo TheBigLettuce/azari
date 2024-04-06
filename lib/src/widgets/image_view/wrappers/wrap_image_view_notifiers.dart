@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
+import 'package:gallery/src/plugs/platform_fullscreens.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/widgets/notifiers/app_bar_visibility.dart';
 import 'package:gallery/src/widgets/notifiers/current_content.dart';
@@ -26,8 +27,10 @@ class WrapImageViewNotifiers extends StatefulWidget {
   final FocusNode mainFocus;
   final InheritedWidget Function(Widget child)? registerNotifiers;
   final void Function([bool refreshPalette]) hardRefresh;
-  final Widget child;
   final BuildContext? gridContext;
+  final AnimationController controller;
+
+  final Widget child;
 
   const WrapImageViewNotifiers({
     super.key,
@@ -36,6 +39,7 @@ class WrapImageViewNotifiers extends StatefulWidget {
     required this.hardRefresh,
     required this.currentCell,
     required this.mainFocus,
+    required this.controller,
     required this.gridContext,
     required this.child,
   });
@@ -61,8 +65,15 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
     super.dispose();
   }
 
-  void toggle() {
+  void toggle(PlatformFullscreensPlug plug) {
     setState(() => _isAppbarShown = !_isAppbarShown);
+
+    if (_isAppbarShown) {
+      plug.unfullscreen();
+      widget.controller.reverse();
+    } else {
+      widget.controller.forward().then((value) => plug.fullscreen());
+    }
   }
 
   void pauseVideo() {

@@ -24,15 +24,20 @@ class GridCell<T extends CellBase> extends StatefulWidget {
   final bool hideTitle;
   final bool animate;
   final bool blur;
+  final Alignment imageAlign;
+
+  final CellStaticData? overrideDescription;
 
   const GridCell({
     super.key,
     required T cell,
     required this.hideTitle,
     required this.indx,
+    this.overrideDescription,
     this.animate = false,
     this.longTitle = false,
     this.blur = false,
+    this.imageAlign = Alignment.center,
   }) : _data = cell;
 
   static GridCell<T> frameDefault<T extends CellBase>(
@@ -44,6 +49,7 @@ class GridCell<T extends CellBase> extends StatefulWidget {
     required bool hideTitle,
     bool animated = false,
     bool blur = false,
+    required Alignment imageAlign,
   }) {
     return GridCell(
       cell: cell,
@@ -52,6 +58,7 @@ class GridCell<T extends CellBase> extends StatefulWidget {
       hideTitle: hideTitle,
       animate: animated,
       blur: blur,
+      imageAlign: imageAlign,
     );
   }
 
@@ -127,13 +134,13 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
   @override
   Widget build(BuildContext context) {
     final data = widget._data;
-    final description = data.description();
+    final description = widget.overrideDescription ?? data.description();
     final alias = widget.hideTitle ? "" : data.alias(widget.longTitle);
 
-    final stickers =
-        data is Stickerable ? (data as Stickerable).stickers(context) : null;
-    final thumbnail =
-        data is Thumbnailable ? (data as Thumbnailable).thumbnail() : null;
+    final stickers = description.ignoreStickers
+        ? null
+        : data.tryAsStickerable(context, false);
+    final thumbnail = data.tryAsThumbnailable();
 
     if (alias.isEmpty &&
         (stickers == null || stickers.isEmpty) &&
@@ -192,7 +199,7 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
                           },
                           image: thumbnail,
                           isAntiAlias: true,
-                          alignment: description.imageAlign,
+                          alignment: widget.imageAlign,
                           color: widget.blur
                               ? Theme.of(context)
                                   .colorScheme

@@ -165,6 +165,7 @@ void mainPickfile() async {
       builder: (context) {
         return Home(
           callback: CallbackDescriptionNested(
+              icon: Icons.file_open_rounded,
               AppLocalizations.of(context)!.chooseFileNotice, (chosen) {
             PlatformFunctions.returnUri(chosen.originalUri);
           }),

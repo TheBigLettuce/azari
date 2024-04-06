@@ -16,22 +16,83 @@ class CopyMovePreview extends StatefulWidget {
   final List<SystemGalleryDirectoryFile> files;
   final double size;
 
-  static PreferredSizeWidget hintWidget(BuildContext context, String title) =>
+  static PreferredSizeWidget hintWidget(
+          BuildContext context, String title, IconData icon) =>
       PreferredSize(
-        preferredSize: const Size.fromHeight(27),
+        preferredSize: const Size.fromHeight(60),
         child: Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Text(
-            title,
-            style: TextStyle(
-                fontStyle: FontStyle.italic,
-                fontSize: Theme.of(context).textTheme.titleMedium?.fontSize,
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.8)),
+          padding:
+              const EdgeInsets.only(left: 24, bottom: 12, top: 12, right: 24),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: DecoratedBox(
+                      decoration: ShapeDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .secondaryContainer
+                            .withOpacity(0.25),
+                        shape: const StadiumBorder(),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                            right: 16, left: 16, bottom: 4, top: 4),
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSecondaryContainer
+                                        .withOpacity(0.8),
+                                  ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const Padding(padding: EdgeInsets.only(right: 8)),
+                DecoratedBox(
+                  decoration: ShapeDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primaryContainer
+                        .withOpacity(0.35),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(
+                      icon,
+                      size: 20,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onPrimaryContainer
+                          .withOpacity(0.8),
+                    ),
+                  ),
+                )
+              ],
+            ),
           ),
         ),
       );
 
-  const CopyMovePreview({super.key, required this.files, required this.size});
+  const CopyMovePreview({
+    super.key,
+    required this.files,
+    required this.size,
+  });
 
   @override
   State<CopyMovePreview> createState() => _CopyMovePreviewState();
@@ -51,44 +112,15 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
       child: SizedBox(
         height: widget.size,
         width: widget.size,
-        child: GestureDetector(
-          onTap: () {
-            final overlayColor =
-                Theme.of(context).colorScheme.background.withOpacity(0.5);
-
-            ImageView.launchWrapped(
-              context,
-              widget.files.length,
-              (context, i) => widget.files[i].content(context),
-              overlayColor,
-              startingCell: id,
-              key: key,
-              // actions: (_) {
-              //   return [
-              //     GridAction(
-              //       Icons.close_rounded,
-              //       (_) {
-              //         widget.files.removeAt(key.currentState!.currentPage);
-
-              //         key.currentState!.update(context, widget.files.length);
-
-              //         setState(() {});
-              //       },
-              //       false,
-              //     )
-              //   ];
-              // },
-            );
-          },
-          child: GridCell(
-            cell: cellData,
-            // isList: false,
-            indx: id,
-            // ignoreStickers: true,
-            // tight: true,
-            hideTitle: true,
-            // shadowOnTop: shadow,
-            // circle: true,
+        child: GridCell(
+          cell: cellData,
+          indx: id,
+          imageAlign: Alignment.topCenter,
+          hideTitle: true,
+          overrideDescription: const CellStaticData(
+            tightMode: true,
+            circle: true,
+            ignoreStickers: true,
           ),
         ),
       ),

@@ -381,7 +381,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                 description: GridDescription(
                   actions: [
                     BooruGridActions.download(context, api.booru),
-                    BooruGridActions.favorites(context, null,
+                    BooruGridActions.favorites(context,
                         showDeleteSnackbar: true)
                   ],
                   settingsButton: GridFrameSettingsButton(

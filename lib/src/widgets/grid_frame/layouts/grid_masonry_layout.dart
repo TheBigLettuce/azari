@@ -36,6 +36,7 @@ class GridMasonryLayout<T extends CellBase> implements GridLayouter<T> {
           context,
           idx,
           cell,
+          imageAlign: Alignment.center,
           hideTitle: settings.hideName,
           isList: isList,
           state: state,
@@ -98,12 +99,7 @@ class GridMasonryLayout<T extends CellBase> implements GridLayouter<T> {
           child: WrapSelection(
             selection: selection,
             thisIndx: indx,
-            onPressed: cell is Pressable<T>
-                ? () {
-                    (cell as Pressable<T>)
-                        .onPress(context, functionality, cell, indx);
-                  }
-                : null,
+            onPressed: cell.tryAsPressable(context, functionality, indx),
             description: cell.description(),
             functionality: functionality,
             selectFrom: null,

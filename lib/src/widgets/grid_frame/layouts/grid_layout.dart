@@ -34,6 +34,7 @@ class GridLayout<T extends CellBase> implements GridLayouter<T> {
             cell,
             hideTitle: settings.hideName,
             isList: isList,
+            imageAlign: Alignment.center,
             animated: PlayAnimationNotifier.maybeOf(context) ?? false,
             state: state,
           );
@@ -62,12 +63,7 @@ class GridLayout<T extends CellBase> implements GridLayouter<T> {
         return WrapSelection(
           selection: selection,
           thisIndx: indx,
-          onPressed: cell is Pressable<T>
-              ? () {
-                  (cell as Pressable<T>)
-                      .onPress(context, functionality, cell, indx);
-                }
-              : null,
+          onPressed: cell.tryAsPressable(context, functionality, indx),
           description: cell.description(),
           functionality: functionality,
           selectFrom: null,

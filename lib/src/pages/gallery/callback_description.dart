@@ -12,6 +12,7 @@ class CallbackDescription {
   final Future<void> Function(SystemGalleryDirectory? chosen, String? newDir) c;
   final String description;
   final List<String> suggestFor;
+  final IconData icon;
 
   final PreferredSizeWidget? preview;
 
@@ -25,6 +26,7 @@ class CallbackDescription {
     this.description,
     this.c, {
     this.preview,
+    required this.icon,
     required this.joinable,
     required this.suggestFor,
   });

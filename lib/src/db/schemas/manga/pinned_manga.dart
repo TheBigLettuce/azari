@@ -7,17 +7,21 @@
 
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
+import 'package:gallery/src/pages/manga/manga_info_page.dart';
+import 'package:gallery/src/pages/manga/manga_page.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:isar/isar.dart';
 
 part 'pinned_manga.g.dart';
 
 @collection
-class PinnedManga extends CompactMangaDataBase {
+class PinnedManga extends CompactMangaDataBase
+    implements Pressable<PinnedManga> {
   PinnedManga({
     required super.mangaId,
     required super.site,
@@ -27,7 +31,6 @@ class PinnedManga extends CompactMangaDataBase {
 
   @override
   CellStaticData description() => const CellStaticData(
-        imageAlign: Alignment.topCenter,
         alignTitleToTopLeft: true,
         tightMode: false,
       );
@@ -94,4 +97,42 @@ class PinnedManga extends CompactMangaDataBase {
   static StreamSubscription<void> watch(void Function(void) f) {
     return Dbs.g.anime.pinnedMangas.watchLazy().listen(f);
   }
+
+  @override
+  void onPress(
+    BuildContext context,
+    GridFunctionality<CompactMangaDataBase> functionality,
+    CompactMangaDataBase cell,
+    int idx,
+  ) {
+    final (client, setInner) = MangaPageDataNotifier.of(context);
+    setInner(true);
+
+    final api = site.api(client);
+
+    Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+      builder: (context) {
+        return MangaInfoPage(
+          id: MangaStringId(cell.mangaId),
+          api: api,
+        );
+      },
+    )).then((value) {
+      setInner(false);
+
+      return value;
+    });
+  }
 }
+
+  // onPressed: OverrideGridOnCellPressBehaviour(
+                      //   onPressed: (context, idx, overrideCell) {
+                      //     return widget.onPress(
+                      //       context,
+                      //       overrideCell as PinnedManga? ??
+                      //           CellProvider.getOf<PinnedManga>(context, idx),
+                      //     );
+                      //   },
+                      // ),
+                      // imageViewDescription:
+                      //     ImageViewDescription(imageViewKey: imageViewKey),

@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/manga/pinned_manga.dart';
 import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
@@ -13,6 +14,7 @@ import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
+import 'package:gallery/src/net/manga/manga_dex.dart';
 import 'package:gallery/src/pages/anime/anime.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 
@@ -59,6 +61,10 @@ enum MangaMeta {
     required this.url,
     required this.name,
   });
+
+  MangaAPI api(Dio client) => switch (this) {
+        MangaMeta.mangaDex => MangaDex(client),
+      };
 }
 
 enum MangaChapterOrder {
@@ -160,13 +166,10 @@ class MangaEntry implements AnimeCell, Stickerable, Thumbnailable {
   CellStaticData description() => const CellStaticData();
 
   @override
-  List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
-
-  @override
   String alias(bool isList) => title;
 
   @override
-  List<Sticker> stickers(BuildContext context) => [
+  List<Sticker> stickers(BuildContext context, bool excludeDuplicate) => [
         if (PinnedManga.exist(id.toString(), site))
           const Sticker(Icons.push_pin_rounded),
       ];

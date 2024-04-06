@@ -13,6 +13,7 @@ import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
+import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:gallery/src/interfaces/filtering/filtering_mode.dart';
 import 'package:gallery/src/pages/booru/booru_page.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
@@ -37,12 +38,14 @@ mixin BooruPostFunctionalityMixin {
     Navigator.push(
         context,
         DialogRoute(
+          themes: InheritedTheme.capture(from: context, to: null),
           context: context,
           builder: (context) {
             return AlertDialog(
               content: Container(
                 decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(10))),
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                ),
                 width: 320,
                 height: 320,
                 clipBehavior: Clip.antiAlias,
@@ -76,7 +79,7 @@ mixin BooruPostFunctionalityMixin {
             icon: const Icon(Icons.share)),
       );
 
-  List<(IconData, void Function()?)> defaultStickers(
+  List<Sticker> defaultStickers(
     PostContentType type,
     BuildContext? context,
     List<String> tags,
@@ -84,29 +87,10 @@ mixin BooruPostFunctionalityMixin {
     Booru booru,
   ) {
     return [
-      if (type == PostContentType.video) (FilteringMode.video.icon, null),
-      if (type == PostContentType.gif) (FilteringMode.gif.icon, null),
-      if (tags.contains("original")) (FilteringMode.original.icon, null),
-      if (tags.contains("translated"))
-        (
-          Icons.translate_outlined,
-          context == null
-              ? null
-              : () {
-                  Navigator.push(
-                    context,
-                    DialogRoute(
-                      context: context,
-                      builder: (context) {
-                        return TranslationNotes(
-                          postId: postId,
-                          booru: booru,
-                        );
-                      },
-                    ),
-                  );
-                }
-        )
+      if (type == PostContentType.video) Sticker(FilteringMode.video.icon),
+      if (type == PostContentType.gif) Sticker(FilteringMode.gif.icon),
+      if (tags.contains("original")) Sticker(FilteringMode.original.icon),
+      if (tags.contains("translated")) const Sticker(Icons.translate_outlined),
     ];
   }
 }

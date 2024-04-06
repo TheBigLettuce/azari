@@ -6,12 +6,13 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/widgets.dart';
+import 'package:gallery/src/interfaces/cell/cell.dart';
 
 import '../grid_frame.dart';
 
 class SelectionGlue {
-  final void Function(BuildContext context, List<GridAction> actions,
-      GridSelection selection) open;
+  final void Function<T extends CellBase>(BuildContext context,
+      List<GridAction<T>> actions, GridSelection<T> selection) open;
   final void Function(int) updateCount;
   final bool Function() isOpen;
   final bool Function() keyboardVisible;
@@ -19,9 +20,12 @@ class SelectionGlue {
   final int Function() barHeight;
   final bool persistentBarHeight;
 
+  static void _emptyOpen<T extends CellBase>(BuildContext context,
+      List<GridAction<T>> actions, GridSelection<T> selection) {}
+
   static SelectionGlue empty(BuildContext context) => SelectionGlue(
         updateCount: (_) {},
-        open: (_, __, ___) {},
+        open: _emptyOpen,
         hideNavBar: (_) {},
         isOpen: () => false,
         barHeight: () => 0,

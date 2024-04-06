@@ -10,10 +10,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/pages/more/settings/network_status.dart';
 import 'package:gallery/src/widgets/gesture_dead_zones.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue_state.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-
 import 'skeleton_state.dart';
 
 class HomeSkeleton extends StatelessWidget {
@@ -39,7 +35,6 @@ class HomeSkeleton extends StatelessWidget {
       extendBodyBehindAppBar: true,
       bottomNavigationBar: navBar!,
       resizeToAvoidBottomInset: false,
-      key: state.scaffoldKey,
       body: GestureDeadZones(
           right: true,
           left: true,

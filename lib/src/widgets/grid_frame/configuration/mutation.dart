@@ -9,7 +9,8 @@ part of '../grid_frame.dart';
 
 class DefaultMutationInterface implements GridMutationInterface {
   DefaultMutationInterface(this._cellCount);
-  final _updates = StreamController<void>.broadcast();
+  final _updatesCell = StreamController<int>.broadcast();
+  final _updatesRefresh = StreamController<bool>.broadcast();
 
   int _cellCount = 0;
   bool _refreshing = false;
@@ -21,7 +22,7 @@ class DefaultMutationInterface implements GridMutationInterface {
   set cellCount(int c) {
     _cellCount = c;
 
-    _update();
+    _updateCell();
   }
 
   @override
@@ -29,32 +30,49 @@ class DefaultMutationInterface implements GridMutationInterface {
 
   @override
   set isRefreshing(bool b) {
+    if (b == _refreshing) {
+      return;
+    }
+
     _refreshing = b;
 
-    _update();
+    _updateRefresh();
   }
 
   @override
   void reset() {
-    cellCount = 0;
-    isRefreshing = false;
+    _cellCount = 0;
+    _refreshing = false;
 
-    _update();
+    _updateCell();
+    _updateRefresh();
   }
 
-  void _update() {
-    if (!_updates.isClosed) {
-      _updates.add(null);
+  void _updateCell() {
+    if (!_updatesCell.isClosed) {
+      _updatesCell.add(_cellCount);
+    }
+  }
+
+  void _updateRefresh() {
+    if (!_updatesRefresh.isClosed) {
+      _updatesRefresh.add(_refreshing);
     }
   }
 
   @override
-  StreamSubscription<void> registerStatusUpdate(void Function(void) f) {
-    return _updates.stream.listen(f);
+  StreamSubscription<int> listenCount(void Function(int) f) {
+    return _updatesCell.stream.listen(f);
+  }
+
+  @override
+  StreamSubscription<bool> listenRefresh(void Function(bool) f) {
+    return _updatesRefresh.stream.listen(f);
   }
 
   @override
   void dispose() {
-    _updates.close();
+    _updatesCell.close();
+    _updatesRefresh.close();
   }
 }

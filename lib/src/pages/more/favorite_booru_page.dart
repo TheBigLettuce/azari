@@ -85,10 +85,6 @@ class FavoriteBooruPage extends StatelessWidget {
         watchLayoutSettings: GridSettingsFavorites.watch,
         download: state.download,
         refreshingStatus: state.state.refreshingStatus,
-        // imageViewDescription: ImageViewDescription(
-        //   addIconsImage: (p) => state.iconsImage(p),
-        //   imageViewKey: state.state.imageViewKey,
-        // ),
         refresh: SynchronousGridRefresh(() => state.loader.count()),
       ),
       getCell: state.loader.getCell,
@@ -405,14 +401,6 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
     search.prewarmResults();
   }
 
-  List<GridAction> iconsImage(FavoriteBooru p) {
-    return [
-      BooruGridActions.favorites(context, p, showDeleteSnackbar: true),
-      BooruGridActions.download(context, booru),
-      _groupButton(context)
-    ];
-  }
-
   Future<void> download(int i) async {
     final p = loader.getCell(i);
 
@@ -426,6 +414,14 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
             thumbUrl: p.previewUrl),
         state.settings);
   }
+
+  // List<GridAction> iconsImage(FavoriteBooru p) {
+  //   return [
+  //     BooruGridActions.favorites(context, p, showDeleteSnackbar: true),
+  //     BooruGridActions.download(context, booru),
+  //     _groupButton(context)
+  //   ];
+  // }
 
   GridAction<FavoriteBooru> _groupButton(BuildContext context) {
     return FavoritesActions.addToGroup(
@@ -460,7 +456,6 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
       _groupButton(context),
       BooruGridActions.favorites(
         context,
-        null,
         showDeleteSnackbar: true,
       ),
     ];

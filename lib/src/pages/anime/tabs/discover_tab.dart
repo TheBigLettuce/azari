@@ -179,26 +179,10 @@ class _DiscoverTabState extends State<DiscoverTab> {
           updateScrollPosition: widget.pagingContainer.updateScrollPos,
           selectionGlue: GlueProvider.generateOf(context)(),
           refreshingStatus: widget.pagingContainer.refreshingStatus,
-          // imageViewDescription: ImageViewDescription(
-          //   imageViewKey: state.imageViewKey,
-          // ),
           refresh: AsyncGridRefresh(_refresh),
-          // onPressed:
-          //     OverrideGridOnCellPressBehaviour(onPressed: (context, idx, _) {
-          //   final cell = CellProvider.getOf<AnimeEntry>(context, idx);
-
-          //   return Navigator.push(context, MaterialPageRoute(
-          //     builder: (context) {
-          //       return DiscoverAnimeInfoPage(
-          //         entry: cell,
-          //       );
-          //     },
-          //   ));
-          // }),
         ),
         mainFocus: state.mainFocus,
         description: GridDescription(
-          risingAnimation: true,
           actions: DiscoverTab.actions(),
           showAppBar: false,
           keybindsDescription: AppLocalizations.of(context)!.discoverTab,

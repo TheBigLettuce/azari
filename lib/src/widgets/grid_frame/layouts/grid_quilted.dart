@@ -37,6 +37,7 @@ class GridQuiltedLayout<T extends CellBase> implements GridLayouter<T> {
           context,
           idx,
           cell,
+          imageAlign: Alignment.topCenter,
           hideTitle: settings.hideName,
           isList: isList,
           animated: PlayAnimationNotifier.maybeOf(context) ?? false,
@@ -72,12 +73,7 @@ class GridQuiltedLayout<T extends CellBase> implements GridLayouter<T> {
           thisIndx: indx,
           description: cell.description(),
           selection: selection,
-          onPressed: cell is Pressable<T>
-              ? () {
-                  (cell as Pressable<T>)
-                      .onPress(context, functionality, cell, indx);
-                }
-              : null,
+          onPressed: cell.tryAsPressable(context, functionality, indx),
           functionality: functionality,
           selectFrom: null,
           child: gridCell(context, cell, indx),

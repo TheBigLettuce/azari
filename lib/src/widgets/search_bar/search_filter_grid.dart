@@ -48,6 +48,7 @@ class SearchFilterGrid<T extends CellBase> {
         _state.filter.filter(_searchVirtual ? "" : value, _currentFilterMode);
 
     interf.cellCount = res.count;
+
     _key.currentState?.update(res.count);
   }
 

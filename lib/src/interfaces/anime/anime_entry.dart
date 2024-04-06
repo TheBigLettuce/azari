@@ -14,13 +14,20 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:gallery/src/pages/anime/anime.dart';
+import 'package:gallery/src/pages/anime/info_pages/discover_anime_info_page.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:isar/isar.dart';
 
 import 'anime_api.dart';
 
 class AnimeEntry
     with BooruPostFunctionalityMixin
-    implements AnimeCell, Thumbnailable, Downloadable, Stickerable {
+    implements
+        AnimeCell,
+        Pressable<AnimeEntry>,
+        Thumbnailable,
+        Downloadable,
+        Stickerable {
   const AnimeEntry({
     required this.site,
     required this.type,
@@ -93,27 +100,6 @@ class AnimeEntry
         CachedNetworkImageProvider(thumbUrl),
       );
 
-  // @override
-  // List<Widget> appBarButtons(BuildContext context) {
-  //   return [
-  //     openInBrowserButton(Uri.parse(thumbUrl)),
-  //     shareButton(context, thumbUrl),
-  //   ];
-  // }
-
-  // @override
-  // Widget? info(BuildContext context) {
-  //   return SliverList.list(children: [
-  //     addInfoTile(
-  //       title: AppLocalizations.of(context)!.sourceFileInfoPage,
-  //       subtitle: thumbUrl,
-  //     )
-  //   ]);
-  // }
-
-  @override
-  List<(IconData, void Function()?)>? addStickers(BuildContext context) => null;
-
   @override
   String alias(bool isList) => title;
 
@@ -121,7 +107,7 @@ class AnimeEntry
   String fileDownloadUrl() => thumbUrl;
 
   @override
-  List<Sticker> stickers(BuildContext context) {
+  List<Sticker> stickers(BuildContext context, bool excludeDuplicate) {
     final (watching, inBacklog) = SavedAnimeEntry.isWatchingBacklog(id, site);
 
     return [
@@ -132,5 +118,17 @@ class AnimeEntry
       if (this is! WatchedAnimeEntry && WatchedAnimeEntry.watched(id, site))
         const Sticker(Icons.check, important: true),
     ];
+  }
+
+  @override
+  void onPress(BuildContext context,
+      GridFunctionality<AnimeEntry> functionality, AnimeEntry cell, int idx) {
+    Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        return DiscoverAnimeInfoPage(
+          entry: cell,
+        );
+      },
+    ));
   }
 }

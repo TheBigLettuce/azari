@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/system_gallery_directory_file_functionality_mixin.dart';
 import 'package:gallery/src/db/base/system_gallery_thumbnail_provider.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
+import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
 import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
 import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
@@ -20,6 +21,7 @@ import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/pages/booru/booru_page.dart';
+import 'package:gallery/src/pages/gallery/files.dart';
 import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
@@ -147,20 +149,19 @@ class SystemGalleryDirectoryFile
   Key uniqueKey() => ValueKey(id);
 
   @override
-  List<(IconData, void Function()?)>? addStickers(BuildContext context) {
-    final stickers = [
-      ...injectedStickers.map((e) => e.icon).map((e) => (e, null)),
-      ...defaultStickers(context, this),
-    ];
+  List<Sticker> stickers(BuildContext context, bool excludeDuplicate) {
+    if (excludeDuplicate) {
+      final stickers = [
+        ...injectedStickers.map((e) => e.icon).map((e) => Sticker(e)),
+        ...defaultStickers(context, this),
+      ];
 
-    return stickers.isEmpty ? null : stickers;
-  }
+      return stickers.isEmpty ? const [] : stickers;
+    }
 
-  @override
-  List<Sticker> stickers(BuildContext context) {
     return [
       ...injectedStickers,
-      ...defaultStickers(context, this).map((e) => Sticker(e.$1)),
+      ...defaultStickers(context, this),
       if (isFavorite) const Sticker(Icons.star_rounded, important: true),
       if (notesFlat.isNotEmpty) const Sticker(Icons.sticky_note_2_outlined)
     ];
@@ -173,14 +174,26 @@ class SystemGalleryDirectoryFile
     SystemGalleryDirectoryFile cell,
     int idx,
   ) =>
-      ImageView.defaultForGrid(
-          context, functionality, const ImageViewDescription(), idx);
+      ImageView.defaultForGrid<SystemGalleryDirectoryFile>(
+        context,
+        functionality,
+        const ImageViewDescription(
+          statistics: ImageViewStatistics(
+            swiped: StatisticsGallery.addFilesSwiped,
+            viewed: StatisticsGallery.addViewedFiles,
+          ),
+        ),
+        idx,
+      );
 }
 
 class _FilesGalleryWidgets implements ContentWidgets {
   const _FilesGalleryWidgets(this.file);
 
   final SystemGalleryDirectoryFile file;
+
+  @override
+  List<Sticker> stickers(BuildContext context) => file.stickers(context, true);
 
   @override
   List<Widget> appBarButtons(BuildContext context) {
@@ -211,7 +224,25 @@ class _FilesGalleryWidgets implements ContentWidgets {
   Widget? info(BuildContext context) => GalleryFileInfo(file: file);
 
   @override
-  List<ImageViewAction> actions(BuildContext context) => const [];
+  List<ImageViewAction> actions(BuildContext context) {
+    final (api, callback, actions, state, plug) = FilesDataNotifier.of(context);
+    final extra = api.getExtra();
+
+    return callback != null
+        ? [
+            actions.chooseAction().asImageView(file),
+          ]
+        : extra.isTrash
+            ? [
+                actions.restoreFromTrash().asImageView(file),
+              ]
+            : [
+                actions.addToFavoritesAction(file, plug).asImageView(file),
+                actions.deleteAction().asImageView(file),
+                actions.copyAction(state, plug).asImageView(file),
+                actions.moveAction(state, plug).asImageView(file)
+              ];
+  }
 
   @override
   String title(BuildContext context) => file.alias(false);

@@ -64,6 +64,8 @@ mixin _ChangePageMixin on State<Home> {
       restartStart();
     }
 
+    icons.pageRiseAnimation.reset();
+
     icons.pageFadeAnimation.animateTo(1).then((value) {
       currentRoute = to;
 
@@ -71,6 +73,8 @@ mixin _ChangePageMixin on State<Home> {
       setState(() {});
 
       _animateIcons(icons);
+
+      icons.pageRiseAnimation.forward();
     });
   }
 
@@ -84,21 +88,6 @@ mixin _ChangePageMixin on State<Home> {
     if (!pop) {
       _switchPage(icons, kMangaPageRoute);
     }
-  }
-
-  void _popGallery(bool b) {
-    final state = switch (currentRoute) {
-      kBooruPageRoute => mainKey.currentState,
-      kGalleryPageRoute => galleryKey.currentState,
-      kMorePageRoute => moreKey.currentState,
-      kMangaPageRoute => mangaKey.currentState,
-      int() => null,
-    };
-    if (state == null) {
-      return;
-    }
-
-    state.maybePop();
   }
 
   void _animateIcons(_AnimatedIconsMixin icons) {
@@ -131,8 +120,29 @@ mixin _ChangePageMixin on State<Home> {
     }
 
     return Animate(
+      controller: icons.pageRiseAnimation,
+      effects: [
+        FadeEffect(
+          delay: const Duration(milliseconds: 50),
+          end: 1,
+          begin: 0,
+          duration: 220.ms,
+          curve: Easing.emphasizedAccelerate,
+        ),
+        SlideEffect(
+          delay: const Duration(milliseconds: 50),
+          begin: const Offset(-0.35, 0.15),
+          end: const Offset(0, 0),
+          duration: 280.ms,
+          curve: Easing.standard,
+        ),
+      ],
+      child: Animate(
         target: 0,
-        effects: [FadeEffect(duration: 50.ms, begin: 1, end: 0)],
+        effects: [
+          FadeEffect(duration: 50.ms, begin: 1, end: 0),
+          const ThenEffect(delay: Duration(milliseconds: 50)),
+        ],
         controller: icons.pageFadeAnimation,
         child: switch (currentRoute) {
           kBooruPageRoute => _NavigatorShell(
@@ -162,7 +172,9 @@ mixin _ChangePageMixin on State<Home> {
               child: const MorePage(),
             ),
           int() => throw "unimpl",
-        });
+        },
+      ),
+    );
   }
 
   static const int kBooruPageRoute = 0;

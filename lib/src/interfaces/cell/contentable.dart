@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 
 /// Content of the file.
@@ -27,6 +28,8 @@ abstract interface class ContentWidgets {
   Widget? info(BuildContext context);
   List<Widget> appBarButtons(BuildContext context);
   List<ImageViewAction> actions(BuildContext context);
+
+  List<Sticker> stickers(BuildContext context);
 
   Key uniquieKey(BuildContext context);
 
@@ -52,6 +55,9 @@ class _EmptyWidgets implements ContentWidgets {
 
   @override
   Key uniquieKey(BuildContext context) => uniqueKeyF();
+
+  @override
+  List<Sticker> stickers(BuildContext context) => const [];
 }
 
 /// Displays an error page in the image view.

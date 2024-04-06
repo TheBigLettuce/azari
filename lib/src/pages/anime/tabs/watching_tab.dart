@@ -153,7 +153,6 @@ class __WatchingTabState extends State<_WatchingTab> {
         ),
         mainFocus: state.mainFocus,
         description: GridDescription(
-          risingAnimation: true,
           actions: [
             GridAction(
               Icons.play_arrow_rounded,
@@ -318,6 +317,7 @@ class _WatchingLayout
                 context,
                 idx,
                 cell,
+                imageAlign: Alignment.topCenter,
                 hideTitle: gridSettings.hideName,
                 isList: isList,
                 state: state,
@@ -469,8 +469,7 @@ class ImportantCard<T extends CellBase> extends StatelessWidget {
           // circle: true,
         ),
       ),
-      backgroundImage:
-          cell is Thumbnailable ? (cell as Thumbnailable).thumbnail() : null,
+      backgroundImage: cell.tryAsThumbnailable(),
       tooltip: cell.alias(false),
       onLongPressed: onLongPressed == null
           ? null

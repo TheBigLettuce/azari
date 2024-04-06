@@ -75,19 +75,13 @@ class ListLayout<T extends CellBase> implements GridLayouter<T> {
     required T cell,
     required bool hideThumbnails,
   }) {
-    final thumbnail =
-        cell is Thumbnailable ? (cell as Thumbnailable).thumbnail() : null;
+    final thumbnail = cell.tryAsThumbnailable();
 
     return WrapSelection(
       selection: selection,
       selectFrom: null,
       description: cell.description(),
-      onPressed: cell is Pressable<T>
-          ? () {
-              (cell as Pressable<T>)
-                  .onPress(context, functionality, cell, index);
-            }
-          : null,
+      onPressed: cell.tryAsPressable(context, functionality, index),
       functionality: functionality,
       thisIndx: index,
       child: Builder(

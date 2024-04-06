@@ -54,6 +54,7 @@ class BooruSearchPage extends StatefulWidget {
   final String tags;
   final SafeMode? overrideSafeMode;
   final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
+  final bool wrapScaffold;
 
   const BooruSearchPage({
     super.key,
@@ -61,6 +62,7 @@ class BooruSearchPage extends StatefulWidget {
     required this.tags,
     this.generateGlue,
     this.overrideSafeMode,
+    this.wrapScaffold = false,
   });
 
   @override
@@ -265,6 +267,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
   @override
   Widget build(BuildContext context) {
     return WrapGridPage(
+      addScaffold: widget.wrapScaffold,
       provided: widget.generateGlue,
       child: Builder(
         builder: (context) {
@@ -296,17 +299,6 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                   download: _download,
                   selectionGlue: GlueProvider.generateOf(context)(),
                   refreshingStatus: state.refreshingStatus,
-                  // imageViewDescription: ImageViewDescription(
-                  //   addIconsImage: (post) => [
-                  //     BooruGridActions.favorites(context, post),
-                  //     BooruGridActions.download(context, api.booru)
-                  //   ],
-                  //   imageViewKey: state.imageViewKey,
-                  //   statistics: const ImageViewStatistics(
-                  //     swiped: StatisticsBooru.addSwiped,
-                  //     viewed: StatisticsBooru.addViewed,
-                  //   ),
-                  // ),
                   search: OverrideGridSearchWidget(
                     SearchAndFocus(
                         search.searchWidget(context, hint: api.booru.name),
@@ -327,7 +319,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                 description: GridDescription(
                   actions: [
                     BooruGridActions.download(context, api.booru),
-                    BooruGridActions.favorites(context, null,
+                    BooruGridActions.favorites(context,
                         showDeleteSnackbar: true)
                   ],
                   menuButtonItems: [
@@ -369,10 +361,8 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
                                           time: DateTime.now()),
                                     ));
 
-                            ScaffoldMessenger.of(
-                                    state.scaffoldKey.currentContext!)
-                                .showSnackBar(SnackBar(
-                                    content: Text(
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(
                               AppLocalizations.of(context)!.bookmarked,
                             )));
                             state.gridKey.currentState?.selection.reset();

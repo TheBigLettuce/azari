@@ -17,10 +17,12 @@ import '../../notifiers/app_bar_visibility.dart';
 class ImageViewAppBar extends StatelessWidget {
   final List<Widget> stickers;
   final List<Widget> actions;
+  final AnimationController controller;
 
   const ImageViewAppBar({
     super.key,
     required this.stickers,
+    required this.controller,
     required this.actions,
   });
 
@@ -31,14 +33,14 @@ class ImageViewAppBar extends StatelessWidget {
     return Animate(
         effects: const [
           SlideEffect(
-            delay: Duration(milliseconds: 500),
+            duration: Duration(milliseconds: 500),
             curve: Easing.emphasizedAccelerate,
             begin: Offset(0, 0),
             end: Offset(0, -1),
           )
         ],
         autoPlay: false,
-        target: AppBarVisibilityNotifier.of(context) ? 0 : 1,
+        controller: controller,
         child: IgnorePointer(
           ignoring: !AppBarVisibilityNotifier.of(context),
           child: Column(

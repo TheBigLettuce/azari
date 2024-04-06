@@ -148,6 +148,14 @@ class _MangaPageState extends State<MangaPage> {
     });
   }
 
+  void _setInner(bool s) {
+    if (s) {
+      inInner = true;
+    } else {
+      _procReload();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final child = GridSkeleton<CompactMangaDataBase>(
@@ -159,32 +167,15 @@ class _MangaPageState extends State<MangaPage> {
           pinnedMangaKey: _pinnedKey,
         ),
         functionality: GridFunctionality(
-            // onPressed: OverrideGridOnCellPressBehaviour(
-            //   onPressed: (context, idx, overrideCell) {
-            //     final cell = overrideCell as CompactMangaDataBase? ??
-            //         CellProvider.getOf<CompactMangaDataBase>(context, idx);
-            //     inInner = true;
-
-            //     return Navigator.of(context, rootNavigator: true)
-            //         .push(MaterialPageRoute(
-            //       builder: (context) {
-            //         return MangaInfoPage(
-            //           id: MangaStringId(cell.mangaId),
-            //           api: api,
-            //         );
-            //       },
-            //     )).then((value) {
-            //       _procReload();
-
-            //       return value;
-            //     });
-            //   },
-            // ),
+            registerNotifiers: (child) {
+              return MangaPageDataNotifier(
+                client: dio,
+                setInner: _setInner,
+                child: child,
+              );
+            },
             selectionGlue: GlueProvider.generateOf(context)(),
             refreshingStatus: state.refreshingStatus,
-            // imageViewDescription: ImageViewDescription(
-            //   imageViewKey: state.imageViewKey,
-            // ),
             refresh: AsyncGridRefresh(
               refresh,
               pullToRefresh: false,
@@ -201,7 +192,6 @@ class _MangaPageState extends State<MangaPage> {
         initalScrollPosition: 0,
         mainFocus: state.mainFocus,
         description: GridDescription(
-          risingAnimation: true,
           actions: const [],
           ignoreEmptyWidgetOnNoContent: true,
           showAppBar: false,
@@ -537,17 +527,6 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
                     GridFunctionality(
                       selectionGlue: selection.glue,
                       refresh: SynchronousGridRefresh(() => data.length),
-                      // onPressed: OverrideGridOnCellPressBehaviour(
-                      //   onPressed: (context, idx, overrideCell) {
-                      //     return widget.onPress(
-                      //       context,
-                      //       overrideCell as PinnedManga? ??
-                      //           CellProvider.getOf<PinnedManga>(context, idx),
-                      //     );
-                      //   },
-                      // ),
-                      // imageViewDescription:
-                      //     ImageViewDescription(imageViewKey: imageViewKey),
                       refreshingStatus: refreshingStatus,
                     ),
                     selection,
@@ -568,4 +547,27 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
       ),
     );
   }
+}
+
+class MangaPageDataNotifier extends InheritedWidget {
+  final Dio client;
+  final void Function(bool) setInner;
+
+  const MangaPageDataNotifier({
+    super.key,
+    required this.client,
+    required this.setInner,
+    required super.child,
+  });
+
+  static (Dio, void Function(bool)) of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<MangaPageDataNotifier>();
+
+    return (widget!.client, widget.setInner);
+  }
+
+  @override
+  bool updateShouldNotify(MangaPageDataNotifier oldWidget) =>
+      client != oldWidget.client || setInner != oldWidget.setInner;
 }

@@ -6,6 +6,8 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/pages/glue_bottom_app_bar.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 
@@ -58,6 +60,38 @@ class _WrapGridPageState extends State<WrapGridPage>
       ),
     );
 
-    return widget.addScaffold ? Scaffold(body: child) : child;
+    return widget.addScaffold
+        ? Scaffold(
+            extendBody: true,
+            bottomNavigationBar: Animate(
+              target: glueState.actions?.$1 == null ? 0 : 1,
+              effects: [
+                MoveEffect(
+                  duration: 220.ms,
+                  curve: Easing.emphasizedDecelerate,
+                  end: Offset.zero,
+                  begin:
+                      Offset(0, 100 + MediaQuery.viewPaddingOf(context).bottom),
+                ),
+              ],
+              child: GlueBottomAppBar(glueState),
+            ),
+            body: Builder(
+              builder: (buildContext) {
+                final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
+
+                final data = MediaQuery.of(buildContext);
+
+                return MediaQuery(
+                  data: data.copyWith(
+                    viewPadding: data.viewPadding +
+                        EdgeInsets.only(bottom: bottomPadding),
+                  ),
+                  child: child,
+                );
+              },
+            ),
+          )
+        : child;
   }
 }

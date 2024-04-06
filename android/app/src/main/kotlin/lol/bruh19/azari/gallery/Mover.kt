@@ -562,7 +562,7 @@ internal class Mover(
                     )
 
                     if (list.count() == 40) {
-                        closure(list.toList(), false, if (inRefreshAtEnd) !cursor.isLast else true)
+                        closure(list.toList(), false, true)
                         list.clear()
                     }
                 } while (

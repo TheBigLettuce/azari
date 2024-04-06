@@ -43,6 +43,18 @@ class GridAction<T extends CellBase> {
   final Color? color;
   final bool animate;
   final bool play;
+
+  ImageViewAction asImageView(T cell) {
+    return ImageViewAction(
+      icon,
+      (_) {
+        onPress([cell]);
+      },
+      color: color,
+      animate: animate,
+      play: play,
+    );
+  }
 }
 
 class ImageViewAction {

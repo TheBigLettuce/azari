@@ -86,7 +86,6 @@ class AnimeCharacter implements AnimeCell, Downloadable, Thumbnailable {
   @override
   CellStaticData description() => const CellStaticData(
         alignTitleToTopLeft: true,
-        imageAlign: Alignment.topCenter,
         titleAtBottom: true,
       );
 

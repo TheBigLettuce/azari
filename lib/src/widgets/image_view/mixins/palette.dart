@@ -21,7 +21,6 @@ mixin ImageViewPaletteMixin on State<ImageView> {
   PaletteGenerator? previousPallete;
 
   void extractPalette(
-      BuildContext context,
       Contentable currentCell,
       GlobalKey<ScaffoldState> scaffoldKey,
       ScrollController scrollController,

@@ -31,7 +31,7 @@ class GridSelection<T extends CellBase> {
 
   int get count => _selected.length;
 
-  void use(void Function(List<CellBase> l) f, bool closeOnPress) {
+  void use(void Function(List<T> l) f, bool closeOnPress) {
     f(_selected.values.toList());
     if (closeOnPress) {
       reset();
@@ -54,7 +54,7 @@ class GridSelection<T extends CellBase> {
     }
 
     if (!glue.isOpen()) {
-      glue.open(context, addActions, this);
+      glue.open<T>(context, addActions, this);
     }
 
     _selected.clear();
@@ -76,7 +76,7 @@ class GridSelection<T extends CellBase> {
     }
 
     if (_selected.isEmpty || !glue.isOpen()) {
-      glue.open(context, addActions, this);
+      glue.open<T>(context, addActions, this);
     }
 
     _selected[id] = selection;
@@ -91,7 +91,7 @@ class GridSelection<T extends CellBase> {
       _selected.clear();
       lastSelected = null;
     } else if (_selected.isNotEmpty && !glue.isOpen()) {
-      glue.open(context, addActions, this);
+      glue.open<T>(context, addActions, this);
     }
 
     glue.updateCount(_selected.length);

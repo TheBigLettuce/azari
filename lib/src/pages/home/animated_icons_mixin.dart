@@ -10,6 +10,7 @@ part of '../home.dart';
 mixin _AnimatedIconsMixin on State<Home> {
   late final AnimationController controllerNavBar;
   late final AnimationController pageFadeAnimation;
+  late final AnimationController pageRiseAnimation;
   late final AnimationController booruIconController;
   late final AnimationController galleryIconController;
   late final AnimationController favoritesIconController;
@@ -27,8 +28,9 @@ mixin _AnimatedIconsMixin on State<Home> {
     controllerNavBar = AnimationController(vsync: ticker);
     pageFadeAnimation = AnimationController(
         vsync: ticker, duration: const Duration(milliseconds: 200));
-    booruIconController = AnimationController(vsync: ticker);
+    pageRiseAnimation = AnimationController(vsync: ticker);
 
+    booruIconController = AnimationController(vsync: ticker);
     galleryIconController = AnimationController(vsync: ticker);
     favoritesIconController = AnimationController(vsync: ticker);
     animeIconController = AnimationController(vsync: ticker);
@@ -37,8 +39,9 @@ mixin _AnimatedIconsMixin on State<Home> {
   void disposeIcons() {
     controllerNavBar.dispose();
     pageFadeAnimation.dispose();
-    booruIconController.dispose();
+    pageRiseAnimation.dispose();
 
+    booruIconController.dispose();
     galleryIconController.dispose();
     favoritesIconController.dispose();
     animeIconController.dispose();

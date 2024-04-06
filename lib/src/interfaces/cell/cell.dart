@@ -10,8 +10,36 @@ import 'package:flutter/widgets.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 
-import 'contentable.dart';
 import 'sticker.dart';
+
+extension CellsExt on Object {
+  void Function()? tryAsPressable<T extends CellBase>(
+      BuildContext context, GridFunctionality<T> functionality, int idx) {
+    if (this is Pressable<T>) {
+      return () {
+        (this as Pressable<T>).onPress(context, functionality, this as T, idx);
+      };
+    }
+
+    return null;
+  }
+
+  List<Sticker>? tryAsStickerable(BuildContext context, bool excludeDuplicate) {
+    if (this is Stickerable) {
+      return (this as Stickerable).stickers(context, excludeDuplicate);
+    }
+
+    return null;
+  }
+
+  ImageProvider? tryAsThumbnailable() {
+    if (this is Thumbnailable) {
+      return (this as Thumbnailable).thumbnail();
+    }
+
+    return null;
+  }
+}
 
 /// Cells on a grid.
 /// Implementations of this interface can be presented on the [GridFrame].
@@ -38,9 +66,9 @@ class CellStaticData {
     this.tightMode = false,
     this.ignoreSwipeSelectGesture = false,
     this.titleAtBottom = false,
-    this.imageAlign = Alignment.center,
     this.circle = false,
     this.alignTitleToTopLeft = false,
+    this.ignoreStickers = false,
   });
 
   /// [GridCell] is displayed in form as a beveled rectangle.
@@ -51,10 +79,9 @@ class CellStaticData {
   final bool titleAtBottom;
   final bool tightMode;
   final bool alignTitleToTopLeft;
+  final bool ignoreStickers;
 
   final int titleLines;
-
-  final Alignment imageAlign;
 }
 
 abstract interface class IsarEntryId {
@@ -69,19 +96,6 @@ abstract interface class IsarEntryId {
 abstract interface class Pressable<T extends CellBase> {
   void onPress(BuildContext context, GridFunctionality<T> functionality, T cell,
       int idx);
-
-  /// File that gets displayed in the image view.
-  /// This can be unimplemented.
-  /// Not implementing this assumes that clicking on the grid will take to an other page,
-  /// requires [GridFrame.overrideOnPress] to be not null, which makes [fileDisplay] never to be called.
-  // Contentable content();
-
-  /// Additional information about the cell.
-  /// This gets displayed in the "Info" list view, in the image view.
-  // Widget? contentInfo(BuildContext context);
-
-  /// Additional buttons which get diplayed in the image view's appbar.
-  // List<Widget>? addButtons(BuildContext context);
 }
 
 abstract interface class Thumbnailable {
@@ -89,9 +103,7 @@ abstract interface class Thumbnailable {
 }
 
 abstract interface class Stickerable {
-  List<(IconData, void Function()?)>? addStickers(BuildContext context);
-
-  List<Sticker> stickers(BuildContext context);
+  List<Sticker> stickers(BuildContext context, bool excludeDuplicate);
 }
 
 abstract interface class Downloadable {

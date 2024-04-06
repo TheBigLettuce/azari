@@ -136,7 +136,6 @@ class __FinishedTabState extends State<_FinishedTab> {
         ),
         mainFocus: state.mainFocus,
         description: GridDescription(
-          risingAnimation: true,
           actions: [
             GridAction(
               Icons.delete_rounded,

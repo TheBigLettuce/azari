@@ -21,7 +21,6 @@ import 'package:gallery/src/interfaces/filtering/filtering_mode.dart';
 import 'package:gallery/src/pages/more/settings/global_progress.dart';
 import 'package:gallery/src/plugs/notifications.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
-import 'package:gallery/src/widgets/translation_notes.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:logging/logging.dart';
 
@@ -56,40 +55,15 @@ mixin SystemGalleryDirectoryFileFunctionalityMixin {
     );
   }
 
-  List<(IconData, void Function()?)> defaultStickers(
+  List<Sticker> defaultStickers(
       BuildContext? context, SystemGalleryDirectoryFile file) {
     return [
-      if (file.isVideo) (FilteringMode.video.icon, null),
-      if (file.isGif) (FilteringMode.gif.icon, null),
-      if (file.isOriginal) (FilteringMode.original.icon, null),
-      if (file.isDuplicate) (FilteringMode.duplicate.icon, null),
+      if (file.isVideo) Sticker(FilteringMode.video.icon),
+      if (file.isGif) Sticker(FilteringMode.gif.icon),
+      if (file.isOriginal) Sticker(FilteringMode.original.icon),
+      if (file.isDuplicate) Sticker(FilteringMode.duplicate.icon),
       if (file.tagsFlat.contains("translated"))
-        (
-          Icons.translate_outlined,
-          context == null
-              ? null
-              : () {
-                  DisassembleResult? res;
-                  try {
-                    res = PostTags.g.dissassembleFilename(file.name);
-                  } catch (_) {
-                    return;
-                  }
-
-                  Navigator.push(
-                    context,
-                    DialogRoute(
-                      context: context,
-                      builder: (context) {
-                        return TranslationNotes(
-                          postId: res!.id,
-                          booru: res.booru,
-                        );
-                      },
-                    ),
-                  );
-                }
-        )
+        const Sticker(Icons.translate_outlined)
     ];
   }
 

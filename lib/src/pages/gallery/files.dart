@@ -77,7 +77,7 @@ class GalleryFiles extends StatefulWidget {
   State<GalleryFiles> createState() => _GalleryFilesState();
 }
 
-class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
+class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
   static const _log = LogTarget.gallery;
 
   final plug = chooseGalleryPlug();
@@ -87,7 +87,7 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
   late final GalleryFilesExtra extra = widget.api.getExtra()
     ..setRefreshingStatusCallback((i, inRefresh, empty) {
       if (empty) {
-        // state.imageViewKey.currentState?.update(context, 0);
+        state.refreshingStatus.mutation.cellCount = 0;
 
         Navigator.of(context).pop();
 
@@ -100,7 +100,6 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
         mutation.isRefreshing = false;
 
         search.performSearch(search.searchTextController.text);
-        // state.imageViewKey.currentState?.update(context, i);
 
         setState(() {});
       }
@@ -213,13 +212,9 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
           _subscription?.cancel();
           _subscription =
               Stream.periodic(const Duration(seconds: 10)).listen((event) {
-            // state.imageViewKey.currentState?.key.currentState?.closeEndDrawer();
-            // final imageViewContext = state.imageViewKey.currentContext;
-            // if (imageViewContext != null) {
-            // Navigator.of(imageViewContext).pop();
-            // }
+            state.refreshingStatus.mutation.cellCount = 0;
 
-            // Navigator.of(context).pop();
+            Navigator.of(context).pop();
 
             return;
           });
@@ -263,6 +258,7 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
           return BooruSearchPage(
             booru: booru,
             tags: tag,
+            wrapScaffold: true,
             overrideSafeMode: overrideSafeMode,
           );
         },
@@ -292,9 +288,16 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
             getCell: (i) => state.transform(widget.api.directCell(i)),
             functionality: GridFunctionality(
               registerNotifiers: (child) {
-                return OnBooruTagPressed(
-                  onPressed: _onBooruTagPressed,
-                  child: child,
+                return FilesDataNotifier(
+                  actions: this,
+                  state: state,
+                  plug: plug,
+                  api: widget.api,
+                  nestedCallback: widget.callback,
+                  child: OnBooruTagPressed(
+                    onPressed: _onBooruTagPressed,
+                    child: child,
+                  ),
                 );
               },
               watchLayoutSettings: GridSettingsFiles.watch,
@@ -310,29 +313,6 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
               ),
               selectionGlue: GlueProvider.generateOf(context)(),
               refreshingStatus: state.refreshingStatus,
-              // imageViewDescription: ImageViewDescription(
-              //   imageViewKey: state.imageViewKey,
-              //   statistics: const ImageViewStatistics(
-              //     swiped: StatisticsGallery.addFilesSwiped,
-              //     viewed: StatisticsGallery.addViewedFiles,
-              //   ),
-              //   addIconsImage: (cell) {
-              //     return widget.callback != null
-              //         ? [
-              //             _chooseAction(),
-              //           ]
-              //         : extra.isTrash
-              //             ? [
-              //                 _restoreFromTrash(),
-              //               ]
-              //             : [
-              //                 _addToFavoritesAction(cell, plug),
-              //                 _deleteAction(),
-              //                 _copyAction(state, plug),
-              //                 _moveAction(state, plug)
-              //               ];
-              //   },
-              // ),
               refresh: extra.supportsDirectRefresh
                   ? AsyncGridRefresh(() async {
                       final i = await widget.api.refresh();
@@ -355,21 +335,21 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
                   ? const []
                   : extra.isTrash
                       ? [
-                          _restoreFromTrash(),
+                          restoreFromTrash(),
                         ]
                       : [
-                          if (extra.isFavorites) _setFavoritesThumbnailAction(),
+                          if (extra.isFavorites) setFavoritesThumbnailAction(),
                           if (MiscSettings.current.filesExtendedActions) ...[
-                            _bulkRename(),
-                            _saveTagsAction(plug),
-                            _addTag(context, () {
+                            bulkRename(),
+                            saveTagsAction(plug),
+                            addTag(context, () {
                               state.gridKey.currentState?.refreshSequence();
                             }),
                           ],
-                          _addToFavoritesAction(null, plug),
-                          _deleteAction(),
-                          _copyAction(state, plug),
-                          _moveAction(state, plug),
+                          addToFavoritesAction(null, plug),
+                          deleteAction(),
+                          copyAction(state, plug),
+                          moveAction(state, plug),
                         ],
               menuButtonItems: [
                 if (widget.callback == null && extra.isTrash)
@@ -465,7 +445,10 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
               inlineMenuButtonItems: true,
               bottomWidget: widget.callback != null
                   ? CopyMovePreview.hintWidget(
-                      context, AppLocalizations.of(context)!.chooseFileNotice)
+                      context,
+                      AppLocalizations.of(context)!.chooseFileNotice,
+                      widget.callback!.icon,
+                    )
                   : null,
               keybindsDescription: widget.dirName,
               gridSeed: state.gridSeed,
@@ -484,4 +467,49 @@ class _GalleryFilesState extends State<GalleryFiles> with _FilesActionsMixin {
           },
         ));
   }
+}
+
+class FilesDataNotifier extends InheritedWidget {
+  final GalleryAPIFiles api;
+  final CallbackDescriptionNested? nestedCallback;
+  final FilesActionsMixin actions;
+  final GridSkeletonStateFilter<SystemGalleryDirectoryFile> state;
+  final GalleryPlug plug;
+
+  const FilesDataNotifier({
+    super.key,
+    required this.api,
+    required this.actions,
+    required this.nestedCallback,
+    required this.plug,
+    required this.state,
+    required super.child,
+  });
+
+  static (
+    GalleryAPIFiles,
+    CallbackDescriptionNested?,
+    FilesActionsMixin,
+    GridSkeletonStateFilter<SystemGalleryDirectoryFile>,
+    GalleryPlug,
+  ) of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<FilesDataNotifier>();
+
+    return (
+      widget!.api,
+      widget.nestedCallback,
+      widget.actions,
+      widget.state,
+      widget.plug,
+    );
+  }
+
+  @override
+  bool updateShouldNotify(FilesDataNotifier oldWidget) =>
+      api != oldWidget.api ||
+      nestedCallback != oldWidget.nestedCallback ||
+      actions != oldWidget.actions ||
+      plug != oldWidget.plug ||
+      state != oldWidget.state;
 }

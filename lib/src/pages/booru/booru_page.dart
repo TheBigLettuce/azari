@@ -36,6 +36,7 @@ import 'package:gallery/src/pages/more/settings/settings_widget.dart';
 import 'package:gallery/src/pages/more/tags/tags_widget.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/page_description.dart';
@@ -190,6 +191,7 @@ class _BooruPageState extends State<BooruPage> {
   late final StreamSubscription favoritesWatcher;
   late final StreamSubscription timeUpdater;
   late final StreamSubscription bookmarksWatcher;
+  late final StreamSubscription blacklistedWatcher;
 
   bool inForeground = true;
 
@@ -232,7 +234,7 @@ class _BooruPageState extends State<BooruPage> {
               state.settings.autoRefreshMicroseconds.microseconds)) {
         final gridState = state.gridKey.currentState;
         if (gridState != null) {
-          gridState.controller.jumpTo(0);
+          gridState.resetFab();
           pagingState.refreshingStatus.refresh(gridState.widget.functionality);
         }
 
@@ -291,11 +293,14 @@ class _BooruPageState extends State<BooruPage> {
       setState(() {});
     });
 
+    blacklistedWatcher = HiddenBooruPost.watch((_) {
+      pagingState.refreshingStatus.mutation.notify();
+    });
+
     favoritesWatcher = Dbs.g.main.favoriteBoorus
         .watchLazy(fireImmediately: false)
         .listen((event) {
-      // state.imageViewKey.currentState?.setState(() {});
-      setState(() {});
+      pagingState.refreshingStatus.mutation.notify();
     });
 
     if (pagingState.restoreSecondaryGrid != null) {
@@ -327,6 +332,7 @@ class _BooruPageState extends State<BooruPage> {
 
   @override
   void dispose() {
+    blacklistedWatcher.cancel();
     settingsWatcher.cancel();
     favoritesWatcher.cancel();
     bookmarksWatcher.cancel();
@@ -514,12 +520,10 @@ class _BooruPageState extends State<BooruPage> {
                 ),
               ),
               description: GridDescription(
-                risingAnimation: true,
                 actions: [
                   BooruGridActions.download(context, pagingState.api.booru),
-                  BooruGridActions.favorites(context, null,
-                      showDeleteSnackbar: true),
-                  BooruGridActions.hide(context, () => setState(() {})),
+                  BooruGridActions.favorites(context, showDeleteSnackbar: true),
+                  BooruGridActions.hide(context),
                 ],
                 pages: PageSwitcher(
                     [

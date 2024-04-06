@@ -19,12 +19,15 @@ class _Fab extends StatefulWidget {
   State<_Fab> createState() => __FabState();
 }
 
-class __FabState extends State<_Fab> {
+class __FabState extends State<_Fab> with SingleTickerProviderStateMixin {
   bool showFab = false;
+  late final AnimationController controller;
 
   @override
   void initState() {
     super.initState();
+
+    controller = AnimationController(vsync: this);
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       final pos = widget.controller.positions.toList();
@@ -38,6 +41,8 @@ class __FabState extends State<_Fab> {
 
   @override
   void dispose() {
+    controller.dispose();
+
     final pos = widget.controller.positions.toList();
     if (pos.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
@@ -51,9 +56,12 @@ class __FabState extends State<_Fab> {
   void _updateFab({required bool fab}) {
     if (fab != showFab) {
       showFab = fab;
-      try {
-        setState(() {});
-      } catch (_) {}
+
+      if (showFab) {
+        controller.forward();
+      } else {
+        controller.reverse();
+      }
     }
   }
 
@@ -73,30 +81,55 @@ class __FabState extends State<_Fab> {
 
   @override
   Widget build(BuildContext context) {
-    return !showFab
-        ? const SizedBox.shrink()
-        : GestureDetector(
-            onLongPress: () {
-              final scroll = widget.controller.position.maxScrollExtent;
-              if (scroll.isInfinite || scroll == 0) {
-                return;
-              }
+    return Animate(
+      value: 0,
+      autoPlay: false,
+      controller: controller,
+      effects: const [
+        FadeEffect(
+          delay: Duration(milliseconds: 80),
+          duration: Duration(milliseconds: 220),
+          begin: 0,
+          end: 1,
+          curve: Easing.standard,
+        ),
+        // RotateEffect(
+        //   duration: Duration(milliseconds: 100),
+        //   curve: Easing.emphasizedAccelerate,
+        //   begin: 0,
+        //   end: 1,
+        // ),
+        ScaleEffect(
+          delay: Duration(milliseconds: 80),
+          duration: Duration(milliseconds: 180),
+          curve: Easing.emphasizedDecelerate,
+          end: Offset(1, 1),
+          begin: Offset.zero,
+        )
+      ],
+      child: GestureDetector(
+        onLongPress: () {
+          final scroll = widget.controller.position.maxScrollExtent;
+          if (scroll.isInfinite || scroll == 0) {
+            return;
+          }
 
-              widget.controller.animateTo(scroll,
-                  duration: 200.ms, curve: Easing.emphasizedAccelerate);
-            },
-            child: FloatingActionButton(
-              onPressed: () {
-                widget.controller.animateTo(
-                  0,
-                  duration: const Duration(milliseconds: 200),
-                  curve: Easing.emphasizedAccelerate,
-                );
+          widget.controller.animateTo(scroll,
+              duration: 200.ms, curve: Easing.emphasizedAccelerate);
+        },
+        child: FloatingActionButton(
+          onPressed: () {
+            widget.controller.animateTo(
+              0,
+              duration: const Duration(milliseconds: 200),
+              curve: Easing.emphasizedAccelerate,
+            );
 
-                StatisticsGeneral.addScrolledUp();
-              },
-              child: const Icon(Icons.arrow_upward),
-            ),
-          ).animate().fadeIn(curve: Easing.standard);
+            StatisticsGeneral.addScrolledUp();
+          },
+          child: const Icon(Icons.arrow_upward),
+        ),
+      ),
+    );
   }
 }

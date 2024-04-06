@@ -47,13 +47,11 @@ class Post extends PostBase implements Pressable<Post> {
         context,
         functionality,
         const ImageViewDescription(
-          // imageViewKey: state.imageViewKey,
+          ignoreOnNearEnd: false,
           statistics: ImageViewStatistics(
             swiped: StatisticsBooru.addSwiped,
             viewed: StatisticsBooru.addViewed,
           ),
-
-          // addIconsImage:
         ),
         idx,
       );

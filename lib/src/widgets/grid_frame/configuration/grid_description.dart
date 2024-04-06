@@ -14,7 +14,6 @@ class GridDescription<T extends CellBase> {
     required this.gridSeed,
     required this.keybindsDescription,
     this.showAppBar = true,
-    this.risingAnimation = false,
     this.ignoreEmptyWidgetOnNoContent = false,
     this.bottomWidget,
     this.asSliver = false,
@@ -53,8 +52,6 @@ class GridDescription<T extends CellBase> {
   final bool appBarSnap;
 
   final int gridSeed;
-
-  final bool risingAnimation;
 
   final PageSwitcher? pages;
 

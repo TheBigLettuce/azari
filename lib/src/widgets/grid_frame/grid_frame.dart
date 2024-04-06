@@ -7,7 +7,6 @@
 
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -102,7 +101,8 @@ class GridFrame<T extends CellBase> extends StatefulWidget {
 class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     with GridSubpageState<T> {
   StreamSubscription<void>? _gridSettingsWatcher;
-  late final StreamSubscription<void> _mutationEvents;
+  late final StreamSubscription<void> _mutationEventsCells;
+  late final StreamSubscription<void> _mutationEventsRefresh;
 
   late ScrollController controller;
   final _holderKey = GlobalKey<__GridSelectionCountHolderState>();
@@ -128,11 +128,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
 
   bool inImageView = false;
 
-  List<int>? segTranslation;
-
-  // void _restoreState(ImageViewDescription<T> imageViewDescription) {
-  //   imageViewDescription.beforeImageViewRestore?.call();
-  // }
+  int _refreshes = 0;
 
   late double lastOffset = widget.initalScrollPosition;
 
@@ -140,9 +136,13 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
   void initState() {
     super.initState();
 
-    _mutationEvents = refreshingStatus.mutation.registerStatusUpdate((_) {
+    _mutationEventsCells = refreshingStatus.mutation.listenCount((_) {
       setState(() {});
     });
+    _mutationEventsRefresh = refreshingStatus.mutation.listenRefresh((_) {
+      setState(() {});
+    });
+
     _gridSettingsWatcher =
         widget.functionality.watchLayoutSettings?.call((newSettings) {
       _layoutSettings = newSettings;
@@ -156,8 +156,6 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     controller = description.asSliver && widget.overrideController != null
         ? widget.overrideController!
         : ScrollController(initialScrollOffset: widget.initalScrollPosition);
-
-    // _restoreState(widget.functionality.imageViewDescription);
 
     if (mutation.cellCount == 0) {
       refreshingStatus.refresh(widget.functionality);
@@ -200,6 +198,12 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     }
   }
 
+  void resetFab() {
+    setState(() {
+      _refreshes += 1;
+    });
+  }
+
   bool _enableAnimations = false;
 
   void enableAnimationsFor(
@@ -223,7 +227,8 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
 
   @override
   void dispose() {
-    _mutationEvents.cancel();
+    _mutationEventsCells.cancel();
+    _mutationEventsRefresh.cancel();
     _gridSettingsWatcher?.cancel();
 
     if (widget.overrideController == null) {
@@ -274,6 +279,35 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
 
     controller.jumpTo(target);
   }
+
+  double _bottomPadding(BuildContext context) {
+    final functionality = widget.functionality;
+    final selectionGlue = functionality.selectionGlue;
+    final description = widget.description;
+
+    return (functionality.selectionGlue.keyboardVisible()
+            ? 0
+            : MediaQuery.viewPaddingOf(context).bottom +
+                (selectionGlue.isOpen()
+                    ? selectionGlue.barHeight()
+                    : selectionGlue.persistentBarHeight
+                        ? selectionGlue.barHeight()
+                        : 0)) +
+        (description.footer != null
+            ? description.footer!.preferredSize.height
+            : 0);
+  }
+
+  double appBarBottomWidgetSize(PageDescription? page) =>
+      ((page?.search == null && !atHomePage) || widget.description.pages == null
+          ? 0
+          : (Platform.isAndroid ? 40 + 16 : 32 + 24)) +
+      (page == null ? 4 : 0);
+
+  bool get hideAppBar =>
+      !widget.description.showAppBar || widget.description.pages != null;
+
+  static const double loadingIndicatorSize = 4;
 
   List<Widget> _makeActions(
       BuildContext context, GridDescription<T> description) {
@@ -365,11 +399,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
                         )
                       : null,
               preferredSize: Size.fromHeight(
-                ((page?.search == null && !atHomePage) ||
-                            widget.description.pages == null
-                        ? 0
-                        : (Platform.isAndroid ? 40 + 16 : 32 + 24)) +
-                    (page == null ? 4 : 0),
+                appBarBottomWidgetSize(page),
               ),
               child: Padding(
                 padding: EdgeInsets.only(top: page == null ? 4 : 0),
@@ -432,40 +462,39 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     ];
   }
 
-  Widget mainBody(BuildContext context, PageDescription? page) => Scrollbar(
+  Widget mainBody(BuildContext context, PageDescription? page) {
+    final m = MediaQuery.of(context);
+
+    return MediaQuery(
+      data: m.copyWith(
+        padding: m.padding +
+            EdgeInsets.only(
+              top: appBarBottomWidgetSize(page),
+              bottom: hideAppBar ? loadingIndicatorSize : 0,
+            ),
+      ),
+      child: Scrollbar(
         interactive: false,
         thumbVisibility: Platform.isAndroid || Platform.isIOS ? false : true,
         controller: controller,
-        child: CustomScrollView(
-          key: atHomePage && page != null ? const PageStorageKey(0) : null,
-          controller: controller,
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: bodySlivers(context, page),
+        child: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+          child: MediaQuery(
+            data: m,
+            child: CustomScrollView(
+              key: atHomePage && page != null ? const PageStorageKey(0) : null,
+              controller: controller,
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: bodySlivers(context, page),
+            ),
+          ),
         ),
-      );
-
-  double _d(BuildContext context) {
-    final functionality = widget.functionality;
-    final selectionGlue = functionality.selectionGlue;
-    final description = widget.description;
-
-    return (functionality.selectionGlue.keyboardVisible()
-            ? 0
-            : MediaQuery.viewPaddingOf(context).bottom +
-                (selectionGlue.isOpen()
-                    ? selectionGlue.barHeight()
-                    : selectionGlue.persistentBarHeight
-                        ? selectionGlue.barHeight()
-                        : 0)) +
-        (description.footer != null
-            ? description.footer!.preferredSize.height
-            : 0);
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    segTranslation = null;
-
     final functionality = widget.functionality;
     final description = widget.description;
     final pageSwitcher = description.pages;
@@ -485,17 +514,27 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
           notifier: searchFocus,
           focusMain: widget.mainFocus.requestFocus,
           child: _GridSelectionCountHolder(
-            calculatePadding: _d,
+            calculatePadding: _bottomPadding,
             key: _holderKey,
             selection: selection,
             child: CellProvider<T>(
               getCell: widget.getCell,
-              child: Builder(
-                builder: (context) {
-                  return SliverMainAxisGroup(
-                    slivers: bodySlivers(context, page),
-                  );
-                },
+              child: GridExtrasNotifier(
+                scrollTo: tryScrollUntil,
+                child: Builder(
+                  builder: (context) {
+                    Widget child = SliverMainAxisGroup(
+                      slivers: bodySlivers(context, page),
+                    );
+
+                    final r = widget.functionality.registerNotifiers;
+                    if (r != null) {
+                      child = r(child);
+                    }
+
+                    return child;
+                  },
+                ),
               ),
             ),
           ),
@@ -532,8 +571,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
                 },
               ),
             ),
-          if (!widget.description.showAppBar ||
-              widget.description.pages != null)
+          if (hideAppBar)
             Align(
               alignment: Alignment.bottomCenter,
               child: Builder(
@@ -543,10 +581,12 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
                       bottom: GridBottomPaddingProvider.of(context),
                     ),
                     child: PreferredSize(
-                      preferredSize: const Size.fromHeight(4),
+                      preferredSize:
+                          const Size.fromHeight(loadingIndicatorSize),
                       child: !mutation.isRefreshing
                           ? const Padding(
-                              padding: EdgeInsets.only(top: 4),
+                              padding:
+                                  EdgeInsets.only(top: loadingIndicatorSize),
                               child: SizedBox(),
                             )
                           : const LinearProgressIndicator(),
@@ -558,11 +598,13 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
           Align(
             alignment: Alignment.bottomRight,
             child: Builder(
+              key: ValueKey((currentPage, _refreshes)),
               builder: (context) {
                 return Padding(
                   padding: EdgeInsets.only(
-                      right: 4,
-                      bottom: GridBottomPaddingProvider.of(context) + 4),
+                    right: 4,
+                    bottom: GridBottomPaddingProvider.of(context) + 4,
+                  ),
                   child: fab.widget(context, controller),
                 );
               },
@@ -570,15 +612,14 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
           ),
         ],
       );
-      if (functionality.registerNotifiers != null) {
-        ret = functionality.registerNotifiers!(ret);
-      }
-
-      if (widget.description.risingAnimation) {
-        ret = _RisingAnimation(key: ValueKey(currentPage), child: ret);
-      }
 
       return ret;
+    }
+
+    Widget c = Builder(builder: child);
+
+    if (functionality.registerNotifiers != null) {
+      c = functionality.registerNotifiers!(c);
     }
 
     return PlayAnimationNotifier(
@@ -588,12 +629,13 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
         focusMain: widget.mainFocus.requestFocus,
         child: _GridSelectionCountHolder(
           key: _holderKey,
-          calculatePadding: _d,
+          calculatePadding: _bottomPadding,
           selection: selection,
           child: CellProvider<T>(
             getCell: widget.getCell,
-            child: Builder(
-              builder: child,
+            child: GridExtrasNotifier(
+              scrollTo: tryScrollUntil,
+              child: c,
             ),
           ),
         ),
@@ -652,37 +694,27 @@ class __GridSelectionCountHolderState extends State<_GridSelectionCountHolder> {
   }
 }
 
-// class SelectionCountNotifier extends InheritedWidget {
-//   final int count;
-//   final int countUpdateTimes;
+class GridExtrasNotifier extends InheritedWidget {
+  const GridExtrasNotifier({
+    super.key,
+    required this.scrollTo,
+    required super.child,
+  });
 
-//   static int countOf(BuildContext context) {
-//     final widget =
-//         context.dependOnInheritedWidgetOfExactType<SelectionCountNotifier>();
+  final void Function(int idx) scrollTo;
 
-//     return widget!.count;
-//   }
+  static void Function(int idx) of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<GridExtrasNotifier>();
 
-//   static int maybeCountOf(BuildContext context) {
-//     final widget =
-//         context.dependOnInheritedWidgetOfExactType<SelectionCountNotifier>();
+    return widget!.scrollTo;
+  }
 
-//     return widget?.count ?? 0;
-//   }
-
-//   const SelectionCountNotifier({
-//     super.key,
-//     required this.count,
-//     required this.countUpdateTimes,
-//     required super.child,
-//   });
-
-//   @override
-//   bool updateShouldNotify(SelectionCountNotifier oldWidget) {
-//     return count != oldWidget.count ||
-//         countUpdateTimes != oldWidget.countUpdateTimes;
-//   }
-// }
+  @override
+  bool updateShouldNotify(GridExtrasNotifier oldWidget) {
+    return scrollTo != oldWidget.scrollTo;
+  }
+}
 
 class PlayAnimationNotifier extends InheritedWidget {
   final bool play;
@@ -703,32 +735,4 @@ class PlayAnimationNotifier extends InheritedWidget {
   @override
   bool updateShouldNotify(PlayAnimationNotifier oldWidget) =>
       play != oldWidget.play;
-}
-
-class _RisingAnimation extends StatelessWidget {
-  final Widget child;
-
-  const _RisingAnimation({super.key, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Animate(
-      autoPlay: true,
-      effects: [
-        FadeEffect(
-          begin: 0,
-          end: 1,
-          duration: 220.ms,
-          curve: Easing.emphasizedAccelerate,
-        ),
-        SlideEffect(
-          begin: const Offset(-0.35, 0.15),
-          end: const Offset(0, 0),
-          duration: 280.ms,
-          curve: Easing.standard,
-        ),
-      ],
-      child: child,
-    );
-  }
 }
