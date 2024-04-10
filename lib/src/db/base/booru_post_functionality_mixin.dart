@@ -128,9 +128,7 @@ class _PostInfoState extends State<PostInfo> {
   void initState() {
     super.initState();
 
-    try {
-      res = PostTags.g.dissassembleFilename(post.filename());
-    } catch (_) {}
+    res = PostTags.g.dissassembleFilename(post.filename()).maybeValue();
   }
 
   @override

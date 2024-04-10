@@ -53,7 +53,7 @@ class GridDescription<T extends CellBase> {
 
   final int gridSeed;
 
-  final PageSwitcher? pages;
+  final PageSwitcherInterface<T>? pages;
 
   final PreferredSizeWidget? footer;
 

@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_action_button.dart';
 import 'package:gallery/src/widgets/notifiers/current_content.dart';
@@ -19,7 +20,12 @@ class ImageViewBottomAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final widgets = CurrentContentNotifier.of(context).widgets;
-    final stickers = widgets.stickers(context);
+    final stickers = widgets.tryAsStickerable(context, true);
+    final actions = widgets.tryAsActionable(context);
+
+    if (actions.isEmpty && stickers.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Animate(
         effects: const [
@@ -49,8 +55,7 @@ class ImageViewBottomAppBar extends StatelessWidget {
                     Expanded(
                       child: Wrap(
                         spacing: 4,
-                        children: widgets
-                            .actions(context)
+                        children: actions
                             .map(
                               (e) => WrapGridActionButton(
                                 e.icon,

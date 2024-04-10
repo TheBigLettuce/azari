@@ -14,8 +14,10 @@ import 'package:gallery/src/pages/anime/info_base/body/synopsis_background.dart'
 import 'package:gallery/src/pages/manga/body/manga_chapters.dart';
 import 'package:gallery/src/pages/manga/body/manga_relations.dart';
 import 'package:gallery/src/pages/anime/search/search_anime.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart';
+import 'package:sliver_tools/sliver_tools.dart';
 
-class MangaInfoBody extends StatelessWidget {
+class MangaInfoBody extends StatefulWidget {
   final MangaEntry entry;
   final MangaAPI api;
   final EdgeInsets viewPadding;
@@ -32,14 +34,31 @@ class MangaInfoBody extends StatelessWidget {
   });
 
   @override
+  State<MangaInfoBody> createState() => _MangaInfoBodyState();
+}
+
+class _MangaInfoBodyState extends State<MangaInfoBody> {
+  int currentPage = 0;
+  int currentPageF() => currentPage;
+
+  void switchPage(int i) {
+    setState(() {
+      currentPage = i;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final entry = widget.entry;
+    final api = widget.api;
+
     return BodyPadding(
-      viewPadding: viewPadding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
+      sliver: true,
+      viewPadding: widget.viewPadding,
+      child: SliverMainAxisGroup(
+        slivers: [
           AnimeGenres<MangaGenre>(
+            sliver: true,
             genres: entry.genres.map((e) => (e, false)).toList(),
             title: (e) => e.name,
             onPressed: (e) {
@@ -51,26 +70,41 @@ class MangaInfoBody extends StatelessWidget {
               );
             },
           ),
-          const Padding(padding: EdgeInsets.only(top: 8)),
-          SynopsisBackground(
-            markdown: true,
-            background: "",
-            synopsis: entry.synopsis,
-            search: (_) {},
-            constraints: BoxConstraints(
-                minWidth: MediaQuery.sizeOf(context).width - 16 - 16,
-                maxWidth: MediaQuery.sizeOf(context).width - 16 - 16),
+          LabelSwitcherWidget(
+            pages: [
+              PageLabel("Synopsis"),
+              PageLabel("Chapters"),
+            ],
+            currentPage: currentPageF,
+            switchPage: switchPage,
+            noHorizontalPadding: true,
+            sliver: true,
           ),
-          MangaChapters(
-            entry: entry,
-            api: api,
-            overlayColor: overlayColor,
-            scrollController: scrollController,
-          ),
-          MangaRelations(
-            entry: entry,
-            api: api,
-          ),
+          if (currentPage == 0) ...[
+            SliverToBoxAdapter(
+              child: SynopsisBackground(
+                showLabel: false,
+                markdown: true,
+                background: "",
+                synopsis: entry.synopsis,
+                search: (_) {},
+                constraints: BoxConstraints(
+                    minWidth: MediaQuery.sizeOf(context).width - 16 - 16,
+                    maxWidth: MediaQuery.sizeOf(context).width - 16 - 16),
+              ),
+            ),
+            MangaRelations(
+              entry: entry,
+              api: api,
+              sliver: true,
+            ),
+          ] else
+            MangaChapters(
+              entry: entry,
+              api: api,
+              overlayColor: widget.overlayColor,
+              scrollController: widget.scrollController,
+            ),
         ],
       ),
     );

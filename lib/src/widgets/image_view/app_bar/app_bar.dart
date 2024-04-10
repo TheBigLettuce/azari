@@ -15,13 +15,11 @@ import 'package:gallery/src/widgets/notifiers/loading_progress.dart';
 import '../../notifiers/app_bar_visibility.dart';
 
 class ImageViewAppBar extends StatelessWidget {
-  final List<Widget> stickers;
   final List<Widget> actions;
   final AnimationController controller;
 
   const ImageViewAppBar({
     super.key,
-    required this.stickers,
     required this.controller,
     required this.actions,
   });
@@ -46,42 +44,35 @@ class ImageViewAppBar extends StatelessWidget {
           child: Column(
             children: [
               Expanded(
-                  child: AppBar(
-                bottom: const _BottomLoadIndicator(
-                    preferredSize: Size.fromHeight(4),
-                    child: SizedBox.shrink()),
-                scrolledUnderElevation: 0,
-                automaticallyImplyLeading: false,
-                leading: const BackButton(),
-                title: GestureDetector(
-                  onLongPress: () {
-                    Clipboard.setData(ClipboardData(
-                        text: currentCell.widgets.title(context)));
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(
-                            AppLocalizations.of(context)!.copiedClipboard)));
-                  },
-                  child: Text(currentCell.widgets.title(context)),
-                ),
-                actions: Scaffold.of(context).hasEndDrawer
-                    ? [
-                        ...actions,
-                        IconButton(
-                            onPressed: () {
-                              Scaffold.of(context).openEndDrawer();
-                            },
-                            icon: const Icon(Icons.info_outline)),
-                      ]
-                    : actions,
-              )),
-              if (stickers.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Wrap(
-                    spacing: 4,
-                    children: stickers,
+                child: AppBar(
+                  bottom: const _BottomLoadIndicator(
+                      preferredSize: Size.fromHeight(4),
+                      child: SizedBox.shrink()),
+                  scrolledUnderElevation: 0,
+                  automaticallyImplyLeading: false,
+                  leading: const BackButton(),
+                  title: GestureDetector(
+                    onLongPress: () {
+                      Clipboard.setData(ClipboardData(
+                          text: currentCell.widgets.alias(false)));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(
+                              AppLocalizations.of(context)!.copiedClipboard)));
+                    },
+                    child: Text(currentCell.widgets.alias(false)),
                   ),
+                  actions: Scaffold.of(context).hasEndDrawer
+                      ? [
+                          ...actions,
+                          IconButton(
+                              onPressed: () {
+                                Scaffold.of(context).openEndDrawer();
+                              },
+                              icon: const Icon(Icons.info_outline)),
+                        ]
+                      : actions,
                 ),
+              ),
             ],
           ),
         ));

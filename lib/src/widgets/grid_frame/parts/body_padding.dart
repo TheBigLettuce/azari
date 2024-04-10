@@ -11,6 +11,7 @@ class _BodyWrapping extends StatelessWidget {
   final FocusNode mainFocus;
   final String pageName;
   final Map<SingleActivatorDescription, void Function()> bindings;
+  // final Widget? pageSwitcherNoBar;
   final List<Widget> children;
 
   const _BodyWrapping({
@@ -18,6 +19,7 @@ class _BodyWrapping extends StatelessWidget {
     required this.bindings,
     required this.mainFocus,
     required this.pageName,
+    // required this.pageSwitcherNoBar,
     required this.children,
   });
 
@@ -40,6 +42,7 @@ class _BodyWrapping extends StatelessWidget {
         focusNode: mainFocus,
         child: Column(
           children: [
+            // if (pageSwitcherNoBar != null) pageSwitcherNoBar!,
             Expanded(
                 child: Stack(
               children: children,

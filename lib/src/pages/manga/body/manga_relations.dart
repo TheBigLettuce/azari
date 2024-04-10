@@ -15,15 +15,52 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 class MangaRelations extends StatelessWidget {
   final MangaAPI api;
   final MangaEntry entry;
+  final bool sliver;
 
   const MangaRelations({
     super.key,
     required this.entry,
     required this.api,
+    this.sliver = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (sliver) {
+      return SliverMainAxisGroup(slivers: [
+        BodySegmentLabel(
+          text: AppLocalizations.of(context)!.relationsLabel,
+          sliver: true,
+        ),
+        ...entry.relations.map(
+          (e) => SliverToBoxAdapter(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: MenuWrapper(
+                title: e.name,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (context) {
+                        return MangaInfoPage(
+                          id: e.id,
+                          api: api,
+                        );
+                      },
+                    ));
+                  },
+                  child: Text(
+                    e.name,
+                    overflow: TextOverflow.fade,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        )
+      ]);
+    }
+
     return entry.relations.isEmpty
         ? const SizedBox.shrink()
         : Column(

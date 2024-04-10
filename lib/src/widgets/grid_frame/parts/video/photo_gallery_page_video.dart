@@ -114,7 +114,6 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
             : chewieController == null
                 ? const Center(child: CircularProgressIndicator())
                 : GestureDetector(
-                    // onTap: widget.onTap,
                     onDoubleTap: () {
                       if (!disposed) {
                         if (chewieController!.isPlaying) {
@@ -130,7 +129,9 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
                         Padding(
                           padding: const EdgeInsets.only(left: 4),
                           child: VideoControls(
-                              controller: controller, setState: setState),
+                            controller: controller,
+                            setState: setState,
+                          ),
                         )
                       ],
                     ),

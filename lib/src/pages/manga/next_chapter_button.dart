@@ -99,12 +99,14 @@ class SkipChapterButtonState extends State<SkipChapterButton> {
         if (widget.direction == SkipDirection.right) {
           ReadMangaChapter.setProgress(
             original.pages,
+            chapterNumber: original.chapter,
+            chapterName: original.title,
             siteMangaId: widget.mangaId,
             chapterId: original.id,
           );
         }
 
-        _launch(value.first.id);
+        _launch(value.first.id, original.title, original.chapter);
       }
 
       return value;
@@ -115,20 +117,26 @@ class SkipChapterButtonState extends State<SkipChapterButton> {
     });
   }
 
-  void _launch(String id) {
+  void _launch(String id, String name, String chapterNumber) {
     currentChapter = id;
 
     widget.reloadChapters();
 
     ReadMangaChapter.launchReader(
       context,
-      widget.overlayColor,
-      mangaTitle: widget.mangaTitle,
-      mangaId: MangaStringId(widget.mangaId),
-      chapterId: id,
-      api: widget.api,
-      onNextPage: widget.onNextPage,
-      reloadChapters: widget.reloadChapters,
+      ReaderData(
+        chapterNumber: chapterNumber,
+        chapterName: name,
+        api: widget.api,
+        mangaId: MangaStringId(widget.mangaId),
+        mangaTitle: widget.mangaTitle,
+        chapterId: id,
+        nextChapterKey: GlobalKey(),
+        prevChaterKey: GlobalKey(),
+        reloadChapters: widget.reloadChapters,
+        onNextPage: widget.onNextPage,
+        overlayColor: widget.overlayColor,
+      ),
       addNextChapterButton: true,
       replace: true,
     );
@@ -166,12 +174,14 @@ class SkipChapterButtonState extends State<SkipChapterButton> {
     if (widget.direction == SkipDirection.right) {
       ReadMangaChapter.setProgress(
         c.pages,
+        chapterNumber: c.chapter,
+        chapterName: c.title,
         siteMangaId: widget.mangaId,
         chapterId: c.id,
       );
     }
 
-    _launch(e.id);
+    _launch(e.id, c.title, c.volume);
   }
 
   @override

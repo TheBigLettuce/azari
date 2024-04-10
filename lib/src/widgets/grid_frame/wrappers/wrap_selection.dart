@@ -16,6 +16,7 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
   final void Function()? onPressed;
 
   final GridFunctionality<T> functionality;
+  final bool limitedSize;
 
   final Widget child;
 
@@ -27,6 +28,7 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
     required this.selection,
     required this.functionality,
     required this.onPressed,
+    this.limitedSize = false,
     required this.child,
   });
 
@@ -41,6 +43,7 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
         selection: null,
         onPressed: onPressed,
         functionality: functionality,
+        limitedSize: limitedSize,
         child: child,
       );
     }
@@ -52,6 +55,7 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
             selectFrom: selectFrom,
             onPressed: onPressed,
             thisIndx: thisIndx,
+            limitedSize: limitedSize,
             child: child,
           )
         : DragTarget(
@@ -83,6 +87,7 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
                   onPressed: onPressed,
                   selectFrom: selectFrom,
                   selection: selection,
+                  limitedSize: limitedSize,
                   child: child,
                 ),
               );
@@ -96,6 +101,7 @@ class _WrappedSelectionCore<T extends CellBase> extends StatefulWidget {
   final GridSelection<T>? selection;
   final List<int>? selectFrom;
   final GridFunctionality<T> functionality;
+  final bool limitedSize;
 
   final void Function()? onPressed;
 
@@ -108,6 +114,7 @@ class _WrappedSelectionCore<T extends CellBase> extends StatefulWidget {
     required this.functionality,
     required this.onPressed,
     required this.child,
+    required this.limitedSize,
   });
 
   @override
@@ -205,7 +212,7 @@ class __WrappedSelectionCoreState<T extends CellBase>
                 ),
               )),
         ),
-        if (selection.isSelected(thisIndx)) ...[
+        if (selection.isSelected(thisIndx) && !widget.limitedSize) ...[
           IgnorePointer(
             child: DecoratedBox(
               decoration: BoxDecoration(

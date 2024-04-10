@@ -107,7 +107,7 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
                                 },
                                 child: GridCell(
                                   cell: e.$2,
-                                  indx: e.$1,
+                                  secondaryTitle: e.$2.role,
                                   hideTitle: false,
                                 ),
                               ),

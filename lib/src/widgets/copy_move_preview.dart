@@ -114,7 +114,6 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
         width: widget.size,
         child: GridCell(
           cell: cellData,
-          indx: id,
           imageAlign: Alignment.topCenter,
           hideTitle: true,
           overrideDescription: const CellStaticData(

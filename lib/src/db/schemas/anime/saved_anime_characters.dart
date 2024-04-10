@@ -9,6 +9,7 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/base/system_gallery_thumbnail_provider.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
@@ -16,7 +17,7 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/pages/anime/anime.dart';
 import 'package:isar/isar.dart';
-// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 part 'saved_anime_characters.g.dart';
 
@@ -72,7 +73,13 @@ class SavedAnimeCharacters {
 }
 
 @embedded
-class AnimeCharacter implements AnimeCell, Downloadable, Thumbnailable {
+class AnimeCharacter
+    implements
+        AnimeCell,
+        ContentWidgets,
+        Infoable,
+        Downloadable,
+        Thumbnailable {
   final String imageUrl;
   final String name;
   final String role;
@@ -87,6 +94,7 @@ class AnimeCharacter implements AnimeCell, Downloadable, Thumbnailable {
   CellStaticData description() => const CellStaticData(
         alignTitleToTopLeft: true,
         titleAtBottom: true,
+        titleLines: 3,
       );
 
   @override
@@ -104,41 +112,20 @@ class AnimeCharacter implements AnimeCell, Downloadable, Thumbnailable {
   @override
   Contentable openImage(BuildContext context) => NetImage(
         this,
-        ContentWidgets.empty(uniqueKey),
         thumbnail(),
       );
 
-  // @override
-  // List<Widget> appBarButtons(BuildContext context) => const [];
-
-  // @override
-  // Widget? info(BuildContext context) => SliverList.list(children: [
-  //       addInfoTile(
-  //         title: AppLocalizations.of(context)!.sourceFileInfoPage,
-  //         subtitle: imageUrl,
-  //       ),
-  //       addInfoTile(
-  //         title: AppLocalizations.of(context)!.role,
-  //         subtitle: role,
-  //       ),
-  //     ]);
-
-  // @override
-  // Contentable content(BuildContext context) =>
-  //     NetImage(this, this, CachedNetworkImageProvider(imageUrl));
-
-  // @override
-  // List<ImageViewAction> actions(BuildContext context) {
-  //   throw UnimplementedError();
-  // }
-
-  // @override
-  // String title(BuildContext context) {
-  //   throw UnimplementedError();
-  // }
-
-  // @override
-  // Key uniquieKey(BuildContext context) {
-  //   throw UnimplementedError();
-  // }
+  @override
+  Widget info(BuildContext context) {
+    return SliverList.list(children: [
+      addInfoTile(
+        title: AppLocalizations.of(context)!.sourceFileInfoPage,
+        subtitle: imageUrl,
+      ),
+      addInfoTile(
+        title: AppLocalizations.of(context)!.role,
+        subtitle: role,
+      ),
+    ]);
+  }
 }

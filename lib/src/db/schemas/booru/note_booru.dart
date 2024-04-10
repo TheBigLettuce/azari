@@ -8,11 +8,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/booru_post_functionality_mixin.dart';
-import 'package:gallery/src/db/base/post_base.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/note_interface.dart';
 import 'package:path/path.dart' as path_util;
 import 'package:isar/isar.dart';
 
@@ -50,69 +48,6 @@ class NoteBooru extends NoteBase
 
   @override
   ImageProvider thumbnail() => CachedNetworkImageProvider(previewUrl);
-
-  // @override
-  // Contentable content() {
-  //   String url = switch (Settings.fromDb().quality) {
-  //     DisplayQuality.original => fileUrl,
-  //     DisplayQuality.sample => sampleUrl
-  //   };
-
-  //   var type = lookupMimeType(url);
-  //   if (type == null) {
-  //     return const EmptyContent();
-  //   }
-
-  //   var typeHalf = type.split("/");
-
-  //   if (typeHalf[0] == "image") {
-  //     ImageProvider provider;
-  //     try {
-  //       provider = NetworkImage(url);
-  //     } catch (e) {
-  //       provider = MemoryImage(kTransparentImage);
-  //     }
-
-  //     return typeHalf[1] == "gif" ? NetGif(provider) : NetImage(provider);
-  //   } else if (typeHalf[0] == "video") {
-  //     return NetVideo(url);
-  //   } else {
-  //     return const EmptyContent();
-  //   }
-  // }
-
-  // @override
-  // Widget? contentInfo(BuildContext context) => null;
-
-  // @override
-  // List<Widget>? addButtons(BuildContext context) {
-  //   return [
-  //     IconButton(
-  //       icon: const Icon(Icons.public),
-  //       onPressed: () {
-  //         launchUrl(
-  //           booru.browserLink(postId),
-  //           mode: LaunchMode.externalApplication,
-  //         );
-  //       },
-  //     ),
-  //     if (Platform.isAndroid)
-  //       GestureDetector(
-  //         onLongPress: () => showQr(context, booru.prefix, postId),
-  //         child: IconButton(
-  //           onPressed: () {
-  //             PlatformFunctions.shareMedia(fileUrl, url: true);
-  //           },
-  //           icon: const Icon(Icons.share),
-  //         ),
-  //       )
-  //     else
-  //       IconButton(
-  //         onPressed: () => showQr(context, booru.prefix, postId),
-  //         icon: const Icon(Icons.qr_code_rounded),
-  //       )
-  //   ];
-  // }
 
   @override
   String alias(bool isList) => postId.toString();
@@ -240,73 +175,5 @@ class NoteBooru extends NoteBase
     return Dbs.g.blacklisted.noteBoorus
         .getByPostIdBooruSync(postId, booru)!
         .text;
-  }
-
-  static NoteInterface<NoteBooru> interfaceSelf(void Function() onDelete) {
-    return NoteInterface(
-      reorder: (cell, from, to) {
-        reorder(booru: cell.booru, postId: cell.postId, from: from, to: to);
-      },
-      addNote: (text, cell, backgroundColor, textColor) {
-        if (NoteBooru.add(cell.postId, cell.booru,
-            text: text,
-            backgroundColor: backgroundColor,
-            textColor: textColor,
-            fileUrl: cell.fileUrl,
-            sampleUrl: cell.sampleUrl,
-            previewUrl: cell.previewUrl)) {
-          onDelete();
-        }
-      },
-      delete: (cell, indx) {
-        if (NoteBooru.remove(cell.postId, cell.booru, indx)) {
-          onDelete();
-        }
-      },
-      load: (cell) {
-        return Dbs.g.blacklisted.noteBoorus
-            .getByPostIdBooruSync(cell.postId, cell.booru);
-      },
-      replace: (cell, indx, newText) {
-        NoteBooru.replace(cell.postId, cell.booru, indx, newText);
-      },
-    );
-  }
-
-  static NoteInterface<T> interface<T extends PostBase>(
-      void Function(void Function()) setState) {
-    return NoteInterface(
-      reorder: (cell, from, to) {
-        reorder(booru: cell.booru, postId: cell.id, from: from, to: to);
-      },
-      addNote: (text, cell, backgroundColor, textColor) {
-        NoteBooru.add(
-          cell.id,
-          cell.booru,
-          text: text,
-          backgroundColor: backgroundColor,
-          textColor: textColor,
-          fileUrl: cell.fileUrl,
-          sampleUrl: cell.sampleUrl,
-          previewUrl: cell.previewUrl,
-        );
-        try {
-          setState(() {});
-        } catch (_) {}
-      },
-      replace: (cell, indx, newText) {
-        NoteBooru.replace(cell.id, cell.booru, indx, newText);
-      },
-      delete: (cell, indx) {
-        NoteBooru.remove(cell.id, cell.booru, indx);
-        try {
-          setState(() {});
-        } catch (_) {}
-      },
-      load: (cell) {
-        return Dbs.g.blacklisted.noteBoorus
-            .getByPostIdBooruSync(cell.id, cell.booru);
-      },
-    );
   }
 }

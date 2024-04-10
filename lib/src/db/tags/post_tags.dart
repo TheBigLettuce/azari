@@ -54,6 +54,98 @@ class DisassembleResult {
   });
 }
 
+// extension ScopeExt<T> on ErrScope<T> {
+//   FutureErrOr<T> get scoped => ErrorOr.scope(this);
+
+//   ScopedBuilder<T> get build => ScopedBuilder((this, () {}));
+// }
+
+typedef ScopeModifier = void Function();
+
+const void end = null;
+
+// extension type ScopedBuilder<T>(
+//     (Future<T> Function() end, void Function() callable) t) {
+//   FutureErrOr<T> operator <=(void end) => ErrorOr._scopeBuilder<T>(t.$1, t.$2);
+
+//   ScopedBuilder<T> operator +(ScopeModifier mod) => ScopedBuilder((
+//         t.$1,
+//         () {
+//           mod();
+//           t.$2();
+//         }
+//       ));
+// }
+
+extension FutureErrOrExt<T> on FutureErrOr<T> {
+  static void _doNothing() {}
+
+  Future<ErrorOr<T>> valueAndComplete(void Function(T) onValue,
+      [void Function() whenComplete = _doNothing]) {
+    return then((value) {
+      if (value.hasValue) {
+        onValue(value.asValue());
+      }
+
+      return value;
+    }).whenComplete(whenComplete);
+  }
+
+  Future<T> get withThrow {
+    return then((value) => value.asValue());
+  }
+}
+
+typedef ErrScope<T> = Future<T> Function();
+typedef FutureErrOr<T> = Future<ErrorOr<T>>;
+typedef FutureErrOrList<T> = Future<ErrorOr<List<T>>>;
+
+class ErrorOr<T> {
+  final T? _data;
+  final String Function(BuildContext context)? _error;
+
+  const ErrorOr.error(String Function(BuildContext context) error)
+      : _error = error,
+        _data = null;
+  const ErrorOr.value(T result)
+      : _data = result,
+        _error = null;
+
+  T asValue() => _data!;
+  T? maybeValue() => _data;
+
+  String? asError(BuildContext context) => _error!(context);
+
+  bool get hasError => _error != null;
+  bool get hasValue => _data != null;
+
+  static FutureErrOr<T> _scopeBuilder<T>(
+      ErrScope<T> f, void Function() onError) async {
+    final T data;
+
+    try {
+      data = await f();
+    } catch (e) {
+      onError();
+      return Future.value(ErrorOr.error((context) => e.toString()));
+    }
+
+    return Future.value(ErrorOr.value(data));
+  }
+
+  static FutureErrOr<T> scope<T>(ErrScope<T> f) async {
+    final T data;
+
+    try {
+      data = await f();
+    } catch (e) {
+      return Future.value(ErrorOr.error((context) => e.toString()));
+    }
+
+    return Future.value(ErrorOr.value(data));
+  }
+}
+
 /// Post tags saved locally.
 /// This is used for offline tag viewing in the gallery.
 class PostTags {
@@ -88,18 +180,19 @@ class PostTags {
 
   /// Tries to disassemble the [filename] into the convenient class.
   /// Throws on error, with the reason string.
-  DisassembleResult dissassembleFilename(String filename,
+  ErrorOr<DisassembleResult> dissassembleFilename(String filename,
       {Booru? suppliedBooru}) {
     final Booru booru;
     if (suppliedBooru == null) {
       final split = filename.split("_");
       if (split.isEmpty || split.length != 2) {
-        throw DisassembleResultError.noPrefix;
+        return ErrorOr.error(DisassembleResultError.noPrefix.translatedString);
       }
 
       final newbooru = Booru.fromPrefix(split.first);
       if (newbooru == null) {
-        throw DisassembleResultError.prefixNotRegistred;
+        return ErrorOr.error(
+            DisassembleResultError.prefixNotRegistred.translatedString);
       }
 
       booru = newbooru;
@@ -115,54 +208,57 @@ class PostTags {
 
     final numbersAndHash = filename.split(" - ");
     if (numbersAndHash.isEmpty || numbersAndHash.length != 2) {
-      throw DisassembleResultError.numbersAndHash;
+      return ErrorOr.error(
+          DisassembleResultError.numbersAndHash.translatedString);
     }
 
     final id = int.tryParse(numbersAndHash.first);
     if (id == null) {
-      throw DisassembleResultError.invalidPostNumber;
+      return ErrorOr.error(
+          DisassembleResultError.invalidPostNumber.translatedString);
     }
 
     final hashAndExt = numbersAndHash.last.split(".");
     if (hashAndExt.isEmpty || hashAndExt.length != 2) {
-      throw DisassembleResultError.noExtension;
+      return ErrorOr.error(DisassembleResultError.noExtension.translatedString);
     }
 
     final numbersLetters = RegExp(r'^[a-z0-9]+$');
     if (!numbersLetters.hasMatch(hashAndExt.first)) {
-      throw DisassembleResultError.hashIsInvalid;
+      return ErrorOr.error(
+          DisassembleResultError.hashIsInvalid.translatedString);
     }
 
     if (hashAndExt.last.length > 6) {
-      throw DisassembleResultError.extensionTooLong;
+      return ErrorOr.error(
+          DisassembleResultError.extensionTooLong.translatedString);
     }
 
     if (hashAndExt.first.length != 32) {
-      throw DisassembleResultError.hashIsnt32;
+      return ErrorOr.error(DisassembleResultError.hashIsnt32.translatedString);
     }
 
     final lettersAndNumbers = RegExp(r'^[a-zA-Z0-9]+$');
     if (!lettersAndNumbers.hasMatch(hashAndExt.last)) {
-      throw DisassembleResultError.extensionInvalid;
+      return ErrorOr.error(
+          DisassembleResultError.extensionInvalid.translatedString);
     }
 
-    return DisassembleResult(
-      id: id,
-      booru: booru,
-      ext: hashAndExt.last,
-      hash: hashAndExt.first,
+    return ErrorOr.value(
+      DisassembleResult(
+        id: id,
+        booru: booru,
+        ext: hashAndExt.last,
+        hash: hashAndExt.first,
+      ),
     );
   }
 
   /// Adds tags to the db.
   /// If [noDisassemble] is true, the [filename] should be guranteed to be in the format.
   void addTagsPost(String filename, List<String> tags, bool noDisassemble) {
-    if (!noDisassemble) {
-      try {
-        dissassembleFilename(filename);
-      } catch (_) {
-        return;
-      }
+    if (!noDisassemble && dissassembleFilename(filename).hasError) {
+      return;
     }
 
     tagsDb.writeTxnSync(() {
@@ -324,13 +420,12 @@ class PostTags {
   Future<List<String>> getOnlineAndSaveTags(
     String filename,
   ) async {
-    try {
-      final dissassembled = dissassembleFilename(filename);
-
-      return loadFromDissassemble(filename, dissassembled);
-    } catch (_) {
-      return [];
+    final dissassembled = dissassembleFilename(filename);
+    if (dissassembled.hasError) {
+      return const [];
     }
+
+    return loadFromDissassemble(filename, dissassembled.asValue());
   }
 
   void deletePostTags(String filename) {

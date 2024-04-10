@@ -80,6 +80,7 @@ class ListLayout<T extends CellBase> implements GridLayouter<T> {
     return WrapSelection(
       selection: selection,
       selectFrom: null,
+      limitedSize: true,
       description: cell.description(),
       onPressed: cell.tryAsPressable(context, functionality, index),
       functionality: functionality,

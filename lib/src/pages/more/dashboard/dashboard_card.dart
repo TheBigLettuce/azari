@@ -59,6 +59,7 @@ class BaseCard extends StatelessWidget {
   final bool expandTitle;
   final void Function()? onLongPressed;
   final bool leanLeft;
+  final Widget? footer;
 
   const BaseCard({
     super.key,
@@ -72,6 +73,7 @@ class BaseCard extends StatelessWidget {
     this.transparentBackground = false,
     this.onPressed,
     this.onLongPressed,
+    this.footer,
     this.leanLeft = false,
   });
 
@@ -79,82 +81,100 @@ class BaseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        Widget body() => Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: leanLeft
-                    ? CrossAxisAlignment.start
-                    : CrossAxisAlignment.center,
-                children: [
-                  DefaultTextStyle.merge(
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: DefaultTextStyle.of(context).style.color ??
-                            Theme.of(context)
-                                .colorScheme
-                                .primary
-                                .withOpacity(0.8),
-                        letterSpacing: 0.8),
-                    child: Padding(
-                      padding: height == null
-                          ? EdgeInsets.zero
-                          : EdgeInsets.only(
-                              left: leanLeft ? 0 : 4,
-                              right: leanLeft ? 24 : 8,
-                              top: 4,
-                              bottom: 4),
-                      child: expandTitle ? Expanded(child: title) : title,
-                    ),
-                  ),
-                  if (constraints.maxWidth > 50)
+        final body = Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment:
+                leanLeft ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+            children: [
+              const SizedBox.shrink(),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: leanLeft
+                      ? CrossAxisAlignment.start
+                      : CrossAxisAlignment.center,
+                  children: [
                     DefaultTextStyle.merge(
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.6),
-                          ),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: DefaultTextStyle.of(context).style.color ??
+                              Theme.of(context)
+                                  .colorScheme
+                                  .secondary
+                                  .withOpacity(0.8),
+                          letterSpacing: 0.8),
                       child: Padding(
-                        padding: EdgeInsets.only(
-                            left: leanLeft ? 0 : 8, right: leanLeft ? 24 : 8),
-                        child: subtitle,
+                        padding: height == null
+                            ? EdgeInsets.zero
+                            : EdgeInsets.only(
+                                left: leanLeft ? 0 : 4,
+                                right: leanLeft ? 24 : 8,
+                                top: 4,
+                                bottom: 4),
+                        child: expandTitle ? Expanded(child: title) : title,
                       ),
                     ),
-                ],
-              ),
-            );
-
-        Widget card() => InkWell(
-              borderRadius: BorderRadius.circular(15),
-              onTap: onPressed,
-              onLongPress: onLongPressed,
-              splashColor:
-                  Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              child: Card.filled(
-                clipBehavior: Clip.antiAlias,
-                color: transparentBackground || backgroundImage != null
-                    ? Theme.of(context).colorScheme.onSurface.withOpacity(0)
-                    : null,
-                child: SizedBox(
-                  width: width,
-                  height: height,
-                  child: Stack(
-                    children: [
-                      if (backgroundImage != null)
-                        BackgroundImageBase(image: backgroundImage!),
-                      body(),
-                    ],
-                  ),
+                    if (constraints.maxWidth > 50)
+                      DefaultTextStyle.merge(
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.6),
+                            ),
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                              left: leanLeft ? 0 : 16,
+                              right: leanLeft ? 24 : 16),
+                          child: subtitle,
+                        ),
+                      ),
+                  ],
                 ),
               ),
-            );
+              if (footer != null)
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: footer!,
+                  ),
+                )
+            ],
+          ),
+        );
+
+        final card = InkWell(
+          borderRadius: BorderRadius.circular(15),
+          onTap: onPressed,
+          onLongPress: onLongPressed,
+          splashColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          child: Card.filled(
+            clipBehavior: Clip.antiAlias,
+            color: transparentBackground || backgroundImage != null
+                ? Theme.of(context).colorScheme.onSurface.withOpacity(0)
+                : null,
+            child: SizedBox(
+              width: width,
+              height: height,
+              child: Stack(
+                children: [
+                  if (backgroundImage != null)
+                    BackgroundImageBase(image: backgroundImage!),
+                  body,
+                ],
+              ),
+            ),
+          ),
+        );
 
         return constraints.maxWidth > 50
-            ? card()
+            ? card
             : Tooltip(
                 message: tooltip,
-                child: card(),
+                child: card,
               );
       },
     );

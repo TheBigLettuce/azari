@@ -50,8 +50,12 @@ class SystemGalleryDirectoryFile
     with SystemGalleryDirectoryFileFunctionalityMixin
     implements
         ContentableCell,
+        ContentWidgets,
         Pressable<SystemGalleryDirectoryFile>,
         Thumbnailable,
+        Infoable,
+        ImageViewActionable,
+        AppBarButtonsable,
         IsarEntryId,
         Stickerable {
   SystemGalleryDirectoryFile({
@@ -112,13 +116,58 @@ class SystemGalleryDirectoryFile
   String alias(bool isList) => name;
 
   @override
+  List<Widget> appBarButtons(BuildContext context) {
+    final res = PostTags.g.dissassembleFilename(name).maybeValue();
+
+    return [
+      if (res != null)
+        IconButton(
+            onPressed: () {
+              launchUrl(
+                res.booru.browserLink(res.id),
+                mode: LaunchMode.externalApplication,
+              );
+            },
+            icon: const Icon(Icons.public)),
+      IconButton(
+          onPressed: () {
+            PlatformFunctions.shareMedia(originalUri);
+          },
+          icon: const Icon(Icons.share))
+    ];
+  }
+
+  @override
+  Widget info(BuildContext context) => GalleryFileInfo(file: this);
+
+  @override
+  List<ImageViewAction> actions(BuildContext context) {
+    final (api, callback, actions, state, plug) = FilesDataNotifier.of(context);
+    final extra = api.getExtra();
+
+    return callback != null
+        ? [
+            actions.chooseAction().asImageView(this),
+          ]
+        : extra.isTrash
+            ? [
+                actions.restoreFromTrash().asImageView(this),
+              ]
+            : [
+                actions.addToFavoritesAction(this, plug).asImageView(this),
+                actions.deleteAction().asImageView(this),
+                actions.copyAction(state, plug).asImageView(this),
+                actions.moveAction(state, plug).asImageView(this)
+              ];
+  }
+
+  @override
   Contentable content(BuildContext context) {
     final size = Size(width.toDouble(), height.toDouble());
 
     if (isVideo) {
       return AndroidVideo(
         this,
-        _FilesGalleryWidgets(this),
         uri: originalUri,
         size: size,
       );
@@ -127,7 +176,6 @@ class SystemGalleryDirectoryFile
     if (isGif) {
       return AndroidGif(
         this,
-        _FilesGalleryWidgets(this),
         uri: originalUri,
         size: size,
       );
@@ -135,7 +183,6 @@ class SystemGalleryDirectoryFile
 
     return AndroidImage(
       this,
-      _FilesGalleryWidgets(this),
       uri: originalUri,
       size: size,
     );
@@ -187,70 +234,6 @@ class SystemGalleryDirectoryFile
       );
 }
 
-class _FilesGalleryWidgets implements ContentWidgets {
-  const _FilesGalleryWidgets(this.file);
-
-  final SystemGalleryDirectoryFile file;
-
-  @override
-  List<Sticker> stickers(BuildContext context) => file.stickers(context, true);
-
-  @override
-  List<Widget> appBarButtons(BuildContext context) {
-    DisassembleResult? res;
-    try {
-      res = PostTags.g.dissassembleFilename(file.name);
-    } catch (_) {}
-
-    return [
-      if (res != null)
-        IconButton(
-            onPressed: () {
-              launchUrl(
-                res!.booru.browserLink(res.id),
-                mode: LaunchMode.externalApplication,
-              );
-            },
-            icon: const Icon(Icons.public)),
-      IconButton(
-          onPressed: () {
-            PlatformFunctions.shareMedia(file.originalUri);
-          },
-          icon: const Icon(Icons.share))
-    ];
-  }
-
-  @override
-  Widget? info(BuildContext context) => GalleryFileInfo(file: file);
-
-  @override
-  List<ImageViewAction> actions(BuildContext context) {
-    final (api, callback, actions, state, plug) = FilesDataNotifier.of(context);
-    final extra = api.getExtra();
-
-    return callback != null
-        ? [
-            actions.chooseAction().asImageView(file),
-          ]
-        : extra.isTrash
-            ? [
-                actions.restoreFromTrash().asImageView(file),
-              ]
-            : [
-                actions.addToFavoritesAction(file, plug).asImageView(file),
-                actions.deleteAction().asImageView(file),
-                actions.copyAction(state, plug).asImageView(file),
-                actions.moveAction(state, plug).asImageView(file)
-              ];
-  }
-
-  @override
-  String title(BuildContext context) => file.alias(false);
-
-  @override
-  Key uniquieKey(BuildContext context) => file.uniqueKey();
-}
-
 class GalleryFileInfo extends StatefulWidget {
   final SystemGalleryDirectoryFile file;
   const GalleryFileInfo({super.key, required this.file});
@@ -277,9 +260,7 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
   void initState() {
     super.initState();
 
-    try {
-      res = PostTags.g.dissassembleFilename(file.name);
-    } catch (_) {}
+    res = PostTags.g.dissassembleFilename(file.name).maybeValue();
 
     if (res != null) {
       tagManager = TagManager.fromEnum(res!.booru);
@@ -374,14 +355,14 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
                                             return AppLocalizations.of(context)!
                                                 .valueIsNull;
                                           }
-                                          try {
-                                            PostTags.g
-                                                .dissassembleFilename(value);
-                                            return null;
-                                          } catch (e) {
-                                            return (e as DisassembleResultError)
-                                                .translatedString(context);
+
+                                          final res = PostTags.g
+                                              .dissassembleFilename(value);
+                                          if (res.hasError) {
+                                            return res.asError(context);
                                           }
+
+                                          return null;
                                         },
                                         onFieldSubmitted: (value) {
                                           PlatformFunctions.rename(

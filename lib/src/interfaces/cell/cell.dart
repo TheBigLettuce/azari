@@ -12,7 +12,7 @@ import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 
 import 'sticker.dart';
 
-extension CellsExt on Object {
+extension CellsExt on CellBase {
   void Function()? tryAsPressable<T extends CellBase>(
       BuildContext context, GridFunctionality<T> functionality, int idx) {
     if (this is Pressable<T>) {
@@ -45,17 +45,21 @@ extension CellsExt on Object {
 /// Implementations of this interface can be presented on the [GridFrame].
 /// This can be not only a cell on a grid, it can be also an element in a list.
 /// [GridFrame] decides how this gets displayed.
-abstract interface class CellBase {
+abstract interface class CellBase implements UniqueKeyable, Aliasable {
   /// Const constructor to allow implementations to have const constructors.
   const CellBase();
 
+  CellStaticData description();
+}
+
+abstract interface class Aliasable {
   /// The name of the cell, displayed on top of the cell.
   /// If [long] is true, it means the cell gets displayed as a list entry,
   /// instead of a cell on a grid.
   String alias(bool long);
+}
 
-  CellStaticData description();
-
+abstract interface class UniqueKeyable {
   Key uniqueKey();
 }
 

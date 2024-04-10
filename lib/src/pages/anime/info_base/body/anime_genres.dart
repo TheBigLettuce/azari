@@ -11,17 +11,19 @@ class AnimeGenres<T> extends StatelessWidget {
   final List<(T, bool)> genres;
   final String Function(T) title;
   final void Function(T) onPressed;
+  final bool sliver;
 
   const AnimeGenres({
     super.key,
     required this.genres,
     required this.onPressed,
     required this.title,
+    this.sliver = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
+    final child = ClipRRect(
       borderRadius: BorderRadius.circular(25),
       clipBehavior: Clip.antiAlias,
       child: SingleChildScrollView(
@@ -44,5 +46,7 @@ class AnimeGenres<T> extends StatelessWidget {
         ),
       ),
     );
+
+    return sliver ? SliverToBoxAdapter(child: child) : child;
   }
 }

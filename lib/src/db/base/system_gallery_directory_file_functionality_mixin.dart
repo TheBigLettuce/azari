@@ -121,8 +121,8 @@ Future<void> loadNetworkThumb(
       "", savingThumbNotifId, groupNotifString, notifChannelName);
   notif.update(0, filename);
 
-  try {
-    final res = PostTags.g.dissassembleFilename(filename);
+  final res = PostTags.g.dissassembleFilename(filename).maybeValue();
+  if (res != null) {
     final client = BooruAPI.defaultClientForBooru(res.booru);
     final api = BooruAPI.fromEnum(res.booru, client, EmptyPageSaver());
 
@@ -141,7 +141,7 @@ Future<void> loadNetworkThumb(
     }
 
     client.close(force: true);
-  } catch (_) {}
+  }
 
   notif.done();
 

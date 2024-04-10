@@ -6,6 +6,10 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/interfaces/cell/contentable.dart';
+import 'package:gallery/src/widgets/image_view/app_bar/end_drawer.dart';
+import 'package:gallery/src/widgets/notifiers/focus.dart';
+import 'package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart';
 import 'package:palette_generator/palette_generator.dart';
 
 import '../../notifiers/current_content.dart';
@@ -14,7 +18,7 @@ import '../app_bar/app_bar.dart';
 class WrapImageViewSkeleton extends StatelessWidget {
   final FocusNode mainFocus;
   final Widget? bottomAppBar;
-  final Widget? endDrawer;
+  final ScrollController scrollController;
   final PaletteGenerator? currentPalette;
   final GlobalKey<ScaffoldState> scaffoldKey;
   final AnimationController controller;
@@ -28,22 +32,14 @@ class WrapImageViewSkeleton extends StatelessWidget {
     required this.scaffoldKey,
     required this.currentPalette,
     required this.bottomAppBar,
-    required this.endDrawer,
+    required this.scrollController,
     required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
-    final currentCell = CurrentContentNotifier.of(context);
-    final b = currentCell.widgets.appBarButtons(context);
-
-    // final currentStickers = currentCell
-    //     .addStickers(context)
-    //     ?.map((e) => StickerWidget(
-    //           Sticker(e.$1),
-    //           onPressed: e.$2,
-    //         ))
-    //     .toList();
+    final widgets = CurrentContentNotifier.of(context).widgets;
+    final b = widgets.tryAsAppBarButtonable(context);
 
     return Scaffold(
       key: scaffoldKey,
@@ -52,16 +48,24 @@ class WrapImageViewSkeleton extends StatelessWidget {
       endDrawerEnableOpenDragGesture: false,
       resizeToAvoidBottomInset: false,
       bottomNavigationBar: bottomAppBar,
-      endDrawer: endDrawer,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight + 4)
+      endDrawer: widgets is! Infoable
+          ? null
+          : Builder(
+              builder: (context) {
+                FocusNotifier.of(context);
+                ImageViewInfoTilesRefreshNotifier.of(context);
 
-        // currentStickers == null
-        // ?
-        // : const Size.fromHeight(kToolbarHeight + 36 + 4)
-        ,
+                final info = (widgets as Infoable).info(context);
+
+                return ImageViewEndDrawer(
+                  scrollController: scrollController,
+                  sliver: info,
+                );
+              },
+            ),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight + 4),
         child: ImageViewAppBar(
-          stickers: const [],
           actions: b,
           controller: controller,
         ),

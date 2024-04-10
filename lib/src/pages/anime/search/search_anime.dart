@@ -297,6 +297,7 @@ class _SearchAnimePageState<T extends CellBase, I, G>
     }
 
     Widget body(BuildContext context) => WrapGridPage(
+          addScaffold: widget.generateGlue == null,
           provided: widget.generateGlue,
           child: GridSkeleton<T>(
             state,
@@ -320,14 +321,7 @@ class _SearchAnimePageState<T extends CellBase, I, G>
                   loadNext: _loadNext,
                   selectionGlue: GlueProvider.generateOf(context)(),
                   refreshingStatus: state.refreshingStatus,
-                  // imageViewDescription:
-                  //     ImageViewDescription(imageViewKey: state.imageViewKey),
                   refresh: AsyncGridRefresh(_load),
-                  // onPressed: OverrideGridOnCellPressBehaviour(
-                  //   onPressed: (context, idx, _) {
-                  //     return widget.onPressed(_results[idx]);
-                  //   },
-                  // ),
                   search: OverrideGridSearchWidget(
                     SearchAndFocus(
                       TextFormField(

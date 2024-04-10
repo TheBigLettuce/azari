@@ -9,6 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/manga/pinned_manga.dart';
+import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
 import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
@@ -16,6 +17,9 @@ import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:gallery/src/net/manga/manga_dex.dart';
 import 'package:gallery/src/pages/anime/anime.dart';
+import 'package:gallery/src/pages/manga/manga_info_page.dart';
+import 'package:gallery/src/pages/manga/next_chapter_button.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 
 abstract interface class MangaAPI {
@@ -72,7 +76,13 @@ enum MangaChapterOrder {
   asc;
 }
 
-class MangaImage implements CellBase, ImageViewContentable, Thumbnailable {
+class MangaImage
+    implements
+        CellBase,
+        ImageViewContentable,
+        ContentWidgets,
+        Thumbnailable,
+        AppBarButtonsable {
   const MangaImage(
     this.url,
     this.order,
@@ -83,15 +93,6 @@ class MangaImage implements CellBase, ImageViewContentable, Thumbnailable {
   final int order;
   final String url;
 
-  // @override
-  // List<Widget>? addButtons(BuildContext context) => null;
-
-  // @override
-  // Widget? contentInfo(BuildContext context) => null;
-
-  // @override
-  // Contentable content() => NetImage(CachedNetworkImageProvider(url));
-
   @override
   CellStaticData description() => const CellStaticData();
 
@@ -101,9 +102,42 @@ class MangaImage implements CellBase, ImageViewContentable, Thumbnailable {
   @override
   Contentable content(BuildContext context) => NetImage(
         this,
-        ContentWidgets.empty(uniqueKey),
         thumbnail(),
       );
+
+  @override
+  List<Widget> appBarButtons(BuildContext context) {
+    final data = MangaReaderNotifier.maybeOf(context);
+
+    if (data == null) {
+      return const [];
+    }
+
+    return [
+      SkipChapterButton(
+        mangaTitle: data.mangaTitle,
+        key: data.prevChaterKey,
+        overlayColor: data.overlayColor,
+        mangaId: data.mangaId.toString(),
+        startingChapterId: data.chapterId,
+        api: data.api,
+        reloadChapters: data.reloadChapters,
+        onNextPage: data.onNextPage,
+        direction: SkipDirection.left,
+      ),
+      SkipChapterButton(
+        mangaTitle: data.mangaTitle,
+        key: data.nextChapterKey,
+        overlayColor: data.overlayColor,
+        mangaId: data.mangaId.toString(),
+        startingChapterId: data.chapterId,
+        api: data.api,
+        reloadChapters: data.reloadChapters,
+        onNextPage: data.onNextPage,
+        direction: SkipDirection.right,
+      ),
+    ];
+  }
 
   @override
   String alias(bool isList) => "${order + 1} / $maxPages";
@@ -112,7 +146,13 @@ class MangaImage implements CellBase, ImageViewContentable, Thumbnailable {
   Key uniqueKey() => ValueKey(url);
 }
 
-class MangaEntry implements AnimeCell, Stickerable, Thumbnailable {
+class MangaEntry
+    implements
+        AnimeCell,
+        Pressable<MangaEntry>,
+        ContentWidgets,
+        Stickerable,
+        Thumbnailable {
   const MangaEntry({
     required this.demographics,
     required this.volumes,
@@ -158,7 +198,6 @@ class MangaEntry implements AnimeCell, Stickerable, Thumbnailable {
   @override
   Contentable openImage(BuildContext context) => NetImage(
         this,
-        ContentWidgets.empty(uniqueKey),
         CachedNetworkImageProvider(imageUrl),
       );
 
@@ -179,6 +218,25 @@ class MangaEntry implements AnimeCell, Stickerable, Thumbnailable {
 
   @override
   Key uniqueKey() => ValueKey(id);
+
+  @override
+  void onPress(BuildContext context,
+      GridFunctionality<MangaEntry> functionality, MangaEntry cell, int idx) {
+    final client = Dio();
+    final api = site.api(client);
+
+    Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+      builder: (context) {
+        return MangaInfoPage(
+          id: id,
+          api: api,
+          entry: this,
+        );
+      },
+    )).whenComplete(() {
+      client.close();
+    });
+  }
 }
 
 class MangaGenre {

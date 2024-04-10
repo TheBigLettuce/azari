@@ -525,7 +525,7 @@ class _BooruPageState extends State<BooruPage> {
                   BooruGridActions.favorites(context, showDeleteSnackbar: true),
                   BooruGridActions.hide(context),
                 ],
-                pages: PageSwitcher(
+                pages: PageSwitcherIcons(
                     [
                       PageIcon(
                         Icons.favorite_rounded,
@@ -536,7 +536,7 @@ class _BooruPageState extends State<BooruPage> {
                         count: Dbs.g.main.gridStateBoorus.countSync(),
                       ),
                     ],
-                    (i) => switch (i) {
+                    (context, state, i) => switch (i) {
                           0 => PageDescription(
                                 search: SearchAndFocus(
                                   favoriteBooruState.search.searchWidget(
@@ -558,8 +558,7 @@ class _BooruPageState extends State<BooruPage> {
                           1 => PageDescription(slivers: [
                               BookmarkPage(
                                 scrollUp: () {
-                                  state.gridKey.currentState?.controller
-                                      .animateTo(
+                                  state.controller.animateTo(
                                     0,
                                     duration: const Duration(milliseconds: 180),
                                     curve: Easing.standardAccelerate,

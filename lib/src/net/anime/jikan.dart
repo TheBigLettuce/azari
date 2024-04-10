@@ -46,7 +46,7 @@ class Jikan implements AnimeAPI {
   }
 
   @override
-  Future<List<AnimeEntry>> search(
+  Future<List<AnimeSearchEntry>> search(
     String title,
     int page,
     int? genreId,
@@ -155,8 +155,8 @@ List<Relation> _fromMeta(api.BuiltList<api.Meta> l) {
       .toList();
 }
 
-AnimeEntry _fromJikanAnime(api.Anime e) {
-  return AnimeEntry(
+AnimeSearchEntry _fromJikanAnime(api.Anime e) {
+  return AnimeSearchEntry(
     explicit: e.genres.indexWhere((e) => e.name == "Hentai") != -1
         ? AnimeSafeMode.h
         : e.genres.indexWhere((e) => e.name == "Ecchi") != -1

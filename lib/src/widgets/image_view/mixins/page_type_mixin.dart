@@ -87,7 +87,7 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
   PhotoViewGalleryPageOptions galleryBuilder(BuildContext context, int i) {
     final cell = drawCell(i);
     final content = cell;
-    final key = cell.widgets.uniquieKey(context);
+    final key = cell.widgets.uniqueKey();
 
     return switch (content) {
       AndroidImage() =>
@@ -106,15 +106,16 @@ mixin ImageViewPageTypeMixin on State<ImageView> {
   PhotoViewGalleryPageOptions _makeVideo(
           BuildContext context, Key key, String uri, bool local) =>
       PhotoViewGalleryPageOptions.customChild(
-          disableGestures: true,
-          tightMode: true,
-          child: !Platform.isAndroid
-              ? const Center(child: Icon(Icons.error_outline))
-              : PhotoGalleryPageVideo(
-                  key: key,
-                  url: uri,
-                  localVideo: local,
-                ));
+        disableGestures: true,
+        tightMode: true,
+        child: !Platform.isAndroid
+            ? const Center(child: Icon(Icons.error_outline))
+            : PhotoGalleryPageVideo(
+                key: key,
+                url: uri,
+                localVideo: local,
+              ),
+      );
 
   PhotoViewGalleryPageOptions _makeNetImage(Key key, ImageProvider provider) {
     final options = PhotoViewGalleryPageOptions(

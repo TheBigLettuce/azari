@@ -11,14 +11,14 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_subpage_state.
 import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 
-class PageSwitchingWidget<T extends CellBase> extends StatelessWidget {
+class PageSwitchingIconsWidget<T extends CellBase> extends StatelessWidget {
   final EdgeInsets padding;
   final GridSubpageState<T> state;
   final GridSelection<T> selection;
   final ScrollController controller;
-  final PageSwitcher pageSwitcher;
+  final PageSwitcherIcons<T> pageSwitcher;
 
-  const PageSwitchingWidget({
+  const PageSwitchingIconsWidget({
     super.key,
     required this.padding,
     required this.state,

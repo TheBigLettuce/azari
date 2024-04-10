@@ -19,6 +19,7 @@ import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
 import 'package:gallery/src/widgets/skeletons/settings.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:sliver_tools/sliver_tools.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MangaInfoPage extends StatefulWidget {
@@ -163,99 +164,99 @@ class _MangaInfoPageState extends State<MangaInfoPage>
                   ],
                 ),
               ),
-              child: SingleChildScrollView(
-                controller: scrollController,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                      bottom: MediaQuery.viewPaddingOf(context).bottom),
-                  child: Stack(
-                    children: [
-                      BackgroundImage(image: entry.thumbnail()),
-                      Column(
-                        children: [
-                          CardShell(
-                            viewPadding: MediaQuery.viewPaddingOf(context),
-                            title: entry.title,
-                            titleEnglish: entry.titleEnglish,
-                            titleJapanese: entry.titleJapanese,
-                            titleSynonyms: entry.titleSynonyms,
-                            safeMode: entry.safety,
-                            info: [
+              child: Stack(
+                children: [
+                  CustomScrollView(
+                    controller: scrollController,
+                    slivers: [
+                      SliverStack(children: [
+                        SliverPositioned.fill(
+                          child: BackgroundImageBase(
+                            image: entry.thumbnail(),
+                            gradient: null,
+                          ),
+                        ),
+                        CardShell.sliver(
+                          viewPadding: MediaQuery.viewPaddingOf(context),
+                          title: entry.title,
+                          titleEnglish: entry.titleEnglish,
+                          titleJapanese: entry.titleJapanese,
+                          titleSynonyms: entry.titleSynonyms,
+                          safeMode: entry.safety,
+                          info: [
+                            UnsizedCard(
+                              subtitle:
+                                  Text(AppLocalizations.of(context)!.cardYear),
+                              tooltip: AppLocalizations.of(context)!.cardYear,
+                              title: Text(entry.year == 0
+                                  ? cardUnknownValue
+                                  : entry.year.toString()),
+                              transparentBackground: true,
+                            ),
+                            if (score != null)
                               UnsizedCard(
                                 subtitle: Text(
-                                    AppLocalizations.of(context)!.cardYear),
-                                tooltip: AppLocalizations.of(context)!.cardYear,
-                                title: Text(entry.year == 0
+                                    AppLocalizations.of(context)!.cardScore),
+                                title: Text(score!.isNegative
                                     ? cardUnknownValue
-                                    : entry.year.toString()),
+                                    : score!.toString()),
+                                tooltip:
+                                    AppLocalizations.of(context)!.cardScore,
                                 transparentBackground: true,
-                              ),
-                              if (score != null)
-                                UnsizedCard(
-                                  subtitle: Text(
-                                      AppLocalizations.of(context)!.cardScore),
-                                  title: Text(score!.isNegative
-                                      ? cardUnknownValue
-                                      : score!.toString()),
-                                  tooltip:
-                                      AppLocalizations.of(context)!.cardScore,
-                                  transparentBackground: true,
-                                )
-                              else
-                                const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.only(right: 24),
-                                    child: SizedBox(
-                                      height: 18,
-                                      width: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
+                              )
+                            else
+                              const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.only(right: 24),
+                                  child: SizedBox(
+                                    height: 18,
+                                    width: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
                                     ),
                                   ),
                                 ),
-                              UnsizedCard(
-                                subtitle: Text(
-                                    AppLocalizations.of(context)!.cardStatus),
-                                tooltip:
-                                    AppLocalizations.of(context)!.cardStatus,
-                                title: Text(entry.status),
-                                transparentBackground: true,
                               ),
-                              UnsizedCard(
-                                subtitle: Text(
-                                    AppLocalizations.of(context)!.cardVolumes),
-                                tooltip:
-                                    AppLocalizations.of(context)!.cardVolumes,
-                                title: Text(entry.volumes.isNegative
-                                    ? cardUnknownValue
-                                    : entry.volumes.toString()),
-                                transparentBackground: true,
-                              ),
-                              UnsizedCard(
-                                subtitle: Text(AppLocalizations.of(context)!
-                                    .cardDemographics),
-                                tooltip: AppLocalizations.of(context)!
-                                    .cardDemographics,
-                                title: Text(entry.demographics.isEmpty
-                                    ? cardUnknownValue
-                                    : entry.demographics),
-                                transparentBackground: true,
-                              ),
-                            ],
-                          ),
-                          MangaInfoBody(
-                            api: widget.api,
-                            overlayColor: overlayColor,
-                            entry: entry,
-                            scrollController: scrollController,
-                            viewPadding: MediaQuery.viewPaddingOf(context),
-                          ),
-                        ],
-                      )
+                            UnsizedCard(
+                              subtitle: Text(
+                                  AppLocalizations.of(context)!.cardStatus),
+                              tooltip: AppLocalizations.of(context)!.cardStatus,
+                              title: Text(entry.status),
+                              transparentBackground: true,
+                            ),
+                            UnsizedCard(
+                              subtitle: Text(
+                                  AppLocalizations.of(context)!.cardVolumes),
+                              tooltip:
+                                  AppLocalizations.of(context)!.cardVolumes,
+                              title: Text(entry.volumes.isNegative
+                                  ? cardUnknownValue
+                                  : entry.volumes.toString()),
+                              transparentBackground: true,
+                            ),
+                            UnsizedCard(
+                              subtitle: Text(AppLocalizations.of(context)!
+                                  .cardDemographics),
+                              tooltip: AppLocalizations.of(context)!
+                                  .cardDemographics,
+                              title: Text(entry.demographics.isEmpty
+                                  ? cardUnknownValue
+                                  : entry.demographics),
+                              transparentBackground: true,
+                            ),
+                          ],
+                        ),
+                      ]),
+                      MangaInfoBody(
+                        api: widget.api,
+                        overlayColor: overlayColor,
+                        entry: entry,
+                        scrollController: scrollController,
+                        viewPadding: MediaQuery.viewPaddingOf(context),
+                      ),
                     ],
                   ),
-                ),
+                ],
               ),
             ),
           );

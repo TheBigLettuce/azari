@@ -19,6 +19,8 @@ class CardShell extends StatefulWidget {
   final List<String> titleSynonyms;
   final AnimeSafeMode safeMode;
 
+  final bool _sliver;
+
   const CardShell({
     super.key,
     required this.title,
@@ -28,7 +30,18 @@ class CardShell extends StatefulWidget {
     required this.safeMode,
     required this.viewPadding,
     required this.info,
-  });
+  }) : _sliver = false;
+
+  const CardShell.sliver({
+    super.key,
+    required this.title,
+    required this.titleEnglish,
+    required this.titleJapanese,
+    required this.titleSynonyms,
+    required this.safeMode,
+    required this.viewPadding,
+    required this.info,
+  }) : _sliver = true;
 
   @override
   State<CardShell> createState() => _CardShellState();
@@ -87,53 +100,62 @@ class _CardShellState extends State<CardShell> {
 
   @override
   Widget build(BuildContext context) {
+    final child = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AnimeNameWidget(
+          title: widget.title,
+          titleEnglish: widget.titleEnglish,
+          titleJapanese: widget.titleJapanese,
+          titleSynonyms: widget.titleSynonyms,
+          safeMode: widget.safeMode,
+        ),
+        Theme(
+          data: Theme.of(context).copyWith(
+              iconTheme: IconThemeData(
+                  color: Theme.of(context).iconTheme.color?.withOpacity(0.8))),
+          child: SizedBox(
+            height: 80,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.all(Radius.elliptical(40, 40)),
+              clipBehavior: Clip.antiAlias,
+              child: ListView(
+                clipBehavior: Clip.none,
+                controller: cardsController,
+                scrollDirection: Axis.horizontal,
+                children: widget.info,
+              ),
+            ),
+          ),
+        )
+      ],
+    );
+
+    final padding = EdgeInsets.only(
+      top: 2 + kToolbarHeight + widget.viewPadding.top,
+      left: 22,
+      right: 22,
+    );
+
     return DefaultTextStyle.merge(
       style: TextStyle(
         color: widget.safeMode == AnimeSafeMode.h ||
                 widget.safeMode == AnimeSafeMode.ecchi
             ? Colors.pink.withOpacity(0.8)
-            : Theme.of(context).colorScheme.primary.withOpacity(0.8),
+            : Theme.of(context).colorScheme.secondary.withOpacity(0.8),
       ),
-      child: Padding(
-        padding: EdgeInsets.only(
-          top: 2 + kToolbarHeight + widget.viewPadding.top,
-          left: 22,
-          right: 22,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AnimeNameWidget(
-              title: widget.title,
-              titleEnglish: widget.titleEnglish,
-              titleJapanese: widget.titleJapanese,
-              titleSynonyms: widget.titleSynonyms,
-              safeMode: widget.safeMode,
-            ),
-            Theme(
-              data: Theme.of(context).copyWith(
-                  iconTheme: IconThemeData(
-                      color:
-                          Theme.of(context).iconTheme.color?.withOpacity(0.8))),
-              child: SizedBox(
-                height: 80,
-                child: ClipRRect(
-                  borderRadius:
-                      const BorderRadius.all(Radius.elliptical(40, 40)),
-                  clipBehavior: Clip.antiAlias,
-                  child: ListView(
-                    clipBehavior: Clip.none,
-                    controller: cardsController,
-                    scrollDirection: Axis.horizontal,
-                    children: widget.info,
-                  ),
-                ),
+      child: widget._sliver
+          ? SliverPadding(
+              padding: padding,
+              sliver: SliverToBoxAdapter(
+                child: child,
               ),
             )
-          ],
-        ),
-      ),
+          : Padding(
+              padding: padding,
+              child: child,
+            ),
     );
   }
 }

@@ -38,10 +38,12 @@ class GridSelection<T extends CellBase> {
     }
   }
 
-  void reset() {
+  void reset([bool force = false]) {
     if (_selected.isNotEmpty) {
       _selected.clear();
       lastSelected = null;
+      glue.updateCount(0);
+    } else if (force) {
       glue.updateCount(0);
     }
   }

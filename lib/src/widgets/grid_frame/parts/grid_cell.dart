@@ -18,7 +18,6 @@ import 'sticker_widget.dart';
 /// The cell of [GridFrame].
 class GridCell<T extends CellBase> extends StatefulWidget {
   final T _data;
-  final int indx;
 
   final bool longTitle;
   final bool hideTitle;
@@ -26,13 +25,15 @@ class GridCell<T extends CellBase> extends StatefulWidget {
   final bool blur;
   final Alignment imageAlign;
 
+  final String? secondaryTitle;
+
   final CellStaticData? overrideDescription;
 
   const GridCell({
     super.key,
     required T cell,
+    this.secondaryTitle,
     required this.hideTitle,
-    required this.indx,
     this.overrideDescription,
     this.animate = false,
     this.longTitle = false,
@@ -54,7 +55,6 @@ class GridCell<T extends CellBase> extends StatefulWidget {
     return GridCell(
       cell: cell,
       longTitle: isList,
-      indx: idx,
       hideTitle: hideTitle,
       animate: animated,
       blur: blur,
@@ -118,10 +118,11 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
         child: Padding(
           padding: const EdgeInsets.only(left: 8, right: 8, top: 6, bottom: 18),
           child: Text(
-            alias,
+            widget.secondaryTitle ?? alias,
             softWrap: false,
             overflow: TextOverflow.ellipsis,
-            maxLines: description.titleLines,
+            maxLines:
+                widget.secondaryTitle != null ? 1 : description.titleLines,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: Colors.white.withOpacity(0.8),
                 ),
@@ -245,7 +246,8 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
                           )),
                     ),
                   ],
-                  if (alias.isNotEmpty && !description.titleAtBottom)
+                  if ((alias.isNotEmpty && !description.titleAtBottom) ||
+                      widget.secondaryTitle != null)
                     aliasWidget(
                       context,
                       description,

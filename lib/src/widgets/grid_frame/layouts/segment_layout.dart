@@ -98,8 +98,6 @@ class SegmentLayout<T extends CellBase>
       );
     });
 
-    // state.segTranslation = t;
-
     return s;
   }
 
@@ -231,7 +229,7 @@ class SegmentLayout<T extends CellBase>
             for (final e in alias.split("_")) {
               if (cell
                   .alias(false)
-                  .startsWith(e.length <= 4 ? e : e.substring(0, 5))) {
+                  .startsWith(e.length <= 4 ? e : e.substring(0, 4))) {
                 suggestionCells.add((
                   cell,
                   caps
@@ -242,7 +240,7 @@ class SegmentLayout<T extends CellBase>
             }
           } else {
             if (cell.alias(false).startsWith(
-                alias.length <= 4 ? alias : alias.substring(0, 5))) {
+                alias.length <= 4 ? alias : alias.substring(0, 4))) {
               suggestionCells.add((
                 cell,
                 caps

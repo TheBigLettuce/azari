@@ -28,6 +28,8 @@ class ReadMangaChapter {
     required this.chapterId,
     required this.chapterProgress,
     required this.lastUpdated,
+    required this.chapterName,
+    required this.chapterNumber,
   });
 
   Id? isarId;
@@ -35,6 +37,8 @@ class ReadMangaChapter {
   @Index(unique: true, replace: true, composite: [CompositeIndex("chapterId")])
   final String siteMangaId;
   final String chapterId;
+  final String chapterName;
+  final String chapterNumber;
 
   final int chapterProgress;
 
@@ -109,6 +113,8 @@ class ReadMangaChapter {
   static void touch({
     required String siteMangaId,
     required String chapterId,
+    required String chapterName,
+    required String chapterNumber,
   }) {
     final e = Dbs.g.anime.readMangaChapters
         .getBySiteMangaIdChapterIdSync(siteMangaId, chapterId);
@@ -121,6 +127,8 @@ class ReadMangaChapter {
           .putBySiteMangaIdChapterIdSync(ReadMangaChapter(
         siteMangaId: siteMangaId,
         chapterId: chapterId,
+        chapterName: chapterName,
+        chapterNumber: chapterNumber,
         chapterProgress: e.chapterProgress,
         lastUpdated: DateTime.now(),
       )),
@@ -131,12 +139,16 @@ class ReadMangaChapter {
     int progress, {
     required String siteMangaId,
     required String chapterId,
+    required String chapterName,
+    required String chapterNumber,
   }) {
     Dbs.g.anime.writeTxnSync(
       () => Dbs.g.anime.readMangaChapters
           .putBySiteMangaIdChapterIdSync(ReadMangaChapter(
         siteMangaId: siteMangaId,
         chapterId: chapterId,
+        chapterNumber: chapterNumber,
+        chapterName: chapterName,
         chapterProgress: progress,
         lastUpdated: DateTime.now(),
       )),
@@ -182,24 +194,20 @@ class ReadMangaChapter {
 
   static Future launchReader(
     BuildContext context,
-    Color overlayColor, {
-    required MangaId mangaId,
-    required String mangaTitle,
-    required String chapterId,
-    required MangaAPI api,
-    required void Function(int page, MangaImage cell) onNextPage,
-    required void Function() reloadChapters,
+    ReaderData data, {
     bool addNextChapterButton = false,
     bool replace = false,
   }) {
     ReadMangaChapter.touch(
-      siteMangaId: mangaId.toString(),
-      chapterId: chapterId.toString(),
+      siteMangaId: data.mangaId.toString(),
+      chapterId: data.chapterId.toString(),
+      chapterName: data.chapterName,
+      chapterNumber: data.chapterNumber,
     );
 
     final p = ReadMangaChapter.progress(
-      siteMangaId: mangaId.toString(),
-      chapterId: chapterId,
+      siteMangaId: data.mangaId.toString(),
+      chapterId: data.chapterId,
     );
 
     final nextChapterKey = GlobalKey<SkipChapterButtonState>();
@@ -209,12 +217,18 @@ class ReadMangaChapter {
       builder: (context) {
         return WrapFutureRestartable(
           newStatus: () {
-            return api.imagesForChapter(MangaStringId(chapterId));
+            return data.api.imagesForChapter(MangaStringId(data.chapterId));
           },
           builder: (context, chapters) {
             return GlueProvider.empty(
               context,
               child: ImageView(
+                registerNotifiers: !addNextChapterButton
+                    ? null
+                    : (child) => MangaReaderNotifier(
+                          data: data,
+                          child: child,
+                        ),
                 ignoreLoadingBuilder: true,
                 download: (i) {
                   final image = chapters[i];
@@ -222,40 +236,15 @@ class ReadMangaChapter {
                   Downloader.g.add(
                     DownloadFile.d(
                       name:
-                          "${i.toString()} / ${image.maxPages} - $chapterId.${image.url.split(".").last}",
+                          "${i.toString()} / ${image.maxPages} - $data.chapterId.${image.url.split(".").last}",
                       url: image.url,
                       thumbUrl: image.url,
-                      site: mangaTitle,
+                      site: data.mangaTitle,
                     ),
                     Settings.fromDb(),
                   );
                 },
-                // appBarItems: [
-                //   if (addNextChapterButton) ...[
-                //     SkipChapterButton(
-                //       mangaTitle: mangaTitle,
-                //       key: prevChaterKey,
-                //       overlayColor: overlayColor,
-                //       mangaId: mangaId.toString(),
-                //       startingChapterId: chapterId,
-                //       api: api,
-                //       reloadChapters: reloadChapters,
-                //       onNextPage: onNextPage,
-                //       direction: SkipDirection.left,
-                //     ),
-                //     SkipChapterButton(
-                //       mangaTitle: mangaTitle,
-                //       key: nextChapterKey,
-                //       overlayColor: overlayColor,
-                //       mangaId: mangaId.toString(),
-                //       startingChapterId: chapterId,
-                //       api: api,
-                //       reloadChapters: reloadChapters,
-                //       onNextPage: onNextPage,
-                //       direction: SkipDirection.right,
-                //     )
-                //   ],
-                // ],
+
                 onRightSwitchPageEnd: addNextChapterButton
                     ? () {
                         nextChapterKey.currentState?.findAndLaunchNext();
@@ -267,14 +256,17 @@ class ReadMangaChapter {
                       }
                     : null,
                 pageChange: (state) {
+                  // state.drawCell(state.currentPage, true)
                   ReadMangaChapter.setProgress(
                     state.currentPage + 1,
-                    siteMangaId: mangaId.toString(),
-                    chapterId: chapterId,
+                    chapterName: data.chapterName,
+                    chapterNumber: data.chapterNumber,
+                    siteMangaId: data.mangaId.toString(),
+                    chapterId: data.chapterId,
                   );
 
-                  onNextPage(state.currentPage,
-                      state.drawCell(state.currentPage, true) as MangaImage);
+                  data.onNextPage(
+                      state.currentPage, chapters[state.currentPage]);
                 },
                 // ignoreEndDrawer: true,
                 cellCount: chapters.length,
@@ -283,7 +275,7 @@ class ReadMangaChapter {
                 onExit: () {},
                 getCell: (context, i) => chapters[i].content(context),
                 onNearEnd: null,
-                systemOverlayRestoreColor: overlayColor,
+                systemOverlayRestoreColor: data.overlayColor,
               ),
             );
           },
@@ -300,5 +292,59 @@ class ReadMangaChapter {
         route,
       );
     }
+  }
+}
+
+@immutable
+class ReaderData {
+  const ReaderData({
+    required this.api,
+    required this.mangaId,
+    required this.mangaTitle,
+    required this.chapterId,
+    required this.nextChapterKey,
+    required this.prevChaterKey,
+    required this.reloadChapters,
+    required this.onNextPage,
+    required this.overlayColor,
+    required this.chapterName,
+    required this.chapterNumber,
+  });
+
+  final MangaAPI api;
+  final MangaId mangaId;
+  final String mangaTitle;
+  final String chapterId;
+  final String chapterName;
+  final String chapterNumber;
+
+  final GlobalKey<SkipChapterButtonState> nextChapterKey;
+  final GlobalKey<SkipChapterButtonState> prevChaterKey;
+
+  final void Function() reloadChapters;
+  final void Function(int page, MangaImage cell) onNextPage;
+
+  final Color overlayColor;
+}
+
+class MangaReaderNotifier extends InheritedWidget {
+  const MangaReaderNotifier({
+    super.key,
+    required this.data,
+    required super.child,
+  });
+
+  final ReaderData data;
+
+  static ReaderData? maybeOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<MangaReaderNotifier>();
+
+    return widget?.data;
+  }
+
+  @override
+  bool updateShouldNotify(MangaReaderNotifier oldWidget) {
+    return data != oldWidget.data;
   }
 }

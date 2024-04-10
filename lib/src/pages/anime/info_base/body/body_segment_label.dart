@@ -9,22 +9,38 @@ import 'package:flutter/material.dart';
 
 class BodySegmentLabel extends StatelessWidget {
   final String text;
+  final bool sliver;
 
-  const BodySegmentLabel({super.key, required this.text});
+  const BodySegmentLabel({
+    super.key,
+    required this.text,
+    this.sliver = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8, top: 12),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.titleLarge!.copyWith(
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.5,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.75),
-            ),
-      ),
+    final child = Text(
+      text,
+      // textAlign: TextAlign.center,
+      style: Theme.of(context).textTheme.titleLarge!.copyWith(
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.5,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.75),
+          ),
     );
+
+    const padding = EdgeInsets.only(bottom: 8, top: 12);
+
+    return sliver
+        ? SliverPadding(
+            padding: padding,
+            sliver: SliverToBoxAdapter(
+              child: child,
+            ),
+          )
+        : Padding(
+            padding: padding,
+            child: child,
+          );
   }
 }

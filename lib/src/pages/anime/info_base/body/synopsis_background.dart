@@ -22,12 +22,14 @@ class SynopsisBackground extends StatelessWidget {
   final BoxConstraints constraints;
   final void Function(String) search;
   final bool markdown;
+  final bool showLabel;
 
   const SynopsisBackground({
     super.key,
     required this.background,
     required this.synopsis,
     required this.search,
+    this.showLabel = true,
     this.markdown = false,
     this.constraints = const BoxConstraints(maxWidth: 200, maxHeight: 300),
   });
@@ -36,6 +38,12 @@ class SynopsisBackground extends StatelessWidget {
           BuildContext context, EditableTextState editableTextState) =>
       AnimeBodyTextSelectionToolbar(
           editableTextState: editableTextState, search: search);
+
+  void onTapLink(String text, String? href, String title) {
+    if (href != null) {
+      launchUrlString(href);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,17 +55,12 @@ class SynopsisBackground extends StatelessWidget {
       color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
     )));
 
-    void onTapLink(String text, String? href, String title) {
-      if (href != null) {
-        launchUrlString(href);
-      }
-    }
-
     return Wrap(
       crossAxisAlignment: WrapCrossAlignment.start,
       direction: Axis.vertical,
       children: [
-        BodySegmentLabel(text: AppLocalizations.of(context)!.synopsisLabel),
+        if (showLabel)
+          BodySegmentLabel(text: AppLocalizations.of(context)!.synopsisLabel),
         Padding(
           padding: const EdgeInsets.only(bottom: 4, right: 4),
           child: AnimatedContainer(

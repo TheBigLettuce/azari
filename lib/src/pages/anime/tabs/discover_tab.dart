@@ -9,7 +9,7 @@ part of '../anime.dart';
 
 class DiscoverExtra {
   String searchText = "";
-  List<AnimeEntry> entries = [];
+  List<AnimeSearchEntry> entries = [];
   int? genreId;
   AnimeSafeMode mode = AnimeSafeMode.safe;
   Future<Map<int, AnimeGenre>>? future;
@@ -17,13 +17,13 @@ class DiscoverExtra {
 
 class DiscoverTab extends StatefulWidget {
   final void Function(bool) procPop;
-  final PagingContainer<AnimeEntry, DiscoverExtra> pagingContainer;
+  final PagingContainer<AnimeSearchEntry, DiscoverExtra> pagingContainer;
   final AnimeAPI api;
 
-  static List<GridAction<AnimeEntry>> actions() => [
+  static List<GridAction<AnimeSearchEntry>> actions() => [
         GridAction(Icons.add, (selected) {
-          final toDelete = <AnimeEntry>[];
-          final toAdd = <AnimeEntry>[];
+          final toDelete = <AnimeSearchEntry>[];
+          final toAdd = <AnimeSearchEntry>[];
 
           for (final e in selected) {
             final entry = SavedAnimeEntry.maybeGet(e.id, e.site);
@@ -54,19 +54,19 @@ class DiscoverTab extends StatefulWidget {
 class _DiscoverTabState extends State<DiscoverTab> {
   late final StreamSubscription<GridSettingsAnimeDiscovery?>
       gridSettingsWatcher;
-  late final GridSkeletonState<AnimeEntry> state;
+  late final GridSkeletonState<AnimeSearchEntry> state;
 
   GridSettingsAnimeDiscovery gridSettings = GridSettingsAnimeDiscovery.current;
 
-  PagingContainer<AnimeEntry, DiscoverExtra> get container =>
+  PagingContainer<AnimeSearchEntry, DiscoverExtra> get container =>
       widget.pagingContainer;
-  List<AnimeEntry> get entries => container.extra.entries;
+  List<AnimeSearchEntry> get entries => container.extra.entries;
 
   @override
   void initState() {
     super.initState();
 
-    state = GridSkeletonState<AnimeEntry>(
+    state = GridSkeletonState<AnimeSearchEntry>(
       initalCellCount: entries.length,
     );
 
@@ -167,9 +167,9 @@ class _DiscoverTabState extends State<DiscoverTab> {
 
   @override
   Widget build(BuildContext context) {
-    return GridSkeleton<AnimeEntry>(
+    return GridSkeleton<AnimeSearchEntry>(
       state,
-      (context) => GridFrame<AnimeEntry>(
+      (context) => GridFrame<AnimeSearchEntry>(
         key: state.gridKey,
         layout: GridSettingsLayoutBehaviour(_settings),
         getCell: (i) => entries[i],
@@ -196,7 +196,7 @@ class _DiscoverTabState extends State<DiscoverTab> {
 }
 
 class _SearchBar extends StatefulWidget {
-  final PagingContainer<AnimeEntry, DiscoverExtra> pagingContainer;
+  final PagingContainer<AnimeSearchEntry, DiscoverExtra> pagingContainer;
   final GlobalKey<GridFrameState> gridKey;
 
   const _SearchBar({

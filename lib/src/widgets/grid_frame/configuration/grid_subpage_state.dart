@@ -16,6 +16,8 @@ mixin GridSubpageState<T extends CellBase> on State<GridFrame<T>> {
   bool get atHomePage => currentPage == 0;
   bool get atNotHomePage => !atHomePage;
 
+  int currentPageF() => currentPage;
+
   void registerOffsetSaver(ScrollController controller) {
     final f = widget.functionality.updateScrollPosition;
     if (f == null) {
@@ -29,7 +31,7 @@ mixin GridSubpageState<T extends CellBase> on State<GridFrame<T>> {
 
   void onSubpageSwitched(
       int next, GridSelection<T> selection, ScrollController controller) {
-    selection.reset();
+    selection.reset(true);
 
     if (atHomePage) {
       savedOffset = controller.offset;

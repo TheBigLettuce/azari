@@ -10,18 +10,48 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
+import 'package:gallery/src/pages/manga/manga_info_page.dart';
+import 'package:gallery/src/pages/manga/manga_page.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:isar/isar.dart';
 
 part 'compact_manga_data.g.dart';
 
 @collection
-class CompactMangaData extends CompactMangaDataBase {
+class CompactMangaData extends CompactMangaDataBase
+    implements Pressable<CompactMangaData> {
   CompactMangaData({
     required super.mangaId,
     required super.site,
     required super.thumbUrl,
     required super.title,
   });
+
+  @override
+  void onPress(
+    BuildContext context,
+    GridFunctionality<CompactMangaData> functionality,
+    CompactMangaDataBase cell,
+    int idx,
+  ) {
+    final (client, setInner) = MangaPageDataNotifier.of(context);
+    setInner(true);
+
+    final api = site.api(client);
+
+    Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+      builder: (context) {
+        return MangaInfoPage(
+          id: MangaStringId(cell.mangaId),
+          api: api,
+        );
+      },
+    )).then((value) {
+      setInner(false);
+
+      return value;
+    });
+  }
 
   static void addAll(List<CompactMangaData> l) {
     Dbs.g.anime.writeTxnSync(
@@ -33,12 +63,7 @@ class CompactMangaData extends CompactMangaDataBase {
   }
 }
 
-class CompactMangaDataBase
-    implements
-        CellBase,
-        // Pressable<CompactMangaDataBase>,
-        IsarEntryId,
-        Thumbnailable {
+class CompactMangaDataBase implements CellBase, IsarEntryId, Thumbnailable {
   CompactMangaDataBase({
     required this.mangaId,
     required this.site,
@@ -64,19 +89,9 @@ class CompactMangaDataBase
   @override
   String alias(bool isList) => title;
 
-  // @override
-  // Contentable content() => NetImage(CachedNetworkImageProvider(thumbUrl));
-
   @override
   ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(thumbUrl);
 
   @override
   Key uniqueKey() => ValueKey(thumbUrl);
 }
-
- // onPressed: OverrideGridOnCellPressBehaviour(
-            //   onPressed: (context, idx, overrideCell) {
-             
-            // ), // imageViewDescription: ImageViewDescription(
-            //   imageViewKey: state.imageViewKey,
-            // ),

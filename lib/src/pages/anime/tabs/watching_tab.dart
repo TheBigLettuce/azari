@@ -135,21 +135,7 @@ class __WatchingTabState extends State<_WatchingTab> {
         functionality: GridFunctionality(
           selectionGlue: GlueProvider.generateOf(context)(),
           refreshingStatus: state.refreshingStatus,
-          // imageViewDescription: ImageViewDescription(
-          //   imageViewKey: state.imageViewKey,
-          // ),
           refresh: SynchronousGridRefresh(() => backlog.length),
-          // onPressed:
-          //     OverrideGridOnCellPressBehaviour(onPressed: (context, idx, _) {
-          //   final cell = CellProvider.getOf<SavedAnimeEntry>(context, idx);
-
-          //   return Navigator.push(context, MaterialPageRoute(
-          //     builder: (context) {
-          //       return WatchingAnimeInfoPage(entry: cell);
-          //     },
-          //   ));
-          // },
-          // ),
         ),
         mainFocus: state.mainFocus,
         description: GridDescription(
@@ -415,9 +401,6 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
                             cell: e.$2,
                             idx: e.$1,
                             onPressed: onPressed,
-                            // onLongPressed: (cell, idx) {
-                            //   selection.selectOrUnselect(context, idx);
-                            // },
                           ).animate(key: ValueKey(e)).fadeIn())
                       .toList()
                   : widget.currentlyWatching.indexed
@@ -426,15 +409,91 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
                           cell: e.$2,
                           idx: e.$1,
                           onPressed: onPressed,
-                          // onLongPressed: (cell, idx) {
-                          //   selection.selectOrUnselect(context, idx);
-                          // },
                         ).animate(key: ValueKey(e)).fadeIn(),
                       )
                       .toList(),
             );
           },
         ));
+  }
+}
+
+class MangaReadingCard<T extends CompactMangaData> extends StatelessWidget {
+  final T cell;
+  final int idx;
+  final void Function(T cell, int idx)? onPressed;
+  final void Function(T cell, int idx)? onLongPressed;
+
+  const MangaReadingCard({
+    super.key,
+    required this.cell,
+    required this.onPressed,
+    required this.idx,
+    this.onLongPressed,
+  });
+
+  void _onLongPressed() => onLongPressed!(cell, idx);
+
+  void _onPressed() => onPressed!(cell, idx);
+
+  @override
+  Widget build(BuildContext context) {
+    final lastRead = ReadMangaChapter.firstForId(cell.mangaId);
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme.labelMedium?.copyWith(
+      color: theme.colorScheme.onSurface.withOpacity(0.7),
+    );
+
+    return BaseCard(
+      onLongPressed: onLongPressed == null ? null : _onLongPressed,
+      subtitle: Text(
+        cell.alias(false),
+        maxLines: 2,
+      ),
+      title: SizedBox(
+        height: 40,
+        width: 40,
+        child: GridCell(
+          cell: cell,
+          hideTitle: true,
+        ),
+      ),
+      backgroundImage: cell.tryAsThumbnailable(),
+      tooltip: cell.alias(false),
+      transparentBackground: false,
+      onPressed: onPressed == null ? null : _onPressed,
+      width: null,
+      height: null,
+      footer: lastRead != null
+          ? RichText(
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                children: [
+                  if (lastRead.chapterName.isNotEmpty)
+                    TextSpan(
+                      text: "${lastRead.chapterName} ",
+                      style: textTheme,
+                    ),
+                  TextSpan(
+                    text:
+                        "${lastRead.chapterNumber} - ${lastRead.chapterProgress}\n",
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
+                  TextSpan(
+                    text: AppLocalizations.of(context)!
+                        .date(lastRead.lastUpdated),
+                    style: textTheme?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : null,
+      leanLeft: false,
+    );
   }
 }
 
@@ -462,11 +521,7 @@ class ImportantCard<T extends CellBase> extends StatelessWidget {
         width: 40,
         child: GridCell(
           cell: cell,
-          indx: 0,
-          // tight: true,
           hideTitle: true,
-          // isList: false,
-          // circle: true,
         ),
       ),
       backgroundImage: cell.tryAsThumbnailable(),

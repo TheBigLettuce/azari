@@ -8,12 +8,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/manga/chapters_settings.dart';
 import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
 import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
-import 'package:gallery/src/pages/anime/info_base/body/body_segment_label.dart';
 import 'package:gallery/src/pages/manga/body/chapter_tile.dart';
 import 'package:gallery/src/pages/more/settings/settings_label.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
@@ -176,132 +174,104 @@ class _MangaChaptersState extends State<MangaChapters> {
     }
   }
 
+  Widget chapterWidget(BuildContext context) => PopupMenuButton(
+        position: PopupMenuPosition.under,
+        shape: const BeveledRectangleBorder(),
+        clipBehavior: Clip.antiAlias,
+        itemBuilder: (context) {
+          return [
+            PopupMenuItem(
+              onTap: () {
+                ChapterSettings.setHideRead(!settings.hideRead);
+              },
+              child: settings.hideRead
+                  ? Text(AppLocalizations.of(context)!.mangaShowRead)
+                  : Text(AppLocalizations.of(context)!.mangaHideRead),
+            ),
+            PopupMenuItem(
+              onTap: () {
+                SavedMangaChapters.clear(
+                  widget.entry.id.toString(),
+                  widget.entry.site,
+                );
+
+                list.clear();
+                page = 0;
+                reachedEnd = false;
+
+                setState(() {});
+              },
+              child: Text(
+                  AppLocalizations.of(context)!.mangaClearCachedMangaChapters),
+            ),
+          ];
+        },
+        child: TextButton(
+          onPressed: null,
+          style: ButtonStyle(
+            foregroundColor:
+                MaterialStatePropertyAll(Theme.of(context).colorScheme.primary),
+          ),
+          child: Text(AppLocalizations.of(context)!.settingsLabel),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
-    Widget chapterWidget() => Row(
-          textBaseline: TextBaseline.alphabetic,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            BodySegmentLabel(
-                text: AppLocalizations.of(context)!.mangaChaptersLabel),
-            PopupMenuButton(
-              position: PopupMenuPosition.under,
-              shape: const BeveledRectangleBorder(),
-              clipBehavior: Clip.antiAlias,
-              itemBuilder: (context) {
-                return [
-                  PopupMenuItem(
-                    onTap: () {
-                      ChapterSettings.setHideRead(!settings.hideRead);
-                    },
-                    child: settings.hideRead
-                        ? Text(AppLocalizations.of(context)!.mangaShowRead)
-                        : Text(AppLocalizations.of(context)!.mangaHideRead),
-                  ),
-                  PopupMenuItem(
-                    onTap: () {
-                      SavedMangaChapters.clear(
-                        widget.entry.id.toString(),
-                        widget.entry.site,
-                      );
-
-                      list.clear();
-                      page = 0;
-                      reachedEnd = false;
-
-                      setState(() {});
-                    },
-                    child: Text(AppLocalizations.of(context)!
-                        .mangaClearCachedMangaChapters),
-                  ),
-                ];
-              },
-              child: TextButton(
-                onPressed: null,
-                style: ButtonStyle(
-                  foregroundColor: MaterialStatePropertyAll(
-                      Theme.of(context).colorScheme.primary),
-                ),
-                child: Text(AppLocalizations.of(context)!.settingsLabel),
-              ),
-            ),
-          ],
-        );
-
     return FutureBuilder(
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.hasData && list.isNotEmpty) {
-          return ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.sizeOf(context).height * 0.4,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                chapterWidget(),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 0),
-                    child: _ChapterBody(
-                      scrollController: widget.scrollController,
-                      list: list,
-                      api: widget.api,
-                      entry: widget.entry,
-                      onFinishRead: _onFinishRead,
-                      onNextLoad: _loadNextChapters,
-                      overlayColor: widget.overlayColor,
-                      reachedEnd: !reachedEnd
-                          ? SliverToBoxAdapter(
-                              child: Center(
-                                child: FilledButton(
-                                  onPressed: _future2 != null
-                                      ? null
-                                      : _loadNextChapters,
-                                  child: _future2 != null
-                                      ? const SizedBox(
-                                          height: 18,
-                                          width: 18,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                      : Text(AppLocalizations.of(context)!
-                                          .mangaLoadNextChapters),
+          return _ChapterBody(
+            scrollController: widget.scrollController,
+            list: list,
+            settingsButton: chapterWidget(context),
+            api: widget.api,
+            entry: widget.entry,
+            onFinishRead: _onFinishRead,
+            onNextLoad: _loadNextChapters,
+            overlayColor: widget.overlayColor,
+            reachedEnd: !reachedEnd
+                ? SliverToBoxAdapter(
+                    child: Center(
+                      child: FilledButton(
+                        onPressed: _future2 != null ? null : _loadNextChapters,
+                        child: _future2 != null
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
                                 ),
-                              ),
-                            )
-                          : null,
+                              )
+                            : Text(AppLocalizations.of(context)!
+                                .mangaLoadNextChapters),
+                      ),
                     ),
-                  ),
-                ),
-              ],
-            ),
+                  )
+                : null,
           );
         } else if (reachedEnd && list.isEmpty) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              chapterWidget(),
-              const EmptyWidget(
-                mini: true,
-                gridSeed: 0,
-              )
-            ],
+          return const SliverToBoxAdapter(
+            child: EmptyWidget(
+              mini: true,
+              gridSeed: 0,
+            ),
           );
         } else {
-          return _future != null
-              ? const SizedBox(
-                  height: 18,
-                  width: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : FilledButton(
-                  onPressed: _loadChapters,
-                  child: Text(AppLocalizations.of(context)!.mangaLoadChapters),
-                );
+          return SliverToBoxAdapter(
+            child: _future != null
+                ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : FilledButton(
+                    onPressed: _loadChapters,
+                    child:
+                        Text(AppLocalizations.of(context)!.mangaLoadChapters),
+                  ),
+          );
         }
       },
     );

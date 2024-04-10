@@ -7,11 +7,14 @@
 
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/pages/anime/info_pages/discover_anime_info_page.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:isar/isar.dart';
 
 part 'saved_anime_entry.g.dart';
@@ -54,7 +57,8 @@ class Relation {
 }
 
 @collection
-class SavedAnimeEntry extends AnimeEntry implements IsarEntryId {
+class SavedAnimeEntry extends AnimeEntry
+    implements IsarEntryId, Pressable<SavedAnimeEntry> {
   SavedAnimeEntry({
     required super.id,
     required this.inBacklog,
@@ -83,6 +87,18 @@ class SavedAnimeEntry extends AnimeEntry implements IsarEntryId {
 
   @override
   Id? isarId;
+
+  @override
+  void onPress(BuildContext context,
+      GridFunctionality<AnimeEntry> functionality, AnimeEntry cell, int idx) {
+    Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        return DiscoverAnimeInfoPage(
+          entry: cell,
+        );
+      },
+    ));
+  }
 
   void save() {
     Dbs.g.anime

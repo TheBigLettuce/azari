@@ -8,8 +8,6 @@
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/note_base.dart';
 import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
-import 'package:gallery/src/interfaces/note_interface.dart';
 import 'package:isar/isar.dart';
 
 part 'note_gallery.g.dart';
@@ -28,36 +26,6 @@ class NoteGallery extends NoteBase {
     required this.isGif,
     required this.isVideo,
   });
-
-  // @override
-  // Contentable content() {
-  //   final size = Size(width.toDouble(), height.toDouble());
-
-  //   if (isVideo) {
-  //     return AndroidVideo(uri: originalUri, size: size);
-  //   }
-
-  //   if (isGif) {
-  //     return AndroidGif(uri: originalUri, size: size);
-  //   }
-
-  //   return AndroidImage(uri: originalUri, size: size);
-  // }
-
-  // @override
-  // ImageProvider<Object>? thumbnail() =>
-  //     SystemGalleryThumbnailProvider(id, isVideo);
-
-  //       @override
-  // List<Widget>? addButtons(BuildContext context) {
-  //   return [
-  //     IconButton(
-  //         onPressed: () {
-  //           PlatformFunctions.shareMedia(originalUri);
-  //         },
-  //         icon: const Icon(Icons.share))
-  //   ];
-  // }
 
   @override
   Key uniqueKey() => ValueKey(id);
@@ -154,72 +122,6 @@ class NoteGallery extends NoteBase {
             width: n.width,
             isGif: n.isGif,
             isVideo: n.isVideo)));
-  }
-
-  static NoteInterface<NoteGallery> interfaceSelf(void Function() onDelete) {
-    return NoteInterface(
-      reorder: (cell, from, to) {
-        reorder(id: cell.id, from: from, to: to);
-      },
-      addNote: (text, cell, backgroundColor, textColor) {
-        if (NoteGallery.add(cell.id,
-            text: [text],
-            height: cell.height,
-            width: cell.width,
-            backgroundColor: backgroundColor,
-            textColor: textColor,
-            isVideo: cell.isVideo,
-            isGif: cell.isGif,
-            originalUri: cell.originalUri)) {
-          onDelete();
-        }
-      },
-      delete: (cell, indx) {
-        if (NoteGallery.remove(cell.id, indx)) {
-          onDelete();
-        }
-      },
-      load: (cell) {
-        return Dbs.g.main.noteGallerys.getByIdSync(cell.id);
-      },
-      replace: (cell, indx, newText) {
-        NoteGallery.replace(cell.id, indx, newText);
-      },
-    );
-  }
-
-  static NoteInterface<SystemGalleryDirectoryFile> interface(
-      void Function({int? replaceIndx, bool addNote, int? removeNote})
-          refresh) {
-    return NoteInterface(
-      reorder: (cell, from, to) {
-        reorder(id: cell.id, from: from, to: to);
-      },
-      addNote: (text, cell, backgroundColor, textColor) {
-        NoteGallery.add(cell.id,
-            text: [text],
-            backgroundColor: backgroundColor,
-            textColor: textColor,
-            height: cell.height,
-            width: cell.width,
-            isVideo: cell.isVideo,
-            isGif: cell.isGif,
-            originalUri: cell.originalUri);
-
-        refresh(addNote: true);
-      },
-      delete: (cell, indx) {
-        NoteGallery.remove(cell.id, indx);
-        refresh(removeNote: indx);
-      },
-      load: (cell) {
-        return Dbs.g.main.noteGallerys.getByIdSync(cell.id);
-      },
-      replace: (cell, indx, newText) {
-        NoteGallery.replace(cell.id, indx, newText);
-        refresh(removeNote: indx);
-      },
-    );
   }
 
   static List<NoteGallery> load() {

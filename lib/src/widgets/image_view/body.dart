@@ -15,7 +15,6 @@ class ImageViewBody extends StatelessWidget {
   final PageController pageController;
   final void Function() onTap;
   final PhotoViewGalleryPageOptions Function(BuildContext, int) builder;
-  final Widget? notes;
   final void Function() onLongPress;
   final int itemCount;
   final Widget Function(BuildContext, ImageChunkEvent?, int)? loadingBuilder;
@@ -28,7 +27,6 @@ class ImageViewBody extends StatelessWidget {
     required this.onPageChanged,
     required this.pageController,
     required this.builder,
-    required this.notes,
     required this.loadingBuilder,
     required this.itemCount,
     required this.onLongPress,
@@ -39,29 +37,26 @@ class ImageViewBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(children: [
-      GestureDeadZones(
-        left: true,
-        right: true,
-        onPressedRight: onPressedRight,
-        onPressedLeft: onPressedLeft,
-        child: GestureDetector(
-          onLongPress: onLongPress,
-          onTap: onTap,
-          child: PhotoViewGallery.builder(
-            loadingBuilder: loadingBuilder,
-            enableRotation: true,
-            backgroundDecoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-            ),
-            onPageChanged: onPageChanged,
-            pageController: pageController,
-            itemCount: itemCount,
-            builder: builder,
+    return GestureDeadZones(
+      left: true,
+      right: true,
+      onPressedRight: onPressedRight,
+      onPressedLeft: onPressedLeft,
+      child: GestureDetector(
+        onLongPress: onLongPress,
+        onTap: onTap,
+        child: PhotoViewGallery.builder(
+          loadingBuilder: loadingBuilder,
+          enableRotation: true,
+          backgroundDecoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
           ),
+          onPageChanged: onPageChanged,
+          pageController: pageController,
+          itemCount: itemCount,
+          builder: builder,
         ),
       ),
-      if (notes != null) notes!
-    ]);
+    );
   }
 }

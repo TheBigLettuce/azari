@@ -5,14 +5,11 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart';
 import 'package:gallery/src/widgets/notifiers/loading_progress.dart';
-import 'package:logging/logging.dart';
 
 mixin ImageViewLoadingBuilderMixin on State<ImageView> {
   Widget loadingBuilder(
@@ -23,6 +20,11 @@ mixin ImageViewLoadingBuilderMixin on State<ImageView> {
     GlobalKey<WrapImageViewNotifiersState> key,
     Contentable Function(int) drawCell,
   ) {
+    final t = drawCell(idx).widgets.tryAsThumbnailable();
+    if (t == null) {
+      return const SizedBox.shrink();
+    }
+
     final expectedBytes = event?.expectedTotalBytes;
     final loadedBytes = event?.cumulativeBytesLoaded;
     final value = loadedBytes != null && expectedBytes != null
@@ -41,20 +43,12 @@ mixin ImageViewLoadingBuilderMixin on State<ImageView> {
       }
     }
 
-    try {
-      final t = drawCell(idx).thumbnail.thumbnail();
-
-      return _Image(
-          t: t,
-          reset: () {
-            key.currentState?.setLoadingProgress(1.0);
-          });
-    } catch (e, stackTrace) {
-      log("_loadingBuilder",
-          error: e, stackTrace: stackTrace, level: Level.WARNING.value);
-
-      return const SizedBox.shrink();
-    }
+    return _Image(
+      t: t,
+      reset: () {
+        key.currentState?.setLoadingProgress(1.0);
+      },
+    );
   }
 }
 

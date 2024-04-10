@@ -15,7 +15,9 @@ import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
+import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
 import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
+import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
@@ -93,7 +95,7 @@ class _AnimePageState extends State<AnimePage>
   final api = const Jikan();
 
   final discoverContainer =
-      PagingContainer<AnimeEntry, DiscoverExtra>(DiscoverExtra());
+      PagingContainer<AnimeSearchEntry, DiscoverExtra>(DiscoverExtra());
 
   @override
   void initState() {

@@ -16,6 +16,7 @@ class _ChapterBody extends StatefulWidget {
   final Widget? reachedEnd;
   final List<(List<MangaChapter>, String)> list;
   final ScrollController scrollController;
+  final Widget settingsButton;
 
   const _ChapterBody({
     super.key,
@@ -26,6 +27,7 @@ class _ChapterBody extends StatefulWidget {
     required this.overlayColor,
     required this.reachedEnd,
     required this.list,
+    required this.settingsButton,
     required this.scrollController,
   });
 
@@ -61,11 +63,88 @@ class __ChapterBodyState extends State<_ChapterBody> {
     super.dispose();
   }
 
-  List<Widget> makeSlivers(
-      BuildContext context, List<(List<MangaChapter>, String)> l) {
-    final ret = <Widget>[];
+  void readLatest(BuildContext context) {
+    if (widget.list.isEmpty) {
+      return;
+    }
 
-    for (final e in l) {
+    final firstForId = ReadMangaChapter.firstForId(widget.entry.id.toString());
+
+    final r = firstForId?.chapterId ?? widget.list.first.$1.first.id;
+    final n = firstForId?.chapterName ?? widget.list.first.$1.first.title;
+    final v = firstForId?.chapterName ?? widget.list.first.$1.first.volume;
+
+    if (firstForId == null) {
+      final c = widget.list.first.$1.first;
+
+      ReadMangaChapter.setProgress(
+        1,
+        chapterName: c.title,
+        chapterNumber: c.volume,
+        siteMangaId: widget.entry.id.toString(),
+        chapterId: c.id,
+      );
+    }
+
+    if (_chapterStale == null) {
+      _chapterStale = ReadMangaChapter.firstForId(widget.entry.id.toString());
+
+      setState(() {});
+    }
+
+    ReadMangaChapter.launchReader(
+      context,
+      ReaderData(
+        api: widget.api,
+        chapterNumber: v,
+        mangaId: widget.entry.id,
+        mangaTitle: widget.entry.title,
+        chapterName: n,
+        chapterId: r,
+        nextChapterKey: GlobalKey(),
+        prevChaterKey: GlobalKey(),
+        reloadChapters: widget.onFinishRead,
+        onNextPage: (p, cell) {
+          if (p + 1 == cell.maxPages) {
+            widget.onFinishRead();
+          }
+        },
+        overlayColor:
+            widget.overlayColor ?? Theme.of(context).colorScheme.background,
+      ),
+      addNextChapterButton: true,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ret = <Widget>[
+      SliverToBoxAdapter(
+        child: Row(
+          textBaseline: TextBaseline.alphabetic,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: FilledButton.tonalIcon(
+                style: const ButtonStyle(visualDensity: VisualDensity.compact),
+                onPressed: () => readLatest(context),
+                icon: const Icon(Icons.navigate_next_rounded),
+                label: Text(
+                  _chapterStale == null
+                      ? AppLocalizations.of(context)!.mangaStartReading
+                      : AppLocalizations.of(context)!.mangaContinueReading,
+                ),
+              ),
+            ),
+            widget.settingsButton,
+          ],
+        ),
+      ),
+    ];
+
+    for (final e in widget.list) {
       ret.add(SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.only(bottom: 12, top: 16),
@@ -76,17 +155,21 @@ class __ChapterBodyState extends State<_ChapterBody> {
         ),
       ));
       ret.add(
-        SliverList.list(
-            children: e.$1.map((e) {
-          return ChapterTile(
-            key: ValueKey(e.id),
-            finishRead: widget.onFinishRead,
-            chapter: e,
-            entry: widget.entry,
-            api: widget.api,
-            overlayColor: widget.overlayColor,
-          );
-        }).toList()),
+        SliverList.builder(
+          itemCount: e.$1.length,
+          itemBuilder: (context, index) {
+            final chapter = e.$1[index];
+
+            return ChapterTile(
+              key: ValueKey(chapter.id),
+              finishRead: widget.onFinishRead,
+              chapter: chapter,
+              entry: widget.entry,
+              api: widget.api,
+              overlayColor: widget.overlayColor,
+            );
+          },
+        ),
       );
     }
 
@@ -94,121 +177,8 @@ class __ChapterBodyState extends State<_ChapterBody> {
       ret.add(widget.reachedEnd!);
     }
 
-    return ret;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    void readLatest() {
-      if (widget.list.isEmpty) {
-        return;
-      }
-
-      final firstForId =
-          ReadMangaChapter.firstForId(widget.entry.id.toString());
-
-      final r = firstForId?.chapterId ?? widget.list.first.$1.first.id;
-
-      if (firstForId == null) {
-        ReadMangaChapter.setProgress(
-          1,
-          siteMangaId: widget.entry.id.toString(),
-          chapterId: widget.list.first.$1.first.id,
-        );
-      }
-
-      if (_chapterStale == null) {
-        _chapterStale = ReadMangaChapter.firstForId(widget.entry.id.toString());
-
-        setState(() {});
-      }
-
-      ReadMangaChapter.launchReader(
-        context,
-        mangaTitle: widget.entry.title,
-        reloadChapters: widget.onFinishRead,
-        widget.overlayColor ?? Theme.of(context).colorScheme.background,
-        mangaId: widget.entry.id,
-        chapterId: r,
-        api: widget.api,
-        addNextChapterButton: true,
-        onNextPage: (p, cell) {
-          if (p + 1 == cell.maxPages) {
-            widget.onFinishRead();
-          }
-        },
-      );
-    }
-
-    return Stack(
-      fit: StackFit.loose,
-      children: [
-        GestureDetector(
-          onTap: () {
-            enabledScrolling = !enabledScrolling;
-
-            setState(() {});
-          },
-          child: AbsorbPointer(
-            absorbing: !enabledScrolling,
-            child: Animate(
-              target: enabledScrolling ? 0 : 1,
-              effects: [
-                BlurEffect(
-                  duration: 360.ms,
-                  curve: Easing.linear,
-                  begin: const Offset(0, 0),
-                  end: const Offset(1, 1),
-                ),
-              ],
-              child: ClipRRect(
-                borderRadius: const BorderRadius.all(Radius.elliptical(10, 10)),
-                clipBehavior: Clip.antiAlias,
-                child: CustomScrollView(
-                  clipBehavior: Clip.none,
-                  primary: false,
-                  scrollDirection: Axis.vertical,
-                  slivers: makeSlivers(
-                    context,
-                    widget.list,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        if (widget.list.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 16, right: 8),
-            child: Align(
-              alignment: Alignment.topRight,
-              child: Animate(
-                target: enabledScrolling ? 1 : 0,
-                effects: [
-                  FadeEffect(duration: 140.ms, begin: 1, end: 0),
-                  SwapEffect(
-                    builder: (_, __) {
-                      return IconButton.filledTonal(
-                        visualDensity: VisualDensity.compact,
-                        onPressed: readLatest,
-                        icon: const Icon(Icons.navigate_next_rounded),
-                      ).animate().fadeIn(duration: 140.ms);
-                    },
-                  )
-                ],
-                child: FilledButton.tonalIcon(
-                  onPressed: readLatest,
-                  icon: const Icon(Icons.navigate_next_rounded),
-                  label: Text(
-                    _chapterStale == null
-                        ? AppLocalizations.of(context)!.mangaStartReading
-                        : AppLocalizations.of(context)!.mangaContinueReading,
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
+    return SliverMainAxisGroup(
+      slivers: ret,
     );
   }
 }

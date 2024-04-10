@@ -20,11 +20,51 @@ import 'package:isar/isar.dart';
 
 import 'anime_api.dart';
 
+class AnimeSearchEntry extends AnimeEntry
+    implements Pressable<AnimeSearchEntry> {
+  const AnimeSearchEntry({
+    required super.site,
+    required super.type,
+    required super.thumbUrl,
+    required super.title,
+    required super.titleJapanese,
+    required super.titleEnglish,
+    required super.score,
+    required super.synopsis,
+    required super.year,
+    required super.id,
+    required super.siteUrl,
+    required super.isAiring,
+    required super.titleSynonyms,
+    required super.genres,
+    required super.relations,
+    required super.trailerUrl,
+    required super.episodes,
+    required super.background,
+    required super.explicit,
+    required super.staff,
+  });
+
+  @override
+  void onPress(BuildContext context,
+      GridFunctionality<AnimeEntry> functionality, AnimeEntry cell, int idx) {
+    Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        return DiscoverAnimeInfoPage(
+          entry: cell,
+        );
+      },
+    ));
+  }
+}
+
 class AnimeEntry
-    with BooruPostFunctionalityMixin
+    with
+        BooruPostFunctionalityMixin
     implements
         AnimeCell,
-        Pressable<AnimeEntry>,
+        // Pressable<AnimeEntry>,
+        ContentWidgets,
         Thumbnailable,
         Downloadable,
         Stickerable {
@@ -96,7 +136,6 @@ class AnimeEntry
   @override
   Contentable openImage(BuildContext context) => NetImage(
         this,
-        ContentWidgets.empty(uniqueKey),
         CachedNetworkImageProvider(thumbUrl),
       );
 
@@ -118,17 +157,5 @@ class AnimeEntry
       if (this is! WatchedAnimeEntry && WatchedAnimeEntry.watched(id, site))
         const Sticker(Icons.check, important: true),
     ];
-  }
-
-  @override
-  void onPress(BuildContext context,
-      GridFunctionality<AnimeEntry> functionality, AnimeEntry cell, int idx) {
-    Navigator.push(context, MaterialPageRoute(
-      builder: (context) {
-        return DiscoverAnimeInfoPage(
-          entry: cell,
-        );
-      },
-    ));
   }
 }

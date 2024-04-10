@@ -10,22 +10,31 @@ import 'package:flutter/material.dart';
 class BodyPadding extends StatelessWidget {
   final Widget child;
   final EdgeInsets viewPadding;
+  final bool sliver;
 
   const BodyPadding({
     super.key,
     required this.viewPadding,
     required this.child,
+    this.sliver = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        // top: 8,
-        left: 22,
-        right: 22,
-      ),
-      child: child,
+    const padding = EdgeInsets.only(
+      // top: 8,
+      left: 22,
+      right: 22,
     );
+
+    return sliver
+        ? SliverPadding(
+            padding: padding,
+            sliver: child,
+          )
+        : Padding(
+            padding: padding,
+            child: child,
+          );
   }
 }

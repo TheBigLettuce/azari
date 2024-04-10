@@ -26,7 +26,6 @@ import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart'
 import 'package:gallery/src/widgets/grid_frame/parts/grid_app_bar_leading.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_app_bar_title.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart';
-import 'package:gallery/src/widgets/grid_frame/parts/page_switching_widget.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/keybinds/describe_keys.dart';
 import 'package:gallery/src/widgets/keybinds/keybind_description.dart';
@@ -131,6 +130,14 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
   int _refreshes = 0;
 
   late double lastOffset = widget.initalScrollPosition;
+
+  void switchPage(int i) {
+    if (i == currentPage) {
+      return;
+    }
+
+    onSubpageSwitched(i, selection, controller);
+  }
 
   @override
   void initState() {
@@ -386,18 +393,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
               isRefreshing: mutation.isRefreshing,
               routeChanger: page != null && page.search == null
                   ? const SizedBox.shrink()
-                  : widget.description.pages != null
-                      ? PageSwitchingWidget(
-                          controller: controller,
-                          selection: selection,
-                          padding: EdgeInsets.only(
-                            top: Platform.isAndroid ? 8 : 12,
-                            bottom: Platform.isAndroid ? 8 : 12,
-                          ),
-                          state: this,
-                          pageSwitcher: widget.description.pages!,
-                        )
-                      : null,
+                  : widget.description.pages?.switcherWidget(context, this),
               preferredSize: Size.fromHeight(
                 appBarBottomWidgetSize(page),
               ),
@@ -424,6 +420,10 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     }
 
     return [
+      if (!widget.description.showAppBar && widget.description.pages != null)
+        SliverToBoxAdapter(
+          child: widget.description.pages!.switcherWidget(context, this),
+        ),
       if (appBar != null) appBar,
       if (page != null)
         ...page.slivers
@@ -500,7 +500,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     final pageSwitcher = description.pages;
 
     final PageDescription? page = pageSwitcher != null && atNotHomePage
-        ? pageSwitcher.buildPage(currentPage - 1)
+        ? pageSwitcher.buildPage(context, this, currentPage - 1)
         : null;
 
     final search = functionality.search;
@@ -548,6 +548,8 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
       Widget ret = _BodyWrapping(
         bindings: const {},
         mainFocus: widget.mainFocus,
+        // pageSwitcherNoBar:
+        //  ,
         pageName: widget.description.keybindsDescription,
         children: [
           if (atHomePage && widget.functionality.refresh.pullToRefresh)

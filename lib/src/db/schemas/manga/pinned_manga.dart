@@ -39,6 +39,10 @@ class PinnedManga extends CompactMangaDataBase
     return Dbs.g.anime.pinnedMangas.getByMangaIdSiteSync(mangaId, site) != null;
   }
 
+  static int count() {
+    return Dbs.g.anime.pinnedMangas.countSync();
+  }
+
   static List<PinnedManga> getAll(int limit) {
     if (limit.isNegative) {
       return Dbs.g.anime.pinnedMangas.where().findAllSync();
@@ -124,15 +128,3 @@ class PinnedManga extends CompactMangaDataBase
     });
   }
 }
-
-  // onPressed: OverrideGridOnCellPressBehaviour(
-                      //   onPressed: (context, idx, overrideCell) {
-                      //     return widget.onPress(
-                      //       context,
-                      //       overrideCell as PinnedManga? ??
-                      //           CellProvider.getOf<PinnedManga>(context, idx),
-                      //     );
-                      //   },
-                      // ),
-                      // imageViewDescription:
-                      //     ImageViewDescription(imageViewKey: imageViewKey),

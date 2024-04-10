@@ -26,7 +26,10 @@ mixin ImageViewPaletteMixin on State<ImageView> {
       ScrollController scrollController,
       int currentPage,
       void Function() resetAnimation) {
-    final t = currentCell.thumbnail.thumbnail();
+    final t = currentCell.widgets.tryAsThumbnailable();
+    if (t == null) {
+      return;
+    }
 
     PaletteGenerator.fromImageProvider(t).then((value) {
       previousPallete = currentPalette;

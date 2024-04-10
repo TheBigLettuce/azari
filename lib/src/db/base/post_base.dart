@@ -64,6 +64,10 @@ class PostBase
     implements
         ContentableCell,
         Thumbnailable,
+        ContentWidgets,
+        AppBarButtonsable,
+        ImageViewActionable,
+        Infoable,
         Stickerable,
         Downloadable,
         IsarEntryId {
@@ -119,6 +123,86 @@ class PostBase
   CellStaticData description() => const CellStaticData();
 
   @override
+  Widget info(BuildContext context) => PostInfo(post: this);
+
+  @override
+  List<Widget> appBarButtons(BuildContext context) {
+    return [
+      openInBrowserButton(Uri.base, () {
+        launchUrl(
+          booru.browserLink(id),
+          mode: LaunchMode.externalApplication,
+        );
+      }),
+      if (Platform.isAndroid)
+        shareButton(context, fileUrl, () {
+          showQr(context, booru.prefix, id);
+        })
+      else
+        IconButton(
+          onPressed: () {
+            showQr(context, booru.prefix, id);
+          },
+          icon: const Icon(Icons.qr_code_rounded),
+        )
+    ];
+  }
+
+  @override
+  List<ImageViewAction> actions(BuildContext context) {
+    final isFavorite = Settings.isFavorite(id, booru);
+
+    return [
+      ImageViewAction(
+        isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+        (_) {
+          Settings.addRemoveFavorites(context, [this], true);
+          LocalTagDictionary.addAll(tags);
+        },
+        play: !isFavorite,
+        color: isFavorite
+            ? Colors.red.harmonizeWith(Theme.of(context).colorScheme.primary)
+            : null,
+        animate: true,
+      ),
+      ImageViewAction(
+        Icons.download,
+        (_) {
+          final settings = Settings.fromDb();
+
+          PostTags.g.addTagsPostAll([(filename(), tags)]);
+          Downloader.g.add(
+            DownloadFile.d(
+              url: fileUrl,
+              site: booru.url,
+              name: filename(),
+              thumbUrl: previewUrl,
+            ),
+            settings,
+          );
+        },
+        animate: true,
+      ),
+      if (this is! FavoriteBooru)
+        ImageViewAction(
+          Icons.hide_image_rounded,
+          (_) {
+            if (HiddenBooruPost.isHidden(id, booru)) {
+              HiddenBooruPost.removeAll([(id, booru)]);
+            } else {
+              HiddenBooruPost.addAll([
+                HiddenBooruPost(booru, id, previewUrl),
+              ]);
+            }
+          },
+          color: HiddenBooruPost.isHidden(id, booru)
+              ? Theme.of(context).colorScheme.primary
+              : null,
+        ),
+    ];
+  }
+
+  @override
   ImageProvider<Object> thumbnail() {
     if (HiddenBooruPost.isHidden(id, booru)) {
       return _transparent;
@@ -130,7 +214,7 @@ class PostBase
   @override
   Contentable content(BuildContext context) {
     if (HiddenBooruPost.isHidden(id, booru)) {
-      return EmptyContent(this, _PostBaseContentWidgets(this));
+      return EmptyContent(this);
     }
 
     String url = switch (Settings.fromDb().quality) {
@@ -140,30 +224,22 @@ class PostBase
 
     var type = lookupMimeType(url);
     if (type == null) {
-      return EmptyContent(this, _PostBaseContentWidgets(this));
+      return EmptyContent(this);
     }
 
     var typeHalf = type.split("/");
 
     if (typeHalf[0] == "image") {
-      ImageProvider provider;
-      try {
-        provider = NetworkImage(url);
-      } catch (e) {
-        provider = MemoryImage(kTransparentImage);
-      }
+      final provider = NetworkImage(url);
 
       return typeHalf[1] == "gif"
-          ? NetGif(this, _PostBaseContentWidgets(this), provider)
-          : NetImage(this, _PostBaseContentWidgets(this), provider);
+          ? NetGif(this, provider)
+          : NetImage(this, provider);
     } else if (typeHalf[0] == "video") {
-      return NetVideo(this, _PostBaseContentWidgets(this),
-          path_util.extension(url) == ".zip" ? sampleUrl : url);
+      return NetVideo(
+          this, path_util.extension(url) == ".zip" ? sampleUrl : url);
     } else {
-      return EmptyContent(
-        this,
-        _PostBaseContentWidgets(this),
-      );
+      return EmptyContent(this);
     }
   }
 
@@ -238,103 +314,6 @@ class PostBase
       )
     ];
   }
-}
-
-class _PostBaseContentWidgets implements ContentWidgets {
-  const _PostBaseContentWidgets(this.post);
-
-  final PostBase post;
-
-  @override
-  Widget info(BuildContext context) {
-    return PostInfo(post: post);
-  }
-
-  @override
-  List<Widget> appBarButtons(BuildContext context) {
-    return [
-      post.openInBrowserButton(Uri.base, () {
-        launchUrl(
-          post.booru.browserLink(post.id),
-          mode: LaunchMode.externalApplication,
-        );
-      }),
-      if (Platform.isAndroid)
-        post.shareButton(context, post.fileUrl, () {
-          post.showQr(context, post.booru.prefix, post.id);
-        })
-      else
-        IconButton(
-          onPressed: () {
-            post.showQr(context, post.booru.prefix, post.id);
-          },
-          icon: const Icon(Icons.qr_code_rounded),
-        )
-    ];
-  }
-
-  @override
-  String title(BuildContext context) => post.alias(false);
-
-  @override
-  Key uniquieKey(BuildContext context) => post.uniqueKey();
-
-  @override
-  List<ImageViewAction> actions(BuildContext context) {
-    final isFavorite = Settings.isFavorite(post.id, post.booru);
-
-    return [
-      ImageViewAction(
-        isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-        (_) {
-          Settings.addRemoveFavorites(context, [post], true);
-          LocalTagDictionary.addAll(post.tags);
-        },
-        play: !isFavorite,
-        color: isFavorite
-            ? Colors.red.harmonizeWith(Theme.of(context).colorScheme.primary)
-            : null,
-        animate: true,
-      ),
-      ImageViewAction(
-        Icons.download,
-        (_) {
-          final settings = Settings.fromDb();
-
-          PostTags.g.addTagsPostAll([(post.filename(), post.tags)]);
-          Downloader.g.add(
-            DownloadFile.d(
-              url: post.fileUrl,
-              site: post.booru.url,
-              name: post.filename(),
-              thumbUrl: post.previewUrl,
-            ),
-            settings,
-          );
-        },
-        animate: true,
-      ),
-      if (post is! FavoriteBooru)
-        ImageViewAction(
-          Icons.hide_image_rounded,
-          (_) {
-            if (HiddenBooruPost.isHidden(post.id, post.booru)) {
-              HiddenBooruPost.removeAll([(post.id, post.booru)]);
-            } else {
-              HiddenBooruPost.addAll([
-                HiddenBooruPost(post.booru, post.id, post.previewUrl),
-              ]);
-            }
-          },
-          color: HiddenBooruPost.isHidden(post.id, post.booru)
-              ? Theme.of(context).colorScheme.primary
-              : null,
-        ),
-    ];
-  }
-
-  @override
-  List<Sticker> stickers(BuildContext context) => post.stickers(context, true);
 }
 
 final _transparent = MemoryImage(kTransparentImage);

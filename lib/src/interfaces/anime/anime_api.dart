@@ -18,7 +18,7 @@ import 'anime_entry.dart';
 abstract class AnimeAPI {
   Future<AnimeEntry> info(int id);
   Future<List<AnimeCharacter>> characters(AnimeEntry entry);
-  Future<List<AnimeEntry>> search(
+  Future<List<AnimeSearchEntry>> search(
       String title, int page, int? genreId, AnimeSafeMode? mode);
   Future<Map<int, AnimeGenre>> genres(AnimeSafeMode mode);
   Future<List<AnimeEntry>> top(int page);
@@ -54,7 +54,8 @@ enum AnimeSafeMode {
   h;
 }
 
-class AnimePicture implements AnimeCell, Thumbnailable, Downloadable {
+class AnimePicture
+    implements AnimeCell, ContentWidgets, Thumbnailable, Downloadable {
   final String imageUrl;
   final String thumbUrl;
 
@@ -66,8 +67,7 @@ class AnimePicture implements AnimeCell, Thumbnailable, Downloadable {
   @override
   Contentable openImage(BuildContext context) => NetImage(
         this,
-        ContentWidgets.empty(uniqueKey),
-        thumbnail(),
+        CachedNetworkImageProvider(imageUrl),
       );
 
   @override

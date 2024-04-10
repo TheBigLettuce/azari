@@ -75,6 +75,8 @@ class _ChapterTileState extends State<ChapterTile> {
           onTap: () {
             ReadMangaChapter.setProgress(
               widget.chapter.pages,
+              chapterNumber: widget.chapter.chapter,
+              chapterName: widget.chapter.title,
               siteMangaId: widget.entry.id.toString(),
               chapterId: widget.chapter.id,
             );
@@ -121,6 +123,8 @@ class _ChapterTileState extends State<ChapterTile> {
                     if (progress == null) {
                       ReadMangaChapter.setProgress(
                         1,
+                        chapterNumber: widget.chapter.chapter,
+                        chapterName: widget.chapter.title,
                         siteMangaId: widget.entry.id.toString(),
                         chapterId: widget.chapter.id,
                       );
@@ -128,20 +132,26 @@ class _ChapterTileState extends State<ChapterTile> {
 
                     ReadMangaChapter.launchReader(
                       context,
-                      mangaTitle: widget.entry.title,
-                      reloadChapters: widget.finishRead,
-                      widget.overlayColor ?? overlayColor,
-                      api: widget.api,
-                      onNextPage: (currentPage, cell) {
-                        if (currentPage + 1 == widget.chapter.pages) {
-                          widget.finishRead();
-                        }
-                      },
-                      mangaId: widget.entry.id,
-                      chapterId: widget.chapter.id,
+                      ReaderData(
+                        chapterNumber: widget.chapter.chapter,
+                        chapterName: widget.chapter.title,
+                        api: widget.api,
+                        mangaId: widget.entry.id,
+                        mangaTitle: widget.entry.title,
+                        chapterId: widget.chapter.id,
+                        nextChapterKey: GlobalKey(),
+                        prevChaterKey: GlobalKey(),
+                        reloadChapters: widget.finishRead,
+                        onNextPage: (currentPage, cell) {
+                          if (currentPage + 1 == widget.chapter.pages) {
+                            widget.finishRead();
+                          }
+                        },
+                        overlayColor: widget.overlayColor ?? overlayColor,
+                      ),
                     );
                   },
-            contentPadding: EdgeInsets.only(right: 16, left: 16),
+            contentPadding: const EdgeInsets.only(right: 16, left: 16),
             subtitle: Text(
                 "${widget.chapter.title}${widget.chapter.translator.isNotEmpty ? ' (${widget.chapter.translator})' : ''}"),
             title: Row(

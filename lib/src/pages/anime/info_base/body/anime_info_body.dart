@@ -160,7 +160,6 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
                               },
                               child: GridCell(
                                 cell: e.$2,
-                                indx: e.$1,
                                 hideTitle: false,
                               ),
                             ),

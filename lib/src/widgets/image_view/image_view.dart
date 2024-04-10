@@ -12,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
-import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:gallery/src/widgets/image_view/mixins/loading_builder.dart';
 import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart';
@@ -20,7 +19,6 @@ import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_skeleton
 import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_theme.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
-import 'package:gallery/src/widgets/notifiers/focus.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart';
 import 'package:logging/logging.dart';
@@ -30,7 +28,6 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../interfaces/cell/cell.dart';
 import 'body.dart';
 import 'bottom_bar.dart';
-import 'app_bar/end_drawer.dart';
 import 'mixins/page_type_mixin.dart';
 import 'mixins/palette.dart';
 
@@ -228,7 +225,7 @@ class ImageViewState extends State<ImageView>
     _updates = widget.updates?.call((c) {
       if (c <= 0) {
         key.currentState?.closeEndDrawer();
-        Navigator.pop(context);
+        Navigator.pop(widget.gridContext ?? context);
 
         return;
       }
@@ -249,7 +246,7 @@ class ImageViewState extends State<ImageView>
     loadCells(currentPage, cellCount);
 
     WidgetsBinding.instance.scheduleFrameCallback((_) {
-      fullscreenPlug.setTitle(drawCell(currentPage).widgets.title(context));
+      fullscreenPlug.setTitle(drawCell(currentPage).widgets.alias(false));
       _loadNext(widget.startingCell);
     });
 
@@ -344,7 +341,7 @@ class ImageViewState extends State<ImageView>
 
     final c = drawCell(index);
 
-    fullscreenPlug.setTitle(c.widgets.title(context));
+    fullscreenPlug.setTitle(c.widgets.alias(false));
 
     refreshPalette();
 
@@ -401,47 +398,36 @@ class ImageViewState extends State<ImageView>
           currentPalette: currentPalette,
           previousPallete: previousPallete,
           child: WrapImageViewSkeleton(
-              scaffoldKey: key,
-              controller: animationController,
-              currentPalette: currentPalette,
-              endDrawer: Builder(builder: (context) {
-                FocusNotifier.of(context);
-                ImageViewInfoTilesRefreshNotifier.of(context);
-
-                final widgets = drawCell(currentPage).widgets;
-                final info = widgets.info(context);
-                // final icons = widgets.appBarButtons(context);
-
-                return info == null
-                    ? const Drawer(child: EmptyWidget(gridSeed: 0))
-                    : ImageViewEndDrawer(
-                        scrollController: scrollController,
-                        sliver: info,
-                      );
-              }),
-              bottomAppBar: const ImageViewBottomAppBar(),
-              mainFocus: mainFocus,
-              child: ImageViewBody(
-                onPressedLeft: _onPressedLeft,
-                onPressedRight: _onPressedRight,
-                onPageChanged: _onPageChanged,
-                onLongPress: _onLongPress,
-                pageController: controller,
-                notes: null,
-                loadingBuilder: widget.ignoreLoadingBuilder
-                    ? null
-                    : (context, event, idx) => loadingBuilder(
-                          context,
-                          event,
-                          idx,
-                          currentPage,
-                          wrapNotifiersKey,
-                          drawCell,
-                        ),
-                itemCount: cellCount,
-                onTap: _onTap,
-                builder: galleryBuilder,
-              )),
+            scaffoldKey: key,
+            scrollController: scrollController,
+            controller: animationController,
+            currentPalette: currentPalette,
+            bottomAppBar: const ImageViewBottomAppBar(),
+            mainFocus: mainFocus,
+            child: ImageViewBody(
+              onPressedLeft: drawCell(currentPage, true) is NetVideo ||
+                      drawCell(currentPage, true) is AndroidVideo
+                  ? null
+                  : _onPressedLeft,
+              onPressedRight: _onPressedRight,
+              onPageChanged: _onPageChanged,
+              onLongPress: _onLongPress,
+              pageController: controller,
+              loadingBuilder: widget.ignoreLoadingBuilder
+                  ? null
+                  : (context, event, idx) => loadingBuilder(
+                        context,
+                        event,
+                        idx,
+                        currentPage,
+                        wrapNotifiersKey,
+                        drawCell,
+                      ),
+              itemCount: cellCount,
+              onTap: _onTap,
+              builder: galleryBuilder,
+            ),
+          ),
         ),
       ),
     );

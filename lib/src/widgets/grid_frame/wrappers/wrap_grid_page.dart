@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/pages/glue_bottom_app_bar.dart';
+import 'package:gallery/src/widgets/gesture_dead_zones.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 
@@ -63,6 +64,7 @@ class _WrapGridPageState extends State<WrapGridPage>
     return widget.addScaffold
         ? Scaffold(
             extendBody: true,
+            resizeToAvoidBottomInset: false,
             bottomNavigationBar: Animate(
               target: glueState.actions?.$1 == null ? 0 : 1,
               effects: [
@@ -76,20 +78,23 @@ class _WrapGridPageState extends State<WrapGridPage>
               ],
               child: GlueBottomAppBar(glueState),
             ),
-            body: Builder(
-              builder: (buildContext) {
-                final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
+            body: GestureDeadZones(
+              child: Builder(
+                builder: (buildContext) {
+                  final bottomPadding =
+                      MediaQuery.viewPaddingOf(context).bottom;
 
-                final data = MediaQuery.of(buildContext);
+                  final data = MediaQuery.of(buildContext);
 
-                return MediaQuery(
-                  data: data.copyWith(
-                    viewPadding: data.viewPadding +
-                        EdgeInsets.only(bottom: bottomPadding),
-                  ),
-                  child: child,
-                );
-              },
+                  return MediaQuery(
+                    data: data.copyWith(
+                      viewPadding: data.viewPadding +
+                          EdgeInsets.only(bottom: bottomPadding),
+                    ),
+                    child: child,
+                  );
+                },
+              ),
             ),
           )
         : child;
