@@ -71,23 +71,6 @@ class SystemGalleryDirectory
   @override
   String alias(bool isList) => name;
 
-  // static SystemGalleryDirectory decode(Object result) {
-  //   result as List<Object?>;
-
-  //   final bucketId = result[1]! as String;
-
-  //   return SystemGalleryDirectory(
-  //     // isarId: id,
-  //     tag: "",
-  //     thumbFileId: result[0]! as int,
-  //     bucketId: bucketId,
-  //     name: result[2]! as String,
-  //     relativeLoc: result[3]! as String,
-  //     volumeName: result[4]! as String,
-  //     lastModified: result[5]! as int,
-  //   );
-  // }
-
   @override
   void onPress(
     BuildContext context,
@@ -105,17 +88,18 @@ class SystemGalleryDirectory
       Navigator.pop(context);
       callback(cell, null);
     } else {
-      if (!canAuthBiometric) {
-        return;
-      }
+      bool requireAuth = false;
 
-      final requireAuth =
-          DirectoryMetadata.get(segmentFnc(cell))?.requireAuth ?? false;
-      if (requireAuth) {
-        final success = await LocalAuthentication()
-            .authenticate(localizedReason: "Open directory");
-        if (!success) {
-          return;
+      if (canAuthBiometric) {
+        requireAuth =
+            DirectoryMetadata.get(segmentFnc(cell))?.requireAuth ?? false;
+        if (requireAuth) {
+          final success = await LocalAuthentication().authenticate(
+            localizedReason: AppLocalizations.of(context)!.openDirectory,
+          );
+          if (!success) {
+            return;
+          }
         }
       }
 

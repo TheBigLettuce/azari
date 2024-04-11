@@ -17,7 +17,6 @@ import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
 import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
-import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
@@ -27,7 +26,7 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.d
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
 import 'package:gallery/src/net/anime/jikan.dart';
-import 'package:gallery/src/pages/anime/info_pages/watching_anime_info_page.dart';
+import 'package:gallery/src/pages/anime/anime_info_page.dart';
 import 'package:gallery/src/pages/anime/paging_container.dart';
 import 'package:gallery/src/pages/more/tab_with_count.dart';
 import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';

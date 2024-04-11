@@ -15,7 +15,7 @@ import 'skeleton_state.dart';
 class HomeSkeleton extends StatelessWidget {
   final SkeletonState state;
   final Widget Function(BuildContext) f;
-  final int selectedRoute;
+  final bool extendBody;
 
   final Widget? navBar;
 
@@ -23,14 +23,14 @@ class HomeSkeleton extends StatelessWidget {
     this.state,
     this.f, {
     super.key,
-    required this.selectedRoute,
+    required this.extendBody,
     required this.navBar,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
+      extendBody: extendBody,
       appBar: null,
       extendBodyBehindAppBar: true,
       bottomNavigationBar: navBar!,

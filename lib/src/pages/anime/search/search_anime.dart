@@ -7,6 +7,7 @@
 
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/main.dart';
@@ -20,6 +21,7 @@ import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/pages/anime/anime.dart';
 import 'package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart';
+import 'package:gallery/src/pages/anime/anime_info_page.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
@@ -36,8 +38,6 @@ import 'package:gallery/src/widgets/skeletons/grid.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import '../info_pages/discover_anime_info_page.dart';
 
 class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
   final I? initalGenreId;
@@ -138,11 +138,14 @@ class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
 
   static void launchAnimeApi(
     BuildContext context,
-    AnimeAPI api, {
+    AnimeAPI Function(Dio) apiFactory, {
     String? search,
     AnimeSafeMode safeMode = AnimeSafeMode.safe,
     int? initalGenreId,
   }) {
+    final client = Dio();
+    final api = apiFactory(client);
+
     Navigator.push(context, MaterialPageRoute(
       builder: (context) {
         return SearchAnimePage<AnimeEntry, int, AnimeGenre>(
@@ -158,7 +161,11 @@ class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
           onPressed: (cell) {
             return Navigator.push(context, MaterialPageRoute(
               builder: (context) {
-                return DiscoverAnimeInfoPage(entry: cell);
+                return AnimeInfoPage(
+                  id: cell.id,
+                  entry: cell,
+                  apiFactory: apiFactory,
+                );
               },
             ));
           },
@@ -166,7 +173,9 @@ class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
           genres: api.genres,
         );
       },
-    ));
+    )).then((_) {
+      client.close();
+    });
   }
 
   const SearchAnimePage({
@@ -515,29 +524,27 @@ class _SearchOptionsState<I, G> extends State<SearchOptions<I, G>> {
 
   @override
   Widget build(BuildContext context) {
-    return WrapFutureRestartable<Map<I, G>>(
-      builder: (context, value) {
-        return Padding(
-          padding:
-              EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-          child: SizedBox(
-            width: double.infinity,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    AppLocalizations.of(context)!.animeSearchSearching,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  if (widget.header != null)
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(right: 8, top: 8, bottom: 8),
-                      child: widget.header!,
-                    ),
-                  SegmentedButtonGroup<(I, G)>(
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SizedBox(
+        width: double.infinity,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                AppLocalizations.of(context)!.animeSearchSearching,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              if (widget.header != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
+                  child: widget.header!,
+                ),
+              WrapFutureRestartable<Map<I, G>>(
+                builder: (context, value) {
+                  return SegmentedButtonGroup<(I, G)>(
                     allowUnselect: true,
                     select: (genre) {
                       currentGenre = genre?.$1;
@@ -553,41 +560,40 @@ class _SearchOptionsState<I, G> extends State<SearchOptions<I, G>> {
                     values: value.entries.map((e) => SegmentedButtonValue(
                         (e.key, e.value), widget.idFromGenre(e.value).$2)),
                     title: AppLocalizations.of(context)!.animeSearchGenres,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16, bottom: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.4),
-                        ),
-                        const Padding(padding: EdgeInsets.only(right: 4)),
-                        Text(
-                          AppLocalizations.of(context)!.usingApi(widget.info),
-                          style:
-                              Theme.of(context).textTheme.labelLarge?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withOpacity(0.4),
-                                  ),
-                        )
-                      ],
-                    ),
-                  ),
-                ],
+                  );
+                },
+                newStatus: widget.genreFuture,
+                bottomSheetVariant: true,
               ),
-            ),
+              Padding(
+                padding: const EdgeInsets.only(top: 16, bottom: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.4),
+                    ),
+                    const Padding(padding: EdgeInsets.only(right: 4)),
+                    Text(
+                      AppLocalizations.of(context)!.usingApi(widget.info),
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.4),
+                          ),
+                    )
+                  ],
+                ),
+              ),
+            ],
           ),
-        );
-      },
-      newStatus: widget.genreFuture,
-      bottomSheetVariant: true,
+        ),
+      ),
     );
   }
 }

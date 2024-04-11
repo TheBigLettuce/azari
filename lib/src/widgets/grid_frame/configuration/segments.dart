@@ -65,14 +65,38 @@ enum SegmentModifier {
 abstract interface class SegmentCapability {
   Set<SegmentModifier> modifiersFor(String seg);
 
+  bool get ignoreButtons;
+
   void addModifiers(List<String> segments, Set<SegmentModifier> m);
   void removeModifiers(List<String> segments, Set<SegmentModifier> m);
 
   static SegmentCapability empty() => const _SegmentCapabilityEmpty();
+  static SegmentCapability alwaysPinned() =>
+      const _SegmentCapabilityAlwaysPinned();
+}
+
+class _SegmentCapabilityAlwaysPinned implements SegmentCapability {
+  const _SegmentCapabilityAlwaysPinned();
+
+  @override
+  final ignoreButtons = true;
+
+  @override
+  void addModifiers(List<String> segments, Set<SegmentModifier> m) {}
+
+  @override
+  Set<SegmentModifier> modifiersFor(String seg) =>
+      const {SegmentModifier.sticky};
+
+  @override
+  void removeModifiers(List<String> segments, Set<SegmentModifier> m) {}
 }
 
 class _SegmentCapabilityEmpty implements SegmentCapability {
   const _SegmentCapabilityEmpty();
+
+  @override
+  final ignoreButtons = true;
 
   @override
   void addModifiers(List<String> segments, Set<SegmentModifier> m) {}

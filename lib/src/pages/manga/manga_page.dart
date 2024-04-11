@@ -171,8 +171,11 @@ class _MangaPageState extends State<MangaPage> {
   }
 
   List<PageLabel> pages(BuildContext context) => [
-        PageLabel("Reading"),
-        PageLabel("Pinned", count: PinnedManga.count()),
+        PageLabel(AppLocalizations.of(context)!.mangaReadingLabel),
+        PageLabel(
+          AppLocalizations.of(context)!.mangaPinnedLabel,
+          count: PinnedManga.count(),
+        ),
       ];
 
   @override
@@ -496,36 +499,6 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
         ),
       ),
     );
-    // CellProvider(
-    // getCell: (i) => data[data.length - 1 - i],
-    //   child: SliverPadding(
-    //     padding: const EdgeInsets.only(left: 14, right: 14),
-    //     sliver: data.isEmpty
-    //         ? const SliverToBoxAdapter(
-    //             child: EmptyWidget(gridSeed: 0),
-    //           )
-    //         : Builder(
-    //             builder: (context) {
-    //               return GridLayout.blueprint<PinnedManga>(
-    //                 context,
-
-    //                 selection,
-    //                 gridCell: (context, cell, idx) {
-    //                   final cell = data[data.length - 1 - idx];
-
-    //                   return GridCell(
-    //                     cell: cell,
-    //                     indx: idx,
-    //                     hideTitle: false,
-    //                     imageAlign: Alignment.topCenter,
-    //                   );
-    //                 },
-
-    //               );
-    //             },
-    //           ),
-    //   ),
-    // );
   }
 }
 

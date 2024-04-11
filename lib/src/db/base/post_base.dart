@@ -65,7 +65,7 @@ class PostBase
         ContentableCell,
         Thumbnailable,
         ContentWidgets,
-        AppBarButtonsable,
+        AppBarButtonable,
         ImageViewActionable,
         Infoable,
         Stickerable,

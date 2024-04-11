@@ -107,8 +107,8 @@ class _SinglePostState extends State<SinglePost> {
         key.currentState?.setState(() {});
       });
 
-      // ignore: use_build_context_synchronously
       ImageView.launchWrapped(
+        // ignore: use_build_context_synchronously
         context,
         1,
         (context, __) => value.content(context),
@@ -124,10 +124,6 @@ class _SinglePostState extends State<SinglePost> {
             Settings.fromDb(),
           );
         },
-        // actions: (p) => [
-        //   BooruGridActions.favorites(context, p),
-        //   BooruGridActions.download(context, booru.booru)
-        // ],
       ).then((value) => favoritesWatcher.cancel());
     } catch (e, trace) {
       try {

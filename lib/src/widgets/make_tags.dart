@@ -273,7 +273,7 @@ void openAddTagDialog(
         context: context,
         builder: (context) {
           return AlertDialog(
-            title: Text("Add tag"),
+            title: Text(AppLocalizations.of(context)!.addTag),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -292,11 +292,11 @@ void openAddTagDialog(
                       }
 
                       if (v.length <= 1) {
-                        return "Value is too short";
+                        return AppLocalizations.of(context)!.valueIsEmpty;
                       }
 
                       if (regexp.hasMatch(v)) {
-                        return "Only characters allowed are A-Z, a-z, 0-9, _, (, ), and ' .";
+                        return AppLocalizations.of(context)!.tagValidationError;
                       }
 
                       return null;

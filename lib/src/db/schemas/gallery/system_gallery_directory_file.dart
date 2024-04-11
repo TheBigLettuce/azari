@@ -55,7 +55,7 @@ class SystemGalleryDirectoryFile
         Thumbnailable,
         Infoable,
         ImageViewActionable,
-        AppBarButtonsable,
+        AppBarButtonable,
         IsarEntryId,
         Stickerable {
   SystemGalleryDirectoryFile({
@@ -394,9 +394,6 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
               title: AppLocalizations.of(context)!.sizeInfoPage,
               subtitle: kbMbSize(context, file.size),
             ),
-            // if (MiscSettings.current.filesExtendedActions &&
-            //     widget.file.isVideo)
-            //   LoadVideoThumbnailTile(file: file),
             if (res != null && file.tagsFlat.contains("translated"))
               TranslationNotes.tile(context, res!.id, res!.booru),
             if (res != null && filesExtended)
@@ -424,68 +421,6 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
     ]);
   }
 }
-
-// class LoadVideoThumbnailTile extends StatefulWidget {
-//   final SystemGalleryDirectoryFile file;
-
-//   const LoadVideoThumbnailTile({
-//     super.key,
-//     required this.file,
-//   });
-
-//   @override
-//   State<LoadVideoThumbnailTile> createState() => _LoadVideoThumbnailTileState();
-// }
-
-// class _LoadVideoThumbnailTileState extends State<LoadVideoThumbnailTile> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return GestureDetector(
-//       onLongPress: () {
-//         final file = widget.file;
-
-//         PlatformFunctions.deleteCachedThumbs([file.id], true);
-
-//         final t = file.thumbnail();
-//         t?.evict();
-
-//         final deleted = PinnedThumbnail.delete(file.id);
-
-//         if (t != null) {
-//           PaintingBinding.instance.imageCache.evict(t, includeLive: true);
-//         }
-
-//         if (deleted) {
-//           try {
-//             setState(() {});
-//           } catch (_) {}
-
-//           ReloadImageNotifier.of(context, true);
-//         }
-//       },
-//       child: RawChip(
-//         onPressed: () {
-//           final file = widget.file;
-
-//           loadNetworkThumb(
-//             file.name,
-//             file.id,
-//             AppLocalizations.of(context)!.netThumbnailLoader,
-//             AppLocalizations.of(context)!.loadingThumbnail,
-//           ).then((value) {
-//             try {
-//               setState(() {});
-//             } catch (_) {}
-
-//             ReloadImageNotifier.of(context, true);
-//           });
-//         },
-//         avatar: const Icon(Icons.broken_image_outlined),
-//         label: Text("Load thumbnail"),
-//       ),
-//     );
-//   }
-// }
 
 class RedownloadTile extends StatefulWidget {
   final SystemGalleryDirectoryFile file;
@@ -547,7 +482,9 @@ class _RedownloadTileState extends State<RedownloadTile> {
               setState(() {});
             },
       avatar: const Icon(Icons.download_outlined),
-      label: Text("Redownload"),
+      label: Text(
+        AppLocalizations.of(context)!.redownloadLabel,
+      ),
     );
   }
 }

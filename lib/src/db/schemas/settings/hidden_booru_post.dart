@@ -37,7 +37,7 @@ class HiddenBooruPost implements CellBase, IsarEntryId, Thumbnailable {
 
   @override
   String alias(bool isList) {
-    return "${booru.string}($postId)";
+    return "$postId ${booru.string}";
   }
 
   @override

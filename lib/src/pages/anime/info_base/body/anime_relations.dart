@@ -7,7 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/pages/anime/info_pages/anime_info_id.dart';
+import 'package:gallery/src/pages/anime/anime_info_page.dart';
 import 'package:gallery/src/pages/anime/search/search_anime.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
@@ -36,9 +36,9 @@ class AnimeRelations extends StatelessWidget {
                       if (e.idIsValid) {
                         Navigator.push(context, MaterialPageRoute(
                           builder: (context) {
-                            return AnimeInfoIdPage(
+                            return AnimeInfoPage(
                               id: e.id,
-                              site: entry.site,
+                              apiFactory: entry.site.api,
                             );
                           },
                         ));

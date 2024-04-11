@@ -421,5 +421,17 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "addTag": "Добавить тег",
+    "valueTooShort": "Слишком коротко",
+    "tagValidationError": "Возможные для ввода знаки A-Z, a-z, 0-9, _, (, ), и ' .",
+    "unstickyDirectory": "Открепить папку",
+    "unblurDirectory": "Перестать размывать миниатюры",
+    "blur": "Размыть",
+    "unblur": "Перестать размывать",
+    "lockDirectory": "Закрыть группу папок",
+    "requireAuth": "Закрыть",
+    "notRequireAuth": "Открыть",
+    "openDirectory": "Открыть папку",
+    "redownloadLabel": "Загрузить снова"
 }

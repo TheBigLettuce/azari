@@ -90,7 +90,9 @@ class _DownloadsState extends State<Downloads> {
         limitLabelChildren: 6,
         injectedLabel: "",
         segment: (cell) {
-          return (Downloader.g.downloadDescription(cell));
+          final p = Downloader.g.downloadDescription(cell);
+          // print(p);
+          return p;
         },
         onLabelPressed: (label, children) {
           if (children.isEmpty) {
@@ -114,7 +116,7 @@ class _DownloadsState extends State<Downloads> {
             }
           }
         },
-        caps: SegmentCapability.empty(),
+        caps: SegmentCapability.alwaysPinned(),
       );
 
   GridSettingsBase _gridSettingsBase() => const GridSettingsBase(
@@ -159,9 +161,6 @@ class _DownloadsState extends State<Downloads> {
             ),
             selectionGlue: GlueProvider.generateOf(context)(),
             refreshingStatus: state.refreshingStatus,
-            // imageViewDescription: ImageViewDescription(
-            //   imageViewKey: state.imageViewKey,
-            // ),
             refresh: SynchronousGridRefresh(() => loader.count()),
           ),
           mainFocus: state.mainFocus,

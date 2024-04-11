@@ -54,51 +54,7 @@ class DisassembleResult {
   });
 }
 
-// extension ScopeExt<T> on ErrScope<T> {
-//   FutureErrOr<T> get scoped => ErrorOr.scope(this);
-
-//   ScopedBuilder<T> get build => ScopedBuilder((this, () {}));
-// }
-
-typedef ScopeModifier = void Function();
-
-const void end = null;
-
-// extension type ScopedBuilder<T>(
-//     (Future<T> Function() end, void Function() callable) t) {
-//   FutureErrOr<T> operator <=(void end) => ErrorOr._scopeBuilder<T>(t.$1, t.$2);
-
-//   ScopedBuilder<T> operator +(ScopeModifier mod) => ScopedBuilder((
-//         t.$1,
-//         () {
-//           mod();
-//           t.$2();
-//         }
-//       ));
-// }
-
-extension FutureErrOrExt<T> on FutureErrOr<T> {
-  static void _doNothing() {}
-
-  Future<ErrorOr<T>> valueAndComplete(void Function(T) onValue,
-      [void Function() whenComplete = _doNothing]) {
-    return then((value) {
-      if (value.hasValue) {
-        onValue(value.asValue());
-      }
-
-      return value;
-    }).whenComplete(whenComplete);
-  }
-
-  Future<T> get withThrow {
-    return then((value) => value.asValue());
-  }
-}
-
 typedef ErrScope<T> = Future<T> Function();
-typedef FutureErrOr<T> = Future<ErrorOr<T>>;
-typedef FutureErrOrList<T> = Future<ErrorOr<List<T>>>;
 
 class ErrorOr<T> {
   final T? _data;
@@ -118,32 +74,6 @@ class ErrorOr<T> {
 
   bool get hasError => _error != null;
   bool get hasValue => _data != null;
-
-  static FutureErrOr<T> _scopeBuilder<T>(
-      ErrScope<T> f, void Function() onError) async {
-    final T data;
-
-    try {
-      data = await f();
-    } catch (e) {
-      onError();
-      return Future.value(ErrorOr.error((context) => e.toString()));
-    }
-
-    return Future.value(ErrorOr.value(data));
-  }
-
-  static FutureErrOr<T> scope<T>(ErrScope<T> f) async {
-    final T data;
-
-    try {
-      data = await f();
-    } catch (e) {
-      return Future.value(ErrorOr.error((context) => e.toString()));
-    }
-
-    return Future.value(ErrorOr.value(data));
-  }
 }
 
 /// Post tags saved locally.

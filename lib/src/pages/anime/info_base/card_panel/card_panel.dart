@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart';
 import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
@@ -69,12 +70,7 @@ class CardPanel extends StatefulWidget {
       ];
 
   static List<Widget> defaultButtons(
-    BuildContext context,
-    AnimeEntry entry, {
-    required bool isWatching,
-    required bool inBacklog,
-    required bool watched,
-  }) =>
+          BuildContext context, AnimeEntry entry, AnimeAPI api) =>
       [
         IconButton(
           onPressed: () {
@@ -119,7 +115,7 @@ class CardPanel extends StatefulWidget {
                           return AnimeNews(news: value);
                         },
                         newStatus: () {
-                          return entry.site.api.animeNews(entry, 0);
+                          return api.animeNews(entry, 0);
                         },
                       ),
                     )

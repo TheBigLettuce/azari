@@ -1309,5 +1309,53 @@
                 "type": "String"
             }
         }
+    },
+    "addTag": "Add tag",
+    "@addTag": {
+        "description": "Add post tag dialog title"
+    },
+    "valueTooShort": "Value is too short",
+    "@valueTooShort": {
+        "description": "Value validation error"
+    },
+    "tagValidationError": "Only characters allowed are A-Z, a-z, 0-9, _, (, ), and ' .",
+    "@tagValidationError": {
+        "description": "Tag validation error"
+    },
+    "unstickyDirectory": "Unsticky directory",
+    "@unstickyDirectory": {
+        "description": "Gallery auth reasons"
+    },
+    "unblurDirectory": "Unblur directory",
+    "@unblurDirectory": {
+        "description": "Gallery auth reasons"
+    },
+    "blur": "Blur",
+    "@blur": {
+        "description": "Group modifiers labels"
+    },
+    "unblur": "Unblur",
+    "@unblur": {
+        "description": "Group modifiers labels"
+    },
+    "lockDirectory": "Lock directory group",
+    "@lockDirectory": {
+        "description": "Gallery auth reasons"
+    },
+    "requireAuth": "Require auth",
+    "@requireAuth": {
+        "description": "Group modifiers labels"
+    },
+    "notRequireAuth": "Unauth",
+    "@notRequireAuth": {
+        "description": "Group modifiers labels"
+    },
+    "openDirectory": "Open directory",
+    "@openDirectory": {
+        "description": "Gallery auth reasons"
+    },
+    "redownloadLabel": "Redownload",
+    "@redownloadLabel": {
+        "description": "Redownload file button label"
     }
 }

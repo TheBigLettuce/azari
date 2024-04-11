@@ -7,8 +7,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
-import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 
@@ -146,17 +144,5 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
         }
       },
     );
-  }
-}
-
-mixin AlwaysLoadingAnimeMixin {
-  final alwaysLoading = MiscSettings.current.animeAlwaysLoadFromNet;
-
-  Future<AnimeEntry> maybeFetchInfo(AnimeEntry entry) {
-    if (alwaysLoading) {
-      return entry.site.api.info(entry.id);
-    }
-
-    return Future.value(entry);
   }
 }

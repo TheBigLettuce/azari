@@ -25,10 +25,12 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BlacklistedPostsPage extends StatefulWidget {
   final SelectionGlue Function([Set<GluePreferences>]) generateGlue;
+  final ScrollController conroller;
 
   const BlacklistedPostsPage({
     super.key,
     required this.generateGlue,
+    required this.conroller,
   });
 
   @override
@@ -61,20 +63,17 @@ class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
       child: GridFrame<HiddenBooruPost>(
         key: state.gridKey,
         getCell: (i) => list[i],
+        overrideController: widget.conroller,
         layout: _ListLayout(
             HideBlacklistedImagesNotifier.of(context), _gridSettingsBase),
         functionality: GridFunctionality(
           selectionGlue: widget.generateGlue(),
-          // onPressed: const OverrideGridOnCellPressBehaviour(),
           refresh: SynchronousGridRefresh(() {
             list = HiddenBooruPost.getAll();
 
             return list.length;
           }),
           refreshingStatus: state.refreshingStatus,
-          // imageViewDescription: ImageViewDescription(
-          //   imageViewKey: state.imageViewKey,
-          // ),
         ),
         mainFocus: state.mainFocus,
         description: GridDescription(

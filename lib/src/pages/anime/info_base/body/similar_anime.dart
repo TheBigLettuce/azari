@@ -8,18 +8,20 @@
 import 'package:flutter/material.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
+import 'package:gallery/src/pages/anime/anime_info_page.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
 import 'package:gallery/src/pages/anime/info_base/body/body_segment_label.dart';
-import 'package:gallery/src/pages/anime/info_pages/anime_info_id.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SimilarAnime extends StatefulWidget {
   final AnimeEntry entry;
+  final AnimeAPI api;
 
   const SimilarAnime({
     super.key,
     required this.entry,
+    required this.api,
   });
 
   @override
@@ -57,8 +59,10 @@ class _SimilarAnimeState extends State<SimilarAnime> {
                                 onPressed: (context) {
                                   Navigator.push(context, MaterialPageRoute(
                                     builder: (context) {
-                                      return AnimeInfoIdPage(
-                                          id: e.$2.id, site: widget.entry.site);
+                                      return AnimeInfoPage(
+                                        id: e.$2.id,
+                                        apiFactory: widget.entry.site.api,
+                                      );
                                     },
                                   ));
                                 },
@@ -84,8 +88,7 @@ class _SimilarAnimeState extends State<SimilarAnime> {
               : Center(
                   child: FilledButton(
                     onPressed: () {
-                      _future =
-                          widget.entry.site.api.recommendations(widget.entry);
+                      _future = widget.api.recommendations(widget.entry);
 
                       setState(() {});
                     },

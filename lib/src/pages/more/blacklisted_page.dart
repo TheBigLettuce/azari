@@ -117,18 +117,20 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
               (context, state, i) => PageDescription(
                 appIcons: [
                   IconButton(
-                      onPressed: () {
-                        hideBlacklistedImages = !hideBlacklistedImages;
+                    onPressed: () {
+                      hideBlacklistedImages = !hideBlacklistedImages;
 
-                        setState(() {});
-                      },
-                      icon: hideBlacklistedImages
-                          ? const Icon(Icons.image_rounded)
-                          : const Icon(Icons.hide_image_rounded))
+                      setState(() {});
+                    },
+                    icon: hideBlacklistedImages
+                        ? const Icon(Icons.image_rounded)
+                        : const Icon(Icons.hide_image_rounded),
+                  )
                 ],
                 slivers: [
                   BlacklistedPostsPage(
                     generateGlue: widget.generateGlue,
+                    conroller: state.controller,
                   )
                 ],
               ),

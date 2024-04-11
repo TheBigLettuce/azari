@@ -10,6 +10,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_characters.dart';
+import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
@@ -20,11 +21,13 @@ import 'body_segment_label.dart';
 
 class AnimeCharactersWidget extends StatefulWidget {
   final AnimeEntry entry;
+  final AnimeAPI api;
   final Color? overlayColor;
 
   const AnimeCharactersWidget({
     super.key,
     required this.entry,
+    required this.api,
     required this.overlayColor,
   });
 
@@ -45,7 +48,7 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
     if (l.isNotEmpty) {
       list.addAll(l);
     } else {
-      SavedAnimeCharacters.addAsync(widget.entry, widget.entry.site.api);
+      SavedAnimeCharacters.addAsync(widget.entry, widget.api);
       _loading = true;
     }
 

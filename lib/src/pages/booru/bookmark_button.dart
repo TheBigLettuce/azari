@@ -21,6 +21,7 @@ import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart
 import 'package:gallery/src/pages/booru/booru_restored_page.dart';
 import 'package:gallery/src/pages/more/settings/settings_widget.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
+import 'package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:gallery/src/widgets/shimmer_loading_indicator.dart';
 import 'package:isar/isar.dart';
@@ -215,15 +216,20 @@ class _BookmarkPageState extends State<BookmarkPage> {
 
   @override
   Widget build(BuildContext context) {
-    return gridStates.isEmpty
-        ? const SliverToBoxAdapter(
-            child: EmptyWidget(
-              gridSeed: 0,
+    return SliverPadding(
+      padding: EdgeInsets.only(
+        bottom: GridBottomPaddingProvider.of(context, true),
+      ),
+      sliver: gridStates.isEmpty
+          ? const SliverToBoxAdapter(
+              child: EmptyWidget(
+                gridSeed: 0,
+              ),
+            )
+          : SliverList.list(
+              children: makeList(context),
             ),
-          )
-        : SliverList.list(
-            children: makeList(context),
-          );
+    );
   }
 }
 

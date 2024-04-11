@@ -454,11 +454,12 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
         ...widget.layout.makeFor<T>(_layoutSettings)(
             context, _layoutSettings, this),
       ],
-      _WrapPadding(
-        footer: description.footer,
-        selectionGlue: functionality.selectionGlue,
-        child: null,
-      )
+      if (currentPage == 0)
+        _WrapPadding(
+          footer: description.footer,
+          selectionGlue: functionality.selectionGlue,
+          child: null,
+        )
     ];
   }
 
@@ -548,8 +549,6 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
       Widget ret = _BodyWrapping(
         bindings: const {},
         mainFocus: widget.mainFocus,
-        // pageSwitcherNoBar:
-        //  ,
         pageName: widget.description.keybindsDescription,
         children: [
           if (atHomePage && widget.functionality.refresh.pullToRefresh)
@@ -685,6 +684,7 @@ class __GridSelectionCountHolderState extends State<_GridSelectionCountHolder> {
       canPop: widget.selection.isEmpty,
       onPopInvoked: _onPop,
       child: GridBottomPaddingProvider(
+        fab: (kFloatingActionButtonMargin * 2 + 24 + 8),
         padding: widget.calculatePadding(context),
         child: SelectionCountNotifier(
           count: widget.selection.count,

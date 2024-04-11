@@ -20,6 +20,7 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_sta
 import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/segment_label.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../grid_frame.dart';
 
@@ -77,7 +78,7 @@ class SegmentLayout<T extends CellBase>
         },
       );
     }
-    final (s, t) = _segmentsFnc<T>(
+    final (s, _) = _segmentsFnc<T>(
         context, segments, state.mutation, state.selection, settings.columns,
         gridSeed: 1,
         functionality: state.widget.functionality,
@@ -585,93 +586,119 @@ class SegmentLayout<T extends CellBase>
                   hidePinnedIcon: segments.hidePinnedIcon,
                   onPress: segmentLabel.onLabelPressed,
                   sticky: toSticky,
-                  menuItems: [
-                    if (segmentLabel.unstickable &&
-                        segmentLabel.seg != segments.unsegmentedLabel)
-                      PopupMenuItem(
-                        onTap: () async {
-                          if (toAuth && canAuthBiometric) {
-                            final success = await LocalAuthentication()
-                                .authenticate(
-                                    localizedReason: "Unsticky directory");
+                  menuItems: segments.caps.ignoreButtons
+                      ? const []
+                      : [
+                          if (segmentLabel.unstickable &&
+                              segmentLabel.seg != segments.unsegmentedLabel)
+                            PopupMenuItem(
+                              onTap: () async {
+                                if (toAuth && canAuthBiometric) {
+                                  final success =
+                                      await LocalAuthentication().authenticate(
+                                    localizedReason:
+                                        AppLocalizations.of(context)!
+                                            .unstickyDirectory,
+                                  );
 
-                            if (!success) {
-                              return;
-                            }
-                          }
-
-                          if (toSticky) {
-                            segments.caps.removeModifiers([segmentLabel.seg],
-                                const {SegmentModifier.sticky});
-                          } else {
-                            segments.caps.addModifiers([segmentLabel.seg],
-                                const {SegmentModifier.sticky});
-                          }
-
-                          HapticFeedback.vibrate();
-                          refreshingStatus.refresh(gridFunctionality);
-                        },
-                        child: Text(
-                          toSticky ? "Unsticky" : "Sticky",
-                        ), // TODO: change
-                      ),
-                    PopupMenuItem(
-                      onTap: () async {
-                        if (toAuth && canAuthBiometric) {
-                          final success = await LocalAuthentication()
-                              .authenticate(
-                                  localizedReason: "Unblur directory");
-
-                          if (!success) {
-                            return;
-                          }
-                        }
-
-                        if (toBlur) {
-                          segments.caps.removeModifiers(
-                              [segmentLabel.seg], const {SegmentModifier.blur});
-                        } else {
-                          segments.caps.addModifiers(
-                              [segmentLabel.seg], const {SegmentModifier.blur});
-                        }
-
-                        HapticFeedback.vibrate();
-                        refreshingStatus.refresh(gridFunctionality);
-                      },
-                      child: Text(toBlur ? "Unblur" : "Blur"), // TODO: change
-                    ),
-                    if (segmentLabel.seg != segments.unsegmentedLabel &&
-                        segments.unsegmentedLabel != segmentLabel.seg &&
-                        segmentLabel.seg != "Booru")
-                      PopupMenuItem(
-                        enabled: canAuthBiometric,
-                        onTap: !canAuthBiometric
-                            ? null
-                            : () async {
-                                final success = await LocalAuthentication()
-                                    .authenticate(
-                                        localizedReason:
-                                            "Lock directory group");
-
-                                if (!success) {
-                                  return;
+                                  if (!success) {
+                                    return;
+                                  }
                                 }
 
-                                if (toAuth) {
+                                if (toSticky) {
                                   segments.caps.removeModifiers(
                                       [segmentLabel.seg],
-                                      const {SegmentModifier.auth});
+                                      const {SegmentModifier.sticky});
                                 } else {
                                   segments.caps.addModifiers([segmentLabel.seg],
-                                      const {SegmentModifier.auth});
+                                      const {SegmentModifier.sticky});
                                 }
 
                                 HapticFeedback.vibrate();
                                 refreshingStatus.refresh(gridFunctionality);
                               },
-                        child: Text(toAuth ? "Unauth" : "Require auth"),
-                      )
-                  ],
+                              child: Text(
+                                toSticky
+                                    ? AppLocalizations.of(context)!.unpinTag
+                                    : AppLocalizations.of(context)!
+                                        .pinGroupLabel,
+                              ),
+                            ),
+                          PopupMenuItem(
+                            onTap: () async {
+                              if (toAuth && canAuthBiometric) {
+                                final success =
+                                    await LocalAuthentication().authenticate(
+                                  localizedReason: AppLocalizations.of(context)!
+                                      .unblurDirectory,
+                                );
+
+                                if (!success) {
+                                  return;
+                                }
+                              }
+
+                              if (toBlur) {
+                                segments.caps.removeModifiers(
+                                    [segmentLabel.seg],
+                                    const {SegmentModifier.blur});
+                              } else {
+                                segments.caps.addModifiers([segmentLabel.seg],
+                                    const {SegmentModifier.blur});
+                              }
+
+                              HapticFeedback.vibrate();
+                              refreshingStatus.refresh(gridFunctionality);
+                            },
+                            child: Text(
+                              toBlur
+                                  ? AppLocalizations.of(context)!.unblur
+                                  : AppLocalizations.of(context)!.blur,
+                            ),
+                          ),
+                          if (segmentLabel.seg != segments.unsegmentedLabel &&
+                              segments.unsegmentedLabel != segmentLabel.seg &&
+                              segmentLabel.seg != "Booru")
+                            PopupMenuItem(
+                              enabled: canAuthBiometric,
+                              onTap: !canAuthBiometric
+                                  ? null
+                                  : () async {
+                                      final success =
+                                          await LocalAuthentication()
+                                              .authenticate(
+                                        localizedReason:
+                                            AppLocalizations.of(context)!
+                                                .lockDirectory,
+                                      );
+
+                                      if (!success) {
+                                        return;
+                                      }
+
+                                      if (toAuth) {
+                                        segments.caps.removeModifiers(
+                                            [segmentLabel.seg],
+                                            const {SegmentModifier.auth});
+                                      } else {
+                                        segments.caps.addModifiers(
+                                            [segmentLabel.seg],
+                                            const {SegmentModifier.auth});
+                                      }
+
+                                      HapticFeedback.vibrate();
+                                      refreshingStatus
+                                          .refresh(gridFunctionality);
+                                    },
+                              child: Text(
+                                toAuth
+                                    ? AppLocalizations.of(context)!
+                                        .notRequireAuth
+                                    : AppLocalizations.of(context)!.requireAuth,
+                              ),
+                            )
+                        ],
                 ),
               ),
             ),

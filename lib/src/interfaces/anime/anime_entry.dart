@@ -14,7 +14,7 @@ import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:gallery/src/pages/anime/anime.dart';
-import 'package:gallery/src/pages/anime/info_pages/discover_anime_info_page.dart';
+import 'package:gallery/src/pages/anime/anime_info_page.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:isar/isar.dart';
 
@@ -46,12 +46,17 @@ class AnimeSearchEntry extends AnimeEntry
   });
 
   @override
-  void onPress(BuildContext context,
-      GridFunctionality<AnimeEntry> functionality, AnimeEntry cell, int idx) {
+  void onPress(
+      BuildContext context,
+      GridFunctionality<AnimeSearchEntry> functionality,
+      AnimeSearchEntry cell,
+      int idx) {
     Navigator.push(context, MaterialPageRoute(
       builder: (context) {
-        return DiscoverAnimeInfoPage(
+        return AnimeInfoPage(
           entry: cell,
+          id: cell.id,
+          apiFactory: cell.site.api,
         );
       },
     ));
@@ -59,11 +64,9 @@ class AnimeSearchEntry extends AnimeEntry
 }
 
 class AnimeEntry
-    with
-        BooruPostFunctionalityMixin
+    with BooruPostFunctionalityMixin
     implements
         AnimeCell,
-        // Pressable<AnimeEntry>,
         ContentWidgets,
         Thumbnailable,
         Downloadable,

@@ -140,9 +140,12 @@ class _TabBarWrapperState extends State<TabBarWrapper> {
           Padding(
             padding: const EdgeInsets.only(top: 10),
             child: SizedBox(
-                width: 24 + 24 + (rightPadding <= 0 ? 8 : rightPadding / 2),
-                child: GestureDetector(
-                  onTap: () {
+              width: 24 + 24 + (rightPadding <= 0 ? 8 : rightPadding / 2),
+              height: 28,
+              child: Center(
+                child: IconButton(
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () {
                     if (!widget.onPressed(false)) {
                       _showSearchField = !_showSearchField;
                       widget.filter(null);
@@ -150,14 +153,16 @@ class _TabBarWrapperState extends State<TabBarWrapper> {
                       setState(() {});
                     }
                   },
-                  child: Icon(
+                  icon: Icon(
                     Icons.search,
                     color: Theme.of(context)
                         .colorScheme
                         .surfaceTint
                         .withOpacity(0.8),
                   ),
-                )),
+                ),
+              ),
+            ),
           ),
         ],
       ),

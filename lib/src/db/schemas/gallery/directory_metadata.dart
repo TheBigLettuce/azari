@@ -110,6 +110,9 @@ class _DirectoryMetadataCap implements SegmentCapability {
   final String specialLabel;
 
   @override
+  final ignoreButtons = false;
+
+  @override
   Set<SegmentModifier> modifiersFor(String seg) {
     if (seg.isEmpty) {
       return const {};

@@ -543,7 +543,6 @@ enum ButtonVariant {
 }
 
 class _ButtonWithPadding extends StatelessWidget {
-  final double padding;
   final Icon icon;
   final void Function() onPressed;
   final String label;
@@ -551,7 +550,6 @@ class _ButtonWithPadding extends StatelessWidget {
 
   const _ButtonWithPadding({
     super.key,
-    this.padding = 8,
     required this.icon,
     required this.onPressed,
     required this.label,
@@ -561,7 +559,7 @@ class _ButtonWithPadding extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: padding),
+      padding: const EdgeInsets.only(bottom: 8),
       child: variant == ButtonVariant.secondary
           ? ElevatedButton.icon(
               onPressed: onPressed,

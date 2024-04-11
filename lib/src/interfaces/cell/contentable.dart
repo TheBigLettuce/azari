@@ -20,8 +20,8 @@ extension ContentWidgetsExt on ContentWidgets {
   }
 
   List<Widget> tryAsAppBarButtonable(BuildContext context) {
-    if (this is AppBarButtonsable) {
-      return (this as AppBarButtonsable).appBarButtons(context);
+    if (this is AppBarButtonable) {
+      return (this as AppBarButtonable).appBarButtons(context);
     }
 
     return const [];
@@ -69,7 +69,7 @@ abstract interface class ImageViewActionable {
   List<ImageViewAction> actions(BuildContext context);
 }
 
-abstract interface class AppBarButtonsable {
+abstract interface class AppBarButtonable {
   List<Widget> appBarButtons(BuildContext context);
 }
 

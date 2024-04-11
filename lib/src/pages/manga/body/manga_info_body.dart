@@ -15,7 +15,7 @@ import 'package:gallery/src/pages/manga/body/manga_chapters.dart';
 import 'package:gallery/src/pages/manga/body/manga_relations.dart';
 import 'package:gallery/src/pages/anime/search/search_anime.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart';
-import 'package:sliver_tools/sliver_tools.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class MangaInfoBody extends StatefulWidget {
   final MangaEntry entry;
@@ -72,8 +72,8 @@ class _MangaInfoBodyState extends State<MangaInfoBody> {
           ),
           LabelSwitcherWidget(
             pages: [
-              PageLabel("Synopsis"),
-              PageLabel("Chapters"),
+              PageLabel(AppLocalizations.of(context)!.synopsisLabel),
+              PageLabel(AppLocalizations.of(context)!.mangaChaptersLabel),
             ],
             currentPage: currentPageF,
             switchPage: switchPage,

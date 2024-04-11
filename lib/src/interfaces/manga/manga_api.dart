@@ -82,7 +82,7 @@ class MangaImage
         ImageViewContentable,
         ContentWidgets,
         Thumbnailable,
-        AppBarButtonsable {
+        AppBarButtonable {
   const MangaImage(
     this.url,
     this.order,

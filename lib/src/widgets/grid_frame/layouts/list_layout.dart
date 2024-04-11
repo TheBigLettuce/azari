@@ -47,23 +47,23 @@ class ListLayout<T extends CellBase> implements GridLayouter<T> {
   }) {
     final getCell = CellProvider.of<T>(context);
 
-    return SliverList.separated(
-      separatorBuilder: (context, index) => const Divider(
-        height: 1,
-      ),
-      itemCount: state.cellCount,
-      itemBuilder: (context, index) {
-        final cell = getCell(index);
+    return SliverPadding(
+      padding: const EdgeInsets.only(right: 8, left: 8),
+      sliver: SliverList.builder(
+        itemCount: state.cellCount,
+        itemBuilder: (context, index) {
+          final cell = getCell(index);
 
-        return _tile(
-          context,
-          functionality,
-          selection,
-          cell: cell,
-          index: index,
-          hideThumbnails: hideThumbnails,
-        );
-      },
+          return _tile(
+            context,
+            functionality,
+            selection,
+            cell: cell,
+            index: index,
+            hideThumbnails: hideThumbnails,
+          );
+        },
+      ),
     );
   }
 
@@ -87,23 +87,40 @@ class ListLayout<T extends CellBase> implements GridLayouter<T> {
       thisIndx: index,
       child: Builder(
         builder: (context) {
+          final theme = Theme.of(context);
           SelectionCountNotifier.countOf(context);
+          final isSelected = selection.isSelected(index);
 
-          return ListTile(
-            textColor: selection.isSelected(index)
-                ? Theme.of(context).colorScheme.inversePrimary
-                : null,
-            leading: !hideThumbnails && thumbnail != null
-                ? CircleAvatar(
-                    backgroundColor: Theme.of(context).colorScheme.background,
-                    foregroundImage: thumbnail,
-                    onForegroundImageError: (_, __) {},
-                  )
-                : null,
-            title: Text(
-              cell.alias(true),
-              softWrap: false,
-              overflow: TextOverflow.ellipsis,
+          return DecoratedBox(
+            decoration: ShapeDecoration(
+              shape: const StadiumBorder(),
+              color: isSelected
+                  ? null
+                  : index.isOdd
+                      ? theme.colorScheme.secondary.withOpacity(0.1)
+                      : theme.colorScheme.surfaceVariant.withOpacity(0.1),
+            ),
+            child: ListTile(
+              textColor: isSelected ? theme.colorScheme.inversePrimary : null,
+              leading: !hideThumbnails && thumbnail != null
+                  ? CircleAvatar(
+                      backgroundColor: theme.colorScheme.background,
+                      foregroundImage: thumbnail,
+                      onForegroundImageError: (_, __) {},
+                    )
+                  : null,
+              title: Text(
+                cell.alias(true),
+                softWrap: false,
+                style: TextStyle(
+                  color: isSelected
+                      ? theme.colorScheme.onPrimary.withOpacity(0.8)
+                      : index.isOdd
+                          ? theme.colorScheme.onSurface.withOpacity(0.8)
+                          : theme.colorScheme.onSurface.withOpacity(0.9),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           );
         },

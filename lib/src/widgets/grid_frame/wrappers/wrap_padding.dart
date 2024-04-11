@@ -10,8 +10,6 @@ part of '../grid_frame.dart';
 class _WrapPadding extends StatelessWidget {
   final PreferredSizeWidget? footer;
   final SelectionGlue selectionGlue;
-  final bool sliver;
-  final bool addFabPadding;
 
   final Widget? child;
 
@@ -19,15 +17,13 @@ class _WrapPadding extends StatelessWidget {
     super.key,
     required this.footer,
     required this.selectionGlue,
-    this.sliver = true,
-    this.addFabPadding = true,
     required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
     final insets = EdgeInsets.only(
-        bottom: (addFabPadding ? kFloatingActionButtonMargin * 2 + 24 + 8 : 0) +
+        bottom: (kFloatingActionButtonMargin * 2 + 24 + 8) +
             (selectionGlue.keyboardVisible()
                 ? 0
                 : MediaQuery.viewPaddingOf(context).bottom +
@@ -38,14 +34,9 @@ class _WrapPadding extends StatelessWidget {
                             : 0)) +
             (footer != null ? footer!.preferredSize.height : 0));
 
-    return sliver
-        ? SliverPadding(
-            padding: insets,
-            sliver: child,
-          )
-        : Padding(
-            padding: insets,
-            child: child,
-          );
+    return SliverPadding(
+      padding: insets,
+      sliver: child,
+    );
   }
 }

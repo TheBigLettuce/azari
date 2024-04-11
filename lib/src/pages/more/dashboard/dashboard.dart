@@ -56,7 +56,6 @@ class _DashboardState extends State<Dashboard> {
               alignment: WrapAlignment.center,
               runAlignment: WrapAlignment.center,
               children: [
-                _Label(text: AppLocalizations.of(context)!.booruLabel),
                 Wrap(
                   children: [
                     DashboardCard(
@@ -100,7 +99,6 @@ class _DashboardState extends State<Dashboard> {
                     ),
                   ],
                 ),
-                _Label(text: AppLocalizations.of(context)!.galleryLabel),
                 Wrap(
                   children: [
                     DashboardCard(
@@ -140,31 +138,6 @@ class _DashboardState extends State<Dashboard> {
                 )
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Label extends StatelessWidget {
-  final String text;
-
-  const _Label({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8, bottom: 2),
-      child: SizedBox(
-        width: MediaQuery.sizeOf(context).width,
-        child: Center(
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                letterSpacing: 2,
-                color:
-                    Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
           ),
         ),
       ),

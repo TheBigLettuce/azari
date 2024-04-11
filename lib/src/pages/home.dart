@@ -124,7 +124,7 @@ class _HomeState extends State<Home>
                         : icons(context, currentRoute),
                   ),
                 ),
-                selectedRoute: currentRoute,
+                extendBody: true,
               ),
             );
           },

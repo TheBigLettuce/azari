@@ -25,6 +25,7 @@ import 'synopsis_background.dart';
 
 class AnimeInfoBody extends StatelessWidget {
   final AnimeEntry entry;
+  final AnimeAPI api;
   final EdgeInsets viewPadding;
   final Color? overlayColor;
 
@@ -32,6 +33,7 @@ class AnimeInfoBody extends StatelessWidget {
     super.key,
     required this.entry,
     required this.viewPadding,
+    required this.api,
     required this.overlayColor,
   });
 
@@ -72,9 +74,11 @@ class AnimeInfoBody extends StatelessWidget {
               constraints: BoxConstraints(
                   maxWidth: MediaQuery.sizeOf(context).width - 16 - 16),
             ),
-            AnimeCharactersWidget(entry: entry, overlayColor: overlayColor),
-            AnimePicturesWidget(entry: entry, overlayColor: overlayColor),
-            SimilarAnime(entry: entry),
+            AnimeCharactersWidget(
+                entry: entry, api: api, overlayColor: overlayColor),
+            AnimePicturesWidget(
+                entry: entry, api: api, overlayColor: overlayColor),
+            SimilarAnime(entry: entry, api: api),
             AnimeRelations(entry: entry),
           ],
         ),
@@ -109,11 +113,13 @@ class AnimeStaff extends StatelessWidget {
 
 class AnimePicturesWidget extends StatefulWidget {
   final AnimeEntry entry;
+  final AnimeAPI api;
   final Color? overlayColor;
 
   const AnimePicturesWidget({
     super.key,
     required this.entry,
+    required this.api,
     required this.overlayColor,
   });
 
@@ -179,7 +185,7 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
               : Center(
                   child: FilledButton(
                     onPressed: () {
-                      _future = widget.entry.site.api.pictures(widget.entry);
+                      _future = widget.api.pictures(widget.entry);
 
                       setState(() {});
                     },

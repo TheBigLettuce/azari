@@ -162,7 +162,8 @@ class __WatchingTabState extends State<_WatchingTab> {
             GridAction(
               Icons.delete_rounded,
               (selected) {
-                SavedAnimeEntry.deleteAll(selected);
+                SavedAnimeEntry.deleteAll(
+                    selected.map((e) => (e.site, e.id)).toList());
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   content:
                       Text(AppLocalizations.of(context)!.deletedFromBacklog),
@@ -382,7 +383,11 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
   void onPressed(SavedAnimeEntry e, int _) {
     Navigator.push(context, MaterialPageRoute(
       builder: (context) {
-        return WatchingAnimeInfoPage(entry: e);
+        return AnimeInfoPage(
+          entry: e,
+          id: e.id,
+          apiFactory: e.site.api,
+        );
       },
     ));
   }

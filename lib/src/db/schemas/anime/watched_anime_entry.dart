@@ -7,10 +7,13 @@
 
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
+import 'package:gallery/src/pages/anime/anime_info_page.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:isar/isar.dart';
 
 import 'saved_anime_entry.dart';
@@ -18,7 +21,8 @@ import 'saved_anime_entry.dart';
 part 'watched_anime_entry.g.dart';
 
 @collection
-class WatchedAnimeEntry extends AnimeEntry implements IsarEntryId {
+class WatchedAnimeEntry extends AnimeEntry
+    implements IsarEntryId, Pressable<WatchedAnimeEntry> {
   WatchedAnimeEntry({
     required this.date,
     required super.explicit,
@@ -123,6 +127,24 @@ class WatchedAnimeEntry extends AnimeEntry implements IsarEntryId {
     );
   }
 
+  @override
+  void onPress(
+    BuildContext context,
+    GridFunctionality<WatchedAnimeEntry> functionality,
+    WatchedAnimeEntry cell,
+    int idx,
+  ) {
+    Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        return AnimeInfoPage(
+          id: cell.id,
+          entry: cell,
+          apiFactory: cell.site.api,
+        );
+      },
+    ));
+  }
+
   void save() {
     Dbs.g.anime.writeTxnSync(
         () => Dbs.g.anime.watchedAnimeEntrys.putBySiteIdSync(this));
@@ -149,6 +171,16 @@ class WatchedAnimeEntry extends AnimeEntry implements IsarEntryId {
   static List<WatchedAnimeEntry> get all =>
       Dbs.g.anime.watchedAnimeEntrys.where().findAllSync();
 
+  static void update(AnimeEntry e) {
+    final prev = maybeGet(e.id, e.site);
+
+    if (prev == null) {
+      return;
+    }
+
+    prev.copySuper(e).save();
+  }
+
   static void read(WatchedAnimeEntry entry) {
     Dbs.g.anime.writeTxnSync(
         () => Dbs.g.anime.watchedAnimeEntrys.putBySiteIdSync(entry));
@@ -169,13 +201,12 @@ class WatchedAnimeEntry extends AnimeEntry implements IsarEntryId {
     SavedAnimeEntry.addAll(entries.cast());
   }
 
-  static void moveAll(List<SavedAnimeEntry> entries) {
-    SavedAnimeEntry.deleteAll(entries);
+  static void moveAll(List<AnimeEntry> entries) {
+    SavedAnimeEntry.deleteAll(entries.map((e) => (e.site, e.id)).toList());
 
     Dbs.g.anime
         .writeTxnSync(() => Dbs.g.anime.watchedAnimeEntrys.putAllBySiteIdSync(
               entries
-                  .cast<SavedAnimeEntry>()
                   .map((entry) => WatchedAnimeEntry(
                         type: entry.type,
                         explicit: entry.explicit,
@@ -210,11 +241,15 @@ class WatchedAnimeEntry extends AnimeEntry implements IsarEntryId {
         .listen(f);
   }
 
-  StreamSubscription<WatchedAnimeEntry?> watch(
-      void Function(WatchedAnimeEntry?) f,
+  static StreamSubscription<WatchedAnimeEntry?> watchSingle(
+      int id, AnimeMetadata site, void Function(WatchedAnimeEntry?) f,
       [bool fire = false]) {
     return Dbs.g.anime.watchedAnimeEntrys
-        .watchObject(isarId!, fireImmediately: fire)
-        .listen(f);
+        .where()
+        .siteIdEqualTo(site, id)
+        .watchLazy(fireImmediately: fire)
+        .map((event) {
+      return maybeGet(id, site);
+    }).listen(f);
   }
 }

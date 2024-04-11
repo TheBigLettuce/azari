@@ -13,7 +13,7 @@ import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 import 'package:gallery/src/interfaces/anime/anime_entry.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/pages/anime/info_pages/discover_anime_info_page.dart';
+import 'package:gallery/src/pages/anime/anime_info_page.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
 import 'package:isar/isar.dart';
 
@@ -89,12 +89,17 @@ class SavedAnimeEntry extends AnimeEntry
   Id? isarId;
 
   @override
-  void onPress(BuildContext context,
-      GridFunctionality<AnimeEntry> functionality, AnimeEntry cell, int idx) {
+  void onPress(
+      BuildContext context,
+      GridFunctionality<SavedAnimeEntry> functionality,
+      SavedAnimeEntry cell,
+      int idx) {
     Navigator.push(context, MaterialPageRoute(
       builder: (context) {
-        return DiscoverAnimeInfoPage(
+        return AnimeInfoPage(
+          id: cell.id,
           entry: cell,
+          apiFactory: cell.site.api,
         );
       },
     ));
@@ -229,6 +234,16 @@ class SavedAnimeEntry extends AnimeEntry
   static SavedAnimeEntry? maybeGet(int id, AnimeMetadata site) =>
       Dbs.g.anime.savedAnimeEntrys.getBySiteIdSync(site, id);
 
+  static void update(AnimeEntry e) {
+    final prev = maybeGet(e.id, e.site);
+
+    if (prev == null) {
+      return;
+    }
+
+    prev.copySuper(e).save();
+  }
+
   static int count() => Dbs.g.anime.savedAnimeEntrys.countSync();
 
   static (bool, bool) isWatchingBacklog(int id, AnimeMetadata site) {
@@ -241,9 +256,10 @@ class SavedAnimeEntry extends AnimeEntry
     return (true, e.inBacklog);
   }
 
-  static void deleteAll(List<IsarEntryId> ids) {
+  static void deleteAll(List<(AnimeMetadata, int)> ids) {
     Dbs.g.anime.writeTxnSync(() => Dbs.g.anime.savedAnimeEntrys
-        .deleteAllSync(ids.map((e) => e.isarId!).toList()));
+        .deleteAllBySiteIdSync(
+            ids.map((e) => e.$1).toList(), ids.map((e) => e.$2).toList()));
   }
 
   static void deleteAllIds(List<(int, AnimeMetadata)> ids) {

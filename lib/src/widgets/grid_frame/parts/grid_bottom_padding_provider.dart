@@ -9,18 +9,20 @@ import 'package:flutter/material.dart';
 
 class GridBottomPaddingProvider extends InheritedWidget {
   final double padding;
+  final double fab;
 
   const GridBottomPaddingProvider({
     super.key,
     required this.padding,
+    required this.fab,
     required super.child,
   });
 
-  static double of(BuildContext context) {
+  static double of(BuildContext context, [bool includeFab = false]) {
     final widget =
         context.dependOnInheritedWidgetOfExactType<GridBottomPaddingProvider>();
 
-    return widget!.padding;
+    return widget!.padding + (includeFab ? widget.fab : 0.0);
   }
 
   @override

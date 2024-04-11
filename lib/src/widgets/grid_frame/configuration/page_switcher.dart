@@ -110,34 +110,39 @@ class _LabelSwitcherWidgetState extends State<LabelSwitcherWidget>
     final pages = widget.pages;
     final currentPage = widget.currentPage();
 
-    final child = Row(
-      children: pages.indexed.map((value) {
-        final (idx, label) = value;
+    final child = FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: pages.indexed.map((value) {
+          final (idx, label) = value;
 
-        return Padding(
-          padding: const EdgeInsets.only(right: 8) +
-              (widget.noHorizontalPadding
-                  ? EdgeInsets.zero
-                  : const EdgeInsets.only(top: 40)),
-          child: GestureDetector(
-            onTap: idx == currentPage
-                ? null
-                : () {
-                    controller.reverse().then((value) {
-                      widget.switchPage(idx);
+          return Padding(
+            padding: const EdgeInsets.only(right: 8) +
+                (widget.noHorizontalPadding
+                    ? EdgeInsets.zero
+                    : const EdgeInsets.only(top: 40)),
+            child: GestureDetector(
+              onTap: idx == currentPage
+                  ? null
+                  : () {
+                      controller.reverse().then((value) {
+                        widget.switchPage(idx);
 
-                      controller.value = 1;
-                    });
-                  },
-            child: _Label(
-              count: label.count,
-              text: label.label,
-              isSelected: idx == currentPage,
-              controller: controller,
+                        controller.value = 1;
+                      });
+                    },
+              child: _Label(
+                count: label.count,
+                text: label.label,
+                isSelected: idx == currentPage,
+                controller: controller,
+              ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     );
 
     final padding = widget.noHorizontalPadding
