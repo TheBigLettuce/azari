@@ -19,7 +19,8 @@ class ChapterTile extends StatefulWidget {
   final MangaChapter chapter;
   final MangaEntry entry;
   final MangaAPI api;
-  final Color? overlayColor;
+  final Color overlayColor;
+  final Brightness iconColor;
   final void Function() finishRead;
 
   const ChapterTile({
@@ -28,6 +29,7 @@ class ChapterTile extends StatefulWidget {
     required this.entry,
     required this.api,
     required this.overlayColor,
+    required this.iconColor,
     required this.finishRead,
   });
 
@@ -147,7 +149,8 @@ class _ChapterTileState extends State<ChapterTile> {
                             widget.finishRead();
                           }
                         },
-                        overlayColor: widget.overlayColor ?? overlayColor,
+                        overlayColor: widget.overlayColor,
+                        iconColor: widget.iconColor,
                       ),
                     );
                   },

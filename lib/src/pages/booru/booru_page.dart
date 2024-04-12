@@ -228,10 +228,7 @@ class _BooruPageState extends State<BooruPage> {
       inForeground = true;
 
       if (pagingState.api.wouldBecomeStale &&
-          state.settings.autoRefresh &&
-          state.settings.autoRefreshMicroseconds != 0 &&
-          pagingState.needToRefresh(
-              state.settings.autoRefreshMicroseconds.microseconds)) {
+          pagingState.needToRefresh(const Duration(hours: 1))) {
         final gridState = state.gridKey.currentState;
         if (gridState != null) {
           gridState.resetFab();
@@ -276,10 +273,7 @@ class _BooruPageState extends State<BooruPage> {
     ));
 
     if (pagingState.api.wouldBecomeStale &&
-        state.settings.autoRefresh &&
-        state.settings.autoRefreshMicroseconds != 0 &&
-        pagingState.needToRefresh(
-            state.settings.autoRefreshMicroseconds.microseconds)) {
+        pagingState.needToRefresh(const Duration(hours: 1))) {
       pagingState.mainGrid
           .writeTxnSync(() => pagingState.mainGrid.posts.clearSync());
       pagingState.refreshingStatus.mutation.cellCount = 0;
@@ -446,14 +440,16 @@ class _BooruPageState extends State<BooruPage> {
         pagingState.updateTime();
 
         if (mainGrid.posts.countSync() - oldCount < 3) {
-          return await _addLast(repeatCount + 1);
+          return _addLast(repeatCount + 1);
         }
       }
     } catch (e, trace) {
       _log.logDefaultImportant(
-          "_addLast on grid ${state.settings.selectedBooru.string}"
+          "_addLast on grid ${state.settings.selectedBooru.string}, try: $repeatCount"
               .errorMessage(e),
           trace);
+
+      return _addLast(repeatCount + 1);
     }
 
     return mainGrid.posts.count();
@@ -512,7 +508,12 @@ class _BooruPageState extends State<BooruPage> {
                   );
                 },
                 registerNotifiers: (child) => OnBooruTagPressed(
-                  onPressed: _onBooruTagPressed,
+                  onPressed: (context, booru, value, safeMode) {
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+
+                    _onBooruTagPressed(context, booru, value, safeMode);
+                  },
                   child: BooruAPINotifier(
                     api: pagingState.api,
                     child: child,

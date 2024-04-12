@@ -119,8 +119,8 @@ class DownloadFile implements CellBase, Thumbnailable, IsarEntryId {
     return Dbs.g.main.downloadFiles
         .filter()
         .inProgressEqualTo(false)
-        // .or()
-        // .isFailedEqualTo(true)
+        .and()
+        .isFailedEqualTo(false)
         .findFirstSync();
   }
 
@@ -135,9 +135,9 @@ class DownloadFile implements CellBase, Thumbnailable, IsarEntryId {
     }
 
     return Dbs.g.main.downloadFiles
-        .where()
+        .filter()
         .inProgressEqualTo(false)
-        .or()
+        .and()
         .isFailedEqualTo(false)
         .sortByDateDesc()
         .limit(6 - minus)

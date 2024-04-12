@@ -39,6 +39,7 @@ import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/make_tags.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/widgets/notifiers/pause_video.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 
 import '../../db/schemas/settings/settings.dart';
@@ -216,6 +217,8 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
 
             Navigator.of(context).pop();
 
+            _subscription?.cancel();
+
             return;
           });
         },
@@ -253,6 +256,8 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
   void _onBooruTagPressed(BuildContext context, Booru booru, String tag,
       SafeMode? overrideSafeMode) {
     if (overrideSafeMode != null) {
+      PauseVideoNotifier.maybePauseOf(context, true);
+
       Navigator.push(context, MaterialPageRoute(
         builder: (context) {
           return BooruSearchPage(
@@ -262,7 +267,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
             overrideSafeMode: overrideSafeMode,
           );
         },
-      ));
+      )).then((value) => PauseVideoNotifier.maybePauseOf(context, false));
 
       return;
     }

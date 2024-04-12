@@ -27,13 +27,15 @@ class AnimeInfoBody extends StatelessWidget {
   final AnimeEntry entry;
   final AnimeAPI api;
   final EdgeInsets viewPadding;
-  final Color? overlayColor;
+  final Color overlayColor;
+  final Brightness iconColor;
 
   const AnimeInfoBody({
     super.key,
     required this.entry,
     required this.viewPadding,
     required this.api,
+    required this.iconColor,
     required this.overlayColor,
   });
 
@@ -75,9 +77,17 @@ class AnimeInfoBody extends StatelessWidget {
                   maxWidth: MediaQuery.sizeOf(context).width - 16 - 16),
             ),
             AnimeCharactersWidget(
-                entry: entry, api: api, overlayColor: overlayColor),
+              entry: entry,
+              api: api,
+              overlayColor: overlayColor,
+              iconColor: iconColor,
+            ),
             AnimePicturesWidget(
-                entry: entry, api: api, overlayColor: overlayColor),
+              entry: entry,
+              api: api,
+              overlayColor: overlayColor,
+              iconColor: iconColor,
+            ),
             SimilarAnime(entry: entry, api: api),
             AnimeRelations(entry: entry),
           ],
@@ -114,13 +124,15 @@ class AnimeStaff extends StatelessWidget {
 class AnimePicturesWidget extends StatefulWidget {
   final AnimeEntry entry;
   final AnimeAPI api;
-  final Color? overlayColor;
+  final Color overlayColor;
+  final Brightness iconColor;
 
   const AnimePicturesWidget({
     super.key,
     required this.entry,
     required this.api,
     required this.overlayColor,
+    required this.iconColor,
   });
 
   @override
@@ -152,15 +164,13 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
                             width: MediaQuery.sizeOf(context).longestSide * 0.2,
                             child: CustomGridCellWrapper(
                               onPressed: (context) {
-                                final overlayColor = widget.overlayColor ??
-                                    Theme.of(context).colorScheme.background;
-
                                 ImageView.launchWrapped(
                                   context,
                                   snapshot.data!.length,
                                   (context, i) =>
                                       snapshot.data![i].openImage(context),
-                                  overlayColor,
+                                  widget.overlayColor,
+                                  widget.iconColor,
                                   startingCell: e.$1,
                                 );
                               },

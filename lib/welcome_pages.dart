@@ -181,7 +181,7 @@ class _WelcomePageState extends State<WelcomePage> {
     super.initState();
 
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      changeSystemUiOverlay(context);
+      changeSystemUiOverlayContext(context);
     });
   }
 

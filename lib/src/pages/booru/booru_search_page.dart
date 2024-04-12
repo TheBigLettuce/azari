@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
+import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
@@ -20,6 +21,7 @@ import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/pages/booru/booru_page.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/pages/booru/add_to_bookmarks_button.dart';
@@ -72,6 +74,7 @@ class BooruSearchPage extends StatefulWidget {
 class _BooruSearchPageState extends State<BooruSearchPage> {
   static const _log = LogTarget.booru;
 
+  late final StreamSubscription blacklistedWatcher;
   late final StreamSubscription<Settings?> settingsWatcher;
   late final StreamSubscription favoritesWatcher;
   late final Dio client = BooruAPI.defaultClientForBooru(widget.booru);
@@ -138,8 +141,12 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
     favoritesWatcher = Dbs.g.main.favoriteBoorus
         .watchLazy(fireImmediately: false)
         .listen((event) {
-      // state.imageViewKey.currentState?.setState(() {});
+      state.refreshingStatus.mutation.notify();
       setState(() {});
+    });
+
+    blacklistedWatcher = HiddenBooruPost.watch((_) {
+      state.refreshingStatus.mutation.notify();
     });
   }
 
@@ -147,6 +154,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
   void dispose() {
     settingsWatcher.cancel();
     favoritesWatcher.cancel();
+    blacklistedWatcher.cancel();
 
     client.close();
     search.dispose();
@@ -256,9 +264,11 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
       }
     } catch (e, trace) {
       _log.logDefaultImportant(
-          "_addLast on grid ${state.settings.selectedBooru.string}"
+          "_addLast on grid ${state.settings.selectedBooru.string}, try: $repeatCount"
               .errorMessage(e),
           trace);
+
+      return _addLast(repeatCount + 1);
     }
 
     return instance.posts.count();

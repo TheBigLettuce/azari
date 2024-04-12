@@ -11,13 +11,15 @@ import 'package:gallery/src/interfaces/anime/anime_api.dart';
 
 class AnimeInfoTheme extends StatelessWidget {
   final AnimeSafeMode mode;
-  final Color? overlayColor;
+  final Color overlayColor;
+  final Brightness iconBrightness;
   final Widget child;
 
   const AnimeInfoTheme({
     super.key,
     required this.mode,
     required this.overlayColor,
+    required this.iconBrightness,
     required this.child,
   });
 
@@ -43,6 +45,7 @@ class AnimeInfoTheme extends StatelessWidget {
         mode: mode,
         child: _RestoreSysOvColor(
           color: overlayColor,
+          iconBrightness: iconBrightness,
           child: child,
         ),
       ),
@@ -101,12 +104,14 @@ class _ButtonsThemes extends StatelessWidget {
 }
 
 class _RestoreSysOvColor extends StatefulWidget {
-  final Color? color;
+  final Color color;
+  final Brightness iconBrightness;
   final Widget child;
 
   const _RestoreSysOvColor({
     super.key,
     required this.color,
+    required this.iconBrightness,
     required this.child,
   });
 
@@ -120,14 +125,17 @@ class __RestoreSysOvColorState extends State<_RestoreSysOvColor> {
     super.initState();
 
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      changeSystemUiOverlay(context);
+      changeSystemUiOverlayContext(context);
     });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      changeSystemUiOverlay(null, widget.color);
+      changeSystemUiOverlayColor(
+        background: widget.color,
+        iconColor: widget.iconBrightness,
+      );
     });
 
     super.dispose();

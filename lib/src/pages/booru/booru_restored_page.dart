@@ -13,6 +13,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_booru_paging.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
+import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
@@ -21,6 +22,7 @@ import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
 import 'package:gallery/src/pages/booru/booru_page.dart';
 import 'package:gallery/src/pages/booru/booru_search_page.dart';
 import 'package:gallery/src/pages/home.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/pages/more/tags/tags_widget.dart';
@@ -29,6 +31,7 @@ import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behavio
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
 import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
+import 'package:gallery/src/widgets/notifiers/pause_video.dart';
 import 'package:gallery/src/widgets/search_bar/search_launch_grid.dart';
 import 'package:gallery/src/widgets/search_bar/search_launch_grid_data.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
@@ -156,6 +159,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
 
   late final StreamSubscription<Settings?> settingsWatcher;
   late final StreamSubscription favoritesWatcher;
+  late final StreamSubscription blacklistedWatcher;
 
   late final SearchLaunchGrid search;
 
@@ -196,13 +200,18 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
     favoritesWatcher = Dbs.g.main.favoriteBoorus
         .watchLazy(fireImmediately: false)
         .listen((event) {
-      // state.imageViewKey.currentState?.setState(() {});
+      state.refreshingStatus.mutation.notify();
       setState(() {});
+    });
+
+    blacklistedWatcher = HiddenBooruPost.watch((_) {
+      state.refreshingStatus.mutation.notify();
     });
   }
 
   @override
   void dispose() {
+    blacklistedWatcher.cancel();
     settingsWatcher.cancel();
     favoritesWatcher.cancel();
 
@@ -296,14 +305,16 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
             .writeTxnSync(() => instance.posts.putAllByIdBooruSync(list.$1));
 
         if (instance.posts.countSync() - oldCount < 3) {
-          return await _addLast(repeatCount + 1);
+          return _addLast(repeatCount + 1);
         }
       }
     } catch (e, trace) {
       _log.logDefaultImportant(
-          "_addLast on grid ${state.settings.selectedBooru.string}"
+          "_addLast on grid ${state.settings.selectedBooru.string}, try: $repeatCount"
               .errorMessage(e),
           trace);
+
+      return _addLast(repeatCount + 1);
     }
 
     return instance.posts.count();
@@ -311,15 +322,18 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
 
   void _onTagPressed(
       BuildContext context, Booru booru, String tag, SafeMode? safeMode) {
+    PauseVideoNotifier.maybePauseOf(context, true);
+
     Navigator.push(context, MaterialPageRoute(
       builder: (context) {
         return BooruSearchPage(
           booru: booru,
           tags: tag,
+          wrapScaffold: true,
           overrideSafeMode: safeMode,
         );
       },
-    ));
+    )).then((value) => PauseVideoNotifier.maybePauseOf(context, false));
   }
 
   @override
@@ -355,17 +369,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                   download: _download,
                   selectionGlue: GlueProvider.generateOf(context)(),
                   refreshingStatus: state.refreshingStatus,
-                  // imageViewDescription: ImageViewDescription(
-                  //   addIconsImage: (post) => [
-                  //     BooruGridActions.favorites(context, post),
-                  //     BooruGridActions.download(context, api.booru)
-                  //   ],
-                  //   imageViewKey: state.imageViewKey,
-                  //   statistics: const ImageViewStatistics(
-                  //     swiped: StatisticsBooru.addSwiped,
-                  //     viewed: StatisticsBooru.addViewed,
-                  //   ),
-                  // ),
                   search: OverrideGridSearchWidget(
                     SearchAndFocus(
                         search.searchWidget(context, hint: api.booru.name),

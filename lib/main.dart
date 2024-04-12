@@ -8,6 +8,8 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -241,18 +243,50 @@ void changeExceptionErrorColors() {
   RenderErrorBox.textStyle = ui.TextStyle(color: Colors.white70);
 }
 
-void changeSystemUiOverlay(BuildContext? context, [Color? override]) {
-  assert(context != null || override != null);
+// void changeSystemUiOverlay(BuildContext? context, [Color? override]) {
+//   assert(context != null || override != null);
+
+//   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+//   SystemChrome.setSystemUIOverlayStyle(
+//     SystemUiOverlayStyle(
+//       systemNavigationBarIconBrightness: ,
+//       systemNavigationBarColor: override?.withOpacity(0.5) ??
+//           Theme.of(context!)
+//               .navigationBarTheme
+//               .backgroundColor
+//               ?.withOpacity(0.5) ??
+//           Theme.of(context!).colorScheme.background.withOpacity(0.5),
+//     ),
+//   );
+// }
+
+void changeSystemUiOverlayContext(BuildContext context) {
+  final theme = Theme.of(context);
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   SystemChrome.setSystemUIOverlayStyle(
     SystemUiOverlayStyle(
-      systemNavigationBarColor: override?.withOpacity(0.5) ??
-          Theme.of(context!)
-              .navigationBarTheme
-              .backgroundColor
-              ?.withOpacity(0.5) ??
-          Theme.of(context!).colorScheme.background.withOpacity(0.5),
+      systemNavigationBarIconBrightness: theme.brightness == ui.Brightness.dark
+          ? ui.Brightness.light
+          : ui.Brightness.dark,
+      systemNavigationBarColor:
+          theme.navigationBarTheme.backgroundColor?.withOpacity(0.5) ??
+              theme.colorScheme.background.withOpacity(0.5),
+    ),
+  );
+}
+
+void changeSystemUiOverlayColor({
+  required Color background,
+  required Brightness iconColor,
+}) {
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(
+    SystemUiOverlayStyle(
+      systemNavigationBarColor: background.withOpacity(0.5),
+      systemNavigationBarIconBrightness: iconColor == ui.Brightness.dark
+          ? ui.Brightness.light
+          : ui.Brightness.dark,
     ),
   );
 }

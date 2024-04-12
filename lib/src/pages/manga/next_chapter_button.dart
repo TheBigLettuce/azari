@@ -21,6 +21,7 @@ class SkipChapterButton extends StatefulWidget {
   final MangaAPI api;
   final String startingChapterId;
   final Color overlayColor;
+  final Brightness iconColor;
   final void Function(int page, MangaImage cell) onNextPage;
   final void Function() reloadChapters;
   final SkipDirection direction;
@@ -31,6 +32,7 @@ class SkipChapterButton extends StatefulWidget {
     required this.startingChapterId,
     required this.api,
     required this.overlayColor,
+    required this.iconColor,
     required this.onNextPage,
     required this.reloadChapters,
     required this.direction,
@@ -136,6 +138,7 @@ class SkipChapterButtonState extends State<SkipChapterButton> {
         reloadChapters: widget.reloadChapters,
         onNextPage: widget.onNextPage,
         overlayColor: widget.overlayColor,
+        iconColor: widget.iconColor,
       ),
       addNextChapterButton: true,
       replace: true,
@@ -181,7 +184,7 @@ class SkipChapterButtonState extends State<SkipChapterButton> {
       );
     }
 
-    _launch(e.id, c.title, c.volume);
+    _launch(e.id, c.title, c.chapter);
   }
 
   @override

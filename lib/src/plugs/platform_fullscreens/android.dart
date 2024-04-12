@@ -5,15 +5,14 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery/main.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
 
 class AndroidFullscreen implements PlatformFullscreensPlug {
   final Color overlayFullscreenColor;
+  final Brightness iconColor;
 
-  bool isOverlaySet = false;
   bool isAppbarShown = true;
 
   @override
@@ -29,23 +28,14 @@ class AndroidFullscreen implements PlatformFullscreensPlug {
 
   @override
   void unfullscreen() {
-    changeSystemUiOverlay(null, overlayFullscreenColor);
-    // SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    // SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-    //   systemNavigationBarColor: overlayFullscreenColor,
-    // ));
+    changeSystemUiOverlayColor(
+      background: overlayFullscreenColor,
+      iconColor: iconColor,
+    );
   }
 
   @override
-  void setTitle(String windowTitle) {
-    if (!isOverlaySet) {
-      isOverlaySet = true;
-      SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle(
-            systemNavigationBarColor: Colors.black.withOpacity(0.5)),
-      );
-    }
-  }
+  void setTitle(String windowTitle) {}
 
-  AndroidFullscreen(this.overlayFullscreenColor);
+  AndroidFullscreen(this.overlayFullscreenColor, this.iconColor);
 }

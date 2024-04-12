@@ -70,7 +70,7 @@ class _HomeState extends State<Home>
     initIcons(this);
 
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      changeSystemUiOverlay(context);
+      changeSystemUiOverlayContext(context);
     });
 
     maybeBeforeYouContinueDialog(context, settings);

@@ -44,7 +44,8 @@ class _LoadingErrorWidgetState extends State<LoadingErrorWidget>
 
   @override
   Widget build(BuildContext context) {
-    IconButton;
+    final theme = Theme.of(context);
+
     if (widget.short) {
       return GestureDetector(
         onTap: () {
@@ -52,8 +53,7 @@ class _LoadingErrorWidgetState extends State<LoadingErrorWidget>
         },
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color:
-                Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.2),
+            color: theme.colorScheme.surfaceVariant.withOpacity(0.2),
           ),
           child: SizedBox.expand(
             child: Center(
@@ -80,25 +80,34 @@ class _LoadingErrorWidgetState extends State<LoadingErrorWidget>
       );
     }
 
-    return Container(
-      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.2),
+    return ColoredBox(
+      color: theme.colorScheme.surfaceVariant.withOpacity(0.1),
       child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              onPressed: widget.refresh,
-              icon: const Icon(Icons.refresh_rounded),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 20, right: 20),
-              child: Text(
-                widget.error,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).iconTheme.color?.withOpacity(0.6)),
+        child: InkWell(
+          onTap: widget.refresh,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(padding: EdgeInsets.only(top: 20)),
+              Icon(
+                Icons.refresh_rounded,
+                color: theme.colorScheme.primary.withOpacity(0.8),
               ),
-            )
-          ],
+              Padding(
+                padding: const EdgeInsets.only(left: 40, right: 40, top: 4),
+                child: Text(
+                  widget.error,
+                  maxLines: 4,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    overflow: TextOverflow.ellipsis,
+                    color: theme.colorScheme.onSurface.withOpacity(0.8),
+                  ),
+                ),
+              ),
+              const Padding(padding: EdgeInsets.only(top: 20)),
+            ],
+          ),
         ),
       ),
     );

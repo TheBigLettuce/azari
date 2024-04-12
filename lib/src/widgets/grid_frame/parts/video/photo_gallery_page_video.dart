@@ -7,10 +7,12 @@
 
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gallery/src/db/schemas/settings/video_settings.dart';
 import 'package:gallery/src/widgets/loading_error_widget.dart';
 import 'package:gallery/src/widgets/notifiers/pause_video.dart';
 import 'package:gallery/src/widgets/grid_frame/parts/video/video_controls.dart';
+import 'package:gallery/src/widgets/notifiers/reload_image.dart';
 import 'package:video_player/video_player.dart';
 
 class PhotoGalleryPageVideo extends StatefulWidget {
@@ -97,6 +99,14 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
     super.dispose();
   }
 
+  String tryFormatError() {
+    if (error is PlatformException) {
+      return (error as PlatformException).message ?? "";
+    }
+
+    return error.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     return PauseVideoNotifier.of(context)
@@ -105,11 +115,10 @@ class _PhotoGalleryPageVideoState extends State<PhotoGalleryPageVideo> {
             isPreviouslyPlayed: controller.value.isPlaying)
         : error != null
             ? LoadingErrorWidget(
-                error: "",
+                error: tryFormatError(),
+                short: false,
                 refresh: () {
-                  setState(() {
-                    error = null;
-                  });
+                  ReloadImageNotifier.of(context);
                 })
             : chewieController == null
                 ? const Center(child: CircularProgressIndicator())

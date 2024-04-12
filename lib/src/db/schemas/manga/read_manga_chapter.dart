@@ -236,7 +236,7 @@ class ReadMangaChapter {
                   Downloader.g.add(
                     DownloadFile.d(
                       name:
-                          "${i.toString()} / ${image.maxPages} - $data.chapterId.${image.url.split(".").last}",
+                          "${i.toString()} / ${image.maxPages} - ${data.chapterId}.${image.url.split(".").last}",
                       url: image.url,
                       thumbUrl: image.url,
                       site: data.mangaTitle,
@@ -244,7 +244,6 @@ class ReadMangaChapter {
                     Settings.fromDb(),
                   );
                 },
-
                 onRightSwitchPageEnd: addNextChapterButton
                     ? () {
                         nextChapterKey.currentState?.findAndLaunchNext();
@@ -256,7 +255,6 @@ class ReadMangaChapter {
                       }
                     : null,
                 pageChange: (state) {
-                  // state.drawCell(state.currentPage, true)
                   ReadMangaChapter.setProgress(
                     state.currentPage + 1,
                     chapterName: data.chapterName,
@@ -268,7 +266,6 @@ class ReadMangaChapter {
                   data.onNextPage(
                       state.currentPage, chapters[state.currentPage]);
                 },
-                // ignoreEndDrawer: true,
                 cellCount: chapters.length,
                 scrollUntill: (_) {},
                 startingCell: p != null ? p - 1 : 0,
@@ -276,6 +273,7 @@ class ReadMangaChapter {
                 getCell: (context, i) => chapters[i].content(context),
                 onNearEnd: null,
                 systemOverlayRestoreColor: data.overlayColor,
+                systemOverlayIconColor: data.iconColor,
               ),
             );
           },
@@ -307,6 +305,7 @@ class ReaderData {
     required this.reloadChapters,
     required this.onNextPage,
     required this.overlayColor,
+    required this.iconColor,
     required this.chapterName,
     required this.chapterNumber,
   });
@@ -325,6 +324,7 @@ class ReaderData {
   final void Function(int page, MangaImage cell) onNextPage;
 
   final Color overlayColor;
+  final Brightness iconColor;
 }
 
 class MangaReaderNotifier extends InheritedWidget {

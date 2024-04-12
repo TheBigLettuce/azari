@@ -24,7 +24,6 @@ enum LogSeverity {
 }
 
 enum LogTarget {
-  init,
   downloader,
   unknown,
   booru,
@@ -161,10 +160,8 @@ class _PrintLogger implements LoggingInterface {
 void initLogger() {
   if (kDebugMode) {
     _current = _PrintLogger();
-    LogTarget.init.logDefault("Logger(print)".messageInit, LogSeverity.init);
   } else {
     _current = const _DummyLogger();
-    LogTarget.init.logDefault("Logger(dummy)".messageInit, LogSeverity.init);
 
     FlutterError.onError = (details) {
       LogTarget.unknown.logDefaultImportant(

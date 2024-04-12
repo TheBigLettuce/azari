@@ -370,7 +370,7 @@ class _SearchAnimePageState<T extends CellBase, I, G>
 
                         WidgetsBinding.instance
                             .addPostFrameCallback((timeStamp) {
-                          changeSystemUiOverlay(context);
+                          changeSystemUiOverlayContext(context);
                         });
 
                         setState(() {});
@@ -434,7 +434,8 @@ class _SearchAnimePageState<T extends CellBase, I, G>
 
     return AnimeInfoTheme(
       mode: mode,
-      overlayColor: Theme.of(context).colorScheme.background,
+      iconBrightness: Theme.of(context).colorScheme.brightness,
+      overlayColor: Theme.of(context).colorScheme.surface,
       child: Builder(
         builder: (context) {
           return body(context);

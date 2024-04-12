@@ -22,13 +22,15 @@ import 'body_segment_label.dart';
 class AnimeCharactersWidget extends StatefulWidget {
   final AnimeEntry entry;
   final AnimeAPI api;
-  final Color? overlayColor;
+  final Color overlayColor;
+  final Brightness iconColor;
 
   const AnimeCharactersWidget({
     super.key,
     required this.entry,
     required this.api,
     required this.overlayColor,
+    required this.iconColor,
   });
 
   @override
@@ -97,14 +99,12 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
                                   GridAspectRatio.zeroFive.value,
                               child: CustomGridCellWrapper(
                                 onPressed: (context) {
-                                  final overlayColor = widget.overlayColor ??
-                                      Theme.of(context).colorScheme.background;
-
                                   ImageView.launchWrapped(
                                     context,
                                     list.length,
                                     (context, i) => list[i].openImage(context),
-                                    overlayColor,
+                                    widget.overlayColor,
+                                    widget.iconColor,
                                     startingCell: e.$1,
                                   );
                                 },

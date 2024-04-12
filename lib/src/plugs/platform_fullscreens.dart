@@ -18,11 +18,12 @@ abstract class PlatformFullscreensPlug {
   void setTitle(String windowTitle);
 }
 
-PlatformFullscreensPlug choosePlatformFullscreenPlug(Color systemOverlayColor) {
+PlatformFullscreensPlug choosePlatformFullscreenPlug(
+    Color systemOverlayColor, Brightness iconColor) {
   if (Platform.isLinux) {
     return LinuxFullscreen();
   } else if (Platform.isAndroid) {
-    return AndroidFullscreen(systemOverlayColor);
+    return AndroidFullscreen(systemOverlayColor, iconColor);
   } else {
     return DummyPlatformFullscreen();
   }

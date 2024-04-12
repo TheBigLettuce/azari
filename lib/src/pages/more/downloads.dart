@@ -89,11 +89,7 @@ class _DownloadsState extends State<Downloads> {
         hidePinnedIcon: true,
         limitLabelChildren: 6,
         injectedLabel: "",
-        segment: (cell) {
-          final p = Downloader.g.downloadDescription(cell);
-          // print(p);
-          return p;
-        },
+        segment: Downloader.g.downloadDescription,
         onLabelPressed: (label, children) {
           if (children.isEmpty) {
             return;

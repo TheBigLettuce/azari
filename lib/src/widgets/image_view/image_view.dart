@@ -76,6 +76,7 @@ class ImageView extends StatefulWidget {
   final Future<int> Function()? onNearEnd;
   final void Function(int i)? download;
   final Color systemOverlayRestoreColor;
+  final Brightness systemOverlayIconColor;
   final void Function(ImageViewState state)? pageChange;
   final void Function()? onExit;
 
@@ -96,7 +97,8 @@ class ImageView extends StatefulWidget {
     BuildContext context,
     int cellCount,
     Contentable Function(BuildContext, int) cell,
-    Color overlayColor, {
+    Color overlayColor,
+    Brightness iconColor, {
     int startingCell = 0,
     void Function(int)? download,
     Key? key,
@@ -115,6 +117,7 @@ class ImageView extends StatefulWidget {
             getCell: cell,
             onNearEnd: null,
             systemOverlayRestoreColor: overlayColor,
+            systemOverlayIconColor: iconColor,
           ),
         );
       },
@@ -127,8 +130,8 @@ class ImageView extends StatefulWidget {
     ImageViewDescription<T> imageDesctipion,
     int startingCell,
   ) {
-    final overlayColor =
-        Theme.of(gridContext).colorScheme.background.withOpacity(0.5);
+    final overlayColor = Theme.of(gridContext).colorScheme.surface;
+    final iconColor = Theme.of(gridContext).colorScheme.brightness;
 
     final tryScroll = GridExtrasNotifier.of(gridContext);
 
@@ -144,6 +147,7 @@ class ImageView extends StatefulWidget {
         statistics: imageDesctipion.statistics,
         registerNotifiers: functionality.registerNotifiers,
         systemOverlayRestoreColor: overlayColor,
+        systemOverlayIconColor: iconColor,
         scrollUntill: tryScroll,
         pageChange: imageDesctipion.pageChange,
         onExit: imageDesctipion.onExit,
@@ -174,6 +178,7 @@ class ImageView extends StatefulWidget {
     required this.getCell,
     required this.onNearEnd,
     required this.systemOverlayRestoreColor,
+    required this.systemOverlayIconColor,
     this.pageChange,
     this.download,
     this.registerNotifiers,
@@ -205,7 +210,8 @@ class ImageViewState extends State<ImageView>
       PageController(initialPage: widget.startingCell);
 
   late final PlatformFullscreensPlug fullscreenPlug =
-      choosePlatformFullscreenPlug(widget.systemOverlayRestoreColor);
+      choosePlatformFullscreenPlug(
+          widget.systemOverlayRestoreColor, widget.systemOverlayIconColor);
 
   StreamSubscription<int>? _updates;
 
@@ -225,7 +231,7 @@ class ImageViewState extends State<ImageView>
     _updates = widget.updates?.call((c) {
       if (c <= 0) {
         key.currentState?.closeEndDrawer();
-        Navigator.pop(widget.gridContext ?? context);
+        Navigator.of(context, rootNavigator: false).pop();
 
         return;
       }
@@ -307,6 +313,15 @@ class ImageViewState extends State<ImageView>
 
   void refreshImage([bool refreshPalette = false]) {
     refreshTries += 1;
+
+    loadCells(currentPage, cellCount);
+
+    final c = drawCell(currentPage, true);
+    if (c is NetImage) {
+      c.provider.evict();
+    } else if (c is NetGif) {
+      c.provider.evict();
+    }
 
     if (refreshPalette) {
       this.refreshPalette();
@@ -405,6 +420,7 @@ class ImageViewState extends State<ImageView>
             bottomAppBar: const ImageViewBottomAppBar(),
             mainFocus: mainFocus,
             child: ImageViewBody(
+              key: ValueKey(refreshTries),
               onPressedLeft: drawCell(currentPage, true) is NetVideo ||
                       drawCell(currentPage, true) is AndroidVideo
                   ? null

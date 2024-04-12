@@ -324,7 +324,12 @@ class SegmentLayout<T extends CellBase>
 
     segMap.removeWhere((key, value) {
       if (value.$1.length == 1 && !value.$2.contains(SegmentModifier.sticky)) {
+        if (value.$2.contains(SegmentModifier.blur)) {
+          return false;
+        }
+
         unsegmented.add(value.$1[0]);
+
         return true;
       }
 
@@ -444,7 +449,6 @@ class SegmentLayout<T extends CellBase>
             columns: columns,
             aspectRatio: aspectRatio,
           ),
-        // _CellsProvided<Cell>() => throw UnimplementedError(),
         _HeaderWithCells<CellBase>() => throw UnimplementedError(),
       });
     }

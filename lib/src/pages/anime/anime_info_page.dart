@@ -191,11 +191,13 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
 
   @override
   Widget build(BuildContext context) {
-    final overlayColor = Theme.of(context).colorScheme.background;
+    final overlayColor = Theme.of(context).colorScheme.surface;
+    final iconBrightness = Theme.of(context).colorScheme.brightness;
 
     return AnimeInfoTheme(
       mode: entry.explicit,
       overlayColor: overlayColor,
+      iconBrightness: iconBrightness,
       child: SettingsSkeleton(
         AppLocalizations.of(context)!.watchingTab,
         widget.state,
@@ -326,6 +328,7 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                     overlayColor: overlayColor,
                     entry: entry,
                     api: api,
+                    iconColor: iconBrightness,
                     viewPadding: MediaQuery.viewPaddingOf(context),
                   ),
                 ],

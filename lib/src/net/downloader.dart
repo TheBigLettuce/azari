@@ -93,6 +93,7 @@ class Downloader with _CancelTokens, _StatisticsTimer {
   void _done() {
     if (_inWork <= maximum) {
       final f = DownloadFile.next();
+
       if (f != null) {
         f.inprogress().save();
 

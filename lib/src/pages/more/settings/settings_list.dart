@@ -9,7 +9,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
@@ -148,47 +147,7 @@ class _SettingsListState extends State<SettingsList> {
           ),
           subtitle: Text(_settings!.quality.translatedString(context)),
         ),
-        SwitchListTile(
-          value: _settings!.autoRefresh,
-          onChanged: (value) => _settings!.copy(autoRefresh: value).save(),
-          title: Text(AppLocalizations.of(context)!.autoRefresh),
-          subtitle: Text(AppLocalizations.of(context)!.autoRefreshSubtitle),
-        ),
-        ListTile(
-          title: Text(AppLocalizations.of(context)!.autoRefreshHours),
-          subtitle: Text(
-              Duration(microseconds: _settings!.autoRefreshMicroseconds)
-                  .inHours
-                  .toString()),
-          onTap: () {
-            Navigator.push(
-                context,
-                DialogRoute(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      title: Text(AppLocalizations.of(context)!.timeInHours),
-                      content: TextField(
-                        onSubmitted: (value) {
-                          _settings!
-                              .copy(
-                                  autoRefreshMicroseconds:
-                                      int.parse(value).hours.inMicroseconds)
-                              .save();
 
-                          Navigator.pop(context);
-                        },
-                        keyboardType: TextInputType.number,
-                        maxLength: 3,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly
-                        ],
-                      ),
-                    );
-                  },
-                ));
-          },
-        ),
         SettingsLabel(AppLocalizations.of(context)!.miscLabel, titleStyle),
         ListTile(
           title: Text(AppLocalizations.of(context)!.savedTagsCount),
@@ -197,38 +156,41 @@ class _SettingsListState extends State<SettingsList> {
             itemBuilder: (context) {
               return [
                 PopupMenuItem(
+                    enabled: false,
                     child: TextButton(
-                  onPressed: () {
-                    PostTags.g.restore((err) {
-                      if (err != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            duration: 1.minutes,
-                            content: Text(AppLocalizations.of(context)!
-                                .couldntRestoreBackup(err))));
-                      } else {
-                        setState(() {});
-                      }
-                    });
-                  },
-                  child: Text(AppLocalizations.of(context)!.restore),
-                )),
+                      onPressed: () {
+                        PostTags.g.restore((err) {
+                          if (err != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                duration: 1.minutes,
+                                content: Text(AppLocalizations.of(context)!
+                                    .couldntRestoreBackup(err))));
+                          } else {
+                            setState(() {});
+                          }
+                        });
+                      },
+                      child: Text(AppLocalizations.of(context)!.restore),
+                    )),
                 PopupMenuItem(
-                    child: TextButton(
-                  onPressed: () {
-                    PostTags.g.copy((err) {
-                      if (err != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text(AppLocalizations.of(context)!
-                                .couldntBackup(err))));
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text(
-                                AppLocalizations.of(context)!.backupSuccess)));
-                      }
-                    });
-                  },
-                  child: Text(AppLocalizations.of(context)!.backup),
-                )),
+                  enabled: false,
+                  child: TextButton(
+                    onPressed: () {
+                      PostTags.g.copy((err) {
+                        if (err != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text(AppLocalizations.of(context)!
+                                  .couldntBackup(err))));
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text(AppLocalizations.of(context)!
+                                  .backupSuccess)));
+                        }
+                      });
+                    },
+                    child: Text(AppLocalizations.of(context)!.backup),
+                  ),
+                ),
               ];
             },
           ),
@@ -236,67 +198,67 @@ class _SettingsListState extends State<SettingsList> {
         ),
         if (Platform.isAndroid)
           FutureBuilder(
-              future: thumbnailCount,
-              builder: (context, data) {
-                return ListTile(
-                  title: Text(AppLocalizations.of(context)!.thumbnailsCSize),
-                  subtitle: data.hasData
-                      ? Text(_calculateMBSize(data.data!))
-                      : Text(AppLocalizations.of(context)!.loadingPlaceholder),
-                  trailing: PopupMenuButton(
-                    itemBuilder: (context) {
-                      return [
-                        PopupMenuItem(
-                            child: TextButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                      context,
-                                      DialogRoute(
-                                        context: context,
-                                        builder: (context) {
-                                          return AlertDialog(
-                                            title: Text(
+            future: thumbnailCount,
+            builder: (context, data) {
+              return ListTile(
+                title: Text(AppLocalizations.of(context)!.thumbnailsCSize),
+                subtitle: data.hasData
+                    ? Text(_calculateMBSize(data.data!))
+                    : Text(AppLocalizations.of(context)!.loadingPlaceholder),
+                trailing: PopupMenuButton(
+                  itemBuilder: (context) {
+                    return [
+                      PopupMenuItem(
+                        enabled: false,
+                        child: TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                DialogRoute(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: Text(AppLocalizations.of(context)!
+                                          .areYouSure),
+                                      actions: [
+                                        TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                            },
+                                            child: Text(
                                                 AppLocalizations.of(context)!
-                                                    .areYouSure),
-                                            actions: [
-                                              TextButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: Text(
-                                                      AppLocalizations.of(
-                                                              context)!
-                                                          .no)),
-                                              TextButton(
-                                                  onPressed: () {
-                                                    Thumbnail.clear();
+                                                    .no)),
+                                        TextButton(
+                                            onPressed: () {
+                                              Thumbnail.clear();
 
-                                                    PlatformFunctions
-                                                        .clearCachedThumbs();
+                                              PlatformFunctions
+                                                  .clearCachedThumbs();
 
-                                                    thumbnailCount =
-                                                        Future.value(0);
+                                              thumbnailCount = Future.value(0);
 
-                                                    setState(() {});
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: Text(
-                                                      AppLocalizations.of(
-                                                              context)!
-                                                          .yes)),
-                                            ],
-                                          );
-                                        },
-                                      ));
-                                },
-                                child: Text(AppLocalizations.of(context)!
-                                    .purgeThumbnails)))
-                      ];
-                    },
-                    icon: const Icon(Icons.more_horiz_rounded),
-                  ),
-                );
-              }),
+                                              setState(() {});
+                                              Navigator.pop(context);
+                                            },
+                                            child: Text(
+                                                AppLocalizations.of(context)!
+                                                    .yes)),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                            child: Text(
+                                AppLocalizations.of(context)!.purgeThumbnails)),
+                      )
+                    ];
+                  },
+                  icon: const Icon(Icons.more_horiz_rounded),
+                ),
+              );
+            },
+          ),
         if (Platform.isAndroid)
           FutureBuilder(
               future: pinnedThumbnailCount,
@@ -311,6 +273,7 @@ class _SettingsListState extends State<SettingsList> {
                     itemBuilder: (context) {
                       return [
                         PopupMenuItem(
+                            enabled: false,
                             child: TextButton(
                                 onPressed: () {
                                   Navigator.push(

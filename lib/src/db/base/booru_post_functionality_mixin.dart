@@ -115,9 +115,6 @@ class _PostInfoState extends State<PostInfo> {
   late final tagManager = TagManager.fromEnum(post.booru);
 
   void _launchGrid(BuildContext context, String t, [SafeMode? safeMode]) {
-    Navigator.pop(context);
-    Navigator.pop(context);
-
     OnBooruTagPressed.pressOf(context, t, post.booru,
         overrideSafeMode: safeMode);
   }

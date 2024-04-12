@@ -52,17 +52,12 @@ class Settings {
   @enumerated
   final SafeMode safeMode;
 
-  final bool autoRefresh;
-  final int autoRefreshMicroseconds;
-
   final bool showWelcomePage;
 
   const Settings({
     required this.path,
     required this.selectedBooru,
     required this.quality,
-    required this.autoRefresh,
-    required this.autoRefreshMicroseconds,
     required this.safeMode,
     required this.showWelcomePage,
   });
@@ -73,8 +68,6 @@ class Settings {
     DisplayQuality? quality,
     bool? booruListView,
     GridColumn? picturesPerRow,
-    bool? autoRefresh,
-    int? autoRefreshMicroseconds,
     bool? saveTagsOnlyOnDownload,
     bool? expensiveHash,
     SafeMode? safeMode,
@@ -86,9 +79,6 @@ class Settings {
       path: path ?? this.path,
       selectedBooru: selectedBooru ?? this.selectedBooru,
       quality: quality ?? this.quality,
-      autoRefresh: autoRefresh ?? this.autoRefresh,
-      autoRefreshMicroseconds:
-          autoRefreshMicroseconds ?? this.autoRefreshMicroseconds,
       safeMode: safeMode ?? this.safeMode,
     );
   }
@@ -96,8 +86,6 @@ class Settings {
   Settings.empty()
       : showWelcomePage = true,
         path = const SettingsPath(),
-        autoRefresh = false,
-        autoRefreshMicroseconds = 1.hours.inMicroseconds,
         selectedBooru = Booru.gelbooru,
         quality = DisplayQuality.sample,
         safeMode = SafeMode.normal;

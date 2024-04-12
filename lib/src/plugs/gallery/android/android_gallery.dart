@@ -38,6 +38,5 @@ class AndroidGallery implements GalleryPlug {
 void initalizeAndroidGallery(bool temporary) {
   if (_global == null) {
     GalleryApi.setup(_GalleryImpl(temporary));
-    LogTarget.init.logDefault("Android gallery".messageInit, LogSeverity.init);
   }
 }
