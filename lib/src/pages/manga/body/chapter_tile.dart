@@ -119,9 +119,6 @@ class _ChapterTileState extends State<ChapterTile> {
             onTap: widget.chapter.pages == 0
                 ? null
                 : () {
-                    final overlayColor =
-                        Theme.of(context).colorScheme.background;
-
                     if (progress == null) {
                       ReadMangaChapter.setProgress(
                         1,

@@ -17,7 +17,6 @@ import 'package:gallery/src/db/schemas/gallery/blacklisted_directory.dart';
 import 'package:gallery/src/db/schemas/gallery/favorite_booru_post.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_api_directories.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_api_files.dart';
-import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/pages/more/settings/network_status.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
