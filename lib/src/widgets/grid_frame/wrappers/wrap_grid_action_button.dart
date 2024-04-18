@@ -19,7 +19,7 @@ class WrapGridActionButton extends StatefulWidget {
   final Color? color;
   final bool animate;
   final bool play;
-  final bool showOnlyWhenSingle;
+  final BuildContext? whenSingleContext;
 
   const WrapGridActionButton(
     this.icon,
@@ -29,7 +29,7 @@ class WrapGridActionButton extends StatefulWidget {
     this.backgroundColor,
     this.color,
     required this.onLongPress,
-    required this.showOnlyWhenSingle,
+    required this.whenSingleContext,
     required this.play,
     required this.animate,
   });
@@ -45,81 +45,76 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
   Widget build(BuildContext context) {
     final icn = Icon(widget.icon, color: widget.color);
 
-    Widget iconBtn(BuildContext context) {
-      return Padding(
-        padding: const EdgeInsets.only(top: 4, bottom: 4),
-        child: GestureDetector(
-          onLongPress: widget.onLongPress == null
-              ? null
-              : () {
-                  widget.onLongPress!();
-                  HapticFeedback.lightImpact();
-                },
-          child: IconButton(
-            style: ButtonStyle(
-              shape: const MaterialStatePropertyAll(RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.elliptical(10, 10)))),
-              backgroundColor: widget.backgroundColor != null
-                  ? MaterialStatePropertyAll(widget.backgroundColor)
-                  : null,
-            ),
-            onPressed: widget.showOnlyWhenSingle &&
-                    SelectionCountNotifier.countOf(context) != 1
-                ? null
-                : widget.onPressed == null
-                    ? null
-                    : () {
-                        if (widget.animate && widget.play) {
-                          _controller?.reset();
-                          _controller
-                              ?.animateTo(1)
-                              .then((value) => _controller?.animateBack(0));
-                        }
-                        HapticFeedback.selectionClick();
-                        widget.onPressed!();
-                      },
-            icon: widget.animate
-                ? Animate(
-                    effects: [
-                      ScaleEffect(
-                          duration: 150.ms,
-                          begin: const Offset(1, 1),
-                          end: const Offset(2, 2),
-                          curve: Easing.emphasizedAccelerate),
-                    ],
-                    onInit: (controller) {
-                      _controller = controller;
-                    },
-                    autoPlay: false,
-                    child: widget.addBadge
-                        ? Badge.count(
-                            backgroundColor:
-                                Theme.of(context).colorScheme.primaryContainer,
-                            textColor: Theme.of(context)
-                                .colorScheme
-                                .onPrimaryContainer,
-                            count: SelectionCountNotifier.countOf(context),
-                            child: icn,
-                            // child: iconBtn(context),
-                          )
-                        : icn,
-                  )
-                : widget.addBadge
-                    ? Badge.count(
-                        backgroundColor:
-                            Theme.of(context).colorScheme.primaryContainer,
-                        textColor:
-                            Theme.of(context).colorScheme.onPrimaryContainer,
-                        count: SelectionCountNotifier.countOf(context),
-                        child: icn,
-                        // child: iconBtn(context),
-                      )
-                    : icn,
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 4),
+      child: GestureDetector(
+        onLongPress: widget.onLongPress == null
+            ? null
+            : () {
+                widget.onLongPress!();
+                HapticFeedback.lightImpact();
+              },
+        child: IconButton(
+          style: ButtonStyle(
+            shape: const MaterialStatePropertyAll(RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.elliptical(10, 10)))),
+            backgroundColor: widget.backgroundColor != null
+                ? MaterialStatePropertyAll(widget.backgroundColor)
+                : null,
           ),
+          onPressed: widget.whenSingleContext != null &&
+                  SelectionCountNotifier.countOf(widget.whenSingleContext!) != 1
+              ? null
+              : widget.onPressed == null
+                  ? null
+                  : () {
+                      if (widget.animate && widget.play) {
+                        _controller?.reset();
+                        _controller
+                            ?.animateTo(1)
+                            .then((value) => _controller?.animateBack(0));
+                      }
+                      HapticFeedback.selectionClick();
+                      widget.onPressed!();
+                    },
+          icon: widget.animate
+              ? Animate(
+                  effects: [
+                    ScaleEffect(
+                        duration: 150.ms,
+                        begin: const Offset(1, 1),
+                        end: const Offset(2, 2),
+                        curve: Easing.emphasizedAccelerate),
+                  ],
+                  onInit: (controller) {
+                    _controller = controller;
+                  },
+                  autoPlay: false,
+                  child: widget.addBadge
+                      ? Badge.count(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primaryContainer,
+                          textColor:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
+                          count: SelectionCountNotifier.countOf(context),
+                          child: icn,
+                          // child: iconBtn(context),
+                        )
+                      : icn,
+                )
+              : widget.addBadge
+                  ? Badge.count(
+                      backgroundColor:
+                          Theme.of(context).colorScheme.primaryContainer,
+                      textColor:
+                          Theme.of(context).colorScheme.onPrimaryContainer,
+                      count: SelectionCountNotifier.countOf(context),
+                      child: icn,
+                      // child: iconBtn(context),
+                    )
+                  : icn,
         ),
-      );
-    }
-
-    return iconBtn(context);
+      ),
+    );
   }
 }

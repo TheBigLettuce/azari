@@ -74,7 +74,7 @@ class SelectionGlueState {
                     selection.use(e.onLongPress!, e.closeOnPress);
                   },
             play: e.play,
-            showOnlyWhenSingle: e.showOnlyWhenSingle,
+            whenSingleContext: e.showOnlyWhenSingle ? context : null,
           ),
           c
         );

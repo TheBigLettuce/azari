@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue_state.dart';
+import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 
 class GlueBottomAppBar extends StatelessWidget {
   final SelectionGlueState glue;
@@ -22,10 +23,11 @@ class GlueBottomAppBar extends StatelessWidget {
       fit: StackFit.passthrough,
       children: [
         const SizedBox(
-            height: 80,
-            child: AbsorbPointer(
-              child: SizedBox.shrink(),
-            )),
+          height: 80,
+          child: AbsorbPointer(
+            child: SizedBox.shrink(),
+          ),
+        ),
         BottomAppBar(
           color: Theme.of(context).colorScheme.surface.withOpacity(0.95),
           child: Row(

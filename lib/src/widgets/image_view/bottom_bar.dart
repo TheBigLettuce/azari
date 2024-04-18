@@ -67,7 +67,7 @@ class ImageViewBottomAppBar extends StatelessWidget {
                                 color: e.color,
                                 onLongPress: null,
                                 animate: e.animate,
-                                showOnlyWhenSingle: false,
+                                whenSingleContext: null,
                               ),
                             )
                             .toList(),

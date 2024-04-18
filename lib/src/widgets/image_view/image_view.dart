@@ -103,7 +103,7 @@ class ImageView extends StatefulWidget {
     void Function(int)? download,
     Key? key,
   }) {
-    return Navigator.push(context, MaterialPageRoute(
+    return Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
       builder: (context) {
         return GlueProvider.empty(
           context,
