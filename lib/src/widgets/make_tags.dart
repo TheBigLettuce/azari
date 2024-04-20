@@ -9,16 +9,15 @@ import 'dart:async';
 
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru_tagging.dart';
 import 'package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart';
 import 'package:gallery/src/pages/more/settings/radio_dialog.dart';
 import 'package:gallery/src/pages/more/settings/settings_label.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/widgets/notifiers/tag_refresh.dart';
 
 import '../db/tags/post_tags.dart';
 import 'load_tags.dart';
@@ -36,7 +35,7 @@ PopupMenuItem launchGridSafeModeItem(
         radioDialog<SafeMode>(
           context,
           SafeMode.values.map((e) => (e, e.translatedString(context))),
-          Settings.fromDb().safeMode,
+          SettingsService.currentData.safeMode,
           (value) => launchGrid(context, tag, value),
           title: AppLocalizations.of(context)!.chooseSafeMode,
           allowSingle: true,
@@ -52,8 +51,7 @@ class DrawerTagsWidget extends StatefulWidget {
   final void Function(BuildContext, String, [SafeMode?])? launchGrid;
   final BooruTagging? excluded;
   final DisassembleResult? res;
-  final bool showLabel;
-  final bool showTagButtons;
+  final bool addRemoveTag;
 
   const DrawerTagsWidget(
     this.tags,
@@ -62,8 +60,7 @@ class DrawerTagsWidget extends StatefulWidget {
     required this.pinnedTags,
     this.launchGrid,
     this.excluded,
-    this.showLabel = true,
-    required this.showTagButtons,
+    this.addRemoveTag = false,
     required this.res,
   });
 
@@ -114,7 +111,7 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
           tag,
           widget.launchGrid!,
         ),
-      if (widget.showTagButtons)
+      if (widget.addRemoveTag)
         PopupMenuItem(
           onTap: () {
             PostTags.g.removeTag([widget.filename], tag);
@@ -174,7 +171,6 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
     final filename = widget.filename;
     final res = widget.res;
     final pinnedTags = widget.pinnedTags;
-    final showLabel = widget.showLabel;
 
     if (tags.isEmpty) {
       if (filename.isEmpty) {
@@ -203,61 +199,14 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
         .map((e) => makeTile(context, e, true))
         .followedBy(filteredTags.map((e) => makeTile(context, e, false)));
 
-    return SliverList.list(
-      children: [
-        if (showLabel)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              SettingsLabel(
-                AppLocalizations.of(context)!.tagsInfoPage,
-                Theme.of(context).textTheme.titleSmall!.copyWith(
-                      color: Theme.of(context).listTileTheme.textColor,
-                    ),
-              ),
-              if (widget.showTagButtons)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        final notifier = TagRefreshNotifier.maybeOf(context);
-                        PostTags.g.deletePostTags(filename);
-                        notifier?.call();
-                      },
-                      icon: const Icon(Icons.delete_rounded),
-                      visualDensity: VisualDensity.compact,
-                      iconSize: 18,
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        openAddTagDialog(context, (v, delete) {
-                          if (delete) {
-                            PostTags.g.removeTag([filename], v);
-                          } else {
-                            PostTags.g.addTag([filename], v);
-                          }
-                        });
-                      },
-                      icon: const Icon(Icons.add_rounded),
-                      visualDensity: VisualDensity.compact,
-                      iconSize: 18,
-                    ),
-                  ],
-                ),
-            ],
-          )
-        else
-          const Padding(padding: EdgeInsets.only(top: 8)),
-        Padding(
-          padding: const EdgeInsets.only(right: 12, left: 16, bottom: 8),
-          child: Wrap(
-            spacing: 4,
-            children: tiles.toList(),
-          ),
-        )
-      ],
+    return SliverPadding(
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
+      sliver: SliverToBoxAdapter(
+        child: Wrap(
+          spacing: 4,
+          children: tiles.toList(),
+        ),
+      ),
     );
   }
 }

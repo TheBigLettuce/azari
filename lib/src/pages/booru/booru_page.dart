@@ -19,6 +19,7 @@ import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
@@ -53,7 +54,6 @@ import '../../db/tags/post_tags.dart';
 import '../../db/initalize_db.dart';
 import '../../db/schemas/downloader/download_file.dart';
 import '../../db/schemas/booru/post.dart';
-import '../../db/schemas/settings/settings.dart';
 import '../../widgets/search_bar/search_launch_grid_data.dart';
 import '../../widgets/notifiers/booru_api.dart';
 import '../../widgets/search_bar/search_launch_grid.dart';
@@ -159,7 +159,7 @@ class _MainGridPagingState implements PagingEntry, PageSaver {
   }
 
   static PagingEntry prototype() {
-    final settings = Settings.fromDb();
+    final settings = SettingsService.currentData;
     final mainGrid = DbsOpen.primaryGrid(settings.selectedBooru);
 
     return _MainGridPagingState(
@@ -187,7 +187,7 @@ class BooruPage extends StatefulWidget {
 class _BooruPageState extends State<BooruPage> {
   static const _log = LogTarget.booru;
 
-  late final StreamSubscription<Settings?> settingsWatcher;
+  late final StreamSubscription<SettingsData?> settingsWatcher;
   late final StreamSubscription favoritesWatcher;
   late final StreamSubscription timeUpdater;
   late final StreamSubscription bookmarksWatcher;
@@ -281,7 +281,7 @@ class _BooruPageState extends State<BooruPage> {
       pagingState.updateTime();
     }
 
-    settingsWatcher = Settings.watch((s) {
+    settingsWatcher = state.settings.s.watch((s) {
       state.settings = s!;
 
       setState(() {});
@@ -509,7 +509,6 @@ class _BooruPageState extends State<BooruPage> {
                 },
                 registerNotifiers: (child) => OnBooruTagPressed(
                   onPressed: (context, booru, value, safeMode) {
-                    Navigator.pop(context);
                     Navigator.pop(context);
 
                     _onBooruTagPressed(context, booru, value, safeMode);

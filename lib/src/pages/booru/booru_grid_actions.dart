@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/post_base.dart';
 import 'package:gallery/src/db/schemas/booru/post.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 
 import '../../net/downloader.dart';
@@ -53,7 +54,7 @@ class BooruGridActions {
     return GridAction(
       Icons.download,
       (selected) {
-        final settings = Settings.fromDb();
+        final settings = SettingsService.currentData;
 
         PostTags.g.addTagsPostAll(
           selected.map((e) => (e.filename(), e.tags)),
@@ -79,7 +80,7 @@ class BooruGridActions {
     return GridAction(
       Icons.favorite_border_rounded,
       (selected) {
-        Settings.addRemoveFavorites(context, selected, showDeleteSnackbar);
+        IsarSettings.addRemoveFavorites(context, selected, showDeleteSnackbar);
         for (final post in selected) {
           LocalTagDictionary.addAll(post.tags);
         }

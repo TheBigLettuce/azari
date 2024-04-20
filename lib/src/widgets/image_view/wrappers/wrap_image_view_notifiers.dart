@@ -29,6 +29,7 @@ class WrapImageViewNotifiers extends StatefulWidget {
   final void Function([bool refreshPalette]) hardRefresh;
   final BuildContext? gridContext;
   final AnimationController controller;
+  final DraggableScrollableController bottomSheetController;
 
   final Widget child;
 
@@ -40,6 +41,7 @@ class WrapImageViewNotifiers extends StatefulWidget {
     required this.currentCell,
     required this.mainFocus,
     required this.controller,
+    required this.bottomSheetController,
     required this.gridContext,
     required this.child,
   });

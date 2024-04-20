@@ -96,7 +96,7 @@ Future initalizeDb(bool temporary) async {
   ], name: "anime", directory: directoryPath, inspector: false);
 
   final main = Isar.openSync([
-    SettingsSchema,
+    IsarSettingsSchema,
     FavoriteBooruSchema,
     LocalTagDictionarySchema,
     GridStateBooruSchema,

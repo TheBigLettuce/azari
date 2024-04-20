@@ -12,6 +12,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/grid_settings/files.dart';
 import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
@@ -42,7 +43,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/notifiers/pause_video.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 
-import '../../db/schemas/settings/settings.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
 import '../../plugs/gallery.dart';
 import '../../widgets/copy_move_preview.dart';
@@ -83,7 +83,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
 
   final plug = chooseGalleryPlug();
 
-  late final StreamSubscription<Settings?> settingsWatcher;
+  late final StreamSubscription<SettingsData?> settingsWatcher;
 
   late final GalleryFilesExtra extra = widget.api.getExtra()
     ..setRefreshingStatusCallback((i, inRefresh, empty) {
@@ -199,7 +199,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
   void initState() {
     super.initState();
 
-    settingsWatcher = Settings.watch((s) {
+    settingsWatcher = state.settings.s.watch((s) {
       state.settings = s!;
 
       setState(() {});
@@ -272,7 +272,6 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
       return;
     }
 
-    Navigator.pop(context);
     Navigator.pop(context);
 
     search.setFilteringMode(FilteringMode.tag);

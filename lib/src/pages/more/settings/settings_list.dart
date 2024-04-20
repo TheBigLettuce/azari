@@ -14,6 +14,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
 import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/display_quality.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
@@ -21,7 +22,6 @@ import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:gallery/welcome_pages.dart';
 
 import '../../../db/tags/post_tags.dart';
-import '../../../db/schemas/settings/settings.dart';
 import 'radio_dialog.dart';
 import 'settings_label.dart';
 import 'settings_widget.dart';
@@ -39,10 +39,10 @@ class SettingsList extends StatefulWidget {
 }
 
 class _SettingsListState extends State<SettingsList> {
-  late final StreamSubscription<Settings?> _watcher;
+  late final StreamSubscription<SettingsData?> _watcher;
   late final StreamSubscription<MiscSettings?> _miscWatcher;
 
-  Settings? _settings = Settings.fromDb();
+  SettingsData _settings = SettingsService.currentData;
   MiscSettings? _miscSettings = MiscSettings.current;
 
   Future<int>? thumbnailCount =
@@ -55,11 +55,11 @@ class _SettingsListState extends State<SettingsList> {
   void initState() {
     super.initState();
 
-    _watcher = Settings.watch((s) {
+    _watcher = _settings.s.watch((s) {
       setState(() {
-        _settings = s;
+        _settings = s!;
       });
-    }, fire: false);
+    });
 
     _miscWatcher = MiscSettings.watch((s) {
       setState(() {
@@ -76,53 +76,61 @@ class _SettingsListState extends State<SettingsList> {
   }
 
   void showDialog(String s) {
-    Navigator.of(context).push(DialogRoute(
+    Navigator.of(context).push(
+      DialogRoute(
         context: context,
         builder: (context) => AlertDialog(
-              actions: [
-                TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text(AppLocalizations.of(context)!.ok))
-              ],
-              title: Text(AppLocalizations.of(context)!.error),
-              content: Text(s),
-            )));
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(AppLocalizations.of(context)!.ok),
+            )
+          ],
+          title: Text(AppLocalizations.of(context)!.error),
+          content: Text(s),
+        ),
+      ),
+    );
   }
 
-  List<Widget> makeList(BuildContext context, TextStyle titleStyle) => [
-        SettingsLabel(AppLocalizations.of(context)!.booruLabel, titleStyle),
+  List<Widget> makeList(BuildContext context, TextStyle titleStyle,
+          AppLocalizations localizations) =>
+      [
+        SettingsLabel(localizations.booruLabel, titleStyle),
         MenuWrapper(
-          title: _settings!.path.path,
+          title: _settings.path.path,
           child: ListTile(
-            title: Text(AppLocalizations.of(context)!.downloadDirectorySetting),
-            subtitle: Text(_settings!.path.pathDisplay),
+            title: Text(localizations.downloadDirectorySetting),
+            subtitle: Text(_settings.path.pathDisplay),
             onTap: () async {
-              await Settings.chooseDirectory(
+              await SettingsService.db.chooseDirectory(
                 showDialog,
-                emptyResult: AppLocalizations.of(context)!.emptyResult,
-                pickDirectory: AppLocalizations.of(context)!.pickDirectory,
-                validDirectory:
-                    AppLocalizations.of(context)!.chooseValidDirectory,
+                emptyResult: localizations.emptyResult,
+                pickDirectory: localizations.pickDirectory,
+                validDirectory: localizations.chooseValidDirectory,
               );
             },
           ),
         ),
         ListTile(
-          title: Text(AppLocalizations.of(context)!.selectedBooruSetting),
-          subtitle: Text(_settings!.selectedBooru.string),
+          title: Text(localizations.selectedBooruSetting),
+          subtitle: Text(_settings.selectedBooru.string),
           onTap: () => radioDialog(
-              context,
-              Booru.values.map((e) => (e, e.string)),
-              _settings!.selectedBooru, (value) {
-            if (value != null && value != _settings!.selectedBooru) {
-              selectBooru(context, _settings!, value);
-            }
-          }, title: AppLocalizations.of(context)!.selectedBooruSetting),
+            context,
+            Booru.values.map((e) => (e, e.string)),
+            _settings.selectedBooru,
+            (value) {
+              if (value != null && value != _settings.selectedBooru) {
+                selectBooru(context, _settings, value);
+              }
+            },
+            title: localizations.selectedBooruSetting,
+          ),
         ),
         ListTile(
-          title: Text(AppLocalizations.of(context)!.settingsTheme),
+          title: Text(localizations.settingsTheme),
           onTap: () => radioDialog(
             context,
             ThemeType.values.map((e) => (e, e.translatedString(context))),
@@ -132,63 +140,70 @@ class _SettingsListState extends State<SettingsList> {
                 selectTheme(context, _miscSettings!, value);
               }
             },
-            title: AppLocalizations.of(context)!.settingsTheme,
+            title: localizations.settingsTheme,
           ),
           subtitle: Text(_miscSettings!.themeType.translatedString(context)),
         ),
         ListTile(
-          title: Text(AppLocalizations.of(context)!.imageDisplayQualitySetting),
+          title: Text(localizations.imageDisplayQualitySetting),
           onTap: () => radioDialog(
             context,
             DisplayQuality.values.map((e) => (e, e.translatedString(context))),
-            _settings!.quality,
-            (value) => _settings!.copy(quality: value).save(),
-            title: AppLocalizations.of(context)!.imageDisplayQualitySetting,
+            _settings.quality,
+            (value) => _settings.copy(quality: value).save(),
+            title: localizations.imageDisplayQualitySetting,
           ),
-          subtitle: Text(_settings!.quality.translatedString(context)),
+          subtitle: Text(_settings.quality.translatedString(context)),
         ),
-
-        SettingsLabel(AppLocalizations.of(context)!.miscLabel, titleStyle),
+        SettingsLabel(localizations.miscLabel, titleStyle),
         ListTile(
-          title: Text(AppLocalizations.of(context)!.savedTagsCount),
+          title: Text(localizations.savedTagsCount),
           trailing: PopupMenuButton(
             icon: const Icon(Icons.more_horiz_outlined),
             itemBuilder: (context) {
               return [
                 PopupMenuItem(
-                    enabled: false,
-                    child: TextButton(
-                      onPressed: () {
-                        PostTags.g.restore((err) {
-                          if (err != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                duration: 1.minutes,
-                                content: Text(AppLocalizations.of(context)!
-                                    .couldntRestoreBackup(err))));
-                          } else {
-                            setState(() {});
-                          }
-                        });
-                      },
-                      child: Text(AppLocalizations.of(context)!.restore),
-                    )),
+                  enabled: false,
+                  child: TextButton(
+                    onPressed: () {
+                      PostTags.g.restore((err) {
+                        if (err != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              duration: 1.minutes,
+                              content:
+                                  Text(localizations.couldntRestoreBackup(err)),
+                            ),
+                          );
+                        } else {
+                          setState(() {});
+                        }
+                      });
+                    },
+                    child: Text(localizations.restore),
+                  ),
+                ),
                 PopupMenuItem(
                   enabled: false,
                   child: TextButton(
                     onPressed: () {
                       PostTags.g.copy((err) {
                         if (err != null) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text(AppLocalizations.of(context)!
-                                  .couldntBackup(err))));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(localizations.couldntBackup(err)),
+                            ),
+                          );
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text(AppLocalizations.of(context)!
-                                  .backupSuccess)));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(localizations.backupSuccess),
+                            ),
+                          );
                         }
                       });
                     },
-                    child: Text(AppLocalizations.of(context)!.backup),
+                    child: Text(localizations.backup),
                   ),
                 ),
               ];
@@ -201,56 +216,51 @@ class _SettingsListState extends State<SettingsList> {
             future: thumbnailCount,
             builder: (context, data) {
               return ListTile(
-                title: Text(AppLocalizations.of(context)!.thumbnailsCSize),
+                title: Text(localizations.thumbnailsCSize),
                 subtitle: data.hasData
-                    ? Text(_calculateMBSize(data.data!))
-                    : Text(AppLocalizations.of(context)!.loadingPlaceholder),
+                    ? Text(_calculateMBSize(data.data!, localizations))
+                    : Text(localizations.loadingPlaceholder),
                 trailing: PopupMenuButton(
                   itemBuilder: (context) {
                     return [
                       PopupMenuItem(
                         enabled: false,
                         child: TextButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                DialogRoute(
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      title: Text(AppLocalizations.of(context)!
-                                          .areYouSure),
-                                      actions: [
-                                        TextButton(
-                                            onPressed: () {
-                                              Navigator.pop(context);
-                                            },
-                                            child: Text(
-                                                AppLocalizations.of(context)!
-                                                    .no)),
-                                        TextButton(
-                                            onPressed: () {
-                                              Thumbnail.clear();
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              DialogRoute(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: Text(localizations.areYouSure),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text(localizations.no)),
+                                      TextButton(
+                                        onPressed: () {
+                                          Thumbnail.clear();
 
-                                              PlatformFunctions
-                                                  .clearCachedThumbs();
+                                          PlatformFunctions.clearCachedThumbs();
 
-                                              thumbnailCount = Future.value(0);
+                                          thumbnailCount = Future.value(0);
 
-                                              setState(() {});
-                                              Navigator.pop(context);
-                                            },
-                                            child: Text(
-                                                AppLocalizations.of(context)!
-                                                    .yes)),
-                                      ],
-                                    );
-                                  },
-                                ),
-                              );
-                            },
-                            child: Text(
-                                AppLocalizations.of(context)!.purgeThumbnails)),
+                                          setState(() {});
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(localizations.yes),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                          child: Text(localizations.purgeThumbnails),
+                        ),
                       )
                     ];
                   },
@@ -264,63 +274,54 @@ class _SettingsListState extends State<SettingsList> {
               future: pinnedThumbnailCount,
               builder: (context, data) {
                 return ListTile(
-                  title:
-                      Text(AppLocalizations.of(context)!.pinnedThumbnailsSize),
+                  title: Text(localizations.pinnedThumbnailsSize),
                   subtitle: data.hasData
-                      ? Text(_calculateMBSize(data.data!))
-                      : Text(AppLocalizations.of(context)!.loadingPlaceholder),
+                      ? Text(_calculateMBSize(data.data!, localizations))
+                      : Text(localizations.loadingPlaceholder),
                   trailing: PopupMenuButton(
                     itemBuilder: (context) {
                       return [
                         PopupMenuItem(
-                            enabled: false,
-                            child: TextButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                      context,
-                                      DialogRoute(
-                                        context: context,
-                                        builder: (context) {
-                                          return AlertDialog(
-                                            title: Text(
-                                                AppLocalizations.of(context)!
-                                                    .areYouSure),
-                                            actions: [
-                                              TextButton(
-                                                  onPressed: () {
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: Text(
-                                                      AppLocalizations.of(
-                                                              context)!
-                                                          .no)),
-                                              TextButton(
-                                                  onPressed: () {
-                                                    PinnedThumbnail.clear();
+                          enabled: false,
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                  context,
+                                  DialogRoute(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        title: Text(localizations.areYouSure),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                            },
+                                            child: Text(localizations.no),
+                                          ),
+                                          TextButton(
+                                            onPressed: () {
+                                              PinnedThumbnail.clear();
 
-                                                    PlatformFunctions
-                                                        .clearCachedThumbs(
-                                                            true);
+                                              PlatformFunctions
+                                                  .clearCachedThumbs(true);
 
-                                                    thumbnailCount =
-                                                        PlatformFunctions
-                                                            .thumbCacheSize(
-                                                                true);
+                                              thumbnailCount = PlatformFunctions
+                                                  .thumbCacheSize(true);
 
-                                                    setState(() {});
-                                                    Navigator.pop(context);
-                                                  },
-                                                  child: Text(
-                                                      AppLocalizations.of(
-                                                              context)!
-                                                          .yes)),
-                                            ],
-                                          );
-                                        },
-                                      ));
-                                },
-                                child: Text(AppLocalizations.of(context)!
-                                    .purgeThumbnails)))
+                                              setState(() {});
+                                              Navigator.pop(context);
+                                            },
+                                            child: Text(localizations.yes),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ));
+                            },
+                            child: Text(localizations.purgeThumbnails),
+                          ),
+                        )
                       ];
                     },
                     icon: const Icon(Icons.more_horiz_rounded),
@@ -330,7 +331,7 @@ class _SettingsListState extends State<SettingsList> {
         SwitchListTile(
           value: _miscSettings!.filesExtendedActions,
           onChanged: (value) => MiscSettings.setFilesExtendedActions(value),
-          title: Text(AppLocalizations.of(context)!.extendedFilesGridActions),
+          title: Text(localizations.extendedFilesGridActions),
         ),
         MenuWrapper(
           title: "GPL-2.0-only",
@@ -342,17 +343,17 @@ class _SettingsListState extends State<SettingsList> {
                 },
               ));
             },
-            title: Text(AppLocalizations.of(context)!.licenseSetting),
+            title: Text(localizations.licenseSetting),
             subtitle: const Text("GPL-2.0-only"),
           ),
         ),
         SwitchListTile(
           value: _miscSettings!.animeAlwaysLoadFromNet,
           onChanged: (value) => MiscSettings.setAnimeAlwaysLoadFromNet(value),
-          title: Text(AppLocalizations.of(context)!.animeAlwaysOnline),
+          title: Text(localizations.animeAlwaysOnline),
         ),
         ListTile(
-          title: Text(AppLocalizations.of(context)!.openWelcomePageSetting),
+          title: Text(localizations.openWelcomePageSetting),
           onTap: () {
             Navigator.push(context, MaterialPageRoute(
               builder: (context) {
@@ -363,25 +364,14 @@ class _SettingsListState extends State<SettingsList> {
             ));
           },
         ),
-        // SwitchListTile(
-        //   title: Text(AppLocalizations.of(context)!.buddhaModeSetting),
-        //   value: _settings!.buddhaMode,
-        //   onChanged: (value) {
-        //     themeChangeStart();
-
-        //     _settings!.copy(buddhaMode: value).save();
-
-        //     RestartWidget.restartApp(context);
-        //   },
-        // )
       ];
 
-  String _calculateMBSize(int i) {
+  String _calculateMBSize(int i, AppLocalizations localizations) {
     if (i == 0) {
-      return AppLocalizations.of(context)!.megabytes(0);
+      return localizations.megabytes(0);
     }
 
-    return AppLocalizations.of(context)!.megabytes((i / (1000 * 1000)));
+    return localizations.megabytes((i / (1000 * 1000)));
   }
 
   @override
@@ -391,12 +381,14 @@ class _SettingsListState extends State<SettingsList> {
         .titleSmall!
         .copyWith(color: Theme.of(context).colorScheme.secondary);
 
+    final localizations = AppLocalizations.of(context)!;
+
     return widget.sliver
         ? SliverList.list(
-            children: makeList(context, titleStyle),
+            children: makeList(context, titleStyle, localizations),
           )
         : ListView(
-            children: makeList(context, titleStyle),
+            children: makeList(context, titleStyle, localizations),
           );
   }
 }

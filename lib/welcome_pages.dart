@@ -10,7 +10,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:gallery/main.dart';
-import 'package:gallery/src/db/schemas/settings/settings.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/display_quality.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
@@ -241,7 +241,7 @@ class CongratulationPage extends StatelessWidget {
               label: Text(AppLocalizations.of(context)!.welcomeFinishLabel),
               icon: const Icon(Icons.check_rounded),
               onPressed: () {
-                Settings.fromDb().copy(showWelcomePage: false).save();
+                SettingsService.currentData.copy(showWelcomePage: false).save();
 
                 if (doNotLaunchHome) {
                   Navigator.pop(context);
@@ -280,7 +280,7 @@ class InitalSettings extends StatefulWidget {
 
 class _InitalSettingsState extends State<InitalSettings> {
   late final StreamSubscription<void> watcher;
-  Settings settings = Settings.fromDb();
+  SettingsData settings = SettingsService.currentData;
 
   String? error;
 
@@ -288,7 +288,7 @@ class _InitalSettingsState extends State<InitalSettings> {
   void initState() {
     super.initState();
 
-    watcher = Settings.watch((s) {
+    watcher = settings.s.watch((s) {
       settings = s!;
 
       error = null;
@@ -340,7 +340,7 @@ class _InitalSettingsState extends State<InitalSettings> {
                   ? const Icon(Icons.check_rounded)
                   : const Icon(Icons.folder),
               onPressed: () {
-                Settings.chooseDirectory(
+                settings.s.chooseDirectory(
                   (e) {
                     error = e;
 
@@ -476,7 +476,7 @@ class _WrapPadding extends StatelessWidget {
                 ),
               ),
             Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(

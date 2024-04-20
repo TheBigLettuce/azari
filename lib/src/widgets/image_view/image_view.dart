@@ -27,7 +27,6 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../interfaces/cell/cell.dart';
 import 'body.dart';
-import 'bottom_bar.dart';
 import 'mixins/page_type_mixin.dart';
 import 'mixins/palette.dart';
 
@@ -196,13 +195,14 @@ class ImageViewState extends State<ImageView>
         ImageViewPageTypeMixin,
         ImageViewPaletteMixin,
         ImageViewLoadingBuilderMixin,
-        SingleTickerProviderStateMixin {
+        TickerProviderStateMixin {
   final mainFocus = FocusNode();
   final GlobalKey<ScaffoldState> key = GlobalKey();
   final GlobalKey<WrapImageViewNotifiersState> wrapNotifiersKey = GlobalKey();
   final GlobalKey<WrapImageViewThemeState> wrapThemeKey = GlobalKey();
 
   late final AnimationController animationController;
+  late final DraggableScrollableController bottomSheetController;
 
   final scrollController = ScrollController();
 
@@ -227,10 +227,10 @@ class ImageViewState extends State<ImageView>
     super.initState();
 
     animationController = AnimationController(vsync: this);
+    bottomSheetController = DraggableScrollableController();
 
     _updates = widget.updates?.call((c) {
       if (c <= 0) {
-        key.currentState?.closeEndDrawer();
         Navigator.of(context, rootNavigator: false).pop();
 
         return;
@@ -262,6 +262,7 @@ class ImageViewState extends State<ImageView>
   @override
   void dispose() {
     animationController.dispose();
+    bottomSheetController.dispose();
     _updates?.cancel();
 
     fullscreenPlug.unfullscreen();
@@ -401,6 +402,7 @@ class ImageViewState extends State<ImageView>
       incr: _incrTiles,
       child: WrapImageViewNotifiers(
         hardRefresh: refreshImage,
+        bottomSheetController: bottomSheetController,
         mainFocus: mainFocus,
         controller: animationController,
         gridContext: widget.gridContext,
@@ -412,39 +414,120 @@ class ImageViewState extends State<ImageView>
           key: wrapThemeKey,
           currentPalette: currentPalette,
           previousPallete: previousPallete,
-          child: WrapImageViewSkeleton(
-            scaffoldKey: key,
-            scrollController: scrollController,
-            controller: animationController,
-            currentPalette: currentPalette,
-            bottomAppBar: const ImageViewBottomAppBar(),
-            mainFocus: mainFocus,
-            child: ImageViewBody(
-              key: ValueKey(refreshTries),
-              onPressedLeft: drawCell(currentPage, true) is NetVideo ||
-                      drawCell(currentPage, true) is AndroidVideo
-                  ? null
-                  : _onPressedLeft,
-              onPressedRight: _onPressedRight,
-              onPageChanged: _onPageChanged,
-              onLongPress: _onLongPress,
-              pageController: controller,
-              loadingBuilder: widget.ignoreLoadingBuilder
-                  ? null
-                  : (context, event, idx) => loadingBuilder(
-                        context,
-                        event,
-                        idx,
-                        currentPage,
-                        wrapNotifiersKey,
-                        drawCell,
-                      ),
-              itemCount: cellCount,
-              onTap: _onTap,
-              builder: galleryBuilder,
+          child: _BottomSheetPopScope(
+            controller: bottomSheetController,
+            child: WrapImageViewSkeleton(
+              scaffoldKey: key,
+              scrollController: scrollController,
+              bottomSheetController: bottomSheetController,
+              controller: animationController,
+              currentPalette: currentPalette,
+              mainFocus: mainFocus,
+              child: ImageViewBody(
+                key: ValueKey(refreshTries),
+                onPressedLeft: drawCell(currentPage, true) is NetVideo ||
+                        drawCell(currentPage, true) is AndroidVideo
+                    ? null
+                    : _onPressedLeft,
+                onPressedRight: _onPressedRight,
+                onPageChanged: _onPageChanged,
+                onLongPress: _onLongPress,
+                pageController: controller,
+                loadingBuilder: widget.ignoreLoadingBuilder
+                    ? null
+                    : (context, event, idx) => loadingBuilder(
+                          context,
+                          event,
+                          idx,
+                          currentPage,
+                          wrapNotifiersKey,
+                          drawCell,
+                        ),
+                itemCount: cellCount,
+                onTap: _onTap,
+                builder: galleryBuilder,
+              ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _BottomSheetPopScope extends StatefulWidget {
+  final DraggableScrollableController controller;
+  final Widget child;
+
+  const _BottomSheetPopScope({
+    super.key,
+    required this.controller,
+    required this.child,
+  });
+
+  @override
+  State<_BottomSheetPopScope> createState() => __BottomSheetPopScopeState();
+}
+
+class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
+  bool ignorePointer = false;
+  double currentPixels = -1;
+
+  @override
+  void initState() {
+    super.initState();
+
+    widget.controller.addListener(listener);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(listener);
+
+    super.dispose();
+  }
+
+  void listener() {
+    if (widget.controller.pixels == currentPixels) {
+      return;
+    }
+
+    WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
+      setState(() {
+        currentPixels = widget.controller.pixels;
+      });
+    });
+  }
+
+  void tryScroll(bool _) {
+    setState(() {
+      ignorePointer = true;
+    });
+
+    widget.controller
+        .animateTo(0,
+            duration: const Duration(milliseconds: 200),
+            curve: Easing.emphasizedAccelerate)
+        .then((value) => setState(() {
+              ignorePointer = false;
+              widget.controller.reset();
+            }));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.controller.isAttached) {
+      return widget.child;
+    }
+
+    return PopScope(
+      canPop: currentPixels.isNegative
+          ? true
+          : WrapImageViewSkeleton.minPixelsFor(context) == currentPixels,
+      onPopInvoked: tryScroll,
+      child: IgnorePointer(
+        ignoring: ignorePointer,
+        child: widget.child,
       ),
     );
   }

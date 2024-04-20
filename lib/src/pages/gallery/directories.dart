@@ -12,6 +12,7 @@ import 'package:gallery/main.dart';
 import 'package:gallery/src/db/schemas/gallery/directory_metadata.dart';
 import 'package:gallery/src/db/schemas/grid_settings/directories.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/gallery/gallery_api_directories.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
@@ -37,7 +38,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
 import 'package:local_auth/local_auth.dart';
 
-import '../../db/schemas/settings/settings.dart';
 import '../../interfaces/filtering/filtering_mode.dart';
 import '../../widgets/skeletons/grid.dart';
 import 'callback_description.dart';
@@ -66,7 +66,7 @@ class GalleryDirectories extends StatefulWidget {
 class _GalleryDirectoriesState extends State<GalleryDirectories> {
   static const _log = LogTarget.gallery;
 
-  late final StreamSubscription<Settings?> settingsWatcher;
+  late final StreamSubscription<SettingsData?> settingsWatcher;
   late final StreamSubscription<MiscSettings?> miscSettingsWatcher;
   late final AppLifecycleListener lifecycleListener;
 
@@ -126,7 +126,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
       },
     );
 
-    settingsWatcher = Settings.watch((s) {
+    settingsWatcher = state.settings.s.watch((s) {
       state.settings = s!;
       setState(() {});
     });

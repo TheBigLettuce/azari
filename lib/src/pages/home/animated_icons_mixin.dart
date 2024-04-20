@@ -47,10 +47,13 @@ mixin _AnimatedIconsMixin on State<Home> {
     animeIconController.dispose();
   }
 
-  List<Widget> icons(BuildContext context, int currentRoute) => [
+  List<Widget> icons(
+          BuildContext context, int currentRoute, SettingsData settings) =>
+      [
         _BooruIcon(
           isSelected: currentRoute == _ChangePageMixin.kBooruPageRoute,
           controller: booruIconController,
+          label: settings.selectedBooru.string,
         ),
         _GalleryIcon(
           isSelected: currentRoute == _ChangePageMixin.kGalleryPageRoute,

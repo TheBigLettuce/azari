@@ -27,59 +27,46 @@ class ImageViewBottomAppBar extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return Animate(
-        effects: const [
-          SlideEffect(
-            duration: Duration(milliseconds: 500),
-            curve: Easing.emphasizedAccelerate,
-            begin: Offset(0, 0),
-            end: Offset(0, 1),
-          )
-        ],
-        autoPlay: false,
-        target: AppBarVisibilityNotifier.of(context) ? 0 : 1,
-        child: IgnorePointer(
-          ignoring: !AppBarVisibilityNotifier.of(context),
-          child: Stack(
-            fit: StackFit.passthrough,
+    return Stack(
+      fit: StackFit.passthrough,
+      children: [
+        const SizedBox(
+          height: 80,
+          child: AbsorbPointer(
+            child: SizedBox.shrink(),
+          ),
+        ),
+        BottomAppBar(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const SizedBox(
-                  height: 80,
-                  child: AbsorbPointer(
-                    child: SizedBox.shrink(),
-                  )),
-              BottomAppBar(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Wrap(
-                        spacing: 4,
-                        children: actions
-                            .map(
-                              (e) => WrapGridActionButton(
-                                e.icon,
-                                () {
-                                  e.onPress(CurrentContentNotifier.of(context));
-                                },
-                                false,
-                                play: e.play,
-                                color: e.color,
-                                onLongPress: null,
-                                animate: e.animate,
-                                whenSingleContext: null,
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    ),
-                    if (stickers.isNotEmpty) FiveStickers(stickers: stickers),
-                  ],
+              Expanded(
+                child: Wrap(
+                  spacing: 4,
+                  children: actions
+                      .map(
+                        (e) => WrapGridActionButton(
+                          e.icon,
+                          () {
+                            e.onPress(CurrentContentNotifier.of(context));
+                          },
+                          false,
+                          play: e.play,
+                          color: e.color,
+                          onLongPress: null,
+                          animate: e.animate,
+                          whenSingleContext: null,
+                        ),
+                      )
+                      .toList(),
                 ),
-              )
+              ),
+              if (stickers.isNotEmpty) FiveStickers(stickers: stickers),
             ],
           ),
-        ));
+        )
+      ],
+    );
   }
 }
 

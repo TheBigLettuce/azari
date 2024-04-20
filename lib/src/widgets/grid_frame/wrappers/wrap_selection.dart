@@ -73,8 +73,6 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
                 return;
               }
 
-              print(SelectionCountNotifier.countOf(context));
-
               selection.selectOrUnselect(context, thisIndx);
             },
             onWillAcceptWithDetails: (data) => true,

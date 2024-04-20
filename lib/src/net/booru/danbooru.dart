@@ -8,6 +8,7 @@
 import 'package:dio/dio.dart';
 import 'package:gallery/src/db/base/post_base.dart';
 import 'package:gallery/src/db/schemas/booru/post.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru/strip_html.dart';
@@ -131,7 +132,7 @@ class Danbooru implements BooruAPI {
     tags = tags.split(" ").take(2).join(" ");
 
     String safeModeS() =>
-        switch (overrideSafeMode ?? Settings.fromDb().safeMode) {
+        switch (overrideSafeMode ?? SettingsService.currentData.safeMode) {
           SafeMode.normal => "rating:g",
           SafeMode.none => '',
           SafeMode.relaxed => "rating:g,s",

@@ -10,7 +10,7 @@ import 'dart:io';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:gallery/src/db/schemas/settings/settings.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
 
@@ -108,7 +108,7 @@ abstract interface class PlatformFunctions {
   static Future<SettingsPath?> chooseDirectory({bool temporary = false}) async {
     return _channel
         .invokeMethod("chooseDirectory", temporary)
-        .then((value) => SettingsPath(
+        .then((value) => SettingsPath.forCurrent(
               path: value["path"],
               pathDisplay: value["pathDisplay"],
             ));

@@ -14,6 +14,7 @@ import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_booru_paging.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
@@ -157,7 +158,7 @@ class RestoredBooruPageState implements PagingEntry {
 class _BooruRestoredPageState extends State<BooruRestoredPage> {
   static const _log = LogTarget.booru;
 
-  late final StreamSubscription<Settings?> settingsWatcher;
+  late final StreamSubscription<SettingsData?> settingsWatcher;
   late final StreamSubscription favoritesWatcher;
   late final StreamSubscription blacklistedWatcher;
 
@@ -191,7 +192,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
       onSubmit: (context, tag) {},
     ));
 
-    settingsWatcher = Settings.watch((s) {
+    settingsWatcher = state.settings.s.watch((s) {
       state.settings = s!;
 
       setState(() {});

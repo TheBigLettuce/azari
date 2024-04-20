@@ -16,6 +16,7 @@ import 'package:gallery/src/db/schemas/booru/note_booru.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/db/schemas/tags/local_tag_dictionary.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
@@ -150,13 +151,13 @@ class PostBase
 
   @override
   List<ImageViewAction> actions(BuildContext context) {
-    final isFavorite = Settings.isFavorite(id, booru);
+    final isFavorite = IsarSettings.isFavorite(id, booru);
 
     return [
       ImageViewAction(
         isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
         (_) {
-          Settings.addRemoveFavorites(context, [this], true);
+          IsarSettings.addRemoveFavorites(context, [this], true);
           LocalTagDictionary.addAll(tags);
         },
         play: !isFavorite,
@@ -168,7 +169,7 @@ class PostBase
       ImageViewAction(
         Icons.download,
         (_) {
-          final settings = Settings.fromDb();
+          final settings = SettingsService.currentData;
 
           PostTags.g.addTagsPostAll([(filename(), tags)]);
           Downloader.g.add(
@@ -217,7 +218,7 @@ class PostBase
       return EmptyContent(this);
     }
 
-    String url = switch (Settings.fromDb().quality) {
+    String url = switch (SettingsService.currentData.quality) {
       DisplayQuality.original => fileUrl,
       DisplayQuality.sample => sampleUrl
     };
@@ -262,7 +263,7 @@ class PostBase
   }
 
   PostContentType _type() {
-    String url = switch (Settings.fromDb().quality) {
+    String url = switch (SettingsService.currentData.quality) {
       DisplayQuality.original => fileUrl,
       DisplayQuality.sample => sampleUrl
     };
@@ -301,7 +302,7 @@ class PostBase
 
     return [
       if (isHidden) const Sticker(Icons.hide_image_rounded),
-      if (this is! FavoriteBooru && Settings.isFavorite(id, booru))
+      if (this is! FavoriteBooru && IsarSettings.isFavorite(id, booru))
         const Sticker(Icons.favorite_rounded, important: true),
       if (NoteBooru.hasNotes(id, booru))
         const Sticker(Icons.sticky_note_2_outlined),

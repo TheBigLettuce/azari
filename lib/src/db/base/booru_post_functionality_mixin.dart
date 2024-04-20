@@ -7,8 +7,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/post_base.dart';
-import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
@@ -17,6 +17,7 @@ import 'package:gallery/src/interfaces/cell/sticker.dart';
 import 'package:gallery/src/interfaces/filtering/filtering_mode.dart';
 import 'package:gallery/src/pages/booru/booru_page.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart';
 import 'package:gallery/src/widgets/make_tags.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:gallery/src/widgets/notifiers/filter.dart';
@@ -108,9 +109,11 @@ class PostInfo extends StatefulWidget {
 }
 
 class _PostInfoState extends State<PostInfo> {
+  int currentPage = 0;
+
   PostBase get post => widget.post;
 
-  final settings = Settings.fromDb();
+  final settings = SettingsService.currentData;
 
   late final tagManager = TagManager.fromEnum(post.booru);
 
@@ -126,6 +129,14 @@ class _PostInfoState extends State<PostInfo> {
     super.initState();
 
     res = PostTags.g.dissassembleFilename(post.filename()).maybeValue();
+  }
+
+  int currentPageF() => currentPage;
+
+  void _switchPage(int i) {
+    setState(() {
+      currentPage = i;
+    });
   }
 
   @override
@@ -145,32 +156,45 @@ class _PostInfoState extends State<PostInfo> {
     final filename = post.filename();
 
     final filterData = FilterNotifier.maybeOf(context);
+    final localizations = AppLocalizations.of(context)!;
 
     return SliverMainAxisGroup(slivers: [
-      if (!(filterData?.searchFocus.hasFocus ?? false))
+      SliverPadding(
+        padding: const EdgeInsets.only(left: 16),
+        sliver: LabelSwitcherWidget(
+          pages: [
+            PageLabel(localizations.infoHeadline),
+            PageLabel(localizations.tagsInfoPage, count: tags.length),
+          ],
+          currentPage: currentPageF,
+          switchPage: _switchPage,
+          sliver: true,
+          noHorizontalPadding: true,
+        ),
+      ),
+      if (currentPage == 0)
         SliverList.list(
           children: [
             MenuWrapper(
               title: post.fileDownloadUrl(),
               child: ListTile(
-                title: Text(AppLocalizations.of(context)!.urlInfoPage),
+                title: Text(localizations.urlInfoPage),
                 subtitle: Text(post.fileDownloadUrl()),
                 onTap: () => launchUrl(Uri.parse(post.fileDownloadUrl()),
                     mode: LaunchMode.externalApplication),
               ),
             ),
             ListTile(
-              title: Text(AppLocalizations.of(context)!.widthInfoPage),
-              subtitle: Text(AppLocalizations.of(context)!.pixels(post.width)),
+              title: Text(localizations.widthInfoPage),
+              subtitle: Text(localizations.pixels(post.width)),
             ),
             ListTile(
-              title: Text(AppLocalizations.of(context)!.heightInfoPage),
-              subtitle: Text(AppLocalizations.of(context)!.pixels(post.height)),
+              title: Text(localizations.heightInfoPage),
+              subtitle: Text(localizations.pixels(post.height)),
             ),
             ListTile(
-              title: Text(AppLocalizations.of(context)!.createdAtInfoPage),
-              subtitle:
-                  Text(AppLocalizations.of(context)!.date(post.createdAt)),
+              title: Text(localizations.createdAtInfoPage),
+              subtitle: Text(localizations.date(post.createdAt)),
             ),
             MenuWrapper(
               title: post.sourceUrl,
@@ -185,34 +209,35 @@ class _PostInfoState extends State<PostInfo> {
               ),
             ),
             ListTile(
-              title: Text(AppLocalizations.of(context)!.ratingInfoPage),
+              title: Text(localizations.ratingInfoPage),
               subtitle: Text(post.rating.translatedName(context)),
             ),
             ListTile(
-              title: Text(AppLocalizations.of(context)!.scoreInfoPage),
+              title: Text(localizations.scoreInfoPage),
               subtitle: Text(post.score.toString()),
             ),
             if (tags.contains("translated"))
               TranslationNotes.tile(context, post.id, post.booru),
           ],
-        ),
-      if (tags.isNotEmpty && filterData != null)
-        SliverToBoxAdapter(
-          child: SearchTextField(
-            filterData,
-            filename,
-            key: ValueKey(filename),
+        )
+      else ...[
+        if (tags.isNotEmpty && filterData != null)
+          SliverToBoxAdapter(
+            child: SearchTextField(
+              filterData,
+              filename,
+              key: ValueKey(filename),
+            ),
           ),
-        ),
-      DrawerTagsWidget(
-        tags,
-        filename,
-        launchGrid: _launchGrid,
-        excluded: tagManager.excluded,
-        pinnedTags: pinnedTags,
-        showTagButtons: false,
-        res: res,
-      )
+        DrawerTagsWidget(
+          tags,
+          filename,
+          launchGrid: _launchGrid,
+          excluded: tagManager.excluded,
+          pinnedTags: pinnedTags,
+          res: res,
+        )
+      ]
     ]);
   }
 }

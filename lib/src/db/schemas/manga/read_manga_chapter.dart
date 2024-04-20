@@ -10,7 +10,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
-import 'package:gallery/src/db/schemas/settings/settings.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/interfaces/manga/manga_api.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart';
@@ -241,7 +241,7 @@ class ReadMangaChapter {
                       thumbUrl: image.url,
                       site: data.mangaTitle,
                     ),
-                    Settings.fromDb(),
+                    SettingsService.currentData,
                   );
                 },
                 onRightSwitchPageEnd: addNextChapterButton

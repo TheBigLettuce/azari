@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/post_base.dart';
 import 'package:gallery/src/db/schemas/grid_settings/favorites.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
-import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart';
@@ -199,8 +198,6 @@ class _StringSegmentKey implements SegmentKey {
 mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
   late final StreamSubscription favoritesWatcher;
   late final StreamSubscription<MiscSettings?> miscSettingsWatcher;
-
-  final booru = Settings.fromDb().selectedBooru;
 
   MiscSettings miscSettings = MiscSettings.current;
 
@@ -407,21 +404,14 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
     PostTags.g.addTagsPost(p.filename(), p.tags, true);
 
     return Downloader.g.add(
-        DownloadFile.d(
-            url: p.fileDownloadUrl(),
-            site: booru.url,
-            name: p.filename(),
-            thumbUrl: p.previewUrl),
-        state.settings);
+      DownloadFile.d(
+          url: p.fileDownloadUrl(),
+          site: state.settings.selectedBooru.url,
+          name: p.filename(),
+          thumbUrl: p.previewUrl),
+      state.settings,
+    );
   }
-
-  // List<GridAction> iconsImage(FavoriteBooru p) {
-  //   return [
-  //     BooruGridActions.favorites(context, p, showDeleteSnackbar: true),
-  //     BooruGridActions.download(context, booru),
-  //     _groupButton(context)
-  //   ];
-  // }
 
   GridAction<FavoriteBooru> _groupButton(BuildContext context) {
     return FavoritesActions.addToGroup(
@@ -452,7 +442,7 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
 
   List<GridAction<FavoriteBooru>> gridActions() {
     return [
-      BooruGridActions.download(context, booru),
+      BooruGridActions.download(context, state.settings.selectedBooru),
       _groupButton(context),
       BooruGridActions.favorites(
         context,

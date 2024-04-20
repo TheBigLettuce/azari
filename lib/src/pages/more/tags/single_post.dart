@@ -11,6 +11,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/net/downloader.dart';
@@ -24,7 +25,6 @@ import 'package:qrscan/qrscan.dart';
 import '../../../db/schemas/booru/post.dart';
 import '../../../interfaces/booru/booru_api.dart';
 import '../../../db/schemas/downloader/download_file.dart';
-import '../../../db/schemas/settings/settings.dart';
 
 class SinglePost extends StatefulWidget {
   final TagManager tagManager;
@@ -56,7 +56,7 @@ class _SinglePostState extends State<SinglePost> {
   void initState() {
     super.initState();
 
-    final booru = Settings.fromDb().selectedBooru;
+    final booru = SettingsService.currentData.selectedBooru;
     client = BooruAPI.defaultClientForBooru(booru);
     booruApi = BooruAPI.fromEnum(booru, client, EmptyPageSaver());
   }
@@ -121,7 +121,7 @@ class _SinglePostState extends State<SinglePost> {
                 site: booru.booru.url,
                 name: value.filename(),
                 thumbUrl: value.previewUrl),
-            Settings.fromDb(),
+            SettingsService.currentData,
           );
         },
       ).then((value) => favoritesWatcher.cancel());

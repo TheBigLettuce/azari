@@ -15,6 +15,7 @@ import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
@@ -75,7 +76,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
   static const _log = LogTarget.booru;
 
   late final StreamSubscription blacklistedWatcher;
-  late final StreamSubscription<Settings?> settingsWatcher;
+  late final StreamSubscription<SettingsData?> settingsWatcher;
   late final StreamSubscription favoritesWatcher;
   late final Dio client = BooruAPI.defaultClientForBooru(widget.booru);
   late final tagManager = TagManager.fromEnum(widget.booru);
@@ -132,7 +133,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
 
     tagManager.latest.add(Tag.string(tag: widget.tags));
 
-    settingsWatcher = Settings.watch((s) {
+    settingsWatcher = SettingsService.db.watch((s) {
       state.settings = s!;
 
       setState(() {});

@@ -8,7 +8,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue_state.dart';
-import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 
 class GlueBottomAppBar extends StatelessWidget {
   final SelectionGlueState glue;

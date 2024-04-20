@@ -10,6 +10,7 @@ import 'dart:developer';
 import 'dart:io' as io;
 
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
 import 'package:gallery/src/interfaces/booru/booru_api.dart';
 import 'package:gallery/src/db/initalize_db.dart';
@@ -19,7 +20,6 @@ import 'package:gallery/src/db/schemas/gallery/directory_tags.dart';
 import 'package:gallery/src/db/schemas/tags/local_tag_dictionary.dart';
 import 'package:gallery/src/db/schemas/tags/local_tags.dart';
 import 'package:gallery/src/db/schemas/booru/post.dart';
-import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:isar/isar.dart';
 import 'package:logging/logging.dart';
@@ -53,8 +53,6 @@ class DisassembleResult {
     required this.id,
   });
 }
-
-typedef ErrScope<T> = Future<T> Function();
 
 class ErrorOr<T> {
   final T? _data;
@@ -434,7 +432,7 @@ class PostTags {
 
       plug.move(MoveOp(
           source: output,
-          rootDir: Settings.fromDb().path.path,
+          rootDir: SettingsService.currentData.path.path,
           targetDir: "backup"));
       onDone(null);
     } catch (e) {

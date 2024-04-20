@@ -27,7 +27,7 @@ class SearchTextField extends StatelessWidget {
     final notifData = FocusNotifier.of(context);
 
     return Padding(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
       child: SearchBar(
           focusNode: data.searchFocus,
           leading: notifData.hasFocus

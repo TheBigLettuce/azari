@@ -12,7 +12,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
-import 'package:gallery/src/db/schemas/settings/settings.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/net/downloader.dart';
 import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
@@ -215,13 +214,11 @@ void main() async {
 
   azariVersion = (await PackageInfo.fromPlatform()).version;
 
-  final settings = Settings.fromDb();
-
   runApp(
     RestartWidget(
       accentColor: accentColor,
       key: restartKey,
-      child: (d, l) => MaterialApp(
+      child: (d, l, settings) => MaterialApp(
         title: 'Azari',
         themeAnimationCurve: Easing.standard,
         themeAnimationDuration: const Duration(milliseconds: 300),

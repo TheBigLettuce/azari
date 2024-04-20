@@ -9,6 +9,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/pages/anime/anime.dart';
 import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
@@ -56,7 +57,7 @@ class _HomeState extends State<Home>
         _AnimatedIconsMixin,
         _BeforeYouContinueDialogMixin {
   final state = SkeletonState();
-  final settings = Settings.fromDb();
+  final settings = SettingsService.currentData;
 
   bool isRefreshing = false;
 
@@ -65,6 +66,8 @@ class _HomeState extends State<Home>
   @override
   void initState() {
     super.initState();
+
+    final settings = SettingsService.currentData;
 
     initChangePage(this, settings);
     initIcons(this);
@@ -121,7 +124,7 @@ class _HomeState extends State<Home>
                     onDestinationSelected: (route) => _switchPage(this, route),
                     destinations: widget.callback != null
                         ? iconsGalleryNotes(context)
-                        : icons(context, currentRoute),
+                        : icons(context, currentRoute, settings),
                   ),
                 ),
                 extendBody: true,

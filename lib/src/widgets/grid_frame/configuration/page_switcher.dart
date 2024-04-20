@@ -213,20 +213,22 @@ class _Label extends StatelessWidget {
           )
         : RichText(
             text: TextSpan(
-            children: [
-              TextSpan(
-                text: text,
-                style: styleText,
-              ),
-              TextSpan(
+              children: [
+                TextSpan(
+                  text: text,
+                  style: styleText,
+                ),
+                TextSpan(
                   text: " $count",
                   style: styleText?.copyWith(
                     fontSize: theme.textTheme.titleMedium?.fontSize,
                     color: styleText.color
                         ?.withOpacity(styleText.color!.opacity - 0.2),
-                  ))
-            ],
-          ));
+                  ),
+                )
+              ],
+            ),
+          );
   }
 }
 

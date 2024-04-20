@@ -9,6 +9,7 @@ import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
 import 'package:gallery/src/db/schemas/settings/settings.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/net/cookie_jar_tab.dart';
 import 'package:gallery/src/net/unsaveable_cookie_jar.dart';
 import 'safe_mode.dart';
@@ -70,7 +71,7 @@ abstract class BooruAPI {
   /// that is, it makes refreshes on restore few.
   static BooruAPI fromSettings(Dio client, PageSaver pageSaver) {
     return BooruAPI.fromEnum(
-        Settings.fromDb().selectedBooru, client, pageSaver);
+        SettingsService.currentData.selectedBooru, client, pageSaver);
   }
 
   static Dio defaultClientForBooru(Booru booru) {

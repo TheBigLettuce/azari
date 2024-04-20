@@ -11,6 +11,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_booru.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/interfaces/logging/logging.dart';
 import 'package:gallery/src/plugs/download_movers.dart';
 import 'package:gallery/src/plugs/notifications.dart';
@@ -68,7 +69,7 @@ class Downloader with _CancelTokens, _StatisticsTimer {
   final NotificationPlug notificationPlug = chooseNotificationPlug();
   final DownloadMoverPlug moverPlug;
 
-  void retry(DownloadFile f, Settings settings) {
+  void retry(DownloadFile f, IsarSettings settings) {
     if (f.isOnHold()) {
       f.failed().save();
     } else if (_hasCancelKey(f.url)) {
@@ -126,7 +127,7 @@ class Downloader with _CancelTokens, _StatisticsTimer {
     DownloadFile.deleteAll(l.map((e) => e.url).toList());
   }
 
-  void add(DownloadFile download, Settings settings) {
+  void add(DownloadFile download, SettingsData settings) {
     if (settings.path.isEmpty) {
       download.failed().save();
 
@@ -148,7 +149,7 @@ class Downloader with _CancelTokens, _StatisticsTimer {
     }
   }
 
-  void addAll(Iterable<DownloadFile> downloads, Settings settings) {
+  void addAll(Iterable<DownloadFile> downloads, SettingsData settings) {
     if (settings.path.isEmpty) {
       return;
     }
@@ -267,7 +268,7 @@ class Downloader with _CancelTokens, _StatisticsTimer {
       progress.update(count);
     })).then((value) async {
       try {
-        final settings = Settings.fromDb();
+        final settings = SettingsService.currentData;
 
         moverPlug.move(MoveOp(
             source: filePath, rootDir: settings.path.path, targetDir: d.site));

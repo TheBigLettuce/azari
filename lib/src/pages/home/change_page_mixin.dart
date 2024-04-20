@@ -40,7 +40,7 @@ mixin _ChangePageMixin on State<Home> {
     mangaKey.currentState?.maybePop();
   }
 
-  void initChangePage(_AnimatedIconsMixin icons, Settings settings) {
+  void initChangePage(_AnimatedIconsMixin icons, SettingsData settings) {
     mainGrid = DbsOpen.primaryGrid(settings.selectedBooru);
   }
 

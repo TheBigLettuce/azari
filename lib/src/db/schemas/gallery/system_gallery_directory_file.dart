@@ -14,6 +14,7 @@ import 'package:gallery/src/db/base/system_gallery_thumbnail_provider.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
 import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
 import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/net/downloader.dart';
@@ -26,11 +27,13 @@ import 'package:gallery/src/plugs/gallery.dart';
 import 'package:gallery/src/plugs/platform_functions.dart';
 import 'package:gallery/src/db/schemas/downloader/download_file.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
+import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart';
 import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
 import 'package:gallery/src/widgets/image_view/image_view.dart';
 import 'package:gallery/src/widgets/make_tags.dart';
 import 'package:gallery/src/widgets/menu_wrapper.dart';
 import 'package:gallery/src/widgets/notifiers/filter.dart';
+import 'package:gallery/src/widgets/notifiers/tag_refresh.dart';
 import 'package:gallery/src/widgets/search_bar/search_text_field.dart';
 import 'package:gallery/src/widgets/set_wallpaper_tile.dart';
 import 'package:isar/isar.dart';
@@ -41,7 +44,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../interfaces/cell/contentable.dart';
 import '../../../interfaces/cell/sticker.dart';
 import '../../../widgets/translation_notes.dart';
-import '../settings/settings.dart';
 
 part 'system_gallery_directory_file.g.dart';
 
@@ -244,6 +246,7 @@ class GalleryFileInfo extends StatefulWidget {
 
 class _GalleryFileInfoState extends State<GalleryFileInfo>
     with SystemGalleryDirectoryFileFunctionalityMixin {
+  int currentPage = 0;
   late final StreamSubscription<void> watcher;
 
   SystemGalleryDirectoryFile get file => widget.file;
@@ -304,6 +307,14 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
     );
   }
 
+  int currentPageF() => currentPage;
+
+  void setPage(int i) {
+    setState(() {
+      currentPage = i;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final filterData = FilterNotifier.maybeOf(context);
@@ -323,7 +334,23 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
     final filename = file.name;
 
     return SliverMainAxisGroup(slivers: [
-      if (!(filterData?.searchFocus.hasFocus ?? false))
+      SliverPadding(
+        padding: const EdgeInsets.only(left: 16),
+        sliver: LabelSwitcherWidget(
+          pages: [
+            PageLabel(AppLocalizations.of(context)!.infoHeadline),
+            PageLabel(
+              AppLocalizations.of(context)!.tagsInfoPage,
+              count: tags.length,
+            ),
+          ],
+          currentPage: currentPageF,
+          switchPage: setPage,
+          sliver: true,
+          noHorizontalPadding: true,
+        ),
+      ),
+      if (currentPage == 0)
         SliverList.list(
           children: [
             MenuWrapper(
@@ -400,24 +427,61 @@ class _GalleryFileInfoState extends State<GalleryFileInfo>
               RedownloadTile(key: file.uniqueKey(), file: file, res: res),
             if (!file.isVideo && !file.isGif) SetWallpaperTile(id: file.id),
           ],
-        ),
-      if (tags.isNotEmpty && filterData != null)
-        SliverToBoxAdapter(
-          child: SearchTextField(
-            filterData,
-            filename,
-            key: ValueKey(filename),
+        )
+      else ...[
+        SliverPadding(
+          padding: const EdgeInsets.only(left: 16, right: 16),
+          sliver: SliverToBoxAdapter(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton.filledTonal(
+                  onPressed: () {
+                    final notifier = TagRefreshNotifier.maybeOf(context);
+                    PostTags.g.deletePostTags(filename);
+                    notifier?.call();
+                  },
+                  icon: const Icon(Icons.delete_rounded),
+                  visualDensity: VisualDensity.compact,
+                  iconSize: 18,
+                ),
+                IconButton.filledTonal(
+                  onPressed: () {
+                    openAddTagDialog(context, (v, delete) {
+                      if (delete) {
+                        PostTags.g.removeTag([filename], v);
+                      } else {
+                        PostTags.g.addTag([filename], v);
+                      }
+                    });
+                  },
+                  icon: const Icon(Icons.add_rounded),
+                  visualDensity: VisualDensity.compact,
+                  iconSize: 18,
+                ),
+              ],
+            ),
           ),
         ),
-      DrawerTagsWidget(
-        tags,
-        filename,
-        showTagButtons: true,
-        launchGrid: _launchGrid,
-        excluded: tagManager?.excluded,
-        pinnedTags: pinnedTags,
-        res: res,
-      )
+        if (tags.isNotEmpty && filterData != null)
+          SliverToBoxAdapter(
+            child: SearchTextField(
+              filterData,
+              filename,
+              key: ValueKey(filename),
+            ),
+          ),
+        DrawerTagsWidget(
+          tags,
+          filename,
+          launchGrid: _launchGrid,
+          excluded: tagManager?.excluded,
+          pinnedTags: pinnedTags,
+          addRemoveTag: true,
+          res: res,
+        ),
+      ],
     ]);
   }
 }
@@ -460,12 +524,13 @@ class _RedownloadTileState extends State<RedownloadTile> {
                 PostTags.g.addTagsPost(post.filename(), post.tags, true);
 
                 Downloader.g.add(
-                    DownloadFile.d(
-                        url: post.fileDownloadUrl(),
-                        site: api.booru.url,
-                        name: post.filename(),
-                        thumbUrl: post.previewUrl),
-                    Settings.fromDb());
+                  DownloadFile.d(
+                      url: post.fileDownloadUrl(),
+                      site: api.booru.url,
+                      name: post.filename(),
+                      thumbUrl: post.previewUrl),
+                  SettingsService.currentData,
+                );
 
                 return null;
               }).onError((error, stackTrace) {

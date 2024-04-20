@@ -8,44 +8,47 @@
 part of '../home.dart';
 
 mixin _BeforeYouContinueDialogMixin {
-  void maybeBeforeYouContinueDialog(BuildContext context, Settings settings) {
+  void maybeBeforeYouContinueDialog(
+      BuildContext context, SettingsData settings) {
     if (settings.path.isEmpty) {
-      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        Navigator.push(
+      WidgetsBinding.instance.scheduleFrameCallback(
+        (timeStamp) {
+          Navigator.push(
             context,
             DialogRoute(
               context: context,
               builder: (context) {
+                final localizations = AppLocalizations.of(context)!;
+
                 return AlertDialog(
-                  title: Text(
-                      AppLocalizations.of(context)!.beforeYouContinueTitle),
-                  content:
-                      Text(AppLocalizations.of(context)!.needChooseDirectory),
+                  title: Text(localizations.beforeYouContinueTitle),
+                  content: Text(localizations.needChooseDirectory),
                   actions: [
                     TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: Text(AppLocalizations.of(context)!.later)),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: Text(localizations.later),
+                    ),
                     TextButton(
-                        onPressed: () {
-                          Settings.chooseDirectory(
-                            (e) {},
-                            emptyResult:
-                                AppLocalizations.of(context)!.emptyResult,
-                            pickDirectory:
-                                AppLocalizations.of(context)!.pickDirectory,
-                            validDirectory: AppLocalizations.of(context)!
-                                .chooseValidDirectory,
-                          );
-                          Navigator.pop(context);
-                        },
-                        child: Text(AppLocalizations.of(context)!.choose))
+                      onPressed: () {
+                        SettingsService.db.chooseDirectory(
+                          (e) {},
+                          emptyResult: localizations.emptyResult,
+                          pickDirectory: localizations.pickDirectory,
+                          validDirectory: localizations.chooseValidDirectory,
+                        );
+                        Navigator.pop(context);
+                      },
+                      child: Text(localizations.choose),
+                    )
                   ],
                 );
               },
-            ));
-      });
+            ),
+          );
+        },
+      );
     }
   }
 }

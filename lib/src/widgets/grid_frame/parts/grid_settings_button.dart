@@ -10,7 +10,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
-import 'package:gallery/src/db/schemas/settings/settings.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
@@ -340,7 +340,7 @@ Widget _safeMode(BuildContext context, SafeMode safeMode,
       (value) {
         (selectSafeMode ??
             (value) {
-              Settings.fromDb().copy(safeMode: value).save();
+              SettingsService.currentData.copy(safeMode: value).save();
             })(value);
 
         Navigator.pop(context);

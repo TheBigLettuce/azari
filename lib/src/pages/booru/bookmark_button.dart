@@ -14,7 +14,7 @@ import 'package:gallery/src/db/base/post_base.dart';
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:gallery/src/db/schemas/booru/post.dart';
 import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
-import 'package:gallery/src/db/schemas/settings/settings.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/pages/home.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
@@ -51,7 +51,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
   late final StreamSubscription<void> settingsWatcher;
   final List<GridStateBooru> gridStates = [];
 
-  Settings settings = Settings.fromDb();
+  SettingsData settings = SettingsService.currentData;
 
   final m = <String, List<Post>>{};
 
@@ -70,7 +70,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
   void initState() {
     super.initState();
 
-    settingsWatcher = Settings.watch((s) {
+    settingsWatcher = settings.s.watch((s) {
       settings = s!;
 
       setState(() {});

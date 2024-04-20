@@ -8,11 +8,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:gallery/main.dart';
+import 'package:gallery/src/db/services/settings.dart';
 
 /// RestartWidget is needed for changing the boorus in the settings.
 class RestartWidget extends StatefulWidget {
   final Color accentColor;
-  final Widget Function(ThemeData dark, ThemeData light) child;
+  final Widget Function(ThemeData dark, ThemeData light, SettingsData settings)
+      child;
 
   const RestartWidget({
     super.key,
@@ -48,7 +50,9 @@ class _RestartWidgetState extends State<RestartWidget> {
         color: MediaQuery.platformBrightnessOf(context) == Brightness.dark
             ? d.colorScheme.background
             : l.colorScheme.background,
-        child: widget.child(d, l).animate(effects: [const FadeEffect()]),
+        child: widget
+            .child(d, l, SettingsService.currentData)
+            .animate(effects: [const FadeEffect()]),
       ),
     );
   }

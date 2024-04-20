@@ -6,7 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/settings/settings.dart';
+import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/interfaces/cell/cell.dart';
 import 'package:gallery/src/interfaces/filtering/filtering_interface.dart';
 import 'package:gallery/src/interfaces/filtering/filtering_mode.dart';
@@ -28,7 +28,7 @@ class SkeletonState {
 
 class GridSkeletonState<T extends CellBase> extends SkeletonState {
   final GlobalKey<GridFrameState<T>> gridKey = GlobalKey();
-  Settings settings = Settings.fromDb();
+  SettingsData settings = SettingsService.currentData;
   final GridRefreshingStatus<T> refreshingStatus;
 
   @override
