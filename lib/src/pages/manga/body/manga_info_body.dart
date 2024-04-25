@@ -5,24 +5,19 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:gallery/src/interfaces/manga/manga_api.dart';
-import 'package:gallery/src/pages/anime/info_base/body/anime_genres.dart';
-import 'package:gallery/src/pages/anime/info_base/body/body_padding.dart';
-import 'package:gallery/src/pages/anime/info_base/body/synopsis_background.dart';
-import 'package:gallery/src/pages/manga/body/manga_chapters.dart';
-import 'package:gallery/src/pages/manga/body/manga_relations.dart';
-import 'package:gallery/src/pages/anime/search/search_anime.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import "package:flutter/material.dart";
+import "package:flutter/widgets.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/interfaces/manga/manga_api.dart";
+import "package:gallery/src/pages/anime/info_base/body/anime_genres.dart";
+import "package:gallery/src/pages/anime/info_base/body/body_padding.dart";
+import "package:gallery/src/pages/anime/info_base/body/synopsis_background.dart";
+import "package:gallery/src/pages/anime/search/search_anime.dart";
+import "package:gallery/src/pages/manga/body/manga_chapters.dart";
+import "package:gallery/src/pages/manga/body/manga_relations.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
 
 class MangaInfoBody extends StatefulWidget {
-  final MangaEntry entry;
-  final MangaAPI api;
-  final EdgeInsets viewPadding;
-  final ScrollController scrollController;
-
   const MangaInfoBody({
     super.key,
     required this.entry,
@@ -30,6 +25,10 @@ class MangaInfoBody extends StatefulWidget {
     required this.api,
     required this.scrollController,
   });
+  final MangaEntry entry;
+  final MangaAPI api;
+  final EdgeInsets viewPadding;
+  final ScrollController scrollController;
 
   @override
   State<MangaInfoBody> createState() => _MangaInfoBodyState();
@@ -87,8 +86,9 @@ class _MangaInfoBodyState extends State<MangaInfoBody> {
                 synopsis: entry.synopsis,
                 search: (_) {},
                 constraints: BoxConstraints(
-                    minWidth: MediaQuery.sizeOf(context).width - 16 - 16,
-                    maxWidth: MediaQuery.sizeOf(context).width - 16 - 16),
+                  minWidth: MediaQuery.sizeOf(context).width - 16 - 16,
+                  maxWidth: MediaQuery.sizeOf(context).width - 16 - 16,
+                ),
               ),
             ),
             MangaRelations(

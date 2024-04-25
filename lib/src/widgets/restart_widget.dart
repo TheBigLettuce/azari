@@ -5,25 +5,24 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/main.dart';
-import 'package:gallery/src/db/schemas/statistics/daily_statistics.dart';
-import 'package:gallery/src/db/services/settings.dart';
+import "package:flutter/material.dart";
+import "package:flutter_animate/flutter_animate.dart";
+import "package:gallery/main.dart";
+import "package:gallery/src/db/schemas/statistics/daily_statistics.dart";
+import "package:gallery/src/db/services/settings.dart";
 
 /// RestartWidget is needed for changing the boorus in the settings.
 class RestartWidget extends StatefulWidget {
-  final Color accentColor;
-  final Widget Function(ThemeData dark, ThemeData light, SettingsData settings)
-      child;
-
   const RestartWidget({
     super.key,
     required this.accentColor,
     required this.child,
   });
+  final Color accentColor;
+  final Widget Function(ThemeData dark, ThemeData light, SettingsData settings)
+      child;
 
   static void restartApp(BuildContext context) {
     context.findAncestorStateOfType<_RestartWidgetState>()!.restartApp();
@@ -44,7 +43,7 @@ class _RestartWidgetState extends State<RestartWidget> {
   late final AppLifecycleListener listener;
   late final StreamSubscription<void> timeTicker;
   final StreamController<Duration> timeListener = StreamController.broadcast();
-  Duration currentDuration = const Duration();
+  Duration currentDuration = Duration.zero;
   DateTime timeNow = DateTime.now();
 
   @override
@@ -61,7 +60,8 @@ class _RestartWidgetState extends State<RestartWidget> {
 
     currentDuration = Duration(milliseconds: sts.durationMillis);
 
-    timeTicker = Stream.periodic(const Duration(seconds: 1)).listen((event) {
+    timeTicker =
+        Stream<void>.periodic(const Duration(seconds: 1)).listen((event) {
       if (!inBackground) {
         bool switchDate = false;
 
@@ -139,7 +139,7 @@ class _RestartWidgetState extends State<RestartWidget> {
       current: _c,
       child: KeyedSubtree(
         key: key,
-        child: Container(
+        child: ColoredBox(
           color: MediaQuery.platformBrightnessOf(context) == Brightness.dark
               ? d.colorScheme.background
               : l.colorScheme.background,
@@ -153,10 +153,6 @@ class _RestartWidgetState extends State<RestartWidget> {
 }
 
 class TimeSpentNotifier extends InheritedWidget {
-  final Stream<Duration> ticker;
-  final Duration Function() current;
-  final DateTime _time;
-
   const TimeSpentNotifier(
     this._time, {
     super.key,
@@ -164,6 +160,9 @@ class TimeSpentNotifier extends InheritedWidget {
     required this.current,
     required super.child,
   });
+  final Stream<Duration> ticker;
+  final Duration Function() current;
+  final DateTime _time;
 
   static (Duration, Stream<Duration>) streamOf(BuildContext context) {
     final widget =

@@ -5,16 +5,18 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
-
-import 'sticker.dart';
+import "package:flutter/material.dart";
+import "package:flutter/widgets.dart";
+import "package:gallery/src/interfaces/cell/sticker.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 
 extension CellsExt on CellBase {
   void Function()? tryAsPressable<T extends CellBase>(
-      BuildContext context, GridFunctionality<T> functionality, int idx) {
+    BuildContext context,
+    GridFunctionality<T> functionality,
+    int idx,
+  ) {
     if (this is Pressable<T>) {
       return () {
         (this as Pressable<T>).onPress(context, functionality, this as T, idx);
@@ -98,8 +100,12 @@ abstract interface class IsarEntryId {
 }
 
 abstract interface class Pressable<T extends CellBase> {
-  void onPress(BuildContext context, GridFunctionality<T> functionality, T cell,
-      int idx);
+  void onPress(
+    BuildContext context,
+    GridFunctionality<T> functionality,
+    T cell,
+    int idx,
+  );
 }
 
 abstract interface class Thumbnailable {

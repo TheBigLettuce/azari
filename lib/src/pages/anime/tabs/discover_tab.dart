@@ -5,7 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of '../anime.dart';
+part of "../anime.dart";
 
 class DiscoverExtra {
   String searchText = "";
@@ -16,36 +16,40 @@ class DiscoverExtra {
 }
 
 class DiscoverTab extends StatefulWidget {
-  final void Function(bool) procPop;
-  final PagingContainer<AnimeSearchEntry, DiscoverExtra> pagingContainer;
-  final AnimeAPI api;
-
-  static List<GridAction<AnimeSearchEntry>> actions() => [
-        GridAction(Icons.add, (selected) {
-          final toDelete = <AnimeSearchEntry>[];
-          final toAdd = <AnimeSearchEntry>[];
-
-          for (final e in selected) {
-            final entry = SavedAnimeEntry.maybeGet(e.id, e.site);
-            if (entry == null) {
-              toAdd.add(e);
-            } else if (entry.inBacklog) {
-              toDelete.add(e);
-            }
-          }
-
-          SavedAnimeEntry.addAll(toAdd);
-          SavedAnimeEntry.deleteAllIds(
-              toDelete.map((e) => (e.id, e.site)).toList());
-        }, true),
-      ];
-
   const DiscoverTab({
     super.key,
     required this.procPop,
     required this.pagingContainer,
     required this.api,
   });
+  final void Function(bool) procPop;
+  final PagingContainer<AnimeSearchEntry, DiscoverExtra> pagingContainer;
+  final AnimeAPI api;
+
+  static List<GridAction<AnimeSearchEntry>> actions() => [
+        GridAction(
+          Icons.add,
+          (selected) {
+            final toDelete = <AnimeSearchEntry>[];
+            final toAdd = <AnimeSearchEntry>[];
+
+            for (final e in selected) {
+              final entry = SavedAnimeEntry.maybeGet(e.id, e.site);
+              if (entry == null) {
+                toAdd.add(e);
+              } else if (entry.inBacklog) {
+                toDelete.add(e);
+              }
+            }
+
+            SavedAnimeEntry.addAll(toAdd);
+            SavedAnimeEntry.deleteAllIds(
+              toDelete.map((e) => (e.id, e.site)).toList(),
+            );
+          },
+          true,
+        ),
+      ];
 
   @override
   State<DiscoverTab> createState() => _DiscoverTabState();
@@ -86,7 +90,7 @@ class _DiscoverTabState extends State<DiscoverTab> {
   }
 
   void openSearchSheet() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useRootNavigator: true,
@@ -194,14 +198,12 @@ class _DiscoverTabState extends State<DiscoverTab> {
 }
 
 class _SearchBar extends StatefulWidget {
-  final PagingContainer<AnimeSearchEntry, DiscoverExtra> pagingContainer;
-  final GlobalKey<GridFrameState> gridKey;
-
   const _SearchBar({
-    super.key,
     required this.pagingContainer,
     required this.gridKey,
   });
+  final PagingContainer<AnimeSearchEntry, DiscoverExtra> pagingContainer;
+  final GlobalKey<GridFrameState> gridKey;
 
   @override
   State<_SearchBar> createState() => __SearchBarState();
@@ -257,14 +259,15 @@ class __SearchBarState extends State<_SearchBar> {
         StatefulBuilder(
           builder: (context, setState) {
             return SafetyButton(
-                mode: container.extra.mode,
-                set: (m) {
-                  container.extra.mode = m;
+              mode: container.extra.mode,
+              set: (m) {
+                container.extra.mode = m;
 
-                  widget.gridKey.currentState?.refreshSequence();
+                widget.gridKey.currentState?.refreshSequence();
 
-                  setState(() {});
-                });
+                setState(() {});
+              },
+            );
           },
         ),
         IconButton(

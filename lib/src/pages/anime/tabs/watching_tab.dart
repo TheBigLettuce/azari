@@ -43,16 +43,15 @@ class __WatchingTabState extends State<_WatchingTab> {
     if (m == null) {
       return;
     }
-    value = value.trim();
 
-    _filteringValue = value;
+    _filteringValue = value.trim();
 
-    final l = value.toLowerCase();
+    final l = _filteringValue.toLowerCase();
 
     _backlogFilter.clear();
     _watchingFilter.clear();
 
-    if (value.isEmpty) {
+    if (_filteringValue.isEmpty) {
       setState(() {});
 
       m.cellCount = backlog.length;
@@ -169,7 +168,8 @@ class __WatchingTabState extends State<_WatchingTab> {
               Icons.delete_rounded,
               (selected) {
                 SavedAnimeEntry.deleteAll(
-                    selected.map((e) => (e.site, e.id)).toList());
+                  selected.map((e) => (e.site, e.id)).toList(),
+                );
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content:
@@ -400,7 +400,7 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
   void onPressed(SavedAnimeEntry e, int _) {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (context) {
           return AnimeInfoPage(
             entry: e,

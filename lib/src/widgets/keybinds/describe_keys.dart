@@ -5,13 +5,13 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'single_activator_description.dart';
+import "package:gallery/src/widgets/keybinds/single_activator_description.dart";
 
 List<String> describeKeys(Map<SingleActivatorDescription, dynamic> bindings) =>
     bindings.keys.map((e) => describeKey(e)).toList();
 
 String describeKey(SingleActivatorDescription activator) {
-  StringBuffer buffer = StringBuffer();
+  final StringBuffer buffer = StringBuffer();
 
   buffer.write("'");
 
@@ -31,9 +31,11 @@ String describeKey(SingleActivatorDescription activator) {
     buffer.write("Meta+");
   }
 
-  buffer.write(activator.a.trigger.keyLabel == " "
-      ? "<space>"
-      : activator.a.trigger.keyLabel);
+  buffer.write(
+    activator.a.trigger.keyLabel == " "
+        ? "<space>"
+        : activator.a.trigger.keyLabel,
+  );
   buffer.write("': ");
   buffer.write(activator.description);
 

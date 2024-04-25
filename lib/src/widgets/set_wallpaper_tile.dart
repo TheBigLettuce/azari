@@ -23,7 +23,7 @@ class SetWallpaperTile extends StatefulWidget {
 }
 
 class _SetWallpaperTileState extends State<SetWallpaperTile> {
-  Future? _status;
+  Future<void>? _status;
 
   @override
   Widget build(BuildContext context) {

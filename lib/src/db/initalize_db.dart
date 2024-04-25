@@ -5,62 +5,60 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
-import 'dart:io' as io;
+import "dart:async";
+import "dart:io" as io;
 
-import 'package:gallery/src/db/schemas/anime/saved_anime_characters.dart';
-import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
-import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
-import 'package:gallery/src/db/schemas/gallery/blacklisted_directory.dart';
-import 'package:gallery/src/db/schemas/downloader/download_file.dart';
-import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
-import 'package:gallery/src/db/schemas/gallery/directory_metadata.dart';
-import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
-import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
-import 'package:gallery/src/db/schemas/grid_settings/directories.dart';
-import 'package:gallery/src/db/schemas/grid_settings/favorites.dart';
-import 'package:gallery/src/db/schemas/grid_settings/files.dart';
-import 'package:gallery/src/db/schemas/grid_state/grid_booru_paging.dart';
-import 'package:gallery/src/db/schemas/manga/chapters_settings.dart';
-import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
-import 'package:gallery/src/db/schemas/manga/pinned_manga.dart';
-import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
-import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
-import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
-import 'package:gallery/src/db/schemas/statistics/daily_statistics.dart';
-import 'package:gallery/src/db/schemas/tags/local_tag_dictionary.dart';
-import 'package:gallery/src/db/schemas/tags/local_tags.dart';
-import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
-import 'package:gallery/src/db/schemas/booru/note_booru.dart';
-import 'package:gallery/src/db/schemas/gallery/note_gallery.dart';
-import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
-import 'package:gallery/src/db/schemas/statistics/statistics_booru.dart';
-import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
-import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
-import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
-import 'package:gallery/src/db/schemas/settings/video_settings.dart';
-import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:isar/isar.dart';
-import 'package:path_provider/path_provider.dart';
-import 'schemas/gallery/system_gallery_directory.dart';
-import 'schemas/gallery/system_gallery_directory_file.dart';
-import 'schemas/gallery/directory_tags.dart';
-import 'schemas/gallery/favorite_file.dart';
-import 'schemas/grid_state/grid_state.dart';
-import 'schemas/grid_state/grid_state_booru.dart';
-import 'schemas/booru/post.dart';
-import 'schemas/settings/settings.dart';
+import "package:gallery/src/db/schemas/anime/saved_anime_characters.dart";
+import "package:gallery/src/db/schemas/anime/saved_anime_entry.dart";
+import "package:gallery/src/db/schemas/anime/watched_anime_entry.dart";
+import "package:gallery/src/db/schemas/booru/favorite_booru.dart";
+import "package:gallery/src/db/schemas/booru/note_booru.dart";
+import "package:gallery/src/db/schemas/booru/post.dart";
+import "package:gallery/src/db/schemas/downloader/download_file.dart";
+import "package:gallery/src/db/schemas/gallery/blacklisted_directory.dart";
+import "package:gallery/src/db/schemas/gallery/directory_metadata.dart";
+import "package:gallery/src/db/schemas/gallery/directory_tags.dart";
+import "package:gallery/src/db/schemas/gallery/favorite_file.dart";
+import "package:gallery/src/db/schemas/gallery/note_gallery.dart";
+import "package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart";
+import "package:gallery/src/db/schemas/gallery/system_gallery_directory.dart";
+import "package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart";
+import "package:gallery/src/db/schemas/gallery/thumbnail.dart";
+import "package:gallery/src/db/schemas/grid_settings/anime_discovery.dart";
+import "package:gallery/src/db/schemas/grid_settings/booru.dart";
+import "package:gallery/src/db/schemas/grid_settings/directories.dart";
+import "package:gallery/src/db/schemas/grid_settings/favorites.dart";
+import "package:gallery/src/db/schemas/grid_settings/files.dart";
+import "package:gallery/src/db/schemas/grid_state/grid_booru_paging.dart";
+import "package:gallery/src/db/schemas/grid_state/grid_state.dart";
+import "package:gallery/src/db/schemas/grid_state/grid_state_booru.dart";
+import "package:gallery/src/db/schemas/manga/chapters_settings.dart";
+import "package:gallery/src/db/schemas/manga/compact_manga_data.dart";
+import "package:gallery/src/db/schemas/manga/pinned_manga.dart";
+import "package:gallery/src/db/schemas/manga/read_manga_chapter.dart";
+import "package:gallery/src/db/schemas/manga/saved_manga_chapters.dart";
+import "package:gallery/src/db/schemas/settings/hidden_booru_post.dart";
+import "package:gallery/src/db/schemas/settings/misc_settings.dart";
+import "package:gallery/src/db/schemas/settings/settings.dart";
+import "package:gallery/src/db/schemas/settings/video_settings.dart";
+import "package:gallery/src/db/schemas/statistics/daily_statistics.dart";
+import "package:gallery/src/db/schemas/statistics/statistics_booru.dart";
+import "package:gallery/src/db/schemas/statistics/statistics_gallery.dart";
+import "package:gallery/src/db/schemas/statistics/statistics_general.dart";
+import "package:gallery/src/db/schemas/tags/local_tag_dictionary.dart";
+import "package:gallery/src/db/schemas/tags/local_tags.dart";
+import "package:gallery/src/db/schemas/tags/pinned_tag.dart";
+import "package:gallery/src/db/schemas/tags/tags.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:isar/isar.dart";
+import "package:path/path.dart" as path;
+import "package:path_provider/path_provider.dart";
 
-import 'package:path/path.dart' as path;
-
-import 'schemas/tags/tags.dart';
-
-part 'dbs.dart';
+part "dbs.dart";
 
 bool _initalized = false;
 
-Future initalizeDb(bool temporary) async {
+Future<void> initalizeDb(bool temporary) async {
   if (_initalized) {
     return;
   }
@@ -85,50 +83,68 @@ Future initalizeDb(bool temporary) async {
 
   final temporaryImagesPath = dimages.path;
 
-  final anime = Isar.openSync([
-    SavedAnimeEntrySchema,
-    WatchedAnimeEntrySchema,
-    SavedAnimeCharactersSchema,
-    ReadMangaChapterSchema,
-    CompactMangaDataSchema,
-    SavedMangaChaptersSchema,
-    ChapterSettingsSchema,
-    PinnedMangaSchema,
-  ], name: "anime", directory: directoryPath, inspector: false);
+  final anime = Isar.openSync(
+    [
+      SavedAnimeEntrySchema,
+      WatchedAnimeEntrySchema,
+      SavedAnimeCharactersSchema,
+      ReadMangaChapterSchema,
+      CompactMangaDataSchema,
+      SavedMangaChaptersSchema,
+      ChapterSettingsSchema,
+      PinnedMangaSchema,
+    ],
+    name: "anime",
+    directory: directoryPath,
+    inspector: false,
+  );
 
-  final main = Isar.openSync([
-    IsarSettingsSchema,
-    FavoriteBooruSchema,
-    LocalTagDictionarySchema,
-    GridStateBooruSchema,
-    DownloadFileSchema,
-    NoteGallerySchema,
-    HiddenBooruPostSchema,
-    StatisticsGallerySchema,
-    StatisticsGeneralSchema,
-    StatisticsBooruSchema,
-    DailyStatisticsSchema,
-    VideoSettingsSchema,
-    MiscSettingsSchema,
-    GridSettingsBooruSchema,
-    GridSettingsDirectoriesSchema,
-    GridSettingsFavoritesSchema,
-    GridSettingsFilesSchema,
-    GridSettingsAnimeDiscoverySchema,
-  ], directory: directoryPath, inspector: false);
+  final main = Isar.openSync(
+    [
+      IsarSettingsSchema,
+      FavoriteBooruSchema,
+      LocalTagDictionarySchema,
+      GridStateBooruSchema,
+      DownloadFileSchema,
+      NoteGallerySchema,
+      HiddenBooruPostSchema,
+      StatisticsGallerySchema,
+      StatisticsGeneralSchema,
+      StatisticsBooruSchema,
+      DailyStatisticsSchema,
+      VideoSettingsSchema,
+      MiscSettingsSchema,
+      GridSettingsBooruSchema,
+      GridSettingsDirectoriesSchema,
+      GridSettingsFavoritesSchema,
+      GridSettingsFilesSchema,
+      GridSettingsAnimeDiscoverySchema,
+    ],
+    directory: directoryPath,
+    inspector: false,
+  );
 
-  final blacklistedDirIsar = Isar.openSync([
-    BlacklistedDirectorySchema,
-    FavoriteFileSchema,
-    DirectoryMetadataSchema,
-    NoteBooruSchema
-  ], directory: directoryPath, inspector: false, name: "androidBlacklistedDir");
+  final blacklistedDirIsar = Isar.openSync(
+    [
+      BlacklistedDirectorySchema,
+      FavoriteFileSchema,
+      DirectoryMetadataSchema,
+      NoteBooruSchema,
+    ],
+    directory: directoryPath,
+    inspector: false,
+    name: "androidBlacklistedDir",
+  );
 
   Isar? thumbnailIsar;
 
   if (io.Platform.isAndroid) {
-    thumbnailIsar = Isar.openSync([ThumbnailSchema, PinnedThumbnailSchema],
-        directory: directoryPath, inspector: false, name: "androidThumbnails");
+    thumbnailIsar = Isar.openSync(
+      [ThumbnailSchema, PinnedThumbnailSchema],
+      directory: directoryPath,
+      inspector: false,
+      name: "androidThumbnails",
+    );
     thumbnailIsar.writeTxnSync(() {
       thumbnailIsar!.thumbnails
           .where()
@@ -140,11 +156,12 @@ Future initalizeDb(bool temporary) async {
   }
 
   _dbs = Dbs._(
-      directory: directoryPath,
-      main: main,
-      anime: anime,
-      temporaryDbDir: temporaryDbPath,
-      temporaryImagesDir: temporaryImagesPath,
-      blacklisted: blacklistedDirIsar,
-      thumbnail: thumbnailIsar);
+    directory: directoryPath,
+    main: main,
+    anime: anime,
+    temporaryDbDir: temporaryDbPath,
+    temporaryImagesDir: temporaryImagesPath,
+    blacklisted: blacklistedDirIsar,
+    thumbnail: thumbnailIsar,
+  );
 }

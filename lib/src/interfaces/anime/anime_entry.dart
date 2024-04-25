@@ -5,20 +5,19 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/base/booru_post_functionality_mixin.dart';
-import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
-import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/cell/contentable.dart';
-import 'package:gallery/src/interfaces/cell/sticker.dart';
-import 'package:gallery/src/pages/anime/anime.dart';
-import 'package:gallery/src/pages/anime/anime_info_page.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
-import 'package:isar/isar.dart';
-
-import 'anime_api.dart';
+import "package:cached_network_image/cached_network_image.dart";
+import "package:flutter/material.dart";
+import "package:gallery/src/db/base/booru_post_functionality_mixin.dart";
+import "package:gallery/src/db/schemas/anime/saved_anime_entry.dart";
+import "package:gallery/src/db/schemas/anime/watched_anime_entry.dart";
+import "package:gallery/src/interfaces/anime/anime_api.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/interfaces/cell/contentable.dart";
+import "package:gallery/src/interfaces/cell/sticker.dart";
+import "package:gallery/src/pages/anime/anime.dart";
+import "package:gallery/src/pages/anime/anime_info_page.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:isar/isar.dart";
 
 class AnimeSearchEntry extends AnimeEntry
     implements Pressable<AnimeSearchEntry> {
@@ -47,19 +46,23 @@ class AnimeSearchEntry extends AnimeEntry
 
   @override
   void onPress(
-      BuildContext context,
-      GridFunctionality<AnimeSearchEntry> functionality,
-      AnimeSearchEntry cell,
-      int idx) {
-    Navigator.push(context, MaterialPageRoute(
-      builder: (context) {
-        return AnimeInfoPage(
-          entry: cell,
-          id: cell.id,
-          apiFactory: cell.site.api,
-        );
-      },
-    ));
+    BuildContext context,
+    GridFunctionality<AnimeSearchEntry> functionality,
+    AnimeSearchEntry cell,
+    int idx,
+  ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) {
+          return AnimeInfoPage(
+            entry: cell,
+            id: cell.id,
+            apiFactory: cell.site.api,
+          );
+        },
+      ),
+    );
   }
 }
 

@@ -5,7 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:pigeon/pigeon.dart';
+import "package:pigeon/pigeon.dart";
 
 @ConfigurePigeon(
   PigeonOptions(
@@ -16,16 +16,9 @@ import 'package:pigeon/pigeon.dart';
       kotlinOptions: KotlinOptions(
         package: "lol.bruh19.azari.gallery",
       ),
-      copyrightHeader: "pigeons/copyright.txt"),
+      copyrightHeader: "pigeons/copyright.txt",),
 )
 class Directory {
-  final int thumbFileId;
-  final String bucketId;
-  final String name;
-  final String relativeLoc;
-  final String volumeName;
-
-  final int lastModified;
 
   const Directory(
       {required this.bucketId,
@@ -33,10 +26,31 @@ class Directory {
       required this.relativeLoc,
       required this.name,
       required this.volumeName,
-      required this.lastModified});
+      required this.lastModified,});
+  final int thumbFileId;
+  final String bucketId;
+  final String name;
+  final String relativeLoc;
+  final String volumeName;
+
+  final int lastModified;
 }
 
 class DirectoryFile {
+
+  const DirectoryFile({
+    required this.id,
+    required this.bucketId,
+    required this.lastModified,
+    required this.originalUri,
+    required this.name,
+    required this.bucketName,
+    required this.size,
+    required this.isGif,
+    required this.height,
+    required this.width,
+    required this.isVideo,
+  });
   final int id;
   final String bucketId;
   final String bucketName;
@@ -53,27 +67,13 @@ class DirectoryFile {
 
   final bool isVideo;
   final bool isGif;
-
-  const DirectoryFile({
-    required this.id,
-    required this.bucketId,
-    required this.lastModified,
-    required this.originalUri,
-    required this.name,
-    required this.bucketName,
-    required this.size,
-    required this.isGif,
-    required this.height,
-    required this.width,
-    required this.isVideo,
-  });
 }
 
 @FlutterApi()
 abstract class GalleryApi {
   void updateDirectories(List<Directory> d, bool inRefresh, bool empty);
   void updatePictures(List<DirectoryFile?> f, String bucketId, int startTime,
-      bool inRefresh, bool empty);
+      bool inRefresh, bool empty,);
 
   void notifyNetworkStatus(bool hasInternet);
 
@@ -81,8 +81,8 @@ abstract class GalleryApi {
 }
 
 class CopyOp {
-  final String from;
-  final String to;
 
   const CopyOp({required this.from, required this.to});
+  final String from;
+  final String to;
 }

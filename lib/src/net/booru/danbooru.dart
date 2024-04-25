@@ -19,10 +19,12 @@ import "package:gallery/src/net/cloudflare_exception.dart";
 import "package:html_unescape/html_unescape_small.dart";
 
 List<BooruTag> _fromDanbooruTags(List<dynamic> l) => l
-    .map((e) => BooruTag(
-          e["name"] as String,
-          e["post_count"],
-        ))
+    .map(
+      (e) => BooruTag(
+        e["name"] as String,
+        e["post_count"],
+      ),
+    )
     .toList();
 
 class Danbooru implements BooruAPI {
@@ -44,17 +46,19 @@ class Danbooru implements BooruAPI {
   @override
   Future<Iterable<String>> notes(int postId) async {
     final resp = await client.getUriLog(
-        Uri.https(booru.url, "/notes.json", {
-          "search[post_id]": postId.toString(),
-        }),
-        LogReq(LogReq.notes(booru, postId), _log));
+      Uri.https(booru.url, "/notes.json", {
+        "search[post_id]": postId.toString(),
+      }),
+      LogReq(LogReq.notes(booru, postId), _log),
+    );
 
     if (resp.statusCode != 200) {
       throw "status code not 200";
     }
 
     return Future.value(
-        (resp.data as List<dynamic>).map((e) => stripHtml(e["body"])));
+      (resp.data as List<dynamic>).map((e) => stripHtml(e["body"])),
+    );
   }
 
   @override
@@ -64,12 +68,13 @@ class Danbooru implements BooruAPI {
     }
 
     final resp = await client.getUriLog(
-        Uri.https(booru.url, "/tags.json", {
-          "search[name_matches]": "$tag*",
-          "search[order]": "count",
-          "limit": "30",
-        }),
-        LogReq(LogReq.completeTag(booru, tag), _log));
+      Uri.https(booru.url, "/tags.json", {
+        "search[name_matches]": "$tag*",
+        "search[order]": "count",
+        "limit": "30",
+      }),
+      LogReq(LogReq.completeTag(booru, tag), _log),
+    );
 
     if (resp.statusCode != 200) {
       throw "status code not 200";
@@ -82,8 +87,9 @@ class Danbooru implements BooruAPI {
   Future<Post> singlePost(int id) async {
     try {
       final resp = await client.getUriLog(
-          Uri.https(booru.url, "/posts/$id.json"),
-          LogReq(LogReq.singlePost(booru, id), _log));
+        Uri.https(booru.url, "/posts/$id.json"),
+        LogReq(LogReq.singlePost(booru, id), _log),
+      );
 
       if (resp.statusCode != 200) {
         throw resp.data["message"];
@@ -105,21 +111,40 @@ class Danbooru implements BooruAPI {
   }
 
   @override
-  Future<(List<Post>, int?)> page(int i, String tags, BooruTagging excludedTags,
-          {SafeMode? overrideSafeMode}) =>
-      _commonPosts(tags, excludedTags,
-          page: i, overrideSafeMode: overrideSafeMode);
+  Future<(List<Post>, int?)> page(
+    int i,
+    String tags,
+    BooruTagging excludedTags, {
+    SafeMode? overrideSafeMode,
+  }) =>
+      _commonPosts(
+        tags,
+        excludedTags,
+        page: i,
+        overrideSafeMode: overrideSafeMode,
+      );
 
   @override
   Future<(List<Post>, int?)> fromPost(
-          int postId, String tags, BooruTagging excludedTags,
-          {SafeMode? overrideSafeMode}) =>
-      _commonPosts(tags, excludedTags,
-          postid: postId, overrideSafeMode: overrideSafeMode);
+    int postId,
+    String tags,
+    BooruTagging excludedTags, {
+    SafeMode? overrideSafeMode,
+  }) =>
+      _commonPosts(
+        tags,
+        excludedTags,
+        postid: postId,
+        overrideSafeMode: overrideSafeMode,
+      );
 
   Future<(List<Post>, int?)> _commonPosts(
-      String tags, BooruTagging excludedTags,
-      {int? postid, int? page, required SafeMode? overrideSafeMode}) async {
+    String tags,
+    BooruTagging excludedTags, {
+    int? postid,
+    int? page,
+    required SafeMode? overrideSafeMode,
+  }) async {
     if (postid == null && page == null) {
       throw "postid or page should be set";
     } else if (postid != null && page != null) {
@@ -152,12 +177,14 @@ class Danbooru implements BooruAPI {
 
     try {
       final resp = await client.getUriLog(
-          Uri.https(booru.url, "/posts.json", query),
-          LogReq(
-              postid != null
-                  ? LogReq.singlePost(booru, postid)
-                  : LogReq.page(booru, page!),
-              _log));
+        Uri.https(booru.url, "/posts.json", query),
+        LogReq(
+          postid != null
+              ? LogReq.singlePost(booru, postid)
+              : LogReq.page(booru, page!),
+          _log,
+        ),
+      );
 
       if (resp.statusCode != 200) {
         throw "status not ok";
@@ -176,7 +203,9 @@ class Danbooru implements BooruAPI {
   }
 
   Future<(List<Post>, int?)> _fromJson(
-      List<dynamic> m, BooruTagging? excludedTags) async {
+    List<dynamic> m,
+    BooruTagging? excludedTags,
+  ) async {
     final List<Post> list = [];
     int? currentSkipped;
     final exclude = excludedTags?.get(-1);

@@ -5,19 +5,10 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/pages/anime/info_base/background_image/background_image.dart';
+import "package:flutter/material.dart";
+import "package:gallery/src/pages/anime/info_base/background_image/background_image.dart";
 
 class UnsizedCard extends StatelessWidget {
-  final Widget title;
-  final Widget subtitle;
-  final String tooltip;
-  final ImageProvider? backgroundImage;
-  final bool transparentBackground;
-  final void Function()? onPressed;
-  final void Function()? onLongPressed;
-  final bool leanToLeft;
-
   const UnsizedCard({
     super.key,
     required this.subtitle,
@@ -29,6 +20,14 @@ class UnsizedCard extends StatelessWidget {
     this.leanToLeft = true,
     this.onLongPressed,
   });
+  final Widget title;
+  final Widget subtitle;
+  final String tooltip;
+  final ImageProvider? backgroundImage;
+  final bool transparentBackground;
+  final void Function()? onPressed;
+  final void Function()? onLongPressed;
+  final bool leanToLeft;
 
   @override
   Widget build(BuildContext context) {
@@ -48,19 +47,6 @@ class UnsizedCard extends StatelessWidget {
 }
 
 class BaseCard extends StatelessWidget {
-  final Widget title;
-  final Widget subtitle;
-  final ImageProvider? backgroundImage;
-  final String tooltip;
-  final bool transparentBackground;
-  final void Function()? onPressed;
-  final double? width;
-  final double? height;
-  final bool expandTitle;
-  final void Function()? onLongPressed;
-  final bool leanLeft;
-  final Widget? footer;
-
   const BaseCard({
     super.key,
     this.backgroundImage,
@@ -76,6 +62,18 @@ class BaseCard extends StatelessWidget {
     this.footer,
     this.leanLeft = false,
   });
+  final Widget title;
+  final Widget subtitle;
+  final ImageProvider? backgroundImage;
+  final String tooltip;
+  final bool transparentBackground;
+  final void Function()? onPressed;
+  final double? width;
+  final double? height;
+  final bool expandTitle;
+  final void Function()? onLongPressed;
+  final bool leanLeft;
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
@@ -98,12 +96,13 @@ class BaseCard extends StatelessWidget {
                     DefaultTextStyle.merge(
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: DefaultTextStyle.of(context).style.color ??
-                              Theme.of(context)
-                                  .colorScheme
-                                  .secondary
-                                  .withOpacity(0.8),
-                          letterSpacing: 0.8),
+                            color: DefaultTextStyle.of(context).style.color ??
+                                Theme.of(context)
+                                    .colorScheme
+                                    .secondary
+                                    .withOpacity(0.8),
+                            letterSpacing: 0.8,
+                          ),
                       child: Padding(
                         padding: height == null
                             ? EdgeInsets.zero
@@ -111,7 +110,8 @@ class BaseCard extends StatelessWidget {
                                 left: leanLeft ? 0 : 4,
                                 right: leanLeft ? 24 : 8,
                                 top: 4,
-                                bottom: 4),
+                                bottom: 4,
+                              ),
                         child: expandTitle ? Expanded(child: title) : title,
                       ),
                     ),
@@ -126,8 +126,9 @@ class BaseCard extends StatelessWidget {
                             ),
                         child: Padding(
                           padding: EdgeInsets.only(
-                              left: leanLeft ? 0 : 16,
-                              right: leanLeft ? 24 : 16),
+                            left: leanLeft ? 0 : 16,
+                            right: leanLeft ? 24 : 16,
+                          ),
                           child: subtitle,
                         ),
                       ),
@@ -139,9 +140,9 @@ class BaseCard extends StatelessWidget {
                   alignment: Alignment.bottomCenter,
                   child: Padding(
                     padding: const EdgeInsets.all(8),
-                    child: footer!,
+                    child: footer,
                   ),
-                )
+                ),
             ],
           ),
         );
@@ -182,10 +183,9 @@ class BaseCard extends StatelessWidget {
 }
 
 class DashboardCard extends StatelessWidget {
+  const DashboardCard({super.key, required this.subtitle, required this.title});
   final String title;
   final String subtitle;
-
-  const DashboardCard({super.key, required this.subtitle, required this.title});
 
   @override
   Widget build(BuildContext context) {

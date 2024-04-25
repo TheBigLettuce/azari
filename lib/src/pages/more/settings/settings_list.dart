@@ -5,34 +5,32 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
-import 'dart:io';
+import "dart:async";
+import "dart:io";
 
-import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
-import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
-import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/booru/display_quality.dart';
-import 'package:gallery/src/plugs/platform_functions.dart';
-import 'package:gallery/src/widgets/menu_wrapper.dart';
-import 'package:gallery/welcome_pages.dart';
-
-import '../../../db/tags/post_tags.dart';
-import 'radio_dialog.dart';
-import 'settings_label.dart';
-import 'settings_widget.dart';
+import "package:flutter/material.dart";
+import "package:flutter_animate/flutter_animate.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart";
+import "package:gallery/src/db/schemas/gallery/thumbnail.dart";
+import "package:gallery/src/db/schemas/settings/misc_settings.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/tags/post_tags.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/display_quality.dart";
+import "package:gallery/src/pages/more/settings/radio_dialog.dart";
+import "package:gallery/src/pages/more/settings/settings_label.dart";
+import "package:gallery/src/pages/more/settings/settings_widget.dart";
+import "package:gallery/src/plugs/platform_functions.dart";
+import "package:gallery/src/widgets/menu_wrapper.dart";
+import "package:gallery/welcome_pages.dart";
 
 class SettingsList extends StatefulWidget {
-  final bool sliver;
-
   const SettingsList({
     super.key,
     required this.sliver,
   });
+  final bool sliver;
 
   @override
   State<SettingsList> createState() => _SettingsListState();
@@ -77,7 +75,7 @@ class _SettingsListState extends State<SettingsList> {
 
   void showDialog(String s) {
     Navigator.of(context).push(
-      DialogRoute(
+      DialogRoute<void>(
         context: context,
         builder: (context) => AlertDialog(
           actions: [
@@ -86,7 +84,7 @@ class _SettingsListState extends State<SettingsList> {
                 Navigator.pop(context);
               },
               child: Text(AppLocalizations.of(context)!.ok),
-            )
+            ),
           ],
           title: Text(AppLocalizations.of(context)!.error),
           content: Text(s),
@@ -95,8 +93,11 @@ class _SettingsListState extends State<SettingsList> {
     );
   }
 
-  List<Widget> makeList(BuildContext context, TextStyle titleStyle,
-          AppLocalizations localizations) =>
+  List<Widget> makeList(
+    BuildContext context,
+    TextStyle titleStyle,
+    AppLocalizations localizations,
+  ) =>
       [
         SettingsLabel(localizations.booruLabel, titleStyle),
         MenuWrapper(
@@ -162,7 +163,7 @@ class _SettingsListState extends State<SettingsList> {
             icon: const Icon(Icons.more_horiz_outlined),
             itemBuilder: (context) {
               return [
-                PopupMenuItem(
+                PopupMenuItem<void>(
                   enabled: false,
                   child: TextButton(
                     onPressed: () {
@@ -183,7 +184,7 @@ class _SettingsListState extends State<SettingsList> {
                     child: Text(localizations.restore),
                   ),
                 ),
-                PopupMenuItem(
+                PopupMenuItem<void>(
                   enabled: false,
                   child: TextButton(
                     onPressed: () {
@@ -223,23 +224,24 @@ class _SettingsListState extends State<SettingsList> {
                 trailing: PopupMenuButton(
                   itemBuilder: (context) {
                     return [
-                      PopupMenuItem(
+                      PopupMenuItem<void>(
                         enabled: false,
                         child: TextButton(
                           onPressed: () {
                             Navigator.push(
                               context,
-                              DialogRoute(
+                              DialogRoute<void>(
                                 context: context,
                                 builder: (context) {
                                   return AlertDialog(
                                     title: Text(localizations.areYouSure),
                                     actions: [
                                       TextButton(
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                          },
-                                          child: Text(localizations.no)),
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(localizations.no),
+                                      ),
                                       TextButton(
                                         onPressed: () {
                                           Thumbnail.clear();
@@ -261,7 +263,7 @@ class _SettingsListState extends State<SettingsList> {
                           },
                           child: Text(localizations.purgeThumbnails),
                         ),
-                      )
+                      ),
                     ];
                   },
                   icon: const Icon(Icons.more_horiz_rounded),
@@ -271,63 +273,68 @@ class _SettingsListState extends State<SettingsList> {
           ),
         if (Platform.isAndroid)
           FutureBuilder(
-              future: pinnedThumbnailCount,
-              builder: (context, data) {
-                return ListTile(
-                  title: Text(localizations.pinnedThumbnailsSize),
-                  subtitle: data.hasData
-                      ? Text(_calculateMBSize(data.data!, localizations))
-                      : Text(localizations.loadingPlaceholder),
-                  trailing: PopupMenuButton(
-                    itemBuilder: (context) {
-                      return [
-                        PopupMenuItem(
-                          enabled: false,
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.push(
-                                  context,
-                                  DialogRoute(
-                                    context: context,
-                                    builder: (context) {
-                                      return AlertDialog(
-                                        title: Text(localizations.areYouSure),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.pop(context);
-                                            },
-                                            child: Text(localizations.no),
-                                          ),
-                                          TextButton(
-                                            onPressed: () {
-                                              PinnedThumbnail.clear();
+            future: pinnedThumbnailCount,
+            builder: (context, data) {
+              return ListTile(
+                title: Text(localizations.pinnedThumbnailsSize),
+                subtitle: data.hasData
+                    ? Text(_calculateMBSize(data.data!, localizations))
+                    : Text(localizations.loadingPlaceholder),
+                trailing: PopupMenuButton(
+                  itemBuilder: (context) {
+                    return [
+                      PopupMenuItem<void>(
+                        enabled: false,
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              DialogRoute<void>(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: Text(localizations.areYouSure),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(localizations.no),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          PinnedThumbnail.clear();
 
-                                              PlatformFunctions
-                                                  .clearCachedThumbs(true);
+                                          PlatformFunctions.clearCachedThumbs(
+                                            true,
+                                          );
 
-                                              thumbnailCount = PlatformFunctions
-                                                  .thumbCacheSize(true);
+                                          thumbnailCount =
+                                              PlatformFunctions.thumbCacheSize(
+                                            true,
+                                          );
 
-                                              setState(() {});
-                                              Navigator.pop(context);
-                                            },
-                                            child: Text(localizations.yes),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  ));
-                            },
-                            child: Text(localizations.purgeThumbnails),
-                          ),
-                        )
-                      ];
-                    },
-                    icon: const Icon(Icons.more_horiz_rounded),
-                  ),
-                );
-              }),
+                                          setState(() {});
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(localizations.yes),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                          child: Text(localizations.purgeThumbnails),
+                        ),
+                      ),
+                    ];
+                  },
+                  icon: const Icon(Icons.more_horiz_rounded),
+                ),
+              );
+            },
+          ),
         SwitchListTile(
           value: _miscSettings!.filesExtendedActions,
           onChanged: (value) => MiscSettings.setFilesExtendedActions(value),
@@ -337,11 +344,14 @@ class _SettingsListState extends State<SettingsList> {
           title: "GPL-2.0-only",
           child: ListTile(
             onTap: () {
-              Navigator.push(context, MaterialPageRoute(
-                builder: (context) {
-                  return const LicensePage();
-                },
-              ));
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (context) {
+                    return const LicensePage();
+                  },
+                ),
+              );
             },
             title: Text(localizations.licenseSetting),
             subtitle: const Text("GPL-2.0-only"),
@@ -355,13 +365,16 @@ class _SettingsListState extends State<SettingsList> {
         ListTile(
           title: Text(localizations.openWelcomePageSetting),
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(
-              builder: (context) {
-                return const WelcomePage(
-                  doNotLaunchHome: true,
-                );
-              },
-            ));
+            Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (context) {
+                  return const WelcomePage(
+                    doNotLaunchHome: true,
+                  );
+                },
+              ),
+            );
           },
         ),
       ];
@@ -371,7 +384,7 @@ class _SettingsListState extends State<SettingsList> {
       return localizations.megabytes(0);
     }
 
-    return localizations.megabytes((i / (1000 * 1000)));
+    return localizations.megabytes(i / (1000 * 1000));
   }
 
   @override

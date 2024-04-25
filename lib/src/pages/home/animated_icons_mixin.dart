@@ -5,7 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of '../home.dart';
+part of "../home.dart";
 
 mixin _AnimatedIconsMixin on State<Home> {
   late final AnimationController controllerNavBar;
@@ -27,7 +27,9 @@ mixin _AnimatedIconsMixin on State<Home> {
   void initIcons(TickerProviderStateMixin ticker) {
     controllerNavBar = AnimationController(vsync: ticker);
     pageFadeAnimation = AnimationController(
-        vsync: ticker, duration: const Duration(milliseconds: 200));
+      vsync: ticker,
+      duration: const Duration(milliseconds: 200),
+    );
     pageRiseAnimation = AnimationController(vsync: ticker);
 
     booruIconController = AnimationController(vsync: ticker);
@@ -48,7 +50,10 @@ mixin _AnimatedIconsMixin on State<Home> {
   }
 
   List<Widget> icons(
-          BuildContext context, int currentRoute, SettingsData settings) =>
+    BuildContext context,
+    int currentRoute,
+    SettingsData settings,
+  ) =>
       [
         _BooruIcon(
           isSelected: currentRoute == _ChangePageMixin.kBooruPageRoute,
@@ -84,7 +89,8 @@ mixin _AnimatedIconsMixin on State<Home> {
           label: AppLocalizations.of(context)!.galleryLabel,
         ),
         NavigationDestination(
-            icon: const Icon(Icons.sticky_note_2),
-            label: AppLocalizations.of(context)!.notesPage),
+          icon: const Icon(Icons.sticky_note_2),
+          label: AppLocalizations.of(context)!.notesPage,
+        ),
       ];
 }

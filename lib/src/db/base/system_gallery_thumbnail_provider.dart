@@ -5,16 +5,16 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:io';
-import 'dart:ui';
+import "dart:io";
+import "dart:ui";
 
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
-import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
-import 'package:gallery/src/plugs/platform_functions.dart';
-import 'package:transparent_image/transparent_image.dart';
+import "package:flutter/foundation.dart";
+import "package:flutter/material.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart";
+import "package:gallery/src/db/schemas/gallery/thumbnail.dart";
+import "package:gallery/src/plugs/platform_functions.dart";
+import "package:transparent_image/transparent_image.dart";
 
 final _thumbLoadingStatus = <int, Future<ThumbId>>{};
 
@@ -41,13 +41,16 @@ class SystemGalleryThumbnailProvider
 
   @override
   Future<SystemGalleryThumbnailProvider> obtainKey(
-      ImageConfiguration configuration) {
+    ImageConfiguration configuration,
+  ) {
     return SynchronousFuture(this);
   }
 
   @override
   ImageStreamCompleter loadImage(
-      SystemGalleryThumbnailProvider key, ImageDecoderCallback decode) {
+    SystemGalleryThumbnailProvider key,
+    ImageDecoderCallback decode,
+  ) {
     return MultiFrameImageStreamCompleter(
       codec: _loadAsync(key, decode),
       scale: 1,
@@ -55,7 +58,9 @@ class SystemGalleryThumbnailProvider
   }
 
   Future<Codec> _loadAsync(
-      SystemGalleryThumbnailProvider key, ImageDecoderCallback decode) async {
+    SystemGalleryThumbnailProvider key,
+    ImageDecoderCallback decode,
+  ) async {
     Future<File?> setFile() async {
       final future = _thumbLoadingStatus[id];
       if (future != null) {
@@ -123,7 +128,7 @@ class SystemGalleryThumbnailProvider
     final int lengthInBytes = await file.length();
     if (lengthInBytes == 0) {
       PaintingBinding.instance.imageCache.evict(key);
-      throw StateError('$file is empty and cannot be loaded as an image.');
+      throw StateError("$file is empty and cannot be loaded as an image.");
     }
     return (file.runtimeType == File)
         ? decode(await ImmutableBuffer.fromFilePath(file.path))

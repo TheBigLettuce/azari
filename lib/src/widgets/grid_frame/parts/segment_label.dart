@@ -5,18 +5,10 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/widgets/menu_wrapper.dart';
+import "package:flutter/material.dart";
+import "package:gallery/src/widgets/menu_wrapper.dart";
 
 class SegmentLabel extends StatelessWidget {
-  final String text;
-  final List<PopupMenuItem> menuItems;
-  // final void Function()? onLongPress;
-  final void Function()? onPress;
-  final bool sticky;
-  final bool hidePinnedIcon;
-  final Widget? overridePinnedIcon;
-
   const SegmentLabel(
     this.text, {
     super.key,
@@ -26,6 +18,12 @@ class SegmentLabel extends StatelessWidget {
     required this.sticky,
     this.overridePinnedIcon,
   });
+  final String text;
+  final List<PopupMenuItem<void>> menuItems;
+  final void Function()? onPress;
+  final bool sticky;
+  final bool hidePinnedIcon;
+  final Widget? overridePinnedIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +62,9 @@ class SegmentLabel extends StatelessWidget {
         if ((sticky && !hidePinnedIcon) || overridePinnedIcon != null)
           overridePinnedIcon ??
               const IconButton.filled(
-                  onPressed: null, icon: Icon(Icons.push_pin_outlined)),
+                onPressed: null,
+                icon: Icon(Icons.push_pin_outlined),
+              ),
       ],
     );
 
@@ -73,19 +73,21 @@ class SegmentLabel extends StatelessWidget {
       items: menuItems,
       child: Padding(
         padding: EdgeInsets.only(
-            bottom: 8,
-            top: 16,
-            right: rightGesture == 0 ? 8 : rightGesture / 2),
+          bottom: 8,
+          top: 16,
+          right: rightGesture == 0 ? 8 : rightGesture / 2,
+        ),
         child: GestureDetector(
           onTap: onPress,
           child: hidePinnedIcon && overridePinnedIcon == null
               ? row
               : SizedBox.fromSize(
                   size: Size.fromHeight(
-                      (Theme.of(context).textTheme.headlineMedium?.fontSize ??
-                              24) +
-                          8 +
-                          16),
+                    (Theme.of(context).textTheme.headlineMedium?.fontSize ??
+                            24) +
+                        8 +
+                        16,
+                  ),
                   child: row,
                 ),
         ),
@@ -95,14 +97,13 @@ class SegmentLabel extends StatelessWidget {
 }
 
 class MediumSegmentLabel extends StatelessWidget {
-  final String text;
-  final Widget? trailingWidget;
-
   const MediumSegmentLabel(
     this.text, {
     super.key,
     this.trailingWidget,
   });
+  final String text;
+  final Widget? trailingWidget;
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +111,10 @@ class MediumSegmentLabel extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.only(
-          bottom: 8, top: 8, right: rightGesture == 0 ? 8 : rightGesture / 2),
+        bottom: 8,
+        top: 8,
+        right: rightGesture == 0 ? 8 : rightGesture / 2,
+      ),
       child: Row(
         textBaseline: TextBaseline.alphabetic,
         mainAxisAlignment: trailingWidget == null

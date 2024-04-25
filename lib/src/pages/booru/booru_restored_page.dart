@@ -159,8 +159,8 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
   static const _log = LogTarget.booru;
 
   late final StreamSubscription<SettingsData?> settingsWatcher;
-  late final StreamSubscription favoritesWatcher;
-  late final StreamSubscription blacklistedWatcher;
+  late final StreamSubscription<void> favoritesWatcher;
+  late final StreamSubscription<void> blacklistedWatcher;
 
   late final SearchLaunchGrid search;
 
@@ -333,7 +333,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
 
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (context) {
           return BooruSearchPage(
             booru: booru,

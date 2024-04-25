@@ -5,12 +5,12 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/base/note_base.dart';
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:isar/isar.dart';
+import "package:flutter/material.dart";
+import "package:gallery/src/db/base/note_base.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:isar/isar.dart";
 
-part 'note_gallery.g.dart';
+part "note_gallery.g.dart";
 
 @collection
 class NoteGallery extends NoteBase {
@@ -42,27 +42,35 @@ class NoteGallery extends NoteBase {
 
   static void reorder({required int id, required int from, required int to}) {}
 
-  static bool add(int id,
-      {required List<String> text,
-      required int height,
-      required int width,
-      required bool isVideo,
-      required bool isGif,
-      required Color? backgroundColor,
-      required Color? textColor,
-      required String originalUri}) {
+  static bool add(
+    int id, {
+    required List<String> text,
+    required int height,
+    required int width,
+    required bool isVideo,
+    required bool isGif,
+    required Color? backgroundColor,
+    required Color? textColor,
+    required String originalUri,
+  }) {
     final n = Dbs.g.main.noteGallerys.getByIdSync(id);
 
-    Dbs.g.main.writeTxnSync(() => Dbs.g.main.noteGallerys.putByIdSync(
-        NoteGallery([...n?.text ?? [], ...text], DateTime.now(),
-            id: id,
-            backgroundColor: backgroundColor?.value,
-            textColor: textColor?.value,
-            originalUri: originalUri,
-            height: height,
-            width: width,
-            isGif: isGif,
-            isVideo: isVideo)));
+    Dbs.g.main.writeTxnSync(
+      () => Dbs.g.main.noteGallerys.putByIdSync(
+        NoteGallery(
+          [...n?.text ?? [], ...text],
+          DateTime.now(),
+          id: id,
+          backgroundColor: backgroundColor?.value,
+          textColor: textColor?.value,
+          originalUri: originalUri,
+          height: height,
+          width: width,
+          isGif: isGif,
+          isVideo: isVideo,
+        ),
+      ),
+    );
 
     return n == null;
   }
@@ -89,7 +97,10 @@ class NoteGallery extends NoteBase {
         Dbs.g.main.noteGallerys.deleteByIdSync(id);
         return true;
       } else {
-        Dbs.g.main.noteGallerys.putByIdSync(NoteGallery(newText, n.time,
+        Dbs.g.main.noteGallerys.putByIdSync(
+          NoteGallery(
+            newText,
+            n.time,
             id: id,
             backgroundColor: n.backgroundColor,
             textColor: n.textColor,
@@ -97,7 +108,9 @@ class NoteGallery extends NoteBase {
             height: n.height,
             width: n.width,
             isGif: n.isGif,
-            isVideo: n.isVideo));
+            isVideo: n.isVideo,
+          ),
+        );
         return false;
       }
     });
@@ -112,16 +125,22 @@ class NoteGallery extends NoteBase {
     final t = n.text.toList();
     t[tidx] = newText;
 
-    Dbs.g.main.writeTxnSync(() => Dbs.g.main.noteGallerys.putByIdSync(
-        NoteGallery(t, n.time,
-            id: n.id,
-            backgroundColor: n.backgroundColor,
-            textColor: n.textColor,
-            originalUri: n.originalUri,
-            height: n.height,
-            width: n.width,
-            isGif: n.isGif,
-            isVideo: n.isVideo)));
+    Dbs.g.main.writeTxnSync(
+      () => Dbs.g.main.noteGallerys.putByIdSync(
+        NoteGallery(
+          t,
+          n.time,
+          id: n.id,
+          backgroundColor: n.backgroundColor,
+          textColor: n.textColor,
+          originalUri: n.originalUri,
+          height: n.height,
+          width: n.width,
+          isGif: n.isGif,
+          isVideo: n.isVideo,
+        ),
+      ),
+    );
   }
 
   static List<NoteGallery> load() {

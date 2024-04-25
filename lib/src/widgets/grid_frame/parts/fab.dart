@@ -5,15 +5,14 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of '../configuration/grid_fab_type.dart';
+part of "../configuration/grid_fab_type.dart";
 
 class _Fab extends StatefulWidget {
-  final ScrollController controller;
-
   const _Fab({
     super.key,
     required this.controller,
   });
+  final ScrollController controller;
 
   @override
   State<_Fab> createState() => __FabState();
@@ -105,7 +104,7 @@ class __FabState extends State<_Fab> with SingleTickerProviderStateMixin {
           curve: Easing.emphasizedDecelerate,
           end: Offset(1, 1),
           begin: Offset.zero,
-        )
+        ),
       ],
       child: GestureDetector(
         onLongPress: () {
@@ -114,8 +113,11 @@ class __FabState extends State<_Fab> with SingleTickerProviderStateMixin {
             return;
           }
 
-          widget.controller.animateTo(scroll,
-              duration: 200.ms, curve: Easing.emphasizedAccelerate);
+          widget.controller.animateTo(
+            scroll,
+            duration: 200.ms,
+            curve: Easing.emphasizedAccelerate,
+          );
         },
         child: FloatingActionButton(
           onPressed: () {

@@ -5,13 +5,14 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:gallery/src/db/schemas/tags/tags.dart';
-import 'package:isar/isar.dart';
+import "package:gallery/src/db/schemas/tags/tags.dart";
+import "package:isar/isar.dart";
 
-part 'directory_tags.g.dart';
+part "directory_tags.g.dart";
 
 @collection
 class DirectoryTag {
+  const DirectoryTag(this.buckedId, this.tag);
   Id get isarId => fastHash(buckedId);
 
   @Index(unique: true, replace: true)
@@ -19,6 +20,4 @@ class DirectoryTag {
 
   @Index()
   final String tag;
-
-  const DirectoryTag(this.buckedId, this.tag);
 }

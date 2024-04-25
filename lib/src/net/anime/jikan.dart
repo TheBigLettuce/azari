@@ -5,13 +5,13 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/foundation.dart';
-import 'package:gallery/src/db/schemas/anime/saved_anime_characters.dart';
-import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
-import 'package:gallery/src/interfaces/anime/anime_api.dart';
-import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/interfaces/logging/logging.dart';
-import 'package:jikan_api/jikan_api.dart' as api;
+import "package:flutter/foundation.dart";
+import "package:gallery/src/db/schemas/anime/saved_anime_characters.dart";
+import "package:gallery/src/db/schemas/anime/saved_anime_entry.dart";
+import "package:gallery/src/interfaces/anime/anime_api.dart";
+import "package:gallery/src/interfaces/anime/anime_entry.dart";
+import "package:gallery/src/interfaces/logging/logging.dart";
+import "package:jikan_api/jikan_api.dart" as api;
 
 class Jikan implements AnimeAPI {
   const Jikan();
@@ -87,12 +87,16 @@ class Jikan implements AnimeAPI {
   @override
   Future<Map<int, AnimeGenre>> genres(AnimeSafeMode mode) async {
     final response = await api.Jikan(debug: kDebugMode).getAnimeGenres(
-        type: mode == AnimeSafeMode.h ? api.GenreType.explicit_genres : null);
+      type: mode == AnimeSafeMode.h ? api.GenreType.explicit_genres : null,
+    );
     final map = <int, AnimeGenre>{};
 
     for (final e in response) {
       map[e.malId] = AnimeGenre(
-          id: e.malId, title: e.name, explicit: mode == AnimeSafeMode.h);
+        id: e.malId,
+        title: e.name,
+        explicit: mode == AnimeSafeMode.h,
+      );
     }
 
     return map;
@@ -104,13 +108,15 @@ class Jikan implements AnimeAPI {
         .getAnimeNews(entry.id, page: page + 1);
 
     return response
-        .map((e) => AnimeNewsEntry(
-              content: e.excerpt,
-              date: DateTime.parse(e.date),
-              browserUrl: e.url,
-              thumbUrl: e.imageUrl,
-              title: e.title,
-            ))
+        .map(
+          (e) => AnimeNewsEntry(
+            content: e.excerpt,
+            date: DateTime.parse(e.date),
+            browserUrl: e.url,
+            thumbUrl: e.imageUrl,
+            title: e.title,
+          ),
+        )
         .toList();
   }
 
@@ -120,10 +126,13 @@ class Jikan implements AnimeAPI {
         await api.Jikan(debug: kDebugMode).getAnimeRecommendations(entry.id);
 
     return response
-        .map((e) => AnimeRecommendations(
+        .map(
+          (e) => AnimeRecommendations(
             thumbUrl: e.entry.imageUrl,
             title: e.entry.title,
-            id: e.entry.malId))
+            id: e.entry.malId,
+          ),
+        )
         .toList();
   }
 
@@ -133,10 +142,12 @@ class Jikan implements AnimeAPI {
         await api.Jikan(debug: kDebugMode).getAnimePictures(entry.id);
 
     return result
-        .map((e) => AnimePicture(
-              imageUrl: e.largeImageUrl ?? e.imageUrl,
-              thumbUrl: e.smallImageUrl ?? e.imageUrl,
-            ))
+        .map(
+          (e) => AnimePicture(
+            imageUrl: e.largeImageUrl ?? e.imageUrl,
+            thumbUrl: e.smallImageUrl ?? e.imageUrl,
+          ),
+        )
         .toList();
   }
 }
@@ -146,12 +157,14 @@ AnimeCharacter _fromJikanCharacter(api.CharacterMeta e) =>
 
 List<Relation> _fromMeta(api.BuiltList<api.Meta> l) {
   return l
-      .map((e) => Relation(
-            thumbUrl: e.url,
-            title: e.name,
-            type: e.type,
-            id: e.malId,
-          ))
+      .map(
+        (e) => Relation(
+          thumbUrl: e.url,
+          title: e.name,
+          type: e.type,
+          id: e.malId,
+        ),
+      )
       .toList();
 }
 
@@ -178,8 +191,9 @@ AnimeSearchEntry _fromJikanAnime(api.Anime e) {
     year: e.year ?? 0,
     siteUrl: e.url,
     staff: e.producers
-        .map((e) =>
-            Relation(thumbUrl: "", title: e.name, type: e.type, id: e.malId))
+        .map(
+          (e) => Relation(title: e.name, type: e.type, id: e.malId),
+        )
         .toList(),
     isAiring: e.airing,
     titleEnglish: e.titleEnglish ?? "",

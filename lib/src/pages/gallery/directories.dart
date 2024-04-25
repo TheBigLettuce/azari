@@ -323,10 +323,12 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     }
 
     if (noAuth.isNotEmpty && requireAuth.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content:
-            Text("Some directories require authentication"), // TODO: change
-        action: SnackBarAction(
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            "Some directories require authentication",
+          ), // TODO: change
+          action: SnackBarAction(
             label: "Auth",
             onPressed: () async {
               final success = await LocalAuthentication()
@@ -340,12 +342,16 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     .removeDirectoriesTag(requireAuth.map((e) => e.bucketId));
               } else {
                 PostTags.g.setDirectoriesTag(
-                    requireAuth.map((e) => e.bucketId), value);
+                  requireAuth.map((e) => e.bucketId),
+                  value,
+                );
               }
 
               _refresh();
-            }),
-      ));
+            },
+          ),
+        ),
+      );
     }
 
     _refresh();
@@ -365,38 +371,42 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
         ),
         getCell: (i) => api.directCell(i),
         functionality: GridFunctionality(
-            selectionGlue: GlueProvider.generateOf(context)(),
-            registerNotifiers: (child) => DirectoriesDataNotifier(
-                  api: api,
-                  nestedCallback: widget.nestedCallback,
-                  callback: widget.callback,
-                  segmentFnc: _segmentCell,
-                  child: child,
-                ),
-            refreshingStatus: state.refreshingStatus,
-            watchLayoutSettings: GridSettingsDirectories.watch,
-            refresh: widget.callback != null
-                ? SynchronousGridRefresh(() {
-                    PlatformFunctions.trashThumbId().then((value) {
-                      try {
-                        setState(() {
-                          trashThumbId = value;
-                        });
-                      } catch (_) {}
-                    });
+          selectionGlue: GlueProvider.generateOf(context)(),
+          registerNotifiers: (child) => DirectoriesDataNotifier(
+            api: api,
+            nestedCallback: widget.nestedCallback,
+            callback: widget.callback,
+            segmentFnc: _segmentCell,
+            child: child,
+          ),
+          refreshingStatus: state.refreshingStatus,
+          watchLayoutSettings: GridSettingsDirectories.watch,
+          refresh: widget.callback != null
+              ? SynchronousGridRefresh(() {
+                  PlatformFunctions.trashThumbId().then((value) {
+                    try {
+                      setState(() {
+                        trashThumbId = value;
+                      });
+                    } catch (_) {}
+                  });
 
-                    return extra.db.systemGalleryDirectorys.countSync();
-                  })
-                : RetainedGridRefresh(_refresh),
-            search: OverrideGridSearchWidget(
-              SearchAndFocus(
-                  search.searchWidget(context,
-                      count: widget.callback != null
-                          ? extra.db.systemGalleryDirectorys.countSync()
-                          : null,
-                      hint: AppLocalizations.of(context)!.directoriesHint),
-                  search.searchFocus),
-            )),
+                  return extra.db.systemGalleryDirectorys.countSync();
+                })
+              : RetainedGridRefresh(_refresh),
+          search: OverrideGridSearchWidget(
+            SearchAndFocus(
+              search.searchWidget(
+                context,
+                count: widget.callback != null
+                    ? extra.db.systemGalleryDirectorys.countSync()
+                    : null,
+                hint: AppLocalizations.of(context)!.directoriesHint,
+              ),
+              search.searchFocus,
+            ),
+          ),
+        ),
         mainFocus: state.mainFocus,
         description: GridDescription(
           actions: widget.callback != null || widget.nestedCallback != null
@@ -408,7 +418,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                       widget.nestedCallback,
                       GlueProvider.generateOf(context),
                       _segmentCell,
-                    )
+                    ),
                 ]
               : [
                   FavoritesActions.addToGroup(
@@ -427,14 +437,17 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     true,
                   ),
                   SystemGalleryDirectoriesActions.blacklist(
-                      context, extra, _segmentCell),
+                    context,
+                    extra,
+                    _segmentCell,
+                  ),
                   SystemGalleryDirectoriesActions.joinedDirectories(
                     context,
                     extra,
                     widget.nestedCallback,
                     GlueProvider.generateOf(context),
                     _segmentCell,
-                  )
+                  ),
                 ],
           footer: widget.callback?.preview,
           menuButtonItems: [
@@ -451,8 +464,9 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     Navigator.pop(context);
                   } catch (e, trace) {
                     _log.logDefaultImportant(
-                        "new folder in android_directories".errorMessage(e),
-                        trace);
+                      "new folder in android_directories".errorMessage(e),
+                      trace,
+                    );
 
                     // ignore: use_build_context_synchronously
                     Navigator.pop(context);
@@ -469,7 +483,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                       : widget.nestedCallback!.description,
                   widget.callback != null
                       ? widget.callback!.icon
-                      : widget.nestedCallback!.icon)
+                      : widget.nestedCallback!.icon,
+                )
               : null,
           settingsButton: GridFrameSettingsButton(
             selectRatio: (ratio, settings) =>
@@ -480,7 +495,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                 (settings as GridSettingsDirectories)
                     .copy(hideName: hideNames)
                     .save(),
-            selectGridLayout: null,
             selectGridColumn: (columns, settings) =>
                 (settings as GridSettingsDirectories)
                     .copy(columns: columns)
@@ -523,11 +537,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 }
 
 class DirectoriesDataNotifier extends InheritedWidget {
-  final GalleryAPIDirectories api;
-  final CallbackDescription? callback;
-  final CallbackDescriptionNested? nestedCallback;
-  final String Function(SystemGalleryDirectory cell) segmentFnc;
-
   const DirectoriesDataNotifier({
     super.key,
     required this.api,
@@ -536,6 +545,10 @@ class DirectoriesDataNotifier extends InheritedWidget {
     required this.segmentFnc,
     required super.child,
   });
+  final GalleryAPIDirectories api;
+  final CallbackDescription? callback;
+  final CallbackDescriptionNested? nestedCallback;
+  final String Function(SystemGalleryDirectory cell) segmentFnc;
 
   static (
     GalleryAPIDirectories,

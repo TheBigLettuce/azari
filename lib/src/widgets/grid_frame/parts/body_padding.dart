@@ -5,23 +5,21 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of '../grid_frame.dart';
+part of "../grid_frame.dart";
 
 class _BodyWrapping extends StatelessWidget {
-  final FocusNode mainFocus;
-  final String pageName;
-  final Map<SingleActivatorDescription, void Function()> bindings;
-  // final Widget? pageSwitcherNoBar;
-  final List<Widget> children;
-
   const _BodyWrapping({
-    super.key,
     required this.bindings,
     required this.mainFocus,
     required this.pageName,
     // required this.pageSwitcherNoBar,
     required this.children,
   });
+  final FocusNode mainFocus;
+  final String pageName;
+  final Map<SingleActivatorDescription, void Function()> bindings;
+  // final Widget? pageSwitcherNoBar;
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +33,7 @@ class _BodyWrapping extends StatelessWidget {
           () {
             mainFocus.requestFocus();
           },
-        )
+        ),
       },
       child: Focus(
         autofocus: true,
@@ -44,9 +42,10 @@ class _BodyWrapping extends StatelessWidget {
           children: [
             // if (pageSwitcherNoBar != null) pageSwitcherNoBar!,
             Expanded(
-                child: Stack(
-              children: children,
-            ))
+              child: Stack(
+                children: children,
+              ),
+            ),
           ],
         ),
       ),

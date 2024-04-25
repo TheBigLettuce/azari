@@ -200,7 +200,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
   late final SearchFilterGrid<SystemGalleryDirectoryFile> search;
 
   AppLifecycleListener? _listener;
-  StreamSubscription? _subscription;
+  StreamSubscription<void>? _subscription;
 
   @override
   void initState() {
@@ -218,8 +218,8 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
       _listener = AppLifecycleListener(
         onHide: () {
           _subscription?.cancel();
-          _subscription =
-              Stream.periodic(const Duration(seconds: 10)).listen((event) {
+          _subscription = Stream<void>.periodic(const Duration(seconds: 10))
+              .listen((event) {
             state.refreshingStatus.mutation.cellCount = 0;
 
             Navigator.of(context).pop();
@@ -271,7 +271,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
 
       Navigator.push(
         context,
-        MaterialPageRoute(
+        MaterialPageRoute<void>(
           builder: (context) {
             return BooruSearchPage(
               booru: booru,
@@ -420,7 +420,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
                 IconButton(
                   onPressed: () {
                     Navigator.of(context, rootNavigator: true).push(
-                      DialogRoute(
+                      DialogRoute<void>(
                         context: context,
                         builder: (context) {
                           return AlertDialog(

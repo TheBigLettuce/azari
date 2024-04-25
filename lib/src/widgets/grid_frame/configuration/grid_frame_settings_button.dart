@@ -5,13 +5,13 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:gallery/src/db/base/grid_settings_base.dart';
-import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
-import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
+import "package:gallery/src/db/base/grid_settings_base.dart";
+import "package:gallery/src/db/schemas/grid_settings/booru.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 
 class GridFrameSettingsButton {
   const GridFrameSettingsButton({
@@ -27,7 +27,8 @@ class GridFrameSettingsButton {
 
   final GridSettingsBase Function()? overrideDefault;
   final StreamSubscription<GridSettingsBase> Function(
-      void Function(GridSettingsBase) f)? watchExplicitly;
+    void Function(GridSettingsBase) f,
+  )? watchExplicitly;
   final void Function(GridAspectRatio?, GridSettingsBase)? selectRatio;
   final void Function(bool, GridSettingsBase)? selectHideName;
   final void Function(GridLayoutType?, GridSettingsBase)? selectGridLayout;

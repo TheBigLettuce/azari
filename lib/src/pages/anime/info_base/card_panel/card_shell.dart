@@ -5,22 +5,11 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/anime/anime_api.dart';
-import 'package:gallery/src/pages/anime/info_base/anime_name_widget.dart';
+import "package:flutter/material.dart";
+import "package:gallery/src/interfaces/anime/anime_api.dart";
+import "package:gallery/src/pages/anime/info_base/anime_name_widget.dart";
 
 class CardShell extends StatefulWidget {
-  final List<Widget> info;
-  final EdgeInsets viewPadding;
-
-  final String title;
-  final String titleEnglish;
-  final String titleJapanese;
-  final List<String> titleSynonyms;
-  final AnimeSafeMode safeMode;
-
-  final bool _sliver;
-
   const CardShell({
     super.key,
     required this.title,
@@ -42,6 +31,16 @@ class CardShell extends StatefulWidget {
     required this.viewPadding,
     required this.info,
   }) : _sliver = true;
+  final List<Widget> info;
+  final EdgeInsets viewPadding;
+
+  final String title;
+  final String titleEnglish;
+  final String titleJapanese;
+  final List<String> titleSynonyms;
+  final AnimeSafeMode safeMode;
+
+  final bool _sliver;
 
   @override
   State<CardShell> createState() => _CardShellState();
@@ -113,13 +112,14 @@ class _CardShellState extends State<CardShell> {
         ),
         Theme(
           data: Theme.of(context).copyWith(
-              iconTheme: IconThemeData(
-                  color: Theme.of(context).iconTheme.color?.withOpacity(0.8))),
+            iconTheme: IconThemeData(
+              color: Theme.of(context).iconTheme.color?.withOpacity(0.8),
+            ),
+          ),
           child: SizedBox(
             height: 80,
             child: ClipRRect(
               borderRadius: const BorderRadius.all(Radius.elliptical(40, 40)),
-              clipBehavior: Clip.antiAlias,
               child: ListView(
                 clipBehavior: Clip.none,
                 controller: cardsController,
@@ -128,7 +128,7 @@ class _CardShellState extends State<CardShell> {
               ),
             ),
           ),
-        )
+        ),
       ],
     );
 

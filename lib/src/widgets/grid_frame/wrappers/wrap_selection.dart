@@ -5,21 +5,9 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of '../grid_frame.dart';
+part of "../grid_frame.dart";
 
 class WrapSelection<T extends CellBase> extends StatelessWidget {
-  final GridSelection<T> selection;
-  final List<int>? selectFrom;
-  final int thisIndx;
-  final CellStaticData description;
-
-  final void Function()? onPressed;
-
-  final GridFunctionality<T> functionality;
-  final bool limitedSize;
-
-  final Widget child;
-
   const WrapSelection({
     super.key,
     required this.thisIndx,
@@ -31,6 +19,17 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
     this.limitedSize = false,
     required this.child,
   });
+  final GridSelection<T> selection;
+  final List<int>? selectFrom;
+  final int thisIndx;
+  final CellStaticData description;
+
+  final void Function()? onPressed;
+
+  final GridFunctionality<T> functionality;
+  final bool limitedSize;
+
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -97,16 +96,6 @@ class WrapSelection<T extends CellBase> extends StatelessWidget {
 }
 
 class _WrappedSelectionCore<T extends CellBase> extends StatefulWidget {
-  final int thisIndx;
-  final GridSelection<T>? selection;
-  final List<int>? selectFrom;
-  final GridFunctionality<T> functionality;
-  final bool limitedSize;
-
-  final void Function()? onPressed;
-
-  final Widget child;
-
   const _WrappedSelectionCore({
     required this.thisIndx,
     required this.selectFrom,
@@ -116,6 +105,15 @@ class _WrappedSelectionCore<T extends CellBase> extends StatefulWidget {
     required this.child,
     required this.limitedSize,
   });
+  final int thisIndx;
+  final GridSelection<T>? selection;
+  final List<int>? selectFrom;
+  final GridFunctionality<T> functionality;
+  final bool limitedSize;
+
+  final void Function()? onPressed;
+
+  final Widget child;
 
   @override
   State<_WrappedSelectionCore<T>> createState() =>
@@ -170,47 +168,48 @@ class __WrappedSelectionCoreState<T extends CellBase>
         Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
-              padding: const EdgeInsets.all(0.5),
-              child: AnimatedContainer(
-                decoration: BoxDecoration(
-                  color: selection.isSelected(thisIndx)
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.primary.withOpacity(0),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                duration: const Duration(milliseconds: 160),
-                curve: Easing.emphasizedAccelerate,
-                child: _LongPressMoveGesture(
-                  selection: widget.selection!,
-                  thisIndx: widget.thisIndx,
-                  selectFrom: widget.selectFrom,
-                  child: GestureDetector(
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(15),
-                      onDoubleTap: widget.functionality.download != null &&
-                              widget.selection!.isEmpty
-                          ? () {
-                              controller.reset();
-                              controller
-                                  .forward()
-                                  .then((value) => controller.reverse());
-                              HapticFeedback.selectionClick();
-                              widget.functionality.download!(thisIndx);
-                            }
-                          : null,
-                      onTap: selection.isEmpty
-                          ? thisIndx.isNegative && widget.onPressed == null
-                              ? null
-                              : widget.onPressed
-                          : () {
-                              selection.selectOrUnselect(context, thisIndx);
-                            },
-                      // onLongPress: ,
-                      child: widget.child,
-                    ),
+            padding: const EdgeInsets.all(0.5),
+            child: AnimatedContainer(
+              decoration: BoxDecoration(
+                color: selection.isSelected(thisIndx)
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.primary.withOpacity(0),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              duration: const Duration(milliseconds: 160),
+              curve: Easing.emphasizedAccelerate,
+              child: _LongPressMoveGesture(
+                selection: widget.selection!,
+                thisIndx: widget.thisIndx,
+                selectFrom: widget.selectFrom,
+                child: GestureDetector(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(15),
+                    onDoubleTap: widget.functionality.download != null &&
+                            widget.selection!.isEmpty
+                        ? () {
+                            controller.reset();
+                            controller
+                                .forward()
+                                .then((value) => controller.reverse());
+                            HapticFeedback.selectionClick();
+                            widget.functionality.download!(thisIndx);
+                          }
+                        : null,
+                    onTap: selection.isEmpty
+                        ? thisIndx.isNegative && widget.onPressed == null
+                            ? null
+                            : widget.onPressed
+                        : () {
+                            selection.selectOrUnselect(context, thisIndx);
+                          },
+                    // onLongPress: ,
+                    child: widget.child,
                   ),
                 ),
-              )),
+              ),
+            ),
+          ),
         ),
         if (selection.isSelected(thisIndx) && !widget.limitedSize) ...[
           IgnorePointer(
@@ -241,7 +240,7 @@ class __WrappedSelectionCoreState<T extends CellBase>
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).colorScheme.primaryContainer,
                       shadows: const [
-                        Shadow(blurRadius: 0, color: Colors.black)
+                        Shadow(),
                       ],
                     ),
                   ),
@@ -267,11 +266,12 @@ class __WrappedSelectionCoreState<T extends CellBase>
           end: const Offset(0, -10),
         ),
         TintEffect(
-            duration: 220.ms,
-            begin: 0,
-            end: 0.1,
-            curve: Easing.standardAccelerate,
-            color: Theme.of(context).colorScheme.primary)
+          duration: 220.ms,
+          begin: 0,
+          end: 0.1,
+          curve: Easing.standardAccelerate,
+          color: Theme.of(context).colorScheme.primary,
+        ),
       ],
       child: child,
     );
@@ -279,12 +279,6 @@ class __WrappedSelectionCoreState<T extends CellBase>
 }
 
 class _LongPressMoveGesture<T extends CellBase> extends StatefulWidget {
-  final GridSelection<T> selection;
-  final int thisIndx;
-  final List<int>? selectFrom;
-
-  final Widget child;
-
   const _LongPressMoveGesture({
     super.key,
     required this.selection,
@@ -292,6 +286,11 @@ class _LongPressMoveGesture<T extends CellBase> extends StatefulWidget {
     required this.selectFrom,
     required this.child,
   });
+  final GridSelection<T> selection;
+  final int thisIndx;
+  final List<int>? selectFrom;
+
+  final Widget child;
 
   @override
   State<_LongPressMoveGesture> createState() => __LongPressMoveGestureState();
@@ -307,8 +306,9 @@ class __LongPressMoveGestureState extends State<_LongPressMoveGesture> {
         LongPressGestureRecognizer:
             GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
                 () => LongPressGestureRecognizer(
-                    debugOwner: this, postAcceptSlopTolerance: 30),
-                (LongPressGestureRecognizer instance) {
+                      debugOwner: this,
+                      postAcceptSlopTolerance: 30,
+                    ), (LongPressGestureRecognizer instance) {
           instance
             ..onLongPress = selection.isEmpty
                 ? widget.thisIndx.isNegative || selection.addActions.isEmpty
@@ -317,8 +317,11 @@ class __LongPressMoveGestureState extends State<_LongPressMoveGesture> {
                         selection.selectOrUnselect(context, widget.thisIndx);
                       }
                 : () {
-                    selection.selectUnselectUntil(context, widget.thisIndx,
-                        selectFrom: widget.selectFrom);
+                    selection.selectUnselectUntil(
+                      context,
+                      widget.thisIndx,
+                      selectFrom: widget.selectFrom,
+                    );
                     HapticFeedback.vibrate();
                   }
             ..onLongPressMoveUpdate = (details) {
@@ -326,7 +329,7 @@ class __LongPressMoveGestureState extends State<_LongPressMoveGesture> {
                 widget.selection.selectAll(context);
               }
             };
-        })
+        }),
       },
       child: widget.child,
     );

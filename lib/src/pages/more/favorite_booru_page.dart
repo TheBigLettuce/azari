@@ -211,7 +211,7 @@ class _StringSegmentKey implements SegmentKey {
 }
 
 mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
-  late final StreamSubscription favoritesWatcher;
+  late final StreamSubscription<void> favoritesWatcher;
   late final StreamSubscription<MiscSettings?> miscSettingsWatcher;
 
   MiscSettings miscSettings = MiscSettings.current;
@@ -244,6 +244,7 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
     } else if (mode == FilteringMode.same) {
       return Dbs.g.main.favoriteBoorus
           .filter()
+          // ignore: inference_failure_on_function_invocation
           .allOf(s.split(" "), (q, element) => q.tagsElementContains(element))
           .sortByMd5()
           .thenByCreatedAtDesc()
@@ -254,6 +255,7 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
 
     return Dbs.g.main.favoriteBoorus
         .filter()
+        // ignore: inference_failure_on_function_invocation
         .allOf(s.split(" "), (q, element) => q.tagsElementContains(element))
         .sortByCreatedAtDesc()
         .offset(offset)

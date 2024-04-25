@@ -5,30 +5,18 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:ui';
+import "dart:ui";
 
-import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import '../../loading_error_widget.dart';
-import '../../shimmer_loading_indicator.dart';
-import '../grid_frame.dart';
-import 'sticker_widget.dart';
+import "package:flutter/material.dart";
+import "package:flutter_animate/flutter_animate.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/parts/sticker_widget.dart";
+import "package:gallery/src/widgets/loading_error_widget.dart";
+import "package:gallery/src/widgets/shimmer_loading_indicator.dart";
 
 /// The cell of [GridFrame].
 class GridCell<T extends CellBase> extends StatefulWidget {
-  final T _data;
-
-  final bool longTitle;
-  final bool hideTitle;
-  final bool animate;
-  final bool blur;
-  final Alignment imageAlign;
-
-  final String? secondaryTitle;
-
-  final CellStaticData? overrideDescription;
-
   const GridCell({
     super.key,
     required T cell,
@@ -40,6 +28,17 @@ class GridCell<T extends CellBase> extends StatefulWidget {
     this.blur = false,
     this.imageAlign = Alignment.center,
   }) : _data = cell;
+  final T _data;
+
+  final bool longTitle;
+  final bool hideTitle;
+  final bool animate;
+  final bool blur;
+  final Alignment imageAlign;
+
+  final String? secondaryTitle;
+
+  final CellStaticData? overrideDescription;
 
   static GridCell<T> frameDefault<T extends CellBase>(
     BuildContext context,
@@ -70,20 +69,25 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
   int _tries = 0;
 
   Widget aliasWidget(
-      BuildContext context, CellStaticData description, String alias) {
+    BuildContext context,
+    CellStaticData description,
+    String alias,
+  ) {
     return description.alignTitleToTopLeft
         ? topAlignAlias(context, description, alias)
         : Container(
             alignment: Alignment.bottomCenter,
             decoration: BoxDecoration(
-                gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
                   Colors.black.withAlpha(50),
                   Colors.black12,
-                  Colors.black45
-                ])),
+                  Colors.black45,
+                ],
+              ),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(6),
               child: Text(
@@ -100,21 +104,26 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
   }
 
   Widget topAlignAlias(
-      BuildContext context, CellStaticData description, String alias) {
+    BuildContext context,
+    CellStaticData description,
+    String alias,
+  ) {
     return SizedBox(
       width: double.infinity,
       child: Container(
         decoration: BoxDecoration(
-            gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
               Colors.black.withOpacity(0.38),
               Colors.black.withOpacity(0.3),
               Colors.black.withOpacity(0.2),
               Colors.black.withOpacity(0.05),
               Colors.black.withOpacity(0),
-            ])),
+            ],
+          ),
+        ),
         child: Padding(
           padding: const EdgeInsets.only(left: 8, right: 8, top: 6, bottom: 18),
           child: Text(
@@ -158,92 +167,97 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
           shape: description.circle
               ? const CircleBorder()
               : RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15.0)),
+                  borderRadius: BorderRadius.circular(15.0),
+                ),
         ),
         child: alias.isEmpty &&
                 thumbnail == null &&
                 (stickers == null || stickers.isEmpty)
             ? null
             : Stack(
-                fit: StackFit.loose,
                 children: [
                   if (thumbnail != null)
                     Center(
-                      child: LayoutBuilder(builder: (context, constraints) {
-                        final blurSigma =
-                            constraints.biggest.longestSide * 0.069;
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final blurSigma =
+                              constraints.biggest.longestSide * 0.069;
 
-                        final image = Image(
-                          key: ValueKey((thumbnail.hashCode, _tries)),
-                          errorBuilder: (context, error, stackTrace) =>
-                              LoadingErrorWidget(
-                            error: error.toString(),
-                            refresh: () {
-                              _tries += 1;
+                          final image = Image(
+                            key: ValueKey((thumbnail.hashCode, _tries)),
+                            errorBuilder: (context, error, stackTrace) =>
+                                LoadingErrorWidget(
+                              error: error.toString(),
+                              refresh: () {
+                                _tries += 1;
 
-                              setState(() {});
+                                setState(() {});
+                              },
+                            ),
+                            frameBuilder: (
+                              context,
+                              child,
+                              frame,
+                              wasSynchronouslyLoaded,
+                            ) {
+                              if (wasSynchronouslyLoaded) {
+                                return child;
+                              }
+
+                              return frame == null
+                                  ? const ShimmerLoadingIndicator()
+                                  : child.animate().fadeIn();
                             },
-                          ),
-                          frameBuilder: (
-                            context,
-                            child,
-                            frame,
-                            wasSynchronouslyLoaded,
-                          ) {
-                            if (wasSynchronouslyLoaded) {
-                              return child;
-                            }
+                            image: thumbnail,
+                            isAntiAlias: true,
+                            alignment: widget.imageAlign,
+                            color: widget.blur
+                                ? Theme.of(context)
+                                    .colorScheme
+                                    .surface
+                                    .withOpacity(0.2)
+                                : null,
+                            colorBlendMode: widget.blur
+                                ? BlendMode.darken
+                                : BlendMode.darken,
+                            fit: BoxFit.cover,
+                            filterQuality: widget.blur
+                                ? FilterQuality.none
+                                : FilterQuality.medium,
+                            width: constraints.maxWidth,
+                            height: constraints.maxHeight,
+                          );
 
-                            return frame == null
-                                ? const ShimmerLoadingIndicator()
-                                : child.animate().fadeIn();
-                          },
-                          image: thumbnail,
-                          isAntiAlias: true,
-                          alignment: widget.imageAlign,
-                          color: widget.blur
-                              ? Theme.of(context)
-                                  .colorScheme
-                                  .surface
-                                  .withOpacity(0.2)
-                              : null,
-                          colorBlendMode:
-                              widget.blur ? BlendMode.darken : BlendMode.darken,
-                          fit: BoxFit.cover,
-                          filterQuality: widget.blur
-                              ? FilterQuality.none
-                              : FilterQuality.medium,
-                          width: constraints.maxWidth,
-                          height: constraints.maxHeight,
-                        );
-
-                        return widget.blur
-                            ? ImageFiltered(
-                                enabled: true,
-                                imageFilter: ImageFilter.compose(
-                                  outer: ImageFilter.blur(
-                                    sigmaX: blurSigma,
-                                    sigmaY: blurSigma,
-                                    tileMode: TileMode.mirror,
+                          return widget.blur
+                              ? ImageFiltered(
+                                  imageFilter: ImageFilter.compose(
+                                    outer: ImageFilter.blur(
+                                      sigmaX: blurSigma,
+                                      sigmaY: blurSigma,
+                                      tileMode: TileMode.mirror,
+                                    ),
+                                    inner: ImageFilter.dilate(
+                                      radiusX: 0.5,
+                                      radiusY: 0.5,
+                                    ),
                                   ),
-                                  inner: ImageFilter.dilate(
-                                      radiusX: 0.5, radiusY: 0.5),
-                                ),
-                                child: image,
-                              )
-                            : image;
-                      }),
+                                  child: image,
+                                )
+                              : image;
+                        },
+                      ),
                     ),
                   if (stickers != null && stickers.isNotEmpty) ...[
                     Align(
                       alignment: Alignment.topRight,
                       child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Wrap(
-                            direction: Axis.vertical,
-                            children:
-                                stickers.map((e) => StickerWidget(e)).toList(),
-                          )),
+                        padding: const EdgeInsets.all(8),
+                        child: Wrap(
+                          direction: Axis.vertical,
+                          children:
+                              stickers.map((e) => StickerWidget(e)).toList(),
+                        ),
+                      ),
                     ),
                   ],
                   if ((alias.isNotEmpty && !description.titleAtBottom) ||
@@ -270,7 +284,6 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
         ),
         if (description.titleAtBottom && alias.isNotEmpty)
           Expanded(
-            flex: 1,
             child: Padding(
               padding: description.tightMode
                   ? const EdgeInsets.only(left: 0.5, right: 0.5)
@@ -285,23 +298,22 @@ class _GridCellState<T extends CellBase> extends State<GridCell<T>> {
                 ),
               ),
             ),
-          )
+          ),
       ],
     );
   }
 }
 
 class CustomGridCellWrapper extends StatelessWidget {
-  final void Function(BuildContext) onPressed;
-  final void Function(BuildContext)? onLongPress;
-  final Widget child;
-
   const CustomGridCellWrapper({
     super.key,
     this.onLongPress,
     required this.onPressed,
     required this.child,
   });
+  final void Function(BuildContext) onPressed;
+  final void Function(BuildContext)? onLongPress;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {

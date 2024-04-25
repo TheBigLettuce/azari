@@ -5,46 +5,45 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/base/grid_settings_base.dart';
-import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
-import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
-import 'package:gallery/src/db/schemas/manga/pinned_manga.dart';
-import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/manga/manga_api.dart';
-import 'package:gallery/src/net/manga/manga_dex.dart';
-import 'package:gallery/src/pages/anime/anime.dart';
-import 'package:gallery/src/pages/anime/search/search_anime.dart';
-import 'package:gallery/src/widgets/empty_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_fab_type.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/page_description.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
-import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
-import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:gallery/src/widgets/skeletons/grid.dart';
-import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import "package:dio/dio.dart";
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/base/grid_settings_base.dart";
+import "package:gallery/src/db/schemas/grid_settings/booru.dart";
+import "package:gallery/src/db/schemas/manga/compact_manga_data.dart";
+import "package:gallery/src/db/schemas/manga/pinned_manga.dart";
+import "package:gallery/src/db/schemas/manga/read_manga_chapter.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/interfaces/manga/manga_api.dart";
+import "package:gallery/src/net/manga/manga_dex.dart";
+import "package:gallery/src/pages/anime/anime.dart";
+import "package:gallery/src/pages/anime/search/search_anime.dart";
+import "package:gallery/src/widgets/empty_widget.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_fab_type.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/page_description.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
+import "package:gallery/src/widgets/notifiers/glue_provider.dart";
+import "package:gallery/src/widgets/skeletons/grid.dart";
+import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
 class MangaPage extends StatefulWidget {
-  final void Function(bool) procPop;
-  final bool wrapGridPage;
-
   const MangaPage({
     super.key,
     required this.procPop,
     this.wrapGridPage = false,
   });
+  final void Function(bool) procPop;
+  final bool wrapGridPage;
 
   @override
   State<MangaPage> createState() => _MangaPageState();
@@ -160,13 +159,18 @@ class _MangaPageState extends State<MangaPage> {
   }
 
   PageDescription _buildPage(
-      BuildContext context, GridFrameState<CompactMangaData> state, int i) {
-    return PageDescription(slivers: [
-      _PinnedMangaWidget(
-        glue: GlueProvider.generateOf(context)(),
-        controller: state.controller,
-      )
-    ]);
+    BuildContext context,
+    GridFrameState<CompactMangaData> state,
+    int i,
+  ) {
+    return PageDescription(
+      slivers: [
+        _PinnedMangaWidget(
+          glue: GlueProvider.generateOf(context)(),
+          controller: state.controller,
+        ),
+      ],
+    );
   }
 
   List<PageLabel> pages(BuildContext context) => [
@@ -188,29 +192,29 @@ class _MangaPageState extends State<MangaPage> {
           pinnedMangaKey: _pinnedKey,
         ),
         functionality: GridFunctionality(
-            registerNotifiers: (child) {
-              return MangaPageDataNotifier(
-                client: dio,
-                setInner: _setInner,
-                child: child,
+          registerNotifiers: (child) {
+            return MangaPageDataNotifier(
+              client: dio,
+              setInner: _setInner,
+              child: child,
+            );
+          },
+          selectionGlue: GlueProvider.generateOf(context)(),
+          refreshingStatus: state.refreshingStatus,
+          refresh: AsyncGridRefresh(
+            refresh,
+            pullToRefresh: false,
+          ),
+          fab: OverrideGridFab(
+            (scrollController) {
+              return ReadingFab(
+                api: api,
+                controller: scrollController,
               );
             },
-            selectionGlue: GlueProvider.generateOf(context)(),
-            refreshingStatus: state.refreshingStatus,
-            refresh: AsyncGridRefresh(
-              refresh,
-              pullToRefresh: false,
-            ),
-            fab: OverrideGridFab(
-              (scrollController) {
-                return ReadingFab(
-                  api: api,
-                  controller: scrollController,
-                );
-              },
-            )),
+          ),
+        ),
         getCell: (i) => data[i],
-        initalScrollPosition: 0,
         mainFocus: state.mainFocus,
         description: GridDescription(
           actions: const [],
@@ -243,14 +247,13 @@ class _MangaPageState extends State<MangaPage> {
 }
 
 class ReadingFab extends StatefulWidget {
-  final MangaAPI api;
-  final ScrollController controller;
-
   const ReadingFab({
     super.key,
     required this.api,
     required this.controller,
   });
+  final MangaAPI api;
+  final ScrollController controller;
 
   @override
   State<ReadingFab> createState() => _ReadingFabState();
@@ -264,13 +267,17 @@ class _ReadingFabState extends State<ReadingFab>
 
   void _listener() {
     if (widget.controller.offset == 0 && !extended) {
-      animation.reverse().then((value) => setState(() {
-            extended = true;
-          }));
+      animation.reverse().then(
+            (value) => setState(() {
+              extended = true;
+            }),
+          );
     } else if (widget.controller.offset > 0 && extended) {
-      animation.forward().then((value) => setState(() {
-            extended = false;
-          }));
+      animation.forward().then(
+            (value) => setState(() {
+              extended = false;
+            }),
+          );
     }
   }
 
@@ -314,8 +321,8 @@ class _ReadingFabState extends State<ReadingFab>
     return FloatingActionButton.extended(
       isExtended: extended,
       shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(16.0)))
-          .lerpTo(
+        borderRadius: BorderRadius.all(Radius.circular(16.0)),
+      ).lerpTo(
         const CircleBorder(),
         Easing.standard.transform(animation.value),
       ),
@@ -351,7 +358,7 @@ class _ReadingLayout
       );
 
   @override
-  final GridSettingsBase Function() defaultSettings = _defaultSettings;
+  GridSettingsBase Function() get defaultSettings => _defaultSettings;
 
   @override
   GridLayouter<T> makeFor<T extends CellBase>(GridSettingsBase settings) {
@@ -363,8 +370,11 @@ class _ReadingLayout
   }
 
   @override
-  List<Widget> call(BuildContext context, GridSettingsBase settings,
-      GridFrameState<CompactMangaData> state) {
+  List<Widget> call(
+    BuildContext context,
+    GridSettingsBase settings,
+    GridFrameState<CompactMangaData> state,
+  ) {
     return [
       if (state.mutation.cellCount == 0)
         SliverToBoxAdapter(
@@ -408,14 +418,12 @@ class _ReadingLayout
 }
 
 class _PinnedMangaWidget extends StatefulWidget {
-  final SelectionGlue glue;
-  final ScrollController controller;
-
   const _PinnedMangaWidget({
-    super.key,
     required this.glue,
     required this.controller,
   });
+  final SelectionGlue glue;
+  final ScrollController controller;
 
   @override
   State<_PinnedMangaWidget> createState() => _PinnedMangaWidgetState();
@@ -479,14 +487,17 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
               (selected) {
                 PinnedManga.deleteAll(selected.map((e) => e.isarId!).toList());
 
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(AppLocalizations.of(context)!.mangaUnpinned),
-                  action: SnackBarAction(
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(AppLocalizations.of(context)!.mangaUnpinned),
+                    action: SnackBarAction(
                       label: AppLocalizations.of(context)!.undoLabel,
                       onPressed: () {
                         PinnedManga.addAll(selected.cast(), true);
-                      }),
-                ));
+                      },
+                    ),
+                  ),
+                );
               },
               true,
             ),
@@ -502,15 +513,14 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
 }
 
 class MangaPageDataNotifier extends InheritedWidget {
-  final Dio client;
-  final void Function(bool) setInner;
-
   const MangaPageDataNotifier({
     super.key,
     required this.client,
     required this.setInner,
     required super.child,
   });
+  final Dio client;
+  final void Function(bool) setInner;
 
   static (Dio, void Function(bool)) of(BuildContext context) {
     final widget =

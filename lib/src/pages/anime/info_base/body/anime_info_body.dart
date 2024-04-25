@@ -5,35 +5,33 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
-import 'package:gallery/src/interfaces/anime/anime_api.dart';
-import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
-import 'package:gallery/src/pages/anime/info_base/body/body_segment_label.dart';
-import 'package:gallery/src/pages/anime/search/search_anime.dart';
-import 'package:gallery/src/widgets/image_view/image_view.dart';
-import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import 'anime_characters_widgets.dart';
-import 'anime_genres.dart';
-import 'anime_relations.dart';
-import 'body_padding.dart';
-import 'similar_anime.dart';
-import 'synopsis_background.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/schemas/anime/saved_anime_entry.dart";
+import "package:gallery/src/interfaces/anime/anime_api.dart";
+import "package:gallery/src/interfaces/anime/anime_entry.dart";
+import "package:gallery/src/pages/anime/info_base/body/anime_characters_widgets.dart";
+import "package:gallery/src/pages/anime/info_base/body/anime_genres.dart";
+import "package:gallery/src/pages/anime/info_base/body/anime_relations.dart";
+import "package:gallery/src/pages/anime/info_base/body/body_padding.dart";
+import "package:gallery/src/pages/anime/info_base/body/body_segment_label.dart";
+import "package:gallery/src/pages/anime/info_base/body/similar_anime.dart";
+import "package:gallery/src/pages/anime/info_base/body/synopsis_background.dart";
+import "package:gallery/src/pages/anime/search/search_anime.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:gallery/src/widgets/image_view/image_view.dart";
 
 class AnimeInfoBody extends StatelessWidget {
-  final AnimeEntry entry;
-  final AnimeAPI api;
-  final EdgeInsets viewPadding;
-
   const AnimeInfoBody({
     super.key,
     required this.entry,
     required this.viewPadding,
     required this.api,
   });
+  final AnimeEntry entry;
+  final AnimeAPI api;
+  final EdgeInsets viewPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +68,8 @@ class AnimeInfoBody extends StatelessWidget {
               background: entry.background,
               synopsis: entry.synopsis,
               constraints: BoxConstraints(
-                  maxWidth: MediaQuery.sizeOf(context).width - 16 - 16),
+                maxWidth: MediaQuery.sizeOf(context).width - 16 - 16,
+              ),
             ),
             AnimeCharactersWidget(
               entry: entry,
@@ -90,9 +89,8 @@ class AnimeInfoBody extends StatelessWidget {
 }
 
 class AnimeStaff extends StatelessWidget {
-  final AnimeEntry entry;
-
   const AnimeStaff({super.key, required this.entry});
+  final AnimeEntry entry;
 
   @override
   Widget build(BuildContext context) {
@@ -114,14 +112,13 @@ class AnimeStaff extends StatelessWidget {
 }
 
 class AnimePicturesWidget extends StatefulWidget {
-  final AnimeEntry entry;
-  final AnimeAPI api;
-
   const AnimePicturesWidget({
     super.key,
     required this.entry,
     required this.api,
   });
+  final AnimeEntry entry;
+  final AnimeAPI api;
 
   @override
   State<AnimePicturesWidget> createState() => _AnimePicturesWidgetState();
@@ -140,7 +137,8 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               BodySegmentLabel(
-                  text: AppLocalizations.of(context)!.animePicturesLabel),
+                text: AppLocalizations.of(context)!.animePicturesLabel,
+              ),
               SizedBox(
                 height: MediaQuery.sizeOf(context).longestSide *
                     0.2 *
@@ -148,24 +146,26 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   children: snapshot.data!.indexed
-                      .map((e) => SizedBox(
-                            width: MediaQuery.sizeOf(context).longestSide * 0.2,
-                            child: CustomGridCellWrapper(
-                              onPressed: (context) {
-                                ImageView.launchWrapped(
-                                  context,
-                                  snapshot.data!.length,
-                                  (context, i) =>
-                                      snapshot.data![i].openImage(context),
-                                  startingCell: e.$1,
-                                );
-                              },
-                              child: GridCell(
-                                cell: e.$2,
-                                hideTitle: false,
-                              ),
+                      .map(
+                        (e) => SizedBox(
+                          width: MediaQuery.sizeOf(context).longestSide * 0.2,
+                          child: CustomGridCellWrapper(
+                            onPressed: (context) {
+                              ImageView.launchWrapped(
+                                context,
+                                snapshot.data!.length,
+                                (context, i) =>
+                                    snapshot.data![i].openImage(context),
+                                startingCell: e.$1,
+                              );
+                            },
+                            child: GridCell(
+                              cell: e.$2,
+                              hideTitle: false,
                             ),
-                          ))
+                          ),
+                        ),
+                      )
                       .toList(),
                 ),
               ),

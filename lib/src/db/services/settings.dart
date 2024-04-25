@@ -5,15 +5,15 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:gallery/src/db/schemas/settings/settings.dart';
-import 'package:gallery/src/db/services/services.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/booru/display_quality.dart';
-import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:isar/isar.dart';
-import 'package:meta/meta.dart';
+import "package:gallery/src/db/schemas/settings/settings.dart";
+import "package:gallery/src/db/services/services.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/display_quality.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:isar/isar.dart";
+import "package:meta/meta.dart";
 
 abstract interface class SettingsPath {
   const SettingsPath();

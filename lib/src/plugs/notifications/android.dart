@@ -5,12 +5,18 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:gallery/src/plugs/notifications.dart';
+import "package:flutter_local_notifications/flutter_local_notifications.dart";
+import "package:gallery/src/plugs/notifications.dart";
 
 const _max = 12;
 
 class AndroidProgress implements NotificationProgress {
+  AndroidProgress({
+    required this.group,
+    required this.id,
+    required this.name,
+    required this.channelName,
+  });
   final String group;
   final int id;
   final String name;
@@ -20,26 +26,27 @@ class AndroidProgress implements NotificationProgress {
   int _step = 0;
   int _currentSteps = 0;
 
-  _showNotification(int progress, String name) {
+  void _showNotification(int progress, String name) {
     FlutterLocalNotificationsPlugin().show(
       id,
       group,
       name,
       NotificationDetails(
         android: AndroidNotificationDetails(
-            channelName.toLowerCase(), channelName,
-            groupKey: group,
-            ongoing: true,
-            playSound: false,
-            enableLights: false,
-            enableVibration: false,
-            importance: Importance.low,
-            category: AndroidNotificationCategory.progress,
-            maxProgress: total,
-            progress: progress,
-            visibility: NotificationVisibility.private,
-            indeterminate: total == -1,
-            showProgress: true),
+          channelName.toLowerCase(),
+          channelName,
+          groupKey: group,
+          ongoing: true,
+          playSound: false,
+          enableVibration: false,
+          importance: Importance.low,
+          category: AndroidNotificationCategory.progress,
+          maxProgress: total,
+          progress: progress,
+          visibility: NotificationVisibility.private,
+          indeterminate: total == -1,
+          showProgress: true,
+        ),
       ),
     );
   }
@@ -74,18 +81,22 @@ class AndroidProgress implements NotificationProgress {
       _step = (total / _max).floor();
     }
   }
-
-  AndroidProgress(
-      {required this.group,
-      required this.id,
-      required this.name,
-      required this.channelName});
 }
 
 class AndroidNotifications implements NotificationPlug {
   @override
   Future<NotificationProgress> newProgress(
-          String name, int id, String group, String channelName) =>
-      Future.value(AndroidProgress(
-          group: group, id: id, name: name, channelName: channelName));
+    String name,
+    int id,
+    String group,
+    String channelName,
+  ) =>
+      Future.value(
+        AndroidProgress(
+          group: group,
+          id: id,
+          name: name,
+          channelName: channelName,
+        ),
+      );
 }

@@ -35,7 +35,7 @@ mixin BooruPostFunctionalityMixin {
   void showQr(BuildContext context, String prefix, int id) {
     Navigator.push(
       context,
-      DialogRoute(
+      DialogRoute<void>(
         themes: InheritedTheme.capture(from: context, to: null),
         context: context,
         builder: (context) {
@@ -117,8 +117,12 @@ class _PostInfoState extends State<PostInfo> {
   final settings = SettingsService.currentData;
 
   void _launchGrid(BuildContext context, String t, [SafeMode? safeMode]) {
-    OnBooruTagPressed.pressOf(context, t, post.booru,
-        overrideSafeMode: safeMode);
+    OnBooruTagPressed.pressOf(
+      context,
+      t,
+      post.booru,
+      overrideSafeMode: safeMode,
+    );
   }
 
   @override
@@ -140,83 +144,91 @@ class _PostInfoState extends State<PostInfo> {
 
     final localizations = AppLocalizations.of(context)!;
 
-    return SliverMainAxisGroup(slivers: [
-      SliverPadding(
-        padding: const EdgeInsets.only(left: 16),
-        sliver: LabelSwitcherWidget(
-          pages: [
-            PageLabel(localizations.infoHeadline),
-            PageLabel(localizations.tagsInfoPage,
-                count: ImageTagsNotifier.of(context).length),
-          ],
-          currentPage: currentPageF,
-          switchPage: _switchPage,
-          sliver: true,
-          noHorizontalPadding: true,
-        ),
-      ),
-      if (currentPage == 0)
-        SliverList.list(
-          children: [
-            MenuWrapper(
-              title: post.fileDownloadUrl(),
-              child: ListTile(
-                title: Text(localizations.urlInfoPage),
-                subtitle: Text(post.fileDownloadUrl()),
-                onTap: () => launchUrl(Uri.parse(post.fileDownloadUrl()),
-                    mode: LaunchMode.externalApplication),
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.only(left: 16),
+          sliver: LabelSwitcherWidget(
+            pages: [
+              PageLabel(localizations.infoHeadline),
+              PageLabel(
+                localizations.tagsInfoPage,
+                count: ImageTagsNotifier.of(context).length,
               ),
-            ),
-            ListTile(
-              title: Text(localizations.widthInfoPage),
-              subtitle: Text(localizations.pixels(post.width)),
-            ),
-            ListTile(
-              title: Text(localizations.heightInfoPage),
-              subtitle: Text(localizations.pixels(post.height)),
-            ),
-            ListTile(
-              title: Text(localizations.createdAtInfoPage),
-              subtitle: Text(localizations.date(post.createdAt)),
-            ),
-            MenuWrapper(
-              title: post.sourceUrl,
-              child: ListTile(
-                title: Text(AppLocalizations.of(context)!.sourceFileInfoPage),
-                subtitle: Text(post.sourceUrl),
-                onTap: post.sourceUrl.isNotEmpty &&
-                        Uri.tryParse(post.sourceUrl) != null
-                    ? () => launchUrl(Uri.parse(post.sourceUrl),
-                        mode: LaunchMode.externalApplication)
-                    : null,
-              ),
-            ),
-            ListTile(
-              title: Text(localizations.ratingInfoPage),
-              subtitle: Text(post.rating.translatedName(context)),
-            ),
-            ListTile(
-              title: Text(localizations.scoreInfoPage),
-              subtitle: Text(post.score.toString()),
-            ),
-            if (post.tags.contains("translated"))
-              TranslationNotes.tile(context, post.id, post.booru),
-          ],
-        )
-      else ...[
-        SliverToBoxAdapter(
-          child: SearchTextField(
-            filename,
-            key: ValueKey(filename),
+            ],
+            currentPage: currentPageF,
+            switchPage: _switchPage,
+            sliver: true,
+            noHorizontalPadding: true,
           ),
         ),
-        DrawerTagsWidget(
-          key: ValueKey(filename),
-          filename,
-          res: ImageTagsNotifier.resOf(context),
-          launchGrid: _launchGrid,
-        )
-      ]
-    ]);
+        if (currentPage == 0)
+          SliverList.list(
+            children: [
+              MenuWrapper(
+                title: post.fileDownloadUrl(),
+                child: ListTile(
+                  title: Text(localizations.urlInfoPage),
+                  subtitle: Text(post.fileDownloadUrl()),
+                  onTap: () => launchUrl(
+                    Uri.parse(post.fileDownloadUrl()),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                ),
+              ),
+              ListTile(
+                title: Text(localizations.widthInfoPage),
+                subtitle: Text(localizations.pixels(post.width)),
+              ),
+              ListTile(
+                title: Text(localizations.heightInfoPage),
+                subtitle: Text(localizations.pixels(post.height)),
+              ),
+              ListTile(
+                title: Text(localizations.createdAtInfoPage),
+                subtitle: Text(localizations.date(post.createdAt)),
+              ),
+              MenuWrapper(
+                title: post.sourceUrl,
+                child: ListTile(
+                  title: Text(AppLocalizations.of(context)!.sourceFileInfoPage),
+                  subtitle: Text(post.sourceUrl),
+                  onTap: post.sourceUrl.isNotEmpty &&
+                          Uri.tryParse(post.sourceUrl) != null
+                      ? () => launchUrl(
+                            Uri.parse(post.sourceUrl),
+                            mode: LaunchMode.externalApplication,
+                          )
+                      : null,
+                ),
+              ),
+              ListTile(
+                title: Text(localizations.ratingInfoPage),
+                subtitle: Text(post.rating.translatedName(context)),
+              ),
+              ListTile(
+                title: Text(localizations.scoreInfoPage),
+                subtitle: Text(post.score.toString()),
+              ),
+              if (post.tags.contains("translated"))
+                TranslationNotes.tile(context, post.id, post.booru),
+            ],
+          )
+        else ...[
+          SliverToBoxAdapter(
+            child: SearchTextField(
+              filename,
+              key: ValueKey(filename),
+            ),
+          ),
+          DrawerTagsWidget(
+            key: ValueKey(filename),
+            filename,
+            res: ImageTagsNotifier.resOf(context),
+            launchGrid: _launchGrid,
+          ),
+        ],
+      ],
+    );
   }
 }

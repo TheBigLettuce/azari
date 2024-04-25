@@ -5,20 +5,19 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/interfaces/anime/anime_api.dart';
-import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/pages/anime/anime_info_page.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
-import 'package:isar/isar.dart';
+import "package:flutter/material.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/db/schemas/anime/saved_anime_entry.dart";
+import "package:gallery/src/interfaces/anime/anime_api.dart";
+import "package:gallery/src/interfaces/anime/anime_entry.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/pages/anime/anime_info_page.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:isar/isar.dart";
 
-import 'saved_anime_entry.dart';
-
-part 'watched_anime_entry.g.dart';
+part "watched_anime_entry.g.dart";
 
 @collection
 class WatchedAnimeEntry extends AnimeEntry
@@ -134,20 +133,24 @@ class WatchedAnimeEntry extends AnimeEntry
     WatchedAnimeEntry cell,
     int idx,
   ) {
-    Navigator.push(context, MaterialPageRoute(
-      builder: (context) {
-        return AnimeInfoPage(
-          id: cell.id,
-          entry: cell,
-          apiFactory: cell.site.api,
-        );
-      },
-    ));
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          return AnimeInfoPage(
+            id: cell.id,
+            entry: cell,
+            apiFactory: cell.site.api,
+          );
+        },
+      ),
+    );
   }
 
   void save() {
     Dbs.g.anime.writeTxnSync(
-        () => Dbs.g.anime.watchedAnimeEntrys.putBySiteIdSync(this));
+      () => Dbs.g.anime.watchedAnimeEntrys.putBySiteIdSync(this),
+    );
   }
 
   static bool watched(int id, AnimeMetadata site) {
@@ -156,7 +159,8 @@ class WatchedAnimeEntry extends AnimeEntry
 
   static void delete(int id, AnimeMetadata site) {
     Dbs.g.anime.writeTxnSync(
-        () => Dbs.g.anime.watchedAnimeEntrys.deleteBySiteIdSync(site, id));
+      () => Dbs.g.anime.watchedAnimeEntrys.deleteBySiteIdSync(site, id),
+    );
   }
 
   static void deleteAll(List<IsarEntryId> ids) {
@@ -183,7 +187,8 @@ class WatchedAnimeEntry extends AnimeEntry
 
   static void read(WatchedAnimeEntry entry) {
     Dbs.g.anime.writeTxnSync(
-        () => Dbs.g.anime.watchedAnimeEntrys.putBySiteIdSync(entry));
+      () => Dbs.g.anime.watchedAnimeEntrys.putBySiteIdSync(entry),
+    );
   }
 
   static void reAdd(List<WatchedAnimeEntry> entries) {
@@ -204,46 +209,54 @@ class WatchedAnimeEntry extends AnimeEntry
   static void moveAll(List<AnimeEntry> entries) {
     SavedAnimeEntry.deleteAll(entries.map((e) => (e.site, e.id)).toList());
 
-    Dbs.g.anime
-        .writeTxnSync(() => Dbs.g.anime.watchedAnimeEntrys.putAllBySiteIdSync(
-              entries
-                  .map((entry) => WatchedAnimeEntry(
-                        type: entry.type,
-                        explicit: entry.explicit,
-                        date: DateTime.now(),
-                        site: entry.site,
-                        relations: entry.relations,
-                        background: entry.background,
-                        thumbUrl: entry.thumbUrl,
-                        title: entry.title,
-                        titleJapanese: entry.titleJapanese,
-                        titleEnglish: entry.titleEnglish,
-                        score: entry.score,
-                        synopsis: entry.synopsis,
-                        year: entry.year,
-                        id: entry.id,
-                        staff: entry.staff,
-                        siteUrl: entry.siteUrl,
-                        isAiring: entry.isAiring,
-                        titleSynonyms: entry.titleSynonyms,
-                        genres: entry.genres,
-                        trailerUrl: entry.trailerUrl,
-                        episodes: entry.episodes,
-                      ))
-                  .toList(),
-            ));
+    Dbs.g.anime.writeTxnSync(
+      () => Dbs.g.anime.watchedAnimeEntrys.putAllBySiteIdSync(
+        entries
+            .map(
+              (entry) => WatchedAnimeEntry(
+                type: entry.type,
+                explicit: entry.explicit,
+                date: DateTime.now(),
+                site: entry.site,
+                relations: entry.relations,
+                background: entry.background,
+                thumbUrl: entry.thumbUrl,
+                title: entry.title,
+                titleJapanese: entry.titleJapanese,
+                titleEnglish: entry.titleEnglish,
+                score: entry.score,
+                synopsis: entry.synopsis,
+                year: entry.year,
+                id: entry.id,
+                staff: entry.staff,
+                siteUrl: entry.siteUrl,
+                isAiring: entry.isAiring,
+                titleSynonyms: entry.titleSynonyms,
+                genres: entry.genres,
+                trailerUrl: entry.trailerUrl,
+                episodes: entry.episodes,
+              ),
+            )
+            .toList(),
+      ),
+    );
   }
 
-  static StreamSubscription<void> watchAll(void Function(void) f,
-      [bool fire = false]) {
+  static StreamSubscription<void> watchAll(
+    void Function(void) f, [
+    bool fire = false,
+  ]) {
     return Dbs.g.anime.watchedAnimeEntrys
         .watchLazy(fireImmediately: fire)
         .listen(f);
   }
 
   static StreamSubscription<WatchedAnimeEntry?> watchSingle(
-      int id, AnimeMetadata site, void Function(WatchedAnimeEntry?) f,
-      [bool fire = false]) {
+    int id,
+    AnimeMetadata site,
+    void Function(WatchedAnimeEntry?) f, [
+    bool fire = false,
+  ]) {
     return Dbs.g.anime.watchedAnimeEntrys
         .where()
         .siteIdEqualTo(site, id)

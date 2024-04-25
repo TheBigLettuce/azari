@@ -5,17 +5,17 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/manga/manga_api.dart';
-import 'package:gallery/src/pages/manga/manga_info_page.dart';
-import 'package:gallery/src/pages/manga/manga_page.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
-import 'package:isar/isar.dart';
+import "package:cached_network_image/cached_network_image.dart";
+import "package:flutter/material.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/interfaces/manga/manga_api.dart";
+import "package:gallery/src/pages/manga/manga_info_page.dart";
+import "package:gallery/src/pages/manga/manga_page.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:isar/isar.dart";
 
-part 'compact_manga_data.g.dart';
+part "compact_manga_data.g.dart";
 
 @collection
 class CompactMangaData extends CompactMangaDataBase
@@ -39,14 +39,16 @@ class CompactMangaData extends CompactMangaDataBase
 
     final api = site.api(client);
 
-    Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
-      builder: (context) {
-        return MangaInfoPage(
-          id: MangaStringId(cell.mangaId),
-          api: api,
-        );
-      },
-    )).then((value) {
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (context) {
+          return MangaInfoPage(
+            id: MangaStringId(cell.mangaId),
+            api: api,
+          );
+        },
+      ),
+    ).then((value) {
       setInner(false);
 
       return value;
@@ -55,7 +57,8 @@ class CompactMangaData extends CompactMangaDataBase
 
   static void addAll(List<CompactMangaData> l) {
     Dbs.g.anime.writeTxnSync(
-        () => Dbs.g.anime.compactMangaDatas.putAllByMangaIdSiteSync(l));
+      () => Dbs.g.anime.compactMangaDatas.putAllByMangaIdSiteSync(l),
+    );
   }
 
   static CompactMangaData? get(String mangaId, MangaMeta site) {

@@ -191,10 +191,10 @@ class _BooruPageState extends State<BooruPage> {
   static const _log = LogTarget.booru;
 
   late final StreamSubscription<SettingsData?> settingsWatcher;
-  late final StreamSubscription favoritesWatcher;
-  late final StreamSubscription timeUpdater;
-  late final StreamSubscription bookmarksWatcher;
-  late final StreamSubscription blacklistedWatcher;
+  late final StreamSubscription<void> favoritesWatcher;
+  late final StreamSubscription<void> timeUpdater;
+  late final StreamSubscription<void> bookmarksWatcher;
+  late final StreamSubscription<void> blacklistedWatcher;
 
   bool inForeground = true;
 
@@ -246,7 +246,7 @@ class _BooruPageState extends State<BooruPage> {
       },
     );
 
-    timeUpdater = Stream.periodic(5.seconds).listen((event) {
+    timeUpdater = Stream<void>.periodic(5.seconds).listen((event) {
       if (inForeground) {
         StatisticsGeneral.addTimeSpent(5.seconds.inMilliseconds);
       }
@@ -321,7 +321,7 @@ class _BooruPageState extends State<BooruPage> {
 
         Navigator.push(
           context,
-          MaterialPageRoute(
+          MaterialPageRoute<void>(
             builder: (context) {
               return BooruRestoredPage(
                 pagingRegistry: widget.pagingRegistry,
@@ -488,7 +488,7 @@ class _BooruPageState extends State<BooruPage> {
   ) {
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (context) {
           return BooruSearchPage(
             booru: booru,
@@ -704,7 +704,7 @@ class __LatestAndExcludedState extends State<_LatestAndExcluded> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  DialogRoute(
+                  DialogRoute<void>(
                     context: context,
                     builder: (context) {
                       return AlertDialog(
@@ -733,7 +733,7 @@ class __LatestAndExcludedState extends State<_LatestAndExcluded> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    DialogRoute(
+                    DialogRoute<void>(
                       context: context,
                       builder: (context) {
                         return AlertDialog(

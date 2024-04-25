@@ -5,26 +5,27 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:dynamic_color/dynamic_color.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/db/schemas/settings/video_settings.dart';
-import 'package:video_player/video_player.dart';
-
-import '../../../notifiers/app_bar_visibility.dart';
+import "package:dynamic_color/dynamic_color.dart";
+import "package:flutter/material.dart";
+import "package:flutter_animate/flutter_animate.dart";
+import "package:gallery/src/db/schemas/settings/video_settings.dart";
+import "package:gallery/src/widgets/notifiers/app_bar_visibility.dart";
+import "package:video_player/video_player.dart";
 
 class VideoControls extends StatelessWidget {
+  const VideoControls({
+    super.key,
+    required this.controller,
+    required this.setState,
+  });
   final VideoPlayerController controller;
   final void Function(void Function()) setState;
-
-  const VideoControls(
-      {super.key, required this.controller, required this.setState});
 
   @override
   Widget build(BuildContext context) {
     return Animate(
       effects: const [
-        FadeEffect(begin: 1, end: 0, duration: Duration(milliseconds: 500))
+        FadeEffect(begin: 1, end: 0, duration: Duration(milliseconds: 500)),
       ],
       autoPlay: false,
       target: AppBarVisibilityNotifier.of(context) ? 0 : 1,
@@ -75,7 +76,8 @@ class VideoControls extends StatelessWidget {
                       Icons.loop_outlined,
                       color: controller.value.isLooping
                           ? Colors.blue.harmonizeWith(
-                              Theme.of(context).colorScheme.primary)
+                              Theme.of(context).colorScheme.primary,
+                            )
                           : null,
                     ),
                   ),
@@ -96,9 +98,8 @@ class VideoControls extends StatelessWidget {
 }
 
 class _PlayButton extends StatefulWidget {
-  final VideoPlayerController controller;
-
   const _PlayButton({required this.controller});
+  final VideoPlayerController controller;
 
   @override
   State<_PlayButton> createState() => __PlayButtonState();
@@ -159,12 +160,10 @@ class __PlayButtonState extends State<_PlayButton> {
 }
 
 class _VideoSeekForward extends StatelessWidget {
-  final VideoPlayerController controller;
-
   const _VideoSeekForward({
-    super.key,
     required this.controller,
   });
+  final VideoPlayerController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -179,12 +178,10 @@ class _VideoSeekForward extends StatelessWidget {
 }
 
 class _VideoSeekBackward extends StatelessWidget {
-  final VideoPlayerController controller;
-
   const _VideoSeekBackward({
-    super.key,
     required this.controller,
   });
+  final VideoPlayerController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -199,9 +196,8 @@ class _VideoSeekBackward extends StatelessWidget {
 }
 
 class _VideoTime extends StatefulWidget {
-  final VideoPlayerController controller;
-
   const _VideoTime({required this.controller});
+  final VideoPlayerController controller;
 
   @override
   State<_VideoTime> createState() => __VideoTimeState();
@@ -244,19 +240,23 @@ class __VideoTimeState extends State<_VideoTime> {
         height: 44,
         child: FittedBox(
           child: RichText(
-            text: TextSpan(children: [
-              TextSpan(
+            text: TextSpan(
+              children: [
+                TextSpan(
                   text: _minutesSeconds(widget.controller.value.position),
                   style: TextStyle(
-                      color:
-                          Theme.of(context).iconTheme.color?.withOpacity(0.6))),
-              TextSpan(
+                    color: Theme.of(context).iconTheme.color?.withOpacity(0.6),
+                  ),
+                ),
+                TextSpan(
                   text:
                       "\n${_minutesSeconds(widget.controller.value.duration)}",
                   style: TextStyle(
-                      color:
-                          Theme.of(context).iconTheme.color?.withOpacity(0.2)))
-            ]),
+                    color: Theme.of(context).iconTheme.color?.withOpacity(0.2),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

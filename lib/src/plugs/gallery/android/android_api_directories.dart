@@ -5,35 +5,35 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:developer';
+import "dart:developer";
 
-import 'package:gallery/src/db/schemas/gallery/directory_metadata.dart';
-import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
-import 'package:gallery/src/db/tags/post_tags.dart';
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/db/schemas/gallery/note_gallery.dart';
-import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
-import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
-import 'package:gallery/src/db/schemas/gallery/blacklisted_directory.dart';
-import 'package:gallery/src/db/schemas/gallery/favorite_file.dart';
-import 'package:gallery/src/interfaces/gallery/gallery_api_directories.dart';
-import 'package:gallery/src/interfaces/gallery/gallery_api_files.dart';
-import 'package:gallery/src/pages/gallery/directories.dart';
-import 'package:gallery/src/pages/more/settings/network_status.dart';
-import 'package:isar/isar.dart';
-import 'package:logging/logging.dart';
-import 'package:gallery/src/plugs/gallery/android/api.g.dart';
-import '../../../db/isar_filter.dart';
-import '../../../interfaces/filtering/filtering_interface.dart';
-import '../../../interfaces/filtering/filtering_mode.dart';
-import '../../platform_functions.dart';
-import '../../gallery.dart';
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/db/isar_filter.dart";
+import "package:gallery/src/db/schemas/gallery/blacklisted_directory.dart";
+import "package:gallery/src/db/schemas/gallery/directory_metadata.dart";
+import "package:gallery/src/db/schemas/gallery/favorite_file.dart";
+import "package:gallery/src/db/schemas/gallery/system_gallery_directory.dart";
+import "package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart";
+import "package:gallery/src/db/schemas/gallery/thumbnail.dart";
+import "package:gallery/src/db/tags/post_tags.dart";
+import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
+import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
+import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
+import "package:gallery/src/interfaces/gallery/gallery_api_files.dart";
+import "package:gallery/src/pages/gallery/directories.dart";
+import "package:gallery/src/pages/more/settings/network_status.dart";
+import "package:gallery/src/plugs/gallery.dart";
+import "package:gallery/src/plugs/gallery/android/api.g.dart";
+import "package:gallery/src/plugs/platform_functions.dart";
+import "package:isar/isar.dart";
+import "package:logging/logging.dart";
 
-part 'android_api_files.dart';
-part 'gallery_impl.dart';
-part 'android_gallery.dart';
+part "android_api_files.dart";
+part "android_gallery.dart";
+part "gallery_impl.dart";
 
 class _GalleryExtra implements GalleryDirectoriesExtra {
+  const _GalleryExtra._(this._impl);
   final _AndroidGallery _impl;
 
   @override
@@ -59,11 +59,14 @@ class _GalleryExtra implements GalleryDirectoriesExtra {
   @override
   GalleryAPIFiles trash() {
     final db = DbsOpen.androidGalleryFiles();
-    final instance = _AndroidGalleryFiles(db, () => _impl.currentImages = null,
-        isTrash: true,
-        bucketId: "trash",
-        target: "trash",
-        getElems: defaultGetElemsFiles(db));
+    final instance = _AndroidGalleryFiles(
+      db,
+      () => _impl.currentImages = null,
+      isTrash: true,
+      bucketId: "trash",
+      target: "trash",
+      getElems: defaultGetElemsFiles(db),
+    );
     _impl.currentImages = instance;
 
     return instance;
@@ -72,11 +75,14 @@ class _GalleryExtra implements GalleryDirectoriesExtra {
   @override
   GalleryAPIFiles favorites() {
     final db = DbsOpen.androidGalleryFiles();
-    final instance = _AndroidGalleryFiles(db, () => _impl.currentImages = null,
-        isFavorites: true,
-        bucketId: "favorites",
-        target: "favorites",
-        getElems: defaultGetElemsFiles(db));
+    final instance = _AndroidGalleryFiles(
+      db,
+      () => _impl.currentImages = null,
+      isFavorites: true,
+      bucketId: "favorites",
+      target: "favorites",
+      getElems: defaultGetElemsFiles(db),
+    );
     _impl.currentImages = instance;
 
     return instance;
@@ -85,7 +91,8 @@ class _GalleryExtra implements GalleryDirectoriesExtra {
   @override
   void addBlacklisted(List<BlacklistedDirectory> bucketIds) {
     Dbs.g.blacklisted.writeTxnSync(
-        () => Dbs.g.blacklisted.blacklistedDirectorys.putAllSync(bucketIds));
+      () => Dbs.g.blacklisted.blacklistedDirectorys.putAllSync(bucketIds),
+    );
     _impl.refreshGrid?.call();
   }
 
@@ -96,7 +103,8 @@ class _GalleryExtra implements GalleryDirectoriesExtra {
 
   @override
   void setRefreshingStatusCallback(
-      void Function(int i, bool inRefresh, bool empty) callback) {
+    void Function(int i, bool inRefresh, bool empty) callback,
+  ) {
     _impl.callback = callback;
   }
 
@@ -107,16 +115,18 @@ class _GalleryExtra implements GalleryDirectoriesExtra {
 
   @override
   void setPassFilter(
-      (Iterable<SystemGalleryDirectory>, dynamic) Function(
-              Iterable<SystemGalleryDirectory>, dynamic, bool)?
-          filter) {
+    (Iterable<SystemGalleryDirectory>, dynamic) Function(
+      Iterable<SystemGalleryDirectory>,
+      dynamic,
+      bool,
+    )? filter,
+  ) {
     _impl.filter.passFilter = filter;
   }
-
-  const _GalleryExtra._(this._impl);
 }
 
 class _AndroidGallery implements GalleryAPIDirectories {
+  _AndroidGallery({this.temporary});
   final bool? temporary;
   final time = DateTime.now();
 
@@ -171,8 +181,12 @@ class _AndroidGallery implements GalleryAPIDirectories {
 
       PlatformFunctions.refreshGallery();
     } catch (e, trace) {
-      log("android gallery",
-          level: Level.SEVERE.value, error: e, stackTrace: trace);
+      log(
+        "android gallery",
+        level: Level.SEVERE.value,
+        error: e,
+        stackTrace: trace,
+      );
     }
 
     return Future.value(db.systemGalleryDirectorys.countSync());
@@ -181,15 +195,16 @@ class _AndroidGallery implements GalleryAPIDirectories {
   @override
   GalleryAPIFiles files(SystemGalleryDirectory d) {
     final db = DbsOpen.androidGalleryFiles();
-    final instance = _AndroidGalleryFiles(db, () => currentImages = null,
-        bucketId: d.bucketId,
-        target: d.name,
-        getElems: defaultGetElemsFiles(db));
+    final instance = _AndroidGalleryFiles(
+      db,
+      () => currentImages = null,
+      bucketId: d.bucketId,
+      target: d.name,
+      getElems: defaultGetElemsFiles(db),
+    );
 
     currentImages = instance;
 
     return instance;
   }
-
-  _AndroidGallery({this.temporary});
 }

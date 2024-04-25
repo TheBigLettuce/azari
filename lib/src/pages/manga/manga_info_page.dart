@@ -5,34 +5,33 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
-import 'package:gallery/src/db/schemas/manga/pinned_manga.dart';
-import 'package:gallery/src/interfaces/manga/manga_api.dart';
-import 'package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart';
-import 'package:gallery/src/pages/anime/info_base/anime_info_app_bar.dart';
-import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
-import 'package:gallery/src/pages/anime/info_base/background_image/background_image.dart';
-import 'package:gallery/src/pages/anime/info_base/card_panel/card_shell.dart';
-import 'package:gallery/src/pages/manga/body/manga_info_body.dart';
-import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
-import 'package:gallery/src/widgets/skeletons/settings.dart';
-import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:sliver_tools/sliver_tools.dart';
-import 'package:url_launcher/url_launcher.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/schemas/manga/compact_manga_data.dart";
+import "package:gallery/src/db/schemas/manga/pinned_manga.dart";
+import "package:gallery/src/interfaces/manga/manga_api.dart";
+import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
+import "package:gallery/src/pages/anime/info_base/anime_info_app_bar.dart";
+import "package:gallery/src/pages/anime/info_base/anime_info_theme.dart";
+import "package:gallery/src/pages/anime/info_base/background_image/background_image.dart";
+import "package:gallery/src/pages/anime/info_base/card_panel/card_shell.dart";
+import "package:gallery/src/pages/manga/body/manga_info_body.dart";
+import "package:gallery/src/pages/more/dashboard/dashboard_card.dart";
+import "package:gallery/src/widgets/skeletons/settings.dart";
+import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
+import "package:sliver_tools/sliver_tools.dart";
+import "package:url_launcher/url_launcher.dart";
 
 class MangaInfoPage extends StatefulWidget {
-  final MangaId id;
-  final MangaAPI api;
-  final MangaEntry? entry;
-
   const MangaInfoPage({
     super.key,
     required this.id,
     required this.api,
     this.entry,
   });
+  final MangaId id;
+  final MangaAPI api;
+  final MangaEntry? entry;
 
   @override
   State<MangaInfoPage> createState() => _MangaInfoPageState();
@@ -43,7 +42,7 @@ class _MangaInfoPageState extends State<MangaInfoPage>
   final state = SkeletonState();
   final scrollController = ScrollController();
   double? score;
-  Future? scoreFuture;
+  Future<void>? scoreFuture;
 
   late bool isPinned = PinnedManga.exist(widget.id.toString(), widget.api.site);
 
@@ -108,70 +107,73 @@ class _MangaInfoPageState extends State<MangaInfoPage>
     final cardUnknownValue = AppLocalizations.of(context)!.cardUnknownValue;
 
     return WrapFutureRestartable(
-        newStatus: newFuture,
-        builder: (context, entry) {
-          return AnimeInfoTheme(
-            mode: entry.safety,
-            child: SettingsSkeleton(
-              AppLocalizations.of(context)!.mangaInfoPage,
-              state,
-              appBar: PreferredSize(
-                preferredSize: const Size.fromHeight(kToolbarHeight),
-                child: AnimeInfoAppBar(
-                  cell: entry,
-                  scrollController: scrollController,
-                ),
+      newStatus: newFuture,
+      builder: (context, entry) {
+        return AnimeInfoTheme(
+          mode: entry.safety,
+          child: SettingsSkeleton(
+            AppLocalizations.of(context)!.mangaInfoPage,
+            state,
+            appBar: PreferredSize(
+              preferredSize: const Size.fromHeight(kToolbarHeight),
+              child: AnimeInfoAppBar(
+                cell: entry,
+                scrollController: scrollController,
               ),
-              extendBodyBehindAppBar: true,
-              bottomAppBar: BottomAppBar(
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        if (isPinned) {
-                          PinnedManga.deleteSingle(
-                              entry.id.toString(), entry.site);
-                        } else {
-                          PinnedManga.addAll([
-                            PinnedManga(
-                              mangaId: entry.id.toString(),
-                              site: entry.site,
-                              thumbUrl: entry.thumbUrl,
-                              title: entry.title,
-                            )
-                          ]);
-                        }
-
-                        isPinned =
-                            PinnedManga.exist(entry.id.toString(), entry.site);
-
-                        setState(() {});
-                      },
-                      icon: Icon(
-                        Icons.push_pin_rounded,
-                        color: isPinned
-                            ? Theme.of(context).colorScheme.primary
-                            : null,
-                      ),
-                    ),
-                    IconButton(
-                        onPressed: () {
-                          launchUrl(Uri.parse(widget.api.browserUrl(entry)));
-                        },
-                        icon: const Icon(Icons.public)),
-                  ],
-                ),
-              ),
-              child: Stack(
+            ),
+            extendBodyBehindAppBar: true,
+            bottomAppBar: BottomAppBar(
+              child: Row(
                 children: [
-                  CustomScrollView(
-                    controller: scrollController,
-                    slivers: [
-                      SliverStack(children: [
+                  IconButton(
+                    onPressed: () {
+                      if (isPinned) {
+                        PinnedManga.deleteSingle(
+                          entry.id.toString(),
+                          entry.site,
+                        );
+                      } else {
+                        PinnedManga.addAll([
+                          PinnedManga(
+                            mangaId: entry.id.toString(),
+                            site: entry.site,
+                            thumbUrl: entry.thumbUrl,
+                            title: entry.title,
+                          ),
+                        ]);
+                      }
+
+                      isPinned =
+                          PinnedManga.exist(entry.id.toString(), entry.site);
+
+                      setState(() {});
+                    },
+                    icon: Icon(
+                      Icons.push_pin_rounded,
+                      color: isPinned
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      launchUrl(Uri.parse(widget.api.browserUrl(entry)));
+                    },
+                    icon: const Icon(Icons.public),
+                  ),
+                ],
+              ),
+            ),
+            child: Stack(
+              children: [
+                CustomScrollView(
+                  controller: scrollController,
+                  slivers: [
+                    SliverStack(
+                      children: [
                         SliverPositioned.fill(
                           child: BackgroundImageBase(
                             image: entry.thumbnail(),
-                            gradient: null,
                           ),
                         ),
                         CardShell.sliver(
@@ -186,18 +188,23 @@ class _MangaInfoPageState extends State<MangaInfoPage>
                               subtitle:
                                   Text(AppLocalizations.of(context)!.cardYear),
                               tooltip: AppLocalizations.of(context)!.cardYear,
-                              title: Text(entry.year == 0
-                                  ? cardUnknownValue
-                                  : entry.year.toString()),
+                              title: Text(
+                                entry.year == 0
+                                    ? cardUnknownValue
+                                    : entry.year.toString(),
+                              ),
                               transparentBackground: true,
                             ),
                             if (score != null)
                               UnsizedCard(
                                 subtitle: Text(
-                                    AppLocalizations.of(context)!.cardScore),
-                                title: Text(score!.isNegative
-                                    ? cardUnknownValue
-                                    : score!.toString()),
+                                  AppLocalizations.of(context)!.cardScore,
+                                ),
+                                title: Text(
+                                  score!.isNegative
+                                      ? cardUnknownValue
+                                      : score!.toString(),
+                                ),
                                 tooltip:
                                     AppLocalizations.of(context)!.cardScore,
                                 transparentBackground: true,
@@ -217,46 +224,55 @@ class _MangaInfoPageState extends State<MangaInfoPage>
                               ),
                             UnsizedCard(
                               subtitle: Text(
-                                  AppLocalizations.of(context)!.cardStatus),
+                                AppLocalizations.of(context)!.cardStatus,
+                              ),
                               tooltip: AppLocalizations.of(context)!.cardStatus,
                               title: Text(entry.status),
                               transparentBackground: true,
                             ),
                             UnsizedCard(
                               subtitle: Text(
-                                  AppLocalizations.of(context)!.cardVolumes),
+                                AppLocalizations.of(context)!.cardVolumes,
+                              ),
                               tooltip:
                                   AppLocalizations.of(context)!.cardVolumes,
-                              title: Text(entry.volumes.isNegative
-                                  ? cardUnknownValue
-                                  : entry.volumes.toString()),
+                              title: Text(
+                                entry.volumes.isNegative
+                                    ? cardUnknownValue
+                                    : entry.volumes.toString(),
+                              ),
                               transparentBackground: true,
                             ),
                             UnsizedCard(
-                              subtitle: Text(AppLocalizations.of(context)!
-                                  .cardDemographics),
+                              subtitle: Text(
+                                AppLocalizations.of(context)!.cardDemographics,
+                              ),
                               tooltip: AppLocalizations.of(context)!
                                   .cardDemographics,
-                              title: Text(entry.demographics.isEmpty
-                                  ? cardUnknownValue
-                                  : entry.demographics),
+                              title: Text(
+                                entry.demographics.isEmpty
+                                    ? cardUnknownValue
+                                    : entry.demographics,
+                              ),
                               transparentBackground: true,
                             ),
                           ],
                         ),
-                      ]),
-                      MangaInfoBody(
-                        api: widget.api,
-                        entry: entry,
-                        scrollController: scrollController,
-                        viewPadding: MediaQuery.viewPaddingOf(context),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                      ],
+                    ),
+                    MangaInfoBody(
+                      api: widget.api,
+                      entry: entry,
+                      scrollController: scrollController,
+                      viewPadding: MediaQuery.viewPaddingOf(context),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          );
-        });
+          ),
+        );
+      },
+    );
   }
 }

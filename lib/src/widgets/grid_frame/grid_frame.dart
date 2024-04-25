@@ -5,56 +5,72 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
-import 'dart:io';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/db/base/grid_settings_base.dart';
-import 'package:gallery/src/interfaces/cell/contentable.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart';
-import 'package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_subpage_state.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/page_description.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart';
-import 'package:gallery/src/widgets/grid_frame/parts/grid_app_bar_leading.dart';
-import 'package:gallery/src/widgets/grid_frame/parts/grid_app_bar_title.dart';
-import 'package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart';
-import 'package:gallery/src/widgets/empty_widget.dart';
-import 'package:gallery/src/widgets/keybinds/describe_keys.dart';
-import 'package:gallery/src/widgets/keybinds/keybind_description.dart';
-import 'package:gallery/src/widgets/keybinds/single_activator_description.dart';
-import 'package:gallery/src/widgets/notifiers/selection_count.dart';
-import '../../interfaces/cell/cell.dart';
-import 'configuration/grid_mutation_interface.dart';
-import '../notifiers/focus.dart';
+import "dart:async";
+import "dart:io";
 
-import 'configuration/selection_glue.dart';
+import "package:flutter/gestures.dart";
+import "package:flutter/material.dart";
+import "package:flutter/services.dart";
+import "package:flutter_animate/flutter_animate.dart";
+import "package:gallery/src/db/base/grid_settings_base.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/interfaces/cell/contentable.dart";
+import "package:gallery/src/widgets/empty_widget.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_subpage_state.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/page_description.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_app_bar_leading.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_app_bar_title.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
+import "package:gallery/src/widgets/keybinds/describe_keys.dart";
+import "package:gallery/src/widgets/keybinds/keybind_description.dart";
+import "package:gallery/src/widgets/keybinds/single_activator_description.dart";
+import "package:gallery/src/widgets/notifiers/focus.dart";
+import "package:gallery/src/widgets/notifiers/selection_count.dart";
 
-part 'configuration/grid_selection.dart';
-part 'wrappers/wrap_selection.dart';
-part 'configuration/mutation.dart';
-part 'configuration/segments.dart';
-part 'configuration/grid_action.dart';
-part 'configuration/grid_description.dart';
-part 'configuration/search_and_focus.dart';
-part 'parts/app_bar.dart';
-part 'wrappers/wrap_padding.dart';
-part 'parts/body_padding.dart';
-part 'parts/bottom_widget.dart';
-part 'parts/cell_provider.dart';
+part "configuration/grid_action.dart";
+part "configuration/grid_description.dart";
+part "configuration/grid_selection.dart";
+part "configuration/mutation.dart";
+part "configuration/search_and_focus.dart";
+part "configuration/segments.dart";
+part "parts/app_bar.dart";
+part "parts/body_padding.dart";
+part "parts/bottom_widget.dart";
+part "parts/cell_provider.dart";
+part "wrappers/wrap_padding.dart";
+part "wrappers/wrap_selection.dart";
 
 typedef MakeCellFunc<T extends CellBase> = Widget Function(
-    BuildContext, T, int);
+  BuildContext,
+  T,
+  int,
+);
 
 /// The grid of images.
 class GridFrame<T extends CellBase> extends StatefulWidget {
+  const GridFrame({
+    required super.key,
+    required this.getCell,
+    this.initalScrollPosition = 0,
+    required this.functionality,
+    this.onDispose,
+    required this.layout,
+    required this.mainFocus,
+    this.belowMainFocus,
+    this.overrideController,
+    required this.description,
+  });
+
   /// Grid gets the cell from [getCell].
   final T Function(int) getCell;
 
@@ -79,19 +95,6 @@ class GridFrame<T extends CellBase> extends StatefulWidget {
   final ScrollController? overrideController;
 
   final GridLayoutBehaviour layout;
-
-  const GridFrame({
-    required super.key,
-    required this.getCell,
-    this.initalScrollPosition = 0,
-    required this.functionality,
-    this.onDispose,
-    required this.layout,
-    required this.mainFocus,
-    this.belowMainFocus,
-    this.overrideController,
-    required this.description,
-  });
 
   @override
   State<GridFrame<T>> createState() => GridFrameState<T>();
@@ -213,8 +216,9 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
 
   bool _enableAnimations = false;
 
-  void enableAnimationsFor(
-      [Duration duration = const Duration(milliseconds: 300)]) {
+  void enableAnimationsFor([
+    Duration duration = const Duration(milliseconds: 300),
+  ]) {
     setState(() {
       _enableAnimations = true;
     });
@@ -321,7 +325,9 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
   static const double loadingIndicatorSize = 4;
 
   List<Widget> _makeActions(
-      BuildContext context, GridDescription<T> description) {
+    BuildContext context,
+    GridDescription<T> description,
+  ) {
     final button = widget.description.settingsButton;
 
     final ret = <Widget>[
@@ -336,7 +342,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
           safeMode: button.safeMode,
           selectSafeMode: button.selectSafeMode,
           onChanged: enableAnimationsFor,
-        )
+        ),
     ];
 
     if (description.menuButtonItems == null) {
@@ -347,17 +353,18 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
                 description.menuButtonItems!.length > 1)
             ? [
                 PopupMenuButton(
-                    position: PopupMenuPosition.under,
-                    itemBuilder: (context) {
-                      return description.menuButtonItems!
-                          .map(
-                            (e) => PopupMenuItem(
-                              enabled: false,
-                              child: e,
-                            ),
-                          )
-                          .toList();
-                    })
+                  position: PopupMenuPosition.under,
+                  itemBuilder: (context) {
+                    return description.menuButtonItems!
+                        .map(
+                          (e) => PopupMenuItem<void>(
+                            enabled: false,
+                            child: e,
+                          ),
+                        )
+                        .toList();
+                  },
+                ),
               ]
             : [
                 ...description.menuButtonItems!,
@@ -453,7 +460,8 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
                     error: refreshingStatus.refreshingError == null
                         ? null
                         : EmptyWidget.unwrapDioError(
-                            refreshingStatus.refreshingError),
+                            refreshingStatus.refreshingError,
+                          ),
                   ),
                   if (functionality.onError != null &&
                       refreshingStatus.refreshingError != null)
@@ -463,14 +471,17 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
             ),
           ),
         ...widget.layout.makeFor<T>(_layoutSettings)(
-            context, _layoutSettings, this),
+          context,
+          _layoutSettings,
+          this,
+        ),
       ],
       if (currentPage == 0)
         _WrapPadding(
           footer: description.footer,
           selectionGlue: functionality.selectionGlue,
           child: null,
-        )
+        ),
     ];
   }
 
@@ -487,7 +498,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
       ),
       child: Scrollbar(
         interactive: false,
-        thumbVisibility: Platform.isAndroid || Platform.isIOS ? false : true,
+        thumbVisibility: !Platform.isAndroid && !Platform.isIOS,
         controller: controller,
         child: ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
@@ -557,7 +568,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
     final fab = functionality.fab;
 
     Widget child(BuildContext context) {
-      Widget ret = _BodyWrapping(
+      final Widget ret = _BodyWrapping(
         bindings: const {},
         mainFocus: widget.mainFocus,
         pageName: widget.description.keybindsDescription,
@@ -578,7 +589,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
                     padding: EdgeInsets.only(
                       bottom: MediaQuery.viewPaddingOf(context).bottom,
                     ),
-                    child: description.footer!,
+                    child: description.footer,
                   );
                 },
               ),
@@ -657,17 +668,16 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
 }
 
 class _GridSelectionCountHolder<T extends CellBase> extends StatefulWidget {
-  final GridSelection<T> selection;
-  final double Function(BuildContext) calculatePadding;
-
-  final Widget child;
-
   const _GridSelectionCountHolder({
     required super.key,
     required this.selection,
     required this.calculatePadding,
     required this.child,
   });
+  final GridSelection<T> selection;
+  final double Function(BuildContext) calculatePadding;
+
+  final Widget child;
 
   @override
   State<_GridSelectionCountHolder> createState() =>
@@ -695,7 +705,7 @@ class __GridSelectionCountHolderState extends State<_GridSelectionCountHolder> {
       canPop: widget.selection.isEmpty,
       onPopInvoked: _onPop,
       child: GridBottomPaddingProvider(
-        fab: (kFloatingActionButtonMargin * 2 + 24 + 8),
+        fab: kFloatingActionButtonMargin * 2 + 24 + 8,
         padding: widget.calculatePadding(context),
         child: SelectionCountNotifier(
           count: widget.selection.count,
@@ -730,13 +740,12 @@ class GridExtrasNotifier extends InheritedWidget {
 }
 
 class PlayAnimationNotifier extends InheritedWidget {
-  final bool play;
-
   const PlayAnimationNotifier({
     super.key,
     required this.play,
     required super.child,
   });
+  final bool play;
 
   static bool? maybeOf(BuildContext context) {
     final widget =

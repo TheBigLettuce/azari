@@ -5,22 +5,24 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:isar/isar.dart';
+import "package:gallery/src/db/initalize_db.dart";
+import "package:isar/isar.dart";
 
-part 'video_settings.g.dart';
+part "video_settings.g.dart";
 
 @collection
 class VideoSettings {
-  final Id id = 0;
+  const VideoSettings({required this.looping, required this.volume});
+
+  Id get id => 0;
 
   final bool looping;
   final double volume;
 
-  const VideoSettings({required this.looping, required this.volume});
-
   VideoSettings copy({bool? looping, double? volume}) => VideoSettings(
-      looping: looping ?? this.looping, volume: volume ?? this.volume);
+        looping: looping ?? this.looping,
+        volume: volume ?? this.volume,
+      );
 
   static VideoSettings get current =>
       Dbs.g.main.videoSettings.getSync(0) ??
@@ -28,11 +30,13 @@ class VideoSettings {
 
   static void changeVolume(double volume) {
     Dbs.g.main.writeTxnSync(
-        () => Dbs.g.main.videoSettings.putSync(current.copy(volume: volume)));
+      () => Dbs.g.main.videoSettings.putSync(current.copy(volume: volume)),
+    );
   }
 
   static void changeLooping(bool looping) {
     Dbs.g.main.writeTxnSync(
-        () => Dbs.g.main.videoSettings.putSync(current.copy(looping: looping)));
+      () => Dbs.g.main.videoSettings.putSync(current.copy(looping: looping)),
+    );
   }
 }

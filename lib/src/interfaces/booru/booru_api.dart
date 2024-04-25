@@ -58,8 +58,11 @@ abstract class BooruAPI {
   /// The boorus which do not support geting posts down a certain post number should keep a page number internally,
   /// and use paging to load the posts.
   Future<(List<Post>, int?)> fromPost(
-      int postId, String tags, BooruTagging excludedTags,
-      {SafeMode? overrideSafeMode});
+    int postId,
+    String tags,
+    BooruTagging excludedTags, {
+    SafeMode? overrideSafeMode,
+  });
 
   /// Tag completition, this shouldn't present more than 10 at a time.
   Future<List<BooruTag>> completeTag(String tag);

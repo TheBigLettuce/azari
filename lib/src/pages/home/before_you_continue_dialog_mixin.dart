@@ -5,17 +5,19 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of '../home.dart';
+part of "../home.dart";
 
 mixin _BeforeYouContinueDialogMixin {
   void maybeBeforeYouContinueDialog(
-      BuildContext context, SettingsData settings) {
+    BuildContext context,
+    SettingsData settings,
+  ) {
     if (settings.path.isEmpty) {
       WidgetsBinding.instance.scheduleFrameCallback(
         (timeStamp) {
           Navigator.push(
             context,
-            DialogRoute(
+            DialogRoute<void>(
               context: context,
               builder: (context) {
                 final localizations = AppLocalizations.of(context)!;
@@ -41,7 +43,7 @@ mixin _BeforeYouContinueDialogMixin {
                         Navigator.pop(context);
                       },
                       child: Text(localizations.choose),
-                    )
+                    ),
                   ],
                 );
               },

@@ -5,29 +5,28 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
-import 'dart:io';
+import "dart:async";
+import "dart:io";
 
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:gallery/main.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/booru/display_quality.dart';
-import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/pages/home.dart';
-import 'package:gallery/src/pages/more/settings/radio_dialog.dart';
-import 'package:gallery/src/plugs/platform_functions.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import "package:flutter/material.dart";
+import "package:flutter/services.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/main.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/display_quality.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/pages/home.dart";
+import "package:gallery/src/pages/more/settings/radio_dialog.dart";
+import "package:gallery/src/plugs/platform_functions.dart";
+import "package:permission_handler/permission_handler.dart";
 
 class AndroidPermissionsPage extends StatefulWidget {
-  final bool doNotLaunchHome;
-
   const AndroidPermissionsPage({
     super.key,
     required this.doNotLaunchHome,
   });
+  final bool doNotLaunchHome;
 
   @override
   State<AndroidPermissionsPage> createState() => _AndroidPermissionsPageState();
@@ -152,13 +151,16 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
           onPressed: !photoAndVideos
               ? null
               : () {
-                  Navigator.pushReplacement(context, MaterialPageRoute(
-                    builder: (context) {
-                      return CongratulationPage(
-                        doNotLaunchHome: widget.doNotLaunchHome,
-                      );
-                    },
-                  ));
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (context) {
+                        return CongratulationPage(
+                          doNotLaunchHome: widget.doNotLaunchHome,
+                        );
+                      },
+                    ),
+                  );
                 },
           label: Text(AppLocalizations.of(context)!.welcomeNextLabel),
         ),
@@ -168,9 +170,8 @@ class _AndroidPermissionsPageState extends State<AndroidPermissionsPage> {
 }
 
 class WelcomePage extends StatefulWidget {
-  final bool doNotLaunchHome;
-
   const WelcomePage({super.key, this.doNotLaunchHome = false});
+  final bool doNotLaunchHome;
 
   @override
   State<WelcomePage> createState() => _WelcomePageState();
@@ -195,28 +196,30 @@ class _WelcomePageState extends State<WelcomePage> {
         FilledButton.icon(
           icon: const Icon(Icons.navigate_next_rounded),
           onPressed: () {
-            Navigator.pushReplacement(context, MaterialPageRoute(
-              builder: (context) {
-                return InitalSettings(
-                  doNotLaunchHome: widget.doNotLaunchHome,
-                );
-              },
-            ));
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute<void>(
+                builder: (context) {
+                  return InitalSettings(
+                    doNotLaunchHome: widget.doNotLaunchHome,
+                  );
+                },
+              ),
+            );
           },
           label: Text(AppLocalizations.of(context)!.welcomeNextLabel),
-        )
+        ),
       ],
     );
   }
 }
 
 class CongratulationPage extends StatelessWidget {
-  final bool doNotLaunchHome;
-
   const CongratulationPage({
     super.key,
     required this.doNotLaunchHome,
   });
+  final bool doNotLaunchHome;
 
   @override
   Widget build(BuildContext context) {
@@ -248,28 +251,27 @@ class CongratulationPage extends StatelessWidget {
 
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (context) {
                       return const Home();
                     },
                   ),
                 );
               },
-            )
+            ),
           ],
-        )
+        ),
       ],
     );
   }
 }
 
 class InitalSettings extends StatefulWidget {
-  final bool doNotLaunchHome;
-
   const InitalSettings({
     super.key,
     required this.doNotLaunchHome,
   });
+  final bool doNotLaunchHome;
 
   @override
   State<InitalSettings> createState() => _InitalSettingsState();
@@ -303,21 +305,27 @@ class _InitalSettingsState extends State<InitalSettings> {
 
   void _nextPage() {
     if (Platform.isAndroid) {
-      Navigator.pushReplacement(context, MaterialPageRoute(
-        builder: (context) {
-          return AndroidPermissionsPage(
-            doNotLaunchHome: widget.doNotLaunchHome,
-          );
-        },
-      ));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute<void>(
+          builder: (context) {
+            return AndroidPermissionsPage(
+              doNotLaunchHome: widget.doNotLaunchHome,
+            );
+          },
+        ),
+      );
     } else {
-      Navigator.pushReplacement(context, MaterialPageRoute(
-        builder: (context) {
-          return CongratulationPage(
-            doNotLaunchHome: widget.doNotLaunchHome,
-          );
-        },
-      ));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute<void>(
+          builder: (context) {
+            return CongratulationPage(
+              doNotLaunchHome: widget.doNotLaunchHome,
+            );
+          },
+        ),
+      );
     }
   }
 
@@ -349,9 +357,11 @@ class _InitalSettingsState extends State<InitalSettings> {
                       AppLocalizations.of(context)!.chooseValidDirectory,
                 );
               },
-              label: Text(settings.path.isEmpty
-                  ? AppLocalizations.of(context)!.downloadDirectorySetting
-                  : settings.path.pathDisplay),
+              label: Text(
+                settings.path.isEmpty
+                    ? AppLocalizations.of(context)!.downloadDirectorySetting
+                    : settings.path.pathDisplay,
+              ),
             ),
             if (error != null)
               Padding(
@@ -416,7 +426,7 @@ class _InitalSettingsState extends State<InitalSettings> {
               label:
                   "${AppLocalizations.of(context)!.safeModeSetting}: ${settings.safeMode.translatedString(context)}",
               variant: ButtonVariant.secondary,
-            )
+            ),
           ],
         ),
       ),
@@ -425,27 +435,25 @@ class _InitalSettingsState extends State<InitalSettings> {
           icon: const Icon(Icons.navigate_next_rounded),
           onPressed: settings.path.isEmpty ? null : _nextPage,
           label: Text(AppLocalizations.of(context)!.welcomeNextLabel),
-        )
+        ),
       ],
     );
   }
 }
 
 class _WrapPadding extends StatelessWidget {
-  final List<Widget> buttons;
-  final String title;
-  final Widget body;
-  final String? explanation;
-  final bool addCenteredIcon;
-
   const _WrapPadding({
-    super.key,
     required this.body,
     required this.buttons,
     required this.title,
     this.explanation,
     this.addCenteredIcon = false,
   });
+  final List<Widget> buttons;
+  final String title;
+  final Widget body;
+  final String? explanation;
+  final bool addCenteredIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -456,10 +464,11 @@ class _WrapPadding extends StatelessWidget {
       child: Scaffold(
         body: Padding(
           padding: EdgeInsets.only(
-              top: 80,
-              bottom: 40 + MediaQuery.viewPaddingOf(context).bottom,
-              left: 40,
-              right: 40),
+            top: 80,
+            bottom: 40 + MediaQuery.viewPaddingOf(context).bottom,
+            left: 40,
+            right: 40,
+          ),
           child: Stack(
             children: [
               if (addCenteredIcon)
@@ -475,7 +484,6 @@ class _WrapPadding extends StatelessWidget {
                   ),
                 ),
               Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
@@ -494,41 +502,41 @@ class _WrapPadding extends StatelessWidget {
                       ),
                     ),
                   ),
-                  explanation == null
-                      ? Row(
+                  if (explanation == null)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: buttons,
+                    )
+                  else
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Icon(
+                          Icons.info_outline_rounded,
+                          color: theme.colorScheme.secondary.withOpacity(0.8),
+                          applyTextScaling: true,
+                        ),
+                        const Padding(padding: EdgeInsets.only(left: 8)),
+                        Expanded(
+                          child: Text(
+                            explanation!,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color:
+                                  theme.colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const Padding(padding: EdgeInsets.only(left: 8)),
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: buttons,
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Icon(
-                              Icons.info_outline_rounded,
-                              color:
-                                  theme.colorScheme.secondary.withOpacity(0.8),
-                              applyTextScaling: true,
-                            ),
-                            const Padding(padding: EdgeInsets.only(left: 8)),
-                            Expanded(
-                              child: Text(
-                                explanation!,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.8),
-                                ),
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const Padding(padding: EdgeInsets.only(left: 8)),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: buttons,
-                            ),
-                          ],
-                        )
+                        ),
+                      ],
+                    ),
                 ],
-              )
+              ),
             ],
           ),
         ),
@@ -544,18 +552,16 @@ enum ButtonVariant {
 }
 
 class _ButtonWithPadding extends StatelessWidget {
-  final Icon icon;
-  final void Function() onPressed;
-  final String label;
-  final ButtonVariant variant;
-
   const _ButtonWithPadding({
-    super.key,
     required this.icon,
     required this.onPressed,
     required this.label,
     required this.variant,
   });
+  final Icon icon;
+  final void Function() onPressed;
+  final String label;
+  final ButtonVariant variant;
 
   @override
   Widget build(BuildContext context) {

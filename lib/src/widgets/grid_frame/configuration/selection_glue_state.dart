@@ -5,17 +5,16 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
-
-import 'selection_glue.dart';
-import '../wrappers/wrap_grid_action_button.dart';
+import "package:flutter/material.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_action_button.dart";
 
 class SelectionGlueState {
   SelectionGlueState({
     required this.hide,
-    Future Function(bool backward)? playAnimation,
+    Future<void> Function(bool backward)? playAnimation,
   }) : _playAnimation = playAnimation;
 
   (List<(Widget, void Function())> actions, void Function() reset)? actions;
@@ -23,7 +22,7 @@ class SelectionGlueState {
   int countUpdateTimes = 0;
 
   final void Function(bool) hide;
-  final Future Function(bool backward)? _playAnimation;
+  final Future<void> Function(bool backward)? _playAnimation;
 
   void _close(void Function(void Function()) setState) {
     if (actions == null) {
@@ -47,12 +46,15 @@ class SelectionGlueState {
 
   SelectionGlue glue(
     bool Function() keyboardVisible,
-    void Function(Function()) setState,
+    void Function(void Function()) setState,
     int Function() barHeight,
     bool persistentBarHeight,
   ) {
-    void open<T extends CellBase>(BuildContext context,
-        List<GridAction<T>> addActions, GridSelection<T> selection) {
+    void open<T extends CellBase>(
+      BuildContext context,
+      List<GridAction<T>> addActions,
+      GridSelection<T> selection,
+    ) {
       if (actions != null || addActions.isEmpty) {
         return;
       }
@@ -81,12 +83,14 @@ class SelectionGlueState {
       }).toList();
 
       if (_playAnimation != null) {
-        _playAnimation(false).then((value) => setState(() {
-              actions = (
-                a,
-                selection.reset,
-              );
-            }));
+        _playAnimation(false).then(
+          (value) => setState(() {
+            actions = (
+              a,
+              selection.reset,
+            );
+          }),
+        );
       } else {
         setState(() {
           actions = (

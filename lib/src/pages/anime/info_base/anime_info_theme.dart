@@ -5,18 +5,17 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/anime/anime_api.dart';
+import "package:flutter/material.dart";
+import "package:gallery/src/interfaces/anime/anime_api.dart";
 
 class AnimeInfoTheme extends StatelessWidget {
-  final AnimeSafeMode mode;
-  final Widget child;
-
   const AnimeInfoTheme({
     super.key,
     required this.mode,
     required this.child,
   });
+  final AnimeSafeMode mode;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +24,7 @@ class AnimeInfoTheme extends StatelessWidget {
     }
 
     final oldTheme = Theme.of(context);
-    Color bgColor = const Color.fromARGB(255, 52, 26, 27);
+    const Color bgColor = Color.fromARGB(255, 52, 26, 27);
 
     final newTheme = ThemeData.from(
       colorScheme: ColorScheme.fromSeed(
@@ -47,14 +46,12 @@ class AnimeInfoTheme extends StatelessWidget {
 }
 
 class _ButtonsThemes extends StatelessWidget {
-  final AnimeSafeMode mode;
-  final Widget child;
-
   const _ButtonsThemes({
-    super.key,
     required this.mode,
     required this.child,
   });
+  final AnimeSafeMode mode;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -73,22 +70,25 @@ class _ButtonsThemes extends StatelessWidget {
               )
             : null,
         filledButtonTheme: FilledButtonThemeData(
-            style: ButtonStyle(
-          foregroundColor: MaterialStatePropertyAll(
-              theme.colorScheme.onPrimary.withOpacity(0.8)),
-          visualDensity: VisualDensity.compact,
-          backgroundColor: MaterialStatePropertyAll(
-            theme.colorScheme.primary.withOpacity(0.8),
+          style: ButtonStyle(
+            foregroundColor: MaterialStatePropertyAll(
+              theme.colorScheme.onPrimary.withOpacity(0.8),
+            ),
+            visualDensity: VisualDensity.compact,
+            backgroundColor: MaterialStatePropertyAll(
+              theme.colorScheme.primary.withOpacity(0.8),
+            ),
           ),
-        )),
+        ),
         textButtonTheme: TextButtonThemeData(
           style: ButtonStyle(
-              textStyle: MaterialStatePropertyAll(
-                theme.textTheme.bodyMedium,
-              ),
-              foregroundColor: MaterialStatePropertyAll(
-                theme.colorScheme.primary.withOpacity(0.8),
-              )),
+            textStyle: MaterialStatePropertyAll(
+              theme.textTheme.bodyMedium,
+            ),
+            foregroundColor: MaterialStatePropertyAll(
+              theme.colorScheme.primary.withOpacity(0.8),
+            ),
+          ),
         ),
       ),
       child: child,

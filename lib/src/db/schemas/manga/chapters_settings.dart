@@ -5,12 +5,12 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:isar/isar.dart';
+import "package:gallery/src/db/initalize_db.dart";
+import "package:isar/isar.dart";
 
-part 'chapters_settings.g.dart';
+part "chapters_settings.g.dart";
 
 @collection
 class ChapterSettings {
@@ -18,7 +18,7 @@ class ChapterSettings {
     required this.hideRead,
   });
 
-  final Id isarId = 0;
+  Id get isarId => 0;
 
   final bool hideRead;
 
@@ -35,13 +35,16 @@ class ChapterSettings {
       const ChapterSettings(hideRead: false);
 
   static void setHideRead(bool read) {
-    Dbs.g.anime.writeTxnSync(() => Dbs.g.anime.chapterSettings.putSync(
-          current.copy(hideRead: read),
-        ));
+    Dbs.g.anime.writeTxnSync(
+      () => Dbs.g.anime.chapterSettings.putSync(
+        current.copy(hideRead: read),
+      ),
+    );
   }
 
   static StreamSubscription<ChapterSettings?> watch(
-      void Function(ChapterSettings? c) f) {
+    void Function(ChapterSettings? c) f,
+  ) {
     return Dbs.g.anime.chapterSettings.watchObject(0).listen(f);
   }
 }

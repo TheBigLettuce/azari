@@ -5,36 +5,34 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:developer';
+import "dart:developer";
 
-import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/db/tags/booru_tagging.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/net/downloader.dart';
-import 'package:gallery/src/widgets/image_view/image_view.dart';
-import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
-import 'package:logging/logging.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:qrscan/qrscan.dart';
-
-import '../../../db/schemas/booru/post.dart';
-import '../../../interfaces/booru/booru_api.dart';
-import '../../../db/schemas/downloader/download_file.dart';
+import "package:dio/dio.dart";
+import "package:flutter/material.dart";
+import "package:flutter/services.dart";
+import "package:flutter_animate/flutter_animate.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/schemas/booru/favorite_booru.dart";
+import "package:gallery/src/db/schemas/booru/post.dart";
+import "package:gallery/src/db/schemas/downloader/download_file.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/tags/booru_tagging.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/booru_api.dart";
+import "package:gallery/src/net/downloader.dart";
+import "package:gallery/src/widgets/image_view/image_view.dart";
+import "package:logging/logging.dart";
+import "package:permission_handler/permission_handler.dart";
+import "package:qrscan/qrscan.dart";
 
 class SinglePost extends StatefulWidget {
-  final TagManager tagManager;
-  final Widget? overrideLeading;
-
   const SinglePost({
     super.key,
     required this.tagManager,
     this.overrideLeading,
   });
+  final TagManager tagManager;
+  final Widget? overrideLeading;
 
   @override
   State<SinglePost> createState() => _SinglePostState();
@@ -70,7 +68,7 @@ class _SinglePostState extends State<SinglePost> {
     super.dispose();
   }
 
-  void _launch([Booru? replaceBooru, int? replaceId]) async {
+  Future<void> _launch([Booru? replaceBooru, int? replaceId]) async {
     if (inProcessLoading) {
       return;
     }
@@ -115,10 +113,11 @@ class _SinglePostState extends State<SinglePost> {
         download: (_) {
           Downloader.g.add(
             DownloadFile.d(
-                url: value.fileDownloadUrl(),
-                site: booru.booru.url,
-                name: value.filename(),
-                thumbUrl: value.previewUrl),
+              url: value.fileDownloadUrl(),
+              site: booru.booru.url,
+              name: value.filename(),
+              thumbUrl: value.previewUrl,
+            ),
             SettingsService.currentData,
           );
         },
@@ -130,8 +129,12 @@ class _SinglePostState extends State<SinglePost> {
             .showSnackBar(SnackBar(content: Text(e.toString())));
       } catch (_) {}
 
-      log("going to a post in single post",
-          level: Level.SEVERE.value, error: e, stackTrace: trace);
+      log(
+        "going to a post in single post",
+        level: Level.SEVERE.value,
+        error: e,
+        stackTrace: trace,
+      );
     }
 
     if (arrowSpinningController != null) {
@@ -159,41 +162,44 @@ class _SinglePostState extends State<SinglePost> {
             },
           ),
           IconButton(
-              onPressed: () {
-                Permission.camera.request().then((value) {
-                  if (!value.isGranted) {
-                    Navigator.push(
-                        context,
-                        DialogRoute(
-                          context: context,
-                          builder: (context) {
-                            return AlertDialog(
-                              title: Text(AppLocalizations.of(context)!.error),
-                              content: Text(AppLocalizations.of(context)!
-                                  .cameraPermQrCodeErr),
-                            );
-                          },
-                        ));
-                  } else {
-                    () async {
-                      final value = await scan();
-                      if (value == null) {
-                        return;
-                      }
+            onPressed: () {
+              Permission.camera.request().then((value) {
+                if (!value.isGranted) {
+                  Navigator.push(
+                    context,
+                    DialogRoute<void>(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: Text(AppLocalizations.of(context)!.error),
+                          content: Text(
+                            AppLocalizations.of(context)!.cameraPermQrCodeErr,
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                } else {
+                  () async {
+                    final value = await scan();
+                    if (value == null) {
+                      return;
+                    }
 
-                      if (RegExp(r"^[0-9]").hasMatch(value)) {
-                        controller.text = value;
-                      } else {
-                        try {
-                          final f = value.split("_");
-                          _launch(Booru.fromPrefix(f[0])!, int.parse(f[1]));
-                        } catch (_) {}
-                      }
-                    }();
-                  }
-                });
-              },
-              icon: const Icon(Icons.qr_code_scanner_rounded)),
+                    if (RegExp("^[0-9]").hasMatch(value)) {
+                      controller.text = value;
+                    } else {
+                      try {
+                        final f = value.split("_");
+                        _launch(Booru.fromPrefix(f[0]), int.parse(f[1]));
+                      } catch (_) {}
+                    }
+                  }();
+                }
+              });
+            },
+            icon: const Icon(Icons.qr_code_scanner_rounded),
+          ),
           IconButton(
             icon: const Icon(Icons.content_paste),
             onPressed: () async {
@@ -205,7 +211,7 @@ class _SinglePostState extends State<SinglePost> {
                   return;
                 }
 
-                final numbers = RegExp(r'\d+')
+                final numbers = RegExp(r"\d+")
                     .allMatches(clipboard.text!)
                     .map((e) => e.input.substring(e.start, e.end))
                     .toList();
@@ -220,30 +226,37 @@ class _SinglePostState extends State<SinglePost> {
 
                 setState(() {
                   menuItems = numbers
-                      .map((e) => ListTile(
-                            title: Text(e),
-                            onTap: () {
-                              controller.text = e;
-                              menuController.close();
-                            },
-                          ))
+                      .map(
+                        (e) => ListTile(
+                          title: Text(e),
+                          onTap: () {
+                            controller.text = e;
+                            menuController.close();
+                          },
+                        ),
+                      )
                       .toList();
                 });
 
                 menuController.open();
               } catch (e, trace) {
-                log("clipboard button in single post",
-                    level: Level.WARNING.value, error: e, stackTrace: trace);
+                log(
+                  "clipboard button in single post",
+                  level: Level.WARNING.value,
+                  error: e,
+                  stackTrace: trace,
+                );
               }
             },
           ),
           IconButton(
             icon: const Icon(Icons.arrow_forward).animate(
-                onInit: (controller) => arrowSpinningController = controller,
-                effects: const [RotateEffect()],
-                autoPlay: false),
+              onInit: (controller) => arrowSpinningController = controller,
+              effects: const [RotateEffect()],
+              autoPlay: false,
+            ),
             onPressed: _launch,
-          )
+          ),
         ],
       ),
     );

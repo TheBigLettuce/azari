@@ -5,24 +5,23 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:gallery/main.dart';
-import 'package:gallery/src/db/base/grid_settings_base.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart';
-import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
-import 'package:gallery/src/widgets/grid_frame/parts/segment_label.dart';
-import 'package:local_auth/local_auth.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import '../grid_frame.dart';
+import "package:flutter/material.dart";
+import "package:flutter/services.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart";
+import "package:gallery/main.dart";
+import "package:gallery/src/db/base/grid_settings_base.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:gallery/src/widgets/grid_frame/parts/segment_label.dart";
+import "package:local_auth/local_auth.dart";
 
 class SegmentLayout<T extends CellBase>
     implements GridLayouter<T>, GridLayoutBehaviour {
@@ -51,8 +50,11 @@ class SegmentLayout<T extends CellBase>
   }
 
   @override
-  List<Widget> call(BuildContext context, GridSettingsBase settings,
-      GridFrameState<T> state) {
+  List<Widget> call(
+    BuildContext context,
+    GridSettingsBase settings,
+    GridFrameState<T> state,
+  ) {
     if (segments.prebuiltSegments != null) {
       return prototype(
         context,
@@ -79,25 +81,30 @@ class SegmentLayout<T extends CellBase>
       );
     }
     final (s, _) = _segmentsFnc<T>(
-        context, segments, state.mutation, state.selection, settings.columns,
-        gridSeed: 1,
-        functionality: state.widget.functionality,
-        aspectRatio: settings.aspectRatio.value,
-        refreshingStatus: state.refreshingStatus,
-        suggestionPrefix: suggestionPrefix,
-        gridCell: (context, idx, cell, blur) {
-      return GridCell.frameDefault(
-        context,
-        idx,
-        cell,
-        isList: isList,
-        blur: blur,
-        imageAlign: Alignment.topCenter,
-        hideTitle: settings.hideName,
-        animated: PlayAnimationNotifier.maybeOf(context) ?? false,
-        state: state,
-      );
-    });
+      context,
+      segments,
+      state.mutation,
+      state.selection,
+      settings.columns,
+      gridSeed: 1,
+      functionality: state.widget.functionality,
+      aspectRatio: settings.aspectRatio.value,
+      refreshingStatus: state.refreshingStatus,
+      suggestionPrefix: suggestionPrefix,
+      gridCell: (context, idx, cell, blur) {
+        return GridCell.frameDefault(
+          context,
+          idx,
+          cell,
+          isList: isList,
+          blur: blur,
+          imageAlign: Alignment.topCenter,
+          hideTitle: settings.hideName,
+          animated: PlayAnimationNotifier.maybeOf(context) ?? false,
+          state: state,
+        );
+      },
+    );
 
     return s;
   }
@@ -119,15 +126,17 @@ class SegmentLayout<T extends CellBase>
     final segRows = <_SegmentType>[];
 
     if (segments.injectedSegments.isNotEmpty) {
-      segRows.add(_HeaderWithCells<T>(
-        _SegSticky(
-          segments.injectedLabel,
-          null,
-          unstickable: false,
+      segRows.add(
+        _HeaderWithCells<T>(
+          _SegSticky(
+            segments.injectedLabel,
+            null,
+            unstickable: false,
+          ),
+          segments.injectedSegments.map((e) => (e, false)).toList(),
+          const {SegmentModifier.sticky},
         ),
-        segments.injectedSegments.map((e) => (e, false)).toList(),
-        const {SegmentModifier.sticky},
-      ));
+      );
     }
 
     int prevCount = 0;
@@ -143,14 +152,14 @@ class SegmentLayout<T extends CellBase>
                         segments.limitLabelChildren != 0 &&
                         !segments.limitLabelChildren!.isNegative) {
                       segments.onLabelPressed!(
-                          e.key.translatedString(context),
-                          List.generate(
-                                  e.value > segments.limitLabelChildren!
-                                      ? segments.limitLabelChildren!
-                                      : e.value,
-                                  (index) => index + prevCount)
-                              .map((e) => getCell(e))
-                              .toList());
+                        e.key.translatedString(context),
+                        List.generate(
+                          e.value > segments.limitLabelChildren!
+                              ? segments.limitLabelChildren!
+                              : e.value,
+                          (index) => index + prevCount,
+                        ).map((e) => getCell(e)).toList(),
+                      );
 
                       return;
                     }
@@ -158,7 +167,9 @@ class SegmentLayout<T extends CellBase>
                     final cells = <T>[];
 
                     for (final i in List.generate(
-                        e.value, (index) => index + prevCount)) {
+                      e.value,
+                      (index) => index + prevCount,
+                    )) {
                       cells.add(getCell(i - 1));
                     }
 
@@ -231,23 +242,28 @@ class SegmentLayout<T extends CellBase>
               if (cell
                   .alias(false)
                   .startsWith(e.length <= 4 ? e : e.substring(0, 4))) {
-                suggestionCells.add((
-                  cell,
-                  caps
-                      .modifiersFor(segments.segment!(cell) ?? "")
-                      .contains(SegmentModifier.blur)
-                ));
+                suggestionCells.add(
+                  (
+                    cell,
+                    caps
+                        .modifiersFor(segments.segment!(cell) ?? "")
+                        .contains(SegmentModifier.blur)
+                  ),
+                );
               }
             }
           } else {
             if (cell.alias(false).startsWith(
-                alias.length <= 4 ? alias : alias.substring(0, 4))) {
-              suggestionCells.add((
-                cell,
-                caps
-                    .modifiersFor(segments.segment!(cell) ?? "")
-                    .contains(SegmentModifier.blur)
-              ));
+                  alias.length <= 4 ? alias : alias.substring(0, 4),
+                )) {
+              suggestionCells.add(
+                (
+                  cell,
+                  caps
+                      .modifiersFor(segments.segment!(cell) ?? "")
+                      .contains(SegmentModifier.blur)
+                ),
+              );
             }
           }
         }
@@ -273,7 +289,8 @@ class SegmentLayout<T extends CellBase>
     }
 
     if (segments.displayFirstCellInSpecial) {
-      segRows.add(_HeaderWithCells<T>(
+      segRows.add(
+        _HeaderWithCells<T>(
           _SegSticky(
             segments.injectedLabel,
             null,
@@ -295,18 +312,22 @@ class SegmentLayout<T extends CellBase>
                     ]
                   : suggestionCells) +
               segments.injectedSegments.map((e) => (e, false)).toList(),
-          const {SegmentModifier.sticky}));
+          const {SegmentModifier.sticky},
+        ),
+      );
     } else {
       if (segments.injectedSegments.isNotEmpty) {
-        segRows.add(_HeaderWithCells<T>(
-          _SegSticky(
-            segments.injectedLabel,
-            null,
-            unstickable: false,
+        segRows.add(
+          _HeaderWithCells<T>(
+            _SegSticky(
+              segments.injectedLabel,
+              null,
+              unstickable: false,
+            ),
+            segments.injectedSegments.map((e) => (e, false)).toList(),
+            const {SegmentModifier.sticky},
           ),
-          segments.injectedSegments.map((e) => (e, false)).toList(),
-          const {SegmentModifier.sticky},
-        ));
+        );
       }
     }
 
@@ -315,11 +336,12 @@ class SegmentLayout<T extends CellBase>
           segments.limitLabelChildren != 0 &&
           !segments.limitLabelChildren!.isNegative) {
         segments.onLabelPressed!(
-            key,
-            value
-                .take(segments.limitLabelChildren!)
-                .map((e) => getCell(e))
-                .toList());
+          key,
+          value
+              .take(segments.limitLabelChildren!)
+              .map((e) => getCell(e))
+              .toList(),
+        );
 
         return;
       }
@@ -345,24 +367,8 @@ class SegmentLayout<T extends CellBase>
 
     segMap.forEach((key, value) {
       if (value.$2.contains(SegmentModifier.sticky)) {
-        segRows.add(_HeaderWithIdx(
-            _SegSticky(
-              key,
-              segments.onLabelPressed == null
-                  ? null
-                  : () => onLabelPressed(key, value.$1),
-            ),
-            value.$1,
-            value.$2));
-
-        predefined.addAll(value.$1);
-      }
-    });
-
-    segMap.forEach(
-      (key, value) {
-        if (!value.$2.contains(SegmentModifier.sticky)) {
-          segRows.add(_HeaderWithIdx(
+        segRows.add(
+          _HeaderWithIdx(
             _SegSticky(
               key,
               segments.onLabelPressed == null
@@ -371,7 +377,28 @@ class SegmentLayout<T extends CellBase>
             ),
             value.$1,
             value.$2,
-          ));
+          ),
+        );
+
+        predefined.addAll(value.$1);
+      }
+    });
+
+    segMap.forEach(
+      (key, value) {
+        if (!value.$2.contains(SegmentModifier.sticky)) {
+          segRows.add(
+            _HeaderWithIdx(
+              _SegSticky(
+                key,
+                segments.onLabelPressed == null
+                    ? null
+                    : () => onLabelPressed(key, value.$1),
+              ),
+              value.$1,
+              value.$2,
+            ),
+          );
 
           predefined.addAll(value.$1);
         }
@@ -379,15 +406,17 @@ class SegmentLayout<T extends CellBase>
     );
 
     if (unsegmented.isNotEmpty) {
-      segRows.add(_HeaderWithIdx(
-        _SegSticky(
-          segments.unsegmentedLabel,
-          segments.onLabelPressed == null
-              ? null
-              : () => onLabelPressed(segments.unsegmentedLabel, unsegmented),
+      segRows.add(
+        _HeaderWithIdx(
+          _SegSticky(
+            segments.unsegmentedLabel,
+            segments.onLabelPressed == null
+                ? null
+                : () => onLabelPressed(segments.unsegmentedLabel, unsegmented),
+          ),
+          unsegmented,
         ),
-        unsegmented,
-      ));
+      );
     }
 
     predefined.addAll(unsegmented);
@@ -427,35 +456,37 @@ class SegmentLayout<T extends CellBase>
     final slivers = <Widget>[];
 
     for (final e in segmentList) {
-      slivers.add(switch (e) {
-        _HeaderWithIdx() => _segmentedRowHeaderIdxs(
-            context,
-            refreshingStatus.mutation,
-            selection,
-            e,
-            gridSeed: gridSeed,
-            gridCell,
-            predefined: predefined,
-            gridFunctionality: functionality,
-            refreshingStatus: refreshingStatus,
-            segments: segments,
-            columns: columns,
-            aspectRatio: aspectRatio,
-          ),
-        _HeaderWithCells<T>() => _segmentedRowHeaderCells<T>(
-            context,
-            refreshingStatus.mutation,
-            selection,
-            e,
-            gridCell,
-            gridFunctionality: functionality,
-            refreshingStatus: refreshingStatus,
-            segments: segments,
-            columns: columns,
-            aspectRatio: aspectRatio,
-          ),
-        _HeaderWithCells<CellBase>() => throw UnimplementedError(),
-      });
+      slivers.add(
+        switch (e) {
+          _HeaderWithIdx() => _segmentedRowHeaderIdxs(
+              context,
+              refreshingStatus.mutation,
+              selection,
+              e,
+              gridSeed: gridSeed,
+              gridCell,
+              predefined: predefined,
+              gridFunctionality: functionality,
+              refreshingStatus: refreshingStatus,
+              segments: segments,
+              columns: columns,
+              aspectRatio: aspectRatio,
+            ),
+          _HeaderWithCells<T>() => _segmentedRowHeaderCells<T>(
+              context,
+              refreshingStatus.mutation,
+              selection,
+              e,
+              gridCell,
+              gridFunctionality: functionality,
+              refreshingStatus: refreshingStatus,
+              segments: segments,
+              columns: columns,
+              aspectRatio: aspectRatio,
+            ),
+          _HeaderWithCells<CellBase>() => throw UnimplementedError(),
+        },
+      );
     }
 
     return slivers;
@@ -617,11 +648,14 @@ class SegmentLayout<T extends CellBase>
 
                                 if (toSticky) {
                                   segments.caps.removeModifiers(
-                                      [segmentLabel.seg],
-                                      const {SegmentModifier.sticky});
+                                    [segmentLabel.seg],
+                                    const {SegmentModifier.sticky},
+                                  );
                                 } else {
-                                  segments.caps.addModifiers([segmentLabel.seg],
-                                      const {SegmentModifier.sticky});
+                                  segments.caps.addModifiers(
+                                    [segmentLabel.seg],
+                                    const {SegmentModifier.sticky},
+                                  );
                                 }
 
                                 HapticFeedback.vibrate();
@@ -650,11 +684,14 @@ class SegmentLayout<T extends CellBase>
 
                               if (toBlur) {
                                 segments.caps.removeModifiers(
-                                    [segmentLabel.seg],
-                                    const {SegmentModifier.blur});
+                                  [segmentLabel.seg],
+                                  const {SegmentModifier.blur},
+                                );
                               } else {
-                                segments.caps.addModifiers([segmentLabel.seg],
-                                    const {SegmentModifier.blur});
+                                segments.caps.addModifiers(
+                                  [segmentLabel.seg],
+                                  const {SegmentModifier.blur},
+                                );
                               }
 
                               HapticFeedback.vibrate();
@@ -688,12 +725,14 @@ class SegmentLayout<T extends CellBase>
 
                                       if (toAuth) {
                                         segments.caps.removeModifiers(
-                                            [segmentLabel.seg],
-                                            const {SegmentModifier.auth});
+                                          [segmentLabel.seg],
+                                          const {SegmentModifier.auth},
+                                        );
                                       } else {
                                         segments.caps.addModifiers(
-                                            [segmentLabel.seg],
-                                            const {SegmentModifier.auth});
+                                          [segmentLabel.seg],
+                                          const {SegmentModifier.auth},
+                                        );
                                       }
 
                                       HapticFeedback.vibrate();
@@ -706,7 +745,7 @@ class SegmentLayout<T extends CellBase>
                                         .notRequireAuth
                                     : AppLocalizations.of(context)!.requireAuth,
                               ),
-                            )
+                            ),
                         ],
                 ),
               ),
@@ -723,17 +762,16 @@ class SegmentLayout<T extends CellBase>
 }
 
 class _SegSticky {
-  final String seg;
-  final void Function()? onLabelPressed;
-  final bool unstickable;
-  final bool firstIsSpecial;
-
   const _SegSticky(
     this.seg,
     this.onLabelPressed, {
     this.firstIsSpecial = false,
     this.unstickable = true,
   });
+  final String seg;
+  final void Function()? onLabelPressed;
+  final bool unstickable;
+  final bool firstIsSpecial;
 }
 
 sealed class _SegmentType {

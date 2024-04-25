@@ -5,19 +5,18 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/image_view/image_view.dart';
-import 'package:isar/isar.dart';
+import "package:flutter/material.dart";
+import "package:gallery/src/db/base/post_base.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:gallery/src/widgets/image_view/image_view.dart";
+import "package:isar/isar.dart";
 
-import '../../base/post_base.dart';
-
-part 'favorite_booru.g.dart';
+part "favorite_booru.g.dart";
 
 @collection
 class FavoriteBooru extends PostBase implements Pressable<FavoriteBooru> {
@@ -43,9 +42,7 @@ class FavoriteBooru extends PostBase implements Pressable<FavoriteBooru> {
   String? group;
 
   @override
-  CellStaticData description() => const CellStaticData(
-        ignoreSwipeSelectGesture: false,
-      );
+  CellStaticData description() => const CellStaticData();
 
   @override
   void onPress(
@@ -63,8 +60,10 @@ class FavoriteBooru extends PostBase implements Pressable<FavoriteBooru> {
         watchTags,
       );
 
-  static StreamSubscription<void> watch(void Function(void) f,
-      [bool fire = false]) {
+  static StreamSubscription<void> watch(
+    void Function(void) f, [
+    bool fire = false,
+  ]) {
     return Dbs.g.main.favoriteBoorus.watchLazy(fireImmediately: fire).listen(f);
   }
 
@@ -72,6 +71,7 @@ class FavoriteBooru extends PostBase implements Pressable<FavoriteBooru> {
 
   static void addAllFileUrl(List<FavoriteBooru> favorites) {
     Dbs.g.main.writeTxnSync(
-        () => Dbs.g.main.favoriteBoorus.putAllByIdBooruSync(favorites));
+      () => Dbs.g.main.favoriteBoorus.putAllByIdBooruSync(favorites),
+    );
   }
 }

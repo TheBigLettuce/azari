@@ -5,12 +5,25 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of 'android_api_directories.dart';
+part of "android_api_directories.dart";
 
 _GalleryImpl? _global;
 
 /// Callbacks related to the gallery.
 class _GalleryImpl implements GalleryApi {
+  factory _GalleryImpl(bool temporary) {
+    if (_global != null) {
+      return _global!;
+    }
+
+    _global = _GalleryImpl._new(
+      DbsOpen.androidGalleryDirectories(temporary: temporary),
+      temporary,
+    );
+    return _global!;
+  }
+
+  _GalleryImpl._new(this.db, this.temporary);
   final Isar db;
   final bool temporary;
   final List<_AndroidGallery> _temporaryApis = [];
@@ -20,8 +33,13 @@ class _GalleryImpl implements GalleryApi {
   _AndroidGallery? _currentApi;
 
   @override
-  void updatePictures(List<DirectoryFile?> f, String bucketId, int startTime,
-      bool inRefresh, bool empty) {
+  void updatePictures(
+    List<DirectoryFile?> f,
+    String bucketId,
+    int startTime,
+    bool inRefresh,
+    bool empty,
+  ) {
     final st = _currentApi?.currentImages?.startTime;
 
     if (st == null || st > startTime) {
@@ -57,7 +75,9 @@ class _GalleryImpl implements GalleryApi {
           ? f
               .where((dir) {
                 final segment = GalleryDirectories.segmentCell(
-                    dir!.bucketName, dir.bucketId);
+                  dir!.bucketName,
+                  dir.bucketId,
+                );
 
                 DirectoryMetadata? data = c[segment];
                 if (data == null) {
@@ -110,23 +130,29 @@ class _GalleryImpl implements GalleryApi {
 
     final blacklisted = Dbs.g.blacklisted.blacklistedDirectorys
         .where()
-        .anyOf(d.cast<Directory>(),
-            (q, element) => q.bucketIdEqualTo(element.bucketId))
+        // ignore: inference_failure_on_function_invocation
+        .anyOf(
+          d.cast<Directory>(),
+          (q, element) => q.bucketIdEqualTo(element.bucketId),
+        )
         .findAllSync();
-    final map = <String, void>{for (var i in blacklisted) i.bucketId: Null};
+    final map = <String, void>{for (final i in blacklisted) i.bucketId: Null};
     d = List.from(d);
     d.removeWhere((element) => map.containsKey(element!.bucketId));
 
     final out = d
         .cast<Directory>()
-        .map((e) => SystemGalleryDirectory(
+        .map(
+          (e) => SystemGalleryDirectory(
             bucketId: e.bucketId,
             name: e.name,
             tag: PostTags.g.directoryTag(e.bucketId) ?? "",
             volumeName: e.volumeName,
             relativeLoc: e.relativeLoc,
             thumbFileId: e.thumbFileId,
-            lastModified: e.lastModified))
+            lastModified: e.lastModified,
+          ),
+        )
         .toList();
 
     db.writeTxnSync(() {
@@ -160,16 +186,6 @@ class _GalleryImpl implements GalleryApi {
     }
   }
 
-  factory _GalleryImpl(bool temporary) {
-    if (_global != null) {
-      return _global!;
-    }
-
-    _global = _GalleryImpl._new(
-        DbsOpen.androidGalleryDirectories(temporary: temporary), temporary);
-    return _global!;
-  }
-
   void _setCurrentApi(_AndroidGallery api) {
     _currentApi = api;
   }
@@ -177,6 +193,4 @@ class _GalleryImpl implements GalleryApi {
   void _unsetCurrentApi() {
     _currentApi = null;
   }
-
-  _GalleryImpl._new(this.db, this.temporary);
 }

@@ -5,18 +5,13 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:math';
+import "dart:math";
 
-import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import "package:dio/dio.dart";
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
 class EmptyWidget extends StatelessWidget {
-  final String? error;
-  final String? overrideEmpty;
-  final bool mini;
-  final int gridSeed;
-
   const EmptyWidget({
     super.key,
     this.error,
@@ -24,6 +19,10 @@ class EmptyWidget extends StatelessWidget {
     required this.gridSeed,
     this.mini = false,
   });
+  final String? error;
+  final String? overrideEmpty;
+  final bool mini;
+  final int gridSeed;
 
   static String unwrapDioError(Object? error) {
     if (error == null) {
@@ -52,36 +51,39 @@ class EmptyWidget extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.only(left: 8, right: 8),
         child: Text.rich(
-          TextSpan(children: [
-            TextSpan(
-              text: error != null
-                  ? r"(ﾟヘﾟ)？" "\n"
-                  : "${chooseKaomoji(gridSeed)}\n",
-              style: TextStyle(
-                fontSize: mini ? 14 : 14 * 2,
-                color:
-                    error == null ? null : Theme.of(context).colorScheme.error,
+          TextSpan(
+            children: [
+              TextSpan(
+                text: error != null
+                    ? "(ﾟヘﾟ)？" "\n"
+                    : "${chooseKaomoji(gridSeed)}\n",
+                style: TextStyle(
+                  fontSize: mini ? 14 : 14 * 2,
+                  color: error == null
+                      ? null
+                      : Theme.of(context).colorScheme.error,
+                ),
               ),
-            ),
-            TextSpan(
-              text: overrideEmpty ??
-                  (error == null
-                      ? "${AppLocalizations.of(context)!.emptyValue}..."
-                      : "${AppLocalizations.of(context)!.error} — $error"),
-              style: TextStyle(
-                overflow: TextOverflow.ellipsis,
-                color: error == null
-                    ? null
-                    : Theme.of(context).colorScheme.error.withOpacity(0.6),
-                fontStyle: error != null ? null : FontStyle.italic,
-                fontSize: error != null
-                    ? mini
-                        ? 14
-                        : 14 * 2
-                    : null,
+              TextSpan(
+                text: overrideEmpty ??
+                    (error == null
+                        ? "${AppLocalizations.of(context)!.emptyValue}..."
+                        : "${AppLocalizations.of(context)!.error} — $error"),
+                style: TextStyle(
+                  overflow: TextOverflow.ellipsis,
+                  color: error == null
+                      ? null
+                      : Theme.of(context).colorScheme.error.withOpacity(0.6),
+                  fontStyle: error != null ? null : FontStyle.italic,
+                  fontSize: error != null
+                      ? mini
+                          ? 14
+                          : 14 * 2
+                      : null,
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
           maxLines: error != null ? 4 : 2,
           textAlign: TextAlign.center,
           style: TextStyle(
@@ -98,16 +100,16 @@ class EmptyWidget extends StatelessWidget {
 String chooseKaomoji(int seed) => emojis[Random(seed).nextInt(emojis.length)];
 
 const List<String> emojis = [
-  r"щ(゜ロ゜щ)",
-  r"(´⊙o⊙`；)",
-  r"(´⊙ω⊙`)！",
-  r"(´･艸･｀)",
-  r"Σ(・Д・)!?",
-  r"(ﾟヘﾟ)？",
-  r"ʅฺ(・ω・。)ʃฺ？？",
-  r"｢(ﾟﾍﾟ)",
+  "щ(゜ロ゜щ)",
+  "(´⊙o⊙`；)",
+  "(´⊙ω⊙`)！",
+  "(´･艸･｀)",
+  "Σ(・Д・)!?",
+  "(ﾟヘﾟ)？",
+  "ʅฺ(・ω・。)ʃฺ？？",
+  "｢(ﾟﾍﾟ)",
   r"┻━┻ ︵ ¯\ (ツ)/¯ ︵ ┻━┻",
-  r"┐(‘～`；)┌",
-  r"╰(　´◔　ω　◔ `)╯",
-  r"ㄟ( θ﹏θ)厂"
+  "┐(‘～`；)┌",
+  "╰(　´◔　ω　◔ `)╯",
+  "ㄟ( θ﹏θ)厂",
 ];

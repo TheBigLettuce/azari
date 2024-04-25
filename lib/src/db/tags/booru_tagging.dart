@@ -5,22 +5,15 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/db/schemas/tags/tags.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:isar/isar.dart';
-
-import '../../interfaces/booru_tagging.dart';
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/db/schemas/tags/tags.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru_tagging.dart";
+import "package:isar/isar.dart";
 
 class TagManager {
-  final IsarBooruTagging _excluded;
-  final IsarBooruTagging _latest;
-
-  BooruTagging get excluded => _excluded;
-  BooruTagging get latest => _latest;
-
   factory TagManager.fromEnum(Booru booru) {
     final mainGrid = DbsOpen.primaryGrid(booru);
 
@@ -30,6 +23,11 @@ class TagManager {
   TagManager._(Isar mainGrid)
       : _excluded = IsarBooruTagging(excludedMode: true, isarCurrent: mainGrid),
         _latest = IsarBooruTagging(excludedMode: false, isarCurrent: mainGrid);
+  final IsarBooruTagging _excluded;
+  final IsarBooruTagging _latest;
+
+  BooruTagging get excluded => _excluded;
+  BooruTagging get latest => _latest;
 }
 
 class IsarBooruTagging implements BooruTagging {
@@ -69,8 +67,11 @@ class IsarBooruTagging implements BooruTagging {
   void add(Tag t) {
     final instance = isarCurrent;
 
-    instance.writeTxnSync(() => instance.tags.putByTagIsExcludedSync(
-        t.copyWith(isExcluded: excludedMode, time: DateTime.now())));
+    instance.writeTxnSync(
+      () => instance.tags.putByTagIsExcludedSync(
+        t.copyWith(isExcluded: excludedMode, time: DateTime.now()),
+      ),
+    );
   }
 
   @override
@@ -78,7 +79,8 @@ class IsarBooruTagging implements BooruTagging {
     final instance = isarCurrent;
 
     instance.writeTxnSync(
-        () => instance.tags.deleteByTagIsExcludedSync(t.tag, excludedMode));
+      () => instance.tags.deleteByTagIsExcludedSync(t.tag, excludedMode),
+    );
   }
 
   @override

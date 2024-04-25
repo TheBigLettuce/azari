@@ -71,7 +71,7 @@ class SystemGalleryDirectory
   String alias(bool isList) => name;
 
   @override
-  void onPress(
+  Future<void> onPress(
     BuildContext context,
     GridFunctionality<SystemGalleryDirectory> functionality,
     SystemGalleryDirectory cell,
@@ -115,7 +115,7 @@ class SystemGalleryDirectory
 
       Navigator.push(
         context,
-        MaterialPageRoute(
+        MaterialPageRoute<void>(
           builder: (context) => switch (cell.bucketId) {
             "favorites" => GalleryFiles(
                 generateGlue: glue,

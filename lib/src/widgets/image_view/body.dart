@@ -5,23 +5,11 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:photo_view/photo_view_gallery.dart';
-
-import '../gesture_dead_zones.dart';
+import "package:flutter/material.dart";
+import "package:gallery/src/widgets/gesture_dead_zones.dart";
+import "package:photo_view/photo_view_gallery.dart";
 
 class ImageViewBody extends StatelessWidget {
-  final void Function(int idx) onPageChanged;
-  final PageController pageController;
-  final void Function() onTap;
-  final PhotoViewGalleryPageOptions Function(BuildContext, int) builder;
-  final void Function() onLongPress;
-  final int itemCount;
-  final Widget Function(BuildContext, ImageChunkEvent?, int)? loadingBuilder;
-
-  final void Function()? onPressedRight;
-  final void Function()? onPressedLeft;
-
   const ImageViewBody({
     super.key,
     required this.onPageChanged,
@@ -34,6 +22,16 @@ class ImageViewBody extends StatelessWidget {
     required this.onPressedLeft,
     required this.onPressedRight,
   });
+  final void Function(int idx) onPageChanged;
+  final PageController pageController;
+  final void Function() onTap;
+  final PhotoViewGalleryPageOptions Function(BuildContext, int) builder;
+  final void Function() onLongPress;
+  final int itemCount;
+  final Widget Function(BuildContext, ImageChunkEvent?, int)? loadingBuilder;
+
+  final void Function()? onPressedRight;
+  final void Function()? onPressedLeft;
 
   @override
   Widget build(BuildContext context) {

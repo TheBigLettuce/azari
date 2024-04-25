@@ -5,19 +5,13 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_subpage_state.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart';
-import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
+import "package:flutter/material.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_subpage_state.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 
 class PageSwitchingIconsWidget<T extends CellBase> extends StatelessWidget {
-  final EdgeInsets padding;
-  final GridSubpageState<T> state;
-  final GridSelection<T> selection;
-  final ScrollController controller;
-  final PageSwitcherIcons<T> pageSwitcher;
-
   const PageSwitchingIconsWidget({
     super.key,
     required this.padding,
@@ -26,6 +20,11 @@ class PageSwitchingIconsWidget<T extends CellBase> extends StatelessWidget {
     required this.controller,
     required this.selection,
   });
+  final EdgeInsets padding;
+  final GridSubpageState<T> state;
+  final GridSelection<T> selection;
+  final ScrollController controller;
+  final PageSwitcherIcons<T> pageSwitcher;
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +33,9 @@ class PageSwitchingIconsWidget<T extends CellBase> extends StatelessWidget {
       child: SegmentedButton<int>(
         emptySelectionAllowed: true,
         style: const ButtonStyle(
-            side: MaterialStatePropertyAll(BorderSide.none),
-            visualDensity: VisualDensity.compact),
+          side: MaterialStatePropertyAll(BorderSide.none),
+          visualDensity: VisualDensity.compact,
+        ),
         showSelectedIcon: false,
         onSelectionChanged: (set) {
           if (set.isEmpty) {
@@ -50,19 +50,21 @@ class PageSwitchingIconsWidget<T extends CellBase> extends StatelessWidget {
                 pageSwitcher.overrideHomeIcon ?? const Icon(Icons.home_rounded),
             value: 0,
           ),
-          ...pageSwitcher.pages.indexed.map((e) => ButtonSegment(
-                icon: _IconWithCount(
-                  count: e.$2.count,
-                  icon: Icon(e.$2.icon),
-                  background: e.$1 + 1 == state.currentPage
-                      ? Theme.of(context).colorScheme.secondary
-                      : Theme.of(context).colorScheme.surfaceVariant,
-                  foreground: e.$1 + 1 == state.currentPage
-                      ? Theme.of(context).colorScheme.onSecondary
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                value: e.$1 + 1,
-              )),
+          ...pageSwitcher.pages.indexed.map(
+            (e) => ButtonSegment(
+              icon: _IconWithCount(
+                count: e.$2.count,
+                icon: Icon(e.$2.icon),
+                background: e.$1 + 1 == state.currentPage
+                    ? Theme.of(context).colorScheme.secondary
+                    : Theme.of(context).colorScheme.surfaceVariant,
+                foreground: e.$1 + 1 == state.currentPage
+                    ? Theme.of(context).colorScheme.onSecondary
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              value: e.$1 + 1,
+            ),
+          ),
         ],
         selected: {state.currentPage},
       ),
@@ -71,18 +73,16 @@ class PageSwitchingIconsWidget<T extends CellBase> extends StatelessWidget {
 }
 
 class _IconWithCount extends StatelessWidget {
-  final Icon icon;
-  final int count;
-  final Color background;
-  final Color foreground;
-
   const _IconWithCount({
-    super.key,
     required this.count,
     required this.icon,
     required this.background,
     required this.foreground,
   });
+  final Icon icon;
+  final int count;
+  final Color background;
+  final Color foreground;
 
   @override
   Widget build(BuildContext context) {
@@ -97,7 +97,7 @@ class _IconWithCount extends StatelessWidget {
                 textColor: foreground,
                 alignment: Alignment.bottomCenter,
                 count: count,
-              )
+              ),
             ],
           );
   }

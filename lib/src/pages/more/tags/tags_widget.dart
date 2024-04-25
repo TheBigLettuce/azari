@@ -5,25 +5,19 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/interfaces/booru_tagging.dart';
-import 'package:gallery/src/widgets/empty_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
-import 'package:gallery/src/widgets/make_tags.dart';
-import 'package:gallery/src/widgets/menu_wrapper.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import '../../../db/schemas/tags/tags.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/schemas/tags/tags.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/interfaces/booru_tagging.dart";
+import "package:gallery/src/widgets/empty_widget.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/make_tags.dart";
+import "package:gallery/src/widgets/menu_wrapper.dart";
 
 class TagsWidget extends StatefulWidget {
-  final void Function(Tag tag, SafeMode? safeMode)? onPress;
-  final bool redBackground;
-  final BooruTagging tagging;
-  final Widget? leading;
-
   const TagsWidget({
     super.key,
     this.redBackground = false,
@@ -31,6 +25,10 @@ class TagsWidget extends StatefulWidget {
     required this.onPress,
     this.leading,
   });
+  final void Function(Tag tag, SafeMode? safeMode)? onPress;
+  final bool redBackground;
+  final BooruTagging tagging;
+  final Widget? leading;
 
   @override
   State<TagsWidget> createState() => _TagsWidgetState();
@@ -103,7 +101,7 @@ class _TagsWidgetState extends State<TagsWidget> {
                       },
                     ),
                   ),
-                )
+                ),
               ],
             ),
           );
@@ -111,11 +109,6 @@ class _TagsWidgetState extends State<TagsWidget> {
 }
 
 class SingleTagWidget extends StatelessWidget {
-  final Tag tag;
-  final BooruTagging tagging;
-  final bool redBackground;
-  final void Function(Tag tag, SafeMode? safeMode)? onPress;
-
   const SingleTagWidget({
     super.key,
     required this.tag,
@@ -123,10 +116,13 @@ class SingleTagWidget extends StatelessWidget {
     required this.tagging,
     required this.redBackground,
   });
+  final Tag tag;
+  final BooruTagging tagging;
+  final bool redBackground;
+  final void Function(Tag tag, SafeMode? safeMode)? onPress;
 
   @override
   Widget build(BuildContext context) {
-    WrapSelection;
     return MenuWrapper(
       title: tag.tag,
       items: [
@@ -143,13 +139,14 @@ class SingleTagWidget extends StatelessWidget {
             tagging.delete(tag);
           },
           child: Text(AppLocalizations.of(context)!.delete),
-        )
+        ),
       ],
       child: FilledButton.tonal(
         style: ButtonStyle(
           visualDensity: VisualDensity.comfortable,
           backgroundColor: MaterialStatePropertyAll(
-              redBackground ? Colors.pink.shade300 : null),
+            redBackground ? Colors.pink.shade300 : null,
+          ),
         ),
         onPressed: onPress == null
             ? null

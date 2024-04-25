@@ -5,14 +5,9 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of 'anime.dart';
+part of "anime.dart";
 
 class TabBarWrapper extends StatefulWidget {
-  final TextEditingController controller;
-  final TabBar tabBar;
-  final void Function(String? value) filter;
-  final bool Function(bool forceSearchPage) onPressed;
-
   const TabBarWrapper({
     required super.key,
     required this.tabBar,
@@ -20,6 +15,10 @@ class TabBarWrapper extends StatefulWidget {
     required this.filter,
     required this.onPressed,
   });
+  final TextEditingController controller;
+  final TabBar tabBar;
+  final void Function(String? value) filter;
+  final bool Function(bool forceSearchPage) onPressed;
 
   @override
   State<TabBarWrapper> createState() => _TabBarWrapperState();
@@ -80,45 +79,48 @@ class _TabBarWrapperState extends State<TabBarWrapper> {
                       TextField(
                         autofocus: true,
                         decoration: InputDecoration(
-                            contentPadding: EdgeInsets.only(
-                                left: (rightPadding <= 0
-                                    ? 44
-                                    : 44 + (rightPadding / 2)),
-                                right: 44 + 8),
-                            hintText: AppLocalizations.of(context)!.filterHint,
-                            border: InputBorder.none,
-                            hintStyle: TextStyle(
-                              fontSize: Theme.of(context)
-                                  .tabBarTheme
-                                  .labelStyle
-                                  ?.fontSize,
-                            )),
+                          contentPadding: EdgeInsets.only(
+                            left: (rightPadding <= 0
+                                ? 44
+                                : 44 + (rightPadding / 2)),
+                            right: 44 + 8,
+                          ),
+                          hintText: AppLocalizations.of(context)!.filterHint,
+                          border: InputBorder.none,
+                          hintStyle: TextStyle(
+                            fontSize: Theme.of(context)
+                                .tabBarTheme
+                                .labelStyle
+                                ?.fontSize,
+                          ),
+                        ),
                         controller: widget.controller,
                         onChanged: widget.filter,
                       ),
                       Padding(
                         padding: const EdgeInsets.only(top: 10, left: 4),
                         child: SizedBox(
-                            width:
-                                24 + (rightPadding <= 0 ? 8 : rightPadding / 2),
-                            child: GestureDetector(
-                              onTap: () {
-                                widget.controller.text = "";
-                                widget.filter("");
-                              },
-                              child: Icon(
-                                Icons.close_rounded,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.8),
-                              ),
-                            )),
-                      )
+                          width:
+                              24 + (rightPadding <= 0 ? 8 : rightPadding / 2),
+                          child: GestureDetector(
+                            onTap: () {
+                              widget.controller.text = "";
+                              widget.filter("");
+                            },
+                            child: Icon(
+                              Icons.close_rounded,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.8),
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   );
                 },
-              )
+              ),
             ],
             child: widget.tabBar,
           ),
@@ -126,16 +128,18 @@ class _TabBarWrapperState extends State<TabBarWrapper> {
             height: 44,
             width: rightPadding <= 0 ? 44 : 44 + (rightPadding / 2),
             decoration: BoxDecoration(
-                gradient: LinearGradient(
-                    begin: Alignment.centerRight,
-                    end: Alignment.centerLeft,
-                    colors: [
+              gradient: LinearGradient(
+                begin: Alignment.centerRight,
+                end: Alignment.centerLeft,
+                colors: [
                   Theme.of(context).colorScheme.background,
                   Theme.of(context).colorScheme.background.withOpacity(0.7),
                   Theme.of(context).colorScheme.background.withOpacity(0.5),
                   Theme.of(context).colorScheme.background.withOpacity(0.3),
-                  Theme.of(context).colorScheme.background.withOpacity(0)
-                ])),
+                  Theme.of(context).colorScheme.background.withOpacity(0),
+                ],
+              ),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.only(top: 10),

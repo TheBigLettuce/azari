@@ -8,6 +8,8 @@
 bool _thumbLoadingLocked = false;
 
 abstract class GlobalProgress {
+  const GlobalProgress();
+
   static bool isThumbLoadingLocked() => _thumbLoadingLocked;
   static void lockThumbLoading() => _thumbLoadingLocked = true;
   static void unlockThumbLoading() => _thumbLoadingLocked = false;

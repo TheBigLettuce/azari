@@ -5,19 +5,26 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-
-import '../interfaces/cell/cell.dart';
-import 'image_view/image_view.dart';
-import '../db/schemas/gallery/system_gallery_directory_file.dart';
-import 'grid_frame/parts/grid_cell.dart';
+import "package:flutter/material.dart";
+import "package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:gallery/src/widgets/image_view/image_view.dart";
 
 class CopyMovePreview extends StatefulWidget {
+  const CopyMovePreview({
+    super.key,
+    required this.files,
+    required this.size,
+  });
   final List<SystemGalleryDirectoryFile> files;
   final double size;
 
   static PreferredSizeWidget hintWidget(
-          BuildContext context, String title, IconData icon) =>
+    BuildContext context,
+    String title,
+    IconData icon,
+  ) =>
       PreferredSize(
         preferredSize: const Size.fromHeight(60),
         child: Padding(
@@ -42,7 +49,11 @@ class CopyMovePreview extends StatefulWidget {
                       ),
                       child: Padding(
                         padding: const EdgeInsets.only(
-                            right: 16, left: 16, bottom: 4, top: 4),
+                          right: 16,
+                          left: 16,
+                          bottom: 4,
+                          top: 4,
+                        ),
                         child: Text(
                           title,
                           maxLines: 1,
@@ -81,18 +92,12 @@ class CopyMovePreview extends StatefulWidget {
                           .withOpacity(0.8),
                     ),
                   ),
-                )
+                ),
               ],
             ),
           ),
         ),
       );
-
-  const CopyMovePreview({
-    super.key,
-    required this.files,
-    required this.size,
-  });
 
   @override
   State<CopyMovePreview> createState() => _CopyMovePreviewState();
@@ -105,8 +110,12 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
     return widget.size.toInt() + (i * 14);
   }
 
-  Widget _thumbPadding(BuildContext context, int id, CellBase cellData,
-      {bool shadow = true}) {
+  Widget _thumbPadding(
+    BuildContext context,
+    int id,
+    CellBase cellData, {
+    bool shadow = true,
+  }) {
     return Padding(
       padding: EdgeInsets.only(left: id * 14),
       child: SizedBox(
@@ -129,7 +138,7 @@ class _CopyMovePreviewState extends State<CopyMovePreview> {
   List<Widget> _previewsLimited(BuildContext context) {
     final list = <Widget>[];
 
-    final width = (MediaQuery.sizeOf(context).width - 8);
+    final width = MediaQuery.sizeOf(context).width - 8;
 
     for (final e in widget.files.indexed) {
       if (calculateWidth(e.$1) > width) {

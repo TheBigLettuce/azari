@@ -89,7 +89,7 @@ class AutocompleteWidget extends StatelessWidget {
                     return;
                   }
 
-                  final tags = List.from(controller!.text.split(" "));
+                  final tags = List<String>.from(controller!.text.split(" "));
 
                   if (tags.isNotEmpty) {
                     tags.removeLast();

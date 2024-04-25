@@ -5,7 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of '../grid_frame.dart';
+part of "../grid_frame.dart";
 
 class GridSelection<T extends CellBase> {
   GridSelection(
@@ -69,8 +69,7 @@ class GridSelection<T extends CellBase> {
     glue.updateCount(_selected.length);
   }
 
-  bool isSelected(int indx) =>
-      indx.isNegative ? false : _selected.containsKey(indx);
+  bool isSelected(int indx) => _selected.containsKey(indx) && !indx.isNegative;
 
   void _add(BuildContext context, int id, T selection) {
     if (id.isNegative) {
@@ -99,8 +98,11 @@ class GridSelection<T extends CellBase> {
     glue.updateCount(_selected.length);
   }
 
-  void selectUnselectUntil(BuildContext context, int indx,
-      {List<int>? selectFrom}) {
+  void selectUnselectUntil(
+    BuildContext context,
+    int indx, {
+    List<int>? selectFrom,
+  }) {
     if (lastSelected != null) {
       final last = selectFrom?.indexOf(lastSelected!) ?? lastSelected!;
       indx = selectFrom?.indexOf(indx) ?? indx;

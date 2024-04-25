@@ -5,22 +5,26 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/anime/saved_anime_characters.dart';
-import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/cell/contentable.dart';
-import 'package:gallery/src/net/anime/jikan.dart';
-import 'package:gallery/src/pages/anime/anime.dart';
-import 'anime_entry.dart';
+import "package:cached_network_image/cached_network_image.dart";
+import "package:dio/dio.dart";
+import "package:flutter/material.dart";
+import "package:gallery/src/db/schemas/anime/saved_anime_characters.dart";
+import "package:gallery/src/db/schemas/anime/saved_anime_entry.dart";
+import "package:gallery/src/interfaces/anime/anime_entry.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/interfaces/cell/contentable.dart";
+import "package:gallery/src/net/anime/jikan.dart";
+import "package:gallery/src/pages/anime/anime.dart";
 
 abstract class AnimeAPI {
   Future<AnimeEntry> info(int id);
   Future<List<AnimeCharacter>> characters(AnimeEntry entry);
   Future<List<AnimeSearchEntry>> search(
-      String title, int page, int? genreId, AnimeSafeMode? mode);
+    String title,
+    int page,
+    int? genreId,
+    AnimeSafeMode? mode,
+  );
   Future<Map<int, AnimeGenre>> genres(AnimeSafeMode mode);
   Future<List<AnimeEntry>> top(int page);
   Future<List<AnimeNewsEntry>> animeNews(AnimeEntry entry, int page);
@@ -35,6 +39,8 @@ abstract class AnimeAPI {
 enum AnimeMetadata {
   jikan("Jikan/MAL");
 
+  const AnimeMetadata(this.name);
+
   final String name;
 
   AnimeAPI api(Dio client) => switch (this) {
@@ -44,8 +50,6 @@ enum AnimeMetadata {
   String browserUrl() => switch (this) {
         AnimeMetadata.jikan => "myanimelist.net",
       };
-
-  const AnimeMetadata(this.name);
 }
 
 enum AnimeSafeMode {
@@ -56,13 +60,12 @@ enum AnimeSafeMode {
 
 class AnimePicture
     implements AnimeCell, ContentWidgets, Thumbnailable, Downloadable {
-  final String imageUrl;
-  final String thumbUrl;
-
   const AnimePicture({
     required this.imageUrl,
     required this.thumbUrl,
   });
+  final String imageUrl;
+  final String thumbUrl;
 
   @override
   Contentable openImage(BuildContext context) => NetImage(
@@ -77,7 +80,7 @@ class AnimePicture
   ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(thumbUrl);
 
   @override
-  Key uniqueKey() => (ValueKey(thumbUrl));
+  Key uniqueKey() => ValueKey(thumbUrl);
 
   @override
   String alias(bool isList) => "";
@@ -112,18 +115,11 @@ class AnimeRecommendations implements CellBase, Thumbnailable, Downloadable {
   @override
   CellStaticData description() => const CellStaticData(
         titleLines: 2,
-        tightMode: false,
         titleAtBottom: true,
       );
 }
 
 class AnimeNewsEntry {
-  final String title;
-  final String content;
-  final String? thumbUrl;
-  final DateTime date;
-  final String browserUrl;
-
   const AnimeNewsEntry({
     required this.content,
     required this.date,
@@ -131,4 +127,9 @@ class AnimeNewsEntry {
     required this.browserUrl,
     required this.title,
   });
+  final String title;
+  final String content;
+  final String? thumbUrl;
+  final DateTime date;
+  final String browserUrl;
 }

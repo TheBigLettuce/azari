@@ -5,24 +5,24 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:developer';
+import "dart:developer";
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/db/schemas/gallery/favorite_file.dart';
-import 'package:gallery/src/db/schemas/gallery/note_gallery.dart';
-import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
-import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
-import 'package:gallery/src/db/schemas/gallery/thumbnail.dart';
-import 'package:gallery/src/db/tags/post_tags.dart';
-import 'package:gallery/src/interfaces/booru/booru_api.dart';
-import 'package:gallery/src/interfaces/cell/sticker.dart';
-import 'package:gallery/src/interfaces/filtering/filtering_mode.dart';
-import 'package:gallery/src/pages/more/settings/global_progress.dart';
-import 'package:gallery/src/plugs/notifications.dart';
-import 'package:gallery/src/plugs/platform_functions.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:logging/logging.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/db/schemas/gallery/favorite_file.dart";
+import "package:gallery/src/db/schemas/gallery/note_gallery.dart";
+import "package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart";
+import "package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart";
+import "package:gallery/src/db/schemas/gallery/thumbnail.dart";
+import "package:gallery/src/db/tags/post_tags.dart";
+import "package:gallery/src/interfaces/booru/booru_api.dart";
+import "package:gallery/src/interfaces/cell/sticker.dart";
+import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
+import "package:gallery/src/pages/more/settings/global_progress.dart";
+import "package:gallery/src/plugs/notifications.dart";
+import "package:gallery/src/plugs/platform_functions.dart";
+import "package:logging/logging.dart";
 
 mixin SystemGalleryDirectoryFileFunctionalityMixin {
   Thumbnail? getThumbnail(int id) {
@@ -37,7 +37,7 @@ mixin SystemGalleryDirectoryFileFunctionalityMixin {
 
     return SystemGalleryDirectoryFile(
       isOriginal: PostTags.g.isOriginal(name),
-      isDuplicate: RegExp(r'[(][0-9].*[)][.][a-zA-Z0-9].*').hasMatch(name),
+      isDuplicate: RegExp("[(][0-9].*[)][.][a-zA-Z0-9].*").hasMatch(name),
       isFavorite: FavoriteFile.isFavorite(id),
       tagsFlat: PostTags.g.getTagsPost(name).join(" "),
       notesFlat:
@@ -56,14 +56,16 @@ mixin SystemGalleryDirectoryFileFunctionalityMixin {
   }
 
   List<Sticker> defaultStickers(
-      BuildContext? context, SystemGalleryDirectoryFile file) {
+    BuildContext? context,
+    SystemGalleryDirectoryFile file,
+  ) {
     return [
       if (file.isVideo) Sticker(FilteringMode.video.icon),
       if (file.isGif) Sticker(FilteringMode.gif.icon),
       if (file.isOriginal) Sticker(FilteringMode.original.icon),
       if (file.isDuplicate) Sticker(FilteringMode.duplicate.icon),
       if (file.tagsFlat.contains("translated"))
-        const Sticker(Icons.translate_outlined)
+        const Sticker(Icons.translate_outlined),
     ];
   }
 
@@ -72,7 +74,7 @@ mixin SystemGalleryDirectoryFileFunctionalityMixin {
       return const Sticker(IconData(0x4B));
     }
 
-    final kb = (size / 1000);
+    final kb = size / 1000;
     if (kb < 1000) {
       if (kb > 500) {
         return const Sticker(IconData(0x4B));
@@ -103,8 +105,12 @@ mixin SystemGalleryDirectoryFileFunctionalityMixin {
 }
 
 Future<void> loadNetworkThumb(
-    String filename, int id, String groupNotifString, String notifChannelName,
-    [bool addToPinned = true]) async {
+  String filename,
+  int id,
+  String groupNotifString,
+  String notifChannelName, [
+  bool addToPinned = true,
+]) async {
   if (GlobalProgress.isThumbLoadingLocked()) {
     return;
   }
@@ -118,7 +124,11 @@ Future<void> loadNetworkThumb(
   final plug = chooseNotificationPlug();
 
   final notif = await plug.newProgress(
-      "", savingThumbNotifId, groupNotifString, notifChannelName);
+    "",
+    savingThumbNotifId,
+    groupNotifString,
+    notifChannelName,
+  );
   notif.update(0, filename);
 
   final res = PostTags.g.dissassembleFilename(filename).maybeValue();
@@ -134,8 +144,10 @@ Future<void> loadNetworkThumb(
       Dbs.g.thumbnail!
           .writeTxnSync(() => Dbs.g.thumbnail!.thumbnails.deleteSync(id));
 
-      Dbs.g.thumbnail!.writeTxnSync(() => Dbs.g.thumbnail!.pinnedThumbnails
-          .putSync(PinnedThumbnail(id, t.differenceHash, t.path)));
+      Dbs.g.thumbnail!.writeTxnSync(
+        () => Dbs.g.thumbnail!.pinnedThumbnails
+            .putSync(PinnedThumbnail(id, t.differenceHash, t.path)),
+      );
     } catch (e) {
       log("video thumb 2", level: Level.WARNING.value, error: e);
     }

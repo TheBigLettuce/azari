@@ -5,19 +5,25 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:isar/isar.dart';
-
-import '../interfaces/cell/cell.dart';
-import '../interfaces/filtering/filtering_interface.dart';
-import '../interfaces/filtering/filtering_mode.dart';
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
+import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
+import "package:isar/isar.dart";
 
 class IsarFilter<T extends IsarEntryId> implements FilterInterface<T> {
-  Isar _from;
+  IsarFilter(Isar from, Isar to, this.getElems, {this.passFilter})
+      : _from = from,
+        _to = to;
+  final Isar _from;
   final Isar _to;
   bool isFiltering = false;
   final Iterable<T> Function(
-          int offset, int limit, String s, SortingMode sort, FilteringMode mode)
-      getElems;
+    int offset,
+    int limit,
+    String s,
+    SortingMode sort,
+    FilteringMode mode,
+  ) getElems;
   (Iterable<T>, dynamic) Function(Iterable<T>, dynamic, bool)? passFilter;
   SortingMode currentSorting = SortingMode.none;
 
@@ -28,16 +34,19 @@ class IsarFilter<T extends IsarEntryId> implements FilterInterface<T> {
   @override
   SortingMode get currentSortingMode => currentSorting;
 
-  void setFrom(Isar from) {
-    _from = from;
-  }
+  // void setFrom(Isar from) {
+  //   _from = from;
+  // }
 
   void dispose() {
     _to.close(deleteFromDisk: true);
   }
 
-  void _writeFromTo(Isar from,
-      Iterable<T> Function(int offset, int limit) getElems, Isar to) {
+  void _writeFromTo(
+    Isar from,
+    Iterable<T> Function(int offset, int limit) getElems,
+    Isar to,
+  ) {
     from.writeTxnSync(() {
       var offset = 0;
       dynamic data;
@@ -50,7 +59,7 @@ class IsarFilter<T extends IsarEntryId> implements FilterInterface<T> {
         if (passFilter != null) {
           (sorted, data) = passFilter!(sorted, data, end);
         }
-        for (var element in sorted) {
+        for (final element in sorted) {
           element.isarId = null;
         }
 
@@ -93,12 +102,18 @@ class IsarFilter<T extends IsarEntryId> implements FilterInterface<T> {
       () => _to.collection<T>().clearSync(),
     );
 
-    _writeFromTo(_from, (offset, limit) {
-      return getElems(offset, limit, s, currentSorting, mode);
-    }, _to);
+    _writeFromTo(
+      _from,
+      (offset, limit) {
+        return getElems(offset, limit, s, currentSorting, mode);
+      },
+      _to,
+    );
 
-    return FilterResult((i) => _to.collection<T>().getSync(i + 1)!,
-        _to.collection<T>().countSync());
+    return FilterResult(
+      (i) => _to.collection<T>().getSync(i + 1)!,
+      _to.collection<T>().countSync(),
+    );
   }
 
   @override
@@ -107,8 +122,4 @@ class IsarFilter<T extends IsarEntryId> implements FilterInterface<T> {
     currentSorting = SortingMode.none;
     _to.writeTxnSync(() => _to.collection<T>().clearSync());
   }
-
-  IsarFilter(Isar from, Isar to, this.getElems, {this.passFilter})
-      : _from = from,
-        _to = to;
 }

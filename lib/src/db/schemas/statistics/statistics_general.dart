@@ -5,25 +5,32 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:isar/isar.dart';
+import "package:gallery/src/db/initalize_db.dart";
+import "package:isar/isar.dart";
 
-part 'statistics_general.g.dart';
+part "statistics_general.g.dart";
 
 @collection
 class StatisticsGeneral {
-  final Id id = 0;
+  const StatisticsGeneral({
+    required this.refreshes,
+    required this.scrolledUp,
+    required this.timeDownload,
+    required this.timeSpent,
+  });
+
+  const StatisticsGeneral.empty()
+      : timeDownload = 0,
+        timeSpent = 0,
+        scrolledUp = 0,
+        refreshes = 0;
+
+  Id get id => 0;
 
   final int timeSpent;
   final int timeDownload;
   final int scrolledUp;
   final int refreshes;
-
-  const StatisticsGeneral(
-      {required this.refreshes,
-      required this.scrolledUp,
-      required this.timeDownload,
-      required this.timeSpent});
 
   StatisticsGeneral copy({
     int? timeSpent,
@@ -32,16 +39,11 @@ class StatisticsGeneral {
     int? refreshes,
   }) =>
       StatisticsGeneral(
-          refreshes: refreshes ?? this.refreshes,
-          scrolledUp: scrolledUp ?? this.scrolledUp,
-          timeDownload: timeDownload ?? this.timeDownload,
-          timeSpent: timeSpent ?? this.timeSpent);
-
-  const StatisticsGeneral.empty()
-      : timeDownload = 0,
-        timeSpent = 0,
-        scrolledUp = 0,
-        refreshes = 0;
+        refreshes: refreshes ?? this.refreshes,
+        scrolledUp: scrolledUp ?? this.scrolledUp,
+        timeDownload: timeDownload ?? this.timeDownload,
+        timeSpent: timeSpent ?? this.timeSpent,
+      );
 
   static StatisticsGeneral get current =>
       Dbs.g.main.statisticsGenerals.getSync(0) ??
@@ -50,28 +52,36 @@ class StatisticsGeneral {
   static void addTimeSpent(int time) {
     final c = current;
 
-    Dbs.g.main.writeTxnSync(() => Dbs.g.main.statisticsGenerals
-        .putSync(c.copy(timeSpent: c.timeSpent + time)));
+    Dbs.g.main.writeTxnSync(
+      () => Dbs.g.main.statisticsGenerals
+          .putSync(c.copy(timeSpent: c.timeSpent + time)),
+    );
   }
 
   static void addTimeDownload(int time) {
     final c = current;
 
-    Dbs.g.main.writeTxnSync(() => Dbs.g.main.statisticsGenerals
-        .putSync(c.copy(timeDownload: c.timeDownload + time)));
+    Dbs.g.main.writeTxnSync(
+      () => Dbs.g.main.statisticsGenerals
+          .putSync(c.copy(timeDownload: c.timeDownload + time)),
+    );
   }
 
   static void addScrolledUp() {
     final c = current;
 
-    Dbs.g.main.writeTxnSync(() => Dbs.g.main.statisticsGenerals
-        .putSync(c.copy(scrolledUp: c.scrolledUp + 1)));
+    Dbs.g.main.writeTxnSync(
+      () => Dbs.g.main.statisticsGenerals
+          .putSync(c.copy(scrolledUp: c.scrolledUp + 1)),
+    );
   }
 
   static void addRefreshes() {
     final c = current;
 
-    Dbs.g.main.writeTxnSync(() => Dbs.g.main.statisticsGenerals
-        .putSync(c.copy(refreshes: c.refreshes + 1)));
+    Dbs.g.main.writeTxnSync(
+      () => Dbs.g.main.statisticsGenerals
+          .putSync(c.copy(refreshes: c.refreshes + 1)),
+    );
   }
 }

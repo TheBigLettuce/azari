@@ -5,36 +5,35 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/plugs/gallery.dart';
-
-import '../db/tags/post_tags.dart';
-import 'notifiers/tag_refresh.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/tags/post_tags.dart";
+import "package:gallery/src/plugs/gallery.dart";
+import "package:gallery/src/widgets/notifiers/tag_refresh.dart";
 
 class LoadTags extends StatelessWidget {
-  final DisassembleResult res;
-  final String filename;
-
   const LoadTags({
     super.key,
     required this.res,
     required this.filename,
   });
+  final DisassembleResult res;
+  final String filename;
 
   @override
   Widget build(BuildContext context) {
     return SliverPadding(
       padding: const EdgeInsets.all(4),
       sliver: SliverToBoxAdapter(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.only(
-              bottom: 8,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(
+                bottom: 8,
+              ),
+              child: Text(AppLocalizations.of(context)!.loadTags),
             ),
-            child: Text(AppLocalizations.of(context)!.loadTags),
-          ),
-          FilledButton(
+            FilledButton(
               onPressed: TagRefreshNotifier.isRefreshingOf(context) ?? false
                   ? null
                   : () {
@@ -53,9 +52,14 @@ class LoadTags extends StatelessWidget {
                           chooseGalleryPlug().notify(null);
                         }).whenComplete(() => setIsRefreshing?.call(false));
                       } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text(AppLocalizations.of(context)!
-                                .notValidFilename(e.toString()))));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              AppLocalizations.of(context)!
+                                  .notValidFilename(e.toString()),
+                            ),
+                          ),
+                        );
                       }
                     },
               child: TagRefreshNotifier.isRefreshingOf(context) ?? false
@@ -63,10 +67,13 @@ class LoadTags extends StatelessWidget {
                       height: 16,
                       width: 16,
                       child: CircularProgressIndicator(
-                          color: Theme.of(context).colorScheme.onPrimary),
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
                     )
-                  : Text("From ${res.booru.string}"))
-        ]),
+                  : Text("From ${res.booru.string}"),
+            ),
+          ],
+        ),
       ),
     );
   }

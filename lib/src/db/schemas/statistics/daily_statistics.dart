@@ -5,26 +5,25 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:isar/isar.dart';
+import "package:gallery/src/db/initalize_db.dart";
+import "package:isar/isar.dart";
 
-import '../../initalize_db.dart';
-
-part 'daily_statistics.g.dart';
+part "daily_statistics.g.dart";
 
 @collection
 class DailyStatistics {
-  final Id id = 0;
-
-  final int swipedBoth;
-  final int durationMillis;
-
-  final DateTime date;
-
   const DailyStatistics({
     required this.swipedBoth,
     required this.durationMillis,
     required this.date,
   });
+
+  Id get id => 0;
+
+  final int swipedBoth;
+  final int durationMillis;
+
+  final DateTime date;
 
   DailyStatistics copy({
     int? durationMillis,

@@ -5,38 +5,37 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
-import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
-import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
-import 'package:gallery/src/interfaces/anime/anime_api.dart';
-import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/pages/anime/info_base/anime_info_app_bar.dart';
-import 'package:gallery/src/pages/anime/info_base/anime_info_theme.dart';
-import 'package:gallery/src/pages/anime/info_base/background_image/background_image.dart';
-import 'package:gallery/src/pages/anime/info_base/body/anime_info_body.dart';
-import 'package:gallery/src/pages/anime/info_base/card_panel/card_panel.dart';
-import 'package:gallery/src/pages/anime/info_base/card_panel/card_shell.dart';
-import 'package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart';
-import 'package:gallery/src/pages/anime/info_base/refresh_entry_icon.dart';
-import 'package:gallery/src/widgets/skeletons/settings.dart';
-import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import "package:dio/dio.dart";
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/schemas/anime/saved_anime_entry.dart";
+import "package:gallery/src/db/schemas/anime/watched_anime_entry.dart";
+import "package:gallery/src/db/schemas/settings/misc_settings.dart";
+import "package:gallery/src/interfaces/anime/anime_api.dart";
+import "package:gallery/src/interfaces/anime/anime_entry.dart";
+import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
+import "package:gallery/src/pages/anime/info_base/anime_info_app_bar.dart";
+import "package:gallery/src/pages/anime/info_base/anime_info_theme.dart";
+import "package:gallery/src/pages/anime/info_base/background_image/background_image.dart";
+import "package:gallery/src/pages/anime/info_base/body/anime_info_body.dart";
+import "package:gallery/src/pages/anime/info_base/card_panel/card_panel.dart";
+import "package:gallery/src/pages/anime/info_base/card_panel/card_shell.dart";
+import "package:gallery/src/pages/anime/info_base/refresh_entry_icon.dart";
+import "package:gallery/src/widgets/skeletons/settings.dart";
+import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
 class AnimeInfoPage extends StatefulWidget {
-  final int id;
-  final AnimeEntry? entry;
-  final AnimeAPI Function(Dio) apiFactory;
-
   const AnimeInfoPage({
     super.key,
     this.entry,
     required this.id,
     required this.apiFactory,
   });
+  final int id;
+  final AnimeEntry? entry;
+  final AnimeAPI Function(Dio) apiFactory;
 
   @override
   State<AnimeInfoPage> createState() => _AnimeInfoPageState();
@@ -96,16 +95,14 @@ class _AnimeInfoPageState extends State<AnimeInfoPage> {
 }
 
 class _AnimeInfoBody extends StatefulWidget {
-  final AnimeEntry entry;
-  final AnimeAPI api;
-  final SkeletonState state;
-
   const _AnimeInfoBody({
-    super.key,
     required this.entry,
     required this.api,
     required this.state,
   });
+  final AnimeEntry entry;
+  final AnimeAPI api;
+  final SkeletonState state;
 
   @override
   State<_AnimeInfoBody> createState() => __AnimeInfoBodyState();
@@ -202,7 +199,9 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                 onPressed: () {
                   if (_watching) {
                     final e = SavedAnimeEntry.maybeGet(
-                        widget.entry.id, widget.entry.site)!;
+                      widget.entry.id,
+                      widget.entry.site,
+                    )!;
 
                     SavedAnimeEntry.deleteAll([
                       (e.site, e.id),
@@ -232,8 +231,10 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                     if (!prevEntry.setCurrentlyWatching()) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                            content: Text(
-                                AppLocalizations.of(context)!.cantWatchThree)),
+                          content: Text(
+                            AppLocalizations.of(context)!.cantWatchThree,
+                          ),
+                        ),
                       );
                     }
                   },
@@ -255,15 +256,19 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
                         WatchedAnimeEntry.maybeGet(entry.id, entry.site)!;
                     WatchedAnimeEntry.delete(entry.id, entry.site);
 
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content:
-                          Text(AppLocalizations.of(context)!.removeFromWatched),
-                      action: SnackBarAction(
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          AppLocalizations.of(context)!.removeFromWatched,
+                        ),
+                        action: SnackBarAction(
                           label: AppLocalizations.of(context)!.undoLabel,
                           onPressed: () {
                             WatchedAnimeEntry.read(prevEntry);
-                          }),
-                    ));
+                          },
+                        ),
+                      ),
+                    );
                   },
                   icon: const Icon(Icons.close_rounded),
                 ),
@@ -286,47 +291,51 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
         ),
         extendBodyBehindAppBar: true,
         appBar: PreferredSize(
-            preferredSize: const Size.fromHeight(kToolbarHeight),
-            child: AnimeInfoAppBar(
-              cell: entry,
-              scrollController: scrollController,
-              appBarActions: [
-                RefreshEntryIcon(
-                  entry,
-                  _save,
-                  api: api,
-                )
-              ],
-            )),
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: AnimeInfoAppBar(
+            cell: entry,
+            scrollController: scrollController,
+            appBarActions: [
+              RefreshEntryIcon(
+                entry,
+                _save,
+                api: api,
+              ),
+            ],
+          ),
+        ),
         child: SingleChildScrollView(
           controller: scrollController,
           child: Padding(
             padding: EdgeInsets.only(
-                bottom: MediaQuery.viewPaddingOf(context).bottom),
-            child: Stack(children: [
-              BackgroundImage(image: entry.thumbnail()),
-              Column(
-                children: [
-                  CardShell(
-                    title: entry.title,
-                    titleEnglish: entry.titleEnglish,
-                    titleJapanese: entry.titleJapanese,
-                    titleSynonyms: entry.titleSynonyms,
-                    safeMode: entry.explicit,
-                    viewPadding: MediaQuery.viewPaddingOf(context),
-                    info: CardPanel.defaultInfo(
-                      context,
-                      entry,
+              bottom: MediaQuery.viewPaddingOf(context).bottom,
+            ),
+            child: Stack(
+              children: [
+                BackgroundImage(image: entry.thumbnail()),
+                Column(
+                  children: [
+                    CardShell(
+                      title: entry.title,
+                      titleEnglish: entry.titleEnglish,
+                      titleJapanese: entry.titleJapanese,
+                      titleSynonyms: entry.titleSynonyms,
+                      safeMode: entry.explicit,
+                      viewPadding: MediaQuery.viewPaddingOf(context),
+                      info: CardPanel.defaultInfo(
+                        context,
+                        entry,
+                      ),
                     ),
-                  ),
-                  AnimeInfoBody(
-                    entry: entry,
-                    api: api,
-                    viewPadding: MediaQuery.viewPaddingOf(context),
-                  ),
-                ],
-              ),
-            ]),
+                    AnimeInfoBody(
+                      entry: entry,
+                      api: api,
+                      viewPadding: MediaQuery.viewPaddingOf(context),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

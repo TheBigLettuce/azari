@@ -36,7 +36,7 @@ class __SearchWidgetState<T extends CellBase> extends State<_SearchWidget<T>> {
         if (widget.instance._state.filteringModes.isNotEmpty)
           IconButton(
             onPressed: () {
-              showModalBottomSheet(
+              showModalBottomSheet<void>(
                 useRootNavigator: true,
                 isScrollControlled: true,
                 showDragHandle: true,

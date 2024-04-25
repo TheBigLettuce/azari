@@ -5,16 +5,19 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
+import "package:flutter/material.dart";
 
-import '../../notifiers/focus.dart';
+import "package:gallery/src/widgets/notifiers/focus.dart";
 
 InputDecoration autocompleteBarDecoration(
-    BuildContext context, void Function() iconOnPressed, List<Widget>? addItems,
-    {required bool showSearch,
-    int? searchCount,
-    required bool roundBorders,
-    required String hint}) {
+  BuildContext context,
+  void Function() iconOnPressed,
+  List<Widget>? addItems, {
+  required bool showSearch,
+  int? searchCount,
+  required bool roundBorders,
+  required String hint,
+}) {
   return InputDecoration(
     prefixIcon: FocusNotifier.of(context).hasFocus
         ? IconButton(
@@ -50,7 +53,8 @@ InputDecoration autocompleteBarDecoration(
     // fillColor: Colors.black,
     border: roundBorders
         ? const OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(50)))
+            borderRadius: BorderRadius.all(Radius.circular(50)),
+          )
         : InputBorder.none,
     isDense: false,
   );

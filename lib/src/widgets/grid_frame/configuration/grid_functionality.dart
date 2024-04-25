@@ -5,18 +5,17 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/base/grid_settings_base.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
-
-import 'grid_back_button_behaviour.dart';
-import 'grid_fab_type.dart';
-import 'grid_refresh_behaviour.dart';
-import 'grid_search_widget.dart';
+import "package:flutter/material.dart";
+import "package:gallery/src/db/base/grid_settings_base.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_back_button_behaviour.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_fab_type.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_refresh_behaviour.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_refreshing_status.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
 
 class GridFunctionality<T extends CellBase> {
   const GridFunctionality({
@@ -58,7 +57,8 @@ class GridFunctionality<T extends CellBase> {
   final InheritedWidget Function(Widget child)? registerNotifiers;
 
   final StreamSubscription<GridSettingsBase> Function(
-      void Function(GridSettingsBase s) f)? watchLayoutSettings;
+    void Function(GridSettingsBase s) f,
+  )? watchLayoutSettings;
 
   final GridFabType fab;
   final SelectionGlue selectionGlue;

@@ -5,18 +5,16 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:dbus/dbus.dart';
-import 'package:gallery/src/plugs/notifications.dart';
-import 'package:gallery/src/plugs/notifications/dummy.dart';
-
-import '../../../dbus/job_view.g.dart';
-import '../../../dbus/job_view_server.g.dart';
+import "package:dbus/dbus.dart";
+import "package:gallery/dbus/job_view.g.dart";
+import "package:gallery/dbus/job_view_server.g.dart";
+import "package:gallery/src/plugs/notifications.dart";
+import "package:gallery/src/plugs/notifications/dummy.dart";
 
 class KDENotificationProgress extends NotificationProgress {
+  KDENotificationProgress(OrgKdeJobViewV2 job) : _job = job;
   final OrgKdeJobViewV2 _job;
   int total = 0;
-
-  KDENotificationProgress(OrgKdeJobViewV2 job) : _job = job;
 
   @override
   void setTotal(int t) {
@@ -50,7 +48,10 @@ class KDENotifications implements NotificationPlug {
   Future<NotificationProgress> newProgress(String name, _, __, ___) async {
     try {
       final object = OrgKdeJobViewServer(
-          _client, "org.kde.kuiserver", DBusObjectPath("/JobViewServer"));
+        _client,
+        "org.kde.kuiserver",
+        DBusObjectPath("/JobViewServer"),
+      );
       final id = await object.callrequestView("Ācārya", "", 0);
 
       final notif = OrgKdeJobViewV2(_client, "org.kde.kuiserver", id);

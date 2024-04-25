@@ -5,52 +5,51 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
-import 'dart:math' as math;
+import "dart:async";
+import "dart:math" as math;
 
-import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/db/base/grid_settings_base.dart';
-import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
-import 'package:gallery/src/db/schemas/anime/watched_anime_entry.dart';
-import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
-import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
-import 'package:gallery/src/db/schemas/manga/compact_manga_data.dart';
-import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
-import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
-import 'package:gallery/src/interfaces/anime/anime_api.dart';
-import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/cell/contentable.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
-import 'package:gallery/src/net/anime/jikan.dart';
-import 'package:gallery/src/pages/anime/anime_info_page.dart';
-import 'package:gallery/src/pages/anime/paging_container.dart';
-import 'package:gallery/src/pages/more/tab_with_count.dart';
-import 'package:gallery/src/pages/more/dashboard/dashboard_card.dart';
-import 'package:gallery/src/widgets/empty_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
-import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
-import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
-import 'package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart';
-import 'package:gallery/src/widgets/grid_frame/parts/segment_label.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:gallery/src/widgets/skeletons/grid.dart';
-import 'package:gallery/src/widgets/skeletons/settings.dart';
-import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import "package:flutter/material.dart";
+import "package:flutter_animate/flutter_animate.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/base/grid_settings_base.dart";
+import "package:gallery/src/db/schemas/anime/saved_anime_entry.dart";
+import "package:gallery/src/db/schemas/anime/watched_anime_entry.dart";
+import "package:gallery/src/db/schemas/grid_settings/anime_discovery.dart";
+import "package:gallery/src/db/schemas/grid_settings/booru.dart";
+import "package:gallery/src/db/schemas/manga/compact_manga_data.dart";
+import "package:gallery/src/db/schemas/manga/read_manga_chapter.dart";
+import "package:gallery/src/db/schemas/settings/misc_settings.dart";
+import "package:gallery/src/interfaces/anime/anime_api.dart";
+import "package:gallery/src/interfaces/anime/anime_entry.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/interfaces/cell/contentable.dart";
+import "package:gallery/src/net/anime/jikan.dart";
+import "package:gallery/src/pages/anime/anime_info_page.dart";
+import "package:gallery/src/pages/anime/paging_container.dart";
+import "package:gallery/src/pages/anime/search/search_anime.dart";
+import "package:gallery/src/pages/more/dashboard/dashboard_card.dart";
+import "package:gallery/src/pages/more/tab_with_count.dart";
+import "package:gallery/src/widgets/empty_widget.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:gallery/src/widgets/grid_frame/parts/segment_label.dart";
+import "package:gallery/src/widgets/notifiers/glue_provider.dart";
+import "package:gallery/src/widgets/skeletons/grid.dart";
+import "package:gallery/src/widgets/skeletons/settings.dart";
+import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
-import 'search/search_anime.dart';
-
-part 'tabs/discover_tab.dart';
-part 'tabs/watching_tab.dart';
-part 'tabs/finished_tab.dart';
-part 'tab_bar_wrapper.dart';
+part "tab_bar_wrapper.dart";
+part "tabs/discover_tab.dart";
+part "tabs/finished_tab.dart";
+part "tabs/watching_tab.dart";
 
 const int kWatchingTabIndx = 0;
 const int kDiscoverTabIndx = 1;
@@ -61,12 +60,11 @@ abstract interface class AnimeCell implements CellBase {
 }
 
 class AnimePage extends StatefulWidget {
-  final void Function(bool) procPop;
-
   const AnimePage({
     super.key,
     required this.procPop,
   });
+  final void Function(bool) procPop;
 
   @override
   State<AnimePage> createState() => _AnimePageState();
@@ -84,8 +82,7 @@ class _AnimePageState extends State<AnimePage>
   late final StreamSubscription<void> watcher;
   late final StreamSubscription<void> watcherWatched;
 
-  late final tabController =
-      TabController(initialIndex: kWatchingTabIndx, length: 3, vsync: this);
+  late final tabController = TabController(length: 3, vsync: this);
 
   int savedCount = 0;
 
@@ -176,16 +173,19 @@ class _AnimePageState extends State<AnimePage>
   @override
   Widget build(BuildContext context) {
     final tabBar = TabBar(
-        padding: const EdgeInsets.only(right: 24),
-        tabAlignment: TabAlignment.center,
-        isScrollable: true,
-        controller: tabController,
-        tabs: [
-          TabWithCount(AppLocalizations.of(context)!.watchingTab, savedCount),
-          Tab(text: AppLocalizations.of(context)!.discoverTab),
-          TabWithCount(AppLocalizations.of(context)!.finishedTab,
-              WatchedAnimeEntry.count()),
-        ]);
+      padding: const EdgeInsets.only(right: 24),
+      tabAlignment: TabAlignment.center,
+      isScrollable: true,
+      controller: tabController,
+      tabs: [
+        TabWithCount(AppLocalizations.of(context)!.watchingTab, savedCount),
+        Tab(text: AppLocalizations.of(context)!.discoverTab),
+        TabWithCount(
+          AppLocalizations.of(context)!.finishedTab,
+          WatchedAnimeEntry.count(),
+        ),
+      ],
+    );
 
     return PopScope(
       canPop: false,

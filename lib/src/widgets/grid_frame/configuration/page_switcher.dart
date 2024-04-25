@@ -5,14 +5,13 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:io';
+import "dart:io";
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
-import 'package:gallery/src/widgets/grid_frame/parts/page_switching_widget.dart';
-
-import 'page_description.dart';
+import "package:flutter/material.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/page_description.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/parts/page_switching_widget.dart";
 
 class PageIcon {
   const PageIcon(
@@ -67,15 +66,20 @@ class PageSwitcherToggable<T extends CellBase>
 
   @override
   PageDescription Function(
-      BuildContext context,
-      GridFrameState<T> state,
-      // ignore: prefer_function_declarations_over_variables
-      int i) get buildPage => _noWidget;
+    BuildContext context,
+    GridFrameState<T> state,
+    // ignore: prefer_function_declarations_over_variables
+    int i,
+  ) get buildPage => _noWidget;
 
   PageDescription _noWidget(
-      BuildContext context, GridFrameState<T> state, int i) {
+    BuildContext context,
+    GridFrameState<T> state,
+    int i,
+  ) {
     return const PageDescription(
-        slivers: [SliverPadding(padding: EdgeInsets.zero)]);
+      slivers: [SliverPadding(padding: EdgeInsets.zero)],
+    );
   }
 
   @override
@@ -88,14 +92,13 @@ class PageSwitcherToggable<T extends CellBase>
 }
 
 class ToggableLabelSwitcherWidget<T extends CellBase> extends StatefulWidget {
-  final List<PageToaggable> pages;
-  final bool Function(BuildContext, int) toggle;
-
   const ToggableLabelSwitcherWidget({
     super.key,
     required this.pages,
     required this.toggle,
   });
+  final List<PageToaggable> pages;
+  final bool Function(BuildContext, int) toggle;
 
   @override
   State<ToggableLabelSwitcherWidget> createState() =>
@@ -143,8 +146,9 @@ class ToggableLabelSwitcherWidgetState
 
     return Padding(
       padding: EdgeInsets.only(
-          left: 8 + gestureInsets.left * 0.5,
-          right: 8 + gestureInsets.right * 0.5),
+        left: 8 + gestureInsets.left * 0.5,
+        right: 8 + gestureInsets.right * 0.5,
+      ),
       child: SizedBox(
         height: 56,
         child: Row(
@@ -193,7 +197,10 @@ class PageSwitcherLabel<T extends CellBase>
 
   @override
   final PageDescription Function(
-      BuildContext context, GridFrameState<T> state, int i) buildPage;
+    BuildContext context,
+    GridFrameState<T> state,
+    int i,
+  ) buildPage;
 
   @override
   Widget switcherWidget(BuildContext context, GridFrameState<T> state) =>
@@ -205,12 +212,6 @@ class PageSwitcherLabel<T extends CellBase>
 }
 
 class LabelSwitcherWidget<T extends CellBase> extends StatefulWidget {
-  final List<PageLabel> pages;
-  final void Function(int) switchPage;
-  final int Function() currentPage;
-  final bool noHorizontalPadding;
-  final bool sliver;
-
   const LabelSwitcherWidget({
     super.key,
     required this.pages,
@@ -219,6 +220,11 @@ class LabelSwitcherWidget<T extends CellBase> extends StatefulWidget {
     this.sliver = false,
     this.noHorizontalPadding = false,
   });
+  final List<PageLabel> pages;
+  final void Function(int) switchPage;
+  final int Function() currentPage;
+  final bool noHorizontalPadding;
+  final bool sliver;
 
   @override
   State<LabelSwitcherWidget> createState() => _LabelSwitcherWidgetState();
@@ -316,18 +322,16 @@ class _LabelSwitcherWidgetState extends State<LabelSwitcherWidget>
 }
 
 class _Label extends StatelessWidget {
-  final String text;
-  final bool isSelected;
-  final int count;
-  final AnimationController controller;
-
   const _Label({
-    super.key,
     required this.text,
     required this.isSelected,
     required this.controller,
     required this.count,
   });
+  final String text;
+  final bool isSelected;
+  final int count;
+  final AnimationController controller;
 
   static final colorOpacityTween = Tween<double>(begin: 0.4, end: 0.8);
 
@@ -339,7 +343,7 @@ class _Label extends StatelessWidget {
         Shadow(
           color: theme.colorScheme.primary.withOpacity(0.2),
           blurRadius: isSelected ? 0.4 : 0.2,
-        )
+        ),
       ],
       fontWeight: FontWeight.w600,
       color: isSelected
@@ -369,7 +373,7 @@ class _Label extends StatelessWidget {
                     color: styleText.color
                         ?.withOpacity(styleText.color!.opacity - 0.2),
                   ),
-                )
+                ),
               ],
             ),
           );
@@ -389,7 +393,10 @@ class PageSwitcherIcons<T extends CellBase>
 
   @override
   final PageDescription Function(
-      BuildContext context, GridFrameState<T> state, int i) buildPage;
+    BuildContext context,
+    GridFrameState<T> state,
+    int i,
+  ) buildPage;
 
   @override
   Widget switcherWidget(BuildContext context, GridFrameState<T> state) =>

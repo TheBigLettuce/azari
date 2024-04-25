@@ -5,14 +5,13 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:math';
+import "dart:math";
 
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import "package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart";
 
 class _PatternPart {
-  final List<QuiltedGridTile> pieces;
-
   const _PatternPart(this.pieces);
+  final List<QuiltedGridTile> pieces;
 }
 
 extension _PatternPartsToListExtension on List<_PatternPart> {
@@ -35,6 +34,8 @@ enum GridColumn {
   four(4),
   five(5),
   six(6);
+
+  const GridColumn(this.number);
 
   final int number;
 
@@ -276,6 +277,4 @@ enum GridColumn {
           ],
       }
           .mergeParts(gridSeed);
-
-  const GridColumn(this.number);
 }

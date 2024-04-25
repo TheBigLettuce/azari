@@ -5,46 +5,42 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:math';
+import "dart:math";
 
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/main.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
-import 'package:gallery/src/pages/anime/anime.dart';
-import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
-import 'package:gallery/src/pages/manga/manga_page.dart';
-import 'package:gallery/src/pages/more/settings/network_status.dart';
-import 'package:gallery/src/pages/glue_bottom_app_bar.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:gallery/src/widgets/notifiers/selection_count.dart';
-import 'package:isar/isar.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import "package:flutter/material.dart";
+import "package:flutter_animate/flutter_animate.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/pages/anime/anime.dart";
+import "package:gallery/src/pages/booru/booru_page.dart";
+import "package:gallery/src/pages/gallery/callback_description_nested.dart";
+import "package:gallery/src/pages/gallery/directories.dart";
+import "package:gallery/src/pages/glue_bottom_app_bar.dart";
+import "package:gallery/src/pages/manga/manga_page.dart";
+import "package:gallery/src/pages/more/more_page.dart";
+import "package:gallery/src/pages/more/settings/network_status.dart";
+import "package:gallery/src/pages/more/settings/settings_widget.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/selection_glue_state.dart";
+import "package:gallery/src/widgets/notifiers/glue_provider.dart";
+import "package:gallery/src/widgets/notifiers/selection_count.dart";
+import "package:gallery/src/widgets/skeletons/home.dart";
+import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
+import "package:isar/isar.dart";
 
-import '../db/initalize_db.dart';
-import '../widgets/grid_frame/configuration/selection_glue_state.dart';
-import '../widgets/skeletons/home.dart';
-import '../widgets/skeletons/skeleton_state.dart';
-import 'booru/booru_page.dart';
-import 'gallery/directories.dart';
-import 'more/more_page.dart';
-import 'more/settings/settings_widget.dart';
-
-part 'home/icons/anime_icon.dart';
-part 'home/icons/gallery_icon.dart';
-part 'home/icons/booru_icon.dart';
-part 'home/icons/manga_icon.dart';
-part 'home/navigator_shell.dart';
-part 'home/change_page_mixin.dart';
-part 'home/animated_icons_mixin.dart';
-part 'home/before_you_continue_dialog_mixin.dart';
+part "home/animated_icons_mixin.dart";
+part "home/before_you_continue_dialog_mixin.dart";
+part "home/change_page_mixin.dart";
+part "home/icons/anime_icon.dart";
+part "home/icons/booru_icon.dart";
+part "home/icons/gallery_icon.dart";
+part "home/icons/manga_icon.dart";
+part "home/navigator_shell.dart";
 
 class Home extends StatefulWidget {
-  final CallbackDescriptionNested? callback;
-
   const Home({super.key, this.callback});
+  final CallbackDescriptionNested? callback;
 
   @override
   State<Home> createState() => _HomeState();
@@ -96,53 +92,52 @@ class _HomeState extends State<Home>
   @override
   Widget build(BuildContext context) {
     return PopScope(
-        canPop: widget.callback != null,
-        onPopInvoked: (pop) => _procPopAll(this, pop),
-        child: Builder(
-          builder: (context) {
-            return _SelectionHolder(
-              hide: hide,
-              defaultPreferences: widget.callback != null
-                  ? {}
-                  : {GluePreferences.persistentBarHeight},
-              child: HomeSkeleton(
-                state,
-                (context) => _currentPage(context, this),
-                navBar: _NavBar(
-                  noNavigationIcons: widget.callback != null,
-                  icons: this,
-                  child: NavigationBar(
-                    labelBehavior:
-                        NavigationDestinationLabelBehavior.onlyShowSelected,
-                    backgroundColor:
-                        Theme.of(context).colorScheme.surface.withOpacity(0.95),
-                    selectedIndex: currentRoute,
-                    onDestinationSelected: (route) => _switchPage(this, route),
-                    destinations: widget.callback != null
-                        ? iconsGalleryNotes(context)
-                        : icons(context, currentRoute, settings),
-                  ),
+      canPop: widget.callback != null,
+      onPopInvoked: (pop) => _procPopAll(this, pop),
+      child: Builder(
+        builder: (context) {
+          return _SelectionHolder(
+            hide: hide,
+            defaultPreferences: widget.callback != null
+                ? {}
+                : {GluePreferences.persistentBarHeight},
+            child: HomeSkeleton(
+              state,
+              (context) => _currentPage(context, this),
+              navBar: _NavBar(
+                noNavigationIcons: widget.callback != null,
+                icons: this,
+                child: NavigationBar(
+                  labelBehavior:
+                      NavigationDestinationLabelBehavior.onlyShowSelected,
+                  backgroundColor:
+                      Theme.of(context).colorScheme.surface.withOpacity(0.95),
+                  selectedIndex: currentRoute,
+                  onDestinationSelected: (route) => _switchPage(this, route),
+                  destinations: widget.callback != null
+                      ? iconsGalleryNotes(context)
+                      : icons(context, currentRoute, settings),
                 ),
-                extendBody: true,
-                noNavBar: widget.callback != null,
               ),
-            );
-          },
-        ));
+              extendBody: true,
+              noNavBar: widget.callback != null,
+            ),
+          );
+        },
+      ),
+    );
   }
 }
 
 class _NavBar extends StatelessWidget {
-  final bool noNavigationIcons;
-  final _AnimatedIconsMixin icons;
-  final Widget child;
-
   const _NavBar({
-    super.key,
     required this.icons,
     required this.noNavigationIcons,
     required this.child,
   });
+  final bool noNavigationIcons;
+  final _AnimatedIconsMixin icons;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -187,9 +182,9 @@ class _NavBar extends StatelessWidget {
                           ],
                           child: GlueBottomAppBar(glueState),
                         )
-                      : const Padding(padding: EdgeInsets.only(bottom: 0));
+                      : const Padding(padding: EdgeInsets.zero);
                 },
-              )
+              ),
             ],
             child: child,
           );
@@ -197,17 +192,15 @@ class _NavBar extends StatelessWidget {
 }
 
 class _SelectionHolder extends StatefulWidget {
-  final Widget child;
-  final Set<GluePreferences> defaultPreferences;
-
-  final void Function(bool backward) hide;
-
   const _SelectionHolder({
-    super.key,
     required this.hide,
     required this.defaultPreferences,
     required this.child,
   });
+  final Widget child;
+  final Set<GluePreferences> defaultPreferences;
+
+  final void Function(bool backward) hide;
 
   @override
   State<_SelectionHolder> createState() => __SelectionHolderState();
@@ -253,6 +246,10 @@ class __SelectionHolderState extends State<_SelectionHolder> {
 }
 
 class _GlueStateProvider extends InheritedWidget {
+  const _GlueStateProvider({
+    required this.state,
+    required super.child,
+  });
   final SelectionGlueState state;
 
   static SelectionGlueState of(BuildContext context) {
@@ -261,12 +258,6 @@ class _GlueStateProvider extends InheritedWidget {
 
     return widget!.state;
   }
-
-  const _GlueStateProvider({
-    super.key,
-    required this.state,
-    required super.child,
-  });
 
   @override
   bool updateShouldNotify(_GlueStateProvider oldWidget) {

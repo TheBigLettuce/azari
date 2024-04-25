@@ -5,22 +5,22 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
-import 'dart:developer';
+import "dart:async";
+import "dart:developer";
 
-import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/widgets/empty_widget.dart';
+import "package:dio/dio.dart";
+import "package:flutter/foundation.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/widgets/empty_widget.dart";
 
 enum LogSeverity {
   init(1),
   trace(400),
   important(1000);
 
-  final int value;
-
   const LogSeverity(this.value);
+
+  final int value;
 }
 
 enum LogTarget {
@@ -31,8 +31,11 @@ enum LogTarget {
   anime,
   manga;
 
-  void logDefault(LogMessage message,
-      [LogSeverity severity = LogSeverity.trace, StackTrace? stackTrace]) {
+  void logDefault(
+    LogMessage message, [
+    LogSeverity severity = LogSeverity.trace,
+    StackTrace? stackTrace,
+  ]) {
     final f = getLogger();
 
     f.add(this, severity, message, stackTrace ?? StackTrace.current);
@@ -46,14 +49,19 @@ class _DummyLogger implements LoggingInterface {
   const _DummyLogger();
 
   @override
-  void add(LogTarget target, LogSeverity severity, LogMessage message,
-      StackTrace stackTrace) {}
+  void add(
+    LogTarget target,
+    LogSeverity severity,
+    LogMessage message,
+    StackTrace stackTrace,
+  ) {}
 
   @override
   LogStorage get storage => const _DummyLoggerStorage();
 }
 
 class _DummyLoggerStorage implements LogStorage {
+  const _DummyLoggerStorage();
   @override
   LogRecord load(LogTarget t, LogSeverity severity, int id) {
     return LogRecord("", t, severity, "");
@@ -68,8 +76,6 @@ class _DummyLoggerStorage implements LogStorage {
   StreamSubscription<void> watch(void Function(void p1) f) {
     return const _DummyStreamSubscription();
   }
-
-  const _DummyLoggerStorage();
 }
 
 class _DummyStreamSubscription implements StreamSubscription<void> {
@@ -107,9 +113,12 @@ class _DummyStreamSubscription implements StreamSubscription<void> {
 late final LoggingInterface _current;
 
 class _PrintLoggerStorage implements LogStorage {
+  _PrintLoggerStorage() {
+    _events = _controller.stream.asBroadcastStream();
+  }
   final List<LogRecord> _buffer = [];
   final StreamController<void> _controller = StreamController();
-  late final Stream _events;
+  late final Stream<void> _events;
 
   @override
   LogRecord load(LogTarget t, LogSeverity severity, int id) {
@@ -123,11 +132,13 @@ class _PrintLoggerStorage implements LogStorage {
     }
 
     _buffer.add(r);
-    log(r.formatTerminal(),
-        level: r.severity.value,
-        stackTrace: r.severity == LogSeverity.important
-            ? StackTrace.fromString(r.stackTrace)
-            : null);
+    log(
+      r.formatTerminal(),
+      level: r.severity.value,
+      stackTrace: r.severity == LogSeverity.important
+          ? StackTrace.fromString(r.stackTrace)
+          : null,
+    );
     _controller.sink.add(null);
 
     return _buffer.length - 1;
@@ -137,24 +148,23 @@ class _PrintLoggerStorage implements LogStorage {
   StreamSubscription<void> watch(void Function(void) f) {
     return _events.listen(f);
   }
-
-  _PrintLoggerStorage() {
-    _events = _controller.stream.asBroadcastStream();
-  }
 }
 
 class _PrintLogger implements LoggingInterface {
+  _PrintLogger();
   final _storage = _PrintLoggerStorage();
 
   @override
-  void add(LogTarget target, LogSeverity severity, LogMessage message,
-          StackTrace stackTrace) =>
+  void add(
+    LogTarget target,
+    LogSeverity severity,
+    LogMessage message,
+    StackTrace stackTrace,
+  ) =>
       message.resolve(target, severity, storage, stackTrace);
 
   @override
   LogStorage get storage => _storage;
-
-  _PrintLogger();
 }
 
 void initLogger() {
@@ -165,8 +175,9 @@ void initLogger() {
 
     FlutterError.onError = (details) {
       LogTarget.unknown.logDefaultImportant(
-          details.exception.toString().message,
-          details.stack ?? StackTrace.current);
+        details.exception.toString().message,
+        details.stack ?? StackTrace.current,
+      );
     };
     PlatformDispatcher.instance.onError = (error, stack) {
       LogTarget.unknown.logDefaultImportant(error.toString().message, stack);
@@ -179,8 +190,12 @@ void initLogger() {
 LoggingInterface getLogger() => _current;
 
 abstract class LoggingInterface {
-  void add(LogTarget target, LogSeverity severity, LogMessage message,
-      StackTrace stackTrace);
+  void add(
+    LogTarget target,
+    LogSeverity severity,
+    LogMessage message,
+    StackTrace stackTrace,
+  );
 
   LogStorage get storage;
 }
@@ -193,6 +208,7 @@ abstract class LogStorage {
 }
 
 class LogRecord {
+  LogRecord(this.value, this.target, this.severity, this.stackTrace);
   final String value;
   final LogTarget target;
   final LogSeverity severity;
@@ -201,13 +217,15 @@ class LogRecord {
   String formatTerminal() {
     return "${target.name}(${severity.name}): $value";
   }
-
-  LogRecord(this.value, this.target, this.severity, this.stackTrace);
 }
 
 abstract class LogMessage {
-  void resolve(LogTarget target, LogSeverity severity, LogStorage s,
-      StackTrace stackTrace);
+  void resolve(
+    LogTarget target,
+    LogSeverity severity,
+    LogStorage s,
+    StackTrace stackTrace,
+  );
 }
 
 extension StringLogMessage on String {
@@ -222,14 +240,17 @@ extension StringLogMessage on String {
 }
 
 class _StringLogMessage implements LogMessage {
+  const _StringLogMessage(this.value);
   final String value;
 
   @override
-  void resolve(LogTarget target, LogSeverity severity, LogStorage s,
-          StackTrace stackTrace) =>
+  void resolve(
+    LogTarget target,
+    LogSeverity severity,
+    LogStorage s,
+    StackTrace stackTrace,
+  ) =>
       s.save(LogRecord(value, target, severity, stackTrace.toString()));
-
-  const _StringLogMessage(this.value);
 }
 
 class LogReq {
@@ -267,13 +288,16 @@ extension ReqLoggingExt on Dio {
         onReceiveProgress: onReceiveProgress,
       );
 
-      rdata.target.logDefault(rdata.message
-          .networkMessage(result.statusCode, result.statusMessage));
+      rdata.target.logDefault(
+        rdata.message.networkMessage(result.statusCode, result.statusMessage),
+      );
 
       return result;
     } catch (e, stack) {
       rdata.target.logDefaultImportant(
-          rdata.message.errorMessage(EmptyWidget.unwrapDioError(e)), stack);
+        rdata.message.errorMessage(EmptyWidget.unwrapDioError(e)),
+        stack,
+      );
       rethrow;
     }
   }

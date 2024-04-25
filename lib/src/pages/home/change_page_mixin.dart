@@ -5,7 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of '../home.dart';
+part of "../home.dart";
 
 mixin _ChangePageMixin on State<Home> {
   late final Isar mainGrid;
@@ -132,7 +132,7 @@ mixin _ChangePageMixin on State<Home> {
         SlideEffect(
           delay: const Duration(milliseconds: 50),
           begin: const Offset(-0.35, 0.15),
-          end: const Offset(0, 0),
+          end: Offset.zero,
           duration: 280.ms,
           curve: Easing.standard,
         ),

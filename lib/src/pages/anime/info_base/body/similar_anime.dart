@@ -5,24 +5,23 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/anime/anime_api.dart';
-import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/pages/anime/anime_info_page.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
-import 'package:gallery/src/pages/anime/info_base/body/body_segment_label.dart';
-import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/interfaces/anime/anime_api.dart";
+import "package:gallery/src/interfaces/anime/anime_entry.dart";
+import "package:gallery/src/pages/anime/anime_info_page.dart";
+import "package:gallery/src/pages/anime/info_base/body/body_segment_label.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
 
 class SimilarAnime extends StatefulWidget {
-  final AnimeEntry entry;
-  final AnimeAPI api;
-
   const SimilarAnime({
     super.key,
     required this.entry,
     required this.api,
   });
+  final AnimeEntry entry;
+  final AnimeAPI api;
 
   @override
   State<SimilarAnime> createState() => _SimilarAnimeState();
@@ -41,37 +40,42 @@ class _SimilarAnimeState extends State<SimilarAnime> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               BodySegmentLabel(
-                  text: AppLocalizations.of(context)!.animeSimilar),
+                text: AppLocalizations.of(context)!.animeSimilar,
+              ),
               SizedBox(
                 height: MediaQuery.sizeOf(context).longestSide * 0.2,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(15),
-                  clipBehavior: Clip.antiAlias,
                   child: ListView(
                     clipBehavior: Clip.none,
                     scrollDirection: Axis.horizontal,
                     children: snapshot.data!.indexed
-                        .map((e) => SizedBox(
-                              width: MediaQuery.sizeOf(context).longestSide *
-                                  0.2 *
-                                  GridAspectRatio.zeroFive.value,
-                              child: CustomGridCellWrapper(
-                                onPressed: (context) {
-                                  Navigator.push(context, MaterialPageRoute(
+                        .map(
+                          (e) => SizedBox(
+                            width: MediaQuery.sizeOf(context).longestSide *
+                                0.2 *
+                                GridAspectRatio.zeroFive.value,
+                            child: CustomGridCellWrapper(
+                              onPressed: (context) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute<void>(
                                     builder: (context) {
                                       return AnimeInfoPage(
                                         id: e.$2.id,
                                         apiFactory: widget.entry.site.api,
                                       );
                                     },
-                                  ));
-                                },
-                                child: GridCell(
-                                  cell: e.$2,
-                                  hideTitle: false,
-                                ),
+                                  ),
+                                );
+                              },
+                              child: GridCell(
+                                cell: e.$2,
+                                hideTitle: false,
                               ),
-                            ))
+                            ),
+                          ),
+                        )
                         .toList(),
                   ),
                 ),

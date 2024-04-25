@@ -5,9 +5,10 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of 'android_api_directories.dart';
+part of "android_api_directories.dart";
 
 class _GalleryFilesExtra implements GalleryFilesExtra {
+  const _GalleryFilesExtra._(this._impl);
   final _AndroidGalleryFiles _impl;
 
   @override
@@ -33,7 +34,7 @@ class _GalleryFilesExtra implements GalleryFilesExtra {
   Future<void> loadNextThumbnails(void Function() callback) async {
     var offset = 0;
     var count = 0;
-    List<Future<ThumbId>> thumbnails = [];
+    final List<Future<ThumbId>> thumbnails = [];
 
     for (;;) {
       final elems = _impl.db.systemGalleryDirectoryFiles
@@ -74,30 +75,39 @@ class _GalleryFilesExtra implements GalleryFilesExtra {
 
   @override
   void setRefreshingStatusCallback(
-      void Function(int i, bool inRefresh, bool empty) callback) {
+    void Function(int i, bool inRefresh, bool empty) callback,
+  ) {
     _impl.callback = callback;
   }
 
   @override
   void setPassFilter(
-      (Iterable<SystemGalleryDirectoryFile>, dynamic) Function(
-              Iterable<SystemGalleryDirectoryFile> cells,
-              dynamic data,
-              bool end)
-          f) {
+    (Iterable<SystemGalleryDirectoryFile>, dynamic) Function(
+      Iterable<SystemGalleryDirectoryFile> cells,
+      dynamic data,
+      bool end,
+    ) f,
+  ) {
     _impl.filter.passFilter = f;
   }
 
   List<SystemGalleryDirectoryFile> getCellsIds(Set<int> isarIds) =>
       _impl.db.systemGalleryDirectoryFiles
           .where()
+          // ignore: inference_failure_on_function_invocation
           .anyOf(isarIds, (q, element) => q.isarIdEqualTo(element))
           .findAllSync();
-
-  const _GalleryFilesExtra._(this._impl);
 }
 
 class _JoinedDirectories extends _AndroidGalleryFiles {
+  _JoinedDirectories(this.directories, super.db, super.unsetCurrentImages)
+      : super(
+          bucketId: "",
+          isTrash: false,
+          isFavorites: false,
+          target: "joinedDir",
+          getElems: lastMofifiedGetElemsFiles(db),
+        );
   final List<String> directories;
 
   @override
@@ -137,23 +147,40 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
         PlatformFunctions.refreshFilesMultiple(directories);
       }
     } catch (e, trace) {
-      log("android gallery",
-          level: Level.SEVERE.value, error: e, stackTrace: trace);
+      log(
+        "android gallery",
+        level: Level.SEVERE.value,
+        error: e,
+        stackTrace: trace,
+      );
     }
 
     return Future.value(db.systemGalleryDirectoryFiles.countSync());
   }
-
-  _JoinedDirectories(this.directories, super.db, super.unsetCurrentImages)
-      : super(
-            bucketId: "",
-            isTrash: false,
-            isFavorites: false,
-            target: "joinedDir",
-            getElems: lastMofifiedGetElemsFiles(db));
 }
 
 class _AndroidGalleryFiles implements GalleryAPIFiles {
+  _AndroidGalleryFiles(
+    this.db,
+    this.unsetCurrentImages, {
+    required Iterable<SystemGalleryDirectoryFile> Function(
+      int,
+      int,
+      String,
+      SortingMode,
+      FilteringMode,
+    ) getElems,
+    required this.target,
+    required String bucketId,
+    this.isTrash = false,
+    this.isFavorites = false,
+  })  : startTime = DateTime.now().millisecondsSinceEpoch,
+        _bucketId = bucketId,
+        filter = IsarFilter<SystemGalleryDirectoryFile>(
+          db,
+          DbsOpen.androidGalleryFiles(),
+          isFavorites ? lastMofifiedGetElemsFiles(db) : getElems,
+        );
   final bool isTrash;
   final bool isFavorites;
   final String _bucketId;
@@ -217,34 +244,25 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
         PlatformFunctions.refreshFiles(_bucketId);
       }
     } catch (e, trace) {
-      log("android gallery",
-          level: Level.SEVERE.value, error: e, stackTrace: trace);
+      log(
+        "android gallery",
+        level: Level.SEVERE.value,
+        error: e,
+        stackTrace: trace,
+      );
     }
 
     return Future.value(db.systemGalleryDirectoryFiles.countSync());
   }
-
-  _AndroidGalleryFiles(
-    this.db,
-    this.unsetCurrentImages, {
-    required Iterable<SystemGalleryDirectoryFile> Function(
-            int, int, String, SortingMode, FilteringMode)
-        getElems,
-    required this.target,
-    required String bucketId,
-    this.isTrash = false,
-    this.isFavorites = false,
-  })  : startTime = DateTime.now().millisecondsSinceEpoch,
-        _bucketId = bucketId,
-        filter = IsarFilter<SystemGalleryDirectoryFile>(
-            db,
-            DbsOpen.androidGalleryFiles(),
-            isFavorites ? lastMofifiedGetElemsFiles(db) : getElems);
 }
 
 Iterable<SystemGalleryDirectoryFile> Function(
-        int, int, String, SortingMode, FilteringMode)
-    lastMofifiedGetElemsFiles(Isar db) {
+  int,
+  int,
+  String,
+  SortingMode,
+  FilteringMode,
+) lastMofifiedGetElemsFiles(Isar db) {
   return (offset, limit, s, sort, mode) {
     if (sort == SortingMode.size) {
       return db.systemGalleryDirectoryFiles
@@ -284,8 +302,12 @@ Iterable<SystemGalleryDirectoryFile> Function(
 }
 
 Iterable<SystemGalleryDirectoryFile> Function(
-        int, int, String, SortingMode, FilteringMode)
-    defaultGetElemsFiles(Isar db) {
+  int,
+  int,
+  String,
+  SortingMode,
+  FilteringMode,
+) defaultGetElemsFiles(Isar db) {
   return (offset, limit, s, sort, _) {
     if (sort == SortingMode.size) {
       return db.systemGalleryDirectoryFiles

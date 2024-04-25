@@ -5,15 +5,29 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:gallery/src/interfaces/filtering/filtering_interface.dart';
-import 'package:isar/isar.dart';
-
-import '../../interfaces/cell/cell.dart';
-import '../../interfaces/filtering/filtering_mode.dart';
-import '../initalize_db.dart';
-import '../isar_filter.dart';
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/db/isar_filter.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
+import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
+import "package:isar/isar.dart";
 
 class LinearIsarLoader<T extends IsarEntryId> {
+  LinearIsarLoader(
+    CollectionSchema schema,
+    this.instance,
+    Iterable<T> Function(
+      int offset,
+      int limit,
+      String s,
+      SortingMode sort,
+      FilteringMode mode,
+    ) passFilter,
+  ) : filter = IsarFilter(
+          instance,
+          DbsOpen.temporarySchemas([schema]),
+          passFilter,
+        );
   final Isar instance;
 
   final IsarFilter<T> filter;
@@ -33,21 +47,11 @@ class LinearIsarLoader<T extends IsarEntryId> {
     }
   }
 
-  void init(void Function(Isar instance) loader,
-      {FilteringMode d = FilteringMode.noFilter}) {
+  void init(
+    void Function(Isar instance) loader, {
+    FilteringMode d = FilteringMode.noFilter,
+  }) {
     loader(instance);
     filter.filter("", d);
   }
-
-  LinearIsarLoader(
-      CollectionSchema schema,
-      this.instance,
-      Iterable<T> Function(int offset, int limit, String s, SortingMode sort,
-              FilteringMode mode)
-          passFilter)
-      : filter = IsarFilter(
-          instance,
-          DbsOpen.temporarySchemas([schema]),
-          passFilter,
-        );
 }

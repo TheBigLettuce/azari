@@ -5,9 +5,10 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of 'android_api_directories.dart';
+part of "android_api_directories.dart";
 
 class AndroidGallery implements GalleryPlug {
+  const AndroidGallery();
   @override
   Future<int> get version => PlatformFunctions.currentMediastoreVersion();
 
@@ -15,8 +16,10 @@ class AndroidGallery implements GalleryPlug {
   bool get temporary => _global!.temporary;
 
   @override
-  GalleryAPIDirectories galleryApi(
-      {bool? temporaryDb, bool setCurrentApi = true}) {
+  GalleryAPIDirectories galleryApi({
+    bool? temporaryDb,
+    bool setCurrentApi = true,
+  }) {
     final api = _AndroidGallery(temporary: temporaryDb);
     if (setCurrentApi) {
       _global!._setCurrentApi(api);
@@ -31,8 +34,6 @@ class AndroidGallery implements GalleryPlug {
   void notify(String? target) {
     _global!.notify(target);
   }
-
-  const AndroidGallery();
 }
 
 void initalizeAndroidGallery(bool temporary) {

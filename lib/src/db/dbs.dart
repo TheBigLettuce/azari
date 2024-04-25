@@ -5,7 +5,7 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of 'initalize_db.dart';
+part of "initalize_db.dart";
 
 const kFilesSchemas = [SystemGalleryDirectoryFileSchema];
 const kDirectoriesSchemas = [SystemGalleryDirectorySchema];
@@ -51,26 +51,38 @@ class Dbs {
 }
 
 abstract class DbsOpen {
+  const DbsOpen();
+
   static Isar primaryGrid(Booru booru) {
     final instance = Isar.getInstance(booru.string);
     if (instance != null) {
       return instance;
     }
 
-    return Isar.openSync(kPrimaryGridSchemas,
-        directory: _dbs.directory, inspector: false, name: booru.string);
+    return Isar.openSync(
+      kPrimaryGridSchemas,
+      directory: _dbs.directory,
+      inspector: false,
+      name: booru.string,
+    );
   }
 
   static Isar secondaryGrid({bool temporary = true}) {
-    return Isar.openSync([PostSchema, GridBooruPagingSchema],
-        directory: temporary ? _dbs.temporaryDbDir : _dbs.directory,
-        inspector: false,
-        name: _microsecSinceEpoch());
+    return Isar.openSync(
+      [PostSchema, GridBooruPagingSchema],
+      directory: temporary ? _dbs.temporaryDbDir : _dbs.directory,
+      inspector: false,
+      name: _microsecSinceEpoch(),
+    );
   }
 
   static Isar secondaryGridName(String name) {
-    return Isar.openSync([PostSchema, GridBooruPagingSchema],
-        directory: _dbs.directory, inspector: false, name: name);
+    return Isar.openSync(
+      [PostSchema, GridBooruPagingSchema],
+      directory: _dbs.directory,
+      inspector: false,
+      name: name,
+    );
   }
 
   static Isar localTags() => Isar.openSync(
@@ -101,6 +113,7 @@ abstract class DbsOpen {
         name: _microsecSinceEpoch(),
       );
 
+  // ignore: strict_raw_type
   static Isar temporarySchemas(List<CollectionSchema> schemas) => Isar.openSync(
         schemas,
         directory: _dbs.temporaryDbDir,

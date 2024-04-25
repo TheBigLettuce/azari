@@ -5,29 +5,27 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/db/schemas/anime/saved_anime_characters.dart';
-import 'package:gallery/src/interfaces/anime/anime_api.dart';
-import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
-import 'package:gallery/src/widgets/image_view/image_view.dart';
-import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import 'body_segment_label.dart';
+import "package:flutter/material.dart";
+import "package:flutter_animate/flutter_animate.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/schemas/anime/saved_anime_characters.dart";
+import "package:gallery/src/interfaces/anime/anime_api.dart";
+import "package:gallery/src/interfaces/anime/anime_entry.dart";
+import "package:gallery/src/pages/anime/info_base/body/body_segment_label.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
+import "package:gallery/src/widgets/image_view/image_view.dart";
 
 class AnimeCharactersWidget extends StatefulWidget {
-  final AnimeEntry entry;
-  final AnimeAPI api;
-
   const AnimeCharactersWidget({
     super.key,
     required this.entry,
     required this.api,
   });
+  final AnimeEntry entry;
+  final AnimeAPI api;
 
   @override
   State<AnimeCharactersWidget> createState() => _AnimeCharactersWidgetState();
@@ -74,45 +72,47 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
       children: [
         if (!_loading)
           BodySegmentLabel(text: AppLocalizations.of(context)!.charactersLabel),
-        _loading
-            ? const SizedBox(
-                height: 18,
-                width: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : SizedBox(
-                height: MediaQuery.sizeOf(context).longestSide * 0.2,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(15),
-                  clipBehavior: Clip.antiAlias,
-                  child: ListView(
-                    clipBehavior: Clip.none,
-                    scrollDirection: Axis.horizontal,
-                    children: list.indexed
-                        .map((e) => SizedBox(
-                              width: MediaQuery.sizeOf(context).longestSide *
-                                  0.2 *
-                                  GridAspectRatio.zeroFive.value,
-                              child: CustomGridCellWrapper(
-                                onPressed: (context) {
-                                  ImageView.launchWrapped(
-                                    context,
-                                    list.length,
-                                    (context, i) => list[i].openImage(context),
-                                    startingCell: e.$1,
-                                  );
-                                },
-                                child: GridCell(
-                                  cell: e.$2,
-                                  secondaryTitle: e.$2.role,
-                                  hideTitle: false,
-                                ),
-                              ),
-                            ))
-                        .toList(),
-                  ),
-                ),
+        if (_loading)
+          const SizedBox(
+            height: 18,
+            width: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        else
+          SizedBox(
+            height: MediaQuery.sizeOf(context).longestSide * 0.2,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: ListView(
+                clipBehavior: Clip.none,
+                scrollDirection: Axis.horizontal,
+                children: list.indexed
+                    .map(
+                      (e) => SizedBox(
+                        width: MediaQuery.sizeOf(context).longestSide *
+                            0.2 *
+                            GridAspectRatio.zeroFive.value,
+                        child: CustomGridCellWrapper(
+                          onPressed: (context) {
+                            ImageView.launchWrapped(
+                              context,
+                              list.length,
+                              (context, i) => list[i].openImage(context),
+                              startingCell: e.$1,
+                            );
+                          },
+                          child: GridCell(
+                            cell: e.$2,
+                            secondaryTitle: e.$2.role,
+                            hideTitle: false,
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
               ),
+            ),
+          ),
       ],
     ).animate().fadeIn();
   }

@@ -5,21 +5,15 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:io';
+import "dart:io";
 
-import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/interfaces/anime/anime_api.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/widgets/menu_wrapper.dart';
+import "package:flutter/material.dart";
+import "package:flutter_animate/flutter_animate.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/interfaces/anime/anime_api.dart";
+import "package:gallery/src/widgets/menu_wrapper.dart";
 
 class AnimeNameWidget extends StatelessWidget {
-  final String title;
-  final String titleEnglish;
-  final String titleJapanese;
-  final List<String> titleSynonyms;
-  final AnimeSafeMode safeMode;
-
   const AnimeNameWidget({
     super.key,
     required this.title,
@@ -28,6 +22,11 @@ class AnimeNameWidget extends StatelessWidget {
     required this.titleSynonyms,
     required this.safeMode,
   });
+  final String title;
+  final String titleEnglish;
+  final String titleJapanese;
+  final List<String> titleSynonyms;
+  final AnimeSafeMode safeMode;
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +77,8 @@ class AnimeNameWidget extends StatelessWidget {
                           color: Theme.of(context)
                               .colorScheme
                               .onPrimary
-                              .withOpacity(0.8))
+                              .withOpacity(0.8),
+                        )
                       : null,
               decoration: safeMode == AnimeSafeMode.h ||
                       safeMode == AnimeSafeMode.ecchi
@@ -93,7 +93,7 @@ class AnimeNameWidget extends StatelessWidget {
               triggerMode: Platform.isAndroid ? TooltipTriggerMode.tap : null,
               showDuration: Platform.isAndroid ? 2.seconds : null,
               message: AppLocalizations.of(context)!
-                  .alsoKnownAs(titleSynonyms.join('\n')),
+                  .alsoKnownAs(titleSynonyms.join("\n")),
               child: title(),
             ),
     );

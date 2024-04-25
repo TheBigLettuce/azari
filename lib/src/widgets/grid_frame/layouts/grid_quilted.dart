@@ -5,17 +5,16 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:gallery/src/db/base/grid_settings_base.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
-import 'package:gallery/src/widgets/grid_frame/parts/grid_cell.dart';
-
-import '../grid_frame.dart';
+import "package:flutter/material.dart";
+import "package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart";
+import "package:gallery/src/db/base/grid_settings_base.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
 
 class GridQuiltedLayout<T extends CellBase> implements GridLayouter<T> {
   const GridQuiltedLayout();
@@ -24,8 +23,11 @@ class GridQuiltedLayout<T extends CellBase> implements GridLayouter<T> {
   bool get isList => false;
 
   @override
-  List<Widget> call(BuildContext context, GridSettingsBase settings,
-      GridFrameState<T> state) {
+  List<Widget> call(
+    BuildContext context,
+    GridSettingsBase settings,
+    GridFrameState<T> state,
+  ) {
     return [
       blueprint<T>(
         context,
@@ -44,7 +46,7 @@ class GridQuiltedLayout<T extends CellBase> implements GridLayouter<T> {
           state: state,
         ),
         columns: settings.columns,
-      )
+      ),
     ];
   }
 

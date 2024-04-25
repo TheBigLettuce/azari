@@ -5,20 +5,10 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of 'manga_chapters.dart';
+part of "manga_chapters.dart";
 
 class _ChapterBody extends StatefulWidget {
-  final MangaEntry entry;
-  final void Function() onFinishRead;
-  final void Function() onNextLoad;
-  final MangaAPI api;
-  final Widget? reachedEnd;
-  final List<(List<MangaChapter>, String)> list;
-  final ScrollController scrollController;
-  final Widget settingsButton;
-
   const _ChapterBody({
-    super.key,
     required this.api,
     required this.entry,
     required this.onFinishRead,
@@ -28,6 +18,14 @@ class _ChapterBody extends StatefulWidget {
     required this.settingsButton,
     required this.scrollController,
   });
+  final MangaEntry entry;
+  final void Function() onFinishRead;
+  final void Function() onNextLoad;
+  final MangaAPI api;
+  final Widget? reachedEnd;
+  final List<(List<MangaChapter>, String)> list;
+  final ScrollController scrollController;
+  final Widget settingsButton;
 
   @override
   State<_ChapterBody> createState() => __ChapterBodyState();
@@ -141,15 +139,17 @@ class __ChapterBodyState extends State<_ChapterBody> {
     ];
 
     for (final e in widget.list) {
-      ret.add(SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 12, top: 16),
-          child: Text(
-            AppLocalizations.of(context)!.mangaVolumeName(e.$2),
-            style: SettingsLabel.defaultStyle(context),
+      ret.add(
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 12, top: 16),
+            child: Text(
+              AppLocalizations.of(context)!.mangaVolumeName(e.$2),
+              style: SettingsLabel.defaultStyle(context),
+            ),
           ),
         ),
-      ));
+      );
       ret.add(
         SliverList.builder(
           itemCount: e.$1.length,

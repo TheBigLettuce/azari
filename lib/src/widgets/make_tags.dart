@@ -5,28 +5,27 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:dynamic_color/dynamic_color.dart';
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
-import 'package:gallery/src/db/schemas/tags/tags.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/db/tags/booru_tagging.dart';
-import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/interfaces/booru_tagging.dart';
-import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart';
-import 'package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart';
-import 'package:gallery/src/pages/more/settings/radio_dialog.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import "package:dynamic_color/dynamic_color.dart";
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/schemas/tags/pinned_tag.dart";
+import "package:gallery/src/db/schemas/tags/tags.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/tags/booru_tagging.dart";
+import "package:gallery/src/db/tags/post_tags.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/interfaces/booru_tagging.dart";
+import "package:gallery/src/pages/more/settings/radio_dialog.dart";
+import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:gallery/src/widgets/load_tags.dart";
+import "package:gallery/src/widgets/menu_wrapper.dart";
+import "package:gallery/src/widgets/notifiers/filter.dart";
+import "package:gallery/src/widgets/notifiers/filter_value.dart";
+import "package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart";
 
-import '../db/tags/post_tags.dart';
-import 'load_tags.dart';
-import 'menu_wrapper.dart';
-import 'notifiers/filter.dart';
-import 'notifiers/filter_value.dart';
-
-PopupMenuItem launchGridSafeModeItem(
+PopupMenuItem<void> launchGridSafeModeItem(
   BuildContext context,
   String tag,
   void Function(BuildContext, String, [SafeMode?]) launchGrid,
@@ -50,11 +49,6 @@ PopupMenuItem launchGridSafeModeItem(
     );
 
 class DrawerTagsWidget extends StatefulWidget {
-  final DisassembleResult? res;
-  final String filename;
-  final void Function(BuildContext, String, [SafeMode?])? launchGrid;
-  final bool addRemoveTag;
-
   const DrawerTagsWidget(
     this.filename, {
     super.key,
@@ -62,6 +56,10 @@ class DrawerTagsWidget extends StatefulWidget {
     this.launchGrid,
     this.addRemoveTag = false,
   });
+  final DisassembleResult? res;
+  final String filename;
+  final void Function(BuildContext, String, [SafeMode?])? launchGrid;
+  final bool addRemoveTag;
 
   @override
   State<DrawerTagsWidget> createState() => _DrawerTagsWidgetState();
@@ -90,7 +88,7 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
     super.dispose();
   }
 
-  List<PopupMenuItem> makeItems(BuildContext context, String tag) {
+  List<PopupMenuItem<void>> makeItems(BuildContext context, String tag) {
     final t = Tag.string(tag: tag);
 
     return [
@@ -103,9 +101,11 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
               excluded!.add(t);
             }
           },
-          child: Text(excluded!.exists(t)
-              ? AppLocalizations.of(context)!.removeFromExcluded
-              : AppLocalizations.of(context)!.addToExcluded),
+          child: Text(
+            excluded!.exists(t)
+                ? AppLocalizations.of(context)!.removeFromExcluded
+                : AppLocalizations.of(context)!.addToExcluded,
+          ),
         ),
       if (widget.launchGrid != null)
         launchGridSafeModeItem(
@@ -210,70 +210,74 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
 }
 
 void openAddTagDialog(
-    BuildContext context, void Function(String, bool) onSubmit) {
+  BuildContext context,
+  void Function(String, bool) onSubmit,
+) {
   final regexp = RegExp(r"[^A-Za-z0-9_\(\)']");
   bool delete = false;
 
   Navigator.push(
-      context,
-      DialogRoute(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text(AppLocalizations.of(context)!.addTag),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Form(
-                  autovalidateMode: AutovalidateMode.always,
-                  child: TextFormField(
-                    enabled: true,
-                    validator: (value) {
-                      if (value == null) {
-                        return AppLocalizations.of(context)!.valueIsNull;
-                      }
+    context,
+    DialogRoute<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(AppLocalizations.of(context)!.addTag),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Form(
+                autovalidateMode: AutovalidateMode.always,
+                child: TextFormField(
+                  enabled: true,
+                  validator: (value) {
+                    if (value == null) {
+                      return AppLocalizations.of(context)!.valueIsNull;
+                    }
 
-                      final v = value.trim();
-                      if (v.isEmpty) {
-                        return AppLocalizations.of(context)!.valueIsEmpty;
-                      }
+                    final v = value.trim();
+                    if (v.isEmpty) {
+                      return AppLocalizations.of(context)!.valueIsEmpty;
+                    }
 
-                      if (v.length <= 1) {
-                        return AppLocalizations.of(context)!.valueIsEmpty;
-                      }
+                    if (v.length <= 1) {
+                      return AppLocalizations.of(context)!.valueIsEmpty;
+                    }
 
-                      if (regexp.hasMatch(v)) {
-                        return AppLocalizations.of(context)!.tagValidationError;
-                      }
+                    if (regexp.hasMatch(v)) {
+                      return AppLocalizations.of(context)!.tagValidationError;
+                    }
 
-                      return null;
-                    },
-                    onFieldSubmitted: (value) {
-                      final v = value.trim();
-                      if (v.isEmpty || v.length <= 1 || regexp.hasMatch(v)) {
-                        return;
-                      }
-
-                      onSubmit(v, delete);
-                      Navigator.pop(context);
-                    },
-                  ),
-                ),
-                StatefulBuilder(
-                  builder: (context, setState) {
-                    return SwitchListTile(
-                        title: Text(AppLocalizations.of(context)!.delete),
-                        value: delete,
-                        onChanged: (v) {
-                          delete = v;
-
-                          setState(() {});
-                        });
+                    return null;
                   },
-                )
-              ],
-            ),
-          );
-        },
-      ));
+                  onFieldSubmitted: (value) {
+                    final v = value.trim();
+                    if (v.isEmpty || v.length <= 1 || regexp.hasMatch(v)) {
+                      return;
+                    }
+
+                    onSubmit(v, delete);
+                    Navigator.pop(context);
+                  },
+                ),
+              ),
+              StatefulBuilder(
+                builder: (context, setState) {
+                  return SwitchListTile(
+                    title: Text(AppLocalizations.of(context)!.delete),
+                    value: delete,
+                    onChanged: (v) {
+                      delete = v;
+
+                      setState(() {});
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    ),
+  );
 }

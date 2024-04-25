@@ -5,25 +5,24 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
-import 'dart:io';
+import "dart:async";
+import "dart:io";
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart';
-import 'package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart';
-import 'package:gallery/src/widgets/grid_frame/layouts/grid_masonry_layout.dart';
-import 'package:gallery/src/widgets/grid_frame/layouts/grid_quilted.dart';
-import 'package:gallery/src/widgets/grid_frame/layouts/list_layout.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:isar/isar.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/base/grid_settings_base.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_layouter.dart";
+import "package:gallery/src/widgets/grid_frame/layouts/grid_layout.dart";
+import "package:gallery/src/widgets/grid_frame/layouts/grid_masonry_layout.dart";
+import "package:gallery/src/widgets/grid_frame/layouts/grid_quilted.dart";
+import "package:gallery/src/widgets/grid_frame/layouts/list_layout.dart";
+import "package:isar/isar.dart";
 
-import '../../base/grid_settings_base.dart';
-
-part 'booru.g.dart';
+part "booru.g.dart";
 
 enum GridLayoutType {
   grid(),
@@ -61,13 +60,14 @@ class GridSettingsBooru extends GridSettingsBase {
     required super.hideName,
   });
 
-  final Id id = 0;
+  Id get id => 0;
 
-  GridSettingsBooru copy(
-      {bool? hideName,
-      GridAspectRatio? aspectRatio,
-      GridColumn? columns,
-      GridLayoutType? layoutType}) {
+  GridSettingsBooru copy({
+    bool? hideName,
+    GridAspectRatio? aspectRatio,
+    GridColumn? columns,
+    GridLayoutType? layoutType,
+  }) {
     return GridSettingsBooru(
       aspectRatio: aspectRatio ?? this.aspectRatio,
       hideName: hideName ?? this.hideName,
@@ -81,7 +81,8 @@ class GridSettingsBooru extends GridSettingsBase {
   }
 
   static StreamSubscription<GridSettingsBooru> watch(
-      void Function(GridSettingsBooru) f) {
+    void Function(GridSettingsBooru) f,
+  ) {
     return Dbs.g.main.gridSettingsBoorus
         .watchObject(0)
         .map((event) => event!)
@@ -91,8 +92,9 @@ class GridSettingsBooru extends GridSettingsBase {
   static GridSettingsBooru current() =>
       Dbs.g.main.gridSettingsBoorus.getSync(0) ??
       GridSettingsBooru(
-          aspectRatio: GridAspectRatio.one,
-          columns: Platform.isAndroid ? GridColumn.two : GridColumn.six,
-          layoutType: GridLayoutType.gridQuilted,
-          hideName: true);
+        aspectRatio: GridAspectRatio.one,
+        columns: Platform.isAndroid ? GridColumn.two : GridColumn.six,
+        layoutType: GridLayoutType.gridQuilted,
+        hideName: true,
+      );
 }

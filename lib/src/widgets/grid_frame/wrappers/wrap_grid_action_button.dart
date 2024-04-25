@@ -5,22 +5,12 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/widgets/notifiers/selection_count.dart';
+import "package:flutter/material.dart";
+import "package:flutter/services.dart";
+import "package:flutter_animate/flutter_animate.dart";
+import "package:gallery/src/widgets/notifiers/selection_count.dart";
 
 class WrapGridActionButton extends StatefulWidget {
-  final IconData icon;
-  final void Function()? onPressed;
-  final void Function()? onLongPress;
-  final bool addBadge;
-  final Color? backgroundColor;
-  final Color? color;
-  final bool animate;
-  final bool play;
-  final BuildContext? whenSingleContext;
-
   const WrapGridActionButton(
     this.icon,
     this.onPressed,
@@ -33,6 +23,15 @@ class WrapGridActionButton extends StatefulWidget {
     required this.play,
     required this.animate,
   });
+  final IconData icon;
+  final void Function()? onPressed;
+  final void Function()? onLongPress;
+  final bool addBadge;
+  final Color? backgroundColor;
+  final Color? color;
+  final bool animate;
+  final bool play;
+  final BuildContext? whenSingleContext;
 
   @override
   State<WrapGridActionButton> createState() => _WrapGridActionButtonState();
@@ -56,8 +55,11 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
               },
         child: IconButton(
           style: ButtonStyle(
-            shape: const MaterialStatePropertyAll(RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.elliptical(10, 10)))),
+            shape: const MaterialStatePropertyAll(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.elliptical(10, 10)),
+              ),
+            ),
             backgroundColor: widget.backgroundColor != null
                 ? MaterialStatePropertyAll(widget.backgroundColor)
                 : null,
@@ -81,10 +83,11 @@ class _WrapGridActionButtonState extends State<WrapGridActionButton> {
               ? Animate(
                   effects: [
                     ScaleEffect(
-                        duration: 150.ms,
-                        begin: const Offset(1, 1),
-                        end: const Offset(2, 2),
-                        curve: Easing.emphasizedAccelerate),
+                      duration: 150.ms,
+                      begin: const Offset(1, 1),
+                      end: const Offset(2, 2),
+                      curve: Easing.emphasizedAccelerate,
+                    ),
                   ],
                   onInit: (controller) {
                     _controller = controller;

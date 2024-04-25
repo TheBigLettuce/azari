@@ -5,15 +5,18 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
+import "package:flutter/material.dart";
 
 class SettingsLabel extends StatelessWidget {
+  const SettingsLabel(
+    this.string,
+    this.style, {
+    super.key,
+    this.removePadding = false,
+  });
   final String string;
   final TextStyle style;
   final bool removePadding;
-
-  const SettingsLabel(this.string, this.style,
-      {super.key, this.removePadding = false});
 
   static TextStyle defaultStyle(BuildContext context) => Theme.of(context)
       .textTheme
@@ -39,12 +42,11 @@ class SettingsLabel extends StatelessWidget {
 }
 
 class MenuLabel extends StatefulWidget {
-  final String title;
-
   const MenuLabel({
     super.key,
     required this.title,
   });
+  final String title;
 
   @override
   State<MenuLabel> createState() => _MenuLabelState();

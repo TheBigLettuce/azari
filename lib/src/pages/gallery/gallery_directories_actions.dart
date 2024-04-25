@@ -5,27 +5,29 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/main.dart';
-import 'package:gallery/src/db/schemas/gallery/directory_metadata.dart';
-import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
-import 'package:gallery/src/interfaces/gallery/gallery_api_directories.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
-import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
-import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
-import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:local_auth/local_auth.dart';
-
-import 'files.dart';
-import '../../db/schemas/gallery/blacklisted_directory.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/main.dart";
+import "package:gallery/src/db/schemas/gallery/blacklisted_directory.dart";
+import "package:gallery/src/db/schemas/gallery/directory_metadata.dart";
+import "package:gallery/src/db/schemas/gallery/system_gallery_directory.dart";
+import "package:gallery/src/db/schemas/statistics/statistics_gallery.dart";
+import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
+import "package:gallery/src/pages/gallery/callback_description_nested.dart";
+import "package:gallery/src/pages/gallery/files.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/notifiers/glue_provider.dart";
+import "package:local_auth/local_auth.dart";
 
 class SystemGalleryDirectoriesActions {
+  const SystemGalleryDirectoriesActions();
+
   static GridAction<SystemGalleryDirectory> blacklist(
-      BuildContext context,
-      GalleryDirectoriesExtra extra,
-      String Function(SystemGalleryDirectory) segment) {
+    BuildContext context,
+    GalleryDirectoriesExtra extra,
+    String Function(SystemGalleryDirectory) segment,
+  ) {
     return GridAction(
       Icons.hide_image_outlined,
       (selected) async {
@@ -56,9 +58,10 @@ class SystemGalleryDirectoriesActions {
         );
 
         if (noAuth.isNotEmpty && requireAuth.isNotEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text("Some directories require authentication"),
-            action: SnackBarAction(
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text("Some directories require authentication"),
+              action: SnackBarAction(
                 label: "Auth",
                 onPressed: () async {
                   final success = await LocalAuthentication()
@@ -67,11 +70,15 @@ class SystemGalleryDirectoriesActions {
                     return;
                   }
 
-                  extra.addBlacklisted(requireAuth
-                      .map((e) => BlacklistedDirectory(e.bucketId, e.name))
-                      .toList());
-                }),
-          ));
+                  extra.addBlacklisted(
+                    requireAuth
+                        .map((e) => BlacklistedDirectory(e.bucketId, e.name))
+                        .toList(),
+                  );
+                },
+              ),
+            ),
+          );
         }
       },
       true,
@@ -104,7 +111,7 @@ class SystemGalleryDirectoriesActions {
     );
   }
 
-  static void joinedDirectoriesFnc(
+  static Future<void> joinedDirectoriesFnc(
     BuildContext context,
     String label,
     List<SystemGalleryDirectory> dirs,
@@ -136,17 +143,20 @@ class SystemGalleryDirectoriesActions {
 
     final joined = extra.joinedDir(dirs.map((e) => e.bucketId).toList());
 
-    Navigator.push(context, MaterialPageRoute(
-      builder: (context) {
-        return GalleryFiles(
-          secure: requireAuth,
-          generateGlue: generate,
-          api: joined,
-          callback: callback,
-          dirName: label,
-          bucketId: "joinedDir",
-        );
-      },
-    ));
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) {
+          return GalleryFiles(
+            secure: requireAuth,
+            generateGlue: generate,
+            api: joined,
+            callback: callback,
+            dirName: label,
+            bucketId: "joinedDir",
+          );
+        },
+      ),
+    );
   }
 }

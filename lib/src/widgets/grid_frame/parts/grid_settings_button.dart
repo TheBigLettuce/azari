@@ -5,20 +5,20 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/base/grid_settings_base.dart';
-import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/widgets/empty_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_column.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/pages/more/settings/radio_dialog.dart';
-import 'package:gallery/src/widgets/notifiers/focus.dart';
-import 'package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/base/grid_settings_base.dart";
+import "package:gallery/src/db/schemas/grid_settings/booru.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/pages/more/settings/radio_dialog.dart";
+import "package:gallery/src/widgets/empty_widget.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
+import "package:gallery/src/widgets/notifiers/focus.dart";
+import "package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart";
 
 class GridSettingsButton extends StatefulWidget {
   const GridSettingsButton(
@@ -43,7 +43,8 @@ class GridSettingsButton extends StatefulWidget {
   final SafeMode? safeMode;
   final void Function(SafeMode?, GridSettingsBase)? selectSafeMode;
   final StreamSubscription<GridSettingsBase> Function(
-      void Function(GridSettingsBase) f)? watch;
+    void Function(GridSettingsBase) f,
+  )? watch;
 
   @override
   State<GridSettingsButton> createState() => _GridSettingsButtonState();
@@ -54,13 +55,12 @@ class _GridSettingsButtonState extends State<GridSettingsButton> {
   Widget build(BuildContext context) {
     return IconButton(
       onPressed: () {
-        showModalBottomSheet(
+        showModalBottomSheet<void>(
           context: context,
           backgroundColor:
               Theme.of(context).colorScheme.surface.withOpacity(0.95),
           isScrollControlled: true,
           showDragHandle: true,
-          useSafeArea: false,
           useRootNavigator: true,
           builder: (context) {
             return SafeArea(
@@ -92,15 +92,6 @@ enum SegmentedButtonVariant {
 }
 
 class SegmentedButtonGroup<T> extends StatefulWidget {
-  final Iterable<SegmentedButtonValue<T>> values;
-  final T? selected;
-  final void Function(T?) select;
-  final String title;
-  final bool allowUnselect;
-  final bool enableFilter;
-
-  final SegmentedButtonVariant variant;
-
   const SegmentedButtonGroup({
     super.key,
     required this.select,
@@ -111,6 +102,14 @@ class SegmentedButtonGroup<T> extends StatefulWidget {
     this.allowUnselect = false,
     this.enableFilter = false,
   });
+  final Iterable<SegmentedButtonValue<T>> values;
+  final T? selected;
+  final void Function(T?) select;
+  final String title;
+  final bool allowUnselect;
+  final bool enableFilter;
+
+  final SegmentedButtonVariant variant;
 
   @override
   State<SegmentedButtonGroup<T>> createState() => _SegmentedButtonGroupState();
@@ -202,7 +201,8 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
 
                     return Padding(
                       padding: EdgeInsets.only(
-                          right: index == newValues.length - 1 ? 8 : 4),
+                        right: index == newValues.length - 1 ? 8 : 4,
+                      ),
                       child: ChoiceChip(
                         showCheckmark: false,
                         selected: e.value == widget.selected,
@@ -305,8 +305,11 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
   }
 }
 
-Widget _ratio(BuildContext context, GridAspectRatio aspectRatio,
-    void Function(GridAspectRatio?) select) {
+Widget _ratio(
+  BuildContext context,
+  GridAspectRatio aspectRatio,
+  void Function(GridAspectRatio?) select,
+) {
   return SegmentedButtonGroup(
     variant: SegmentedButtonVariant.segments,
     select: select,
@@ -317,8 +320,11 @@ Widget _ratio(BuildContext context, GridAspectRatio aspectRatio,
   );
 }
 
-Widget _columns(BuildContext context, GridColumn columns,
-    void Function(GridColumn?) select) {
+Widget _columns(
+  BuildContext context,
+  GridColumn columns,
+  void Function(GridColumn?) select,
+) {
   return SegmentedButtonGroup(
     variant: SegmentedButtonVariant.segments,
     select: select,
@@ -329,8 +335,11 @@ Widget _columns(BuildContext context, GridColumn columns,
   );
 }
 
-Widget _gridLayout(BuildContext context, GridLayoutType selectGridLayout,
-    void Function(GridLayoutType?) select) {
+Widget _gridLayout(
+  BuildContext context,
+  GridLayoutType selectGridLayout,
+  void Function(GridLayoutType?) select,
+) {
   return SegmentedButtonGroup(
     variant: SegmentedButtonVariant.segments,
     select: select,
@@ -341,8 +350,11 @@ Widget _gridLayout(BuildContext context, GridLayoutType selectGridLayout,
   );
 }
 
-Widget _safeMode(BuildContext context, SafeMode safeMode,
-    {void Function(SafeMode?)? selectSafeMode}) {
+Widget _safeMode(
+  BuildContext context,
+  SafeMode safeMode, {
+  void Function(SafeMode?)? selectSafeMode,
+}) {
   return TextButton(
     child: Text(AppLocalizations.of(context)!.safeModeSetting),
     onPressed: () => radioDialog<SafeMode>(
@@ -363,7 +375,10 @@ Widget _safeMode(BuildContext context, SafeMode safeMode,
 }
 
 Widget _hideName(
-    BuildContext context, bool hideName, void Function(bool) select) {
+  BuildContext context,
+  bool hideName,
+  void Function(bool) select,
+) {
   return SwitchListTile(
     contentPadding: EdgeInsets.zero,
     title: Text(AppLocalizations.of(context)!.hideNames),
@@ -373,12 +388,10 @@ Widget _hideName(
 }
 
 class _BottomSheetContent extends StatefulWidget {
-  final GridSettingsButton button;
-
   const _BottomSheetContent({
-    super.key,
     required this.button,
   });
+  final GridSettingsButton button;
 
   @override
   State<_BottomSheetContent> createState() => __BottomSheetContentState();
@@ -426,10 +439,14 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
                 ),
               ),
               if (button.safeMode != null)
-                _safeMode(context, button.safeMode!, selectSafeMode: (s) {
-                  button.selectSafeMode!(s, gridSettings);
-                  button.onChanged();
-                }),
+                _safeMode(
+                  context,
+                  button.safeMode!,
+                  selectSafeMode: (s) {
+                    button.selectSafeMode!(s, gridSettings);
+                    button.onChanged();
+                  },
+                ),
               if (button.selectHideName != null)
                 _hideName(context, gridSettings.hideName, (n) {
                   button.selectHideName!(n, gridSettings);
@@ -449,7 +466,7 @@ class __BottomSheetContentState extends State<_BottomSheetContent> {
                 button.selectGridColumn(c, gridSettings);
                 button.onChanged();
               }),
-              const Padding(padding: EdgeInsets.only(bottom: 8))
+              const Padding(padding: EdgeInsets.only(bottom: 8)),
             ],
           ),
         ),

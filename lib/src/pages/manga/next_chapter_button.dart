@@ -5,10 +5,10 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
-import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
-import 'package:gallery/src/interfaces/manga/manga_api.dart';
+import "package:flutter/material.dart";
+import "package:gallery/src/db/schemas/manga/read_manga_chapter.dart";
+import "package:gallery/src/db/schemas/manga/saved_manga_chapters.dart";
+import "package:gallery/src/interfaces/manga/manga_api.dart";
 
 enum SkipDirection {
   right,
@@ -16,14 +16,6 @@ enum SkipDirection {
 }
 
 class SkipChapterButton extends StatefulWidget {
-  final String mangaId;
-  final String mangaTitle;
-  final MangaAPI api;
-  final String startingChapterId;
-  final void Function(int page, MangaImage cell) onNextPage;
-  final void Function() reloadChapters;
-  final SkipDirection direction;
-
   const SkipChapterButton({
     super.key,
     required this.mangaId,
@@ -34,13 +26,20 @@ class SkipChapterButton extends StatefulWidget {
     required this.direction,
     required this.mangaTitle,
   });
+  final String mangaId;
+  final String mangaTitle;
+  final MangaAPI api;
+  final String startingChapterId;
+  final void Function(int page, MangaImage cell) onNextPage;
+  final void Function() reloadChapters;
+  final SkipDirection direction;
 
   @override
   State<SkipChapterButton> createState() => SkipChapterButtonState();
 }
 
 class SkipChapterButtonState extends State<SkipChapterButton> {
-  Future? progress;
+  Future<void>? progress;
 
   final List<MangaChapter> chapters = [];
   int page = 0;
@@ -71,7 +70,7 @@ class SkipChapterButtonState extends State<SkipChapterButton> {
     super.dispose();
   }
 
-  Future _tryLoadNew(MangaChapter original) async {
+  Future<List<MangaChapter>> _tryLoadNew(MangaChapter original) async {
     return await widget.api
         .chapters(
       MangaStringId(widget.mangaId),
@@ -157,7 +156,8 @@ class SkipChapterButtonState extends State<SkipChapterButton> {
     }
 
     final e = chapters.elementAtOrNull(
-        widget.direction == SkipDirection.right ? idx + 1 : idx - 1);
+      widget.direction == SkipDirection.right ? idx + 1 : idx - 1,
+    );
     if (e == null) {
       progress = _tryLoadNew(chapters[idx]);
 

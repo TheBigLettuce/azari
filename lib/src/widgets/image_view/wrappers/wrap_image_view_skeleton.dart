@@ -5,35 +5,25 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/interfaces/cell/contentable.dart';
-import 'package:gallery/src/pages/booru/booru_page.dart';
-import 'package:gallery/src/pages/more/settings/radio_dialog.dart';
-import 'package:gallery/src/widgets/gesture_dead_zones.dart';
-import 'package:gallery/src/widgets/image_view/bottom_bar.dart';
-import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart';
-import 'package:gallery/src/widgets/notifiers/app_bar_visibility.dart';
-import 'package:gallery/src/widgets/notifiers/focus.dart';
-import 'package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart';
-import 'package:palette_generator/palette_generator.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import '../../notifiers/current_content.dart';
-import '../app_bar/app_bar.dart';
+import "package:flutter/material.dart";
+import "package:flutter_animate/flutter_animate.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/interfaces/cell/contentable.dart";
+import "package:gallery/src/pages/booru/booru_page.dart";
+import "package:gallery/src/pages/more/settings/radio_dialog.dart";
+import "package:gallery/src/widgets/gesture_dead_zones.dart";
+import "package:gallery/src/widgets/image_view/app_bar/app_bar.dart";
+import "package:gallery/src/widgets/image_view/bottom_bar.dart";
+import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:gallery/src/widgets/notifiers/app_bar_visibility.dart";
+import "package:gallery/src/widgets/notifiers/current_content.dart";
+import "package:gallery/src/widgets/notifiers/focus.dart";
+import "package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart";
+import "package:palette_generator/palette_generator.dart";
 
 class WrapImageViewSkeleton extends StatelessWidget {
-  final FocusNode mainFocus;
-  final ScrollController scrollController;
-  final PaletteGenerator? currentPalette;
-  final GlobalKey<ScaffoldState> scaffoldKey;
-  final AnimationController controller;
-  final DraggableScrollableController bottomSheetController;
-
-  final Widget child;
-
   const WrapImageViewSkeleton({
     super.key,
     required this.mainFocus,
@@ -44,6 +34,14 @@ class WrapImageViewSkeleton extends StatelessWidget {
     required this.scrollController,
     required this.child,
   });
+  final FocusNode mainFocus;
+  final ScrollController scrollController;
+  final PaletteGenerator? currentPalette;
+  final GlobalKey<ScaffoldState> scaffoldKey;
+  final AnimationController controller;
+  final DraggableScrollableController bottomSheetController;
+
+  final Widget child;
 
   static double minPixelsFor(BuildContext context) {
     final widgets = CurrentContentNotifier.of(context).widgets;
@@ -84,9 +82,9 @@ class WrapImageViewSkeleton extends StatelessWidget {
                     SlideEffect(
                       duration: Duration(milliseconds: 500),
                       curve: Easing.emphasizedAccelerate,
-                      begin: Offset(0, 0),
+                      begin: Offset.zero,
                       end: Offset(0, 1),
-                    )
+                    ),
                   ],
                   autoPlay: false,
                   target: AppBarVisibilityNotifier.of(context) ? 0 : 1,
@@ -96,7 +94,8 @@ class WrapImageViewSkeleton extends StatelessWidget {
                     ),
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                          color: colorScheme.surface.withOpacity(0.98)),
+                        color: colorScheme.surface.withOpacity(0.98),
+                      ),
                       child: IgnorePointer(
                         ignoring: !AppBarVisibilityNotifier.of(context),
                         child: DraggableScrollableSheet(
@@ -142,29 +141,31 @@ class WrapImageViewSkeleton extends StatelessWidget {
                                                 Padding(
                                                   padding:
                                                       const EdgeInsets.only(
-                                                          left: 8),
+                                                    left: 8,
+                                                  ),
                                                   child: Row(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .center,
                                                     children: stickers
-                                                        .map((e) => Padding(
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                      .only(
-                                                                      right: 8),
-                                                              child: Icon(
-                                                                e.icon,
-                                                                size: 16,
-                                                                color: e.important
-                                                                    ? colorScheme
-                                                                        .secondary
-                                                                    : colorScheme
-                                                                        .onSurface
-                                                                        .withOpacity(
-                                                                            0.6),
-                                                              ),
-                                                            ))
+                                                        .map(
+                                                          (e) => Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .only(
+                                                              right: 8,
+                                                            ),
+                                                            child: Icon(
+                                                              e.icon,
+                                                              size: 16,
+                                                              color: e.important
+                                                                  ? colorScheme
+                                                                      .secondary
+                                                                  : colorScheme
+                                                                      .onSurface
+                                                                      .withOpacity(
+                                                                      0.6,
+                                                                    ),
+                                                            ),
+                                                          ),
+                                                        )
                                                         .toList(),
                                                   ),
                                                 ),
@@ -174,7 +175,6 @@ class WrapImageViewSkeleton extends StatelessWidget {
                                                 child: _PinnedTagsRow(),
                                               ),
                                               Align(
-                                                alignment: Alignment.center,
                                                 child: _BottomSheetButton(
                                                   bottomSheetController:
                                                       bottomSheetController,
@@ -203,7 +203,8 @@ class WrapImageViewSkeleton extends StatelessWidget {
                                     builder: (context) {
                                       FocusNotifier.of(context);
                                       ImageViewInfoTilesRefreshNotifier.of(
-                                          context);
+                                        context,
+                                      );
 
                                       return widgets.tryAsInfoable(context)!;
                                     },
@@ -238,7 +239,7 @@ class WrapImageViewSkeleton extends StatelessWidget {
 }
 
 class _PinnedTagsRow extends StatelessWidget {
-  const _PinnedTagsRow({super.key});
+  const _PinnedTagsRow();
 
   @override
   Widget build(BuildContext context) {
@@ -250,59 +251,61 @@ class _PinnedTagsRow extends StatelessWidget {
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
-      crossAxisAlignment: CrossAxisAlignment.center,
       children: tags
-          .map((e) => Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: GestureDetector(
-                  onTap: res == null
-                      ? null
-                      : () {
-                          OnBooruTagPressed.maybePressOf(
-                              context, e.tag, res.booru);
-                        },
-                  onLongPress: res == null
-                      ? null
-                      : () {
-                          radioDialog<SafeMode>(
-                            context,
-                            SafeMode.values
-                                .map((e) => (e, e.translatedString(context))),
-                            SettingsService.currentData.safeMode,
-                            (value) {
-                              OnBooruTagPressed.maybePressOf(
-                                context,
-                                e.tag,
-                                res.booru,
-                                overrideSafeMode: value,
-                              );
-                            },
-                            title: AppLocalizations.of(context)!.chooseSafeMode,
-                            allowSingle: true,
-                          );
-                        },
-                  child: Text(
-                    "#${e.tag.length > 10 ? "${e.tag.substring(0, 10 - 3)}..." : e.tag}",
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.secondary.withOpacity(0.65),
-                    ),
+          .map(
+            (e) => Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: GestureDetector(
+                onTap: res == null
+                    ? null
+                    : () {
+                        OnBooruTagPressed.maybePressOf(
+                          context,
+                          e.tag,
+                          res.booru,
+                        );
+                      },
+                onLongPress: res == null
+                    ? null
+                    : () {
+                        radioDialog<SafeMode>(
+                          context,
+                          SafeMode.values
+                              .map((e) => (e, e.translatedString(context))),
+                          SettingsService.currentData.safeMode,
+                          (value) {
+                            OnBooruTagPressed.maybePressOf(
+                              context,
+                              e.tag,
+                              res.booru,
+                              overrideSafeMode: value,
+                            );
+                          },
+                          title: AppLocalizations.of(context)!.chooseSafeMode,
+                          allowSingle: true,
+                        );
+                      },
+                child: Text(
+                  "#${e.tag.length > 10 ? "${e.tag.substring(0, 10 - 3)}..." : e.tag}",
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.secondary.withOpacity(0.65),
                   ),
                 ),
-              ))
+              ),
+            ),
+          )
           .toList(),
     );
   }
 }
 
 class _AnimatedBottomPadding extends StatefulWidget {
-  final DraggableScrollableController bottomSheetController;
-  final double minPixels;
-
   const _AnimatedBottomPadding({
-    super.key,
     required this.bottomSheetController,
     required this.minPixels,
   });
+  final DraggableScrollableController bottomSheetController;
+  final double minPixels;
 
   @override
   State<_AnimatedBottomPadding> createState() => _AnimatedBottomPaddingState();
@@ -372,14 +375,12 @@ class _AnimatedBottomPaddingState extends State<_AnimatedBottomPadding>
 }
 
 class _BottomSheetButton extends StatefulWidget {
-  final DraggableScrollableController bottomSheetController;
-  final double minSize;
-
   const _BottomSheetButton({
-    super.key,
     required this.bottomSheetController,
     required this.minSize,
   });
+  final DraggableScrollableController bottomSheetController;
+  final double minSize;
 
   @override
   State<_BottomSheetButton> createState() => __BottomSheetButtonState();
@@ -453,7 +454,7 @@ class __BottomSheetButtonState extends State<_BottomSheetButton> {
                 Icons.keyboard_arrow_down_rounded,
               ).animate().fadeIn(curve: Easing.standard);
             },
-          )
+          ),
         ],
         child: const Icon(
           size: 18,

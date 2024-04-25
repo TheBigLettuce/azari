@@ -5,30 +5,29 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:io';
-import 'dart:ui' as ui;
+import "dart:io";
+import "dart:ui" as ui;
 
-import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
-import 'package:gallery/src/interfaces/logging/logging.dart';
-import 'package:gallery/src/net/downloader.dart';
-import 'package:gallery/src/pages/gallery/callback_description_nested.dart';
-import 'package:gallery/src/pages/more/settings/network_status.dart';
-import 'package:gallery/src/plugs/gallery.dart';
-import 'package:gallery/src/plugs/platform_functions.dart';
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/widgets/fade_sideways_page_transition_builder.dart';
-import 'package:gallery/src/widgets/restart_widget.dart';
-import 'package:gallery/welcome_pages.dart';
-import 'package:local_auth/local_auth.dart';
+import "package:flutter/material.dart";
+import "package:flutter/rendering.dart";
+import "package:flutter/services.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:flutter_local_notifications/flutter_local_notifications.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/db/schemas/settings/misc_settings.dart";
+import "package:gallery/src/interfaces/logging/logging.dart";
+import "package:gallery/src/net/downloader.dart";
+import "package:gallery/src/pages/gallery/callback_description_nested.dart";
+import "package:gallery/src/pages/home.dart";
+import "package:gallery/src/pages/more/settings/network_status.dart";
+import "package:gallery/src/plugs/gallery.dart";
+import "package:gallery/src/plugs/platform_functions.dart";
+import "package:gallery/src/widgets/fade_sideways_page_transition_builder.dart";
+import "package:gallery/src/widgets/restart_widget.dart";
+import "package:gallery/welcome_pages.dart";
+import "package:local_auth/local_auth.dart";
 // import 'package:google_fonts/google_fonts.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import 'src/pages/home.dart';
+import "package:package_info_plus/package_info_plus.dart";
 
 late final String azariVersion;
 
@@ -40,13 +39,19 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
   );
 
   const menuTheme = MenuThemeData(
-      style: MenuStyle(
-          shape: MaterialStatePropertyAll(RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(15))))));
+    style: MenuStyle(
+      shape: MaterialStatePropertyAll(
+        RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(15)),
+        ),
+      ),
+    ),
+  );
 
   const popupMenuTheme = PopupMenuThemeData(
     shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(15))),
+      borderRadius: BorderRadius.all(Radius.circular(15)),
+    ),
   );
 
   var baseTheme = switch (type) {
@@ -65,7 +70,6 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.pink,
           brightness: Brightness.dark,
-          background: null,
         ),
         pageTransitionsTheme: pageTransition,
         useMaterial3: true,
@@ -76,42 +80,47 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
     radius: const ui.Radius.circular(15),
     mainAxisMargin: 0.75,
     thumbColor: MaterialStatePropertyAll(
-        baseTheme.colorScheme.onSurface.withOpacity(0.75)),
+      baseTheme.colorScheme.onSurface.withOpacity(0.75),
+    ),
   );
 
   switch (type) {
     case ThemeType.systemAccent:
       baseTheme = baseTheme.copyWith(
-          scrollbarTheme: scrollBarTheme,
-          listTileTheme: baseTheme.listTileTheme.copyWith(
-              isThreeLine: false,
-              subtitleTextStyle: baseTheme.textTheme.bodyMedium!.copyWith(
-                fontWeight: FontWeight.w300,
-              )));
+        scrollbarTheme: scrollBarTheme,
+        listTileTheme: baseTheme.listTileTheme.copyWith(
+          isThreeLine: false,
+          subtitleTextStyle: baseTheme.textTheme.bodyMedium!.copyWith(
+            fontWeight: FontWeight.w300,
+          ),
+        ),
+      );
 
     case ThemeType.secretPink:
       baseTheme = baseTheme.copyWith(
         scrollbarTheme: scrollBarTheme,
         scaffoldBackgroundColor: baseTheme.colorScheme.background,
-        chipTheme: null,
         filledButtonTheme: FilledButtonThemeData(
-            style: ButtonStyle(
-          foregroundColor: MaterialStatePropertyAll(
-              baseTheme.colorScheme.onPrimary.withOpacity(0.8)),
-          visualDensity: VisualDensity.compact,
-          backgroundColor: MaterialStatePropertyAll(
-            baseTheme.colorScheme.primary.withOpacity(0.8),
+          style: ButtonStyle(
+            foregroundColor: MaterialStatePropertyAll(
+              baseTheme.colorScheme.onPrimary.withOpacity(0.8),
+            ),
+            visualDensity: VisualDensity.compact,
+            backgroundColor: MaterialStatePropertyAll(
+              baseTheme.colorScheme.primary.withOpacity(0.8),
+            ),
           ),
-        )),
+        ),
         // buttonTheme: const ButtonThemeData(),
         textButtonTheme: TextButtonThemeData(
           style: ButtonStyle(
-              textStyle: MaterialStatePropertyAll(
-                baseTheme.textTheme.bodyMedium,
-              ),
-              foregroundColor: MaterialStatePropertyAll(
-                baseTheme.colorScheme.primary.withOpacity(0.8),
-              )),
+            textStyle: MaterialStatePropertyAll(
+              baseTheme.textTheme.bodyMedium,
+            ),
+            foregroundColor: MaterialStatePropertyAll(
+              baseTheme.colorScheme.primary.withOpacity(0.8),
+            ),
+          ),
         ),
       );
   }
@@ -121,8 +130,8 @@ ThemeData buildTheme(Brightness brightness, Color accentColor) {
 
 /// Entrypoint for the second Android's Activity.
 /// Picks a file and returns to the app requested.
-@pragma('vm:entry-point')
-void mainPickfile() async {
+@pragma("vm:entry-point")
+Future<void> mainPickfile() async {
   initLogger();
 
   WidgetsFlutterBinding.ensureInitialized();
@@ -137,9 +146,9 @@ void mainPickfile() async {
         (await auth.getAvailableBiometrics()).isNotEmpty;
   }
 
-  initalizeNetworkStatus(Platform.isAndroid
-      ? await PlatformFunctions.currentNetworkStatus()
-      : true);
+  initalizeNetworkStatus(
+    Platform.isAndroid && await PlatformFunctions.currentNetworkStatus(),
+  );
 
   changeExceptionErrorColors();
 
@@ -148,26 +157,28 @@ void mainPickfile() async {
 
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
-  runApp(MaterialApp(
-    title: 'Azari',
-    themeAnimationCurve: Easing.standard,
-    themeAnimationDuration: const Duration(milliseconds: 300),
-    darkTheme: buildTheme(Brightness.dark, accentColor),
-    theme: buildTheme(Brightness.light, accentColor),
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
-    supportedLocales: AppLocalizations.supportedLocales,
-    home: Builder(
-      builder: (context) {
-        return Home(
-          callback: CallbackDescriptionNested(
-              icon: Icons.file_open_rounded,
-              AppLocalizations.of(context)!.chooseFileNotice, (chosen) {
-            PlatformFunctions.returnUri(chosen.originalUri);
-          }),
-        );
-      },
+  runApp(
+    MaterialApp(
+      title: "Azari",
+      themeAnimationCurve: Easing.standard,
+      themeAnimationDuration: const Duration(milliseconds: 300),
+      darkTheme: buildTheme(Brightness.dark, accentColor),
+      theme: buildTheme(Brightness.light, accentColor),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Builder(
+        builder: (context) {
+          return Home(
+            callback: CallbackDescriptionNested(
+                icon: Icons.file_open_rounded,
+                AppLocalizations.of(context)!.chooseFileNotice, (chosen) {
+              PlatformFunctions.returnUri(chosen.originalUri);
+            }),
+          );
+        },
+      ),
     ),
-  ));
+  );
 }
 
 void main() async {
@@ -188,23 +199,25 @@ void main() async {
   }
 
   initalizeGalleryPlug(false);
-  initalizeNetworkStatus(Platform.isAndroid
-      ? await PlatformFunctions.currentNetworkStatus()
-      : true);
+  initalizeNetworkStatus(
+    Platform.isAndroid && await PlatformFunctions.currentNetworkStatus(),
+  );
 
   final accentColor = await PlatformFunctions.accentColor();
 
   final GlobalKey restartKey = GlobalKey();
 
   await FlutterLocalNotificationsPlugin().initialize(
-      const InitializationSettings(
-          linux:
-              LinuxInitializationSettings(defaultActionName: "Default action"),
-          android: AndroidInitializationSettings('@drawable/ic_notification')),
-      onDidReceiveNotificationResponse: (details) {
-    final context = restartKey.currentContext;
-    if (context != null) {}
-  }, onDidReceiveBackgroundNotificationResponse: notifBackground);
+    const InitializationSettings(
+      linux: LinuxInitializationSettings(defaultActionName: "Default action"),
+      android: AndroidInitializationSettings("@drawable/ic_notification"),
+    ),
+    onDidReceiveNotificationResponse: (details) {
+      final context = restartKey.currentContext;
+      if (context != null) {}
+    },
+    onDidReceiveBackgroundNotificationResponse: notifBackground,
+  );
 
   FlutterLocalNotificationsPlugin().cancelAll();
 
@@ -217,7 +230,7 @@ void main() async {
       accentColor: accentColor,
       key: restartKey,
       child: (d, l, settings) => MaterialApp(
-        title: 'Azari',
+        title: "Azari",
         themeAnimationCurve: Easing.standard,
         themeAnimationDuration: const Duration(milliseconds: 300),
         darkTheme: d,
@@ -235,6 +248,8 @@ void changeExceptionErrorColors() {
   RenderErrorBox.backgroundColor = Colors.blue.shade800;
   RenderErrorBox.textStyle = ui.TextStyle(color: Colors.white70);
 }
+
+bool get canAuthBiometric => _canUseAuth;
 
 SystemUiOverlayStyle navBarStyleForTheme(
   ThemeData theme, {
@@ -255,9 +270,7 @@ SystemUiOverlayStyle navBarStyleForTheme(
           .withOpacity(transparent ? 0.0 : 0.8),
     );
 
-@pragma('vm:entry-point')
+@pragma("vm:entry-point")
 void notifBackground(NotificationResponse res) {}
 
 bool _canUseAuth = false;
-
-bool get canAuthBiometric => _canUseAuth;

@@ -5,22 +5,17 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
-import 'dart:math';
+import "dart:async";
+import "dart:math";
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
-import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
-import 'package:gallery/src/interfaces/manga/manga_api.dart';
-import 'package:gallery/src/widgets/menu_wrapper.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/schemas/manga/read_manga_chapter.dart";
+import "package:gallery/src/db/schemas/manga/saved_manga_chapters.dart";
+import "package:gallery/src/interfaces/manga/manga_api.dart";
+import "package:gallery/src/widgets/menu_wrapper.dart";
 
 class ChapterTile extends StatefulWidget {
-  final MangaChapter chapter;
-  final MangaEntry entry;
-  final MangaAPI api;
-  final void Function() finishRead;
-
   const ChapterTile({
     super.key,
     required this.chapter,
@@ -28,6 +23,10 @@ class ChapterTile extends StatefulWidget {
     required this.api,
     required this.finishRead,
   });
+  final MangaChapter chapter;
+  final MangaEntry entry;
+  final MangaAPI api;
+  final void Function() finishRead;
 
   @override
   State<ChapterTile> createState() => _ChapterTileState();
@@ -54,7 +53,7 @@ class _ChapterTileState extends State<ChapterTile> {
 
     progress = ReadMangaChapter.progress(
       siteMangaId: widget.entry.id.toString(),
-      chapterId: widget.chapter.id.toString(),
+      chapterId: widget.chapter.id,
     );
   }
 
@@ -93,7 +92,7 @@ class _ChapterTileState extends State<ChapterTile> {
             widget.finishRead();
           },
           child: Text(AppLocalizations.of(context)!.mangaRemoveProgress),
-        )
+        ),
       ],
       includeCopy: false,
       title: AppLocalizations.of(context)!
@@ -102,11 +101,12 @@ class _ChapterTileState extends State<ChapterTile> {
         padding: const EdgeInsets.only(top: 4, bottom: 4),
         child: DecoratedBox(
           decoration: ShapeDecoration(
-              color:
-                  Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.2),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-              )),
+            color:
+                Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.2),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+          ),
           child: ListTile(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
@@ -147,14 +147,15 @@ class _ChapterTileState extends State<ChapterTile> {
                   },
             contentPadding: const EdgeInsets.only(right: 16, left: 16),
             subtitle: Text(
-                "${widget.chapter.title}${widget.chapter.translator.isNotEmpty ? ' (${widget.chapter.translator})' : ''}"),
+              "${widget.chapter.title}${widget.chapter.translator.isNotEmpty ? ' (${widget.chapter.translator})' : ''}",
+            ),
             title: Row(
               children: [
                 Transform.rotate(
                   transformHitTests: false,
                   angle: 5 * (-pi / 180),
                   child: Text(
-                    widget.chapter.chapter.toString(),
+                    widget.chapter.chapter,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.secondary,
                     ),
@@ -173,7 +174,7 @@ class _ChapterTileState extends State<ChapterTile> {
                             .onSurface
                             .withOpacity(0.6),
                       ),
-                )
+                ),
               ],
             ),
           ),

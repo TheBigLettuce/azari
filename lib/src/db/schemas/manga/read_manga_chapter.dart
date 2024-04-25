@@ -5,21 +5,21 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/db/schemas/downloader/download_file.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/interfaces/manga/manga_api.dart';
-import 'package:gallery/src/net/downloader.dart';
-import 'package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart';
-import 'package:gallery/src/pages/manga/next_chapter_button.dart';
-import 'package:gallery/src/widgets/image_view/image_view.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:isar/isar.dart';
+import "package:flutter/material.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/db/schemas/downloader/download_file.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/interfaces/manga/manga_api.dart";
+import "package:gallery/src/net/downloader.dart";
+import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
+import "package:gallery/src/pages/manga/next_chapter_button.dart";
+import "package:gallery/src/widgets/image_view/image_view.dart";
+import "package:gallery/src/widgets/notifiers/glue_provider.dart";
+import "package:isar/isar.dart";
 
-part 'read_manga_chapter.g.dart';
+part "read_manga_chapter.g.dart";
 
 @collection
 class ReadMangaChapter {
@@ -123,15 +123,16 @@ class ReadMangaChapter {
     }
 
     Dbs.g.anime.writeTxnSync(
-      () => Dbs.g.anime.readMangaChapters
-          .putBySiteMangaIdChapterIdSync(ReadMangaChapter(
-        siteMangaId: siteMangaId,
-        chapterId: chapterId,
-        chapterName: chapterName,
-        chapterNumber: chapterNumber,
-        chapterProgress: e.chapterProgress,
-        lastUpdated: DateTime.now(),
-      )),
+      () => Dbs.g.anime.readMangaChapters.putBySiteMangaIdChapterIdSync(
+        ReadMangaChapter(
+          siteMangaId: siteMangaId,
+          chapterId: chapterId,
+          chapterName: chapterName,
+          chapterNumber: chapterNumber,
+          chapterProgress: e.chapterProgress,
+          lastUpdated: DateTime.now(),
+        ),
+      ),
     );
   }
 
@@ -143,15 +144,16 @@ class ReadMangaChapter {
     required String chapterNumber,
   }) {
     Dbs.g.anime.writeTxnSync(
-      () => Dbs.g.anime.readMangaChapters
-          .putBySiteMangaIdChapterIdSync(ReadMangaChapter(
-        siteMangaId: siteMangaId,
-        chapterId: chapterId,
-        chapterNumber: chapterNumber,
-        chapterName: chapterName,
-        chapterProgress: progress,
-        lastUpdated: DateTime.now(),
-      )),
+      () => Dbs.g.anime.readMangaChapters.putBySiteMangaIdChapterIdSync(
+        ReadMangaChapter(
+          siteMangaId: siteMangaId,
+          chapterId: chapterId,
+          chapterNumber: chapterNumber,
+          chapterName: chapterName,
+          chapterProgress: progress,
+          lastUpdated: DateTime.now(),
+        ),
+      ),
     );
   }
 
@@ -192,7 +194,7 @@ class ReadMangaChapter {
     return p;
   }
 
-  static Future launchReader(
+  static Future<void> launchReader(
     BuildContext context,
     ReaderData data, {
     bool addNextChapterButton = false,
@@ -200,7 +202,7 @@ class ReadMangaChapter {
   }) {
     ReadMangaChapter.touch(
       siteMangaId: data.mangaId.toString(),
-      chapterId: data.chapterId.toString(),
+      chapterId: data.chapterId,
       chapterName: data.chapterName,
       chapterNumber: data.chapterNumber,
     );
@@ -213,7 +215,7 @@ class ReadMangaChapter {
     final nextChapterKey = GlobalKey<SkipChapterButtonState>();
     final prevChaterKey = GlobalKey<SkipChapterButtonState>();
 
-    final route = MaterialPageRoute(
+    final route = MaterialPageRoute<void>(
       builder: (context) {
         return WrapFutureRestartable(
           newStatus: () {
@@ -236,7 +238,7 @@ class ReadMangaChapter {
                   Downloader.g.add(
                     DownloadFile.d(
                       name:
-                          "${i.toString()} / ${image.maxPages} - ${data.chapterId}.${image.url.split(".").last}",
+                          "$i / ${image.maxPages} - ${data.chapterId}.${image.url.split(".").last}",
                       url: image.url,
                       thumbUrl: image.url,
                       site: data.mangaTitle,
@@ -264,7 +266,9 @@ class ReadMangaChapter {
                   );
 
                   data.onNextPage(
-                      state.currentPage, chapters[state.currentPage]);
+                    state.currentPage,
+                    chapters[state.currentPage],
+                  );
                 },
                 cellCount: chapters.length,
                 scrollUntill: (_) {},

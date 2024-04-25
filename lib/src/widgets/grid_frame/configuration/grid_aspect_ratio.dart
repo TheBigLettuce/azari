@@ -12,6 +12,7 @@ enum GridAspectRatio {
   oneTwo(1.2),
   oneFive(1.5);
 
-  final double value;
   const GridAspectRatio(this.value);
+
+  final double value;
 }

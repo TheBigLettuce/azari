@@ -5,31 +5,30 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/manga/chapters_settings.dart';
-import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
-import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
-import 'package:gallery/src/interfaces/manga/manga_api.dart';
-import 'package:gallery/src/pages/manga/body/chapter_tile.dart';
-import 'package:gallery/src/pages/more/settings/settings_label.dart';
-import 'package:gallery/src/widgets/empty_widget.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/schemas/manga/chapters_settings.dart";
+import "package:gallery/src/db/schemas/manga/read_manga_chapter.dart";
+import "package:gallery/src/db/schemas/manga/saved_manga_chapters.dart";
+import "package:gallery/src/interfaces/manga/manga_api.dart";
+import "package:gallery/src/pages/manga/body/chapter_tile.dart";
+import "package:gallery/src/pages/more/settings/settings_label.dart";
+import "package:gallery/src/widgets/empty_widget.dart";
 
-part 'chapter_body.dart';
+part "chapter_body.dart";
 
 class MangaChapters extends StatefulWidget {
-  final MangaEntry entry;
-  final MangaAPI api;
-  final ScrollController scrollController;
-
   const MangaChapters({
     super.key,
     required this.entry,
     required this.api,
     required this.scrollController,
   });
+  final MangaEntry entry;
+  final MangaAPI api;
+  final ScrollController scrollController;
 
   @override
   State<MangaChapters> createState() => _MangaChaptersState();
@@ -67,11 +66,16 @@ class _MangaChaptersState extends State<MangaChapters> {
     });
 
     if (SavedMangaChapters.count(
-            widget.entry.id.toString(), widget.entry.site) !=
+          widget.entry.id.toString(),
+          widget.entry.site,
+        ) !=
         0) {
       _future = () async {
         final chpt = SavedMangaChapters.get(
-            widget.entry.id.toString(), widget.entry.site, settings);
+          widget.entry.id.toString(),
+          widget.entry.site,
+          settings,
+        );
 
         if (chpt == null) {
           return list;
@@ -133,7 +137,11 @@ class _MangaChaptersState extends State<MangaChapters> {
         reachedEnd = true;
       } else {
         SavedMangaChapters.add(
-            widget.entry.id.toString(), widget.entry.site, value, page);
+          widget.entry.id.toString(),
+          widget.entry.site,
+          value,
+          page,
+        );
       }
 
       _future2 = null;
@@ -155,7 +163,11 @@ class _MangaChaptersState extends State<MangaChapters> {
 
       if (value.isNotEmpty) {
         SavedMangaChapters.add(
-            widget.entry.id.toString(), widget.entry.site, value, page);
+          widget.entry.id.toString(),
+          widget.entry.site,
+          value,
+          page,
+        );
       } else {
         reachedEnd = true;
       }
@@ -178,7 +190,7 @@ class _MangaChaptersState extends State<MangaChapters> {
         clipBehavior: Clip.antiAlias,
         itemBuilder: (context) {
           return [
-            PopupMenuItem(
+            PopupMenuItem<void>(
               onTap: () {
                 ChapterSettings.setHideRead(!settings.hideRead);
               },
@@ -186,7 +198,7 @@ class _MangaChaptersState extends State<MangaChapters> {
                   ? Text(AppLocalizations.of(context)!.mangaShowRead)
                   : Text(AppLocalizations.of(context)!.mangaHideRead),
             ),
-            PopupMenuItem(
+            PopupMenuItem<void>(
               onTap: () {
                 SavedMangaChapters.clear(
                   widget.entry.id.toString(),
@@ -200,7 +212,8 @@ class _MangaChaptersState extends State<MangaChapters> {
                 setState(() {});
               },
               child: Text(
-                  AppLocalizations.of(context)!.mangaClearCachedMangaChapters),
+                AppLocalizations.of(context)!.mangaClearCachedMangaChapters,
+              ),
             ),
           ];
         },
@@ -241,8 +254,10 @@ class _MangaChaptersState extends State<MangaChapters> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : Text(AppLocalizations.of(context)!
-                                .mangaLoadNextChapters),
+                            : Text(
+                                AppLocalizations.of(context)!
+                                    .mangaLoadNextChapters,
+                              ),
                       ),
                     ),
                   )

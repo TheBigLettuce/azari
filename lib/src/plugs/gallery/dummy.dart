@@ -5,16 +5,15 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/gallery/blacklisted_directory.dart';
-import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
-import 'package:gallery/src/interfaces/filtering/filtering_interface.dart';
-import 'package:gallery/src/interfaces/filtering/filtering_mode.dart';
-import 'package:gallery/src/interfaces/gallery/gallery_api_files.dart';
-import 'package:gallery/src/plugs/gallery.dart';
-import 'package:isar/isar.dart';
-
-import '../../interfaces/gallery/gallery_api_directories.dart';
+import "package:flutter/material.dart";
+import "package:gallery/src/db/schemas/gallery/blacklisted_directory.dart";
+import "package:gallery/src/db/schemas/gallery/system_gallery_directory.dart";
+import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
+import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
+import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
+import "package:gallery/src/interfaces/gallery/gallery_api_files.dart";
+import "package:gallery/src/plugs/gallery.dart";
+import "package:isar/isar.dart";
 
 class DummyGallery implements GalleryPlug {
   @override
@@ -27,13 +26,16 @@ class DummyGallery implements GalleryPlug {
   void notify(String? target) {}
 
   @override
-  GalleryAPIDirectories galleryApi(
-      {bool? temporaryDb, bool setCurrentApi = true}) {
+  GalleryAPIDirectories galleryApi({
+    bool? temporaryDb,
+    bool setCurrentApi = true,
+  }) {
     return const _DummyDirectories();
   }
 }
 
 class _DummyDirectories implements GalleryAPIDirectories {
+  const _DummyDirectories();
   @override
   void close() {}
 
@@ -56,11 +58,10 @@ class _DummyDirectories implements GalleryAPIDirectories {
   Future<int> refresh() {
     return Future.value(0);
   }
-
-  const _DummyDirectories();
 }
 
 class _DummyFilter implements FilterInterface<SystemGalleryDirectory> {
+  const _DummyFilter();
   @override
   FilterResult<SystemGalleryDirectory> filter(String s, FilteringMode mode) {
     return FilterResult((i) => throw UnimplementedError(), 0);
@@ -68,8 +69,6 @@ class _DummyFilter implements FilterInterface<SystemGalleryDirectory> {
 
   @override
   void setSortingMode(SortingMode mode) {}
-
-  const _DummyFilter();
 
   @override
   SortingMode get currentSortingMode => SortingMode.none;
@@ -82,6 +81,7 @@ class _DummyFilter implements FilterInterface<SystemGalleryDirectory> {
 }
 
 class _DummyDirectoriesExtra implements GalleryDirectoriesExtra {
+  const _DummyDirectoriesExtra();
   @override
   void addBlacklisted(List<BlacklistedDirectory> bucketIds) {}
 
@@ -111,16 +111,20 @@ class _DummyDirectoriesExtra implements GalleryDirectoriesExtra {
 
   @override
   void setPassFilter(
-      (Iterable<SystemGalleryDirectory>, dynamic) Function(
-              Iterable<SystemGalleryDirectory> p1, dynamic p2, bool p3)?
-          filter) {}
+    (Iterable<SystemGalleryDirectory>, dynamic) Function(
+      Iterable<SystemGalleryDirectory> p1,
+      dynamic p2,
+      bool p3,
+    )? filter,
+  ) {}
 
   @override
   void setRefreshGridCallback(void Function() callback) {}
 
   @override
   void setRefreshingStatusCallback(
-      void Function(int i, bool inRefresh, bool empty) callback) {
+    void Function(int i, bool inRefresh, bool empty) callback,
+  ) {
     WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
       callback(0, false, true);
     });
@@ -128,10 +132,7 @@ class _DummyDirectoriesExtra implements GalleryDirectoriesExtra {
 
   @override
   void setTemporarySet(void Function(int p1, bool p2) callback) {}
-
-  const _DummyDirectoriesExtra();
 }
-
 
 // class _DummyFiles implements GalleryAPIFiles {
 //   @override
@@ -155,7 +156,6 @@ class _DummyDirectoriesExtra implements GalleryDirectoriesExtra {
 
 //   const _DummyFiles();
 // }
-
 
 // class _DirectoriesExtraDummy implements GalleryDirectoriesExtra {
 //   @override

@@ -5,9 +5,10 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:cookie_jar/cookie_jar.dart';
+import "package:cookie_jar/cookie_jar.dart";
 
 class UnsaveableCookieJar implements CookieJar {
+  const UnsaveableCookieJar(CookieJar jar) : _proxy = jar;
   final CookieJar _proxy;
 
   @override
@@ -27,10 +28,8 @@ class UnsaveableCookieJar implements CookieJar {
   Future<void> saveFromResponse(Uri uri, List<Cookie> cookies) =>
       Future.value();
 
-  void replaceDirectly(Uri uri, List<Cookie> cookies) async {
+  Future<void> replaceDirectly(Uri uri, List<Cookie> cookies) async {
     await _proxy.deleteAll();
     _proxy.saveFromResponse(uri, cookies);
   }
-
-  const UnsaveableCookieJar(CookieJar jar) : _proxy = jar;
 }

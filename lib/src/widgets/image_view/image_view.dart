@@ -5,36 +5,33 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
-import 'dart:developer';
+import "dart:async";
+import "dart:developer";
 
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/interfaces/cell/contentable.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/image_view/mixins/loading_builder.dart';
-import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart';
-import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_skeleton.dart';
-import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_theme.dart';
-import 'package:gallery/src/plugs/platform_fullscreens.dart';
-import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart';
-import 'package:logging/logging.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
-// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import '../../interfaces/cell/cell.dart';
-import 'body.dart';
-import 'mixins/page_type_mixin.dart';
-import 'mixins/palette.dart';
+import "package:flutter/material.dart";
+import "package:flutter/services.dart";
+import "package:flutter_animate/flutter_animate.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/interfaces/cell/contentable.dart";
+import "package:gallery/src/plugs/platform_fullscreens.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/image_view/body.dart";
+import "package:gallery/src/widgets/image_view/mixins/loading_builder.dart";
+import "package:gallery/src/widgets/image_view/mixins/page_type_mixin.dart";
+import "package:gallery/src/widgets/image_view/mixins/palette.dart";
+import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_skeleton.dart";
+import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_theme.dart";
+import "package:gallery/src/widgets/notifiers/glue_provider.dart";
+import "package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart";
+import "package:logging/logging.dart";
+import "package:wakelock_plus/wakelock_plus.dart";
 
 class ImageViewStatistics {
+  const ImageViewStatistics({required this.swiped, required this.viewed});
   final void Function() swiped;
   final void Function() viewed;
-
-  const ImageViewStatistics({required this.swiped, required this.viewed});
 }
 
 abstract interface class ImageViewContentable {
@@ -66,6 +63,26 @@ abstract interface class ContentableCell
     implements ImageViewContentable, CellBase {}
 
 class ImageView extends StatefulWidget {
+  const ImageView({
+    super.key,
+    required this.cellCount,
+    required this.scrollUntill,
+    required this.startingCell,
+    this.onExit,
+    this.statistics,
+    this.tags,
+    this.updates,
+    this.watchTags,
+    this.ignoreLoadingBuilder = false,
+    required this.getCell,
+    required this.onNearEnd,
+    this.pageChange,
+    this.download,
+    this.registerNotifiers,
+    this.onRightSwitchPageEnd,
+    this.onLeftSwitchPageEnd,
+    this.gridContext,
+  });
   final int startingCell;
   final Contentable? Function(BuildContext context, int i) getCell;
   final int cellCount;
@@ -90,7 +107,9 @@ class ImageView extends StatefulWidget {
 
   final List<ImageTag> Function(Contentable)? tags;
   final StreamSubscription<List<ImageTag>> Function(
-      Contentable, void Function(List<ImageTag> l))? watchTags;
+    Contentable,
+    void Function(List<ImageTag> l),
+  )? watchTags;
 
   static Future<void> launchWrapped(
     BuildContext context,
@@ -100,23 +119,25 @@ class ImageView extends StatefulWidget {
     void Function(int)? download,
     Key? key,
   }) {
-    return Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
-      builder: (context) {
-        return GlueProvider.empty(
-          context,
-          child: ImageView(
-            key: key,
-            cellCount: cellCount,
-            download: download,
-            scrollUntill: (_) {},
-            startingCell: startingCell,
-            onExit: () {},
-            getCell: cell,
-            onNearEnd: null,
-          ),
-        );
-      },
-    ));
+    return Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (context) {
+          return GlueProvider.empty(
+            context,
+            child: ImageView(
+              key: key,
+              cellCount: cellCount,
+              download: download,
+              scrollUntill: (_) {},
+              startingCell: startingCell,
+              onExit: () {},
+              getCell: cell,
+              onNearEnd: null,
+            ),
+          );
+        },
+      ),
+    );
   }
 
   static Future<void> defaultForGrid<T extends ContentableCell>(
@@ -126,8 +147,9 @@ class ImageView extends StatefulWidget {
     int startingCell,
     List<ImageTag> Function(Contentable)? tags,
     StreamSubscription<List<ImageTag>> Function(
-            Contentable, void Function(List<ImageTag> l))?
-        watchTags,
+      Contentable,
+      void Function(List<ImageTag> l),
+    )? watchTags,
   ) {
     final tryScroll = GridExtrasNotifier.of(gridContext);
 
@@ -135,53 +157,35 @@ class ImageView extends StatefulWidget {
 
     final getCell = CellProvider.of<T>(gridContext);
 
-    return Navigator.of(gridContext, rootNavigator: true)
-        .push(MaterialPageRoute(builder: (context) {
-      return ImageView(
-        updates: functionality.refreshingStatus.mutation.listenCount,
-        gridContext: gridContext,
-        statistics: imageDesctipion.statistics,
-        registerNotifiers: functionality.registerNotifiers,
-        scrollUntill: tryScroll,
-        pageChange: imageDesctipion.pageChange,
-        watchTags: watchTags,
-        onExit: imageDesctipion.onExit,
-        getCell: (context, idx) => getCell(idx).content(context),
-        cellCount: functionality.refreshingStatus.mutation.cellCount,
-        download: functionality.download,
-        startingCell: startingCell,
-        tags: tags,
-        onNearEnd: imageDesctipion.ignoreOnNearEnd
-            ? null
-            : () => functionality.refreshingStatus.onNearEnd(functionality),
-      );
-    })).then((value) {
+    return Navigator.of(gridContext, rootNavigator: true).push(
+      MaterialPageRoute<void>(
+        builder: (context) {
+          return ImageView(
+            updates: functionality.refreshingStatus.mutation.listenCount,
+            gridContext: gridContext,
+            statistics: imageDesctipion.statistics,
+            registerNotifiers: functionality.registerNotifiers,
+            scrollUntill: tryScroll,
+            pageChange: imageDesctipion.pageChange,
+            watchTags: watchTags,
+            onExit: imageDesctipion.onExit,
+            getCell: (context, idx) => getCell(idx).content(context),
+            cellCount: functionality.refreshingStatus.mutation.cellCount,
+            download: functionality.download,
+            startingCell: startingCell,
+            tags: tags,
+            onNearEnd: imageDesctipion.ignoreOnNearEnd
+                ? null
+                : () => functionality.refreshingStatus.onNearEnd(functionality),
+          );
+        },
+      ),
+    ).then((value) {
       functionality.selectionGlue.hideNavBar(false);
 
       return value;
     });
   }
-
-  const ImageView({
-    super.key,
-    required this.cellCount,
-    required this.scrollUntill,
-    required this.startingCell,
-    this.onExit,
-    this.statistics,
-    this.tags,
-    this.updates,
-    this.watchTags,
-    this.ignoreLoadingBuilder = false,
-    required this.getCell,
-    required this.onNearEnd,
-    this.pageChange,
-    this.download,
-    this.registerNotifiers,
-    this.onRightSwitchPageEnd,
-    this.onLeftSwitchPageEnd,
-    this.gridContext,
-  });
 
   @override
   State<ImageView> createState() => ImageViewState();
@@ -227,7 +231,7 @@ class ImageViewState extends State<ImageView>
 
     _updates = widget.updates?.call((c) {
       if (c <= 0) {
-        Navigator.of(context, rootNavigator: false).pop();
+        Navigator.of(context).pop();
 
         return;
       }
@@ -305,8 +309,12 @@ class ImageViewState extends State<ImageView>
           });
         }
       }).onError((error, stackTrace) {
-        log("loading next in the image view page",
-            level: Level.WARNING.value, error: error, stackTrace: stackTrace);
+        log(
+          "loading next in the image view page",
+          level: Level.WARNING.value,
+          error: error,
+          stackTrace: stackTrace,
+        );
       }).then((value) {
         refreshing = false;
       });
@@ -459,14 +467,12 @@ class ImageViewState extends State<ImageView>
 }
 
 class _BottomSheetPopScope extends StatefulWidget {
-  final DraggableScrollableController controller;
-  final Widget child;
-
   const _BottomSheetPopScope({
-    super.key,
     required this.controller,
     required this.child,
   });
+  final DraggableScrollableController controller;
+  final Widget child;
 
   @override
   State<_BottomSheetPopScope> createState() => __BottomSheetPopScopeState();
@@ -508,13 +514,17 @@ class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
     });
 
     widget.controller
-        .animateTo(0,
-            duration: const Duration(milliseconds: 200),
-            curve: Easing.emphasizedAccelerate)
-        .then((value) => setState(() {
-              ignorePointer = false;
-              widget.controller.reset();
-            }));
+        .animateTo(
+          0,
+          duration: const Duration(milliseconds: 200),
+          curve: Easing.emphasizedAccelerate,
+        )
+        .then(
+          (value) => setState(() {
+            ignorePointer = false;
+            widget.controller.reset();
+          }),
+        );
   }
 
   @override
@@ -524,9 +534,8 @@ class __BottomSheetPopScopeState extends State<_BottomSheetPopScope> {
     }
 
     return PopScope(
-      canPop: currentPixels.isNegative
-          ? true
-          : WrapImageViewSkeleton.minPixelsFor(context) == currentPixels,
+      canPop: currentPixels.isNegative &&
+          WrapImageViewSkeleton.minPixelsFor(context) != currentPixels,
       onPopInvoked: tryScroll,
       child: IgnorePointer(
         ignoring: ignorePointer,

@@ -5,20 +5,25 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
+import "package:flutter/material.dart";
 
 class PaddingBackgroundImage extends StatelessWidget {
+  const PaddingBackgroundImage({
+    super.key,
+    required this.viewPadding,
+    required this.child,
+  });
   final Widget child;
   final EdgeInsets viewPadding;
-
-  const PaddingBackgroundImage(
-      {super.key, required this.viewPadding, required this.child});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-          top: 2 + kToolbarHeight + viewPadding.top, left: 22, right: 22),
+        top: 2 + kToolbarHeight + viewPadding.top,
+        left: 22,
+        right: 22,
+      ),
       child: child,
     );
   }

@@ -12,6 +12,12 @@ enum Booru {
   gelbooru(string: "Gelbooru", prefix: "g", url: "gelbooru.com"),
   danbooru(string: "Danbooru", prefix: "d", url: "danbooru.donmai.us");
 
+  const Booru({
+    required this.string,
+    required this.prefix,
+    required this.url,
+  });
+
   // Name. starting with an uppercase letter.
   final String string;
 
@@ -47,7 +53,7 @@ enum Booru {
   }
 
   static Booru? fromPrefix(String prefix) {
-    for (var b in Booru.values) {
+    for (final b in Booru.values) {
       if (b.prefix == prefix) {
         return b;
       }
@@ -55,10 +61,4 @@ enum Booru {
 
     return null;
   }
-
-  const Booru({
-    required this.string,
-    required this.prefix,
-    required this.url,
-  });
 }

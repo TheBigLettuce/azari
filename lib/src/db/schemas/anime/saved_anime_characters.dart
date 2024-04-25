@@ -5,21 +5,21 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/base/system_gallery_thumbnail_provider.dart';
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/interfaces/anime/anime_api.dart';
-import 'package:gallery/src/interfaces/anime/anime_entry.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/interfaces/cell/contentable.dart';
-import 'package:gallery/src/pages/anime/anime.dart';
-import 'package:isar/isar.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import "package:cached_network_image/cached_network_image.dart";
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/base/system_gallery_thumbnail_provider.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/interfaces/anime/anime_api.dart";
+import "package:gallery/src/interfaces/anime/anime_entry.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/interfaces/cell/contentable.dart";
+import "package:gallery/src/pages/anime/anime.dart";
+import "package:isar/isar.dart";
 
-part 'saved_anime_characters.g.dart';
+part "saved_anime_characters.g.dart";
 
 final _futures = <(int, AnimeMetadata), Future>{};
 
@@ -50,21 +50,32 @@ class SavedAnimeCharacters {
 
     _futures[(entry.id, entry.site)] = api.characters(entry)
       ..then((value) {
-        Dbs.g.anime.writeTxnSync(() => Dbs.g.anime.savedAnimeCharacters
-            .putByIdSiteSync(SavedAnimeCharacters(
-                characters: value, id: entry.id, site: entry.site)));
+        Dbs.g.anime.writeTxnSync(
+          () => Dbs.g.anime.savedAnimeCharacters.putByIdSiteSync(
+            SavedAnimeCharacters(
+              characters: value,
+              id: entry.id,
+              site: entry.site,
+            ),
+          ),
+        );
       }).whenComplete(() => _futures.remove((entry.id, entry.site)));
 
     return false;
   }
 
   static StreamSubscription<SavedAnimeCharacters?> watch(
-      int id, AnimeMetadata site, void Function(SavedAnimeCharacters?) f,
-      [bool fire = false]) {
+    int id,
+    AnimeMetadata site,
+    void Function(SavedAnimeCharacters?) f, [
+    bool fire = false,
+  ]) {
     var e = Dbs.g.anime.savedAnimeCharacters.getByIdSiteSync(id, site)?.isarId;
-    e ??= Dbs.g.anime.writeTxnSync(() => Dbs.g.anime.savedAnimeCharacters
-        .putByIdSiteSync(
-            SavedAnimeCharacters(characters: const [], id: id, site: site)));
+    e ??= Dbs.g.anime.writeTxnSync(
+      () => Dbs.g.anime.savedAnimeCharacters.putByIdSiteSync(
+        SavedAnimeCharacters(characters: const [], id: id, site: site),
+      ),
+    );
 
     return Dbs.g.anime.savedAnimeCharacters
         .watchObject(e!, fireImmediately: fire)
@@ -80,15 +91,14 @@ class AnimeCharacter
         Infoable,
         Downloadable,
         Thumbnailable {
-  final String imageUrl;
-  final String name;
-  final String role;
-
   AnimeCharacter({
     this.imageUrl = "",
     this.name = "",
     this.role = "",
   });
+  final String imageUrl;
+  final String name;
+  final String role;
 
   @override
   CellStaticData description() => const CellStaticData(
@@ -117,15 +127,17 @@ class AnimeCharacter
 
   @override
   Widget info(BuildContext context) {
-    return SliverList.list(children: [
-      addInfoTile(
-        title: AppLocalizations.of(context)!.sourceFileInfoPage,
-        subtitle: imageUrl,
-      ),
-      addInfoTile(
-        title: AppLocalizations.of(context)!.role,
-        subtitle: role,
-      ),
-    ]);
+    return SliverList.list(
+      children: [
+        addInfoTile(
+          title: AppLocalizations.of(context)!.sourceFileInfoPage,
+          subtitle: imageUrl,
+        ),
+        addInfoTile(
+          title: AppLocalizations.of(context)!.role,
+          subtitle: role,
+        ),
+      ],
+    );
   }
 }

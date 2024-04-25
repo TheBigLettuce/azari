@@ -5,23 +5,17 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/main.dart';
-import 'package:gallery/src/pages/glue_bottom_app_bar.dart';
-import 'package:gallery/src/widgets/gesture_dead_zones.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:gallery/src/widgets/notifiers/selection_count.dart';
-
-import '../configuration/selection_glue.dart';
-import '../configuration/selection_glue_state.dart';
+import "package:flutter/material.dart";
+import "package:flutter_animate/flutter_animate.dart";
+import "package:gallery/main.dart";
+import "package:gallery/src/pages/glue_bottom_app_bar.dart";
+import "package:gallery/src/widgets/gesture_dead_zones.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/selection_glue_state.dart";
+import "package:gallery/src/widgets/notifiers/glue_provider.dart";
+import "package:gallery/src/widgets/notifiers/selection_count.dart";
 
 class WrapGridPage extends StatefulWidget {
-  final SelectionGlue Function([Set<GluePreferences>])? provided;
-  final int navBarHeight;
-  final bool addScaffold;
-  final Widget child;
-
   const WrapGridPage({
     super.key,
     this.provided,
@@ -29,6 +23,10 @@ class WrapGridPage extends StatefulWidget {
     this.navBarHeight = 80,
     required this.child,
   });
+  final SelectionGlue Function([Set<GluePreferences>])? provided;
+  final int navBarHeight;
+  final bool addScaffold;
+  final Widget child;
 
   @override
   State<WrapGridPage> createState() => _WrapGridPageState();
@@ -80,7 +78,9 @@ class _WrapGridPageState extends State<WrapGridPage>
                     curve: Easing.emphasizedDecelerate,
                     end: Offset.zero,
                     begin: Offset(
-                        0, 100 + MediaQuery.viewPaddingOf(context).bottom),
+                      0,
+                      100 + MediaQuery.viewPaddingOf(context).bottom,
+                    ),
                   ),
                 ],
                 child: GlueBottomAppBar(glueState),

@@ -5,40 +5,25 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/tags/post_tags.dart';
-import 'package:gallery/src/interfaces/cell/contentable.dart';
-import 'package:gallery/src/plugs/platform_fullscreens.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
-import 'package:gallery/src/widgets/notifiers/app_bar_visibility.dart';
-import 'package:gallery/src/widgets/notifiers/current_content.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:gallery/src/widgets/notifiers/loading_progress.dart';
-import 'package:gallery/src/widgets/notifiers/pause_video.dart';
-import 'package:gallery/src/widgets/notifiers/reload_image.dart';
-
-import '../../notifiers/filter.dart';
-import '../../notifiers/filter_value.dart';
-import '../../notifiers/focus.dart';
-import '../../notifiers/tag_refresh.dart';
+import "package:flutter/material.dart";
+import "package:gallery/src/db/tags/post_tags.dart";
+import "package:gallery/src/interfaces/cell/contentable.dart";
+import "package:gallery/src/plugs/platform_fullscreens.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:gallery/src/widgets/notifiers/app_bar_visibility.dart";
+import "package:gallery/src/widgets/notifiers/current_content.dart";
+import "package:gallery/src/widgets/notifiers/filter.dart";
+import "package:gallery/src/widgets/notifiers/filter_value.dart";
+import "package:gallery/src/widgets/notifiers/focus.dart";
+import "package:gallery/src/widgets/notifiers/glue_provider.dart";
+import "package:gallery/src/widgets/notifiers/loading_progress.dart";
+import "package:gallery/src/widgets/notifiers/pause_video.dart";
+import "package:gallery/src/widgets/notifiers/reload_image.dart";
+import "package:gallery/src/widgets/notifiers/tag_refresh.dart";
 
 class WrapImageViewNotifiers extends StatefulWidget {
-  final void Function() onTagRefresh;
-  final Contentable currentCell;
-  final FocusNode mainFocus;
-  final InheritedWidget Function(Widget child)? registerNotifiers;
-  final void Function([bool refreshPalette]) hardRefresh;
-  final BuildContext? gridContext;
-  final AnimationController controller;
-  final DraggableScrollableController bottomSheetController;
-  final List<ImageTag> Function(Contentable)? tags;
-  final StreamSubscription<List<ImageTag>> Function(
-      Contentable, void Function(List<ImageTag> l))? watchTags;
-
-  final Widget child;
-
   const WrapImageViewNotifiers({
     super.key,
     required this.registerNotifiers,
@@ -53,6 +38,21 @@ class WrapImageViewNotifiers extends StatefulWidget {
     required this.gridContext,
     required this.child,
   });
+  final void Function() onTagRefresh;
+  final Contentable currentCell;
+  final FocusNode mainFocus;
+  final InheritedWidget Function(Widget child)? registerNotifiers;
+  final void Function([bool refreshPalette]) hardRefresh;
+  final BuildContext? gridContext;
+  final AnimationController controller;
+  final DraggableScrollableController bottomSheetController;
+  final List<ImageTag> Function(Contentable)? tags;
+  final StreamSubscription<List<ImageTag>> Function(
+    Contentable,
+    void Function(List<ImageTag> l),
+  )? watchTags;
+
+  final Widget child;
 
   @override
   State<WrapImageViewNotifiers> createState() => WrapImageViewNotifiersState();
@@ -120,62 +120,61 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
   @override
   Widget build(BuildContext context) {
     return OriginalGridContext(
-        generate: GlueProvider.generateOf(widget.gridContext ?? context),
-        gridContext: widget.gridContext ?? context,
-        child: _TagWatchers(
-          key: ValueKey(widget.currentCell),
-          tags: widget.tags,
-          watchTags: widget.watchTags,
-          currentCell: widget.currentCell,
-          child: ReloadImageNotifier(
-              reload: widget.hardRefresh,
-              child: PauseVideoNotifier(
-                setPause: _setPause,
-                pause: _isPaused,
-                child: TagRefreshNotifier(
-                    isRefreshing: _isTagsRefreshing,
-                    setIsRefreshing: (b) {
-                      _isTagsRefreshing = b;
+      generate: GlueProvider.generateOf(widget.gridContext ?? context),
+      gridContext: widget.gridContext ?? context,
+      child: _TagWatchers(
+        key: ValueKey(widget.currentCell),
+        tags: widget.tags,
+        watchTags: widget.watchTags,
+        currentCell: widget.currentCell,
+        child: ReloadImageNotifier(
+          reload: widget.hardRefresh,
+          child: PauseVideoNotifier(
+            setPause: _setPause,
+            pause: _isPaused,
+            child: TagRefreshNotifier(
+              isRefreshing: _isTagsRefreshing,
+              setIsRefreshing: (b) {
+                _isTagsRefreshing = b;
 
-                      try {
-                        setState(() {});
-                      } catch (_) {}
-                    },
-                    notify: widget.onTagRefresh,
-                    child: FilterValueNotifier(
-                      notifier: _searchData.searchController,
-                      child: FilterNotifier(
-                          data: _searchData,
-                          child: FocusNotifier(
-                            notifier: _searchData.searchFocus,
-                            focusMain: widget.mainFocus.requestFocus,
-                            child: CurrentContentNotifier(
-                                content: widget.currentCell,
-                                child: LoadingProgressNotifier(
-                                  progress: _loadingProgress,
-                                  child: AppBarVisibilityNotifier(
-                                      isShown: _isAppbarShown,
-                                      child: widget.registerNotifiers == null
-                                          ? widget.child
-                                          : widget.registerNotifiers!(
-                                              widget.child)),
-                                )),
-                          )),
-                    )),
-              )),
-        ));
+                try {
+                  setState(() {});
+                } catch (_) {}
+              },
+              notify: widget.onTagRefresh,
+              child: FilterValueNotifier(
+                notifier: _searchData.searchController,
+                child: FilterNotifier(
+                  data: _searchData,
+                  child: FocusNotifier(
+                    notifier: _searchData.searchFocus,
+                    focusMain: widget.mainFocus.requestFocus,
+                    child: CurrentContentNotifier(
+                      content: widget.currentCell,
+                      child: LoadingProgressNotifier(
+                        progress: _loadingProgress,
+                        child: AppBarVisibilityNotifier(
+                          isShown: _isAppbarShown,
+                          child: widget.registerNotifiers == null
+                              ? widget.child
+                              : widget.registerNotifiers!(
+                                  widget.child,
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
 class _TagWatchers extends StatefulWidget {
-  final List<ImageTag> Function(Contentable)? tags;
-  final StreamSubscription<List<ImageTag>> Function(
-      Contentable, void Function(List<ImageTag> l))? watchTags;
-
-  final Contentable currentCell;
-
-  final Widget child;
-
   const _TagWatchers({
     super.key,
     required this.tags,
@@ -183,6 +182,15 @@ class _TagWatchers extends StatefulWidget {
     required this.currentCell,
     required this.child,
   });
+  final List<ImageTag> Function(Contentable)? tags;
+  final StreamSubscription<List<ImageTag>> Function(
+    Contentable,
+    void Function(List<ImageTag> l),
+  )? watchTags;
+
+  final Contentable currentCell;
+
+  final Widget child;
 
   @override
   State<_TagWatchers> createState() => __TagWatchersState();
@@ -238,15 +246,14 @@ class __TagWatchersState extends State<_TagWatchers> {
 }
 
 class OriginalGridContext extends InheritedWidget {
-  final BuildContext gridContext;
-  final SelectionGlue Function() generate;
-
   const OriginalGridContext({
     super.key,
     required this.gridContext,
     required this.generate,
     required super.child,
   });
+  final BuildContext gridContext;
+  final SelectionGlue Function() generate;
 
   static BuildContext? maybeOf(BuildContext context) {
     final widget =
@@ -268,15 +275,14 @@ class OriginalGridContext extends InheritedWidget {
 }
 
 class ImageTagsNotifier extends InheritedWidget {
-  final List<ImageTag> tags;
-  final DisassembleResult? res;
-
   const ImageTagsNotifier({
     super.key,
     required this.tags,
     required this.res,
     required super.child,
   });
+  final List<ImageTag> tags;
+  final DisassembleResult? res;
 
   static List<ImageTag> of(BuildContext context) {
     final widget =

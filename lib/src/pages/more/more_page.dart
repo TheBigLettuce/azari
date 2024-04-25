@@ -5,19 +5,18 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:flutter/material.dart';
-import 'package:gallery/main.dart';
-import 'package:gallery/src/db/schemas/statistics/daily_statistics.dart';
-import 'package:gallery/src/pages/more/downloads.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:gallery/src/widgets/restart_widget.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import 'dashboard/dashboard.dart';
-import 'blacklisted_page.dart';
-import 'settings/settings_widget.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/main.dart";
+import "package:gallery/src/db/schemas/statistics/daily_statistics.dart";
+import "package:gallery/src/pages/more/blacklisted_page.dart";
+import "package:gallery/src/pages/more/dashboard/dashboard.dart";
+import "package:gallery/src/pages/more/downloads.dart";
+import "package:gallery/src/pages/more/settings/settings_widget.dart";
+import "package:gallery/src/widgets/notifiers/glue_provider.dart";
+import "package:gallery/src/widgets/restart_widget.dart";
 
 class MorePage extends StatelessWidget {
   const MorePage({
@@ -52,11 +51,14 @@ class MorePage extends StatelessWidget {
                   IconButton.filled(
                     icon: const Icon(Icons.dashboard_outlined),
                     onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(
-                        builder: (context) {
-                          return const Dashboard();
-                        },
-                      ));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (context) {
+                            return const Dashboard();
+                          },
+                        ),
+                      );
                     },
                   ),
                   const Padding(padding: EdgeInsets.only(left: 8)),
@@ -65,13 +67,16 @@ class MorePage extends StatelessWidget {
                     onPressed: () {
                       final g = GlueProvider.generateOf(context);
 
-                      Navigator.push(context, MaterialPageRoute(
-                        builder: (context) {
-                          return Downloads(
-                            generateGlue: g,
-                          );
-                        },
-                      ));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (context) {
+                            return Downloads(
+                              generateGlue: g,
+                            );
+                          },
+                        ),
+                      );
                     },
                   ),
                   const Padding(padding: EdgeInsets.only(left: 8)),
@@ -81,24 +86,26 @@ class MorePage extends StatelessWidget {
                       final g = GlueProvider.generateOf(context);
 
                       Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => BlacklistedPage(
-                              generateGlue: g,
-                            ),
-                          ));
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (context) => BlacklistedPage(
+                            generateGlue: g,
+                          ),
+                        ),
+                      );
                     },
                   ),
                   const Padding(padding: EdgeInsets.only(left: 8)),
                   IconButton.filled(
                     icon: const Icon(Icons.settings_outlined),
                     onPressed: () {
-                      Navigator.of(context, rootNavigator: true)
-                          .push(MaterialPageRoute(
-                        builder: (context) {
-                          return const SettingsWidget();
-                        },
-                      ));
+                      Navigator.of(context, rootNavigator: true).push(
+                        MaterialPageRoute<void>(
+                          builder: (context) {
+                            return const SettingsWidget();
+                          },
+                        ),
+                      );
                     },
                   ),
                 ],
@@ -167,21 +174,20 @@ class MorePage extends StatelessWidget {
               ),
             ],
           ),
-        )
+        ),
       ],
     );
   }
 }
 
 class TimeSpentWidget extends StatefulWidget {
-  final Stream<Duration> stream;
-  final Duration initalDuration;
-
   const TimeSpentWidget({
     super.key,
     required this.stream,
     required this.initalDuration,
   });
+  final Stream<Duration> stream;
+  final Duration initalDuration;
 
   @override
   State<TimeSpentWidget> createState() => _TimeSpentWidgetState();
@@ -212,7 +218,7 @@ class _TimeSpentWidgetState extends State<TimeSpentWidget> {
   String timeStr() {
     var microseconds = duration.inMicroseconds;
     var sign = "";
-    var negative = microseconds < 0;
+    final negative = microseconds < 0;
 
     var hours = microseconds ~/ Duration.microsecondsPerHour;
     microseconds = microseconds.remainder(Duration.microsecondsPerHour);
@@ -225,15 +231,15 @@ class _TimeSpentWidgetState extends State<TimeSpentWidget> {
       sign = "-";
     }
 
-    var minutes = microseconds ~/ Duration.microsecondsPerMinute;
+    final minutes = microseconds ~/ Duration.microsecondsPerMinute;
     microseconds = microseconds.remainder(Duration.microsecondsPerMinute);
 
-    var minutesPadding = minutes < 10 ? "0" : "";
+    final minutesPadding = minutes < 10 ? "0" : "";
 
-    var seconds = microseconds ~/ Duration.microsecondsPerSecond;
+    final seconds = microseconds ~/ Duration.microsecondsPerSecond;
     microseconds = microseconds.remainder(Duration.microsecondsPerSecond);
 
-    var secondsPadding = seconds < 10 ? "0" : "";
+    final secondsPadding = seconds < 10 ? "0" : "";
 
     return "${hours != 0 ? "$sign$hours h " : ""}${minutes != 0 ? "$minutesPadding$minutes m " : ""}$secondsPadding$seconds s";
   }

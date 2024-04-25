@@ -5,28 +5,27 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/anime/anime_api.dart';
-import 'package:gallery/src/interfaces/anime/anime_entry.dart';
+import "package:flutter/material.dart";
+import "package:gallery/src/interfaces/anime/anime_api.dart";
+import "package:gallery/src/interfaces/anime/anime_entry.dart";
 
 class RefreshEntryIcon extends StatefulWidget {
-  final AnimeEntry entry;
-  final AnimeAPI api;
-  final void Function(AnimeEntry) save;
-
   const RefreshEntryIcon(
     this.entry,
     this.save, {
     super.key,
     required this.api,
   });
+  final AnimeEntry entry;
+  final AnimeAPI api;
+  final void Function(AnimeEntry) save;
 
   @override
   State<RefreshEntryIcon> createState() => _RefreshEntryIconState();
 }
 
 class _RefreshEntryIconState extends State<RefreshEntryIcon> {
-  Future? _refreshingProgress;
+  Future<void>? _refreshingProgress;
 
   @override
   Widget build(BuildContext context) {

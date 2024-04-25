@@ -5,20 +5,21 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
-import 'dart:io';
-import 'package:dio/dio.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:gallery/src/db/schemas/statistics/statistics_booru.dart';
-import 'package:gallery/src/db/schemas/statistics/statistics_general.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/interfaces/logging/logging.dart';
-import 'package:gallery/src/plugs/download_movers.dart';
-import 'package:gallery/src/plugs/notifications.dart';
-import 'package:gallery/src/db/schemas/downloader/download_file.dart';
-import 'package:gallery/src/db/schemas/settings/settings.dart';
-import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
+import "dart:async";
+import "dart:io";
+
+import "package:dio/dio.dart";
+import "package:flutter_animate/flutter_animate.dart";
+import "package:gallery/src/db/schemas/downloader/download_file.dart";
+import "package:gallery/src/db/schemas/settings/settings.dart";
+import "package:gallery/src/db/schemas/statistics/statistics_booru.dart";
+import "package:gallery/src/db/schemas/statistics/statistics_general.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/interfaces/logging/logging.dart";
+import "package:gallery/src/plugs/download_movers.dart";
+import "package:gallery/src/plugs/notifications.dart";
+import "package:path/path.dart" as path;
+import "package:path_provider/path_provider.dart";
 
 Downloader? _global;
 
@@ -27,10 +28,10 @@ const kDownloadFailed = "Failed"; // TODO: change
 const kDownloadInProgress = "In progress"; // TODO: change
 
 mixin _StatisticsTimer {
-  StreamSubscription? _refresher;
+  StreamSubscription<void>? _refresher;
 
   void _start() {
-    _refresher ??= Stream.periodic(1.seconds).listen((event) {
+    _refresher ??= Stream<void>.periodic(1.seconds).listen((event) {
       StatisticsGeneral.addTimeDownload(1.seconds.inMilliseconds);
     });
   }
@@ -60,6 +61,7 @@ mixin _CancelTokens {
 }
 
 class Downloader with _CancelTokens, _StatisticsTimer {
+  Downloader._new(this.maximum, this.moverPlug);
   static const _log = LogTarget.downloader;
 
   int _inWork = 0;
@@ -155,10 +157,12 @@ class Downloader with _CancelTokens, _StatisticsTimer {
     }
 
     final toDownload = downloads
-        .where((element) =>
-            element.isarId == null ||
-            !_hasCancelKey(element.url) ||
-            DownloadFile.notExist(element.url))
+        .where(
+          (element) =>
+              element.isarId == null ||
+              !_hasCancelKey(element.url) ||
+              DownloadFile.notExist(element.url),
+        )
         .map((e) => e.onHold())
         .toList();
 
@@ -168,7 +172,7 @@ class Downloader with _CancelTokens, _StatisticsTimer {
 
     DownloadFile.saveAll(toDownload);
 
-    List<DownloadFile> toSave = [];
+    final List<DownloadFile> toSave = [];
 
     for (final e in toDownload) {
       if (_inWork >= maximum) {
@@ -199,10 +203,11 @@ class Downloader with _CancelTokens, _StatisticsTimer {
     final failed = DownloadFile.allFailed;
 
     addAll(
-        failed.length < 7
-            ? failed + DownloadFile.nextNumber(failed.length)
-            : failed,
-        SettingsService.currentData);
+      failed.length < 7
+          ? failed + DownloadFile.nextNumber(failed.length)
+          : failed,
+      SettingsService.currentData,
+    );
   }
 
   void markStale({List<DownloadFile>? override}) {
@@ -236,9 +241,10 @@ class Downloader with _CancelTokens, _StatisticsTimer {
     DownloadFile.saveAll(toUpdate);
   }
 
-  void _download(DownloadFile d) async {
+  Future<void> _download(DownloadFile d) async {
     final downloadtd = Directory(
-        path.joinAll([(await getTemporaryDirectory()).path, "downloads"]));
+      path.joinAll([(await getTemporaryDirectory()).path, "downloads"]),
+    );
 
     final dirpath = path.joinAll([downloadtd.path, d.site]);
     try {
@@ -248,7 +254,9 @@ class Downloader with _CancelTokens, _StatisticsTimer {
       await Directory(dirpath).create();
     } catch (e, trace) {
       _log.logDefaultImportant(
-          "while creating directory $dirpath".errorMessage(e), trace);
+        "while creating directory $dirpath".errorMessage(e),
+        trace,
+      );
 
       return;
     }
@@ -260,28 +268,40 @@ class Downloader with _CancelTokens, _StatisticsTimer {
     }
 
     final progress = await notificationPlug.newProgress(
-        d.name, d.isarId!, d.site, "Downloader");
+      d.name,
+      d.isarId!,
+      d.site,
+      "Downloader",
+    );
 
     _start();
 
     _log.logDefault("Started download: $d".message);
 
-    dio.download(d.url, filePath,
-        cancelToken: _tokens[d.url],
-        deleteOnError: true, onReceiveProgress: ((count, total) {
-      if (count == total || !_hasCancelKey(d.url)) {
-        progress.done();
-        return;
-      }
+    dio.download(
+      d.url,
+      filePath,
+      cancelToken: _tokens[d.url],
+      onReceiveProgress: (count, total) {
+        if (count == total || !_hasCancelKey(d.url)) {
+          progress.done();
+          return;
+        }
 
-      progress.setTotal(total);
-      progress.update(count);
-    })).then((value) async {
+        progress.setTotal(total);
+        progress.update(count);
+      },
+    ).then((value) async {
       try {
         final settings = SettingsService.currentData;
 
-        moverPlug.move(MoveOp(
-            source: filePath, rootDir: settings.path.path, targetDir: d.site));
+        moverPlug.move(
+          MoveOp(
+            source: filePath,
+            rootDir: settings.path.path,
+            targetDir: d.site,
+          ),
+        );
 
         DownloadFile.deleteAll([d.url]);
         _removeToken(d.url);
@@ -289,7 +309,9 @@ class Downloader with _CancelTokens, _StatisticsTimer {
         StatisticsBooru.addDownloaded();
       } catch (e, trace) {
         _log.logDefaultImportant(
-            "writting downloaded file ${d.name} to uri".errorMessage(e), trace);
+          "writting downloaded file ${d.name} to uri".errorMessage(e),
+          trace,
+        );
         _removeToken(d.url);
         d.failed().save();
       }
@@ -303,7 +325,7 @@ class Downloader with _CancelTokens, _StatisticsTimer {
     }).whenComplete(() => _done());
   }
 
-  void _removeTempContentsDownloads() async {
+  Future<void> _removeTempContentsDownloads() async {
     try {
       final tempd = await getTemporaryDirectory();
       final downld = Directory(path.join(tempd.path, "downloads"));
@@ -313,14 +335,14 @@ class Downloader with _CancelTokens, _StatisticsTimer {
 
       downld.list().map((event) {
         event.deleteSync(recursive: true);
-      }).drain();
+      }).drain<void>();
     } catch (e, trace) {
       _log.logDefaultImportant(
-          "deleting temp directories".errorMessage(e), trace);
+        "deleting temp directories".errorMessage(e),
+        trace,
+      );
     }
   }
-
-  Downloader._new(this.maximum, this.moverPlug);
 
   static Downloader get g => _global!;
 }

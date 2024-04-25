@@ -5,11 +5,11 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:dio/dio.dart';
-import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
-import 'package:gallery/src/interfaces/anime/anime_api.dart';
-import 'package:gallery/src/interfaces/logging/logging.dart';
-import 'package:gallery/src/interfaces/manga/manga_api.dart';
+import "package:dio/dio.dart";
+import "package:gallery/src/db/schemas/manga/saved_manga_chapters.dart";
+import "package:gallery/src/interfaces/anime/anime_api.dart";
+import "package:gallery/src/interfaces/logging/logging.dart";
+import "package:gallery/src/interfaces/manga/manga_api.dart";
 
 const Duration _defaultTimeout = Duration(seconds: 30);
 
@@ -103,7 +103,7 @@ class MangaDex implements MangaAPI {
   @override
   Future<double> score(MangaEntry e) async {
     final res = await client.getUriLog(
-      Uri.https(site.url, "/statistics/manga/${e.id.toString()}"),
+      Uri.https(site.url, "/statistics/manga/${e.id}"),
       const LogReq("Manga score", _log),
       options: Options(
         responseType: ResponseType.json,
@@ -122,7 +122,7 @@ class MangaDex implements MangaAPI {
   @override
   Future<MangaEntry> single(MangaId id) async {
     final res = await client.getUriLog(
-      Uri.https(site.url, "/manga/${id.toString()}", {
+      Uri.https(site.url, "/manga/$id", {
         "includes[0]": "cover_art",
         "includes[1]": "manga",
       }),
@@ -149,24 +149,25 @@ class MangaDex implements MangaAPI {
     MangaChapterOrder order = MangaChapterOrder.desc,
   }) async {
     final res = await client.getUriLog(
-        Uri.https(site.url, "/manga/$id/feed", {
-          "limit": count.toString(),
-          "offset": (page * count).toString(),
-          "contentRating[0]": "safe",
-          "contentRating[1]": "suggestive",
-          "contentRating[2]": "erotica",
-          "contentRating[3]": "pornographic",
-          "includes[]": "scanlation_group",
-          "order[volume]": order == MangaChapterOrder.asc ? "asc" : "desc",
-          "order[chapter]": order == MangaChapterOrder.asc ? "asc" : "desc",
-          "translatedLanguage[]": "en",
-        }),
-        LogReq("Manga chapters page $page", _log),
-        options: Options(
-          responseType: ResponseType.json,
-          sendTimeout: _defaultTimeout,
-          receiveTimeout: _defaultTimeout,
-        ));
+      Uri.https(site.url, "/manga/$id/feed", {
+        "limit": count.toString(),
+        "offset": (page * count).toString(),
+        "contentRating[0]": "safe",
+        "contentRating[1]": "suggestive",
+        "contentRating[2]": "erotica",
+        "contentRating[3]": "pornographic",
+        "includes[]": "scanlation_group",
+        "order[volume]": order == MangaChapterOrder.asc ? "asc" : "desc",
+        "order[chapter]": order == MangaChapterOrder.asc ? "asc" : "desc",
+        "translatedLanguage[]": "en",
+      }),
+      LogReq("Manga chapters page $page", _log),
+      options: Options(
+        responseType: ResponseType.json,
+        sendTimeout: _defaultTimeout,
+        receiveTimeout: _defaultTimeout,
+      ),
+    );
 
     return _fromJsonChapters("en", res.data["data"]);
   }
@@ -191,13 +192,18 @@ class MangaDex implements MangaAPI {
       final String baseUrl = res.data["baseUrl"];
       final String hash = res.data["chapter"]["hash"];
 
-      final ret = _fromJsonImages(res.data["chapter"]["data"],
-          baseUrl: baseUrl, hash: hash);
+      final ret = _fromJsonImages(
+        res.data["chapter"]["data"],
+        baseUrl: baseUrl,
+        hash: hash,
+      );
 
       return ret;
     } catch (e, stackTrace) {
       LogTarget.manga.logDefaultImportant(
-          "unwrapping manga chapter images json".errorMessage(e), stackTrace);
+        "unwrapping manga chapter images json".errorMessage(e),
+        stackTrace,
+      );
 
       rethrow;
     }
@@ -215,11 +221,13 @@ List<MangaImage> _fromJsonImages(
   final ret = <MangaImage>[];
 
   for (final e in l.indexed) {
-    ret.add(MangaImage(
-      "$baseUrl/data/$hash/${e.$2}",
-      e.$1,
-      l.length,
-    ));
+    ret.add(
+      MangaImage(
+        "$baseUrl/data/$hash/${e.$2}",
+        e.$1,
+        l.length,
+      ),
+    );
   }
 
   return ret;
@@ -239,18 +247,23 @@ List<MangaChapter> _fromJsonChapters(String lang, List<dynamic> l) {
           continue;
         }
 
-        ret.add(MangaChapter(
+        ret.add(
+          MangaChapter(
             chapter: attr["chapter"] ?? "0",
             pages: pages,
             title: attr["title"] ?? "",
             volume: volume,
             translator: _getScanlationGroup(e["relationships"]) ?? "",
-            id: e["id"]));
+            id: e["id"],
+          ),
+        );
       }
     }
   } catch (e, stackTrace) {
     LogTarget.manga.logDefaultImportant(
-        "unwrapping manga chapter json".errorMessage(e), stackTrace);
+      "unwrapping manga chapter json".errorMessage(e),
+      stackTrace,
+    );
 
     rethrow;
   }
@@ -346,7 +359,9 @@ List<MangaEntry> _fromJson(List<dynamic> l) {
     return res;
   } catch (e, stackTrace) {
     LogTarget.manga.logDefaultImportant(
-        "unwrapping manga json".errorMessage(e), stackTrace);
+      "unwrapping manga json".errorMessage(e),
+      stackTrace,
+    );
 
     rethrow;
   }
@@ -368,10 +383,12 @@ List<MangaRelation> _mangaRelations(List<dynamic> l) {
         continue;
       }
 
-      ret.add(MangaRelation(
-        id: MangaStringId(e["id"]),
-        name: _tagOrFirst("en", attr["title"]),
-      ));
+      ret.add(
+        MangaRelation(
+          id: MangaStringId(e["id"]),
+          name: _tagOrFirst("en", attr["title"]),
+        ),
+      );
     }
   }
 
@@ -414,9 +431,12 @@ List<MangaGenre> _genres(List<dynamic> l) {
   }
 
   return l
-      .map((e) => MangaGenre(
+      .map(
+        (e) => MangaGenre(
           id: MangaStringId(e["id"]),
-          name: _tagOrFirst("en", e["attributes"]["name"])))
+          name: _tagOrFirst("en", e["attributes"]["name"]),
+        ),
+      )
       .toList();
 }
 
@@ -453,8 +473,11 @@ List<String> _tagEntries(String tag, List<dynamic> l, int? exclude) {
   return ret;
 }
 
-(String, int)? _tagFirstIndex(String tag, List<dynamic> l,
-    [bool longest = false]) {
+(String, int)? _tagFirstIndex(
+  String tag,
+  List<dynamic> l, [
+  bool longest = false,
+]) {
   if (!longest) {
     for (final e in l.indexed) {
       final e1 = e.$2[tag];

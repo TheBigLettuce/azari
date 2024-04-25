@@ -5,35 +5,29 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/base/post_base.dart';
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/db/schemas/booru/post.dart';
-import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/pages/home.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
-import 'package:gallery/src/pages/booru/booru_restored_page.dart';
-import 'package:gallery/src/pages/more/settings/settings_widget.dart';
-import 'package:gallery/src/widgets/empty_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:gallery/src/widgets/shimmer_loading_indicator.dart';
-import 'package:isar/isar.dart';
-
-import '../../widgets/time_label.dart';
+import "package:flutter/material.dart";
+import "package:flutter_animate/flutter_animate.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/base/post_base.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/db/schemas/booru/post.dart";
+import "package:gallery/src/db/schemas/grid_state/grid_state_booru.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/pages/booru/booru_restored_page.dart";
+import "package:gallery/src/pages/home.dart";
+import "package:gallery/src/pages/more/settings/settings_widget.dart";
+import "package:gallery/src/widgets/empty_widget.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_bottom_padding_provider.dart";
+import "package:gallery/src/widgets/notifiers/glue_provider.dart";
+import "package:gallery/src/widgets/shimmer_loading_indicator.dart";
+import "package:gallery/src/widgets/time_label.dart";
+import "package:isar/isar.dart";
 
 class BookmarkPage extends StatefulWidget {
-  final void Function(String? e) saveSelectedPage;
-  final PagingStateRegistry pagingRegistry;
-  final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
-  final void Function() scrollUp;
-
   const BookmarkPage({
     super.key,
     required this.saveSelectedPage,
@@ -41,6 +35,10 @@ class BookmarkPage extends StatefulWidget {
     required this.pagingRegistry,
     required this.scrollUp,
   });
+  final void Function(String? e) saveSelectedPage;
+  final PagingStateRegistry pagingRegistry;
+  final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
+  final void Function() scrollUp;
 
   @override
   State<BookmarkPage> createState() => _BookmarkPageState();
@@ -103,11 +101,12 @@ class _BookmarkPageState extends State<BookmarkPage> {
         SafeMode.none => db.posts.where().limit(5).findAllSync(),
       };
 
-  void _updateDirectly() async {
+  Future<void> _updateDirectly() async {
     gridStates.clear();
 
     gridStates.addAll(
-        Dbs.g.main.gridStateBoorus.where().sortByTimeDesc().findAllSync());
+      Dbs.g.main.gridStateBoorus.where().sortByTimeDesc().findAllSync(),
+    );
 
     if (m.isEmpty) {
       for (final e in gridStates) {
@@ -140,28 +139,33 @@ class _BookmarkPageState extends State<BookmarkPage> {
   }
 
   void launchGrid(BuildContext context, GridStateBooru e) {
-    Dbs.g.main.writeTxnSync(() =>
-        Dbs.g.main.gridStateBoorus.putByNameSync(e.copy(time: DateTime.now())));
+    Dbs.g.main.writeTxnSync(
+      () => Dbs.g.main.gridStateBoorus
+          .putByNameSync(e.copy(time: DateTime.now())),
+    );
 
     widget.saveSelectedPage(e.name);
 
     inInner = true;
 
-    Navigator.push(context, MaterialPageRoute(
-      builder: (context) {
-        return BooruRestoredPage(
-          state: e,
-          pagingRegistry: widget.pagingRegistry,
-          onDispose: () {
-            if (!isRestart) {
-              widget.saveSelectedPage(null);
-              widget.pagingRegistry.remove(e.name);
-            }
-          },
-          generateGlue: widget.generateGlue,
-        );
-      },
-    )).whenComplete(_procUpdate);
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) {
+          return BooruRestoredPage(
+            state: e,
+            pagingRegistry: widget.pagingRegistry,
+            onDispose: () {
+              if (!isRestart) {
+                widget.saveSelectedPage(null);
+                widget.pagingRegistry.remove(e.name);
+              }
+            },
+            generateGlue: widget.generateGlue,
+          );
+        },
+      ),
+    ).whenComplete(_procUpdate);
   }
 
   List<Widget> makeList(BuildContext context) {
@@ -193,7 +197,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
         m[e.name] = posts;
 
         // TODO: do something about this
-        db.close(deleteFromDisk: false);
+        db.close();
       }
 
       list.add(
@@ -234,16 +238,15 @@ class _BookmarkPageState extends State<BookmarkPage> {
 }
 
 class BookmarkListTile extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final GridStateBooru state;
-
   const BookmarkListTile({
     super.key,
     required this.subtitle,
     required this.title,
     required this.state,
   });
+  final String title;
+  final String subtitle;
+  final GridStateBooru state;
 
   @override
   Widget build(BuildContext context) {
@@ -251,7 +254,6 @@ class BookmarkListTile extends StatelessWidget {
       padding: const EdgeInsets.only(top: 8, bottom: 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -270,7 +272,7 @@ class BookmarkListTile extends StatelessWidget {
                       .withOpacity(0.8),
                   letterSpacing: 0.8,
                 ),
-          )
+          ),
         ],
       ),
     );
@@ -278,12 +280,6 @@ class BookmarkListTile extends StatelessWidget {
 }
 
 class _BookmarkListTile extends StatefulWidget {
-  final String title;
-  final String subtitle;
-  final GridStateBooru state;
-  final void Function(BuildContext context, GridStateBooru e) onPressed;
-  final List<Post> posts;
-
   const _BookmarkListTile({
     super.key,
     required this.subtitle,
@@ -292,6 +288,11 @@ class _BookmarkListTile extends StatefulWidget {
     required this.onPressed,
     required this.posts,
   });
+  final String title;
+  final String subtitle;
+  final GridStateBooru state;
+  final void Function(BuildContext context, GridStateBooru e) onPressed;
+  final List<Post> posts;
 
   @override
   State<_BookmarkListTile> createState() => __BookmarkListTileState();
@@ -330,7 +331,6 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
               SizedBox(
                 height: size,
                 child: ClipPath.shape(
-                  clipBehavior: Clip.antiAlias,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),
                   ),
@@ -383,7 +383,6 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
                   children: [
                     Column(
                       mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
@@ -407,54 +406,59 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
                                         .withOpacity(0.8),
                                     letterSpacing: 0.8,
                                   ),
-                        )
+                        ),
                       ],
                     ),
                     IconButton.filledTonal(
                       onPressed: () {
                         Navigator.push(
-                            context,
-                            DialogRoute(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: Text(
-                                    AppLocalizations.of(context)!.delete,
-                                  ),
-                                  content: ListTile(
-                                    title: Text(widget.state.tags),
-                                    subtitle:
-                                        Text(widget.state.time.toString()),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        DbsOpen.secondaryGridName(
-                                                widget.state.name)
-                                            .close(deleteFromDisk: true)
-                                            .then((value) {
-                                          if (value) {
-                                            Dbs.g.main.writeTxnSync(() => Dbs
-                                                .g.main.gridStateBoorus
+                          context,
+                          DialogRoute<void>(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: Text(
+                                  AppLocalizations.of(context)!.delete,
+                                ),
+                                content: ListTile(
+                                  title: Text(widget.state.tags),
+                                  subtitle: Text(widget.state.time.toString()),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      DbsOpen.secondaryGridName(
+                                        widget.state.name,
+                                      )
+                                          .close(deleteFromDisk: true)
+                                          .then((value) {
+                                        if (value) {
+                                          Dbs.g.main.writeTxnSync(
+                                            () => Dbs.g.main.gridStateBoorus
                                                 .deleteByNameSync(
-                                                    widget.state.name));
-                                          }
+                                              widget.state.name,
+                                            ),
+                                          );
+                                        }
 
-                                          Navigator.pop(context);
-                                        });
-                                      },
-                                      child: Text(
-                                          AppLocalizations.of(context)!.yes),
+                                        Navigator.pop(context);
+                                      });
+                                    },
+                                    child: Text(
+                                      AppLocalizations.of(context)!.yes,
                                     ),
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: Text(
-                                          AppLocalizations.of(context)!.no),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Text(
+                                      AppLocalizations.of(context)!.no,
                                     ),
-                                  ],
-                                );
-                              },
-                            ));
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        );
                       },
                       icon: const Icon(Icons.delete_outline_rounded),
                     ),
@@ -462,7 +466,7 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
                 ),
               ),
             ],
-          )
+          ),
         ],
       ),
     );

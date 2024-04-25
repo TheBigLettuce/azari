@@ -5,22 +5,32 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import "package:flutter/material.dart";
+import "package:flutter/services.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
 
-import '../pages/more/settings/settings_label.dart';
+import "package:gallery/src/pages/more/settings/settings_label.dart";
 
 class MenuWrapper extends StatefulWidget {
+  const MenuWrapper({
+    super.key,
+    this.items = const [],
+    required this.title,
+    required this.child,
+    this.includeCopy = true,
+  });
   final String title;
-  final List<PopupMenuItem> items;
+  final List<PopupMenuItem<void>> items;
   final bool includeCopy;
 
   final Widget child;
 
-  static List<PopupMenuItem> menuItems(
-          BuildContext context, String title, bool includeCopy,
-          [List<PopupMenuItem>? items]) =>
+  static List<PopupMenuItem<void>> menuItems(
+    BuildContext context,
+    String title,
+    bool includeCopy, [
+    List<PopupMenuItem<void>>? items,
+  ]) =>
       [
         PopupMenuItem(
           padding: const EdgeInsets.only(left: 16, right: 16),
@@ -36,16 +46,8 @@ class MenuWrapper extends StatefulWidget {
               Clipboard.setData(ClipboardData(text: title));
             },
             child: Text(AppLocalizations.of(context)!.copyLabel),
-          )
+          ),
       ];
-
-  const MenuWrapper({
-    super.key,
-    this.items = const [],
-    required this.title,
-    required this.child,
-    this.includeCopy = true,
-  });
 
   @override
   State<MenuWrapper> createState() => _MenuWrapperState();

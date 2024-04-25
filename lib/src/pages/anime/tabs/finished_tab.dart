@@ -69,15 +69,13 @@ class __FinishedTabState extends State<_FinishedTab> {
       return;
     }
 
-    value = value.trim();
+    _filteringValue = value.trim();
 
-    _filteringValue = value;
-
-    final l = value.toLowerCase();
+    final l = _filteringValue.toLowerCase();
 
     _filter.clear();
 
-    if (value.isEmpty) {
+    if (_filteringValue.isEmpty) {
       setState(() {});
 
       m.cellCount = _list.length;
