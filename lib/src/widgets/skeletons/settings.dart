@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/main.dart';
 
 import '../gesture_dead_zones.dart';
 import '../keybinds/describe_keys.dart';
@@ -63,42 +64,45 @@ class SettingsSkeleton extends StatelessWidget {
         child: Focus(
           autofocus: autofocus,
           focusNode: state.mainFocus,
-          child: Scaffold(
-            floatingActionButtonLocation:
-                FloatingActionButtonLocation.endContained,
-            bottomNavigationBar: bottomAppBar,
-            extendBody: extendBody,
-            floatingActionButton: fab,
-            extendBodyBehindAppBar: extendBodyBehindAppBar,
-            drawerEnableOpenDragGesture:
-                MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,
-            appBar: appBar,
-            body: GestureDeadZones(
-                left: true,
-                right: true,
-                child: appBar == null && expectSliverBody
-                    ? CustomScrollView(
-                        slivers: [
-                          SliverAppBar.large(
-                            expandedHeight: 160,
-                            flexibleSpace: FlexibleSpaceBar(
-                              title: Text(
-                                pageDescription,
-                                style: TextStyle(
-                                    color: Theme.of(context)
-                                        .textTheme
-                                        .bodyLarge
-                                        ?.color),
+          child: AnnotatedRegion(
+            value: navBarStyleForTheme(Theme.of(context)),
+            child: Scaffold(
+              floatingActionButtonLocation:
+                  FloatingActionButtonLocation.endContained,
+              bottomNavigationBar: bottomAppBar,
+              extendBody: extendBody,
+              floatingActionButton: fab,
+              extendBodyBehindAppBar: extendBodyBehindAppBar,
+              drawerEnableOpenDragGesture:
+                  MediaQuery.systemGestureInsetsOf(context) == EdgeInsets.zero,
+              appBar: appBar,
+              body: GestureDeadZones(
+                  left: true,
+                  right: true,
+                  child: appBar == null && expectSliverBody
+                      ? CustomScrollView(
+                          slivers: [
+                            SliverAppBar.large(
+                              expandedHeight: 160,
+                              flexibleSpace: FlexibleSpaceBar(
+                                title: Text(
+                                  pageDescription,
+                                  style: TextStyle(
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.color),
+                                ),
                               ),
                             ),
-                          ),
-                          SliverPadding(
-                            padding: EdgeInsets.only(bottom: insets.bottom),
-                            sliver: child,
-                          )
-                        ],
-                      )
-                    : child),
+                            SliverPadding(
+                              padding: EdgeInsets.only(bottom: insets.bottom),
+                              sliver: child,
+                            )
+                          ],
+                        )
+                      : child),
+            ),
           ),
         ));
   }

@@ -5,20 +5,22 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:io';
+import "dart:io";
 
-import 'package:dynamic_color/dynamic_color.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/plugs/download_movers.dart';
-import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
+import "package:dynamic_color/dynamic_color.dart";
+import "package:flutter/material.dart";
+import "package:flutter/services.dart";
+import "package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/plugs/download_movers.dart";
 
 const MethodChannel _channel = MethodChannel("lol.bruh19.azari.gallery");
 
 /// Platform functions which are currently implemented.
 /// Most of the methods here depend on the callbacks methods created by Pigeon.
 abstract interface class PlatformFunctions {
+  const PlatformFunctions();
+
   static void hideRecents(bool hide) {
     _channel.invokeMethod("hideRecents", hide);
   }
@@ -38,7 +40,7 @@ abstract interface class PlatformFunctions {
   static Future<String> pickFileAndCopy(String outputDir) {
     return _channel
         .invokeMethod("pickFileAndCopy", outputDir)
-        .then((value) => value!);
+        .then((value) => value as String);
   }
 
   static void loadThumbnail(int thumb) {
@@ -46,12 +48,14 @@ abstract interface class PlatformFunctions {
   }
 
   static Future<bool> requestManageMedia() {
-    return _channel.invokeMethod("requestManageMedia").then((value) => value);
+    return _channel
+        .invokeMethod("requestManageMedia")
+        .then((value) => value as bool);
   }
 
   static Future<Color> accentColor() async {
     try {
-      final int c = await _channel.invokeMethod("accentColor");
+      final int c = (await _channel.invokeMethod("accentColor")) as int;
       return Color(c);
     } catch (e) {
       try {
@@ -71,47 +75,58 @@ abstract interface class PlatformFunctions {
     }
 
     _channel.invokeMethod(
-        "rename", {"uri": uri, "newName": newName, "notify": notify});
+      "rename",
+      {"uri": uri, "newName": newName, "notify": notify},
+    );
   }
 
-  static void copyMoveFiles(String? chosen, String? chosenVolumeName,
-      List<SystemGalleryDirectoryFile> selected,
-      {required bool move, String? newDir}) {
-    _channel.invokeMethod("copyMoveFiles", {
-      "dest": chosen ?? newDir,
-      "images": selected
-          .where((element) => !element.isVideo)
-          .map((e) => e.id)
-          .toList(),
-      "videos": selected
-          .where((element) => element.isVideo)
-          .map((e) => e.id)
-          .toList(),
-      "move": move,
-      "volumeName": chosenVolumeName,
-      "newDir": newDir != null
-    });
+  static void copyMoveFiles(
+    String? chosen,
+    String? chosenVolumeName,
+    List<SystemGalleryDirectoryFile> selected, {
+    required bool move,
+    String? newDir,
+  }) {
+    _channel.invokeMethod(
+      "copyMoveFiles",
+      {
+        "dest": chosen ?? newDir,
+        "images": selected
+            .where((element) => !element.isVideo)
+            .map((e) => e.id)
+            .toList(),
+        "videos": selected
+            .where((element) => element.isVideo)
+            .map((e) => e.id)
+            .toList(),
+        "move": move,
+        "volumeName": chosenVolumeName,
+        "newDir": newDir != null,
+      },
+    );
   }
 
   static Future<int?> trashThumbId() {
     if (!Platform.isAndroid) {
-      return Future.value(null);
+      return Future.value();
     }
     return _channel.invokeMethod("trashThumbId");
   }
 
   static void deleteFiles(List<SystemGalleryDirectoryFile> selected) {
     _channel.invokeMethod(
-        "deleteFiles", selected.map((e) => e.originalUri).toList());
+      "deleteFiles",
+      selected.map((e) => e.originalUri).toList(),
+    );
   }
 
   static Future<SettingsPath?> chooseDirectory({bool temporary = false}) async {
-    return _channel
-        .invokeMethod("chooseDirectory", temporary)
-        .then((value) => SettingsPath.forCurrent(
-              path: value["path"],
-              pathDisplay: value["pathDisplay"],
-            ));
+    return _channel.invokeMethod("chooseDirectory", temporary).then(
+          (value) => SettingsPath.forCurrent(
+            path: (value as Map<String, dynamic>)["path"] as String,
+            pathDisplay: value["pathDisplay"] as String,
+          ),
+        );
   }
 
   static void refreshGallery() {
@@ -119,11 +134,15 @@ abstract interface class PlatformFunctions {
   }
 
   static Future<bool> manageMediaSupported() {
-    return _channel.invokeMethod("manageMediaSupported").then((value) => value);
+    return _channel
+        .invokeMethod("manageMediaSupported")
+        .then((value) => value as bool);
   }
 
   static Future<bool> manageMediaStatus() {
-    return _channel.invokeMethod("manageMediaStatus").then((value) => value);
+    return _channel
+        .invokeMethod("manageMediaStatus")
+        .then((value) => value as bool);
   }
 
   static void emptyTrash() {
@@ -131,8 +150,10 @@ abstract interface class PlatformFunctions {
   }
 
   static void move(MoveOp op) {
-    _channel.invokeMethod("move",
-        {"source": op.source, "rootUri": op.rootDir, "dir": op.targetDir});
+    _channel.invokeMethod(
+      "move",
+      {"source": op.source, "rootUri": op.rootDir, "dir": op.targetDir},
+    );
   }
 
   static void shareMedia(String originalUri, {bool url = false}) {
@@ -140,8 +161,10 @@ abstract interface class PlatformFunctions {
   }
 
   static Future<bool> moveInternal(String internalAppDir, List<String> uris) {
-    return _channel.invokeMethod("moveInternal",
-        {"dir": internalAppDir, "uris": uris}).then((value) => value ?? false);
+    return _channel.invokeMethod(
+      "moveInternal",
+      {"dir": internalAppDir, "uris": uris},
+    ).then((value) => (value as bool?) ?? false);
   }
 
   static void refreshTrashed() {
@@ -157,12 +180,14 @@ abstract interface class PlatformFunctions {
   }
 
   static Future<bool> moveFromInternal(
-      String fromInternalFile, String toDir, String volume) {
-    return _channel.invokeMethod("moveFromInternal", {
-      "from": fromInternalFile,
-      "to": toDir,
-      "volume": volume
-    }).then((value) => value ?? false);
+    String fromInternalFile,
+    String toDir,
+    String volume,
+  ) {
+    return _channel.invokeMethod(
+      "moveFromInternal",
+      {"from": fromInternalFile, "to": toDir, "volume": volume},
+    ).then((value) => (value as bool?) ?? false);
   }
 
   static void preloadImage(String uri) {
@@ -172,12 +197,17 @@ abstract interface class PlatformFunctions {
   static Future<int> thumbCacheSize([bool fromPinned = false]) {
     return _channel
         .invokeMethod("thumbCacheSize", fromPinned)
-        .then((value) => value);
+        .then((value) => value as int);
   }
 
   static Future<ThumbId> getCachedThumb(int id) {
-    return _channel.invokeMethod("getCachedThumb", id).then((value) =>
-        ThumbId(id: id, path: value["path"], differenceHash: value["hash"]));
+    return _channel.invokeMethod("getCachedThumb", id).then(
+          (value) => ThumbId(
+            id: id,
+            path: (value as Map<String, dynamic>)["path"] as String,
+            differenceHash: value["hash"] as int,
+          ),
+        );
   }
 
   static void clearCachedThumbs([bool fromPinned = false]) {
@@ -186,17 +216,21 @@ abstract interface class PlatformFunctions {
 
   static void deleteCachedThumbs(List<int> id, [bool fromPinned = false]) {
     _channel.invokeMethod(
-        "deleteCachedThumbs", {"ids": id, "fromPinned": fromPinned});
+      "deleteCachedThumbs",
+      {"ids": id, "fromPinned": fromPinned},
+    );
   }
 
   static Future<int> currentMediastoreVersion() {
     return _channel
         .invokeMethod("currentMediastoreVersion")
-        .then((value) => value);
+        .then((value) => value as int);
   }
 
   static Future<bool> currentNetworkStatus() {
-    return _channel.invokeMethod("currentNetworkStatus").then((value) => value);
+    return _channel
+        .invokeMethod("currentNetworkStatus")
+        .then((value) => value as bool);
   }
 
   static Future<void> setWallpaper(int id) {
@@ -204,25 +238,26 @@ abstract interface class PlatformFunctions {
   }
 
   static Future<ThumbId> saveThumbNetwork(String url, int id) {
-    return _channel.invokeMethod("saveThumbNetwork", {
-      "url": url,
-      "id": id
-    }).then((value) =>
-        ThumbId(id: id, path: value["path"], differenceHash: value["hash"]));
+    return _channel
+        .invokeMethod("saveThumbNetwork", {"url": url, "id": id}).then(
+      (value) => ThumbId(
+        id: id,
+        path: (value as Map<String, dynamic>)["path"] as String,
+        differenceHash: value["hash"] as int,
+      ),
+    );
   }
-
-  const PlatformFunctions();
 }
 
 @immutable
 class ThumbId {
-  final int id;
-  final String path;
-  final int differenceHash;
-
   const ThumbId({
     required this.id,
     required this.path,
     required this.differenceHash,
   });
+
+  final int id;
+  final String path;
+  final int differenceHash;
 }

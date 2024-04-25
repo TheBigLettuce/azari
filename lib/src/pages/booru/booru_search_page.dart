@@ -5,60 +5,52 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
-import 'dart:io';
+import "dart:async";
+import "dart:io";
 
-import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
-import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
-import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
-import 'package:gallery/src/db/schemas/tags/tags.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/db/tags/booru_tagging.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/booru/booru_api.dart';
-import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
-import 'package:gallery/src/pages/booru/booru_page.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
-import 'package:gallery/src/interfaces/logging/logging.dart';
-import 'package:gallery/src/pages/booru/add_to_bookmarks_button.dart';
-import 'package:gallery/src/pages/more/tags/tags_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:gallery/src/widgets/search_bar/search_launch_grid.dart';
-import 'package:gallery/src/widgets/search_bar/search_launch_grid_data.dart';
-import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
-import 'package:isar/isar.dart';
-import 'package:path/path.dart' as path;
-import 'package:url_launcher/url_launcher.dart';
-
-import '../../db/schemas/statistics/statistics_general.dart';
-import 'booru_grid_actions.dart';
-import '../../net/downloader.dart';
-import '../../db/tags/post_tags.dart';
-import '../../db/initalize_db.dart';
-import '../../db/schemas/downloader/download_file.dart';
-import '../../db/schemas/booru/post.dart';
-import '../../db/schemas/settings/settings.dart';
-import '../../widgets/skeletons/grid.dart';
-import '../../widgets/notifiers/booru_api.dart';
-import '../../widgets/grid_frame/grid_frame.dart';
-import '../../widgets/grid_frame/configuration/grid_frame_settings_button.dart';
+import "package:dio/dio.dart";
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/db/schemas/booru/favorite_booru.dart";
+import "package:gallery/src/db/schemas/booru/post.dart";
+import "package:gallery/src/db/schemas/downloader/download_file.dart";
+import "package:gallery/src/db/schemas/grid_settings/booru.dart";
+import "package:gallery/src/db/schemas/grid_state/grid_state_booru.dart";
+import "package:gallery/src/db/schemas/settings/hidden_booru_post.dart";
+import "package:gallery/src/db/schemas/statistics/statistics_general.dart";
+import "package:gallery/src/db/schemas/tags/tags.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/tags/booru_tagging.dart";
+import "package:gallery/src/db/tags/post_tags.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/booru_api.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/interfaces/logging/logging.dart";
+import "package:gallery/src/net/downloader.dart";
+import "package:gallery/src/pages/booru/add_to_bookmarks_button.dart";
+import "package:gallery/src/pages/booru/booru_grid_actions.dart";
+import "package:gallery/src/pages/booru/booru_page.dart";
+import "package:gallery/src/pages/more/tags/tags_widget.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
+import "package:gallery/src/widgets/notifiers/booru_api.dart";
+import "package:gallery/src/widgets/notifiers/glue_provider.dart";
+import "package:gallery/src/widgets/search_bar/search_launch_grid.dart";
+import "package:gallery/src/widgets/search_bar/search_launch_grid_data.dart";
+import "package:gallery/src/widgets/skeletons/grid.dart";
+import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
+import "package:isar/isar.dart";
+import "package:path/path.dart" as path;
+import "package:url_launcher/url_launcher.dart";
 
 class BooruSearchPage extends StatefulWidget {
-  final Booru booru;
-  final String tags;
-  final SafeMode? overrideSafeMode;
-  final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
-  final bool wrapScaffold;
-
   const BooruSearchPage({
     super.key,
     required this.booru,
@@ -67,6 +59,12 @@ class BooruSearchPage extends StatefulWidget {
     this.overrideSafeMode,
     this.wrapScaffold = false,
   });
+
+  final Booru booru;
+  final String tags;
+  final SafeMode? overrideSafeMode;
+  final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
+  final bool wrapScaffold;
 
   @override
   State<BooruSearchPage> createState() => _BooruSearchPageState();
@@ -93,7 +91,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
   bool reachedEnd = false;
   bool removeDb = true;
 
-  late final Isar instance = DbsOpen.secondaryGrid(temporary: true);
+  late final Isar instance = DbsOpen.secondaryGrid();
 
   late final state = GridSkeletonState<Post>(
     reachedEnd: () => reachedEnd,
@@ -139,9 +137,7 @@ class _BooruSearchPageState extends State<BooruSearchPage> {
       setState(() {});
     });
 
-    favoritesWatcher = Dbs.g.main.favoriteBoorus
-        .watchLazy(fireImmediately: false)
-        .listen((event) {
+    favoritesWatcher = Dbs.g.main.favoriteBoorus.watchLazy().listen((event) {
       state.refreshingStatus.mutation.notify();
       setState(() {});
     });

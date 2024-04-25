@@ -5,27 +5,30 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
-import 'dart:developer';
-import 'dart:io' as io;
+import "dart:async";
+import "dart:developer";
+import "dart:io" as io;
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/booru/booru_api.dart';
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/plugs/platform_functions.dart';
-import 'package:gallery/src/plugs/download_movers.dart';
-import 'package:gallery/src/db/schemas/gallery/directory_tags.dart';
-import 'package:gallery/src/db/schemas/tags/local_tag_dictionary.dart';
-import 'package:gallery/src/db/schemas/tags/local_tags.dart';
-import 'package:gallery/src/db/schemas/booru/post.dart';
-import 'package:gallery/src/db/schemas/tags/tags.dart';
-import 'package:isar/isar.dart';
-import 'package:logging/logging.dart';
-import 'package:path/path.dart';
-import 'package:gallery/src/net/downloader.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/db/schemas/booru/post.dart";
+import "package:gallery/src/db/schemas/gallery/directory_tags.dart";
+import "package:gallery/src/db/schemas/tags/local_tag_dictionary.dart";
+import "package:gallery/src/db/schemas/tags/local_tags.dart";
+import "package:gallery/src/db/schemas/tags/pinned_tag.dart";
+import "package:gallery/src/db/schemas/tags/tags.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/booru_api.dart";
+import "package:gallery/src/net/downloader.dart";
+import "package:gallery/src/plugs/download_movers.dart";
+import "package:gallery/src/plugs/platform_functions.dart";
+import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:isar/isar.dart";
+import "package:logging/logging.dart";
+import "package:path/path.dart";
+import "package:stream_transform/stream_transform.dart";
 
 late final PostTags _global;
 bool _isInitalized = false;
@@ -34,6 +37,13 @@ bool _isInitalized = false;
 /// All the files downloaded with the [Downloader] have a certain format
 /// of the filenames, this class represents the format.
 class DisassembleResult {
+  const DisassembleResult({
+    required this.booru,
+    required this.ext,
+    required this.hash,
+    required this.id,
+  });
+
   /// Extension of the file.
   final String ext;
 
@@ -45,25 +55,18 @@ class DisassembleResult {
 
   /// The post number.
   final int id;
-
-  const DisassembleResult({
-    required this.booru,
-    required this.ext,
-    required this.hash,
-    required this.id,
-  });
 }
 
 class ErrorOr<T> {
-  final T? _data;
-  final String Function(BuildContext context)? _error;
-
   const ErrorOr.error(String Function(BuildContext context) error)
       : _error = error,
         _data = null;
   const ErrorOr.value(T result)
       : _data = result,
         _error = null;
+
+  final T? _data;
+  final String Function(BuildContext context)? _error;
 
   T asValue() => _data!;
   T? maybeValue() => _data;
@@ -77,12 +80,26 @@ class ErrorOr<T> {
 /// Post tags saved locally.
 /// This is used for offline tag viewing in the gallery.
 class PostTags {
+  PostTags._new(this.tagsDb);
+
+  static PostTags get g {
+    if (_isInitalized) {
+      return _global;
+    }
+
+    _isInitalized = true;
+
+    return _global = PostTags._new(DbsOpen.localTags());
+  }
+
   Isar tagsDb;
 
   /// Connects to the booru and downloads the tags from it.
   /// Resolves to an empty list in case of any error.
   Future<List<String>> loadFromDissassemble(
-      String filename, DisassembleResult dissassembled) async {
+    String filename,
+    DisassembleResult dissassembled,
+  ) async {
     final client = BooruAPI.defaultClientForBooru(dissassembled.booru);
     final api =
         BooruAPI.fromEnum(dissassembled.booru, client, EmptyPageSaver());
@@ -94,12 +111,17 @@ class PostTags {
       }
 
       tagsDb.writeTxnSync(
-          () => tagsDb.localTags.putSync(LocalTags(filename, post.tags)));
+        () => tagsDb.localTags.putSync(LocalTags(filename, post.tags)),
+      );
 
       return post.tags;
     } catch (e, trace) {
-      log("fetching post for tags",
-          level: Level.SEVERE.value, error: e, stackTrace: trace);
+      log(
+        "fetching post for tags",
+        level: Level.SEVERE.value,
+        error: e,
+        stackTrace: trace,
+      );
       return [];
     } finally {
       client.close();
@@ -108,8 +130,10 @@ class PostTags {
 
   /// Tries to disassemble the [filename] into the convenient class.
   /// Throws on error, with the reason string.
-  ErrorOr<DisassembleResult> dissassembleFilename(String filename,
-      {Booru? suppliedBooru}) {
+  ErrorOr<DisassembleResult> dissassembleFilename(
+    String filename, {
+    Booru? suppliedBooru,
+  }) {
     final Booru booru;
     if (suppliedBooru == null) {
       final split = filename.split("_");
@@ -120,7 +144,8 @@ class PostTags {
       final newbooru = Booru.fromPrefix(split.first);
       if (newbooru == null) {
         return ErrorOr.error(
-            DisassembleResultError.prefixNotRegistred.translatedString);
+          DisassembleResultError.prefixNotRegistred.translatedString,
+        );
       }
 
       booru = newbooru;
@@ -137,13 +162,15 @@ class PostTags {
     final numbersAndHash = filename.split(" - ");
     if (numbersAndHash.isEmpty || numbersAndHash.length != 2) {
       return ErrorOr.error(
-          DisassembleResultError.numbersAndHash.translatedString);
+        DisassembleResultError.numbersAndHash.translatedString,
+      );
     }
 
     final id = int.tryParse(numbersAndHash.first);
     if (id == null) {
       return ErrorOr.error(
-          DisassembleResultError.invalidPostNumber.translatedString);
+        DisassembleResultError.invalidPostNumber.translatedString,
+      );
     }
 
     final hashAndExt = numbersAndHash.last.split(".");
@@ -151,25 +178,28 @@ class PostTags {
       return ErrorOr.error(DisassembleResultError.noExtension.translatedString);
     }
 
-    final numbersLetters = RegExp(r'^[a-z0-9]+$');
+    final numbersLetters = RegExp(r"^[a-z0-9]+$");
     if (!numbersLetters.hasMatch(hashAndExt.first)) {
       return ErrorOr.error(
-          DisassembleResultError.hashIsInvalid.translatedString);
+        DisassembleResultError.hashIsInvalid.translatedString,
+      );
     }
 
     if (hashAndExt.last.length > 6) {
       return ErrorOr.error(
-          DisassembleResultError.extensionTooLong.translatedString);
+        DisassembleResultError.extensionTooLong.translatedString,
+      );
     }
 
     if (hashAndExt.first.length != 32) {
       return ErrorOr.error(DisassembleResultError.hashIsnt32.translatedString);
     }
 
-    final lettersAndNumbers = RegExp(r'^[a-zA-Z0-9]+$');
+    final lettersAndNumbers = RegExp(r"^[a-zA-Z0-9]+$");
     if (!lettersAndNumbers.hasMatch(hashAndExt.last)) {
       return ErrorOr.error(
-          DisassembleResultError.extensionInvalid.translatedString);
+        DisassembleResultError.extensionInvalid.translatedString,
+      );
     }
 
     return ErrorOr.value(
@@ -198,11 +228,13 @@ class PostTags {
   /// Doesn't dissassemble.
   void addTagsPostAll(Iterable<(String, List<String>)> tags) {
     tagsDb.writeTxnSync(() {
-      tagsDb.localTags.putAllSync(tags.map((e) {
-        _putTagsAndIncreaseFreq(e.$2);
+      tagsDb.localTags.putAllSync(
+        tags.map((e) {
+          _putTagsAndIncreaseFreq(e.$2);
 
-        return LocalTags(e.$1, e.$2);
-      }).toList());
+          return LocalTags(e.$1, e.$2);
+        }).toList(),
+      );
     });
   }
 
@@ -228,22 +260,30 @@ class PostTags {
   }
 
   void _putTagsAndIncreaseFreq(List<String> tags) {
-    tagsDb.localTagDictionarys.putAllSync(tags
-        .map((e) => LocalTagDictionary(
-            e,
-            (tagsDb.localTagDictionarys.getSync(fastHash(e))?.frequency ?? 0) +
-                1))
-        .toList());
+    tagsDb.localTagDictionarys.putAllSync(
+      tags
+          .map(
+            (e) => LocalTagDictionary(
+              e,
+              (tagsDb.localTagDictionarys.getSync(fastHash(e))?.frequency ??
+                      0) +
+                  1,
+            ),
+          )
+          .toList(),
+    );
   }
 
   /// Saves all the tags from the posts.
   void addAllPostTags(List<Post> p) {
     tagsDb.writeTxnSync(() {
-      tagsDb.localTags.putAllSync(p.map((e) {
-        final ret = LocalTags(e.filename(), e.tags);
-        _putTagsAndIncreaseFreq(ret.tags);
-        return ret;
-      }).toList());
+      tagsDb.localTags.putAllSync(
+        p.map((e) {
+          final ret = LocalTags(e.filename(), e.tags);
+          _putTagsAndIncreaseFreq(ret.tags);
+          return ret;
+        }).toList(),
+      );
     });
   }
 
@@ -363,7 +403,7 @@ class PostTags {
   /// Restore local tags from the backup.
   /// The backup is just an copy of the Isar DB.
   /// In case of any error reverts back.
-  void restore(void Function(String? error) onDone) async {
+  Future<void> restore(void Function(String? error) onDone) async {
     final tagsFile = joinAll([Dbs.g.appStorageDir, "localTags"]);
     final tagsBakFile = joinAll([Dbs.g.appStorageDir, "localTags.bak"]);
 
@@ -371,11 +411,11 @@ class PostTags {
       final outputFile =
           await PlatformFunctions.pickFileAndCopy(Dbs.g.appStorageDir);
       await Isar.openSync(
-              [LocalTagsSchema, LocalTagDictionarySchema, DirectoryTagSchema],
-              directory: Dbs.g.appStorageDir,
-              inspector: false,
-              name: outputFile.split("/").last)
-          .close();
+        [LocalTagsSchema, LocalTagDictionarySchema, DirectoryTagSchema],
+        directory: Dbs.g.appStorageDir,
+        inspector: false,
+        name: outputFile.split("/").last,
+      ).close();
 
       await tagsDb.copyToFile(tagsBakFile);
 
@@ -407,33 +447,40 @@ class PostTags {
   }
 
   void setDirectoriesTag(Iterable<String> bucketIds, String tag) {
-    tagsDb.writeTxnSync(() => tagsDb.directoryTags
-        .putAllSync(bucketIds.map((e) => DirectoryTag(e, tag)).toList()));
+    tagsDb.writeTxnSync(
+      () => tagsDb.directoryTags
+          .putAllSync(bucketIds.map((e) => DirectoryTag(e, tag)).toList()),
+    );
   }
 
   void removeDirectoriesTag(Iterable<String> buckedIds) {
-    tagsDb.writeTxnSync(() => tagsDb.directoryTags
-        .deleteAllSync(buckedIds.map((e) => fastHash(e)).toList()));
+    tagsDb.writeTxnSync(
+      () => tagsDb.directoryTags
+          .deleteAllSync(buckedIds.map((e) => fastHash(e)).toList()),
+    );
   }
 
   /// Make a copy of the tags DB.
   /// Calls [onDone] with null error when complete,
   /// or with non-null error when something went wrong.
-  void copy(void Function(String? error) onDone) async {
+  Future<void> copy(void Function(String? error) onDone) async {
     try {
       final plug = await chooseDownloadMoverPlug();
 
       final output = joinAll([
         Dbs.g.temporaryDbDir,
-        "${DateTime.now().microsecondsSinceEpoch.toString()}_savedtags.bin"
+        "${DateTime.now().microsecondsSinceEpoch}_savedtags.bin",
       ]);
 
       await tagsDb.copyToFile(output);
 
-      plug.move(MoveOp(
+      plug.move(
+        MoveOp(
           source: output,
           rootDir: SettingsService.currentData.path.path,
-          targetDir: "backup"));
+          targetDir: "backup",
+        ),
+      );
       onDone(null);
     } catch (e) {
       onDone(e.toString());
@@ -441,21 +488,47 @@ class PostTags {
   }
 
   StreamSubscription<List<LocalTags>> watch(
-      String filename, void Function(List<LocalTags>) f) {
+    String filename,
+    void Function(List<LocalTags>) f,
+  ) {
     return tagsDb.localTags.where().filenameEqualTo(filename).watch().listen(f);
   }
 
-  PostTags._new(this.tagsDb);
+  StreamSubscription<List<ImageTag>> watchImagePinned(
+    List<String> tags,
+    void Function(List<ImageTag>) f,
+  ) {
+    return PostTags.g.tagsDb.pinnedTags
+        .watchLazy()
+        .map<List<ImageTag>>((event) {
+      return tags.map((e) => ImageTag(e, PinnedTag.isPinned(e))).toList();
+    }).listen(f);
+  }
 
-  static PostTags get g {
-    if (_isInitalized) {
-      return _global;
-    }
+  StreamSubscription<List<ImageTag>> watchImageAndPinned(
+    String filename,
+    void Function(List<ImageTag>) f,
+  ) {
+    return tagsDb.localTags
+        .where()
+        .filenameEqualTo(filename)
+        .watch()
+        .merge(
+          PostTags.g.tagsDb.pinnedTags.watchLazy().map((_) {
+            final t = PostTags.g.tagsDb.localTags.getByFilenameSync(filename);
 
-    _isInitalized = true;
-    _global = PostTags._new(DbsOpen.localTags());
+            return t != null ? [t] : const [];
+          }),
+        )
+        .map<List<ImageTag>>((event) {
+      if (event.isEmpty) {
+        return const [];
+      }
 
-    return _global;
+      return event.first.tags
+          .map((e) => ImageTag(e, PinnedTag.isPinned(e)))
+          .toList();
+    }).listen(f);
   }
 }
 

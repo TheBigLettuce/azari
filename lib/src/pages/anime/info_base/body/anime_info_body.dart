@@ -27,16 +27,12 @@ class AnimeInfoBody extends StatelessWidget {
   final AnimeEntry entry;
   final AnimeAPI api;
   final EdgeInsets viewPadding;
-  final Color overlayColor;
-  final Brightness iconColor;
 
   const AnimeInfoBody({
     super.key,
     required this.entry,
     required this.viewPadding,
     required this.api,
-    required this.iconColor,
-    required this.overlayColor,
   });
 
   @override
@@ -79,14 +75,10 @@ class AnimeInfoBody extends StatelessWidget {
             AnimeCharactersWidget(
               entry: entry,
               api: api,
-              overlayColor: overlayColor,
-              iconColor: iconColor,
             ),
             AnimePicturesWidget(
               entry: entry,
               api: api,
-              overlayColor: overlayColor,
-              iconColor: iconColor,
             ),
             SimilarAnime(entry: entry, api: api),
             AnimeRelations(entry: entry),
@@ -124,15 +116,11 @@ class AnimeStaff extends StatelessWidget {
 class AnimePicturesWidget extends StatefulWidget {
   final AnimeEntry entry;
   final AnimeAPI api;
-  final Color overlayColor;
-  final Brightness iconColor;
 
   const AnimePicturesWidget({
     super.key,
     required this.entry,
     required this.api,
-    required this.overlayColor,
-    required this.iconColor,
   });
 
   @override
@@ -169,8 +157,6 @@ class _AnimePicturesWidgetState extends State<AnimePicturesWidget> {
                                   snapshot.data!.length,
                                   (context, i) =>
                                       snapshot.data![i].openImage(context),
-                                  widget.overlayColor,
-                                  widget.iconColor,
                                   startingCell: e.$1,
                                 );
                               },

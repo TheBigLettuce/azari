@@ -5,56 +5,66 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
-import 'package:gallery/src/db/tags/post_tags.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/interfaces/gallery/gallery_api_files.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart";
+import "package:gallery/src/db/tags/post_tags.dart";
+import "package:gallery/src/interfaces/gallery/gallery_api_files.dart";
 
 /// Data for the [FilteringMode.same].
 class SameFilterAccumulator {
-  final Map<int, Set<int>> data;
-  int skipped;
-
   SameFilterAccumulator.empty()
       : data = {},
         skipped = 0;
+
+  final Map<int, Set<int>> data;
+  int skipped;
 }
 
 abstract class FileFilters {
+  const FileFilters();
+
   static (Iterable<SystemGalleryDirectoryFile>, dynamic) tag(
-      Iterable<SystemGalleryDirectoryFile> cells, String searchText) {
+    Iterable<SystemGalleryDirectoryFile> cells,
+    String searchText,
+  ) {
     if (searchText.isEmpty) {
       return (cells, null);
     }
 
     return (
-      cells.where((element) =>
-          PostTags.g.containsTagMultiple(element.name, searchText)),
+      cells.where(
+        (element) => PostTags.g.containsTagMultiple(element.name, searchText),
+      ),
       null
     );
   }
 
   static (Iterable<SystemGalleryDirectoryFile>, dynamic) tagReversed(
-      Iterable<SystemGalleryDirectoryFile> cells, String searchText) {
+    Iterable<SystemGalleryDirectoryFile> cells,
+    String searchText,
+  ) {
     if (searchText.isEmpty) {
       return (cells, null);
     }
 
     return (
-      cells.where((element) =>
-          !PostTags.g.containsTagMultiple(element.name, searchText)),
+      cells.where(
+        (element) => !PostTags.g.containsTagMultiple(element.name, searchText),
+      ),
       null
     );
   }
 
   static (Iterable<SystemGalleryDirectoryFile>, dynamic) favorite(
-      Iterable<SystemGalleryDirectoryFile> cells) {
+    Iterable<SystemGalleryDirectoryFile> cells,
+  ) {
     return (cells.where((element) => element.isFavorite), null);
   }
 
   static (Iterable<SystemGalleryDirectoryFile>, dynamic) untagged(
-      Iterable<SystemGalleryDirectoryFile> cells) {
+    Iterable<SystemGalleryDirectoryFile> cells,
+  ) {
     return (
       cells.where((element) => PostTags.g.getTagsPost(element.name).isEmpty),
       null
@@ -62,22 +72,26 @@ abstract class FileFilters {
   }
 
   static (Iterable<SystemGalleryDirectoryFile>, dynamic) video(
-      Iterable<SystemGalleryDirectoryFile> cells) {
+    Iterable<SystemGalleryDirectoryFile> cells,
+  ) {
     return (cells.where((element) => element.isVideo), null);
   }
 
   static (Iterable<SystemGalleryDirectoryFile>, dynamic) gif(
-      Iterable<SystemGalleryDirectoryFile> cells) {
+    Iterable<SystemGalleryDirectoryFile> cells,
+  ) {
     return (cells.where((element) => element.isGif), null);
   }
 
   static (Iterable<SystemGalleryDirectoryFile>, dynamic) duplicate(
-      Iterable<SystemGalleryDirectoryFile> cells) {
+    Iterable<SystemGalleryDirectoryFile> cells,
+  ) {
     return (cells.where((element) => element.isDuplicate), null);
   }
 
   static (Iterable<SystemGalleryDirectoryFile>, dynamic) original(
-      Iterable<SystemGalleryDirectoryFile> cells) {
+    Iterable<SystemGalleryDirectoryFile> cells,
+  ) {
     return (
       cells
           .where((element) => PostTags.g.containsTag(element.name, "original")),
@@ -86,17 +100,20 @@ abstract class FileFilters {
   }
 
   static (Iterable<SystemGalleryDirectoryFile>, dynamic) same(
-      BuildContext context,
-      Iterable<SystemGalleryDirectoryFile> cells,
-      SameFilterAccumulator? accu,
-      GalleryFilesExtra extra,
-      {required bool end,
-      required SystemGalleryDirectoryFile Function(int i) getCell,
-      required void Function() performSearch}) {
-    accu ??= SameFilterAccumulator.empty();
+    BuildContext context,
+    Iterable<SystemGalleryDirectoryFile> cells,
+    dynamic data,
+    GalleryFilesExtra extra, {
+    required bool end,
+    required SystemGalleryDirectoryFile Function(int i) getCell,
+    required void Function() performSearch,
+  }) {
+    final accu =
+        (data as SameFilterAccumulator?) ?? SameFilterAccumulator.empty();
 
     Iterable<(int isarId, int? h)> getDifferenceHash(
-        Iterable<SystemGalleryDirectoryFile> cells) sync* {
+      Iterable<SystemGalleryDirectoryFile> cells,
+    ) sync* {
       for (final cell in cells) {
         yield (cell.isarId!, cell.getThumbnail(cell.id)?.differenceHash);
       }
@@ -118,30 +135,35 @@ abstract class FileFilters {
     if (end) {
       if (accu.skipped != 0) {
         ScaffoldMessenger.of(context).removeCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(AppLocalizations.of(context)!.resultsIncomplete),
-          duration: const Duration(seconds: 20),
-          action: SnackBarAction(
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.resultsIncomplete),
+            duration: const Duration(seconds: 20),
+            action: SnackBarAction(
               label: AppLocalizations.of(context)!.loadMoreLabel,
               onPressed: () {
                 extra.loadNextThumbnails(() {
                   try {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        duration: const Duration(seconds: 4),
-                        content: Text(AppLocalizations.of(context)!.loaded)));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(AppLocalizations.of(context)!.loaded),
+                      ),
+                    );
                     performSearch();
                   } catch (_) {}
                 });
-              }),
-        ));
+              },
+            ),
+          ),
+        );
       }
 
       return (
         () sync* {
-          for (final i in accu!.data.values) {
+          for (final i in accu.data.values) {
             if (i.length > 1) {
               for (final v in i) {
-                var file = getCell(v);
+                final file = getCell(v);
                 file.isarId = null;
                 yield file;
               }
@@ -158,7 +180,9 @@ abstract class FileFilters {
   static int hammingDistance(int first, int second) => bitCount(first ^ second);
 
   // stolen from internet
-  static int bitCount(int n) {
+  static int bitCount(int nn) {
+    int n = nn;
+
     n = n - ((n >> 1) & 0x5555555555555555);
     n = (n & 0x3333333333333333) + ((n >> 2) & 0x3333333333333333);
     n = (n + (n >> 4)) & 0x0f0f0f0f0f0f0f0f;

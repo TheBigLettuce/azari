@@ -117,8 +117,6 @@ class MangaImage
       SkipChapterButton(
         mangaTitle: data.mangaTitle,
         key: data.prevChaterKey,
-        overlayColor: data.overlayColor,
-        iconColor: data.iconColor,
         mangaId: data.mangaId.toString(),
         startingChapterId: data.chapterId,
         api: data.api,
@@ -129,8 +127,6 @@ class MangaImage
       SkipChapterButton(
         mangaTitle: data.mangaTitle,
         key: data.nextChapterKey,
-        overlayColor: data.overlayColor,
-        iconColor: data.iconColor,
         mangaId: data.mangaId.toString(),
         startingChapterId: data.chapterId,
         api: data.api,

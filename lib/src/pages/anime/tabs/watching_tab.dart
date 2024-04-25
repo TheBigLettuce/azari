@@ -5,17 +5,17 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of '../anime.dart';
+part of "../anime.dart";
 
 class _WatchingTab extends StatefulWidget {
-  final void Function() onDispose;
-  final void Function(bool) procPop;
-
   const _WatchingTab({
     required super.key,
     required this.procPop,
     required this.onDispose,
   });
+
+  final void Function() onDispose;
+  final void Function(bool) procPop;
 
   @override
   State<_WatchingTab> createState() => __WatchingTabState();
@@ -61,9 +61,12 @@ class __WatchingTabState extends State<_WatchingTab> {
     }
 
     _backlogFilter.addAll(
-        backlog.where((element) => element.title.toLowerCase().contains(l)));
-    _watchingFilter.addAll(currentlyWatching
-        .where((element) => element.title.toLowerCase().contains(l)));
+      backlog.where((element) => element.title.toLowerCase().contains(l)),
+    );
+    _watchingFilter.addAll(
+      currentlyWatching
+          .where((element) => element.title.toLowerCase().contains(l)),
+    );
 
     m.cellCount = _backlogFilter.length;
   }
@@ -151,9 +154,12 @@ class __WatchingTabState extends State<_WatchingTab> {
                 }
 
                 if (!entry.setCurrentlyWatching()) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
                       content:
-                          Text(AppLocalizations.of(context)!.cantWatchThree)));
+                          Text(AppLocalizations.of(context)!.cantWatchThree),
+                    ),
+                  );
                 }
               },
               true,
@@ -164,15 +170,18 @@ class __WatchingTabState extends State<_WatchingTab> {
               (selected) {
                 SavedAnimeEntry.deleteAll(
                     selected.map((e) => (e.site, e.id)).toList());
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content:
-                      Text(AppLocalizations.of(context)!.deletedFromBacklog),
-                  action: SnackBarAction(
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content:
+                        Text(AppLocalizations.of(context)!.deletedFromBacklog),
+                    action: SnackBarAction(
                       label: AppLocalizations.of(context)!.undoLabel,
                       onPressed: () {
                         SavedAnimeEntry.reAdd(selected);
-                      }),
-                ));
+                      },
+                    ),
+                  ),
+                );
               },
               true,
             ),
@@ -237,8 +246,11 @@ class _WatchingLayout
   GridSettingsBase Function() get defaultSettings => _defaultSettings;
 
   @override
-  List<Widget> call(BuildContext context, GridSettingsBase gridSettings,
-      GridFrameState<SavedAnimeEntry> state) {
+  List<Widget> call(
+    BuildContext context,
+    GridSettingsBase gridSettings,
+    GridFrameState<SavedAnimeEntry> state,
+  ) {
     return [
       SliverPadding(
         padding: const EdgeInsets.only(left: 14, right: 14),
@@ -270,9 +282,10 @@ class _WatchingLayout
         )
       else
         SliverToBoxAdapter(
-            child: EmptyWidget(
-          gridSeed: state.widget.description.gridSeed,
-        )),
+          child: EmptyWidget(
+            gridSeed: state.widget.description.gridSeed,
+          ),
+        ),
       SliverPadding(
         padding: const EdgeInsets.only(left: 14, right: 14),
         sliver: SliverToBoxAdapter(
@@ -315,19 +328,15 @@ class _WatchingLayout
         )
       else
         SliverToBoxAdapter(
-            child: EmptyWidget(
-          gridSeed: state.widget.description.gridSeed + 1,
-        )),
+          child: EmptyWidget(
+            gridSeed: state.widget.description.gridSeed + 1,
+          ),
+        ),
     ];
   }
 }
 
 class _CurrentlyWatching extends StatefulWidget {
-  final bool watchingRight;
-  final List<SavedAnimeEntry> currentlyWatching;
-  final ScrollController controller;
-  final SelectionGlue glue;
-
   const _CurrentlyWatching({
     super.key,
     required this.currentlyWatching,
@@ -335,6 +344,11 @@ class _CurrentlyWatching extends StatefulWidget {
     required this.watchingRight,
     required this.glue,
   });
+
+  final bool watchingRight;
+  final List<SavedAnimeEntry> currentlyWatching;
+  final ScrollController controller;
+  final SelectionGlue glue;
 
   @override
   State<_CurrentlyWatching> createState() => __CurrentlyWatchingState();
@@ -354,14 +368,17 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
         Icons.delete_rounded,
         (selected) {
           SavedAnimeEntry.deleteAll(selected.cast());
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(AppLocalizations.of(context)!.deletedFromBacklog),
-            action: SnackBarAction(
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.deletedFromBacklog),
+              action: SnackBarAction(
                 label: AppLocalizations.of(context)!.undoLabel,
                 onPressed: () {
                   SavedAnimeEntry.reAdd(selected.cast());
-                }),
-          ));
+                },
+              ),
+            ),
+          );
         },
         true,
       ),
@@ -381,54 +398,55 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
   );
 
   void onPressed(SavedAnimeEntry e, int _) {
-    Navigator.push(context, MaterialPageRoute(
-      builder: (context) {
-        return AnimeInfoPage(
-          entry: e,
-          id: e.id,
-          apiFactory: e.site.api,
-        );
-      },
-    ));
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          return AnimeInfoPage(
+            entry: e,
+            id: e.id,
+            apiFactory: e.site.api,
+          );
+        },
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return CellProvider(
-        getCell: (i) => widget.currentlyWatching[i],
-        child: Builder(
-          builder: (context) {
-            return SliverGrid.count(
-              crossAxisCount: 3,
-              children: widget.watchingRight
-                  ? widget.currentlyWatching.reversed.indexed
-                      .map((e) => ImportantCard(
-                            cell: e.$2,
-                            idx: e.$1,
-                            onPressed: onPressed,
-                          ).animate(key: ValueKey(e)).fadeIn())
-                      .toList()
-                  : widget.currentlyWatching.indexed
-                      .map(
-                        (e) => ImportantCard(
-                          cell: e.$2,
-                          idx: e.$1,
-                          onPressed: onPressed,
-                        ).animate(key: ValueKey(e)).fadeIn(),
-                      )
-                      .toList(),
-            );
-          },
-        ));
+      getCell: (i) => widget.currentlyWatching[i],
+      child: Builder(
+        builder: (context) {
+          return SliverGrid.count(
+            crossAxisCount: 3,
+            children: widget.watchingRight
+                ? widget.currentlyWatching.reversed.indexed
+                    .map(
+                      (e) => ImportantCard(
+                        cell: e.$2,
+                        idx: e.$1,
+                        onPressed: onPressed,
+                      ).animate(key: ValueKey(e)).fadeIn(),
+                    )
+                    .toList()
+                : widget.currentlyWatching.indexed
+                    .map(
+                      (e) => ImportantCard(
+                        cell: e.$2,
+                        idx: e.$1,
+                        onPressed: onPressed,
+                      ).animate(key: ValueKey(e)).fadeIn(),
+                    )
+                    .toList(),
+          );
+        },
+      ),
+    );
   }
 }
 
 class MangaReadingCard<T extends CompactMangaData> extends StatelessWidget {
-  final T cell;
-  final int idx;
-  final void Function(T cell, int idx)? onPressed;
-  final void Function(T cell, int idx)? onLongPressed;
-
   const MangaReadingCard({
     super.key,
     required this.cell,
@@ -436,6 +454,11 @@ class MangaReadingCard<T extends CompactMangaData> extends StatelessWidget {
     required this.idx,
     this.onLongPressed,
   });
+
+  final T cell;
+  final int idx;
+  final void Function(T cell, int idx)? onPressed;
+  final void Function(T cell, int idx)? onLongPressed;
 
   void _onLongPressed() => onLongPressed!(cell, idx);
 
@@ -465,7 +488,6 @@ class MangaReadingCard<T extends CompactMangaData> extends StatelessWidget {
       ),
       backgroundImage: cell.tryAsThumbnailable(),
       tooltip: cell.alias(false),
-      transparentBackground: false,
       onPressed: onPressed == null ? null : _onPressed,
       width: null,
       height: null,
@@ -497,17 +519,11 @@ class MangaReadingCard<T extends CompactMangaData> extends StatelessWidget {
               ),
             )
           : null,
-      leanLeft: false,
     );
   }
 }
 
 class ImportantCard<T extends CellBase> extends StatelessWidget {
-  final T cell;
-  final int idx;
-  final void Function(T cell, int idx)? onPressed;
-  final void Function(T cell, int idx)? onLongPressed;
-
   const ImportantCard({
     super.key,
     required this.cell,
@@ -515,6 +531,11 @@ class ImportantCard<T extends CellBase> extends StatelessWidget {
     required this.idx,
     this.onLongPressed,
   });
+
+  final T cell;
+  final int idx;
+  final void Function(T cell, int idx)? onPressed;
+  final void Function(T cell, int idx)? onLongPressed;
 
   @override
   Widget build(BuildContext context) {

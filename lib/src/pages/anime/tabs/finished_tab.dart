@@ -5,17 +5,17 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of '../anime.dart';
+part of "../anime.dart";
 
 class _FinishedTab extends StatefulWidget {
-  final void Function() onDispose;
-  final void Function(bool) procPop;
-
   const _FinishedTab({
     required this.procPop,
     required super.key,
     required this.onDispose,
   });
+
+  final void Function() onDispose;
+  final void Function(bool) procPop;
 
   @override
   State<_FinishedTab> createState() => __FinishedTabState();
@@ -86,7 +86,8 @@ class __FinishedTabState extends State<_FinishedTab> {
     }
 
     _filter.addAll(
-        _list.where((element) => element.title.toLowerCase().contains(l)));
+      _list.where((element) => element.title.toLowerCase().contains(l)),
+    );
 
     m.cellCount = _filter.length;
   }
@@ -147,10 +148,11 @@ class __FinishedTabState extends State<_FinishedTab> {
                     content:
                         Text(AppLocalizations.of(context)!.deletedFromWatched),
                     action: SnackBarAction(
-                        label: AppLocalizations.of(context)!.undoLabel,
-                        onPressed: () {
-                          WatchedAnimeEntry.reAdd(selected);
-                        }),
+                      label: AppLocalizations.of(context)!.undoLabel,
+                      onPressed: () {
+                        WatchedAnimeEntry.reAdd(selected);
+                      },
+                    ),
                   ),
                 );
               },

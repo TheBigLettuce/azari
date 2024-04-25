@@ -5,20 +5,18 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:dio/dio.dart';
-import 'package:gallery/src/db/base/post_base.dart';
-import 'package:gallery/src/db/schemas/booru/post.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/interfaces/booru/strip_html.dart';
-import 'package:gallery/src/interfaces/logging/logging.dart';
-import 'package:html_unescape/html_unescape_small.dart';
-
-import '../../db/schemas/settings/settings.dart';
-import '../../interfaces/booru/booru_api.dart';
-import '../../interfaces/booru_tagging.dart';
-import '../cloudflare_exception.dart';
+import "package:dio/dio.dart";
+import "package:gallery/src/db/base/post_base.dart";
+import "package:gallery/src/db/schemas/booru/post.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/booru_api.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/interfaces/booru/strip_html.dart";
+import "package:gallery/src/interfaces/booru_tagging.dart";
+import "package:gallery/src/interfaces/logging/logging.dart";
+import "package:gallery/src/net/cloudflare_exception.dart";
+import "package:html_unescape/html_unescape_small.dart";
 
 List<BooruTag> _fromDanbooruTags(List<dynamic> l) => l
     .map((e) => BooruTag(
@@ -134,7 +132,7 @@ class Danbooru implements BooruAPI {
     String safeModeS() =>
         switch (overrideSafeMode ?? SettingsService.currentData.safeMode) {
           SafeMode.normal => "rating:g",
-          SafeMode.none => '',
+          SafeMode.none => "",
           SafeMode.relaxed => "rating:g,s",
         };
 

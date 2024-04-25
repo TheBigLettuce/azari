@@ -5,46 +5,42 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/base/post_base.dart';
-import 'package:gallery/src/db/schemas/grid_settings/favorites.dart';
-import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/booru/booru_api.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart';
-import 'package:gallery/src/pages/more/favorite_booru_actions.dart';
-import 'package:gallery/src/net/downloader.dart';
-import 'package:gallery/src/interfaces/cell/contentable.dart';
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
-import 'package:gallery/src/db/schemas/tags/local_tag_dictionary.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
-import 'package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart';
-import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
-import 'package:gallery/src/widgets/skeletons/grid.dart';
-import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
-import 'package:isar/isar.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import '../../db/loaders/linear_isar_loader.dart';
-import '../../interfaces/filtering/filtering_mode.dart';
-import '../booru/booru_grid_actions.dart';
-import '../../db/tags/post_tags.dart';
-import '../../db/schemas/downloader/download_file.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/base/post_base.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/db/loaders/linear_isar_loader.dart";
+import "package:gallery/src/db/schemas/booru/favorite_booru.dart";
+import "package:gallery/src/db/schemas/downloader/download_file.dart";
+import "package:gallery/src/db/schemas/grid_settings/favorites.dart";
+import "package:gallery/src/db/schemas/settings/misc_settings.dart";
+import "package:gallery/src/db/schemas/tags/local_tag_dictionary.dart";
+import "package:gallery/src/db/tags/post_tags.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/booru_api.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/interfaces/cell/contentable.dart";
+import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
+import "package:gallery/src/net/downloader.dart";
+import "package:gallery/src/pages/booru/booru_grid_actions.dart";
+import "package:gallery/src/pages/booru/booru_page.dart";
+import "package:gallery/src/pages/more/favorite_booru_actions.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart";
+import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
+import "package:gallery/src/widgets/notifiers/glue_provider.dart";
+import "package:gallery/src/widgets/search_bar/search_filter_grid.dart";
+import "package:gallery/src/widgets/skeletons/grid.dart";
+import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
+import "package:isar/isar.dart";
 
 class FavoriteBooruPage extends StatelessWidget {
-  final FavoriteBooruPageState state;
-  final ScrollController conroller;
-  final bool asSliver;
-  final bool wrapGridPage;
-
   const FavoriteBooruPage({
     super.key,
     required this.state,
@@ -53,6 +49,22 @@ class FavoriteBooruPage extends StatelessWidget {
     this.wrapGridPage = false,
   });
 
+  final FavoriteBooruPageState state;
+  final ScrollController conroller;
+  final bool asSliver;
+  final bool wrapGridPage;
+
+  void _onPressed(
+    BuildContext context,
+    Booru booru,
+    String t,
+    SafeMode? safeMode,
+  ) {
+    Navigator.pop(context);
+
+    state.search.performSearch(t);
+  }
+
   GridFrame<FavoriteBooru> child(BuildContext context) {
     return GridFrame<FavoriteBooru>(
       key: state.state.gridKey,
@@ -60,7 +72,7 @@ class FavoriteBooruPage extends StatelessWidget {
           ? SegmentLayout<FavoriteBooru>(
               Segments(
                 AppLocalizations.of(context)!.segmentsUncategorized,
-                injectedLabel: '',
+                injectedLabel: "",
                 caps: SegmentCapability.empty(),
                 hidePinnedIcon: true,
                 prebuiltSegments: state.segments,
@@ -74,12 +86,17 @@ class FavoriteBooruPage extends StatelessWidget {
             ? const EmptyGridSearchWidget()
             : OverrideGridSearchWidget(
                 SearchAndFocus(
-                    state.search.searchWidget(
-                      context,
-                      count: state.state.refreshingStatus.mutation.cellCount,
-                    ),
-                    state.search.searchFocus),
+                  state.search.searchWidget(
+                    context,
+                    count: state.state.refreshingStatus.mutation.cellCount,
+                  ),
+                  state.search.searchFocus,
+                ),
               ),
+        registerNotifiers: (child) => OnBooruTagPressed(
+          onPressed: _onPressed,
+          child: child,
+        ),
         selectionGlue: GlueProvider.generateOf(context)(),
         watchLayoutSettings: GridSettingsFavorites.watch,
         download: state.download,
@@ -93,8 +110,6 @@ class FavoriteBooruPage extends StatelessWidget {
         settingsButton: !asSliver ? state.gridSettingsButton() : null,
         showAppBar: !asSliver,
         asSliver: asSliver,
-        ignoreEmptyWidgetOnNoContent: false,
-        // ignoreSwipeSelectGesture: false,
         keybindsDescription: AppLocalizations.of(context)!.favoritesLabel,
         pageName: AppLocalizations.of(context)!.favoritesLabel,
         gridSeed: state.state.gridSeed,
@@ -117,13 +132,13 @@ class FavoriteBooruPage extends StatelessWidget {
 }
 
 class FavoriteBooruStateHolder extends StatefulWidget {
-  final Widget Function(BuildContext context, FavoriteBooruPageState state)
-      build;
-
   const FavoriteBooruStateHolder({
     super.key,
     required this.build,
   });
+
+  final Widget Function(BuildContext context, FavoriteBooruPageState state)
+      build;
 
   @override
   State<FavoriteBooruStateHolder> createState() =>
@@ -261,7 +276,8 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
 
           segments![const _FilterEnumSegmentKey(FilteringMode.ungrouped)] =
               (segments![const _FilterEnumSegmentKey(
-                          FilteringMode.ungrouped)] ??
+                        FilteringMode.ungrouped,
+                      )] ??
                       0) +
                   1;
         }
@@ -273,7 +289,8 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
         FilteringMode.same => sameFavorites(cells, data, end, _collector),
         FilteringMode.ungrouped => (
             cells.where(
-                (element) => element.group == null || element.group!.isEmpty),
+              (element) => element.group == null || element.group!.isEmpty,
+            ),
             data
           ),
         FilteringMode.gif => (
@@ -289,7 +306,8 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
     };
 
   Iterable<FavoriteBooru> _collector(
-      Map<String, Set<(int, Booru)>>? data) sync* {
+    Map<String, Set<(int, Booru)>>? data,
+  ) sync* {
     for (final ids in data!.values) {
       for (final i in ids) {
         final f = loader.instance.favoriteBoorus.getByIdBooruSync(i.$1, i.$2)!;
@@ -300,11 +318,12 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
   }
 
   static (Iterable<T>, dynamic) sameFavorites<T extends PostBase>(
-      Iterable<T> cells,
-      Map<String, Set<(int, Booru)>>? data,
-      bool end,
-      Iterable<T> Function(Map<String, Set<(int, Booru)>>? data) collect) {
-    data = data ?? {};
+    Iterable<T> cells,
+    dynamic data_,
+    bool end,
+    Iterable<T> Function(Map<String, Set<(int, Booru)>>? data) collect,
+  ) {
+    final data = (data_ as Map<String, Set<(int, Booru)>>?) ?? {};
 
     T? prevCell;
     for (final e in cells) {
@@ -312,7 +331,7 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
         if (prevCell.md5 == e.md5) {
           final prev = data[e.md5] ?? {};
 
-          data[e.md5] = {...prev, ((e.id, e.booru))};
+          data[e.md5] = {...prev, (e.id, e.booru)};
         }
       }
 
@@ -378,7 +397,8 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
           .findAllSync();
 
       return Future.value(
-          result.map((e) => BooruTag(e.tag, e.frequency)).toList());
+        result.map((e) => BooruTag(e.tag, e.frequency)).toList(),
+      );
     });
 
     setState(() {});
@@ -405,10 +425,11 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
 
     return Downloader.g.add(
       DownloadFile.d(
-          url: p.fileDownloadUrl(),
-          site: state.settings.selectedBooru.url,
-          name: p.filename(),
-          thumbUrl: p.previewUrl),
+        url: p.fileDownloadUrl(),
+        site: state.settings.selectedBooru.url,
+        name: p.filename(),
+        thumbUrl: p.previewUrl,
+      ),
       state.settings,
     );
   }
@@ -453,7 +474,6 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
 
   GridFrameSettingsButton gridSettingsButton() {
     return GridFrameSettingsButton(
-      selectHideName: null,
       overrideDefault: GridSettingsFavorites.current,
       watchExplicitly: GridSettingsFavorites.watch,
       selectRatio: (ratio, settings) =>

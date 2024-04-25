@@ -6,13 +6,9 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/services.dart';
-import 'package:gallery/main.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
 
 class AndroidFullscreen implements PlatformFullscreensPlug {
-  final Color overlayFullscreenColor;
-  final Brightness iconColor;
-
   bool isAppbarShown = true;
 
   @override
@@ -28,14 +24,12 @@ class AndroidFullscreen implements PlatformFullscreensPlug {
 
   @override
   void unfullscreen() {
-    changeSystemUiOverlayColor(
-      background: overlayFullscreenColor,
-      iconColor: iconColor,
-    );
+    isAppbarShown = true;
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 
   @override
   void setTitle(String windowTitle) {}
 
-  AndroidFullscreen(this.overlayFullscreenColor, this.iconColor);
+  AndroidFullscreen();
 }

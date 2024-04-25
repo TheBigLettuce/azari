@@ -54,5 +54,7 @@ class Post extends PostBase implements Pressable<Post> {
           ),
         ),
         idx,
+        imageViewTags,
+        watchTags,
       );
 }

@@ -86,15 +86,10 @@ class _AnimeInfoAppBarState extends State<AnimeInfoAppBar>
         ...widget.appBarActions,
         IconButton(
           onPressed: () {
-            final overlayColor = Theme.of(context).colorScheme.surface;
-            final iconColor = Theme.of(context).colorScheme.brightness;
-
             ImageView.launchWrapped(
               context,
               1,
               (_, __) => widget.cell.openImage(context),
-              overlayColor,
-              iconColor,
             );
           },
           icon: const Icon(Icons.image),

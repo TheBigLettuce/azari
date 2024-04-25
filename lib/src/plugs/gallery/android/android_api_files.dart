@@ -122,11 +122,7 @@ class _JoinedDirectories extends _AndroidGalleryFiles {
         int offset = 0;
 
         while (true) {
-          final f = Dbs.g.blacklisted.favoriteBooruPosts
-              .where()
-              .offset(offset)
-              .limit(200)
-              .findAllSync()
+          final f = FavoriteFile.getAll(offset: offset, limit: 200)
               .map((e) => e.id)
               .toList();
           offset += f.length;
@@ -206,11 +202,7 @@ class _AndroidGalleryFiles implements GalleryAPIFiles {
         int offset = 0;
 
         while (true) {
-          final f = Dbs.g.blacklisted.favoriteBooruPosts
-              .where()
-              .offset(offset)
-              .limit(200)
-              .findAllSync()
+          final f = FavoriteFile.getAll(offset: offset, limit: 200)
               .map((e) => e.id)
               .toList();
           offset += f.length;

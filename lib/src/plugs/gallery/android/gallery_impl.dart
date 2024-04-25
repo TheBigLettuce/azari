@@ -51,32 +51,30 @@ class _GalleryImpl implements GalleryApi {
     }
 
     try {
-      final out = f
-          .cast<DirectoryFile>()
-          .map((e) => SystemGalleryDirectoryFile(
-              id: e.id,
-              bucketId: e.bucketId,
-              notesFlat: Dbs.g.main.noteGallerys
-                      .getByIdSync(e.id)
-                      ?.text
-                      .join()
-                      .toLowerCase() ??
-                  "",
-              name: e.name,
-              size: e.size,
-              isDuplicate:
-                  RegExp(r'[(][0-9].*[)][.][a-zA-Z0-9].*').hasMatch(e.name),
-              isFavorite:
-                  Dbs.g.blacklisted.favoriteBooruPosts.getSync(e.id) != null,
-              lastModified: e.lastModified,
-              height: e.height,
-              width: e.width,
-              isGif: e.isGif,
-              isOriginal: PostTags.g.isOriginal(e.name),
-              originalUri: e.originalUri,
-              isVideo: e.isVideo,
-              tagsFlat: PostTags.g.getTagsPost(e.name).join(" ")))
-          .toList();
+      final c = <String, DirectoryMetadata>{};
+
+      final out = bucketId == "favorites"
+          ? f
+              .where((dir) {
+                final segment = GalleryDirectories.segmentCell(
+                    dir!.bucketName, dir.bucketId);
+
+                DirectoryMetadata? data = c[segment];
+                if (data == null) {
+                  final d = DirectoryMetadata.get(segment);
+                  if (d == null) {
+                    return true;
+                  }
+
+                  data = d;
+                  c[segment] = d;
+                }
+
+                return !data.requireAuth && !data.blur;
+              })
+              .map(SystemGalleryDirectoryFile.fromDirectoryFile)
+              .toList()
+          : f.map(SystemGalleryDirectoryFile.fromDirectoryFile).toList();
 
       db.writeTxnSync(() => db.systemGalleryDirectoryFiles.putAllSync(out));
     } catch (e) {

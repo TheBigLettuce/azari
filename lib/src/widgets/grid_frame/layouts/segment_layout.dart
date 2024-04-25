@@ -253,6 +253,11 @@ class SegmentLayout<T extends CellBase>
         }
       }
 
+      if (suggestionCells.isNotEmpty) {
+        suggestionCells
+            .sort((a, b) => a.$1.alias(false).compareTo(b.$1.alias(false)));
+      }
+
       final (res) = segments.segment!(cell);
       if (res == null) {
         unsegmented.add(i);

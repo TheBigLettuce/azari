@@ -5,19 +5,18 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:dio/dio.dart';
-import 'package:dio_cookie_manager/dio_cookie_manager.dart';
-import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
-import 'package:gallery/src/db/schemas/settings/settings.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/net/cookie_jar_tab.dart';
-import 'package:gallery/src/net/unsaveable_cookie_jar.dart';
-import 'safe_mode.dart';
-import '../../db/schemas/booru/post.dart';
-import '../../net/booru/danbooru.dart';
-import '../../net/booru/gelbooru.dart';
-import '../booru_tagging.dart';
-import 'booru.dart';
+import "package:dio/dio.dart";
+import "package:dio_cookie_manager/dio_cookie_manager.dart";
+import "package:gallery/src/db/schemas/booru/post.dart";
+import "package:gallery/src/db/schemas/grid_settings/booru.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/interfaces/booru_tagging.dart";
+import "package:gallery/src/net/booru/danbooru.dart";
+import "package:gallery/src/net/booru/gelbooru.dart";
+import "package:gallery/src/net/cookie_jar_tab.dart";
+import "package:gallery/src/net/unsaveable_cookie_jar.dart";
 
 /// The interface to interact with the various booru APIs.
 ///
@@ -27,7 +26,7 @@ import 'booru.dart';
 /// return the current page in [currentPage], return true in [wouldBecomeStale]
 /// and reset page number after calls to [page].
 abstract class BooruAPI {
-  const BooruAPI(Dio client, PageSaver pageSaver);
+  const BooruAPI();
 
   /// Some booru do not support pulling posts down a certain post number,
   /// this flag reflects this.
@@ -44,8 +43,12 @@ abstract class BooruAPI {
   /// This is only used to refresh the grid, the code which loads and presets the posts uses [fromPost] for further posts loading.
   /// The boorus which do not support geting posts down a certain post number should keep a page number internally,
   /// and return it in [currentPage].
-  Future<(List<Post>, int?)> page(int p, String tags, BooruTagging excludedTags,
-      {SafeMode? overrideSafeMode});
+  Future<(List<Post>, int?)> page(
+    int p,
+    String tags,
+    BooruTagging excludedTags, {
+    SafeMode? overrideSafeMode,
+  });
 
   /// Get the post's notes.
   /// Usually used for translations.
@@ -71,7 +74,10 @@ abstract class BooruAPI {
   /// that is, it makes refreshes on restore few.
   static BooruAPI fromSettings(Dio client, PageSaver pageSaver) {
     return BooruAPI.fromEnum(
-        SettingsService.currentData.selectedBooru, client, pageSaver);
+      SettingsService.currentData.selectedBooru,
+      client,
+      pageSaver,
+    );
   }
 
   static Dio defaultClientForBooru(Booru booru) {

@@ -86,6 +86,11 @@ class SegmentedButtonValue<T> {
   final IconData? icon;
 }
 
+enum SegmentedButtonVariant {
+  chip,
+  segments;
+}
+
 class SegmentedButtonGroup<T> extends StatefulWidget {
   final Iterable<SegmentedButtonValue<T>> values;
   final T? selected;
@@ -94,12 +99,15 @@ class SegmentedButtonGroup<T> extends StatefulWidget {
   final bool allowUnselect;
   final bool enableFilter;
 
+  final SegmentedButtonVariant variant;
+
   const SegmentedButtonGroup({
     super.key,
     required this.select,
     required this.selected,
     required this.values,
     required this.title,
+    required this.variant,
     this.allowUnselect = false,
     this.enableFilter = false,
   });
@@ -155,8 +163,8 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
 
     final child = newValues.isEmpty
         ? const EmptyWidget(gridSeed: 0, mini: true)
-        : newValues.length <= 5
-            ? SingleChildScrollView(
+        : switch (widget.variant) {
+            SegmentedButtonVariant.segments => SingleChildScrollView(
                 controller: controller,
                 scrollDirection: Axis.horizontal,
                 child: Padding(
@@ -181,8 +189,8 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
                         widget.selected != null ? {widget.selected as T} : {},
                   ),
                 ),
-              )
-            : SizedBox(
+              ),
+            SegmentedButtonVariant.chip => SizedBox(
                 height: 40,
                 child: ListView.builder(
                   controller: controller,
@@ -219,7 +227,8 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
                     );
                   },
                 ),
-              );
+              ),
+          };
 
     return Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 4),
@@ -299,6 +308,7 @@ class _SegmentedButtonGroupState<T> extends State<SegmentedButtonGroup<T>> {
 Widget _ratio(BuildContext context, GridAspectRatio aspectRatio,
     void Function(GridAspectRatio?) select) {
   return SegmentedButtonGroup(
+    variant: SegmentedButtonVariant.segments,
     select: select,
     selected: aspectRatio,
     values: GridAspectRatio.values
@@ -310,6 +320,7 @@ Widget _ratio(BuildContext context, GridAspectRatio aspectRatio,
 Widget _columns(BuildContext context, GridColumn columns,
     void Function(GridColumn?) select) {
   return SegmentedButtonGroup(
+    variant: SegmentedButtonVariant.segments,
     select: select,
     selected: columns,
     values: GridColumn.values
@@ -321,6 +332,7 @@ Widget _columns(BuildContext context, GridColumn columns,
 Widget _gridLayout(BuildContext context, GridLayoutType selectGridLayout,
     void Function(GridLayoutType?) select) {
   return SegmentedButtonGroup(
+    variant: SegmentedButtonVariant.segments,
     select: select,
     selected: selectGridLayout,
     values: GridLayoutType.values

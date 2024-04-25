@@ -5,19 +5,19 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-part of 'search_filter_grid.dart';
+part of "search_filter_grid.dart";
 
 class _SearchWidget<T extends CellBase> extends StatefulWidget {
-  final SearchFilterGrid<T> instance;
-  final String? hint;
-  final int? count;
-
   const _SearchWidget({
     super.key,
     required this.instance,
     required this.count,
     required this.hint,
   });
+
+  final SearchFilterGrid<T> instance;
+  final String? hint;
+  final int? count;
 
   @override
   State<_SearchWidget<T>> createState() => __SearchWidgetState();
@@ -47,16 +47,26 @@ class __SearchWidgetState<T extends CellBase> extends State<_SearchWidget<T>> {
                       selectSorting: (e) {
                         widget.instance._state.filter.setSortingMode(e);
                         widget.instance._onChanged(
-                            widget.instance.searchTextController.text, true);
+                          widget.instance.searchTextController.text,
+                          true,
+                        );
                       },
                       currentSorting:
                           widget.instance._state.filter.currentSortingMode,
                       enabledSorting: widget.instance._state.sortingModes,
                       select: (e) {
+                        final res = widget.instance.setFilteringMode(e);
+                        if (res != e) {
+                          return e;
+                        }
+
                         widget.instance._searchVirtual = false;
-                        widget.instance._currentFilterMode = e;
                         widget.instance._onChanged(
-                            widget.instance.searchTextController.text, true);
+                          widget.instance.searchTextController.text,
+                          true,
+                        );
+
+                        return e;
                       },
                       currentFilter: widget.instance._currentFilterMode,
                       enabledModes: widget.instance._state.filteringModes,
@@ -68,7 +78,7 @@ class __SearchWidgetState<T extends CellBase> extends State<_SearchWidget<T>> {
             icon: Icon(widget.instance._currentFilterMode.icon),
             padding: EdgeInsets.zero,
           ),
-        if (widget.instance.addItems != null) ...widget.instance.addItems!
+        if (widget.instance.addItems != null) ...widget.instance.addItems!,
       ];
 
   Widget _autocompleteWidget() => AutocompleteWidget(
@@ -80,7 +90,6 @@ class __SearchWidgetState<T extends CellBase> extends State<_SearchWidget<T>> {
         },
         widget.instance._localTagCompleteFunc,
         widget.instance.searchFocus,
-        roundBorders: false,
         swapSearchIcon: true,
         searchCount: count,
         addItems: _addItems(),
@@ -117,13 +126,6 @@ class __SearchWidgetState<T extends CellBase> extends State<_SearchWidget<T>> {
 }
 
 class _FilteringWidget extends StatefulWidget {
-  final FilteringMode currentFilter;
-  final SortingMode currentSorting;
-  final Set<FilteringMode> enabledModes;
-  final Set<SortingMode> enabledSorting;
-  final void Function(FilteringMode) select;
-  final void Function(SortingMode) selectSorting;
-
   const _FilteringWidget({
     super.key,
     required this.currentFilter,
@@ -133,6 +135,13 @@ class _FilteringWidget extends StatefulWidget {
     required this.enabledSorting,
     required this.selectSorting,
   });
+
+  final FilteringMode currentFilter;
+  final SortingMode currentSorting;
+  final Set<FilteringMode> enabledModes;
+  final Set<SortingMode> enabledSorting;
+  final FilteringMode Function(FilteringMode) select;
+  final void Function(SortingMode) selectSorting;
 
   @override
   State<_FilteringWidget> createState() => __FilteringWidgetState();
@@ -144,14 +153,12 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
 
   void _selectFilter(FilteringMode? mode) {
     if (mode == null) {
-      currentFilter = FilteringMode.noFilter;
+      return;
     } else {
-      currentFilter = mode;
+      currentFilter = widget.select(mode);
+
+      setState(() {});
     }
-
-    widget.select(currentFilter);
-
-    setState(() {});
   }
 
   void _selectSorting(SortingMode? sort) {
@@ -178,31 +185,39 @@ class __FilteringWidgetState extends State<_FilteringWidget> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             SegmentedButtonGroup<FilteringMode>(
+              variant: SegmentedButtonVariant.chip,
               select: _selectFilter,
               selected: currentFilter,
               allowUnselect: true,
               values: widget.enabledModes
                   .where((element) => element != FilteringMode.noFilter)
-                  .map((e) => SegmentedButtonValue(
-                        e,
-                        e.translatedString(context),
-                        icon: e.icon,
-                      )),
+                  .map(
+                    (e) => SegmentedButtonValue(
+                      e,
+                      e.translatedString(context),
+                      icon: e.icon,
+                    ),
+                  ),
               title: AppLocalizations.of(context)!.filteringModesLabel,
             ),
             SegmentedButtonGroup<SortingMode>(
+              variant: SegmentedButtonVariant.segments,
               select: _selectSorting,
               selected: currentSorting,
               values: widget.enabledSorting.isEmpty
                   ? [
-                      SegmentedButtonValue(currentSorting,
-                          currentSorting.translatedString(context))
+                      SegmentedButtonValue(
+                        currentSorting,
+                        currentSorting.translatedString(context),
+                      ),
                     ]
-                  : widget.enabledSorting.map((e) =>
-                      SegmentedButtonValue(e, e.translatedString(context))),
+                  : widget.enabledSorting.map(
+                      (e) =>
+                          SegmentedButtonValue(e, e.translatedString(context)),
+                    ),
               title: AppLocalizations.of(context)!.sortingModesLabel,
             ),
-            const Padding(padding: EdgeInsets.only(bottom: 8))
+            const Padding(padding: EdgeInsets.only(bottom: 8)),
           ],
         ),
       ),

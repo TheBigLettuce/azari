@@ -39,6 +39,7 @@ class Directory {
 class DirectoryFile {
   final int id;
   final String bucketId;
+  final String bucketName;
 
   final String name;
   final String originalUri;
@@ -53,17 +54,19 @@ class DirectoryFile {
   final bool isVideo;
   final bool isGif;
 
-  const DirectoryFile(
-      {required this.id,
-      required this.bucketId,
-      required this.lastModified,
-      required this.originalUri,
-      required this.name,
-      required this.size,
-      required this.isGif,
-      required this.height,
-      required this.width,
-      required this.isVideo});
+  const DirectoryFile({
+    required this.id,
+    required this.bucketId,
+    required this.lastModified,
+    required this.originalUri,
+    required this.name,
+    required this.bucketName,
+    required this.size,
+    required this.isGif,
+    required this.height,
+    required this.width,
+    required this.isVideo,
+  });
 }
 
 @FlutterApi()

@@ -5,27 +5,24 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/base/post_base.dart';
-import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/db/tags/booru_tagging.dart';
-import 'package:gallery/src/db/tags/post_tags.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/interfaces/cell/sticker.dart';
-import 'package:gallery/src/interfaces/filtering/filtering_mode.dart';
-import 'package:gallery/src/pages/booru/booru_page.dart';
-import 'package:gallery/src/plugs/platform_functions.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart';
-import 'package:gallery/src/widgets/make_tags.dart';
-import 'package:gallery/src/widgets/menu_wrapper.dart';
-import 'package:gallery/src/widgets/notifiers/filter.dart';
-import 'package:gallery/src/widgets/search_bar/search_text_field.dart';
-import 'package:gallery/src/widgets/translation_notes.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/base/post_base.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/interfaces/cell/sticker.dart";
+import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
+import "package:gallery/src/pages/booru/booru_page.dart";
+import "package:gallery/src/plugs/platform_functions.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/page_switcher.dart";
+import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:gallery/src/widgets/make_tags.dart";
+import "package:gallery/src/widgets/menu_wrapper.dart";
+import "package:gallery/src/widgets/search_bar/search_text_field.dart";
+import "package:gallery/src/widgets/translation_notes.dart";
+import "package:qr_flutter/qr_flutter.dart";
+import "package:url_launcher/url_launcher.dart";
 
 enum PostContentType {
   none,
@@ -37,29 +34,29 @@ enum PostContentType {
 mixin BooruPostFunctionalityMixin {
   void showQr(BuildContext context, String prefix, int id) {
     Navigator.push(
-        context,
-        DialogRoute(
-          themes: InheritedTheme.capture(from: context, to: null),
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              content: Container(
-                decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.all(Radius.circular(10)),
-                ),
-                width: 320,
-                height: 320,
-                clipBehavior: Clip.antiAlias,
-                child: QrImageView(
-                  data: "${prefix}_$id",
-                  backgroundColor: Theme.of(context).colorScheme.onSurface,
-                  version: QrVersions.auto,
-                  size: 320,
-                ),
+      context,
+      DialogRoute(
+        themes: InheritedTheme.capture(from: context, to: null),
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            content: Container(
+              decoration: const BoxDecoration(
+                borderRadius: BorderRadius.all(Radius.circular(10)),
               ),
-            );
-          },
-        ));
+              width: 320,
+              height: 320,
+              clipBehavior: Clip.antiAlias,
+              child: QrImageView(
+                data: "${prefix}_$id",
+                backgroundColor: Theme.of(context).colorScheme.onSurface,
+                size: 320,
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Widget openInBrowserButton(Uri uri, [void Function()? overrideOnPressed]) =>
@@ -69,15 +66,19 @@ mixin BooruPostFunctionalityMixin {
             () => launchUrl(uri, mode: LaunchMode.externalApplication),
       );
 
-  Widget shareButton(BuildContext context, String url,
-          [void Function()? onLongPress]) =>
+  Widget shareButton(
+    BuildContext context,
+    String url, [
+    void Function()? onLongPress,
+  ]) =>
       GestureDetector(
         onLongPress: onLongPress,
         child: IconButton(
-            onPressed: () {
-              PlatformFunctions.shareMedia(url, url: true);
-            },
-            icon: const Icon(Icons.share)),
+          onPressed: () {
+            PlatformFunctions.shareMedia(url, url: true);
+          },
+          icon: const Icon(Icons.share),
+        ),
       );
 
   List<Sticker> defaultStickers(
@@ -97,12 +98,12 @@ mixin BooruPostFunctionalityMixin {
 }
 
 class PostInfo extends StatefulWidget {
-  final PostBase post;
-
   const PostInfo({
     super.key,
     required this.post,
   });
+
+  final PostBase post;
 
   @override
   State<PostInfo> createState() => _PostInfoState();
@@ -115,20 +116,14 @@ class _PostInfoState extends State<PostInfo> {
 
   final settings = SettingsService.currentData;
 
-  late final tagManager = TagManager.fromEnum(post.booru);
-
   void _launchGrid(BuildContext context, String t, [SafeMode? safeMode]) {
     OnBooruTagPressed.pressOf(context, t, post.booru,
         overrideSafeMode: safeMode);
   }
 
-  DisassembleResult? res;
-
   @override
   void initState() {
     super.initState();
-
-    res = PostTags.g.dissassembleFilename(post.filename()).maybeValue();
   }
 
   int currentPageF() => currentPage;
@@ -141,21 +136,8 @@ class _PostInfoState extends State<PostInfo> {
 
   @override
   Widget build(BuildContext context) {
-    final pinnedTags = <String>[];
-
-    final tags = <String>[];
-
-    for (final e in post.tags) {
-      if (PinnedTag.isPinned(e)) {
-        pinnedTags.add(e);
-      } else {
-        tags.add(e);
-      }
-    }
-
     final filename = post.filename();
 
-    final filterData = FilterNotifier.maybeOf(context);
     final localizations = AppLocalizations.of(context)!;
 
     return SliverMainAxisGroup(slivers: [
@@ -164,7 +146,8 @@ class _PostInfoState extends State<PostInfo> {
         sliver: LabelSwitcherWidget(
           pages: [
             PageLabel(localizations.infoHeadline),
-            PageLabel(localizations.tagsInfoPage, count: tags.length),
+            PageLabel(localizations.tagsInfoPage,
+                count: ImageTagsNotifier.of(context).length),
           ],
           currentPage: currentPageF,
           switchPage: _switchPage,
@@ -216,26 +199,22 @@ class _PostInfoState extends State<PostInfo> {
               title: Text(localizations.scoreInfoPage),
               subtitle: Text(post.score.toString()),
             ),
-            if (tags.contains("translated"))
+            if (post.tags.contains("translated"))
               TranslationNotes.tile(context, post.id, post.booru),
           ],
         )
       else ...[
-        if (tags.isNotEmpty && filterData != null)
-          SliverToBoxAdapter(
-            child: SearchTextField(
-              filterData,
-              filename,
-              key: ValueKey(filename),
-            ),
+        SliverToBoxAdapter(
+          child: SearchTextField(
+            filename,
+            key: ValueKey(filename),
           ),
+        ),
         DrawerTagsWidget(
-          tags,
+          key: ValueKey(filename),
           filename,
+          res: ImageTagsNotifier.resOf(context),
           launchGrid: _launchGrid,
-          excluded: tagManager.excluded,
-          pinnedTags: pinnedTags,
-          res: res,
         )
       ]
     ]);

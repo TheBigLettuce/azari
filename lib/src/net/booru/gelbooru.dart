@@ -5,23 +5,20 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:dio/dio.dart';
-import 'package:gallery/src/db/base/post_base.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/booru/booru_api.dart';
-import 'package:gallery/src/db/schemas/settings/settings.dart';
-import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/interfaces/booru/strip_html.dart';
-import 'package:gallery/src/interfaces/logging/logging.dart';
-import 'package:html_unescape/html_unescape_small.dart';
-import 'package:path/path.dart' as path;
-import 'package:xml/xml.dart';
-
-import '../../db/schemas/booru/post.dart';
-import 'package:intl/intl.dart';
-
-import '../../interfaces/booru_tagging.dart';
+import "package:dio/dio.dart";
+import "package:gallery/src/db/base/post_base.dart";
+import "package:gallery/src/db/schemas/booru/post.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/booru_api.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/interfaces/booru/strip_html.dart";
+import "package:gallery/src/interfaces/booru_tagging.dart";
+import "package:gallery/src/interfaces/logging/logging.dart";
+import "package:html_unescape/html_unescape_small.dart";
+import "package:intl/intl.dart";
+import "package:path/path.dart" as path;
+import "package:xml/xml.dart";
 
 const Duration _defaultTimeout = Duration(seconds: 30);
 
@@ -38,20 +35,25 @@ class GelbooruRespDecoder implements BooruRespDecoder {
 
   @override
   List<BooruTag> tags(dynamic data) {
-    final l = data["tag"];
+    final l =
+        (data as Map<String, dynamic>)["tag"] as List<Map<String, dynamic>>?;
     if (l == null) {
       return const [];
     }
 
-    return (l as List<dynamic>)
-        .map((e) =>
-            BooruTag(HtmlUnescape().convert(e["name"] as String), e["count"]))
+    return l
+        .map(
+          (e) => BooruTag(
+            HtmlUnescape().convert(e["name"] as String),
+            e["count"] as int,
+          ),
+        )
         .toList();
   }
 
   @override
   Iterable<String> notes(dynamic data) {
-    final doc = XmlDocument.parse(data);
+    final doc = XmlDocument.parse(data as String);
 
     return doc.children.first.children.map(
       (e) => stripHtml(e.getAttribute("body")!),
@@ -60,7 +62,7 @@ class GelbooruRespDecoder implements BooruRespDecoder {
 
   @override
   (List<Post>, int?) posts(dynamic data, Booru booru) {
-    final json = data["post"];
+    final json = (data as Map<String, dynamic>)["post"];
     if (json == null) {
       return (<Post>[], null);
     }
@@ -71,40 +73,45 @@ class GelbooruRespDecoder implements BooruRespDecoder {
 
     final escaper = HtmlUnescape();
 
-    for (final post in json as List<dynamic>) {
-      String createdAt = post["created_at"];
-      DateTime date = dateFormatter.parse(createdAt).copyWith(
-          year: int.tryParse(createdAt.substring(createdAt.length - 4)));
+    for (final post in json as List<Map<String, dynamic>>) {
+      final createdAt = post["created_at"] as String;
+      final date = dateFormatter.parse(createdAt).copyWith(
+            year: int.tryParse(createdAt.substring(createdAt.length - 4)),
+          );
 
-      final rating = post["rating"];
+      final rating = post["rating"] as String?;
 
-      list.add(Post(
-          height: post["height"],
+      list.add(
+        Post(
+          height: post["height"] as int,
           booru: booru,
-          id: post["id"],
-          md5: post["md5"],
-          tags: (post["tags"].split(" ") as List<String>)
+          id: post["id"] as int,
+          md5: post["md5"] as String,
+          tags: (post["tags"] as String)
+              .split(" ")
               .map((e) => escaper.convert(e))
               .toList(),
-          score: post["score"],
-          sourceUrl: post["source"],
+          score: post["score"] as int,
+          sourceUrl: post["source"] as String,
           createdAt: date,
           rating: rating == null
               ? PostRating.general
-              : switch (rating as String) {
+              : switch (rating) {
                   "general" => PostRating.general,
                   "sensitive" => PostRating.sensitive,
                   "questionable" => PostRating.questionable,
                   "explicit" => PostRating.explicit,
                   String() => PostRating.general,
                 },
-          width: post["width"],
-          fileUrl: post["file_url"],
-          previewUrl: post["preview_url"],
-          ext: path.extension(post["image"]),
-          sampleUrl: post["sample_url"] == ""
-              ? post["file_url"]
-              : post["sample_url"]));
+          width: post["width"] as int,
+          fileUrl: post["file_url"] as String,
+          previewUrl: post["preview_url"] as String,
+          ext: path.extension(post["image"] as String),
+          sampleUrl: (post["sample_url"] as String) == ""
+              ? post["file_url"] as String
+              : post["sample_url"] as String,
+        ),
+      );
     }
 
     return (list, null);
@@ -128,7 +135,7 @@ class Gelbooru implements BooruAPI {
   final Booru booru;
 
   @override
-  final bool wouldBecomeStale = true;
+  bool get wouldBecomeStale => true;
 
   @override
   Future<Iterable<String>> notes(int postId) async {
@@ -164,7 +171,7 @@ class Gelbooru implements BooruAPI {
         "limit": "30",
         "json": "1",
         "name_pattern": "$t%",
-        "orderby": "count"
+        "orderby": "count",
       }),
       options: Options(
         sendTimeout: _defaultTimeout,
@@ -210,8 +217,8 @@ class Gelbooru implements BooruAPI {
     final String safeMode =
         switch (overrideSafeMode ?? SettingsService.currentData.safeMode) {
       SafeMode.none => "",
-      SafeMode.normal => 'rating:general',
-      SafeMode.relaxed => '-rating:explicit -rating:questionable',
+      SafeMode.normal => "rating:general",
+      SafeMode.relaxed => "-rating:explicit -rating:questionable",
     };
 
     final query = <String, dynamic>{
@@ -221,7 +228,7 @@ class Gelbooru implements BooruAPI {
       "pid": p.toString(),
       "json": "1",
       "tags": "$safeMode $excludedTagsString $tags",
-      "limit": BooruAPI.numberOfElementsPerRefresh().toString()
+      "limit": BooruAPI.numberOfElementsPerRefresh().toString(),
     };
 
     final resp = await client.getUriLog(
@@ -240,13 +247,17 @@ class Gelbooru implements BooruAPI {
   @override
   Future<Post> singlePost(int id) async {
     final resp = await client.getUriLog(
-      Uri.https(booru.url, "/index.php", {
-        "page": "dapi",
-        "s": "post",
-        "q": "index",
-        "id": id.toString(),
-        "json": "1"
-      }),
+      Uri.https(
+        booru.url,
+        "/index.php",
+        {
+          "page": "dapi",
+          "s": "post",
+          "q": "index",
+          "id": id.toString(),
+          "json": "1",
+        },
+      ),
       options: Options(
         sendTimeout: _defaultTimeout,
         receiveTimeout: _defaultTimeout,

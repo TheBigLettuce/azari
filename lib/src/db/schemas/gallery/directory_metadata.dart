@@ -5,14 +5,14 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:gallery/main.dart';
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/db/schemas/tags/tags.dart';
-import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
-import 'package:isar/isar.dart';
-import 'package:local_auth/local_auth.dart';
+import "package:gallery/main.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/db/schemas/tags/tags.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:isar/isar.dart";
+import "package:local_auth/local_auth.dart";
 
-part 'directory_metadata.g.dart';
+part "directory_metadata.g.dart";
 
 @collection
 class DirectoryMetadata {
@@ -91,14 +91,15 @@ class DirectoryMetadata {
 
     Dbs.g.blacklisted.writeTxnSync(
       () {
-        Dbs.g.blacklisted.directoryMetadatas
-            .putByCategoryNameSync(DirectoryMetadata(
-          id,
-          DateTime.now(),
-          blur: blur,
-          requireAuth: auth,
-          sticky: sticky,
-        ));
+        Dbs.g.blacklisted.directoryMetadatas.putByCategoryNameSync(
+          DirectoryMetadata(
+            id,
+            DateTime.now(),
+            blur: blur,
+            requireAuth: auth,
+            sticky: sticky,
+          ),
+        );
       },
     );
   }
@@ -110,7 +111,7 @@ class _DirectoryMetadataCap implements SegmentCapability {
   final String specialLabel;
 
   @override
-  final ignoreButtons = false;
+  bool get ignoreButtons => false;
 
   @override
   Set<SegmentModifier> modifiersFor(String seg) {
@@ -146,8 +147,8 @@ class _DirectoryMetadataCap implements SegmentCapability {
   }
 
   @override
-  void addModifiers(List<String> segments, Set<SegmentModifier> m) {
-    segments = segments
+  void addModifiers(List<String> segments_, Set<SegmentModifier> m) {
+    final segments = segments_
         .where((element) => element != "Booru" && element != specialLabel)
         .toList();
 
@@ -161,8 +162,13 @@ class _DirectoryMetadataCap implements SegmentCapability {
         .map(
           (element) =>
               element.$2 ??
-              DirectoryMetadata(segments[element.$1], DateTime.now(),
-                  blur: false, sticky: false, requireAuth: false),
+              DirectoryMetadata(
+                segments[element.$1],
+                DateTime.now(),
+                blur: false,
+                sticky: false,
+                requireAuth: false,
+              ),
         );
     final toUpdate = <DirectoryMetadata>[];
 
@@ -181,13 +187,15 @@ class _DirectoryMetadataCap implements SegmentCapability {
       toUpdate.add(seg);
     }
 
-    Dbs.g.blacklisted.writeTxnSync(() => Dbs.g.blacklisted.directoryMetadatas
-        .putAllByCategoryNameSync(toUpdate));
+    Dbs.g.blacklisted.writeTxnSync(
+      () => Dbs.g.blacklisted.directoryMetadatas
+          .putAllByCategoryNameSync(toUpdate),
+    );
   }
 
   @override
-  void removeModifiers(List<String> segments, Set<SegmentModifier> m) {
-    segments = segments
+  void removeModifiers(List<String> segments_, Set<SegmentModifier> m) {
+    final segments = segments_
         .where((element) => element != "Booru" && element != specialLabel)
         .toList();
 
@@ -198,15 +206,17 @@ class _DirectoryMetadataCap implements SegmentCapability {
     final l = Dbs.g.blacklisted.directoryMetadatas
         .getAllByCategoryNameSync(segments)
         .indexed
-        .map((e) =>
-            e.$2 ??
-            DirectoryMetadata(
-              segments[e.$1],
-              DateTime.now(),
-              blur: false,
-              sticky: false,
-              requireAuth: false,
-            ));
+        .map(
+          (e) =>
+              e.$2 ??
+              DirectoryMetadata(
+                segments[e.$1],
+                DateTime.now(),
+                blur: false,
+                sticky: false,
+                requireAuth: false,
+              ),
+        );
     final toUpdate = <DirectoryMetadata>[];
 
     for (var seg in l) {
@@ -224,7 +234,9 @@ class _DirectoryMetadataCap implements SegmentCapability {
       toUpdate.add(seg);
     }
 
-    Dbs.g.blacklisted.writeTxnSync(() => Dbs.g.blacklisted.directoryMetadatas
-        .putAllByCategoryNameSync(toUpdate));
+    Dbs.g.blacklisted.writeTxnSync(
+      () => Dbs.g.blacklisted.directoryMetadatas
+          .putAllByCategoryNameSync(toUpdate),
+    );
   }
 }

@@ -9,7 +9,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/db/schemas/gallery/favorite_booru_post.dart';
+import 'package:gallery/src/db/schemas/gallery/favorite_file.dart';
 import 'package:gallery/src/db/schemas/gallery/note_gallery.dart';
 import 'package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart';
 import 'package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart';
@@ -38,7 +38,7 @@ mixin SystemGalleryDirectoryFileFunctionalityMixin {
     return SystemGalleryDirectoryFile(
       isOriginal: PostTags.g.isOriginal(name),
       isDuplicate: RegExp(r'[(][0-9].*[)][.][a-zA-Z0-9].*').hasMatch(name),
-      isFavorite: Dbs.g.blacklisted.favoriteBooruPosts.getSync(id) != null,
+      isFavorite: FavoriteFile.isFavorite(id),
       tagsFlat: PostTags.g.getTagsPost(name).join(" "),
       notesFlat:
           Dbs.g.main.noteGallerys.getSync(id)?.text.join().toLowerCase() ?? "",

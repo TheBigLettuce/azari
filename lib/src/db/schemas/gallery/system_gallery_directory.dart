@@ -5,22 +5,21 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/main.dart';
-import 'package:gallery/src/db/base/system_gallery_thumbnail_provider.dart';
-import 'package:gallery/src/db/schemas/gallery/directory_metadata.dart';
-import 'package:gallery/src/db/schemas/statistics/statistics_gallery.dart';
-import 'package:gallery/src/pages/gallery/directories.dart';
-import 'package:gallery/src/pages/gallery/files.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:isar/isar.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:local_auth/local_auth.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/main.dart";
+import "package:gallery/src/db/base/system_gallery_thumbnail_provider.dart";
+import "package:gallery/src/db/schemas/gallery/directory_metadata.dart";
+import "package:gallery/src/db/schemas/statistics/statistics_gallery.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/pages/gallery/directories.dart";
+import "package:gallery/src/pages/gallery/files.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:gallery/src/widgets/notifiers/glue_provider.dart";
+import "package:isar/isar.dart";
+import "package:local_auth/local_auth.dart";
 
-import '../../../interfaces/cell/cell.dart';
-
-part 'system_gallery_directory.g.dart';
+part "system_gallery_directory.g.dart";
 
 @collection
 class SystemGalleryDirectory

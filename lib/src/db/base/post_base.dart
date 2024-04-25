@@ -5,36 +5,39 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:io';
+import "dart:async";
+import "dart:io";
 
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:dynamic_color/dynamic_color.dart';
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/base/booru_post_functionality_mixin.dart';
-import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
-import 'package:gallery/src/db/schemas/booru/note_booru.dart';
-import 'package:gallery/src/db/schemas/downloader/download_file.dart';
-import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
-import 'package:gallery/src/db/schemas/tags/local_tag_dictionary.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/db/tags/post_tags.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:gallery/src/db/schemas/settings/settings.dart';
-import 'package:gallery/src/interfaces/cell/sticker.dart';
-import 'package:gallery/src/net/downloader.dart';
-import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
-import 'package:gallery/src/widgets/image_view/image_view.dart';
-import 'package:isar/isar.dart';
-import 'package:mime/mime.dart';
-import 'package:path/path.dart' as path_util;
-import 'package:transparent_image/transparent_image.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import '../../interfaces/cell/contentable.dart';
-import '../../interfaces/booru/display_quality.dart';
+import "package:cached_network_image/cached_network_image.dart";
+import "package:dynamic_color/dynamic_color.dart";
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/base/booru_post_functionality_mixin.dart";
+import "package:gallery/src/db/schemas/booru/favorite_booru.dart";
+import "package:gallery/src/db/schemas/booru/note_booru.dart";
+import "package:gallery/src/db/schemas/downloader/download_file.dart";
+import "package:gallery/src/db/schemas/settings/hidden_booru_post.dart";
+import "package:gallery/src/db/schemas/settings/settings.dart";
+import "package:gallery/src/db/schemas/tags/local_tag_dictionary.dart";
+import "package:gallery/src/db/schemas/tags/pinned_tag.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/tags/post_tags.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/display_quality.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/interfaces/cell/contentable.dart";
+import "package:gallery/src/interfaces/cell/sticker.dart";
+import "package:gallery/src/net/downloader.dart";
+import "package:gallery/src/pages/more/favorite_booru_actions.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/image_view/image_view.dart";
+import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
+import "package:isar/isar.dart";
+import "package:mime/mime.dart";
+import "package:path/path.dart" as path_util;
+import "package:transparent_image/transparent_image.dart";
+import "package:url_launcher/url_launcher.dart";
 
 enum PostRating {
   general,
@@ -120,6 +123,17 @@ class PostBase
   @enumerated
   final Booru booru;
 
+  List<ImageTag> imageViewTags(Contentable c) => (c.widgets as PostBase)
+      .tags
+      .map((e) => ImageTag(e, PinnedTag.isPinned(e)))
+      .toList();
+
+  StreamSubscription<List<ImageTag>> watchTags(
+    Contentable c,
+    void Function(List<ImageTag> l) f,
+  ) =>
+      PostTags.g.watchImagePinned(tags, f);
+
   @override
   CellStaticData description() => const CellStaticData();
 
@@ -145,7 +159,7 @@ class PostBase
             showQr(context, booru.prefix, id);
           },
           icon: const Icon(Icons.qr_code_rounded),
-        )
+        ),
     ];
   }
 
@@ -166,6 +180,31 @@ class PostBase
             : null,
         animate: true,
       ),
+      if (this is FavoriteBooru)
+        FavoritesActions.addToGroup<PostBase>(
+          context,
+          (selected) {
+            final g = (selected.first as FavoriteBooru).group;
+
+            for (final e in selected.cast<FavoriteBooru>().skip(1)) {
+              if (g != e.group) {
+                return null;
+              }
+            }
+
+            return g;
+          },
+          (selected, value, toPin) {
+            for (final FavoriteBooru e in selected.cast()) {
+              e.group = value.isEmpty ? null : value;
+            }
+
+            FavoriteBooru.addAllFileUrl(selected.cast());
+
+            Navigator.of(context, rootNavigator: true).pop();
+          },
+          false,
+        ).asImageView(this),
       ImageViewAction(
         Icons.download,
         (_) {
@@ -218,17 +257,17 @@ class PostBase
       return EmptyContent(this);
     }
 
-    String url = switch (SettingsService.currentData.quality) {
+    final url = switch (SettingsService.currentData.quality) {
       DisplayQuality.original => fileUrl,
       DisplayQuality.sample => sampleUrl
     };
 
-    var type = lookupMimeType(url);
+    final type = lookupMimeType(url);
     if (type == null) {
       return EmptyContent(this);
     }
 
-    var typeHalf = type.split("/");
+    final typeHalf = type.split("/");
 
     if (typeHalf[0] == "image") {
       final provider = NetworkImage(url);
@@ -238,7 +277,9 @@ class PostBase
           : NetImage(this, provider);
     } else if (typeHalf[0] == "video") {
       return NetVideo(
-          this, path_util.extension(url) == ".zip" ? sampleUrl : url);
+        this,
+        path_util.extension(url) == ".zip" ? sampleUrl : url,
+      );
     } else {
       return EmptyContent(this);
     }
@@ -251,7 +292,7 @@ class PostBase
       "${booru.prefix}_$id - $md5${ext != '.zip' ? ext : path_util.extension(sampleUrl)}";
 
   @override
-  String alias(bool isList) => isList ? tags.join(" ") : id.toString();
+  String alias(bool isList) => isList ? filename() : id.toString();
 
   @override
   String fileDownloadUrl() {
@@ -263,17 +304,17 @@ class PostBase
   }
 
   PostContentType _type() {
-    String url = switch (SettingsService.currentData.quality) {
+    final url = switch (SettingsService.currentData.quality) {
       DisplayQuality.original => fileUrl,
       DisplayQuality.sample => sampleUrl
     };
 
-    var type = lookupMimeType(url);
+    final type = lookupMimeType(url);
     if (type == null) {
       return PostContentType.none;
     }
 
-    var typeHalf = type.split("/");
+    final typeHalf = type.split("/");
 
     if (typeHalf[0] == "image") {
       return typeHalf[1] == "gif" ? PostContentType.gif : PostContentType.image;
@@ -312,7 +353,7 @@ class PostBase
         tags,
         id,
         booru,
-      )
+      ),
     ];
   }
 }

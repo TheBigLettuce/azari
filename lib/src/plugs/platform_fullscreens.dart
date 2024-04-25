@@ -7,7 +7,6 @@
 
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:gallery/src/plugs/platform_fullscreens/android.dart';
 import 'package:gallery/src/plugs/platform_fullscreens/dummy.dart';
 import 'package:gallery/src/plugs/platform_fullscreens/linux.dart';
@@ -18,12 +17,11 @@ abstract class PlatformFullscreensPlug {
   void setTitle(String windowTitle);
 }
 
-PlatformFullscreensPlug choosePlatformFullscreenPlug(
-    Color systemOverlayColor, Brightness iconColor) {
+PlatformFullscreensPlug choosePlatformFullscreenPlug() {
   if (Platform.isLinux) {
     return LinuxFullscreen();
   } else if (Platform.isAndroid) {
-    return AndroidFullscreen(systemOverlayColor, iconColor);
+    return AndroidFullscreen();
   } else {
     return DummyPlatformFullscreen();
   }

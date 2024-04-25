@@ -27,6 +27,7 @@ import 'package:gallery/src/db/schemas/manga/pinned_manga.dart';
 import 'package:gallery/src/db/schemas/manga/read_manga_chapter.dart';
 import 'package:gallery/src/db/schemas/manga/saved_manga_chapters.dart';
 import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
+import 'package:gallery/src/db/schemas/statistics/daily_statistics.dart';
 import 'package:gallery/src/db/schemas/tags/local_tag_dictionary.dart';
 import 'package:gallery/src/db/schemas/tags/local_tags.dart';
 import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
@@ -45,7 +46,7 @@ import 'package:path_provider/path_provider.dart';
 import 'schemas/gallery/system_gallery_directory.dart';
 import 'schemas/gallery/system_gallery_directory_file.dart';
 import 'schemas/gallery/directory_tags.dart';
-import 'schemas/gallery/favorite_booru_post.dart';
+import 'schemas/gallery/favorite_file.dart';
 import 'schemas/grid_state/grid_state.dart';
 import 'schemas/grid_state/grid_state_booru.dart';
 import 'schemas/booru/post.dart';
@@ -106,6 +107,7 @@ Future initalizeDb(bool temporary) async {
     StatisticsGallerySchema,
     StatisticsGeneralSchema,
     StatisticsBooruSchema,
+    DailyStatisticsSchema,
     VideoSettingsSchema,
     MiscSettingsSchema,
     GridSettingsBooruSchema,
@@ -117,7 +119,7 @@ Future initalizeDb(bool temporary) async {
 
   final blacklistedDirIsar = Isar.openSync([
     BlacklistedDirectorySchema,
-    FavoriteBooruPostSchema,
+    FavoriteFileSchema,
     DirectoryMetadataSchema,
     NoteBooruSchema
   ], directory: directoryPath, inspector: false, name: "androidBlacklistedDir");

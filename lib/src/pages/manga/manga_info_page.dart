@@ -105,8 +105,6 @@ class _MangaInfoPageState extends State<MangaInfoPage>
 
   @override
   Widget build(BuildContext context) {
-    final overlayColor = Theme.of(context).colorScheme.surface;
-    final iconBrightness = Theme.of(context).colorScheme.brightness;
     final cardUnknownValue = AppLocalizations.of(context)!.cardUnknownValue;
 
     return WrapFutureRestartable(
@@ -114,8 +112,6 @@ class _MangaInfoPageState extends State<MangaInfoPage>
         builder: (context, entry) {
           return AnimeInfoTheme(
             mode: entry.safety,
-            iconBrightness: iconBrightness,
-            overlayColor: overlayColor,
             child: SettingsSkeleton(
               AppLocalizations.of(context)!.mangaInfoPage,
               state,
@@ -251,8 +247,6 @@ class _MangaInfoPageState extends State<MangaInfoPage>
                       ]),
                       MangaInfoBody(
                         api: widget.api,
-                        overlayColor: overlayColor,
-                        iconColor: iconBrightness,
                         entry: entry,
                         scrollController: scrollController,
                         viewPadding: MediaQuery.viewPaddingOf(context),

@@ -7,9 +7,7 @@
 
 import 'dart:developer';
 
-import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:logging/logging.dart';
 import 'package:palette_generator/palette_generator.dart';
@@ -34,14 +32,6 @@ mixin ImageViewPaletteMixin on State<ImageView> {
     PaletteGenerator.fromImageProvider(t).then((value) {
       previousPallete = currentPalette;
       currentPalette = value;
-
-      SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle(
-          systemNavigationBarColor: value.dominantColor?.color
-              .harmonizeWith(Theme.of(context).colorScheme.primary)
-              .withOpacity(0.1),
-        ),
-      );
 
       resetAnimation();
 

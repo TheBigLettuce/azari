@@ -5,10 +5,15 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gallery/main.dart';
+import 'package:gallery/src/db/schemas/statistics/daily_statistics.dart';
 import 'package:gallery/src/pages/more/downloads.dart';
 import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
+import 'package:gallery/src/widgets/restart_widget.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import 'dashboard/dashboard.dart';
 import 'blacklisted_page.dart';
@@ -22,6 +27,12 @@ class MorePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final color = theme.colorScheme.onSurface.withOpacity(0.8);
+
+    final (time, stream) = TimeSpentNotifier.streamOf(context);
+
+    final timeNow = DateTime.now();
+    final emoji = timeNow.hour > 20 || timeNow.hour <= 6 ? "🌙" : "☀️";
 
     return Stack(
       children: [
@@ -32,60 +43,103 @@ class MorePage extends StatelessWidget {
             bottom: 12,
             top: 12 + 40 + MediaQuery.viewPaddingOf(context).top,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              IconButton.filled(
-                icon: const Icon(Icons.dashboard_outlined),
-                onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (context) {
-                      return const Dashboard();
-                    },
-                  ));
-                },
-              ),
-              const Padding(padding: EdgeInsets.only(left: 8)),
-              IconButton.filled(
-                icon: const Icon(Icons.download_outlined),
-                onPressed: () {
-                  final g = GlueProvider.generateOf(context);
-
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (context) {
-                      return Downloads(
-                        generateGlue: g,
-                      );
-                    },
-                  ));
-                },
-              ),
-              const Padding(padding: EdgeInsets.only(left: 8)),
-              IconButton.filled(
-                icon: const Icon(Icons.hide_image_outlined),
-                onPressed: () {
-                  final g = GlueProvider.generateOf(context);
-
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => BlacklistedPage(
-                          generateGlue: g,
-                        ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton.filled(
+                    icon: const Icon(Icons.dashboard_outlined),
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(
+                        builder: (context) {
+                          return const Dashboard();
+                        },
                       ));
-                },
-              ),
-              const Padding(padding: EdgeInsets.only(left: 8)),
-              IconButton.filled(
-                icon: const Icon(Icons.settings_outlined),
-                onPressed: () {
-                  Navigator.of(context, rootNavigator: true)
-                      .push(MaterialPageRoute(
-                    builder: (context) {
-                      return const SettingsWidget();
                     },
-                  ));
-                },
+                  ),
+                  const Padding(padding: EdgeInsets.only(left: 8)),
+                  IconButton.filled(
+                    icon: const Icon(Icons.download_outlined),
+                    onPressed: () {
+                      final g = GlueProvider.generateOf(context);
+
+                      Navigator.push(context, MaterialPageRoute(
+                        builder: (context) {
+                          return Downloads(
+                            generateGlue: g,
+                          );
+                        },
+                      ));
+                    },
+                  ),
+                  const Padding(padding: EdgeInsets.only(left: 8)),
+                  IconButton.filled(
+                    icon: const Icon(Icons.hide_image_outlined),
+                    onPressed: () {
+                      final g = GlueProvider.generateOf(context);
+
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BlacklistedPage(
+                              generateGlue: g,
+                            ),
+                          ));
+                    },
+                  ),
+                  const Padding(padding: EdgeInsets.only(left: 8)),
+                  IconButton.filled(
+                    icon: const Icon(Icons.settings_outlined),
+                    onPressed: () {
+                      Navigator.of(context, rootNavigator: true)
+                          .push(MaterialPageRoute(
+                        builder: (context) {
+                          return const SettingsWidget();
+                        },
+                      ));
+                    },
+                  ),
+                ],
+              ),
+              const Padding(padding: EdgeInsets.only(top: 80)),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  "${AppLocalizations.of(context)!.date(timeNow)} $emoji",
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.9),
+                  ),
+                ),
+              ),
+              const Padding(padding: EdgeInsets.only(top: 40)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  TimeSpentWidget(
+                    stream: stream,
+                    initalDuration: time,
+                  ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        DailyStatistics.current.swipedBoth.toString(),
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: color,
+                        ),
+                      ),
+                      Text(
+                        "Pictures seen today",
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: color.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
@@ -114,6 +168,97 @@ class MorePage extends StatelessWidget {
             ],
           ),
         )
+      ],
+    );
+  }
+}
+
+class TimeSpentWidget extends StatefulWidget {
+  final Stream<Duration> stream;
+  final Duration initalDuration;
+
+  const TimeSpentWidget({
+    super.key,
+    required this.stream,
+    required this.initalDuration,
+  });
+
+  @override
+  State<TimeSpentWidget> createState() => _TimeSpentWidgetState();
+}
+
+class _TimeSpentWidgetState extends State<TimeSpentWidget> {
+  late Duration duration = widget.initalDuration;
+  late final StreamSubscription<Duration> watcher;
+
+  @override
+  void initState() {
+    super.initState();
+
+    watcher = widget.stream.listen((event) {
+      setState(() {
+        duration = event;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    watcher.cancel();
+
+    super.dispose();
+  }
+
+  String timeStr() {
+    var microseconds = duration.inMicroseconds;
+    var sign = "";
+    var negative = microseconds < 0;
+
+    var hours = microseconds ~/ Duration.microsecondsPerHour;
+    microseconds = microseconds.remainder(Duration.microsecondsPerHour);
+
+    // Correcting for being negative after first division, instead of before,
+    // to avoid negating min-int, -(2^31-1), of a native int64.
+    if (negative) {
+      hours = 0 - hours; // Not using `-hours` to avoid creating -0.0 on web.
+      microseconds = 0 - microseconds;
+      sign = "-";
+    }
+
+    var minutes = microseconds ~/ Duration.microsecondsPerMinute;
+    microseconds = microseconds.remainder(Duration.microsecondsPerMinute);
+
+    var minutesPadding = minutes < 10 ? "0" : "";
+
+    var seconds = microseconds ~/ Duration.microsecondsPerSecond;
+    microseconds = microseconds.remainder(Duration.microsecondsPerSecond);
+
+    var secondsPadding = seconds < 10 ? "0" : "";
+
+    return "${hours != 0 ? "$sign$hours h " : ""}${minutes != 0 ? "$minutesPadding$minutes m " : ""}$secondsPadding$seconds s";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.onSurface.withOpacity(0.8);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          timeStr(),
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: color,
+          ),
+        ),
+        Text(
+          "Time spent today",
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: color.withOpacity(0.7),
+          ),
+        ),
       ],
     );
   }

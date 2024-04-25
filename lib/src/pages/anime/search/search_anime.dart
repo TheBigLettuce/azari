@@ -10,7 +10,6 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
-import 'package:gallery/main.dart';
 import 'package:gallery/src/db/base/grid_settings_base.dart';
 import 'package:gallery/src/db/schemas/anime/saved_anime_entry.dart';
 import 'package:gallery/src/db/schemas/grid_settings/anime_discovery.dart';
@@ -368,11 +367,6 @@ class _SearchAnimePageState<T extends CellBase, I, G>
                           _load();
                         }
 
-                        WidgetsBinding.instance
-                            .addPostFrameCallback((timeStamp) {
-                          changeSystemUiOverlayContext(context);
-                        });
-
                         setState(() {});
                       }),
                   IconButton(
@@ -434,8 +428,6 @@ class _SearchAnimePageState<T extends CellBase, I, G>
 
     return AnimeInfoTheme(
       mode: mode,
-      iconBrightness: Theme.of(context).colorScheme.brightness,
-      overlayColor: Theme.of(context).colorScheme.surface,
       child: Builder(
         builder: (context) {
           return body(context);
@@ -546,6 +538,7 @@ class _SearchOptionsState<I, G> extends State<SearchOptions<I, G>> {
               WrapFutureRestartable<Map<I, G>>(
                 builder: (context, value) {
                   return SegmentedButtonGroup<(I, G)>(
+                    variant: SegmentedButtonVariant.chip,
                     allowUnselect: true,
                     select: (genre) {
                       currentGenre = genre?.$1;

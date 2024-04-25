@@ -166,6 +166,10 @@ class _DownloadsState extends State<Downloads> {
             ],
             menuButtonItems: [
               IconButton(
+                onPressed: Downloader.g.restartFailed,
+                icon: const Icon(Icons.download_rounded),
+              ),
+              IconButton(
                 onPressed: Downloader.g.removeAll,
                 icon: const Icon(Icons.close),
               ),

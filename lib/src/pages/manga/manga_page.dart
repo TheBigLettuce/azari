@@ -125,8 +125,6 @@ class _MangaPageState extends State<MangaPage> {
         prevChaterKey: GlobalKey(),
         reloadChapters: () {},
         onNextPage: (p, cell) {},
-        overlayColor: Theme.of(context).colorScheme.surface,
-        iconColor: Theme.of(context).colorScheme.brightness,
       ),
       addNextChapterButton: true,
     ).then((value) {

@@ -338,7 +338,7 @@ class __BookmarkListTileState extends State<_BookmarkListTile> {
                     builder: (context, constraints) {
                       return Row(
                         children: List.generate(
-                          5,
+                          widget.posts.length,
                           (index) {
                             final e = widget.posts[index];
 

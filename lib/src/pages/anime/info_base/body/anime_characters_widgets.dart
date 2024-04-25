@@ -22,15 +22,11 @@ import 'body_segment_label.dart';
 class AnimeCharactersWidget extends StatefulWidget {
   final AnimeEntry entry;
   final AnimeAPI api;
-  final Color overlayColor;
-  final Brightness iconColor;
 
   const AnimeCharactersWidget({
     super.key,
     required this.entry,
     required this.api,
-    required this.overlayColor,
-    required this.iconColor,
   });
 
   @override
@@ -103,8 +99,6 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
                                     context,
                                     list.length,
                                     (context, i) => list[i].openImage(context),
-                                    widget.overlayColor,
-                                    widget.iconColor,
                                     startingCell: e.$1,
                                   );
                                 },

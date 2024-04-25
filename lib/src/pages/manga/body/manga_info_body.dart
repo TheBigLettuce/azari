@@ -21,8 +21,6 @@ class MangaInfoBody extends StatefulWidget {
   final MangaEntry entry;
   final MangaAPI api;
   final EdgeInsets viewPadding;
-  final Color overlayColor;
-  final Brightness iconColor;
   final ScrollController scrollController;
 
   const MangaInfoBody({
@@ -30,8 +28,6 @@ class MangaInfoBody extends StatefulWidget {
     required this.entry,
     required this.viewPadding,
     required this.api,
-    required this.overlayColor,
-    required this.iconColor,
     required this.scrollController,
   });
 
@@ -104,9 +100,7 @@ class _MangaInfoBodyState extends State<MangaInfoBody> {
             MangaChapters(
               entry: entry,
               api: api,
-              overlayColor: widget.overlayColor,
               scrollController: widget.scrollController,
-              iconColor: widget.iconColor,
             ),
         ],
       ),

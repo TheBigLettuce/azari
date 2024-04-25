@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/main.dart';
 import 'package:gallery/src/widgets/empty_widget.dart';
 
 class WrapFutureRestartable<T> extends StatefulWidget {
@@ -102,35 +103,41 @@ class _WrapFutureRestartableState<T> extends State<WrapFutureRestartable<T>> {
       future: f,
       builder: (context, snapshot) {
         if (!snapshot.hasData && !snapshot.hasError) {
-          return const Scaffold(
-            body: Center(
-              child: SizedBox(
-                width: 40,
-                child: LinearProgressIndicator(),
+          return AnnotatedRegion(
+            value: navBarStyleForTheme(Theme.of(context), elevation: false),
+            child: const Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 40,
+                  child: LinearProgressIndicator(),
+                ),
               ),
             ),
           );
         } else if (snapshot.hasError) {
-          return Scaffold(
-            appBar: AppBar(),
-            body: Center(
-              child: Column(
-                children: [
-                  EmptyWidget(
-                    gridSeed: 0,
-                    error: EmptyWidget.unwrapDioError(snapshot.error),
-                  ),
-                  const Padding(padding: EdgeInsets.only(bottom: 8)),
-                  FilledButton(
-                    onPressed: () {
-                      f = widget.newStatus();
-                      count += 1;
+          return AnnotatedRegion(
+            value: navBarStyleForTheme(Theme.of(context)),
+            child: Scaffold(
+              appBar: AppBar(),
+              body: Center(
+                child: Column(
+                  children: [
+                    EmptyWidget(
+                      gridSeed: 0,
+                      error: EmptyWidget.unwrapDioError(snapshot.error),
+                    ),
+                    const Padding(padding: EdgeInsets.only(bottom: 8)),
+                    FilledButton(
+                      onPressed: () {
+                        f = widget.newStatus();
+                        count += 1;
 
-                      setState(() {});
-                    },
-                    child: Text(AppLocalizations.of(context)!.tryAgain),
-                  )
-                ],
+                        setState(() {});
+                      },
+                      child: Text(AppLocalizations.of(context)!.tryAgain),
+                    )
+                  ],
+                ),
               ),
             ),
           );

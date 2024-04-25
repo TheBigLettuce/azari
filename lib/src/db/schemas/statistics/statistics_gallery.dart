@@ -6,6 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:gallery/src/db/initalize_db.dart';
+import 'package:gallery/src/db/schemas/statistics/daily_statistics.dart';
 import 'package:isar/isar.dart';
 
 part 'statistics_gallery.g.dart';
@@ -79,6 +80,8 @@ class StatisticsGallery {
 
     Dbs.g.main.writeTxnSync(() => Dbs.g.main.statisticsGallerys
         .putSync(c.copy(viewedFiles: c.viewedFiles + 1)));
+
+    DailyStatistics.current.add(swipedBoth: 1).save();
   }
 
   static void addFilesSwiped() {

@@ -110,11 +110,9 @@ class _DiscoverTabState extends State<DiscoverTab> {
                 return container.extra.future!;
               }
 
-              return widget.api.genres(AnimeSafeMode.safe).then((value) {
-                container.extra.future = Future.value(value);
+              container.extra.future = widget.api.genres(AnimeSafeMode.safe);
 
-                return value;
-              });
+              return container.extra.future!;
             },
             idFromGenre: (genre) => (genre.id, genre.title),
           ),
@@ -229,20 +227,28 @@ class __SearchBarState extends State<_SearchBar> {
     super.dispose();
   }
 
+  void _search(BuildContext context, String value) {
+    final gridState = widget.gridKey.currentState;
+    if (gridState == null) {
+      return;
+    }
+
+    if (value == container.extra.searchText) {
+      return;
+    }
+
+    container.extra.searchText = value;
+    gridState.refreshingStatus.updateProgress?.ignore();
+    gridState.refreshingStatus.updateProgress = null;
+    gridState.refreshingStatus.refresh(gridState.widget.functionality);
+
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     return SearchBar(
-      onSubmitted: (value) {
-        if (value == container.extra.searchText) {
-          return;
-        }
-
-        container.extra.searchText = value;
-
-        widget.gridKey.currentState?.refreshSequence();
-
-        Navigator.pop(context);
-      },
+      onSubmitted: (value) => _search(context, value),
       controller: controller,
       elevation: const MaterialStatePropertyAll(0),
       hintText: AppLocalizations.of(context)!.searchHint,
@@ -262,9 +268,7 @@ class __SearchBarState extends State<_SearchBar> {
           },
         ),
         IconButton(
-          onPressed: () {
-            controller.text = "";
-          },
+          onPressed: () => _search(context, ""),
           icon: const Icon(Icons.close_rounded),
         ),
       ],

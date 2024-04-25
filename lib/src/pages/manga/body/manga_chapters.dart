@@ -22,16 +22,12 @@ part 'chapter_body.dart';
 class MangaChapters extends StatefulWidget {
   final MangaEntry entry;
   final MangaAPI api;
-  final Color overlayColor;
-  final Brightness iconColor;
   final ScrollController scrollController;
 
   const MangaChapters({
     super.key,
     required this.entry,
     required this.api,
-    required this.iconColor,
-    required this.overlayColor,
     required this.scrollController,
   });
 
@@ -227,13 +223,11 @@ class _MangaChaptersState extends State<MangaChapters> {
           return _ChapterBody(
             scrollController: widget.scrollController,
             list: list,
-            iconColor: widget.iconColor,
             settingsButton: chapterWidget(context),
             api: widget.api,
             entry: widget.entry,
             onFinishRead: _onFinishRead,
             onNextLoad: _loadNextChapters,
-            overlayColor: widget.overlayColor,
             reachedEnd: !reachedEnd
                 ? SliverToBoxAdapter(
                     child: Center(

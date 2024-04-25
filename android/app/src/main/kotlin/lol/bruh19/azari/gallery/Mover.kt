@@ -454,6 +454,7 @@ internal class Mover(
     ) {
         val projection = arrayOf(
             MediaStore.Files.FileColumns.BUCKET_ID,
+            MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME,
             MediaStore.Files.FileColumns.DISPLAY_NAME,
             MediaStore.Files.FileColumns.DATE_MODIFIED,
             MediaStore.Files.FileColumns._ID,
@@ -513,6 +514,8 @@ internal class Mover(
         )?.use { cursor ->
             val id = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
             val bucket_id = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_ID)
+            val bucket_name =
+                cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.BUCKET_DISPLAY_NAME)
             val b_display_name =
                 cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
             val date_modified =
@@ -557,7 +560,8 @@ internal class Mover(
                             isGif = cursor.getString(media_mime) == "image/gif",
                             height = cursor.getLong(media_height),
                             width = cursor.getLong(media_width),
-                            size = cursor.getInt(size).toLong()
+                            size = cursor.getInt(size).toLong(),
+                            bucketName = cursor.getString(bucket_name),
                         )
                     )
 

@@ -308,7 +308,11 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
   double appBarBottomWidgetSize(PageDescription? page) =>
       ((page?.search == null && !atHomePage) || widget.description.pages == null
           ? 0
-          : (Platform.isAndroid ? 40 + 16 : 32 + 24)) +
+          : (widget.description.showPageSwitcherAsHeader
+              ? 0
+              : Platform.isAndroid
+                  ? 40 + 16
+                  : 32 + 24)) +
       (page == null ? 4 : 0);
 
   bool get hideAppBar =>
@@ -391,7 +395,8 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
           ? description.bottomWidget!
           : _BottomWidget(
               isRefreshing: mutation.isRefreshing,
-              routeChanger: page != null && page.search == null
+              routeChanger: (page != null && page.search == null) ||
+                      widget.description.showPageSwitcherAsHeader
                   ? const SizedBox.shrink()
                   : widget.description.pages?.switcherWidget(context, this),
               preferredSize: Size.fromHeight(
@@ -428,6 +433,11 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
       if (page != null)
         ...page.slivers
       else ...[
+        if (widget.description.showPageSwitcherAsHeader &&
+            widget.description.pages != null)
+          SliverToBoxAdapter(
+            child: widget.description.pages!.switcherWidget(context, this),
+          ),
         if (!mutation.isRefreshing &&
             mutation.cellCount == 0 &&
             !description.ignoreEmptyWidgetOnNoContent)
@@ -439,6 +449,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
                 children: [
                   EmptyWidget(
                     gridSeed: 0,
+                    overrideEmpty: widget.description.overrideEmptyWidgetNotice,
                     error: refreshingStatus.refreshingError == null
                         ? null
                         : EmptyWidget.unwrapDioError(

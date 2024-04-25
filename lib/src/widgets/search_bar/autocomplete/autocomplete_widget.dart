@@ -5,38 +5,16 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:developer';
+import "dart:developer";
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/interfaces/booru/booru_api.dart';
-import 'package:gallery/src/widgets/notifiers/focus.dart';
-import 'package:logging/logging.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import 'autocomplete_tag.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/interfaces/booru/booru_api.dart";
+import "package:gallery/src/widgets/notifiers/focus.dart";
+import "package:gallery/src/widgets/search_bar/autocomplete/autocomplete_tag.dart";
+import "package:logging/logging.dart";
 
 class AutocompleteWidget extends StatelessWidget {
-  final TextEditingController? controller;
-  final void Function(String) highlightChanged;
-  final void Function(String) onSubmit;
-  final void Function() focusMain;
-  final Future<List<BooruTag>> Function(String) complF;
-  final FocusNode? focus;
-  final ScrollController? scrollHack;
-  final bool noSticky;
-  final bool submitOnPress;
-  final bool roundBorders;
-  final String? customHint;
-  final bool showSearch;
-  final int? searchCount;
-  final bool noUnfocus;
-  final void Function()? onChanged;
-  final List<Widget>? addItems;
-  final String? searchTextOverride;
-  final bool plainSearchBar;
-  final bool swapSearchIcon;
-  final bool disable;
-
   const AutocompleteWidget(
     this.controller,
     this.highlightChanged,
@@ -61,6 +39,27 @@ class AutocompleteWidget extends StatelessWidget {
     this.addItems,
   });
 
+  final TextEditingController? controller;
+  final void Function(String) highlightChanged;
+  final void Function(String) onSubmit;
+  final void Function() focusMain;
+  final Future<List<BooruTag>> Function(String) complF;
+  final FocusNode? focus;
+  final ScrollController? scrollHack;
+  final bool noSticky;
+  final bool submitOnPress;
+  final bool roundBorders;
+  final String? customHint;
+  final bool showSearch;
+  final int? searchCount;
+  final bool noUnfocus;
+  final void Function()? onChanged;
+  final List<Widget>? addItems;
+  final String? searchTextOverride;
+  final bool plainSearchBar;
+  final bool swapSearchIcon;
+  final bool disable;
+
   @override
   Widget build(BuildContext context) {
     return RawAutocomplete<String>(
@@ -68,44 +67,43 @@ class AutocompleteWidget extends StatelessWidget {
       focusNode: focus,
       optionsViewBuilder: (context, onSelected, options) {
         final tiles = options
-            .map((elem) => ListTile(
-                  onTap: () {
-                    if (controller == null) {
-                      if (submitOnPress) {
-                        onSubmit(elem);
-                      }
-                      return;
-                    }
-
+            .map(
+              (elem) => ListTile(
+                onTap: () {
+                  if (controller == null) {
                     if (submitOnPress) {
-                      focusMain();
-                      controller!.text = "";
                       onSubmit(elem);
-                      return;
                     }
+                    return;
+                  }
 
-                    if (noSticky) {
-                      onSelected(elem);
-                      return;
-                    }
+                  if (submitOnPress) {
+                    focusMain();
+                    controller!.text = "";
+                    onSubmit(elem);
+                    return;
+                  }
 
-                    final tags = List.from(controller!.text.split(" "));
+                  if (noSticky) {
+                    onSelected(elem);
+                    return;
+                  }
 
-                    if (tags.isNotEmpty) {
-                      tags.removeLast();
-                      tags.remove(elem);
-                    }
+                  final tags = List.from(controller!.text.split(" "));
 
-                    tags.add(elem);
+                  if (tags.isNotEmpty) {
+                    tags.removeLast();
+                    tags.remove(elem);
+                  }
 
-                    final tagsString =
-                        tags.reduce((value, element) => "$value $element");
+                  tags.add(elem);
 
-                    onSelected(tagsString);
-                    onChanged?.call();
-                  },
-                  title: Text(elem),
-                ))
+                  onSelected(tags.join(" "));
+                  onChanged?.call();
+                },
+                title: Text(elem),
+              ),
+            )
             .toList();
 
         return Align(
@@ -121,22 +119,24 @@ class AutocompleteWidget extends StatelessWidget {
               child: ListView.builder(
                 itemCount: tiles.length,
                 itemBuilder: (context, index) {
-                  return Builder(builder: (context) {
-                    final highlight =
-                        AutocompleteHighlightedOption.of(context) == index;
-                    if (highlight) {
-                      highlightChanged(options.elementAt(index));
-                      WidgetsBinding.instance
-                          .scheduleFrameCallback((timeStamp) {
-                        Scrollable.ensureVisible(context);
-                      });
-                    }
+                  return Builder(
+                    builder: (context) {
+                      final highlight =
+                          AutocompleteHighlightedOption.of(context) == index;
+                      if (highlight) {
+                        highlightChanged(options.elementAt(index));
+                        WidgetsBinding.instance
+                            .scheduleFrameCallback((timeStamp) {
+                          Scrollable.ensureVisible(context);
+                        });
+                      }
 
-                    return Container(
-                      color: highlight ? Theme.of(context).focusColor : null,
-                      child: tiles[index],
-                    );
-                  });
+                      return Container(
+                        color: highlight ? Theme.of(context).focusColor : null,
+                        child: tiles[index],
+                      );
+                    },
+                  );
                 },
               ),
             ),
@@ -154,7 +154,8 @@ class AutocompleteWidget extends StatelessWidget {
                 onChanged: disable ? null : (_) => onChanged,
                 onSubmitted: onSubmit,
               )
-            : makeSearchBar(context,
+            : makeSearchBar(
+                context,
                 focusNode: focusNode,
                 disable: disable,
                 addItems: addItems,
@@ -164,7 +165,8 @@ class AutocompleteWidget extends StatelessWidget {
                 count: searchCount,
                 swapSearchIcon: swapSearchIcon,
                 searchTextOverride: searchTextOverride,
-                customHint: customHint);
+                customHint: customHint,
+              );
       },
       optionsBuilder: (textEditingValue) async {
         if (disable) {
@@ -175,8 +177,12 @@ class AutocompleteWidget extends StatelessWidget {
           return (await autocompleteTag(textEditingValue.text, complF))
               .map((e) => e.tag);
         } catch (e, trace) {
-          log("autocomplete in search, excluded tags",
-              level: Level.WARNING.value, error: e, stackTrace: trace);
+          log(
+            "autocomplete in search, excluded tags",
+            level: Level.WARNING.value,
+            error: e,
+            stackTrace: trace,
+          );
 
           return const [];
         }
@@ -226,9 +232,9 @@ Widget makeSearchBar(
               ),
             ),
             elevation: const MaterialStatePropertyAll(0),
-            backgroundColor: MaterialStatePropertyAll(disable
-                ? surface.withOpacity(0.4)
-                : surfaceTint.withOpacity(0.8)),
+            backgroundColor: MaterialStatePropertyAll(
+              disable ? surface.withOpacity(0.4) : surfaceTint.withOpacity(0.8),
+            ),
             hintStyle: MaterialStatePropertyAll(
               TextStyle(
                 color: onPrimary.withOpacity(0.5),
@@ -250,10 +256,11 @@ Widget makeSearchBar(
           ),
           iconButtonTheme: IconButtonThemeData(
             style: ButtonStyle(
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-                padding: const MaterialStatePropertyAll(EdgeInsets.all(0)),
-                iconColor: MaterialStatePropertyAll(onPrimary)),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+              padding: const MaterialStatePropertyAll(EdgeInsets.zero),
+              iconColor: MaterialStatePropertyAll(onPrimary),
+            ),
           ),
           hintColor: onPrimary.withOpacity(0.5),
         ),
@@ -269,11 +276,12 @@ Widget makeSearchBar(
                   },
                 ),
           constraints: BoxConstraints(
-              maxHeight: 38,
-              minHeight: 38,
-              maxWidth: !notifier.hasFocus || disable
-                  ? 114 + (count != null ? 38 : 0)
-                  : maxWidth),
+            maxHeight: 38,
+            minHeight: 38,
+            maxWidth: !notifier.hasFocus || disable
+                ? 114 + (count != null ? 38 : 0)
+                : maxWidth,
+          ),
           hintText: notifier.hasFocus && !disable
               ? "${searchTextOverride ?? AppLocalizations.of(context)!.searchHint} ${customHint ?? ''}"
               : customHint ??
@@ -285,11 +293,12 @@ Widget makeSearchBar(
               ? [
                   if (addItems != null) ...addItems,
                   IconButton(
-                      onPressed: () {
-                        textController.clear();
-                        onChanged?.call();
-                      },
-                      icon: const Icon(Icons.close))
+                    onPressed: () {
+                      textController.clear();
+                      onChanged?.call();
+                    },
+                    icon: const Icon(Icons.close),
+                  ),
                 ]
               : count != null
                   ? [Badge(label: Text(count.toString()))]

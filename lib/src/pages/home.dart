@@ -8,7 +8,9 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/main.dart';
 import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
 import 'package:gallery/src/pages/anime/anime.dart';
@@ -21,9 +23,7 @@ import 'package:gallery/src/widgets/notifiers/selection_count.dart';
 import 'package:isar/isar.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import '../../main.dart';
 import '../db/initalize_db.dart';
-import '../db/schemas/settings/settings.dart';
 import '../widgets/grid_frame/configuration/selection_glue_state.dart';
 import '../widgets/skeletons/home.dart';
 import '../widgets/skeletons/skeleton_state.dart';
@@ -71,10 +71,6 @@ class _HomeState extends State<Home>
 
     initChangePage(this, settings);
     initIcons(this);
-
-    WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      changeSystemUiOverlayContext(context);
-    });
 
     maybeBeforeYouContinueDialog(context, settings);
 
@@ -128,6 +124,7 @@ class _HomeState extends State<Home>
                   ),
                 ),
                 extendBody: true,
+                noNavBar: widget.callback != null,
               ),
             );
           },

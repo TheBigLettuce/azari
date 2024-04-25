@@ -30,8 +30,6 @@ import 'body.dart';
 import 'mixins/page_type_mixin.dart';
 import 'mixins/palette.dart';
 
-final Color kListTileColorInInfo = Colors.white60.withOpacity(0.8);
-
 class ImageViewStatistics {
   final void Function() swiped;
   final void Function() viewed;
@@ -74,8 +72,6 @@ class ImageView extends StatefulWidget {
   final void Function(int post) scrollUntill;
   final Future<int> Function()? onNearEnd;
   final void Function(int i)? download;
-  final Color systemOverlayRestoreColor;
-  final Brightness systemOverlayIconColor;
   final void Function(ImageViewState state)? pageChange;
   final void Function()? onExit;
 
@@ -92,12 +88,14 @@ class ImageView extends StatefulWidget {
 
   final StreamSubscription<int> Function(void Function(int) f)? updates;
 
+  final List<ImageTag> Function(Contentable)? tags;
+  final StreamSubscription<List<ImageTag>> Function(
+      Contentable, void Function(List<ImageTag> l))? watchTags;
+
   static Future<void> launchWrapped(
     BuildContext context,
     int cellCount,
-    Contentable Function(BuildContext, int) cell,
-    Color overlayColor,
-    Brightness iconColor, {
+    Contentable Function(BuildContext, int) cell, {
     int startingCell = 0,
     void Function(int)? download,
     Key? key,
@@ -115,8 +113,6 @@ class ImageView extends StatefulWidget {
             onExit: () {},
             getCell: cell,
             onNearEnd: null,
-            systemOverlayRestoreColor: overlayColor,
-            systemOverlayIconColor: iconColor,
           ),
         );
       },
@@ -128,10 +124,11 @@ class ImageView extends StatefulWidget {
     GridFunctionality<T> functionality,
     ImageViewDescription<T> imageDesctipion,
     int startingCell,
+    List<ImageTag> Function(Contentable)? tags,
+    StreamSubscription<List<ImageTag>> Function(
+            Contentable, void Function(List<ImageTag> l))?
+        watchTags,
   ) {
-    final overlayColor = Theme.of(gridContext).colorScheme.surface;
-    final iconColor = Theme.of(gridContext).colorScheme.brightness;
-
     final tryScroll = GridExtrasNotifier.of(gridContext);
 
     functionality.selectionGlue.hideNavBar(true);
@@ -145,15 +142,15 @@ class ImageView extends StatefulWidget {
         gridContext: gridContext,
         statistics: imageDesctipion.statistics,
         registerNotifiers: functionality.registerNotifiers,
-        systemOverlayRestoreColor: overlayColor,
-        systemOverlayIconColor: iconColor,
         scrollUntill: tryScroll,
         pageChange: imageDesctipion.pageChange,
+        watchTags: watchTags,
         onExit: imageDesctipion.onExit,
         getCell: (context, idx) => getCell(idx).content(context),
         cellCount: functionality.refreshingStatus.mutation.cellCount,
         download: functionality.download,
         startingCell: startingCell,
+        tags: tags,
         onNearEnd: imageDesctipion.ignoreOnNearEnd
             ? null
             : () => functionality.refreshingStatus.onNearEnd(functionality),
@@ -172,12 +169,12 @@ class ImageView extends StatefulWidget {
     required this.startingCell,
     this.onExit,
     this.statistics,
+    this.tags,
     this.updates,
+    this.watchTags,
     this.ignoreLoadingBuilder = false,
     required this.getCell,
     required this.onNearEnd,
-    required this.systemOverlayRestoreColor,
-    required this.systemOverlayIconColor,
     this.pageChange,
     this.download,
     this.registerNotifiers,
@@ -210,8 +207,7 @@ class ImageViewState extends State<ImageView>
       PageController(initialPage: widget.startingCell);
 
   late final PlatformFullscreensPlug fullscreenPlug =
-      choosePlatformFullscreenPlug(
-          widget.systemOverlayRestoreColor, widget.systemOverlayIconColor);
+      choosePlatformFullscreenPlug();
 
   StreamSubscription<int>? _updates;
 
@@ -236,9 +232,14 @@ class ImageViewState extends State<ImageView>
         return;
       }
 
+      if (cellCount != c) {
+        widget.statistics?.viewed();
+      }
+
       cellCount = c;
       final prev = currentPage;
       currentPage = prev.clamp(0, cellCount - 1);
+
       loadCells(currentPage, cellCount);
       refreshPalette();
 
@@ -402,6 +403,8 @@ class ImageViewState extends State<ImageView>
       incr: _incrTiles,
       child: WrapImageViewNotifiers(
         hardRefresh: refreshImage,
+        tags: widget.tags,
+        watchTags: widget.watchTags,
         bottomSheetController: bottomSheetController,
         mainFocus: mainFocus,
         controller: animationController,

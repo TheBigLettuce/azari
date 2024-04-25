@@ -105,7 +105,10 @@ class DownloadFile implements CellBase, Thumbnailable, IsarEntryId {
   }
 
   static List<DownloadFile> get inProgressNow =>
-      Dbs.g.main.downloadFiles.filter().inProgressEqualTo(true).findAllSync();
+      Dbs.g.main.downloadFiles.where().inProgressEqualTo(true).findAllSync();
+
+  static List<DownloadFile> get allFailed =>
+      Dbs.g.main.downloadFiles.where().isFailedEqualTo(true).findAllSync();
 
   static bool notExist(String url) => !exist(url);
 

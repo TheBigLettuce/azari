@@ -8,34 +8,44 @@
 import 'package:gallery/src/db/initalize_db.dart';
 import 'package:isar/isar.dart';
 
-part 'favorite_booru_post.g.dart';
+part 'favorite_file.g.dart';
 
 @collection
-class FavoriteBooruPost {
-  const FavoriteBooruPost(this.id, this.time);
+class FavoriteFile {
+  const FavoriteFile(this.id, this.time);
 
   final Id id;
   @Index()
   final DateTime time;
 
-  static int get thumbnail => Dbs.g.blacklisted.favoriteBooruPosts
+  static int get thumbnail => Dbs.g.blacklisted.favoriteFiles
       .where()
       .sortByTimeDesc()
       .findFirstSync()!
       .id;
 
+  static bool isFavorite(int id) {
+    return Dbs.g.blacklisted.favoriteFiles.getSync(id) != null;
+  }
+
+  static List<FavoriteFile> getAll({required int offset, required int limit}) =>
+      Dbs.g.blacklisted.favoriteFiles
+          .where()
+          .offset(offset)
+          .limit(limit)
+          .findAllSync();
+
   static void addAll(List<int> ids) {
-    Dbs.g.blacklisted.writeTxnSync(() => Dbs.g.blacklisted.favoriteBooruPosts
-        .putAllSync(
-            ids.map((e) => FavoriteBooruPost(e, DateTime.now())).toList()));
+    Dbs.g.blacklisted.writeTxnSync(() => Dbs.g.blacklisted.favoriteFiles
+        .putAllSync(ids.map((e) => FavoriteFile(e, DateTime.now())).toList()));
   }
 
   static void deleteAll(List<int> ids) {
-    Dbs.g.blacklisted.writeTxnSync(
-        () => Dbs.g.blacklisted.favoriteBooruPosts.deleteAllSync(ids));
+    Dbs.g.blacklisted
+        .writeTxnSync(() => Dbs.g.blacklisted.favoriteFiles.deleteAllSync(ids));
   }
 
-  static int get count => Dbs.g.blacklisted.favoriteBooruPosts.countSync();
+  static int get count => Dbs.g.blacklisted.favoriteFiles.countSync();
   static bool isEmpty() => count == 0;
   static bool isNotEmpty() => !isEmpty();
 }

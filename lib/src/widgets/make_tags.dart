@@ -12,11 +12,12 @@ import 'package:flutter/material.dart';
 import 'package:gallery/src/db/schemas/tags/pinned_tag.dart';
 import 'package:gallery/src/db/schemas/tags/tags.dart';
 import 'package:gallery/src/db/services/settings.dart';
+import 'package:gallery/src/db/tags/booru_tagging.dart';
 import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/booru_tagging.dart';
+import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart';
 import 'package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart';
 import 'package:gallery/src/pages/more/settings/radio_dialog.dart';
-import 'package:gallery/src/pages/more/settings/settings_label.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../db/tags/post_tags.dart';
@@ -32,6 +33,10 @@ PopupMenuItem launchGridSafeModeItem(
 ) =>
     PopupMenuItem(
       onTap: () {
+        if (tag.isEmpty) {
+          return;
+        }
+
         radioDialog<SafeMode>(
           context,
           SafeMode.values.map((e) => (e, e.translatedString(context))),
@@ -45,23 +50,17 @@ PopupMenuItem launchGridSafeModeItem(
     );
 
 class DrawerTagsWidget extends StatefulWidget {
-  final List<String> tags;
-  final String filename;
-  final List<String> pinnedTags;
-  final void Function(BuildContext, String, [SafeMode?])? launchGrid;
-  final BooruTagging? excluded;
   final DisassembleResult? res;
+  final String filename;
+  final void Function(BuildContext, String, [SafeMode?])? launchGrid;
   final bool addRemoveTag;
 
   const DrawerTagsWidget(
-    this.tags,
     this.filename, {
     super.key,
-    required this.pinnedTags,
+    this.res,
     this.launchGrid,
-    this.excluded,
     this.addRemoveTag = false,
-    required this.res,
   });
 
   @override
@@ -70,12 +69,16 @@ class DrawerTagsWidget extends StatefulWidget {
 
 class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
   late final StreamSubscription<void>? _watcher;
+  late final BooruTagging? excluded;
 
   @override
   void initState() {
     super.initState();
+    excluded = widget.res == null
+        ? null
+        : TagManager.fromEnum(widget.res!.booru).excluded;
 
-    _watcher = widget.excluded?.watch((_) {
+    _watcher = excluded?.watch((_) {
       setState(() {});
     });
   }
@@ -89,19 +92,18 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
 
   List<PopupMenuItem> makeItems(BuildContext context, String tag) {
     final t = Tag.string(tag: tag);
-    final excluded = widget.excluded;
 
     return [
       if (excluded != null)
         PopupMenuItem(
           onTap: () {
-            if (excluded.exists(t)) {
-              excluded.delete(t);
+            if (excluded!.exists(t)) {
+              excluded!.delete(t);
             } else {
-              excluded.add(t);
+              excluded!.add(t);
             }
           },
-          child: Text(excluded.exists(t)
+          child: Text(excluded!.exists(t)
               ? AppLocalizations.of(context)!.removeFromExcluded
               : AppLocalizations.of(context)!.addToExcluded),
         ),
@@ -149,8 +151,7 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
           label: Text(
             e,
             style: TextStyle(
-              color: widget.excluded != null &&
-                      widget.excluded!.exists(Tag.string(tag: e))
+              color: excluded != null && excluded!.exists(Tag.string(tag: e))
                   ? Colors.red
                       .harmonizeWith(Theme.of(context).colorScheme.primary)
                       .withOpacity(0.9)
@@ -167,10 +168,9 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final tags = widget.tags;
     final filename = widget.filename;
     final res = widget.res;
-    final pinnedTags = widget.pinnedTags;
+    final tags = ImageTagsNotifier.of(context);
 
     if (tags.isEmpty) {
       if (filename.isEmpty) {
@@ -188,16 +188,14 @@ class _DrawerTagsWidgetState extends State<DrawerTagsWidget> {
     final value = FilterValueNotifier.maybeOf(context).trim();
     final data = FilterNotifier.maybeOf(context);
 
-    final Iterable<String> filteredTags;
+    final Iterable<ImageTag> filteredTags;
     if (data != null && value.isNotEmpty) {
-      filteredTags = tags.where((element) => element.contains(value));
+      filteredTags = tags.where((element) => element.tag.contains(value));
     } else {
       filteredTags = tags;
     }
 
-    final tiles = pinnedTags
-        .map((e) => makeTile(context, e, true))
-        .followedBy(filteredTags.map((e) => makeTile(context, e, false)));
+    final tiles = filteredTags.map((e) => makeTile(context, e.tag, e.favorite));
 
     return SliverPadding(
       padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),

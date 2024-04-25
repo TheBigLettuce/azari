@@ -141,16 +141,12 @@ void mainPickfile() async {
       ? await PlatformFunctions.currentNetworkStatus()
       : true);
 
-  // await Permission.photos.request();
-  // await Permission.videos.request();
-  // await Permission.storage.request();
-  // await Permission.accessMediaLocation.request();
-  // PlatformFunctions.requestManageMedia();
-
   changeExceptionErrorColors();
 
   final accentColor = await PlatformFunctions.accentColor();
   azariVersion = (await PackageInfo.fromPlatform()).version;
+
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   runApp(MaterialApp(
     title: 'Azari',
@@ -214,6 +210,8 @@ void main() async {
 
   azariVersion = (await PackageInfo.fromPlatform()).version;
 
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
   runApp(
     RestartWidget(
       accentColor: accentColor,
@@ -238,53 +236,24 @@ void changeExceptionErrorColors() {
   RenderErrorBox.textStyle = ui.TextStyle(color: Colors.white70);
 }
 
-// void changeSystemUiOverlay(BuildContext? context, [Color? override]) {
-//   assert(context != null || override != null);
-
-//   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-//   SystemChrome.setSystemUIOverlayStyle(
-//     SystemUiOverlayStyle(
-//       systemNavigationBarIconBrightness: ,
-//       systemNavigationBarColor: override?.withOpacity(0.5) ??
-//           Theme.of(context!)
-//               .navigationBarTheme
-//               .backgroundColor
-//               ?.withOpacity(0.5) ??
-//           Theme.of(context!).colorScheme.background.withOpacity(0.5),
-//     ),
-//   );
-// }
-
-void changeSystemUiOverlayContext(BuildContext context) {
-  final theme = Theme.of(context);
-
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  SystemChrome.setSystemUIOverlayStyle(
+SystemUiOverlayStyle navBarStyleForTheme(
+  ThemeData theme, {
+  bool transparent = true,
+  bool elevation = true,
+}) =>
     SystemUiOverlayStyle(
       systemNavigationBarIconBrightness: theme.brightness == ui.Brightness.dark
           ? ui.Brightness.light
           : ui.Brightness.dark,
-      systemNavigationBarColor:
-          theme.navigationBarTheme.backgroundColor?.withOpacity(0.5) ??
-              theme.colorScheme.background.withOpacity(0.5),
-    ),
-  );
-}
-
-void changeSystemUiOverlayColor({
-  required Color background,
-  required Brightness iconColor,
-}) {
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  SystemChrome.setSystemUIOverlayStyle(
-    SystemUiOverlayStyle(
-      systemNavigationBarColor: background.withOpacity(0.5),
-      systemNavigationBarIconBrightness: iconColor == ui.Brightness.dark
-          ? ui.Brightness.light
-          : ui.Brightness.dark,
-    ),
-  );
-}
+      systemNavigationBarColor: (elevation
+              ? ElevationOverlay.applySurfaceTint(
+                  theme.colorScheme.surface,
+                  theme.colorScheme.surfaceTint,
+                  3,
+                )
+              : theme.colorScheme.surface)
+          .withOpacity(transparent ? 0.0 : 0.8),
+    );
 
 @pragma('vm:entry-point')
 void notifBackground(NotificationResponse res) {}

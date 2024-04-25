@@ -272,8 +272,6 @@ class ReadMangaChapter {
                 onExit: () {},
                 getCell: (context, i) => chapters[i].content(context),
                 onNearEnd: null,
-                systemOverlayRestoreColor: data.overlayColor,
-                systemOverlayIconColor: data.iconColor,
               ),
             );
           },
@@ -304,8 +302,6 @@ class ReaderData {
     required this.prevChaterKey,
     required this.reloadChapters,
     required this.onNextPage,
-    required this.overlayColor,
-    required this.iconColor,
     required this.chapterName,
     required this.chapterNumber,
   });
@@ -322,9 +318,6 @@ class ReaderData {
 
   final void Function() reloadChapters;
   final void Function(int page, MangaImage cell) onNextPage;
-
-  final Color overlayColor;
-  final Brightness iconColor;
 }
 
 class MangaReaderNotifier extends InheritedWidget {

@@ -5,17 +5,21 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:gallery/src/db/services/settings.dart';
+import 'package:gallery/src/interfaces/booru/safe_mode.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
+import 'package:gallery/src/pages/booru/booru_page.dart';
+import 'package:gallery/src/pages/more/settings/radio_dialog.dart';
 import 'package:gallery/src/widgets/gesture_dead_zones.dart';
 import 'package:gallery/src/widgets/image_view/bottom_bar.dart';
+import 'package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart';
 import 'package:gallery/src/widgets/notifiers/app_bar_visibility.dart';
 import 'package:gallery/src/widgets/notifiers/focus.dart';
 import 'package:gallery/src/widgets/notifiers/image_view_info_tiles_refresh_notifier.dart';
 import 'package:palette_generator/palette_generator.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 import '../../notifiers/current_content.dart';
 import '../app_bar/app_bar.dart';
@@ -56,18 +60,14 @@ class WrapImageViewSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final widgets = CurrentContentNotifier.of(context).widgets;
+    final stickers = widgets.tryAsStickerable(context, true);
     final b = widgets.tryAsAppBarButtonable(context);
+
     final min = MediaQuery.sizeOf(context);
     final viewPadding = MediaQuery.viewPaddingOf(context);
+    final colorScheme = Theme.of(context).colorScheme;
 
     final minSize = (minPixels(widgets, viewPadding)) / min.height;
-
-    final surface = Theme.of(context).colorScheme.surface;
-    final hsl = HSLColor.fromColor(surface);
-    final newHsl = hsl
-        .withHue(clampDouble(hsl.hue - 8, 0, 360))
-        .withSaturation(clampDouble(hsl.saturation + 0.08, 0, 1))
-        .withLightness(clampDouble(hsl.lightness + 0.02, 0, 1));
 
     return Scaffold(
       key: scaffoldKey,
@@ -75,106 +75,156 @@ class WrapImageViewSkeleton extends StatelessWidget {
       extendBody: true,
       endDrawerEnableOpenDragGesture: false,
       resizeToAvoidBottomInset: false,
-      bottomNavigationBar: Builder(
-        builder: (context) {
-          return Animate(
-            effects: const [
-              SlideEffect(
-                duration: Duration(milliseconds: 500),
-                curve: Easing.emphasizedAccelerate,
-                begin: Offset(0, 0),
-                end: Offset(0, 1),
-              )
-            ],
-            autoPlay: false,
-            target: AppBarVisibilityNotifier.of(context) ? 0 : 1,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(15),
-              ),
-              child: DecoratedBox(
-                decoration: BoxDecoration(color: surface.withOpacity(0.98)),
-                child: IgnorePointer(
-                  ignoring: !AppBarVisibilityNotifier.of(context),
-                  child: DraggableScrollableSheet(
-                    controller: bottomSheetController,
-                    expand: false,
-                    snap: true,
-                    shouldCloseOnMinExtent: false,
-                    maxChildSize: 1 -
-                        ((kToolbarHeight + viewPadding.top + 8) / min.height),
-                    minChildSize: minSize,
-                    initialChildSize: minSize,
-                    builder: (context, scrollController) {
-                      if (widgets is! Infoable) {
-                        return const ImageViewBottomAppBar();
-                      }
+      bottomNavigationBar: stickers.isEmpty && b.isEmpty && widgets is! Infoable
+          ? null
+          : Builder(
+              builder: (context) {
+                return Animate(
+                  effects: const [
+                    SlideEffect(
+                      duration: Duration(milliseconds: 500),
+                      curve: Easing.emphasizedAccelerate,
+                      begin: Offset(0, 0),
+                      end: Offset(0, 1),
+                    )
+                  ],
+                  autoPlay: false,
+                  target: AppBarVisibilityNotifier.of(context) ? 0 : 1,
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(15),
+                    ),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                          color: colorScheme.surface.withOpacity(0.98)),
+                      child: IgnorePointer(
+                        ignoring: !AppBarVisibilityNotifier.of(context),
+                        child: DraggableScrollableSheet(
+                          controller: bottomSheetController,
+                          expand: false,
+                          snap: true,
+                          shouldCloseOnMinExtent: false,
+                          maxChildSize: 1 -
+                              ((kToolbarHeight + viewPadding.top + 8) /
+                                  min.height),
+                          minChildSize: minSize,
+                          initialChildSize: minSize,
+                          builder: (context, scrollController) {
+                            if (widgets is! Infoable) {
+                              return const ImageViewBottomAppBar();
+                            }
 
-                      return GestureDeadZones(
-                        left: true,
-                        right: true,
-                        child: CustomScrollView(
-                          key: ValueKey((viewPadding.bottom, min)),
-                          clipBehavior: Clip.antiAlias,
-                          controller: scrollController,
-                          slivers: [
-                            SliverToBoxAdapter(
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: newHsl.toColor().withOpacity(0.8),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(4),
-                                  child: SizedBox(
-                                    height: 18,
-                                    child: Align(
-                                      alignment: Alignment.center,
-                                      child: _BottomSheetButton(
-                                        bottomSheetController:
-                                            bottomSheetController,
-                                        minSize: minSize,
+                            return GestureDeadZones(
+                              left: true,
+                              right: true,
+                              child: CustomScrollView(
+                                key: ValueKey((viewPadding.bottom, min)),
+                                clipBehavior: Clip.antiAlias,
+                                controller: scrollController,
+                                slivers: [
+                                  SliverToBoxAdapter(
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        color:
+                                            ElevationOverlay.applySurfaceTint(
+                                          colorScheme.surface,
+                                          colorScheme.surfaceTint,
+                                          3 / 2.5,
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(4),
+                                        child: SizedBox(
+                                          height: 18,
+                                          child: Stack(
+                                            children: [
+                                              if (stickers.isNotEmpty)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          left: 8),
+                                                  child: Row(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .center,
+                                                    children: stickers
+                                                        .map((e) => Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .only(
+                                                                      right: 8),
+                                                              child: Icon(
+                                                                e.icon,
+                                                                size: 16,
+                                                                color: e.important
+                                                                    ? colorScheme
+                                                                        .secondary
+                                                                    : colorScheme
+                                                                        .onSurface
+                                                                        .withOpacity(
+                                                                            0.6),
+                                                              ),
+                                                            ))
+                                                        .toList(),
+                                                  ),
+                                                ),
+                                              const Padding(
+                                                padding:
+                                                    EdgeInsets.only(right: 8),
+                                                child: _PinnedTagsRow(),
+                                              ),
+                                              Align(
+                                                alignment: Alignment.center,
+                                                child: _BottomSheetButton(
+                                                  bottomSheetController:
+                                                      bottomSheetController,
+                                                  minSize: minSize,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              ),
-                            ),
-                            const SliverAppBar(
-                              automaticallyImplyLeading: false,
-                              titleSpacing: 0,
-                              toolbarHeight: 80,
-                              title: ImageViewBottomAppBar(),
-                              pinned: true,
-                            ),
-                            _AnimatedBottomPadding(
-                              bottomSheetController: bottomSheetController,
-                              minPixels: minPixels(widgets, viewPadding),
-                            ),
-                            Builder(
-                              builder: (context) {
-                                FocusNotifier.of(context);
-                                ImageViewInfoTilesRefreshNotifier.of(context);
+                                  const SliverAppBar(
+                                    automaticallyImplyLeading: false,
+                                    titleSpacing: 0,
+                                    toolbarHeight: 80,
+                                    title: ImageViewBottomAppBar(),
+                                    pinned: true,
+                                  ),
+                                  _AnimatedBottomPadding(
+                                    bottomSheetController:
+                                        bottomSheetController,
+                                    minPixels: minPixels(widgets, viewPadding),
+                                  ),
+                                  Builder(
+                                    builder: (context) {
+                                      FocusNotifier.of(context);
+                                      ImageViewInfoTilesRefreshNotifier.of(
+                                          context);
 
-                                return widgets.tryAsInfoable(context)!;
-                              },
-                            ),
-                            SliverPadding(
-                              padding: EdgeInsets.only(
-                                bottom:
-                                    MediaQuery.viewPaddingOf(context).bottom,
+                                      return widgets.tryAsInfoable(context)!;
+                                    },
+                                  ),
+                                  SliverPadding(
+                                    padding: EdgeInsets.only(
+                                      bottom: MediaQuery.viewPaddingOf(context)
+                                          .bottom,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
+                            );
+                          },
                         ),
-                      );
-                    },
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
-          );
-        },
-      ),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight + 4),
         child: ImageViewAppBar(
@@ -183,6 +233,63 @@ class WrapImageViewSkeleton extends StatelessWidget {
         ),
       ),
       body: child,
+    );
+  }
+}
+
+class _PinnedTagsRow extends StatelessWidget {
+  const _PinnedTagsRow({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final tags = ImageTagsNotifier.of(context)
+        .where((element) => element.favorite)
+        .take(2);
+    final theme = Theme.of(context);
+    final res = ImageTagsNotifier.resOf(context);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: tags
+          .map((e) => Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: GestureDetector(
+                  onTap: res == null
+                      ? null
+                      : () {
+                          OnBooruTagPressed.maybePressOf(
+                              context, e.tag, res.booru);
+                        },
+                  onLongPress: res == null
+                      ? null
+                      : () {
+                          radioDialog<SafeMode>(
+                            context,
+                            SafeMode.values
+                                .map((e) => (e, e.translatedString(context))),
+                            SettingsService.currentData.safeMode,
+                            (value) {
+                              OnBooruTagPressed.maybePressOf(
+                                context,
+                                e.tag,
+                                res.booru,
+                                overrideSafeMode: value,
+                              );
+                            },
+                            title: AppLocalizations.of(context)!.chooseSafeMode,
+                            allowSingle: true,
+                          );
+                        },
+                  child: Text(
+                    "#${e.tag.length > 10 ? "${e.tag.substring(0, 10 - 3)}..." : e.tag}",
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.secondary.withOpacity(0.65),
+                    ),
+                  ),
+                ),
+              ))
+          .toList(),
     );
   }
 }

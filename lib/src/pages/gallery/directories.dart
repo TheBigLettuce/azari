@@ -5,51 +5,44 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:flutter/material.dart';
-import 'package:gallery/main.dart';
-import 'package:gallery/src/db/schemas/gallery/directory_metadata.dart';
-import 'package:gallery/src/db/schemas/grid_settings/directories.dart';
-import 'package:gallery/src/db/schemas/settings/misc_settings.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/gallery/gallery_api_directories.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
-import 'package:gallery/src/interfaces/logging/logging.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart';
-import 'package:gallery/src/plugs/gallery.dart';
-import 'package:gallery/src/widgets/copy_move_preview.dart';
-import 'package:gallery/src/pages/more/favorite_booru_actions.dart';
-import 'package:gallery/src/pages/gallery/gallery_directories_actions.dart';
-import 'package:gallery/src/db/tags/post_tags.dart';
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/plugs/platform_functions.dart';
-import 'package:gallery/src/db/schemas/gallery/system_gallery_directory.dart';
-import 'package:gallery/src/db/schemas/gallery/favorite_booru_post.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/grid_frame.dart';
-import 'package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart';
-import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:gallery/src/widgets/search_bar/search_filter_grid.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
-import 'package:local_auth/local_auth.dart';
-
-import '../../interfaces/filtering/filtering_mode.dart';
-import '../../widgets/skeletons/grid.dart';
-import 'callback_description.dart';
-import 'callback_description_nested.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/main.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/db/schemas/gallery/directory_metadata.dart";
+import "package:gallery/src/db/schemas/gallery/favorite_file.dart";
+import "package:gallery/src/db/schemas/gallery/system_gallery_directory.dart";
+import "package:gallery/src/db/schemas/grid_settings/directories.dart";
+import "package:gallery/src/db/schemas/settings/misc_settings.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/tags/post_tags.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
+import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
+import "package:gallery/src/interfaces/logging/logging.dart";
+import "package:gallery/src/pages/gallery/callback_description.dart";
+import "package:gallery/src/pages/gallery/callback_description_nested.dart";
+import "package:gallery/src/pages/gallery/gallery_directories_actions.dart";
+import "package:gallery/src/pages/more/favorite_booru_actions.dart";
+import "package:gallery/src/plugs/gallery.dart";
+import "package:gallery/src/plugs/platform_functions.dart";
+import "package:gallery/src/widgets/copy_move_preview.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/layouts/segment_layout.dart";
+import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
+import "package:gallery/src/widgets/notifiers/glue_provider.dart";
+import "package:gallery/src/widgets/search_bar/search_filter_grid.dart";
+import "package:gallery/src/widgets/skeletons/grid.dart";
+import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
+import "package:local_auth/local_auth.dart";
 
 class GalleryDirectories extends StatefulWidget {
-  final CallbackDescription? callback;
-  final CallbackDescriptionNested? nestedCallback;
-  final bool showBackButton;
-  final void Function(bool) procPop;
-  final bool wrapGridPage;
-
   const GalleryDirectories({
     super.key,
     this.callback,
@@ -58,6 +51,27 @@ class GalleryDirectories extends StatefulWidget {
     this.wrapGridPage = false,
     this.showBackButton = false,
   }) : assert(!(callback != null && nestedCallback != null));
+
+  final CallbackDescription? callback;
+  final CallbackDescriptionNested? nestedCallback;
+  final bool showBackButton;
+  final void Function(bool) procPop;
+  final bool wrapGridPage;
+
+  static String segmentCell(String name, String bucketId) {
+    for (final booru in Booru.values) {
+      if (booru.url == name) {
+        return "Booru";
+      }
+    }
+
+    final dirTag = PostTags.g.directoryTag(bucketId);
+    if (dirTag != null) {
+      return dirTag;
+    }
+
+    return name.split(" ").first.toLowerCase();
+  }
 
   @override
   State<GalleryDirectories> createState() => _GalleryDirectoriesState();
@@ -103,8 +117,9 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   late final SearchFilterGrid<SystemGalleryDirectory> search;
 
   late final api = galleryPlug.galleryApi(
-      temporaryDb: widget.callback != null || widget.nestedCallback != null,
-      setCurrentApi: widget.callback == null);
+    temporaryDb: widget.callback != null || widget.nestedCallback != null,
+    setCurrentApi: widget.callback == null,
+  );
   bool isThumbsLoading = false;
 
   int? trashThumbId;
@@ -199,21 +214,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
     galleryPlug.version.then((value) => galleryVersion = value);
   }
 
-  String _segmentFnc(SystemGalleryDirectory cell) {
-    for (final booru in Booru.values) {
-      if (booru.url == cell.name) {
-        return "Booru";
-      }
-    }
-
-    final dirTag = PostTags.g.directoryTag(cell.bucketId);
-    if (dirTag != null) {
-      return dirTag;
-    }
-
-    final name = cell.name.split(" ");
-    return name.first.toLowerCase();
-  }
+  String _segmentCell(SystemGalleryDirectory cell) =>
+      GalleryDirectories.segmentCell(cell.name, cell.bucketId);
 
   Segments<SystemGalleryDirectory> _makeSegments(BuildContext context) {
     return Segments(
@@ -225,10 +227,9 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
           widget.callback != null || widget.nestedCallback != null,
       caps:
           DirectoryMetadata.caps(AppLocalizations.of(context)!.segmentsSpecial),
-      segment: _segmentFnc,
-
+      segment: _segmentCell,
       injectedSegments: [
-        if (FavoriteBooruPost.isNotEmpty())
+        if (FavoriteFile.isNotEmpty())
           SystemGalleryDirectory(
             bucketId: "favorites",
             name: AppLocalizations.of(context)!
@@ -239,7 +240,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
             lastModified: 0,
             thumbFileId: miscSettings.favoritesThumbId != 0
                 ? miscSettings.favoritesThumbId
-                : FavoriteBooruPost.thumbnail,
+                : FavoriteFile.thumbnail,
           ),
         if (trashThumbId != null)
           SystemGalleryDirectory(
@@ -262,18 +263,22 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                 extra,
                 widget.nestedCallback,
                 GlueProvider.generateOf(context),
-                _segmentFnc,
+                _segmentCell,
               ),
     );
   }
 
-  void _addToGroup(BuildContext context, List<SystemGalleryDirectory> selected,
-      String value, bool toPin) async {
+  Future<void> _addToGroup(
+    BuildContext context,
+    List<SystemGalleryDirectory> selected,
+    String value,
+    bool toPin,
+  ) async {
     final requireAuth = <SystemGalleryDirectory>[];
     final noAuth = <SystemGalleryDirectory>[];
 
     for (final e in selected) {
-      final m = DirectoryMetadata.get(_segmentFnc(e));
+      final m = DirectoryMetadata.get(_segmentCell(e));
       if (m != null && m.requireAuth) {
         requireAuth.add(e);
       } else {
@@ -291,19 +296,26 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
     if (value.isEmpty) {
       PostTags.g.removeDirectoriesTag(
-          (noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth)
-              .map((e) => e.bucketId));
+        (noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth)
+            .map((e) => e.bucketId),
+      );
     } else {
       PostTags.g.setDirectoriesTag(
-          (noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth)
-              .map((e) => e.bucketId),
-          value);
+        (noAuth.isEmpty && requireAuth.isNotEmpty ? requireAuth : noAuth)
+            .map((e) => e.bucketId),
+        value,
+      );
 
       if (toPin) {
         if (await DirectoryMetadata.canAuth(value, "Sticky directory")) {
           final m = (DirectoryMetadata.get(value) ??
-                  DirectoryMetadata(value, DateTime.now(),
-                      blur: false, sticky: false, requireAuth: false))
+                  DirectoryMetadata(
+                    value,
+                    DateTime.now(),
+                    blur: false,
+                    sticky: false,
+                    requireAuth: false,
+                  ))
               .copyBools(sticky: true);
           m.save();
         }
@@ -312,7 +324,8 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
     if (noAuth.isNotEmpty && requireAuth.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Some directories require authentication"),
+        content:
+            Text("Some directories require authentication"), // TODO: change
         action: SnackBarAction(
             label: "Auth",
             onPressed: () async {
@@ -357,7 +370,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                   api: api,
                   nestedCallback: widget.nestedCallback,
                   callback: widget.callback,
-                  segmentFnc: _segmentFnc,
+                  segmentFnc: _segmentCell,
                   child: child,
                 ),
             refreshingStatus: state.refreshingStatus,
@@ -394,7 +407,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                       extra,
                       widget.nestedCallback,
                       GlueProvider.generateOf(context),
-                      _segmentFnc,
+                      _segmentCell,
                     )
                 ]
               : [
@@ -414,38 +427,39 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
                     true,
                   ),
                   SystemGalleryDirectoriesActions.blacklist(
-                      context, extra, _segmentFnc),
+                      context, extra, _segmentCell),
                   SystemGalleryDirectoriesActions.joinedDirectories(
                     context,
                     extra,
                     widget.nestedCallback,
                     GlueProvider.generateOf(context),
-                    _segmentFnc,
+                    _segmentCell,
                   )
                 ],
           footer: widget.callback?.preview,
           menuButtonItems: [
             if (widget.callback != null)
               IconButton(
-                  onPressed: () async {
-                    try {
-                      widget.callback!(
-                        null,
-                        await PlatformFunctions.chooseDirectory(temporary: true)
-                            .then((value) => value!.path),
-                      );
-                      // ignore: use_build_context_synchronously
-                      Navigator.pop(context);
-                    } catch (e, trace) {
-                      _log.logDefaultImportant(
-                          "new folder in android_directories".errorMessage(e),
-                          trace);
+                onPressed: () async {
+                  try {
+                    widget.callback!(
+                      null,
+                      await PlatformFunctions.chooseDirectory(temporary: true)
+                          .then((value) => value!.path),
+                    );
+                    // ignore: use_build_context_synchronously
+                    Navigator.pop(context);
+                  } catch (e, trace) {
+                    _log.logDefaultImportant(
+                        "new folder in android_directories".errorMessage(e),
+                        trace);
 
-                      // ignore: use_build_context_synchronously
-                      Navigator.pop(context);
-                    }
-                  },
-                  icon: const Icon(Icons.create_new_folder_outlined)),
+                    // ignore: use_build_context_synchronously
+                    Navigator.pop(context);
+                  }
+                },
+                icon: const Icon(Icons.create_new_folder_outlined),
+              ),
           ],
           bottomWidget: widget.callback != null || widget.nestedCallback != null
               ? CopyMovePreview.hintWidget(

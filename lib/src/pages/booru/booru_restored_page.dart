@@ -5,52 +5,50 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'dart:async';
+import "dart:async";
 
-import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/db/schemas/grid_settings/booru.dart';
-import 'package:gallery/src/db/schemas/grid_state/grid_booru_paging.dart';
-import 'package:gallery/src/db/schemas/grid_state/grid_state_booru.dart';
-import 'package:gallery/src/db/schemas/settings/hidden_booru_post.dart';
-import 'package:gallery/src/db/services/settings.dart';
-import 'package:gallery/src/db/tags/booru_tagging.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/booru/booru_api.dart';
-import 'package:gallery/src/interfaces/booru/safe_mode.dart';
-import 'package:gallery/src/db/schemas/booru/favorite_booru.dart';
-import 'package:gallery/src/pages/booru/booru_page.dart';
-import 'package:gallery/src/pages/booru/booru_search_page.dart';
-import 'package:gallery/src/pages/home.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
-import 'package:gallery/src/interfaces/logging/logging.dart';
-import 'package:gallery/src/pages/more/tags/tags_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart';
-import 'package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart';
-import 'package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart';
-import 'package:gallery/src/widgets/notifiers/glue_provider.dart';
-import 'package:gallery/src/widgets/notifiers/pause_video.dart';
-import 'package:gallery/src/widgets/search_bar/search_launch_grid.dart';
-import 'package:gallery/src/widgets/search_bar/search_launch_grid_data.dart';
-import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
-import 'package:isar/isar.dart';
-import 'package:url_launcher/url_launcher.dart';
-
-import '../../db/schemas/statistics/statistics_general.dart';
-import 'booru_grid_actions.dart';
-import '../../net/downloader.dart';
-import '../../db/tags/post_tags.dart';
-import '../../db/initalize_db.dart';
-import '../../db/schemas/downloader/download_file.dart';
-import '../../db/schemas/booru/post.dart';
-import '../../db/schemas/settings/settings.dart';
-import '../../widgets/skeletons/grid.dart';
-import '../../widgets/notifiers/booru_api.dart';
-import '../../widgets/grid_frame/grid_frame.dart';
-import '../../widgets/grid_frame/configuration/grid_frame_settings_button.dart';
+import "package:dio/dio.dart";
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/db/schemas/booru/favorite_booru.dart";
+import "package:gallery/src/db/schemas/booru/post.dart";
+import "package:gallery/src/db/schemas/downloader/download_file.dart";
+import "package:gallery/src/db/schemas/grid_settings/booru.dart";
+import "package:gallery/src/db/schemas/grid_state/grid_booru_paging.dart";
+import "package:gallery/src/db/schemas/grid_state/grid_state_booru.dart";
+import "package:gallery/src/db/schemas/settings/hidden_booru_post.dart";
+import "package:gallery/src/db/schemas/statistics/statistics_general.dart";
+import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/tags/booru_tagging.dart";
+import "package:gallery/src/db/tags/post_tags.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/booru/booru_api.dart";
+import "package:gallery/src/interfaces/booru/safe_mode.dart";
+import "package:gallery/src/interfaces/logging/logging.dart";
+import "package:gallery/src/net/downloader.dart";
+import "package:gallery/src/pages/booru/booru_grid_actions.dart";
+import "package:gallery/src/pages/booru/booru_page.dart";
+import "package:gallery/src/pages/booru/booru_search_page.dart";
+import "package:gallery/src/pages/home.dart";
+import "package:gallery/src/pages/more/tags/tags_widget.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_frame_settings_button.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_layout_behaviour.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_search_widget.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart";
+import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
+import "package:gallery/src/widgets/grid_frame/wrappers/wrap_grid_page.dart";
+import "package:gallery/src/widgets/notifiers/booru_api.dart";
+import "package:gallery/src/widgets/notifiers/glue_provider.dart";
+import "package:gallery/src/widgets/notifiers/pause_video.dart";
+import "package:gallery/src/widgets/search_bar/search_launch_grid.dart";
+import "package:gallery/src/widgets/search_bar/search_launch_grid_data.dart";
+import "package:gallery/src/widgets/skeletons/grid.dart";
+import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
+import "package:isar/isar.dart";
+import "package:url_launcher/url_launcher.dart";
 
 class _IsarPageSaver implements PageSaver {
   const _IsarPageSaver(this.instance);
@@ -69,12 +67,6 @@ class _IsarPageSaver implements PageSaver {
 }
 
 class BooruRestoredPage extends StatefulWidget {
-  final GridStateBooru state;
-  final PagingStateRegistry pagingRegistry;
-  final SafeMode? overrideSafeMode;
-  final void Function()? onDispose;
-  final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
-
   const BooruRestoredPage({
     super.key,
     required this.state,
@@ -83,6 +75,12 @@ class BooruRestoredPage extends StatefulWidget {
     this.overrideSafeMode,
     this.onDispose,
   });
+
+  final GridStateBooru state;
+  final PagingStateRegistry pagingRegistry;
+  final SafeMode? overrideSafeMode;
+  final void Function()? onDispose;
+  final SelectionGlue Function([Set<GluePreferences>])? generateGlue;
 
   @override
   State<BooruRestoredPage> createState() => _BooruRestoredPageState();
@@ -119,7 +117,7 @@ class RestoredBooruPageState implements PagingEntry {
 
     state.dispose();
 
-    instance.close(deleteFromDisk: false);
+    instance.close();
   }
 
   @override
@@ -141,9 +139,11 @@ class RestoredBooruPageState implements PagingEntry {
     final prev = Dbs.g.main.gridStateBoorus.getByNameSync(instance.name)!;
 
     Dbs.g.main.writeTxnSync(
-      () => Dbs.g.main.gridStateBoorus.putByNameSync(prev.copy(
-        scrollOffset: o,
-      )),
+      () => Dbs.g.main.gridStateBoorus.putByNameSync(
+        prev.copy(
+          scrollOffset: o,
+        ),
+      ),
     );
   }
 
@@ -179,18 +179,20 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
       return RestoredBooruPageState(widget.state.booru, widget.state.name);
     }) as RestoredBooruPageState;
 
-    search = SearchLaunchGrid(SearchLaunchGridData(
-      completeTag: api.completeTag,
-      mainFocus: state.mainFocus,
-      header: TagsWidget(
-        tagging: tagManager.latest,
-        onPress: (tag, safeMode) {},
+    search = SearchLaunchGrid(
+      SearchLaunchGridData(
+        completeTag: api.completeTag,
+        mainFocus: state.mainFocus,
+        header: TagsWidget(
+          tagging: tagManager.latest,
+          onPress: (tag, safeMode) {},
+        ),
+        searchText: widget.state.tags,
+        addItems: (_) => const [],
+        disabled: true,
+        onSubmit: (context, tag) {},
       ),
-      searchText: widget.state.tags,
-      addItems: (_) => const [],
-      disabled: true,
-      onSubmit: (context, tag) {},
-    ));
+    );
 
     settingsWatcher = state.settings.s.watch((s) {
       state.settings = s!;
@@ -198,9 +200,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
       setState(() {});
     });
 
-    favoritesWatcher = Dbs.g.main.favoriteBoorus
-        .watchLazy(fireImmediately: false)
-        .listen((event) {
+    favoritesWatcher = Dbs.g.main.favoriteBoorus.watchLazy().listen((event) {
       state.refreshingStatus.mutation.notify();
       setState(() {});
     });
@@ -269,10 +269,11 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
 
     return Downloader.g.add(
       DownloadFile.d(
-          url: p.fileDownloadUrl(),
-          site: api.booru.url,
-          name: p.filename(),
-          thumbUrl: p.previewUrl),
+        url: p.fileDownloadUrl(),
+        site: api.booru.url,
+        name: p.filename(),
+        thumbUrl: p.previewUrl,
+      ),
       state.settings,
     );
   }
@@ -311,9 +312,10 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
       }
     } catch (e, trace) {
       _log.logDefaultImportant(
-          "_addLast on grid ${state.settings.selectedBooru.string}, try: $repeatCount"
-              .errorMessage(e),
-          trace);
+        "_addLast on grid ${state.settings.selectedBooru.string}, try: $repeatCount"
+            .errorMessage(e),
+        trace,
+      );
 
       return _addLast(repeatCount + 1);
     }
@@ -322,19 +324,26 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
   }
 
   void _onTagPressed(
-      BuildContext context, Booru booru, String tag, SafeMode? safeMode) {
+    BuildContext context,
+    Booru booru,
+    String tag,
+    SafeMode? safeMode,
+  ) {
     PauseVideoNotifier.maybePauseOf(context, true);
 
-    Navigator.push(context, MaterialPageRoute(
-      builder: (context) {
-        return BooruSearchPage(
-          booru: booru,
-          tags: tag,
-          wrapScaffold: true,
-          overrideSafeMode: safeMode,
-        );
-      },
-    )).then((value) => PauseVideoNotifier.maybePauseOf(context, false));
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          return BooruSearchPage(
+            booru: booru,
+            tags: tag,
+            wrapScaffold: true,
+            overrideSafeMode: safeMode,
+          );
+        },
+      ),
+    ).then((value) => PauseVideoNotifier.maybePauseOf(context, false));
   }
 
   @override
@@ -350,7 +359,8 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
               (context) => GridFrame<Post>(
                 key: state.gridKey,
                 layout: const GridSettingsLayoutBehaviour(
-                    GridSettingsBooru.current),
+                  GridSettingsBooru.current,
+                ),
                 mainFocus: state.mainFocus,
                 getCell: (i) => instance.posts.getSync(i + 1)!,
                 initalScrollPosition: pagingState.offset,
@@ -360,8 +370,10 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                   onError: (error) {
                     return OutlinedButton.icon(
                       onPressed: () {
-                        launchUrl(Uri.https(api.booru.url),
-                            mode: LaunchMode.externalApplication);
+                        launchUrl(
+                          Uri.https(api.booru.url),
+                          mode: LaunchMode.externalApplication,
+                        );
                       },
                       label: Text(AppLocalizations.of(context)!.openInBrowser),
                       icon: const Icon(Icons.public),
@@ -372,8 +384,9 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                   refreshingStatus: state.refreshingStatus,
                   search: OverrideGridSearchWidget(
                     SearchAndFocus(
-                        search.searchWidget(context, hint: api.booru.name),
-                        search.searchFocus),
+                      search.searchWidget(context, hint: api.booru.name),
+                      search.searchFocus,
+                    ),
                   ),
                   loadNext: _addLast,
                   refresh: AsyncGridRefresh(_clearAndRefresh),
@@ -385,36 +398,42 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                 description: GridDescription(
                   actions: [
                     BooruGridActions.download(context, api.booru),
-                    BooruGridActions.favorites(context,
-                        showDeleteSnackbar: true)
+                    BooruGridActions.favorites(
+                      context,
+                      showDeleteSnackbar: true,
+                    ),
                   ],
                   settingsButton: GridFrameSettingsButton(
-                      selectGridColumn: (columns, settings) =>
-                          (settings as GridSettingsBooru)
-                              .copy(columns: columns)
-                              .save(),
-                      selectGridLayout: (layoutType, settings) =>
-                          (settings as GridSettingsBooru)
-                              .copy(layoutType: layoutType)
-                              .save(),
-                      selectRatio: (ratio, settings) =>
-                          (settings as GridSettingsBooru)
-                              .copy(aspectRatio: ratio)
-                              .save(),
-                      safeMode: _safeMode(),
-                      selectSafeMode: (safeMode, _) {
-                        if (safeMode == null) {
-                          return;
-                        }
+                    selectGridColumn: (columns, settings) =>
+                        (settings as GridSettingsBooru)
+                            .copy(columns: columns)
+                            .save(),
+                    selectGridLayout: (layoutType, settings) =>
+                        (settings as GridSettingsBooru)
+                            .copy(layoutType: layoutType)
+                            .save(),
+                    selectRatio: (ratio, settings) =>
+                        (settings as GridSettingsBooru)
+                            .copy(aspectRatio: ratio)
+                            .save(),
+                    safeMode: _safeMode(),
+                    selectSafeMode: (safeMode, _) {
+                      if (safeMode == null) {
+                        return;
+                      }
 
-                        final prev = Dbs.g.main.gridStateBoorus
-                            .getByNameSync(widget.state.name)!;
+                      final prev = Dbs.g.main.gridStateBoorus
+                          .getByNameSync(widget.state.name)!;
 
-                        Dbs.g.main.writeTxnSync(() => Dbs.g.main.gridStateBoorus
-                            .putByNameSync(prev.copy(safeMode: safeMode)));
+                      Dbs.g.main.writeTxnSync(
+                        () => Dbs.g.main.gridStateBoorus.putByNameSync(
+                          prev.copy(safeMode: safeMode),
+                        ),
+                      );
 
-                        setState(() {});
-                      }),
+                      setState(() {});
+                    },
+                  ),
                   inlineMenuButtonItems: true,
                   keybindsDescription:
                       AppLocalizations.of(context)!.booruGridPageName,

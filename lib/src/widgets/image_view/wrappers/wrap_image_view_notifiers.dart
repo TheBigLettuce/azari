@@ -5,7 +5,10 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:gallery/src/db/tags/post_tags.dart';
 import 'package:gallery/src/interfaces/cell/contentable.dart';
 import 'package:gallery/src/plugs/platform_fullscreens.dart';
 import 'package:gallery/src/widgets/grid_frame/configuration/selection_glue.dart';
@@ -30,6 +33,9 @@ class WrapImageViewNotifiers extends StatefulWidget {
   final BuildContext? gridContext;
   final AnimationController controller;
   final DraggableScrollableController bottomSheetController;
+  final List<ImageTag> Function(Contentable)? tags;
+  final StreamSubscription<List<ImageTag>> Function(
+      Contentable, void Function(List<ImageTag> l))? watchTags;
 
   final Widget child;
 
@@ -39,6 +45,8 @@ class WrapImageViewNotifiers extends StatefulWidget {
     required this.onTagRefresh,
     required this.hardRefresh,
     required this.currentCell,
+    required this.tags,
+    required this.watchTags,
     required this.mainFocus,
     required this.controller,
     required this.bottomSheetController,
@@ -59,6 +67,11 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
 
   late final _searchData =
       FilterNotifierData(TextEditingController(), FocusNode());
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   void dispose() {
@@ -107,44 +120,119 @@ class WrapImageViewNotifiersState extends State<WrapImageViewNotifiers> {
   @override
   Widget build(BuildContext context) {
     return OriginalGridContext(
-      generate: GlueProvider.generateOf(widget.gridContext ?? context),
-      gridContext: widget.gridContext ?? context,
-      child: ReloadImageNotifier(
-          reload: widget.hardRefresh,
-          child: PauseVideoNotifier(
-            setPause: _setPause,
-            pause: _isPaused,
-            child: TagRefreshNotifier(
-                isRefreshing: _isTagsRefreshing,
-                setIsRefreshing: (b) {
-                  _isTagsRefreshing = b;
+        generate: GlueProvider.generateOf(widget.gridContext ?? context),
+        gridContext: widget.gridContext ?? context,
+        child: _TagWatchers(
+          key: ValueKey(widget.currentCell),
+          tags: widget.tags,
+          watchTags: widget.watchTags,
+          currentCell: widget.currentCell,
+          child: ReloadImageNotifier(
+              reload: widget.hardRefresh,
+              child: PauseVideoNotifier(
+                setPause: _setPause,
+                pause: _isPaused,
+                child: TagRefreshNotifier(
+                    isRefreshing: _isTagsRefreshing,
+                    setIsRefreshing: (b) {
+                      _isTagsRefreshing = b;
 
-                  try {
-                    setState(() {});
-                  } catch (_) {}
-                },
-                notify: widget.onTagRefresh,
-                child: FilterValueNotifier(
-                  notifier: _searchData.searchController,
-                  child: FilterNotifier(
-                      data: _searchData,
-                      child: FocusNotifier(
-                        notifier: _searchData.searchFocus,
-                        focusMain: widget.mainFocus.requestFocus,
-                        child: CurrentContentNotifier(
-                            content: widget.currentCell,
-                            child: LoadingProgressNotifier(
-                              progress: _loadingProgress,
-                              child: AppBarVisibilityNotifier(
-                                  isShown: _isAppbarShown,
-                                  child: widget.registerNotifiers == null
-                                      ? widget.child
-                                      : widget
-                                          .registerNotifiers!(widget.child)),
-                            )),
-                      )),
-                )),
-          )),
+                      try {
+                        setState(() {});
+                      } catch (_) {}
+                    },
+                    notify: widget.onTagRefresh,
+                    child: FilterValueNotifier(
+                      notifier: _searchData.searchController,
+                      child: FilterNotifier(
+                          data: _searchData,
+                          child: FocusNotifier(
+                            notifier: _searchData.searchFocus,
+                            focusMain: widget.mainFocus.requestFocus,
+                            child: CurrentContentNotifier(
+                                content: widget.currentCell,
+                                child: LoadingProgressNotifier(
+                                  progress: _loadingProgress,
+                                  child: AppBarVisibilityNotifier(
+                                      isShown: _isAppbarShown,
+                                      child: widget.registerNotifiers == null
+                                          ? widget.child
+                                          : widget.registerNotifiers!(
+                                              widget.child)),
+                                )),
+                          )),
+                    )),
+              )),
+        ));
+  }
+}
+
+class _TagWatchers extends StatefulWidget {
+  final List<ImageTag> Function(Contentable)? tags;
+  final StreamSubscription<List<ImageTag>> Function(
+      Contentable, void Function(List<ImageTag> l))? watchTags;
+
+  final Contentable currentCell;
+
+  final Widget child;
+
+  const _TagWatchers({
+    super.key,
+    required this.tags,
+    required this.watchTags,
+    required this.currentCell,
+    required this.child,
+  });
+
+  @override
+  State<_TagWatchers> createState() => __TagWatchersState();
+}
+
+class __TagWatchersState extends State<_TagWatchers> {
+  late final StreamSubscription<List<ImageTag>>? tagWatcher;
+  late final DisassembleResult? res;
+
+  List<ImageTag> tags = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    res = PostTags.g
+        .dissassembleFilename(widget.currentCell.widgets.alias(true))
+        .maybeValue();
+
+    tagWatcher = widget.watchTags?.call(widget.currentCell, (t) {
+      final newTags = <ImageTag>[];
+
+      newTags.addAll(t.where((element) => element.favorite));
+      newTags.addAll(t.where((element) => !element.favorite));
+
+      setState(() {
+        tags = newTags;
+      });
+    });
+
+    final t = widget.tags?.call(widget.currentCell);
+    if (t != null) {
+      tags.addAll(t.where((element) => element.favorite));
+      tags.addAll(t.where((element) => !element.favorite));
+    }
+  }
+
+  @override
+  void dispose() {
+    tagWatcher?.cancel();
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ImageTagsNotifier(
+      tags: tags,
+      res: res,
+      child: widget.child,
     );
   }
 }
@@ -177,4 +265,41 @@ class OriginalGridContext extends InheritedWidget {
   @override
   bool updateShouldNotify(OriginalGridContext oldWidget) =>
       oldWidget.gridContext != gridContext;
+}
+
+class ImageTagsNotifier extends InheritedWidget {
+  final List<ImageTag> tags;
+  final DisassembleResult? res;
+
+  const ImageTagsNotifier({
+    super.key,
+    required this.tags,
+    required this.res,
+    required super.child,
+  });
+
+  static List<ImageTag> of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<ImageTagsNotifier>();
+
+    return widget!.tags;
+  }
+
+  static DisassembleResult? resOf(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<ImageTagsNotifier>();
+
+    return widget!.res;
+  }
+
+  @override
+  bool updateShouldNotify(ImageTagsNotifier oldWidget) =>
+      tags != oldWidget.tags || res != oldWidget.res;
+}
+
+class ImageTag {
+  const ImageTag(this.tag, this.favorite);
+
+  final String tag;
+  final bool favorite;
 }

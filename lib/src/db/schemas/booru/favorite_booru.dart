@@ -59,6 +59,8 @@ class FavoriteBooru extends PostBase implements Pressable<FavoriteBooru> {
         functionality,
         const ImageViewDescription(),
         idx,
+        imageViewTags,
+        watchTags,
       );
 
   static StreamSubscription<void> watch(void Function(void) f,

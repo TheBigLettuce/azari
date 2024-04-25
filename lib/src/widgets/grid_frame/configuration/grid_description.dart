@@ -23,6 +23,8 @@ class GridDescription<T extends CellBase> {
     this.footer,
     this.pages,
     this.pageName,
+    this.overrideEmptyWidgetNotice,
+    this.showPageSwitcherAsHeader = false,
     this.appBarSnap = true,
   });
 
@@ -51,7 +53,11 @@ class GridDescription<T extends CellBase> {
 
   final bool appBarSnap;
 
+  final bool showPageSwitcherAsHeader;
+
   final int gridSeed;
+
+  final String? overrideEmptyWidgetNotice;
 
   final PageSwitcherInterface<T>? pages;
 

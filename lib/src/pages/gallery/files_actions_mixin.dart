@@ -134,7 +134,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     return GridAction(
       Icons.copy,
       (selected) {
-        _moveOrCopy(context, selected, false, state, plug);
+        moveOrCopyFnc(context, selected, false, state, plug);
       },
       false,
     );
@@ -146,7 +146,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     return GridAction(
       Icons.forward_rounded,
       (selected) {
-        _moveOrCopy(context, selected, true, state, plug);
+        moveOrCopyFnc(context, selected, true, state, plug);
       },
       false,
     );
@@ -167,14 +167,13 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     );
   }
 
-  void _moveOrCopy(
+  void moveOrCopyFnc(
       BuildContext context,
       List<SystemGalleryDirectoryFile> selected,
       bool move,
       GridSkeletonStateFilter<SystemGalleryDirectoryFile> state,
       GalleryPlug plug) {
-    // state.imageViewKey.currentState?.wrapNotifiersKey.currentState
-    //     ?.pauseVideo();
+    PauseVideoNotifier.maybePauseOf(context, true);
 
     final List<String> searchPrefix = [];
     for (final tag in selected.first.tagsFlat.split(" ")) {
@@ -245,11 +244,7 @@ mixin FilesActionsMixin on State<GalleryFiles> {
           ),
         );
       },
-    )).then((value) {
-      // state
-      //   .imageViewKey.currentState?.wrapNotifiersKey.currentState
-      //   ?.unpauseVideo()
-    });
+    )).then((value) => PauseVideoNotifier.maybePauseOf(context, false));
   }
 
   void _favoriteOrUnfavorite(BuildContext context,
@@ -266,20 +261,20 @@ mixin FilesActionsMixin on State<GalleryFiles> {
     }
 
     if (toAdd.isNotEmpty) {
-      FavoriteBooruPost.addAll(toAdd);
+      FavoriteFile.addAll(toAdd);
     }
 
     plug.notify(null);
 
     if (toDelete.isNotEmpty) {
-      FavoriteBooruPost.deleteAll(toDelete);
+      FavoriteFile.deleteAll(toDelete);
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(AppLocalizations.of(context)!.deletedFromFavorites),
         action: SnackBarAction(
             label: AppLocalizations.of(context)!.undoLabel,
             onPressed: () {
-              FavoriteBooruPost.addAll(toDelete);
+              FavoriteFile.addAll(toDelete);
 
               plug.notify(null);
             }),

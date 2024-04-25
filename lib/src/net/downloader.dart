@@ -195,6 +195,16 @@ class Downloader with _CancelTokens, _StatisticsTimer {
     _tokens.clear();
   }
 
+  void restartFailed() {
+    final failed = DownloadFile.allFailed;
+
+    addAll(
+        failed.length < 7
+            ? failed + DownloadFile.nextNumber(failed.length)
+            : failed,
+        SettingsService.currentData);
+  }
+
   void markStale({List<DownloadFile>? override}) {
     if (override != null) {
       for (final element in override) {

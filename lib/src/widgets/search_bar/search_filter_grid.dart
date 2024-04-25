@@ -5,19 +5,18 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/tags/post_tags.dart';
-import 'package:gallery/src/interfaces/booru/booru_api.dart';
-import 'package:gallery/src/interfaces/filtering/filtering_interface.dart';
-import 'package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart';
-import 'package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:gallery/src/widgets/skeletons/skeleton_state.dart';
+import "package:flutter/material.dart";
+import "package:flutter_gen/gen_l10n/app_localizations.dart";
+import "package:gallery/src/db/tags/post_tags.dart";
+import "package:gallery/src/interfaces/booru/booru_api.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
+import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
+import "package:gallery/src/widgets/grid_frame/parts/grid_settings_button.dart";
+import "package:gallery/src/widgets/search_bar/autocomplete/autocomplete_widget.dart";
+import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 
-import '../../interfaces/cell/cell.dart';
-import '../../interfaces/filtering/filtering_mode.dart';
-
-part 'search_widget.dart';
+part "search_widget.dart";
 
 /// Search mixin which filters the elements on a grid.
 class SearchFilterGrid<T extends CellBase> {
@@ -37,14 +36,14 @@ class SearchFilterGrid<T extends CellBase> {
       PostTags.g.completeLocalTag;
 
   void _onChanged(String value, bool direct) {
-    var interf = _state.refreshingStatus.mutation;
+    final interf = _state.refreshingStatus.mutation;
     _state.hook(_currentFilterMode);
 
     if (!_state.filter.empty) {
       _state.gridKey.currentState?.enableAnimationsFor();
     }
 
-    var res =
+    final res =
         _state.filter.filter(_searchVirtual ? "" : value, _currentFilterMode);
 
     interf.cellCount = res.count;
@@ -83,12 +82,17 @@ class SearchFilterGrid<T extends CellBase> {
     return _currentFilterMode;
   }
 
-  void setFilteringMode(FilteringMode f) {
+  FilteringMode setFilteringMode(FilteringMode f) {
     if (_state.filteringModes.contains(f)) {
       _currentFilterMode = f;
+
+      return f;
     }
+
+    return _currentFilterMode;
   }
 
+  // ignore: use_setters_to_change_properties
   void setLocalTagCompleteF(Future<List<BooruTag>> Function(String string) f) {
     _localTagCompleteFunc = f;
   }

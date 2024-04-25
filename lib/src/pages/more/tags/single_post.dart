@@ -70,8 +70,7 @@ class _SinglePostState extends State<SinglePost> {
     super.dispose();
   }
 
-  void _launch(Color overlayColor, Brightness iconColor,
-      [Booru? replaceBooru, int? replaceId]) async {
+  void _launch([Booru? replaceBooru, int? replaceId]) async {
     if (inProcessLoading) {
       return;
     }
@@ -112,7 +111,6 @@ class _SinglePostState extends State<SinglePost> {
         context,
         1,
         (context, __) => value.content(context),
-        overlayColor, iconColor,
         key: key,
         download: (_) {
           Downloader.g.add(
@@ -162,9 +160,6 @@ class _SinglePostState extends State<SinglePost> {
           ),
           IconButton(
               onPressed: () {
-                final color = Theme.of(context).colorScheme.surface;
-                final iconColor = Theme.of(context).colorScheme.brightness;
-
                 Permission.camera.request().then((value) {
                   if (!value.isGranted) {
                     Navigator.push(
@@ -191,8 +186,7 @@ class _SinglePostState extends State<SinglePost> {
                       } else {
                         try {
                           final f = value.split("_");
-                          _launch(color, iconColor, Booru.fromPrefix(f[0])!,
-                              int.parse(f[1]));
+                          _launch(Booru.fromPrefix(f[0])!, int.parse(f[1]));
                         } catch (_) {}
                       }
                     }();
@@ -248,10 +242,7 @@ class _SinglePostState extends State<SinglePost> {
                 onInit: (controller) => arrowSpinningController = controller,
                 effects: const [RotateEffect()],
                 autoPlay: false),
-            onPressed: () => _launch(
-              Theme.of(context).colorScheme.surface,
-              Theme.of(context).colorScheme.brightness,
-            ),
+            onPressed: _launch,
           )
         ],
       ),

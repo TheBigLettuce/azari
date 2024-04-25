@@ -6,20 +6,15 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import 'package:flutter/material.dart';
-import 'package:gallery/main.dart';
 import 'package:gallery/src/interfaces/anime/anime_api.dart';
 
 class AnimeInfoTheme extends StatelessWidget {
   final AnimeSafeMode mode;
-  final Color overlayColor;
-  final Brightness iconBrightness;
   final Widget child;
 
   const AnimeInfoTheme({
     super.key,
     required this.mode,
-    required this.overlayColor,
-    required this.iconBrightness,
     required this.child,
   });
 
@@ -29,25 +24,23 @@ class AnimeInfoTheme extends StatelessWidget {
       return child;
     }
 
-    final theme = Theme.of(context);
+    final oldTheme = Theme.of(context);
     Color bgColor = const Color.fromARGB(255, 52, 26, 27);
 
-    return Theme(
-      data: ThemeData.from(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.pink,
-          brightness:
-              mode == AnimeSafeMode.h ? Brightness.dark : theme.brightness,
-          background: mode == AnimeSafeMode.h ? bgColor : null,
-        ),
+    final newTheme = ThemeData.from(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: Colors.pink,
+        brightness:
+            mode == AnimeSafeMode.h ? Brightness.dark : oldTheme.brightness,
+        background: mode == AnimeSafeMode.h ? bgColor : null,
       ),
+    );
+
+    return Theme(
+      data: newTheme,
       child: _ButtonsThemes(
         mode: mode,
-        child: _RestoreSysOvColor(
-          color: overlayColor,
-          iconBrightness: iconBrightness,
-          child: child,
-        ),
+        child: child,
       ),
     );
   }
@@ -100,49 +93,5 @@ class _ButtonsThemes extends StatelessWidget {
       ),
       child: child,
     );
-  }
-}
-
-class _RestoreSysOvColor extends StatefulWidget {
-  final Color color;
-  final Brightness iconBrightness;
-  final Widget child;
-
-  const _RestoreSysOvColor({
-    super.key,
-    required this.color,
-    required this.iconBrightness,
-    required this.child,
-  });
-
-  @override
-  State<_RestoreSysOvColor> createState() => __RestoreSysOvColorState();
-}
-
-class __RestoreSysOvColorState extends State<_RestoreSysOvColor> {
-  @override
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      changeSystemUiOverlayContext(context);
-    });
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      changeSystemUiOverlayColor(
-        background: widget.color,
-        iconColor: widget.iconBrightness,
-      );
-    });
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return widget.child;
   }
 }

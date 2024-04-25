@@ -5,18 +5,17 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
-import 'package:gallery/src/db/base/booru_post_functionality_mixin.dart';
-import 'package:gallery/src/db/initalize_db.dart';
-import 'package:gallery/src/interfaces/booru/booru.dart';
-import 'package:gallery/src/interfaces/cell/cell.dart';
-import 'package:path/path.dart' as path_util;
-import 'package:isar/isar.dart';
+import "package:cached_network_image/cached_network_image.dart";
+import "package:flutter/material.dart";
+import "package:gallery/src/db/base/booru_post_functionality_mixin.dart";
+import "package:gallery/src/db/base/note_base.dart";
+import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/interfaces/cell/cell.dart";
+import "package:isar/isar.dart";
+import "package:path/path.dart" as path_util;
 
-import '../../base/note_base.dart';
-
-part 'note_booru.g.dart';
+part "note_booru.g.dart";
 
 @collection
 class NoteBooru extends NoteBase
@@ -61,11 +60,12 @@ class NoteBooru extends NoteBase
     }
   }
 
-  static void reorder(
-      {required int postId,
-      required Booru booru,
-      required int from,
-      required int to}) {
+  static void reorder({
+    required int postId,
+    required Booru booru,
+    required int from,
+    required int to,
+  }) {
     final n = Dbs.g.blacklisted.noteBoorus.getByPostIdBooruSync(postId, booru);
     if (n == null || from == to) {
       return;
@@ -80,36 +80,50 @@ class NoteBooru extends NoteBase
       newText.insert(to - 1, e1);
     }
 
-    Dbs.g.blacklisted.writeTxnSync(() => Dbs.g.blacklisted.noteBoorus
-        .putByPostIdBooruSync(NoteBooru(newText, n.time,
-            postId: postId,
-            booru: booru,
-            backgroundColor: n.backgroundColor,
-            textColor: n.textColor,
-            fileUrl: n.fileUrl,
-            sampleUrl: n.sampleUrl,
-            previewUrl: n.previewUrl)));
+    Dbs.g.blacklisted.writeTxnSync(
+      () => Dbs.g.blacklisted.noteBoorus.putByPostIdBooruSync(
+        NoteBooru(
+          newText,
+          n.time,
+          postId: postId,
+          booru: booru,
+          backgroundColor: n.backgroundColor,
+          textColor: n.textColor,
+          fileUrl: n.fileUrl,
+          sampleUrl: n.sampleUrl,
+          previewUrl: n.previewUrl,
+        ),
+      ),
+    );
   }
 
-  static bool add(int pid, Booru booru,
-      {required String text,
-      required String fileUrl,
-      required String sampleUrl,
-      required Color? backgroundColor,
-      required Color? textColor,
-      required previewUrl}) {
+  static bool add(
+    int pid,
+    Booru booru, {
+    required String text,
+    required String fileUrl,
+    required String sampleUrl,
+    required Color? backgroundColor,
+    required Color? textColor,
+    required String previewUrl,
+  }) {
     final n = Dbs.g.blacklisted.noteBoorus.getByPostIdBooruSync(pid, booru);
 
-    Dbs.g.blacklisted.writeTxnSync(() => Dbs.g.blacklisted.noteBoorus
-        .putByPostIdBooruSync(NoteBooru(
-            [...n?.text ?? [], text], DateTime.now(),
-            postId: pid,
-            booru: booru,
-            backgroundColor: backgroundColor?.value,
-            textColor: textColor?.value,
-            fileUrl: fileUrl,
-            sampleUrl: sampleUrl,
-            previewUrl: previewUrl)));
+    Dbs.g.blacklisted.writeTxnSync(
+      () => Dbs.g.blacklisted.noteBoorus.putByPostIdBooruSync(
+        NoteBooru(
+          [...n?.text ?? [], text],
+          DateTime.now(),
+          postId: pid,
+          booru: booru,
+          backgroundColor: backgroundColor?.value,
+          textColor: textColor?.value,
+          fileUrl: fileUrl,
+          sampleUrl: sampleUrl,
+          previewUrl: previewUrl,
+        ),
+      ),
+    );
 
     return n == null;
   }
@@ -122,15 +136,21 @@ class NoteBooru extends NoteBase
     final t = n.text.toList();
     t[idx] = newText;
 
-    Dbs.g.blacklisted.writeTxnSync(() => Dbs.g.blacklisted.noteBoorus
-        .putByPostIdBooruSync(NoteBooru(t, n.time,
-            postId: n.postId,
-            booru: n.booru,
-            backgroundColor: n.backgroundColor,
-            textColor: n.textColor,
-            fileUrl: n.fileUrl,
-            sampleUrl: n.sampleUrl,
-            previewUrl: n.previewUrl)));
+    Dbs.g.blacklisted.writeTxnSync(
+      () => Dbs.g.blacklisted.noteBoorus.putByPostIdBooruSync(
+        NoteBooru(
+          t,
+          n.time,
+          postId: n.postId,
+          booru: n.booru,
+          backgroundColor: n.backgroundColor,
+          textColor: n.textColor,
+          fileUrl: n.fileUrl,
+          sampleUrl: n.sampleUrl,
+          previewUrl: n.previewUrl,
+        ),
+      ),
+    );
   }
 
   static bool remove(int pid, Booru booru, int indx) {
@@ -143,15 +163,19 @@ class NoteBooru extends NoteBase
       if (t.isEmpty) {
         return Dbs.g.blacklisted.noteBoorus.deleteByPostIdBooruSync(pid, booru);
       } else {
-        Dbs.g.blacklisted.noteBoorus.putByPostIdBooruSync(NoteBooru(
-            t, DateTime.now(),
+        Dbs.g.blacklisted.noteBoorus.putByPostIdBooruSync(
+          NoteBooru(
+            t,
+            DateTime.now(),
             postId: pid,
             booru: booru,
             backgroundColor: n.backgroundColor,
             textColor: n.textColor,
             fileUrl: n.fileUrl,
             sampleUrl: n.sampleUrl,
-            previewUrl: n.previewUrl));
+            previewUrl: n.previewUrl,
+          ),
+        );
 
         return false;
       }

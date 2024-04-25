@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:gallery/src/plugs/gallery.dart';
 
 import '../db/tags/post_tags.dart';
 import 'notifiers/tag_refresh.dart';
@@ -49,6 +50,7 @@ class LoadTags extends StatelessWidget {
                             .then((value) {
                           PostTags.g.addTagsPost(filename, value, true);
                           notifier?.call();
+                          chooseGalleryPlug().notify(null);
                         }).whenComplete(() => setIsRefreshing?.call(false));
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(

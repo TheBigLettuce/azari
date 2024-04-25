@@ -9,8 +9,6 @@ part of 'manga_chapters.dart';
 
 class _ChapterBody extends StatefulWidget {
   final MangaEntry entry;
-  final Color overlayColor;
-  final Brightness iconColor;
   final void Function() onFinishRead;
   final void Function() onNextLoad;
   final MangaAPI api;
@@ -25,8 +23,6 @@ class _ChapterBody extends StatefulWidget {
     required this.entry,
     required this.onFinishRead,
     required this.onNextLoad,
-    required this.overlayColor,
-    required this.iconColor,
     required this.reachedEnd,
     required this.list,
     required this.settingsButton,
@@ -111,8 +107,6 @@ class __ChapterBodyState extends State<_ChapterBody> {
             widget.onFinishRead();
           }
         },
-        overlayColor: widget.overlayColor,
-        iconColor: widget.iconColor,
       ),
       addNextChapterButton: true,
     );
@@ -168,8 +162,6 @@ class __ChapterBodyState extends State<_ChapterBody> {
               chapter: chapter,
               entry: widget.entry,
               api: widget.api,
-              iconColor: widget.iconColor,
-              overlayColor: widget.overlayColor,
             );
           },
         ),

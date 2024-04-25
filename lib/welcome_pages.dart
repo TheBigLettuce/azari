@@ -9,6 +9,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gallery/main.dart';
 import 'package:gallery/src/db/services/settings.dart';
 import 'package:gallery/src/interfaces/booru/booru.dart';
@@ -179,10 +180,6 @@ class _WelcomePageState extends State<WelcomePage> {
   @override
   void initState() {
     super.initState();
-
-    WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-      changeSystemUiOverlayContext(context);
-    });
   }
 
   @override
@@ -454,82 +451,86 @@ class _WrapPadding extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      body: Padding(
-        padding: EdgeInsets.only(
-            top: 80,
-            bottom: 40 + MediaQuery.viewPaddingOf(context).bottom,
-            left: 40,
-            right: 40),
-        child: Stack(
-          children: [
-            if (addCenteredIcon)
-              Center(
-                child: Transform.rotate(
-                  angle: 0.4363323,
-                  child: Icon(
-                    const IconData(0x963F),
-                    size: 78,
-                    color: theme.colorScheme.onSurface.withOpacity(0.2),
-                    applyTextScaling: true,
-                  ),
-                ),
-              ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        Text(
-                          title,
-                          style: theme.textTheme.headlineLarge,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 40),
-                          child: body,
-                        ),
-                      ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: navBarStyleForTheme(theme, transparent: false),
+      child: Scaffold(
+        body: Padding(
+          padding: EdgeInsets.only(
+              top: 80,
+              bottom: 40 + MediaQuery.viewPaddingOf(context).bottom,
+              left: 40,
+              right: 40),
+          child: Stack(
+            children: [
+              if (addCenteredIcon)
+                Center(
+                  child: Transform.rotate(
+                    angle: 0.4363323,
+                    child: Icon(
+                      const IconData(0x963F),
+                      size: 78,
+                      color: theme.colorScheme.onSurface.withOpacity(0.2),
+                      applyTextScaling: true,
                     ),
                   ),
                 ),
-                explanation == null
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: buttons,
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
                         children: [
-                          Icon(
-                            Icons.info_outline_rounded,
-                            color: theme.colorScheme.secondary.withOpacity(0.8),
-                            applyTextScaling: true,
+                          Text(
+                            title,
+                            style: theme.textTheme.headlineLarge,
                           ),
-                          const Padding(padding: EdgeInsets.only(left: 8)),
-                          Expanded(
-                            child: Text(
-                              explanation!,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.8),
-                              ),
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const Padding(padding: EdgeInsets.only(left: 8)),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: buttons,
+                          Padding(
+                            padding: const EdgeInsets.only(top: 40),
+                            child: body,
                           ),
                         ],
-                      )
-              ],
-            )
-          ],
+                      ),
+                    ),
+                  ),
+                  explanation == null
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: buttons,
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Icon(
+                              Icons.info_outline_rounded,
+                              color:
+                                  theme.colorScheme.secondary.withOpacity(0.8),
+                              applyTextScaling: true,
+                            ),
+                            const Padding(padding: EdgeInsets.only(left: 8)),
+                            Expanded(
+                              child: Text(
+                                explanation!,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.8),
+                                ),
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const Padding(padding: EdgeInsets.only(left: 8)),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: buttons,
+                            ),
+                          ],
+                        )
+                ],
+              )
+            ],
+          ),
         ),
       ),
     );
