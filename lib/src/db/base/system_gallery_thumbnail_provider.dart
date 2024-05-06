@@ -10,9 +10,7 @@ import "dart:ui";
 
 import "package:flutter/foundation.dart";
 import "package:flutter/material.dart";
-import "package:gallery/src/db/initalize_db.dart";
-import "package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart";
-import "package:gallery/src/db/schemas/gallery/thumbnail.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/thumbnail.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:transparent_image/transparent_image.dart";
 

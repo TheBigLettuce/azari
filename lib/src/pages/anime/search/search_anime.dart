@@ -11,11 +11,7 @@ import "package:dio/dio.dart";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/base/grid_settings_base.dart";
-import "package:gallery/src/db/schemas/anime/saved_anime_entry.dart";
-import "package:gallery/src/db/schemas/grid_settings/anime_discovery.dart";
-import "package:gallery/src/db/schemas/grid_settings/booru.dart";
-import "package:gallery/src/db/schemas/manga/pinned_manga.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_api.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
@@ -73,6 +69,8 @@ class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
     AnimeSafeMode safeMode = AnimeSafeMode.safe,
     MangaId? initalGenreId,
   }) {
+    final db = DatabaseConnectionNotifier.of(context);
+
     Navigator.push(
       context,
       MaterialPageRoute<void>(
@@ -89,27 +87,16 @@ class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
                   final toAdd = <MangaEntry>[];
 
                   for (final e in selected) {
-                    if (PinnedManga.exist(e.id.toString(), e.site)) {
+                    if (db.pinnedManga.exist(e.id.toString(), e.site)) {
                       toDelete.add(e);
                     } else {
                       toAdd.add(e);
                     }
                   }
 
-                  PinnedManga.addAll(
-                    toAdd
-                        .map(
-                          (e) => PinnedManga(
-                            mangaId: e.id.toString(),
-                            site: e.site,
-                            thumbUrl: e.thumbUrl,
-                            title: e.title,
-                          ),
-                        )
-                        .toList(),
-                  );
+                  db.pinnedManga.addAll(toAdd);
 
-                  PinnedManga.deleteAllIds(
+                  db.pinnedManga.deleteAll(
                     toDelete.map((e) => (e.id, e.site)).toList(),
                   );
                 },
@@ -175,7 +162,7 @@ class SearchAnimePage<T extends CellBase, I, G> extends StatefulWidget {
       context,
       MaterialPageRoute<void>(
         builder: (context) {
-          return SearchAnimePage<AnimeEntry, int, AnimeGenre>(
+          return SearchAnimePage<AnimeEntryData, int, AnimeGenre>(
             initalText: search,
             explicit: safeMode,
             actions: DiscoverTab.actions(),
@@ -219,7 +206,11 @@ class _SearchAnimePageState<T extends CellBase, I, G>
   final List<T> _results = [];
   late final StreamSubscription<void> watcher;
   final searchFocus = FocusNode();
-  late final state = GridSkeletonState<T>(reachedEnd: () => _reachedEnd);
+  late final state = GridSkeletonRefreshingState<T>(
+    reachedEnd: () => _reachedEnd,
+    next: _loadNext,
+    clearRefresh: AsyncGridRefresh(_load),
+  );
   late AnimeSafeMode mode = widget.explicit;
 
   final gridSettings = GridSettingsAnimeDiscovery.current;
@@ -343,10 +334,8 @@ class _SearchAnimePageState<T extends CellBase, I, G>
                     icon: const Icon(Icons.public),
                   );
                 },
-                loadNext: _loadNext,
                 selectionGlue: GlueProvider.generateOf(context)(),
                 refreshingStatus: state.refreshingStatus,
-                refresh: AsyncGridRefresh(_load),
                 search: OverrideGridSearchWidget(
                   SearchAndFocus(
                     TextFormField(

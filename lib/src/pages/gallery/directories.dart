@@ -10,12 +10,12 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/main.dart";
-import "package:gallery/src/db/initalize_db.dart";
-import "package:gallery/src/db/schemas/gallery/directory_metadata.dart";
-import "package:gallery/src/db/schemas/gallery/favorite_file.dart";
-import "package:gallery/src/db/schemas/gallery/system_gallery_directory.dart";
-import "package:gallery/src/db/schemas/grid_settings/directories.dart";
-import "package:gallery/src/db/schemas/settings/misc_settings.dart";
+import "package:gallery/src/db/services/impl/isar/foundation/initalize_db.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/directory_metadata.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/favorite_file.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/directories.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/settings/misc_settings.dart";
 import "package:gallery/src/db/services/settings.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
@@ -91,7 +91,7 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
   GridMutationInterface get mutation => state.refreshingStatus.mutation;
 
   bool proceed = true;
-  late final extra = api.getExtra()
+  late final extra = api.asExtra()
     ..setRefreshGridCallback(() {
       if (widget.callback != null) {
         mutation.cellCount = 0;
@@ -105,6 +105,19 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
 
   late final GridSkeletonStateFilter<SystemGalleryDirectory> state =
       GridSkeletonStateFilter(
+    clearRefresh: widget.callback != null
+        ? SynchronousGridRefresh(() {
+            PlatformFunctions.trashThumbId().then((value) {
+              try {
+                setState(() {
+                  trashThumbId = value;
+                });
+              } catch (_) {}
+            });
+
+            return extra.db.systemGalleryDirectorys.countSync();
+          })
+        : RetainedGridRefresh(_refresh),
     transform: (cell) => cell,
     filter: extra.filter,
     initalCellCount: widget.callback != null
@@ -381,19 +394,6 @@ class _GalleryDirectoriesState extends State<GalleryDirectories> {
           ),
           refreshingStatus: state.refreshingStatus,
           watchLayoutSettings: GridSettingsDirectories.watch,
-          refresh: widget.callback != null
-              ? SynchronousGridRefresh(() {
-                  PlatformFunctions.trashThumbId().then((value) {
-                    try {
-                      setState(() {
-                        trashThumbId = value;
-                      });
-                    } catch (_) {}
-                  });
-
-                  return extra.db.systemGalleryDirectorys.countSync();
-                })
-              : RetainedGridRefresh(_refresh),
           search: OverrideGridSearchWidget(
             SearchAndFocus(
               search.searchWidget(

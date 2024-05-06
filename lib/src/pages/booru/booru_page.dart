@@ -11,26 +11,26 @@ import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/initalize_db.dart";
-import "package:gallery/src/db/schemas/booru/favorite_booru.dart";
-import "package:gallery/src/db/schemas/booru/post.dart";
-import "package:gallery/src/db/schemas/downloader/download_file.dart";
-import "package:gallery/src/db/schemas/grid_settings/booru.dart";
-import "package:gallery/src/db/schemas/grid_state/grid_booru_paging.dart";
-import "package:gallery/src/db/schemas/grid_state/grid_state.dart";
-import "package:gallery/src/db/schemas/grid_state/grid_state_booru.dart";
-import "package:gallery/src/db/schemas/settings/hidden_booru_post.dart";
-import "package:gallery/src/db/schemas/statistics/statistics_general.dart";
-import "package:gallery/src/db/schemas/tags/tags.dart";
-import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/base/post_base.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/booru/favorite_booru.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/booru/post.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/downloader/download_file.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/booru.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_booru_paging.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_state.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_state_booru.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/settings/hidden_booru_post.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/statistics/statistics_general.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/tags/tags.dart";
+import "package:gallery/src/db/services/posts_source.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/db/tags/booru_tagging.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/interfaces/booru_tagging.dart";
-import "package:gallery/src/interfaces/logging/logging.dart";
-import "package:gallery/src/net/downloader.dart";
+import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/booru/bookmark_button.dart";
 import "package:gallery/src/pages/booru/booru_grid_actions.dart";
 import "package:gallery/src/pages/booru/booru_restored_page.dart";
@@ -67,22 +67,30 @@ typedef OnBooruTagPressedFunc = void Function(
   SafeMode? overrideSafeMode,
 );
 
-class _MainGridPagingState implements PagingEntry, PageSaver {
+class _MainGridPagingState implements PagingEntry {
   _MainGridPagingState(int initalCellCount, this.booru)
       : mainGrid = DbsOpen.primaryGrid(booru),
         tagManager = TagManager.fromEnum(booru),
         client = BooruAPI.defaultClientForBooru(booru) {
-    refreshingStatus = GridRefreshingStatus(initalCellCount, () => reachedEnd);
+    source = PostsSourceService.currentMain(api, tagManager.excluded, this);
+    refreshingStatus = GridRefreshingStatus(
+      initalCellCount,
+      () => reachedEnd,
+      clearRefresh: AsyncGridRefresh(source.clearRefresh),
+      next: source.next,
+    );
   }
 
   final Booru booru;
   final Isar mainGrid;
 
+  @override
   bool reachedEnd = false;
 
   late final BooruAPI api = BooruAPI.fromEnum(booru, client, this);
   final TagManager tagManager;
   final Dio client;
+  late final PostsSourceService source;
 
   int? currentSkipped;
 
@@ -120,6 +128,7 @@ class _MainGridPagingState implements PagingEntry, PageSaver {
     return offset;
   }
 
+  @override
   void updateTime() {
     final prev = _currentState;
 
@@ -130,6 +139,13 @@ class _MainGridPagingState implements PagingEntry, PageSaver {
 
   @override
   int get page => mainGrid.gridBooruPagings.getSync(0)?.page ?? 0;
+
+  @override
+  set page(int p) {
+    mainGrid.writeTxnSync(
+      () => mainGrid.gridBooruPagings.putSync(GridBooruPaging(p)),
+    );
+  }
 
   @override
   void setOffset(double o) {
@@ -143,19 +159,6 @@ class _MainGridPagingState implements PagingEntry, PageSaver {
   }
 
   @override
-  void setPage(int p) {
-    mainGrid.writeTxnSync(
-      () => mainGrid.gridBooruPagings.putSync(GridBooruPaging(p)),
-    );
-  }
-
-  @override
-  void save(int page) => setPage(page);
-
-  @override
-  int get current => page;
-
-  @override
   void dispose() {
     client.close();
     refreshingStatus.dispose();
@@ -166,7 +169,7 @@ class _MainGridPagingState implements PagingEntry, PageSaver {
     final mainGrid = DbsOpen.primaryGrid(settings.selectedBooru);
 
     return _MainGridPagingState(
-      mainGrid.posts.countSync(),
+      mainGrid.postIsars.countSync(),
       settings.selectedBooru,
     );
   }
@@ -188,8 +191,6 @@ class BooruPage extends StatefulWidget {
 }
 
 class _BooruPageState extends State<BooruPage> {
-  static const _log = LogTarget.booru;
-
   late final StreamSubscription<SettingsData?> settingsWatcher;
   late final StreamSubscription<void> favoritesWatcher;
   late final StreamSubscription<void> timeUpdater;
@@ -237,8 +238,7 @@ class _BooruPageState extends State<BooruPage> {
           final gridState = state.gridKey.currentState;
           if (gridState != null) {
             gridState.resetFab();
-            pagingState.refreshingStatus
-                .refresh(gridState.widget.functionality);
+            pagingState.refreshingStatus.refresh();
           }
 
           pagingState.updateTime();
@@ -289,7 +289,7 @@ class _BooruPageState extends State<BooruPage> {
     if (pagingState.api.wouldBecomeStale &&
         pagingState.needToRefresh(const Duration(hours: 1))) {
       pagingState.mainGrid
-          .writeTxnSync(() => pagingState.mainGrid.posts.clearSync());
+          .writeTxnSync(() => pagingState.mainGrid.postIsars.clearSync());
       pagingState.refreshingStatus.mutation.cellCount = 0;
 
       pagingState.updateTime();
@@ -364,44 +364,8 @@ class _BooruPageState extends State<BooruPage> {
     super.dispose();
   }
 
-  Future<int> _clearAndRefresh() async {
-    final mainGrid = pagingState.mainGrid;
-    final api = pagingState.api;
-
-    try {
-      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        state.gridKey.currentState?.selection.reset();
-      });
-      mainGrid.writeTxnSync(() => mainGrid.posts.clearSync());
-
-      StatisticsGeneral.addRefreshes();
-
-      pagingState.updateTime();
-
-      final list = await api.page(0, "", pagingState.tagManager.excluded);
-      pagingState.setOffset(0);
-      currentSkipped = list.$2;
-      mainGrid.writeTxnSync(() {
-        mainGrid.posts.clearSync();
-        return mainGrid.posts.putAllByIdBooruSync(
-          list.$1
-              .where(
-                (element) => !HiddenBooruPost.isHidden(element.id, api.booru),
-              )
-              .toList(),
-        );
-      });
-
-      pagingState.reachedEnd = false;
-    } catch (e) {
-      rethrow;
-    }
-
-    return mainGrid.posts.count();
-  }
-
   Future<void> _download(int i) async {
-    final p = pagingState.mainGrid.posts.getSync(i + 1);
+    final p = pagingState.mainGrid.postIsars.getSync(i + 1);
     if (p == null) {
       return Future.value();
     }
@@ -417,65 +381,6 @@ class _BooruPageState extends State<BooruPage> {
       ),
       state.settings,
     );
-  }
-
-  Future<int> _addLast([int repeatCount = 0]) async {
-    final mainGrid = pagingState.mainGrid;
-    final api = pagingState.api;
-
-    if (repeatCount >= 3) {
-      return mainGrid.posts.countSync();
-    }
-
-    if (pagingState.reachedEnd) {
-      return mainGrid.posts.countSync();
-    }
-    final p = mainGrid.posts.getSync(mainGrid.posts.countSync());
-    if (p == null) {
-      return mainGrid.posts.countSync();
-    }
-
-    try {
-      final list = await api.fromPost(
-        currentSkipped != null && currentSkipped! < p.id
-            ? currentSkipped!
-            : p.id,
-        "",
-        pagingState.tagManager.excluded,
-      );
-
-      if (list.$1.isEmpty && currentSkipped == null) {
-        pagingState.reachedEnd = true;
-      } else {
-        currentSkipped = list.$2;
-        final oldCount = mainGrid.posts.countSync();
-        mainGrid.writeTxnSync(
-          () => mainGrid.posts.putAllByIdBooruSync(
-            list.$1
-                .where(
-                  (element) => !HiddenBooruPost.isHidden(element.id, api.booru),
-                )
-                .toList(),
-          ),
-        );
-
-        pagingState.updateTime();
-
-        if (mainGrid.posts.countSync() - oldCount < 3) {
-          return _addLast(repeatCount + 1);
-        }
-      }
-    } catch (e, trace) {
-      _log.logDefaultImportant(
-        "_addLast on grid ${state.settings.selectedBooru.string}, try: $repeatCount"
-            .errorMessage(e),
-        trace,
-      );
-
-      return _addLast(repeatCount + 1);
-    }
-
-    return mainGrid.posts.count();
   }
 
   final scrollController = ScrollController();
@@ -516,9 +421,7 @@ class _BooruPageState extends State<BooruPage> {
               overrideController: scrollController,
               functionality: GridFunctionality(
                 selectionGlue: GlueProvider.generateOf(context)(),
-                loadNext: _addLast,
                 watchLayoutSettings: GridSettingsBooru.watch,
-                refresh: AsyncGridRefresh(_clearAndRefresh),
                 refreshingStatus: pagingState.refreshingStatus,
                 download: _download,
                 search: OverrideGridSearchWidget(
@@ -636,7 +539,7 @@ class _BooruPageState extends State<BooruPage> {
                 gridSeed: state.gridSeed,
               ),
               mainFocus: state.mainFocus,
-              getCell: (i) => pagingState.mainGrid.posts.getSync(i + 1)!,
+              getCell: pagingState.source.forIdxUnsafe,
               initalScrollPosition: pagingState.offset,
             ),
             canPop: false,

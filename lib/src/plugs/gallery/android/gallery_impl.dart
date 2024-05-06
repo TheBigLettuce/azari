@@ -17,7 +17,7 @@ class _GalleryImpl implements GalleryApi {
     }
 
     _global = _GalleryImpl._new(
-      DbsOpen.androidGalleryDirectories(temporary: temporary),
+      DbsOpen.androidGalleryDirectories(temporary),
       temporary,
     );
     return _global!;

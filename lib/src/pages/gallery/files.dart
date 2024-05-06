@@ -11,12 +11,12 @@ import "dart:math" as math;
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/schemas/gallery/favorite_file.dart";
-import "package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart";
-import "package:gallery/src/db/schemas/grid_settings/files.dart";
-import "package:gallery/src/db/schemas/settings/misc_settings.dart";
-import "package:gallery/src/db/schemas/statistics/statistics_gallery.dart";
-import "package:gallery/src/db/schemas/tags/pinned_tag.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/favorite_file.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory_file.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/files.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/settings/misc_settings.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/statistics/statistics_gallery.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/tags/pinned_tag.dart";
 import "package:gallery/src/db/services/settings.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
@@ -119,13 +119,6 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
         FilteringMode.untagged => FileFilters.untagged(cells),
         FilteringMode.tag =>
           FileFilters.tag(cells, search.searchTextController.text),
-        FilteringMode.notes => (
-            cells.where((element) => element.notesFlat.isNotEmpty).where(
-                  (element) => element.notesFlat
-                      .contains(search.searchTextController.text.toLowerCase()),
-                ),
-            null
-          ),
         FilteringMode.tagReversed =>
           FileFilters.tagReversed(cells, search.searchTextController.text),
         FilteringMode.video => FileFilters.video(cells),
@@ -148,6 +141,15 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
 
   late final GridSkeletonStateFilter<SystemGalleryDirectoryFile> state =
       GridSkeletonStateFilter(
+    clearRefresh: extra.supportsDirectRefresh
+        ? AsyncGridRefresh(() async {
+            final i = await widget.api.refresh();
+
+            search.performSearch(search.searchTextController.text);
+
+            return i;
+          })
+        : RetainedGridRefresh(_refresh),
     transform: (cell) {
       if (state.filter.currentSortingMode == SortingMode.size ||
           search.currentFilteringMode() == FilteringMode.same) {
@@ -172,8 +174,7 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
       }
 
       if (selected == FilteringMode.tag ||
-          selected == FilteringMode.tagReversed ||
-          selected == FilteringMode.notes) {
+          selected == FilteringMode.tagReversed) {
         search.markSearchVirtual();
       }
 
@@ -187,7 +188,6 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
       FilteringMode.duplicate,
       FilteringMode.same,
       FilteringMode.tag,
-      FilteringMode.notes,
       FilteringMode.tagReversed,
       FilteringMode.untagged,
       FilteringMode.gif,
@@ -361,15 +361,6 @@ class _GalleryFilesState extends State<GalleryFiles> with FilesActionsMixin {
             ),
             selectionGlue: GlueProvider.generateOf(context)(),
             refreshingStatus: state.refreshingStatus,
-            refresh: extra.supportsDirectRefresh
-                ? AsyncGridRefresh(() async {
-                    final i = await widget.api.refresh();
-
-                    search.performSearch(search.searchTextController.text);
-
-                    return i;
-                  })
-                : RetainedGridRefresh(_refresh),
             search: OverrideGridSearchWidget(
               SearchAndFocus(
                 search.searchWidget(context, hint: widget.dirName),

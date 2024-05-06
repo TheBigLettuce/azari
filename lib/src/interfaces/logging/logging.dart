@@ -11,6 +11,7 @@ import "dart:developer";
 import "package:dio/dio.dart";
 import "package:flutter/foundation.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
+import "package:gallery/src/net/cloudflare_exception.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
 
 enum LogSeverity {
@@ -298,6 +299,13 @@ extension ReqLoggingExt on Dio {
         rdata.message.errorMessage(EmptyWidget.unwrapDioError(e)),
         stack,
       );
+
+      if (e is DioException) {
+        if (e.response?.statusCode == 403) {
+          throw CloudflareException();
+        }
+      }
+
       rethrow;
     }
   }

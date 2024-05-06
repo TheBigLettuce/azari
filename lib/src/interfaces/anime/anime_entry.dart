@@ -7,9 +7,7 @@
 
 import "package:cached_network_image/cached_network_image.dart";
 import "package:flutter/material.dart";
-import "package:gallery/src/db/base/booru_post_functionality_mixin.dart";
-import "package:gallery/src/db/schemas/anime/saved_anime_entry.dart";
-import "package:gallery/src/db/schemas/anime/watched_anime_entry.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_api.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
@@ -19,9 +17,11 @@ import "package:gallery/src/pages/anime/anime_info_page.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:isar/isar.dart";
 
-class AnimeSearchEntry extends AnimeEntry
-    implements Pressable<AnimeSearchEntry> {
+class AnimeSearchEntry extends AnimeEntryData {
   const AnimeSearchEntry({
+    required this.genres,
+    required this.relations,
+    required this.staff,
     required super.site,
     required super.type,
     required super.thumbUrl,
@@ -35,20 +35,26 @@ class AnimeSearchEntry extends AnimeEntry
     required super.siteUrl,
     required super.isAiring,
     required super.titleSynonyms,
-    required super.genres,
-    required super.relations,
     required super.trailerUrl,
     required super.episodes,
     required super.background,
     required super.explicit,
-    required super.staff,
   });
+
+  @override
+  final List<AnimeGenre> genres;
+
+  @override
+  final List<AnimeRelation> relations;
+
+  @override
+  final List<AnimeRelation> staff;
 
   @override
   void onPress(
     BuildContext context,
-    GridFunctionality<AnimeSearchEntry> functionality,
-    AnimeSearchEntry cell,
+    GridFunctionality<AnimeEntryData> functionality,
+    AnimeEntryData cell,
     int idx,
   ) {
     Navigator.push(
@@ -66,15 +72,99 @@ class AnimeSearchEntry extends AnimeEntry
   }
 }
 
-class AnimeEntry
-    with BooruPostFunctionalityMixin
+class AnimeGenre {
+  const AnimeGenre({
+    required this.id,
+    required this.title,
+    required this.unpressable,
+    required this.explicit,
+  });
+
+  final String title;
+  final int id;
+  final bool unpressable;
+  final bool explicit;
+}
+
+class AnimeRelation {
+  const AnimeRelation({
+    required this.id,
+    required this.thumbUrl,
+    required this.title,
+    required this.type,
+  });
+
+  final int id;
+  final String thumbUrl;
+  final String title;
+  final String type;
+
+  bool get idIsValid => id != 0 && type != "manga";
+
+  @override
+  String toString() => title;
+}
+
+abstract class SavedAnimeEntryData extends AnimeEntryData {
+  const SavedAnimeEntryData({
+    required super.site,
+    required super.type,
+    required super.thumbUrl,
+    required super.title,
+    required super.titleJapanese,
+    required super.titleEnglish,
+    required super.score,
+    required super.synopsis,
+    required super.year,
+    required super.id,
+    required super.siteUrl,
+    required super.isAiring,
+    required super.titleSynonyms,
+    required super.trailerUrl,
+    required super.episodes,
+    required super.background,
+    required super.explicit,
+  });
+
+  SavedAnimeEntryData copySuper(
+    AnimeEntryData e, [
+    bool ignoreRelations = false,
+  ]);
+
+  SavedAnimeEntryData copy({
+    bool? inBacklog,
+    AnimeMetadata? site,
+    int? episodes,
+    String? trailerUrl,
+    String? siteUrl,
+    String? title,
+    String? titleJapanese,
+    String? titleEnglish,
+    String? background,
+    int? id,
+    List<AnimeGenre>? genres,
+    List<String>? titleSynonyms,
+    List<AnimeRelation>? relations,
+    bool? isAiring,
+    int? year,
+    double? score,
+    String? thumbUrl,
+    String? synopsis,
+    String? type,
+    AnimeSafeMode? explicit,
+    List<AnimeRelation>? staff,
+  });
+}
+
+abstract class AnimeEntryData
     implements
         AnimeCell,
         ContentWidgets,
         Thumbnailable,
         Downloadable,
-        Stickerable {
-  const AnimeEntry({
+        Stickerable,
+        Pressable<AnimeEntryData> {
+  const AnimeEntryData({
     required this.site,
     required this.type,
     required this.thumbUrl,
@@ -88,13 +178,10 @@ class AnimeEntry
     required this.siteUrl,
     required this.isAiring,
     required this.titleSynonyms,
-    required this.genres,
-    required this.relations,
     required this.trailerUrl,
     required this.episodes,
     required this.background,
     required this.explicit,
-    required this.staff,
   });
 
   @Index(unique: true, replace: true, composite: [CompositeIndex("id")])
@@ -115,9 +202,10 @@ class AnimeEntry
   final String type;
 
   final List<String> titleSynonyms;
-  final List<AnimeGenre> genres;
-  final List<Relation> relations;
-  final List<Relation> staff;
+  List<AnimeGenre> get genres;
+
+  List<AnimeRelation> get relations;
+  List<AnimeRelation> get staff;
 
   final double score;
 
@@ -153,14 +241,16 @@ class AnimeEntry
 
   @override
   List<Sticker> stickers(BuildContext context, bool excludeDuplicate) {
-    final (watching, inBacklog) = SavedAnimeEntry.isWatchingBacklog(id, site);
+    final (watching, inBacklog) =
+        currentDb.savedAnime.isWatchingBacklog(id, site);
 
     return [
-      if (this is! SavedAnimeEntry && watching)
+      if (this is! SavedAnimeEntryData && watching)
         !inBacklog
             ? const Sticker(Icons.play_arrow_rounded)
             : const Sticker(Icons.library_add_check),
-      if (this is! WatchedAnimeEntry && WatchedAnimeEntry.watched(id, site))
+      if (this is! WatchedAnimeEntryData &&
+          currentDb.watchedAnime.watched(id, site))
         const Sticker(Icons.check, important: true),
     ];
   }

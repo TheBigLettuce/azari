@@ -15,12 +15,12 @@ class AddToBookmarksButton extends StatelessWidget {
     required this.f,
   });
   final GridSkeletonState state;
-  final void Function() f;
+  final void Function(BuildContext) f;
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      onPressed: f,
+      onPressed: () => f(context),
       icon: const Icon(Icons.bookmark_add),
     );
   }

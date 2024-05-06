@@ -176,7 +176,7 @@ class ImageView extends StatefulWidget {
             tags: tags,
             onNearEnd: imageDesctipion.ignoreOnNearEnd
                 ? null
-                : () => functionality.refreshingStatus.onNearEnd(functionality),
+                : functionality.refreshingStatus.onNearEnd,
           );
         },
       ),

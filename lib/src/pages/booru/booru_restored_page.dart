@@ -10,23 +10,23 @@ import "dart:async";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/initalize_db.dart";
-import "package:gallery/src/db/schemas/booru/favorite_booru.dart";
-import "package:gallery/src/db/schemas/booru/post.dart";
-import "package:gallery/src/db/schemas/downloader/download_file.dart";
-import "package:gallery/src/db/schemas/grid_settings/booru.dart";
-import "package:gallery/src/db/schemas/grid_state/grid_booru_paging.dart";
-import "package:gallery/src/db/schemas/grid_state/grid_state_booru.dart";
-import "package:gallery/src/db/schemas/settings/hidden_booru_post.dart";
-import "package:gallery/src/db/schemas/statistics/statistics_general.dart";
+import "package:gallery/src/db/base/post_base.dart";
+import "package:gallery/src/db/services/impl/isar/foundation/initalize_db.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/booru/favorite_booru.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/booru/post.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/downloader/download_file.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/booru.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_booru_paging.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_state_booru.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/settings/hidden_booru_post.dart";
+import "package:gallery/src/db/services/posts_source.dart";
 import "package:gallery/src/db/services/settings.dart";
 import "package:gallery/src/db/tags/booru_tagging.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/interfaces/logging/logging.dart";
-import "package:gallery/src/net/downloader.dart";
+import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/booru/booru_grid_actions.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
 import "package:gallery/src/pages/booru/booru_search_page.dart";
@@ -49,22 +49,6 @@ import "package:gallery/src/widgets/skeletons/grid.dart";
 import "package:gallery/src/widgets/skeletons/skeleton_state.dart";
 import "package:isar/isar.dart";
 import "package:url_launcher/url_launcher.dart";
-
-class _IsarPageSaver implements PageSaver {
-  const _IsarPageSaver(this.instance);
-
-  final Isar instance;
-
-  @override
-  int get current => instance.gridBooruPagings.getSync(0)?.page ?? 0;
-
-  @override
-  void save(int page) {
-    instance.writeTxnSync(
-      () => instance.gridBooruPagings.putSync(GridBooruPaging(page)),
-    );
-  }
-}
 
 class BooruRestoredPage extends StatefulWidget {
   const BooruRestoredPage({
@@ -90,26 +74,42 @@ class RestoredBooruPageState implements PagingEntry {
   RestoredBooruPageState(
     Booru booru,
     String name,
+    String tags,
   )   : tagManager = TagManager.fromEnum(booru),
         instance = DbsOpen.secondaryGridName(name),
         client = BooruAPI.defaultClientForBooru(booru) {
-    api = BooruAPI.fromEnum(booru, client, _IsarPageSaver(instance));
+    api = BooruAPI.fromEnum(booru, client, this);
+
+    source = PostsSourceService.currentRestored(
+      name,
+      api,
+      tagManager.excluded,
+      this,
+      initialTags: tags,
+    );
   }
 
   final Dio client;
   final TagManager tagManager;
   late final BooruAPI api;
+  late final PostsSourceService source;
 
   int? currentSkipped;
 
+  @override
   bool reachedEnd = false;
 
   final Isar instance;
 
-  late final state = GridSkeletonState<Post>(
-    initalCellCount: instance.posts.countSync(),
+  late final state = GridSkeletonRefreshingState<Post>(
+    initalCellCount: instance.postIsars.countSync(),
     reachedEnd: () => reachedEnd,
+    clearRefresh: AsyncGridRefresh(source.clearRefresh),
+    next: source.next,
   );
+
+  @override
+  void updateTime() {}
 
   @override
   void dispose() {
@@ -135,6 +135,13 @@ class RestoredBooruPageState implements PagingEntry {
   int get page => instance.gridBooruPagings.getSync(0)?.page ?? 0;
 
   @override
+  set page(int p) {
+    instance.writeTxnSync(
+      () => instance.gridBooruPagings.putSync(GridBooruPaging(p)),
+    );
+  }
+
+  @override
   void setOffset(double o) {
     final prev = Dbs.g.main.gridStateBoorus.getByNameSync(instance.name)!;
 
@@ -146,18 +153,9 @@ class RestoredBooruPageState implements PagingEntry {
       ),
     );
   }
-
-  @override
-  void setPage(int p) {
-    instance.writeTxnSync(
-      () => instance.gridBooruPagings.putSync(GridBooruPaging(page)),
-    );
-  }
 }
 
 class _BooruRestoredPageState extends State<BooruRestoredPage> {
-  static const _log = LogTarget.booru;
-
   late final StreamSubscription<SettingsData?> settingsWatcher;
   late final StreamSubscription<void> favoritesWatcher;
   late final StreamSubscription<void> blacklistedWatcher;
@@ -167,7 +165,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
   late final RestoredBooruPageState pagingState;
 
   BooruAPI get api => pagingState.api;
-  GridSkeletonState<Post> get state => pagingState.state;
+  GridSkeletonRefreshingState<Post> get state => pagingState.state;
   TagManager get tagManager => pagingState.tagManager;
   Isar get instance => pagingState.instance;
 
@@ -176,7 +174,11 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
     super.initState();
 
     pagingState = widget.pagingRegistry.getOrRegister(widget.state.name, () {
-      return RestoredBooruPageState(widget.state.booru, widget.state.name);
+      return RestoredBooruPageState(
+        widget.state.booru,
+        widget.state.name,
+        widget.state.tags,
+      );
     }) as RestoredBooruPageState;
 
     search = SearchLaunchGrid(
@@ -229,38 +231,8 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
     return prev.safeMode;
   }
 
-  Future<int> _clearAndRefresh() async {
-    try {
-      WidgetsBinding.instance.scheduleFrameCallback((timeStamp) {
-        state.gridKey.currentState?.selection.reset();
-      });
-      StatisticsGeneral.addRefreshes();
-
-      instance.writeTxnSync(() => instance.posts.clearSync());
-
-      final list = await api.page(
-        0,
-        widget.state.tags,
-        tagManager.excluded,
-        overrideSafeMode: _safeMode(),
-      );
-
-      pagingState.currentSkipped = list.$2;
-      instance.writeTxnSync(() {
-        instance.posts.clearSync();
-        return instance.posts.putAllByIdBooruSync(list.$1);
-      });
-
-      pagingState.reachedEnd = false;
-    } catch (e) {
-      rethrow;
-    }
-
-    return instance.posts.count();
-  }
-
   Future<void> _download(int i) async {
-    final p = instance.posts.getSync(i + 1);
+    final p = instance.postIsars.getSync(i + 1);
     if (p == null) {
       return Future.value();
     }
@@ -276,51 +248,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
       ),
       state.settings,
     );
-  }
-
-  Future<int> _addLast([int repeatCount = 0]) async {
-    if (pagingState.reachedEnd || repeatCount >= 3) {
-      return instance.posts.countSync();
-    }
-
-    final p = instance.posts.getSync(instance.posts.countSync());
-    if (p == null) {
-      return instance.posts.countSync();
-    }
-
-    try {
-      final list = await api.fromPost(
-        pagingState.currentSkipped != null && pagingState.currentSkipped! < p.id
-            ? pagingState.currentSkipped!
-            : p.id,
-        widget.state.tags,
-        tagManager.excluded,
-        overrideSafeMode: _safeMode(),
-      );
-
-      if (list.$1.isEmpty && pagingState.currentSkipped == null) {
-        pagingState.reachedEnd = true;
-      } else {
-        pagingState.currentSkipped = list.$2;
-        final oldCount = instance.posts.countSync();
-        instance
-            .writeTxnSync(() => instance.posts.putAllByIdBooruSync(list.$1));
-
-        if (instance.posts.countSync() - oldCount < 3) {
-          return _addLast(repeatCount + 1);
-        }
-      }
-    } catch (e, trace) {
-      _log.logDefaultImportant(
-        "_addLast on grid ${state.settings.selectedBooru.string}, try: $repeatCount"
-            .errorMessage(e),
-        trace,
-      );
-
-      return _addLast(repeatCount + 1);
-    }
-
-    return instance.posts.count();
   }
 
   void _onTagPressed(
@@ -362,7 +289,7 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                   GridSettingsBooru.current,
                 ),
                 mainFocus: state.mainFocus,
-                getCell: (i) => instance.posts.getSync(i + 1)!,
+                getCell: pagingState.source.forIdxUnsafe,
                 initalScrollPosition: pagingState.offset,
                 functionality: GridFunctionality(
                   watchLayoutSettings: GridSettingsBooru.watch,
@@ -388,8 +315,6 @@ class _BooruRestoredPageState extends State<BooruRestoredPage> {
                       search.searchFocus,
                     ),
                   ),
-                  loadNext: _addLast,
-                  refresh: AsyncGridRefresh(_clearAndRefresh),
                   registerNotifiers: (child) => OnBooruTagPressed(
                     onPressed: _onTagPressed,
                     child: BooruAPINotifier(api: api, child: child),

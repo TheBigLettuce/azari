@@ -7,7 +7,6 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:gallery/src/db/schemas/statistics/statistics_general.dart";
 
 part "../parts/fab.dart";
 

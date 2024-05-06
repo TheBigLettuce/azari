@@ -10,20 +10,20 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/post_base.dart";
-import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/db/services/impl/isar/foundation/initalize_db.dart";
 import "package:gallery/src/db/loaders/linear_isar_loader.dart";
-import "package:gallery/src/db/schemas/booru/favorite_booru.dart";
-import "package:gallery/src/db/schemas/downloader/download_file.dart";
-import "package:gallery/src/db/schemas/grid_settings/favorites.dart";
-import "package:gallery/src/db/schemas/settings/misc_settings.dart";
-import "package:gallery/src/db/schemas/tags/local_tag_dictionary.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/booru/favorite_booru.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/downloader/download_file.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/favorites.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/settings/misc_settings.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tag_dictionary.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
-import "package:gallery/src/net/downloader.dart";
+import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/booru/booru_grid_actions.dart";
 import "package:gallery/src/pages/booru/booru_page.dart";
 import "package:gallery/src/pages/more/favorite_booru_actions.dart";
@@ -101,7 +101,6 @@ class FavoriteBooruPage extends StatelessWidget {
         watchLayoutSettings: GridSettingsFavorites.watch,
         download: state.download,
         refreshingStatus: state.state.refreshingStatus,
-        refresh: SynchronousGridRefresh(() => state.loader.count()),
       ),
       getCell: state.loader.getCell,
       mainFocus: state.state.mainFocus,
@@ -348,6 +347,7 @@ mixin FavoriteBooruPageState<T extends StatefulWidget> on State<T> {
   }
 
   late final state = GridSkeletonStateFilter<FavoriteBooru>(
+    clearRefresh: SynchronousGridRefresh(loader.count),
     filter: loader.filter,
     unsetFilteringModeOnReset: false,
     hook: (selected) {

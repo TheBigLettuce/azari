@@ -12,14 +12,14 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/schemas/booru/favorite_booru.dart";
-import "package:gallery/src/db/schemas/booru/post.dart";
-import "package:gallery/src/db/schemas/downloader/download_file.dart";
+import "package:gallery/src/db/base/post_base.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/booru/favorite_booru.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/downloader/download_file.dart";
 import "package:gallery/src/db/services/settings.dart";
 import "package:gallery/src/db/tags/booru_tagging.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
-import "package:gallery/src/net/downloader.dart";
+import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:logging/logging.dart";
 import "package:permission_handler/permission_handler.dart";
@@ -145,6 +145,88 @@ class _SinglePostState extends State<SinglePost> {
     inProcessLoading = false;
   }
 
+  Future<void> _tryClipboard() async {
+    try {
+      final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
+      if (clipboard == null ||
+          clipboard.text == null ||
+          clipboard.text!.isEmpty) {
+        return;
+      }
+
+      final numbers = RegExp(r"\d+")
+          .allMatches(clipboard.text!)
+          .map((e) => e.input.substring(e.start, e.end))
+          .toList();
+      if (numbers.isEmpty) {
+        return;
+      }
+
+      if (numbers.length == 1) {
+        controller.text = numbers.first;
+        return;
+      }
+
+      setState(() {
+        menuItems = numbers
+            .map(
+              (e) => ListTile(
+                title: Text(e),
+                onTap: () {
+                  controller.text = e;
+                  menuController.close();
+                },
+              ),
+            )
+            .toList();
+      });
+
+      menuController.open();
+    } catch (e, trace) {
+      log(
+        "clipboard button in single post",
+        level: Level.WARNING.value,
+        error: e,
+        stackTrace: trace,
+      );
+    }
+  }
+
+  Future<void> _qrCode() async {
+    final camera = await Permission.camera.request();
+
+    if (!camera.isGranted) {
+      return Navigator.push<void>(
+        context,
+        DialogRoute(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: Text(AppLocalizations.of(context)!.error),
+              content: Text(
+                AppLocalizations.of(context)!.cameraPermQrCodeErr,
+              ),
+            );
+          },
+        ),
+      );
+    } else {
+      final value = await scan();
+      if (value == null) {
+        return;
+      }
+
+      if (RegExp("^[0-9]").hasMatch(value)) {
+        controller.text = value;
+      } else {
+        try {
+          final f = value.split("_");
+          return _launch(Booru.fromPrefix(f[0]), int.parse(f[1]));
+        } catch (_) {}
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MenuAnchor(
@@ -157,97 +239,15 @@ class _SinglePostState extends State<SinglePost> {
         trailing: [
           IconButton(
             icon: const Icon(Icons.close),
-            onPressed: () {
-              controller.text = "";
-            },
+            onPressed: controller.clear,
           ),
           IconButton(
-            onPressed: () {
-              Permission.camera.request().then((value) {
-                if (!value.isGranted) {
-                  Navigator.push(
-                    context,
-                    DialogRoute<void>(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: Text(AppLocalizations.of(context)!.error),
-                          content: Text(
-                            AppLocalizations.of(context)!.cameraPermQrCodeErr,
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                } else {
-                  () async {
-                    final value = await scan();
-                    if (value == null) {
-                      return;
-                    }
-
-                    if (RegExp("^[0-9]").hasMatch(value)) {
-                      controller.text = value;
-                    } else {
-                      try {
-                        final f = value.split("_");
-                        _launch(Booru.fromPrefix(f[0]), int.parse(f[1]));
-                      } catch (_) {}
-                    }
-                  }();
-                }
-              });
-            },
             icon: const Icon(Icons.qr_code_scanner_rounded),
+            onPressed: _qrCode,
           ),
           IconButton(
             icon: const Icon(Icons.content_paste),
-            onPressed: () async {
-              try {
-                final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
-                if (clipboard == null ||
-                    clipboard.text == null ||
-                    clipboard.text!.isEmpty) {
-                  return;
-                }
-
-                final numbers = RegExp(r"\d+")
-                    .allMatches(clipboard.text!)
-                    .map((e) => e.input.substring(e.start, e.end))
-                    .toList();
-                if (numbers.isEmpty) {
-                  return;
-                }
-
-                if (numbers.length == 1) {
-                  controller.text = numbers.first;
-                  return;
-                }
-
-                setState(() {
-                  menuItems = numbers
-                      .map(
-                        (e) => ListTile(
-                          title: Text(e),
-                          onTap: () {
-                            controller.text = e;
-                            menuController.close();
-                          },
-                        ),
-                      )
-                      .toList();
-                });
-
-                menuController.open();
-              } catch (e, trace) {
-                log(
-                  "clipboard button in single post",
-                  level: Level.WARNING.value,
-                  error: e,
-                  stackTrace: trace,
-                );
-              }
-            },
+            onPressed: _tryClipboard,
           ),
           IconButton(
             icon: const Icon(Icons.arrow_forward).animate(

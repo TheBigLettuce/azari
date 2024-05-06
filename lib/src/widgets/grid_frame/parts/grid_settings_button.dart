@@ -9,9 +9,7 @@ import "dart:async";
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/base/grid_settings_base.dart";
-import "package:gallery/src/db/schemas/grid_settings/booru.dart";
-import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/pages/more/settings/radio_dialog.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
@@ -35,15 +33,15 @@ class GridSettingsButton extends StatefulWidget {
   });
 
   final void Function() onChanged;
-  final GridSettingsBase Function() gridSettings;
-  final void Function(GridAspectRatio?, GridSettingsBase)? selectRatio;
-  final void Function(bool, GridSettingsBase)? selectHideName;
-  final void Function(GridLayoutType?, GridSettingsBase)? selectGridLayout;
-  final void Function(GridColumn?, GridSettingsBase) selectGridColumn;
+  final GridSettingsData Function() gridSettings;
+  final void Function(GridAspectRatio?, GridSettingsData)? selectRatio;
+  final void Function(bool, GridSettingsData)? selectHideName;
+  final void Function(GridLayoutType?, GridSettingsData)? selectGridLayout;
+  final void Function(GridColumn?, GridSettingsData) selectGridColumn;
   final SafeMode? safeMode;
-  final void Function(SafeMode?, GridSettingsBase)? selectSafeMode;
-  final StreamSubscription<GridSettingsBase> Function(
-    void Function(GridSettingsBase) f,
+  final void Function(SafeMode?, GridSettingsData)? selectSafeMode;
+  final StreamSubscription<GridSettingsData> Function(
+    void Function(GridSettingsData) f,
   )? watch;
 
   @override
@@ -400,9 +398,9 @@ class _BottomSheetContent extends StatefulWidget {
 class __BottomSheetContentState extends State<_BottomSheetContent> {
   GridSettingsButton get button => widget.button;
 
-  StreamSubscription<GridSettingsBase>? watcher;
+  StreamSubscription<GridSettingsData>? watcher;
 
-  late GridSettingsBase gridSettings = button.gridSettings();
+  late GridSettingsData gridSettings = button.gridSettings();
 
   @override
   void initState() {

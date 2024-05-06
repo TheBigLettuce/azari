@@ -12,7 +12,7 @@ import "package:flutter/gestures.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:flutter_animate/flutter_animate.dart";
-import "package:gallery/src/db/base/grid_settings_base.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
@@ -109,7 +109,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
   late ScrollController controller;
   final _holderKey = GlobalKey<__GridSelectionCountHolderState>();
 
-  late GridSettingsBase _layoutSettings = widget.layout.defaultSettings();
+  late GridSettingsData _layoutSettings = widget.layout.defaultSettings();
 
   late final selection = GridSelection<T>(
     widget.description.actions,
@@ -168,7 +168,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
         : ScrollController(initialScrollOffset: widget.initalScrollPosition);
 
     if (mutation.cellCount == 0) {
-      refreshingStatus.refresh(widget.functionality);
+      refreshingStatus.refresh();
     }
 
     if (!description.asSliver) {
@@ -181,7 +181,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
 
         setState(() {});
 
-        if (functionality.loadNext == null) {
+        if (functionality.refreshingStatus.next == null) {
           return;
         }
 
@@ -201,7 +201,7 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
               (controller.offset /
                       controller.positions.first.maxScrollExtent) >=
                   1 - (height / controller.positions.first.maxScrollExtent)) {
-            refreshingStatus.onNearEnd(widget.functionality);
+            refreshingStatus.onNearEnd();
           }
         });
       });
@@ -230,10 +230,6 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
         setState(() {});
       } catch (_) {}
     });
-  }
-
-  void refreshSequence() {
-    refreshingStatus.refresh(widget.functionality);
   }
 
   @override
@@ -573,9 +569,10 @@ class GridFrameState<T extends CellBase> extends State<GridFrame<T>>
         mainFocus: widget.mainFocus,
         pageName: widget.description.keybindsDescription,
         children: [
-          if (atHomePage && widget.functionality.refresh.pullToRefresh)
+          if (atHomePage &&
+              widget.functionality.refreshingStatus.clearRefresh.pullToRefresh)
             RefreshIndicator(
-              onRefresh: () => refreshingStatus.refresh(widget.functionality),
+              onRefresh: () => refreshingStatus.refresh(),
               child: mainBody(context, page),
             )
           else

@@ -9,11 +9,10 @@ import "dart:async";
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/schemas/tags/tags.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/tags/tags.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/interfaces/booru_tagging.dart";
 import "package:gallery/src/widgets/empty_widget.dart";
-import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/make_tags.dart";
 import "package:gallery/src/widgets/menu_wrapper.dart";
 

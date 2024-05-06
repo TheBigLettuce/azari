@@ -10,7 +10,7 @@ import "dart:io";
 import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
-import "package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory_file.dart";
 import "package:gallery/src/db/services/settings.dart";
 import "package:gallery/src/plugs/download_movers.dart";
 
@@ -83,7 +83,7 @@ abstract interface class PlatformFunctions {
   static void copyMoveFiles(
     String? chosen,
     String? chosenVolumeName,
-    List<SystemGalleryDirectoryFile> selected, {
+    List<GalleryFile> selected, {
     required bool move,
     String? newDir,
   }) {
@@ -113,7 +113,7 @@ abstract interface class PlatformFunctions {
     return _channel.invokeMethod("trashThumbId");
   }
 
-  static void deleteFiles(List<SystemGalleryDirectoryFile> selected) {
+  static void deleteFiles(List<GalleryFile> selected) {
     _channel.invokeMethod(
       "deleteFiles",
       selected.map((e) => e.originalUri).toList(),

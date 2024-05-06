@@ -8,8 +8,8 @@
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/grid_settings_base.dart";
-import "package:gallery/src/db/schemas/grid_settings/booru.dart";
-import "package:gallery/src/db/schemas/settings/hidden_booru_post.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/booru.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/settings/hidden_booru_post.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/pages/more/blacklisted_page.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
@@ -37,8 +37,14 @@ class BlacklistedPostsPage extends StatefulWidget {
 }
 
 class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
-  late final state =
-      GridSkeletonState<HiddenBooruPost>(initalCellCount: list.length);
+  late final state = GridSkeletonRefreshingState<HiddenBooruPost>(
+    initalCellCount: list.length,
+    clearRefresh: SynchronousGridRefresh(() {
+      list = HiddenBooruPost.getAll();
+
+      return list.length;
+    }),
+  );
   List<HiddenBooruPost> list = <HiddenBooruPost>[];
 
   @override
@@ -69,11 +75,6 @@ class BlacklistedPostsPageState extends State<BlacklistedPostsPage> {
         ),
         functionality: GridFunctionality(
           selectionGlue: widget.generateGlue(),
-          refresh: SynchronousGridRefresh(() {
-            list = HiddenBooruPost.getAll();
-
-            return list.length;
-          }),
           refreshingStatus: state.refreshingStatus,
         ),
         mainFocus: state.mainFocus,

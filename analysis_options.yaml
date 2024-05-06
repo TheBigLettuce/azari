@@ -44,7 +44,15 @@ linter:
   rules:
     sort_constructors_first: true
     prefer_double_quotes: true
-    
+    use_to_and_as_if_applicable: true
+    use_string_buffers: true
+    use_if_null_to_convert_nulls_to_bools: true
+    unnecessary_null_aware_operator_on_extension_on_nullable: true
+    unawaited_futures: true
+    prefer_mixin: true
+    prefer_int_literals: true
+    noop_primitive_operations: true
+
     # avoid_print: false  # Uncomment to disable the `avoid_print` rule
     # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
 

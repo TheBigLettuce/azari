@@ -10,8 +10,7 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:gallery/main.dart";
-import "package:gallery/src/db/schemas/statistics/daily_statistics.dart";
-import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/services/services.dart";
 
 /// RestartWidget is needed for changing the boorus in the settings.
 class RestartWidget extends StatefulWidget {
@@ -50,7 +49,7 @@ class _RestartWidgetState extends State<RestartWidget> {
   void initState() {
     super.initState();
 
-    DailyStatistics sts = DailyStatistics.current;
+    StatisticsDailyData sts = currentDb.statisticsDaily.current;
 
     if (timeNow.day != sts.date.day ||
         timeNow.month != sts.date.month ||
@@ -83,11 +82,11 @@ class _RestartWidgetState extends State<RestartWidget> {
 
         if (stepsToSave >= _maxSteps || switchDate) {
           if (switchDate) {
-            DailyStatistics.current
+            currentDb.statisticsDaily.current
                 .copy(durationMillis: 1, swipedBoth: 0, date: timeNow)
                 .save();
           } else {
-            DailyStatistics.current
+            currentDb.statisticsDaily.current
                 .copy(durationMillis: currentDuration.inMilliseconds)
                 .save();
           }
@@ -133,19 +132,21 @@ class _RestartWidgetState extends State<RestartWidget> {
     final d = buildTheme(Brightness.dark, widget.accentColor);
     final l = buildTheme(Brightness.light, widget.accentColor);
 
-    return TimeSpentNotifier(
-      timeNow,
-      ticker: timeListener.stream,
-      current: _c,
-      child: KeyedSubtree(
-        key: key,
-        child: ColoredBox(
-          color: MediaQuery.platformBrightnessOf(context) == Brightness.dark
-              ? d.colorScheme.background
-              : l.colorScheme.background,
-          child: widget
-              .child(d, l, SettingsService.currentData)
-              .animate(effects: [const FadeEffect()]),
+    return DatabaseConnectionNotifier.current(
+      TimeSpentNotifier(
+        timeNow,
+        ticker: timeListener.stream,
+        current: _c,
+        child: KeyedSubtree(
+          key: key,
+          child: ColoredBox(
+            color: MediaQuery.platformBrightnessOf(context) == Brightness.dark
+                ? d.colorScheme.background
+                : l.colorScheme.background,
+            child: widget
+                .child(d, l, SettingsService.currentData)
+                .animate(effects: [const FadeEffect()]),
+          ),
         ),
       ),
     );

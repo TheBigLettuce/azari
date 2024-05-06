@@ -7,8 +7,7 @@
 
 import "package:dio/dio.dart";
 import "package:dio_cookie_manager/dio_cookie_manager.dart";
-import "package:gallery/src/db/schemas/booru/post.dart";
-import "package:gallery/src/db/schemas/grid_settings/booru.dart";
+import "package:gallery/src/db/base/post_base.dart";
 import "package:gallery/src/db/services/settings.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
@@ -118,19 +117,13 @@ class BooruTag {
 abstract class PageSaver {
   const PageSaver();
 
-  void save(int page);
-
-  int get current;
+  int get page;
+  set page(int p);
 }
 
 class EmptyPageSaver implements PageSaver {
   EmptyPageSaver();
 
   @override
-  int current = 0;
-
-  @override
-  void save(int page) {
-    current = page;
-  }
+  int page = 0;
 }

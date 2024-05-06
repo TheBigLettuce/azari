@@ -7,8 +7,8 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/schemas/manga/compact_manga_data.dart";
-import "package:gallery/src/db/schemas/manga/pinned_manga.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/manga/compact_manga_data.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/manga/pinned_manga.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
 import "package:gallery/src/pages/anime/info_base/anime_info_app_bar.dart";

@@ -5,8 +5,8 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "package:gallery/src/db/schemas/gallery/blacklisted_directory.dart";
-import "package:gallery/src/db/schemas/gallery/system_gallery_directory.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_files.dart";
 import "package:isar/isar.dart";
@@ -15,7 +15,7 @@ abstract class GalleryAPIDirectories {
   SystemGalleryDirectory directCell(int i);
 
   Future<int> refresh();
-  GalleryDirectoriesExtra getExtra();
+  GalleryDirectoriesExtra asExtra();
   GalleryAPIFiles files(SystemGalleryDirectory d);
 
   void close();
@@ -31,7 +31,7 @@ abstract class GalleryDirectoriesExtra {
   GalleryAPIFiles trash();
   GalleryAPIFiles favorites();
 
-  void addBlacklisted(List<BlacklistedDirectory> bucketIds);
+  void addBlacklisted(List<BlacklistedDirectoryData> bucketIds);
 
   void setRefreshGridCallback(void Function() callback);
   void setTemporarySet(void Function(int, bool) callback);

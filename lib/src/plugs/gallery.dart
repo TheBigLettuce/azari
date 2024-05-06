@@ -14,7 +14,7 @@ import "package:gallery/src/plugs/gallery/dummy.dart";
 
 abstract class GalleryPlug {
   GalleryAPIDirectories galleryApi({
-    bool? temporaryDb,
+    required bool temporaryDb,
     bool setCurrentApi = true,
   });
   void notify(String? target);

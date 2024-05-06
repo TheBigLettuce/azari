@@ -22,15 +22,19 @@ class _WatchingTab extends StatefulWidget {
 }
 
 class __WatchingTabState extends State<_WatchingTab> {
-  final state = GridSkeletonState<SavedAnimeEntry>();
-  final List<SavedAnimeEntry> currentlyWatching =
+  final List<SavedAnimeEntryData> currentlyWatching =
       SavedAnimeEntry.currentlyWatching();
-  final List<SavedAnimeEntry> backlog = SavedAnimeEntry.backlog();
+  final List<SavedAnimeEntryData> backlog = SavedAnimeEntry.backlog();
 
-  final List<SavedAnimeEntry> _backlogFilter = [];
-  final List<SavedAnimeEntry> _watchingFilter = [];
+  final List<SavedAnimeEntryData> _backlogFilter = [];
+  final List<SavedAnimeEntryData> _watchingFilter = [];
 
   late final StreamSubscription<void> watcher;
+
+  late final state = GridSkeletonRefreshingState<SavedAnimeEntryData>(
+    clearRefresh: SynchronousGridRefresh(() => backlog.length),
+  );
+
   final gridSeed = math.Random().nextInt(948512342);
   final GlobalKey<__CurrentlyWatchingState> watchingKey = GlobalKey();
 
@@ -101,7 +105,7 @@ class __WatchingTabState extends State<_WatchingTab> {
     super.dispose();
   }
 
-  SavedAnimeEntry _getCell(int i) {
+  SavedAnimeEntryData _getCell(int i) {
     if (_backlogFilter.isNotEmpty) {
       return _backlogFilter[upward ? _backlogFilter.length - 1 - i : i];
     }
@@ -111,9 +115,9 @@ class __WatchingTabState extends State<_WatchingTab> {
 
   @override
   Widget build(BuildContext context) {
-    return GridSkeleton<AnimeEntry>(
+    return GridSkeleton<AnimeEntryData>(
       state,
-      (context) => GridFrame<SavedAnimeEntry>(
+      (context) => GridFrame<SavedAnimeEntryData>(
         key: state.gridKey,
         layout: _WatchingLayout(
           currentlyWatching,
@@ -137,7 +141,6 @@ class __WatchingTabState extends State<_WatchingTab> {
         functionality: GridFunctionality(
           selectionGlue: GlueProvider.generateOf(context)(),
           refreshingStatus: state.refreshingStatus,
-          refresh: SynchronousGridRefresh(() => backlog.length),
         ),
         mainFocus: state.mainFocus,
         description: GridDescription(
@@ -207,7 +210,7 @@ class __WatchingTabState extends State<_WatchingTab> {
 }
 
 class _WatchingLayout
-    implements GridLayouter<SavedAnimeEntry>, GridLayoutBehaviour {
+    implements GridLayouter<SavedAnimeEntryData>, GridLayoutBehaviour {
   const _WatchingLayout(
     this.currentlyWatching, {
     required this.backlogUpward,
@@ -225,10 +228,10 @@ class _WatchingLayout
   final bool watchingRight;
   final void Function() flipWatchingRight;
 
-  final List<SavedAnimeEntry> currentlyWatching;
+  final List<SavedAnimeEntryData> currentlyWatching;
 
   @override
-  GridLayouter<T> makeFor<T extends CellBase>(GridSettingsBase settings) {
+  GridLayouter<T> makeFor<T extends CellBase>(GridSettingsData settings) {
     return this as GridLayouter<T>;
   }
 
@@ -248,8 +251,8 @@ class _WatchingLayout
   @override
   List<Widget> call(
     BuildContext context,
-    GridSettingsBase gridSettings,
-    GridFrameState<SavedAnimeEntry> state,
+    GridSettingsData gridSettings,
+    GridFrameState<SavedAnimeEntryData> state,
   ) {
     return [
       SliverPadding(
@@ -306,7 +309,7 @@ class _WatchingLayout
       if (state.mutation.cellCount > 0)
         SliverPadding(
           padding: const EdgeInsets.only(left: 14, right: 14),
-          sliver: GridLayout.blueprint<SavedAnimeEntry>(
+          sliver: GridLayout.blueprint<SavedAnimeEntryData>(
             context,
             state.widget.functionality,
             state.selection,
@@ -346,7 +349,7 @@ class _CurrentlyWatching extends StatefulWidget {
   });
 
   final bool watchingRight;
-  final List<SavedAnimeEntry> currentlyWatching;
+  final List<SavedAnimeEntryData> currentlyWatching;
   final ScrollController controller;
   final SelectionGlue glue;
 
@@ -355,7 +358,7 @@ class _CurrentlyWatching extends StatefulWidget {
 }
 
 class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
-  late final selection = GridSelection<SavedAnimeEntry>(
+  late final selection = GridSelection<SavedAnimeEntryData>(
     [
       GridAction(
         Icons.play_arrow_rounded,
@@ -397,7 +400,7 @@ class __CurrentlyWatchingState extends State<_CurrentlyWatching> {
     // ignoreSwipe: true,
   );
 
-  void onPressed(SavedAnimeEntry e, int _) {
+  void onPressed(SavedAnimeEntryData e, int _) {
     Navigator.push(
       context,
       MaterialPageRoute<void>(

@@ -17,7 +17,7 @@ class AndroidGallery implements GalleryPlug {
 
   @override
   GalleryAPIDirectories galleryApi({
-    bool? temporaryDb,
+    required bool temporaryDb,
     bool setCurrentApi = true,
   }) {
     final api = _AndroidGallery(temporary: temporaryDb);

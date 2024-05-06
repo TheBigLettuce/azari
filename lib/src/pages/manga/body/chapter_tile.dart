@@ -10,8 +10,8 @@ import "dart:math";
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/schemas/manga/read_manga_chapter.dart";
-import "package:gallery/src/db/schemas/manga/saved_manga_chapters.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/manga/read_manga_chapter.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/manga/saved_manga_chapters.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/widgets/menu_wrapper.dart";
 

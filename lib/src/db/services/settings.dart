@@ -5,15 +5,11 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "dart:async";
+part of "services.dart";
 
-import "package:gallery/src/db/schemas/settings/settings.dart";
-import "package:gallery/src/db/services/services.dart";
-import "package:gallery/src/interfaces/booru/booru.dart";
-import "package:gallery/src/interfaces/booru/display_quality.dart";
-import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:isar/isar.dart";
-import "package:meta/meta.dart";
+extension SettingsDataExt on SettingsData {
+  void save() => SettingsService.db.add(this);
+}
 
 abstract interface class SettingsPath {
   const SettingsPath();
@@ -28,7 +24,7 @@ abstract interface class SettingsPath {
     required String path,
     required String pathDisplay,
   }) =>
-      switch (currentDb) {
+      switch (_currentDb) {
         ServicesImplTable.isar => IsarSettingsPath(
             path: path,
             pathDisplay: pathDisplay,
@@ -57,8 +53,6 @@ abstract class SettingsData {
   @ignore
   SettingsService get s;
 
-  void save();
-
   SettingsData copy({
     SettingsPath? path,
     Booru? selectedBooru,
@@ -69,10 +63,12 @@ abstract class SettingsData {
 }
 
 @immutable
-abstract interface class SettingsService {
+abstract interface class SettingsService implements ServiceMarker {
   const SettingsService();
 
   SettingsData get current;
+
+  void add(SettingsData data);
 
   StreamSubscription<SettingsData?> watch(void Function(SettingsData? s) f);
 
@@ -83,6 +79,6 @@ abstract interface class SettingsService {
     required String validDirectory,
   });
 
-  static SettingsService get db => currentDb.settings;
+  static SettingsService get db => _currentDb.settings;
   static SettingsData get currentData => db.current;
 }

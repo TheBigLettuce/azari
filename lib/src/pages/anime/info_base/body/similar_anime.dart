@@ -20,7 +20,7 @@ class SimilarAnime extends StatefulWidget {
     required this.entry,
     required this.api,
   });
-  final AnimeEntry entry;
+  final AnimeEntryData entry;
   final AnimeAPI api;
 
   @override

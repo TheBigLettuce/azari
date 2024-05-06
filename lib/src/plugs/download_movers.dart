@@ -23,7 +23,7 @@ class MoveOp {
 }
 
 abstract class DownloadMoverPlug {
-  void move(MoveOp op);
+  Future<void> move(MoveOp op);
 }
 
 Future<DownloadMoverPlug> chooseDownloadMoverPlug() {

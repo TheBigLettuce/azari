@@ -11,10 +11,10 @@ import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/grid_settings_base.dart";
-import "package:gallery/src/db/schemas/grid_settings/booru.dart";
-import "package:gallery/src/db/schemas/manga/compact_manga_data.dart";
-import "package:gallery/src/db/schemas/manga/pinned_manga.dart";
-import "package:gallery/src/db/schemas/manga/read_manga_chapter.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/booru.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/manga/compact_manga_data.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/manga/pinned_manga.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/manga/read_manga_chapter.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/net/manga/manga_dex.dart";
@@ -53,7 +53,12 @@ class _MangaPageState extends State<MangaPage> {
   late final StreamSubscription<void> watcher;
 
   final data = <CompactMangaData>[];
-  final state = GridSkeletonState<CompactMangaData>();
+  late final state = GridSkeletonRefreshingState<CompactMangaData>(
+    clearRefresh: AsyncGridRefresh(
+      refresh,
+      pullToRefresh: false,
+    ),
+  );
 
   final dio = Dio();
   late final api = MangaDex(dio);
@@ -201,10 +206,6 @@ class _MangaPageState extends State<MangaPage> {
           },
           selectionGlue: GlueProvider.generateOf(context)(),
           refreshingStatus: state.refreshingStatus,
-          refresh: AsyncGridRefresh(
-            refresh,
-            pullToRefresh: false,
-          ),
           fab: OverrideGridFab(
             (scrollController) {
               return ReadingFab(
@@ -433,7 +434,9 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
   late final StreamSubscription<void> watcher;
   final List<PinnedManga> data = [];
 
-  late final state = GridSkeletonState<PinnedManga>();
+  late final state = GridSkeletonRefreshingState<PinnedManga>(
+    clearRefresh: SynchronousGridRefresh(() => data.length),
+  );
 
   @override
   void initState() {
@@ -468,7 +471,6 @@ class _PinnedMangaWidgetState extends State<_PinnedMangaWidget> {
         getCell: (i) => data[data.length - 1 - i],
         functionality: GridFunctionality(
           selectionGlue: widget.glue,
-          refresh: SynchronousGridRefresh(() => data.length),
           refreshingStatus: state.refreshingStatus,
         ),
         layout: GridSettingsLayoutBehaviour(

@@ -8,7 +8,7 @@
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/post_base.dart";
-import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/interfaces/cell/sticker.dart";
@@ -31,70 +31,90 @@ enum PostContentType {
   image;
 }
 
-mixin BooruPostFunctionalityMixin {
-  void showQr(BuildContext context, String prefix, int id) {
-    Navigator.push(
-      context,
-      DialogRoute<void>(
-        themes: InheritedTheme.capture(from: context, to: null),
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            content: Container(
-              decoration: const BoxDecoration(
-                borderRadius: BorderRadius.all(Radius.circular(10)),
-              ),
-              width: 320,
-              height: 320,
-              clipBehavior: Clip.antiAlias,
-              child: QrImageView(
-                data: "${prefix}_$id",
-                backgroundColor: Theme.of(context).colorScheme.onSurface,
-                size: 320,
-              ),
+void showQr(BuildContext context, String prefix, int id) {
+  Navigator.push(
+    context,
+    DialogRoute<void>(
+      themes: InheritedTheme.capture(from: context, to: null),
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          content: Container(
+            decoration: const BoxDecoration(
+              borderRadius: BorderRadius.all(Radius.circular(10)),
             ),
-          );
+            width: 320,
+            height: 320,
+            clipBehavior: Clip.antiAlias,
+            child: QrImageView(
+              data: "${prefix}_$id",
+              backgroundColor: Theme.of(context).colorScheme.onSurface,
+              size: 320,
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}
+
+class OpenInBrowserButton extends StatelessWidget {
+  const OpenInBrowserButton(
+    this.uri, {
+    super.key,
+    this.overrideOnPressed,
+  });
+
+  final Uri uri;
+  final void Function()? overrideOnPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.public),
+      onPressed: overrideOnPressed ??
+          () => launchUrl(uri, mode: LaunchMode.externalApplication),
+    );
+  }
+}
+
+class ShareButton extends StatelessWidget {
+  const ShareButton(
+    this.url, {
+    super.key,
+    this.onLongPress,
+  });
+
+  final void Function()? onLongPress;
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onLongPress: onLongPress,
+      child: IconButton(
+        onPressed: () {
+          PlatformFunctions.shareMedia(url, url: true);
         },
+        icon: const Icon(Icons.share),
       ),
     );
   }
+}
 
-  Widget openInBrowserButton(Uri uri, [void Function()? overrideOnPressed]) =>
-      IconButton(
-        icon: const Icon(Icons.public),
-        onPressed: overrideOnPressed ??
-            () => launchUrl(uri, mode: LaunchMode.externalApplication),
-      );
-
-  Widget shareButton(
-    BuildContext context,
-    String url, [
-    void Function()? onLongPress,
-  ]) =>
-      GestureDetector(
-        onLongPress: onLongPress,
-        child: IconButton(
-          onPressed: () {
-            PlatformFunctions.shareMedia(url, url: true);
-          },
-          icon: const Icon(Icons.share),
-        ),
-      );
-
-  List<Sticker> defaultStickers(
-    PostContentType type,
-    BuildContext? context,
-    List<String> tags,
-    int postId,
-    Booru booru,
-  ) {
-    return [
-      if (type == PostContentType.video) Sticker(FilteringMode.video.icon),
-      if (type == PostContentType.gif) Sticker(FilteringMode.gif.icon),
-      if (tags.contains("original")) Sticker(FilteringMode.original.icon),
-      if (tags.contains("translated")) const Sticker(Icons.translate_outlined),
-    ];
-  }
+List<Sticker> defaultStickersPost(
+  PostContentType type,
+  BuildContext? context,
+  List<String> tags,
+  int postId,
+  Booru booru,
+) {
+  return [
+    if (type == PostContentType.video) Sticker(FilteringMode.video.icon),
+    if (type == PostContentType.gif) Sticker(FilteringMode.gif.icon),
+    if (tags.contains("original")) Sticker(FilteringMode.original.icon),
+    if (tags.contains("translated")) const Sticker(Icons.translate_outlined),
+  ];
 }
 
 class PostInfo extends StatefulWidget {
@@ -103,7 +123,7 @@ class PostInfo extends StatefulWidget {
     required this.post,
   });
 
-  final PostBase post;
+  final Post post;
 
   @override
   State<PostInfo> createState() => _PostInfoState();
@@ -112,7 +132,7 @@ class PostInfo extends StatefulWidget {
 class _PostInfoState extends State<PostInfo> {
   int currentPage = 0;
 
-  PostBase get post => widget.post;
+  Post get post => widget.post;
 
   final settings = SettingsService.currentData;
 
@@ -140,7 +160,8 @@ class _PostInfoState extends State<PostInfo> {
 
   @override
   Widget build(BuildContext context) {
-    final filename = post.filename();
+    final filename = PostTags.g
+        .filename(post.booru, post.fileDownloadUrl(), post.md5, post.id);
 
     final localizations = AppLocalizations.of(context)!;
 

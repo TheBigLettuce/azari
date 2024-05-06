@@ -6,8 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/foundation.dart";
-import "package:gallery/src/db/schemas/anime/saved_anime_characters.dart";
-import "package:gallery/src/db/schemas/anime/saved_anime_entry.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_api.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
 import "package:gallery/src/interfaces/logging/logging.dart";
@@ -25,7 +24,7 @@ class Jikan implements AnimeAPI {
   AnimeMetadata get site => AnimeMetadata.jikan;
 
   @override
-  Future<AnimeEntry> info(int id) async {
+  Future<AnimeEntryData> info(int id) async {
     try {
       final response = await api.Jikan(debug: kDebugMode).getAnime(id);
 
@@ -38,7 +37,7 @@ class Jikan implements AnimeAPI {
   }
 
   @override
-  Future<List<AnimeCharacter>> characters(AnimeEntry entry) async {
+  Future<List<AnimeCharacter>> characters(AnimeEntryData entry) async {
     final response =
         await api.Jikan(debug: kDebugMode).getAnimeCharacters(entry.id);
 
@@ -72,7 +71,7 @@ class Jikan implements AnimeAPI {
   }
 
   @override
-  Future<List<AnimeEntry>> top(int page) async {
+  Future<List<AnimeEntryData>> top(int page) async {
     try {
       final response =
           await api.Jikan(debug: kDebugMode).getTopAnime(page: page + 1);
@@ -96,6 +95,7 @@ class Jikan implements AnimeAPI {
         id: e.malId,
         title: e.name,
         explicit: mode == AnimeSafeMode.h,
+        unpressable: false,
       );
     }
 
@@ -103,7 +103,7 @@ class Jikan implements AnimeAPI {
   }
 
   @override
-  Future<List<AnimeNewsEntry>> animeNews(AnimeEntry entry, int page) async {
+  Future<List<AnimeNewsEntry>> animeNews(AnimeEntryData entry, int page) async {
     final response = await api.Jikan(debug: kDebugMode)
         .getAnimeNews(entry.id, page: page + 1);
 
@@ -121,7 +121,8 @@ class Jikan implements AnimeAPI {
   }
 
   @override
-  Future<List<AnimeRecommendations>> recommendations(AnimeEntry entry) async {
+  Future<List<AnimeRecommendations>> recommendations(
+      AnimeEntryData entry) async {
     final response =
         await api.Jikan(debug: kDebugMode).getAnimeRecommendations(entry.id);
 
@@ -137,7 +138,7 @@ class Jikan implements AnimeAPI {
   }
 
   @override
-  Future<List<AnimePicture>> pictures(AnimeEntry entry) async {
+  Future<List<AnimePicture>> pictures(AnimeEntryData entry) async {
     final result =
         await api.Jikan(debug: kDebugMode).getAnimePictures(entry.id);
 
@@ -155,10 +156,10 @@ class Jikan implements AnimeAPI {
 AnimeCharacter _fromJikanCharacter(api.CharacterMeta e) =>
     AnimeCharacter(imageUrl: e.imageUrl, name: e.name, role: e.role);
 
-List<Relation> _fromMeta(api.BuiltList<api.Meta> l) {
+List<AnimeRelation> _fromMeta(api.BuiltList<api.Meta> l) {
   return l
       .map(
-        (e) => Relation(
+        (e) => AnimeRelation(
           thumbUrl: e.url,
           title: e.name,
           type: e.type,
@@ -192,7 +193,8 @@ AnimeSearchEntry _fromJikanAnime(api.Anime e) {
     siteUrl: e.url,
     staff: e.producers
         .map(
-          (e) => Relation(title: e.name, type: e.type, id: e.malId),
+          (e) => AnimeRelation(
+              title: e.name, type: e.type, id: e.malId, thumbUrl: ""),
         )
         .toList(),
     isAiring: e.airing,
@@ -200,17 +202,54 @@ AnimeSearchEntry _fromJikanAnime(api.Anime e) {
     titleJapanese: e.titleJapanese ?? "",
     titleSynonyms: e.titleSynonyms.toList(),
     genres: e.genres
-            .map((e) => AnimeGenre(title: e.name, id: e.malId))
+            .map(
+              (e) => AnimeGenre(
+                title: e.name,
+                id: e.malId,
+                unpressable: false,
+                explicit: false,
+              ),
+            )
             .toList() +
         e.explicitGenres
-            .map((e) => AnimeGenre(title: e.name, id: e.malId, explicit: true))
+            .map(
+              (e) => AnimeGenre(
+                title: e.name,
+                id: e.malId,
+                unpressable: false,
+                explicit: true,
+              ),
+            )
             .toList() +
         e.demographics
-            .map((e) => AnimeGenre(title: e.name, id: e.malId))
+            .map(
+              (e) => AnimeGenre(
+                title: e.name,
+                id: e.malId,
+                unpressable: false,
+                explicit: false,
+              ),
+            )
             .toList() +
-        e.themes.map((e) => AnimeGenre(title: e.name, id: e.malId)).toList() +
+        e.themes
+            .map(
+              (e) => AnimeGenre(
+                title: e.name,
+                id: e.malId,
+                unpressable: false,
+                explicit: false,
+              ),
+            )
+            .toList() +
         e.studios
-            .map((e) => AnimeGenre(title: e.name, unpressable: true))
+            .map(
+              (e) => AnimeGenre(
+                title: e.name,
+                unpressable: true,
+                explicit: false,
+                id: -1,
+              ),
+            )
             .toList(),
     trailerUrl: e.trailerUrl ?? "",
     episodes: e.episodes ?? 0,

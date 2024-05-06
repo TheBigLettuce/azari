@@ -21,10 +21,11 @@ class CardPanel extends StatefulWidget {
     required this.entry,
     required this.viewPadding,
   });
-  final AnimeEntry entry;
+  final AnimeEntryData entry;
   final EdgeInsets viewPadding;
 
-  static List<Widget> defaultInfo(BuildContext context, AnimeEntry entry) => [
+  static List<Widget> defaultInfo(BuildContext context, AnimeEntryData entry) =>
+      [
         UnsizedCard(
           subtitle: Text(AppLocalizations.of(context)!.cardYear),
           tooltip: AppLocalizations.of(context)!.cardYear,
@@ -79,7 +80,7 @@ class CardPanel extends StatefulWidget {
 
   static List<Widget> defaultButtons(
     BuildContext context,
-    AnimeEntry entry,
+    AnimeEntryData entry,
     AnimeAPI api,
   ) =>
       [

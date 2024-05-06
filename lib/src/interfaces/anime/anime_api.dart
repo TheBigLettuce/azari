@@ -8,8 +8,7 @@
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
-import "package:gallery/src/db/schemas/anime/saved_anime_characters.dart";
-import "package:gallery/src/db/schemas/anime/saved_anime_entry.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
@@ -17,8 +16,8 @@ import "package:gallery/src/net/anime/jikan.dart";
 import "package:gallery/src/pages/anime/anime.dart";
 
 abstract class AnimeAPI {
-  Future<AnimeEntry> info(int id);
-  Future<List<AnimeCharacter>> characters(AnimeEntry entry);
+  Future<AnimeEntryData> info(int id);
+  Future<List<AnimeCharacter>> characters(AnimeEntryData entry);
   Future<List<AnimeSearchEntry>> search(
     String title,
     int page,
@@ -26,10 +25,10 @@ abstract class AnimeAPI {
     AnimeSafeMode? mode,
   );
   Future<Map<int, AnimeGenre>> genres(AnimeSafeMode mode);
-  Future<List<AnimeEntry>> top(int page);
-  Future<List<AnimeNewsEntry>> animeNews(AnimeEntry entry, int page);
-  Future<List<AnimeRecommendations>> recommendations(AnimeEntry entry);
-  Future<List<AnimePicture>> pictures(AnimeEntry entry);
+  Future<List<AnimeEntryData>> top(int page);
+  Future<List<AnimeNewsEntry>> animeNews(AnimeEntryData entry, int page);
+  Future<List<AnimeRecommendations>> recommendations(AnimeEntryData entry);
+  Future<List<AnimePicture>> pictures(AnimeEntryData entry);
 
   AnimeMetadata get site;
 

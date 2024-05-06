@@ -11,10 +11,9 @@ import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/post_base.dart";
-import "package:gallery/src/db/initalize_db.dart";
-import "package:gallery/src/db/schemas/booru/post.dart";
-import "package:gallery/src/db/schemas/grid_state/grid_state_booru.dart";
-import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/booru/post.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_state/grid_state_booru.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/pages/booru/booru_restored_page.dart";
 import "package:gallery/src/pages/home.dart";
@@ -86,19 +85,19 @@ class _BookmarkPageState extends State<BookmarkPage> {
   }
 
   List<Post> getSingle(Isar db) => switch (settings.safeMode) {
-        SafeMode.normal => db.posts
+        SafeMode.normal => db.postIsars
             .where()
             .ratingEqualTo(PostRating.general)
             .limit(5)
             .findAllSync(),
-        SafeMode.relaxed => db.posts
+        SafeMode.relaxed => db.postIsars
             .where()
             .ratingEqualTo(PostRating.general)
             .or()
             .ratingEqualTo(PostRating.sensitive)
             .limit(5)
             .findAllSync(),
-        SafeMode.none => db.posts.where().limit(5).findAllSync(),
+        SafeMode.none => db.postIsars.where().limit(5).findAllSync(),
       };
 
   Future<void> _updateDirectly() async {

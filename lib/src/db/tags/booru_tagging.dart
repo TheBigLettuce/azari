@@ -7,8 +7,7 @@
 
 import "dart:async";
 
-import "package:gallery/src/db/initalize_db.dart";
-import "package:gallery/src/db/schemas/tags/tags.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/tags/tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru_tagging.dart";
 import "package:isar/isar.dart";

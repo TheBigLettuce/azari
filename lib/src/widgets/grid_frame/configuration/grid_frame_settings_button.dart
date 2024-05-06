@@ -7,8 +7,7 @@
 
 import "dart:async";
 
-import "package:gallery/src/db/base/grid_settings_base.dart";
-import "package:gallery/src/db/schemas/grid_settings/booru.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
@@ -25,14 +24,14 @@ class GridFrameSettingsButton {
     this.watchExplicitly,
   });
 
-  final GridSettingsBase Function()? overrideDefault;
-  final StreamSubscription<GridSettingsBase> Function(
-    void Function(GridSettingsBase) f,
+  final GridSettingsData Function()? overrideDefault;
+  final StreamSubscription<GridSettingsData> Function(
+    void Function(GridSettingsData) f,
   )? watchExplicitly;
-  final void Function(GridAspectRatio?, GridSettingsBase)? selectRatio;
-  final void Function(bool, GridSettingsBase)? selectHideName;
-  final void Function(GridLayoutType?, GridSettingsBase)? selectGridLayout;
-  final void Function(GridColumn?, GridSettingsBase) selectGridColumn;
+  final void Function(GridAspectRatio?, GridSettingsData)? selectRatio;
+  final void Function(bool, GridSettingsData)? selectHideName;
+  final void Function(GridLayoutType?, GridSettingsData)? selectGridLayout;
+  final void Function(GridColumn?, GridSettingsData) selectGridColumn;
   final SafeMode? safeMode;
-  final void Function(SafeMode?, GridSettingsBase)? selectSafeMode;
+  final void Function(SafeMode?, GridSettingsData)? selectSafeMode;
 }

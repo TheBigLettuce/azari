@@ -47,9 +47,7 @@ enum FilteringMode {
   /// Filter by segments.
   group(Icons.group_work_outlined),
 
-  ungrouped(Icons.fiber_manual_record_rounded),
-
-  notes(Icons.sticky_note_2_outlined);
+  ungrouped(Icons.fiber_manual_record_rounded);
 
   const FilteringMode(this.icon);
 
@@ -79,7 +77,5 @@ enum FilteringMode {
           AppLocalizations.of(context)!.enumFilteringModeGroup,
         FilteringMode.ungrouped =>
           AppLocalizations.of(context)!.enumFilteringModeUngrouped,
-        FilteringMode.notes =>
-          AppLocalizations.of(context)!.enumFilteringModeNotes,
       };
 }

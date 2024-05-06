@@ -9,9 +9,7 @@ import "dart:async";
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/schemas/manga/chapters_settings.dart";
-import "package:gallery/src/db/schemas/manga/read_manga_chapter.dart";
-import "package:gallery/src/db/schemas/manga/saved_manga_chapters.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 import "package:gallery/src/pages/manga/body/chapter_tile.dart";
 import "package:gallery/src/pages/more/settings/settings_label.dart";
@@ -35,8 +33,8 @@ class MangaChapters extends StatefulWidget {
 }
 
 class _MangaChaptersState extends State<MangaChapters> {
-  late final StreamSubscription<ChapterSettings?> watcher;
-  ChapterSettings settings = ChapterSettings.current;
+  late final StreamSubscription<ChaptersSettingsData?> watcher;
+  ChaptersSettingsData settings = ChapterSettings.current;
 
   final List<(List<MangaChapter>, String)> list = [];
 

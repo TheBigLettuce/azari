@@ -9,12 +9,10 @@ import "dart:developer";
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/initalize_db.dart";
-import "package:gallery/src/db/schemas/gallery/favorite_file.dart";
-import "package:gallery/src/db/schemas/gallery/note_gallery.dart";
-import "package:gallery/src/db/schemas/gallery/pinned_thumbnail.dart";
-import "package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart";
-import "package:gallery/src/db/schemas/gallery/thumbnail.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/favorite_file.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/pinned_thumbnail.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory_file.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/thumbnail.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/cell/sticker.dart";
@@ -40,8 +38,6 @@ mixin SystemGalleryDirectoryFileFunctionalityMixin {
       isDuplicate: RegExp("[(][0-9].*[)][.][a-zA-Z0-9].*").hasMatch(name),
       isFavorite: FavoriteFile.isFavorite(id),
       tagsFlat: PostTags.g.getTagsPost(name).join(" "),
-      notesFlat:
-          Dbs.g.main.noteGallerys.getSync(id)?.text.join().toLowerCase() ?? "",
       id: id,
       bucketId: result[1]! as String,
       name: name,

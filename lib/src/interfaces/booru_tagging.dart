@@ -7,7 +7,7 @@
 
 import "dart:async";
 
-import "package:gallery/src/db/schemas/tags/tags.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/tags/tags.dart";
 
 /// Tag search history.
 /// Used for both for the recent tags and the excluded.

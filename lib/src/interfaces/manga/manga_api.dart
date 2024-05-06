@@ -8,9 +8,7 @@
 import "package:cached_network_image/cached_network_image.dart";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
-import "package:gallery/src/db/schemas/manga/pinned_manga.dart";
-import "package:gallery/src/db/schemas/manga/read_manga_chapter.dart";
-import "package:gallery/src/db/schemas/manga/saved_manga_chapters.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_api.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
@@ -143,14 +141,64 @@ class MangaImage
   Key uniqueKey() => ValueKey(url);
 }
 
-class MangaEntry
+mixin MangaEntry
     implements
+        MangaEntryBase,
         AnimeCell,
         Pressable<MangaEntry>,
         ContentWidgets,
         Stickerable,
         Thumbnailable {
-  const MangaEntry({
+  @override
+  Contentable openImage(BuildContext context) => NetImage(
+        this,
+        CachedNetworkImageProvider(imageUrl),
+      );
+
+  @override
+  CellStaticData description() => const CellStaticData();
+
+  @override
+  String alias(bool isList) => title;
+
+  @override
+  List<Sticker> stickers(BuildContext context, bool excludeDuplicate) => [
+        if (currentDb.pinnedManga.exist(id.toString(), site))
+          const Sticker(Icons.push_pin_rounded),
+      ];
+
+  @override
+  ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(thumbUrl);
+
+  @override
+  Key uniqueKey() => ValueKey(id);
+
+  @override
+  void onPress(
+    BuildContext context,
+    GridFunctionality<MangaEntry> functionality,
+    MangaEntry cell,
+    int idx,
+  ) {
+    final client = Dio();
+    final api = site.api(client);
+
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute<void>(
+        builder: (context) {
+          return MangaInfoPage(
+            id: id,
+            api: api,
+            entry: this,
+          );
+        },
+      ),
+    ).whenComplete(client.close);
+  }
+}
+
+class MangaEntryBase {
+  const MangaEntryBase({
     required this.demographics,
     required this.volumes,
     required this.status,
@@ -191,55 +239,6 @@ class MangaEntry
   final List<MangaGenre> genres;
   final List<MangaRelation> relations;
   final List<String> titleSynonyms;
-
-  @override
-  Contentable openImage(BuildContext context) => NetImage(
-        this,
-        CachedNetworkImageProvider(imageUrl),
-      );
-
-  @override
-  CellStaticData description() => const CellStaticData();
-
-  @override
-  String alias(bool isList) => title;
-
-  @override
-  List<Sticker> stickers(BuildContext context, bool excludeDuplicate) => [
-        if (PinnedManga.exist(id.toString(), site))
-          const Sticker(Icons.push_pin_rounded),
-      ];
-
-  @override
-  ImageProvider<Object> thumbnail() => CachedNetworkImageProvider(thumbUrl);
-
-  @override
-  Key uniqueKey() => ValueKey(id);
-
-  @override
-  void onPress(
-    BuildContext context,
-    GridFunctionality<MangaEntry> functionality,
-    MangaEntry cell,
-    int idx,
-  ) {
-    final client = Dio();
-    final api = site.api(client);
-
-    Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute<void>(
-        builder: (context) {
-          return MangaInfoPage(
-            id: id,
-            api: api,
-            entry: this,
-          );
-        },
-      ),
-    ).whenComplete(() {
-      client.close();
-    });
-  }
 }
 
 class MangaGenre {

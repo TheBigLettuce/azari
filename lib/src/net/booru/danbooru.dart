@@ -7,25 +7,15 @@
 
 import "package:dio/dio.dart";
 import "package:gallery/src/db/base/post_base.dart";
-import "package:gallery/src/db/schemas/booru/post.dart";
-import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
 import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/interfaces/booru/strip_html.dart";
 import "package:gallery/src/interfaces/booru_tagging.dart";
 import "package:gallery/src/interfaces/logging/logging.dart";
+import "package:gallery/src/net/booru/conventers/danbooru.dart";
 import "package:gallery/src/net/cloudflare_exception.dart";
-import "package:html_unescape/html_unescape_small.dart";
-
-List<BooruTag> _fromDanbooruTags(List<dynamic> l) => l
-    .map(
-      (e) => BooruTag(
-        e["name"] as String,
-        e["post_count"],
-      ),
-    )
-    .toList();
 
 class Danbooru implements BooruAPI {
   const Danbooru(
@@ -41,24 +31,18 @@ class Danbooru implements BooruAPI {
   final Booru booru;
 
   @override
-  final bool wouldBecomeStale = false;
+  bool get wouldBecomeStale => false;
 
   @override
   Future<Iterable<String>> notes(int postId) async {
-    final resp = await client.getUriLog(
+    final resp = await client.getUriLog<List<Map<String, dynamic>>>(
       Uri.https(booru.url, "/notes.json", {
         "search[post_id]": postId.toString(),
       }),
       LogReq(LogReq.notes(booru, postId), _log),
     );
 
-    if (resp.statusCode != 200) {
-      throw "status code not 200";
-    }
-
-    return Future.value(
-      (resp.data as List<dynamic>).map((e) => stripHtml(e["body"])),
-    );
+    return (resp.data!).map((e) => stripHtml(e["body"] as String));
   }
 
   @override
@@ -67,7 +51,7 @@ class Danbooru implements BooruAPI {
       return const [];
     }
 
-    final resp = await client.getUriLog(
+    final resp = await client.getUriLog<List<Map<String, dynamic>>>(
       Uri.https(booru.url, "/tags.json", {
         "search[name_matches]": "$tag*",
         "search[order]": "count",
@@ -76,38 +60,28 @@ class Danbooru implements BooruAPI {
       LogReq(LogReq.completeTag(booru, tag), _log),
     );
 
-    if (resp.statusCode != 200) {
-      throw "status code not 200";
-    }
-
-    return _fromDanbooruTags(resp.data);
+    return resp.data!
+        .map(
+          (e) => BooruTag(
+            e["name"] as String,
+            e["post_count"] as int,
+          ),
+        )
+        .toList();
   }
 
   @override
   Future<Post> singlePost(int id) async {
-    try {
-      final resp = await client.getUriLog(
-        Uri.https(booru.url, "/posts/$id.json"),
-        LogReq(LogReq.singlePost(booru, id), _log),
-      );
+    final resp = await client.getUriLog<dynamic>(
+      Uri.https(booru.url, "/posts/$id.json"),
+      LogReq(LogReq.singlePost(booru, id), _log),
+    );
 
-      if (resp.statusCode != 200) {
-        throw resp.data["message"];
-      }
-
-      if (resp.data == null) {
-        throw "no post";
-      }
-
-      return (await _fromJson([resp.data], null)).$1[0];
-    } catch (e) {
-      if (e is DioException) {
-        if (e.response?.statusCode == 403) {
-          return Future.error(CloudflareException());
-        }
-      }
-      return Future.error(e);
+    if (resp.data == null) {
+      throw "no post";
     }
+
+    return fromList([resp.data])[0];
   }
 
   @override
@@ -151,9 +125,6 @@ class Danbooru implements BooruAPI {
       throw "only one should be set";
     }
 
-    // anonymous api calls to danbooru are limited by two tags per search req
-    tags = tags.split(" ").take(2).join(" ");
-
     String safeModeS() =>
         switch (overrideSafeMode ?? SettingsService.currentData.safeMode) {
           SafeMode.normal => "rating:g",
@@ -164,7 +135,9 @@ class Danbooru implements BooruAPI {
     final query = <String, dynamic>{
       "limit": BooruAPI.numberOfElementsPerRefresh().toString(),
       "format": "json",
-      "post[tags]": "${safeModeS()} $tags",
+
+      "post[tags]":
+          "${safeModeS()} ${tags.split(" ").take(2).join(" ")}", // anonymous api calls to danbooru are limited by two tags per search req
     };
 
     if (postid != null) {
@@ -176,7 +149,7 @@ class Danbooru implements BooruAPI {
     }
 
     try {
-      final resp = await client.getUriLog(
+      final resp = await client.getUriLog<List<dynamic>>(
         Uri.https(booru.url, "/posts.json", query),
         LogReq(
           postid != null
@@ -186,11 +159,7 @@ class Danbooru implements BooruAPI {
         ),
       );
 
-      if (resp.statusCode != 200) {
-        throw "status not ok";
-      }
-
-      return _fromJson(resp.data, excludedTags);
+      return _skipExcluded(fromList(resp.data!), excludedTags);
     } catch (e) {
       if (e is DioException) {
         if (e.response?.statusCode == 403) {
@@ -201,63 +170,27 @@ class Danbooru implements BooruAPI {
       return Future.error(e);
     }
   }
+}
 
-  Future<(List<Post>, int?)> _fromJson(
-    List<dynamic> m,
-    BooruTagging? excludedTags,
-  ) async {
-    final List<Post> list = [];
-    int? currentSkipped;
-    final exclude = excludedTags?.get(-1);
+(List<Post>, int?) _skipExcluded(List<Post> posts, BooruTagging excludedTags) {
+  final exclude = excludedTags.get(-1);
 
-    final escaper = HtmlUnescape();
+  if (exclude.isEmpty) {
+    return (posts, null);
+  }
 
-    outer:
-    for (final e in m) {
-      try {
-        final String tags = e["tag_string"];
-        if (exclude != null) {
-          for (final tag in exclude) {
-            if (tags.contains(tag.tag)) {
-              currentSkipped = e["id"];
-              continue outer;
-            }
-          }
-        }
+  int? currentSkipped;
 
-        final rating = e["rating"];
-
-        final post = Post(
-          height: e["image_height"],
-          id: e["id"],
-          score: e["score"],
-          sourceUrl: e["source"],
-          rating: rating == null
-              ? PostRating.general
-              : switch (rating as String) {
-                  "g" => PostRating.general,
-                  "s" => PostRating.sensitive,
-                  "q" => PostRating.questionable,
-                  "e" => PostRating.explicit,
-                  String() => PostRating.general,
-                },
-          createdAt: DateTime.parse(e["created_at"]),
-          md5: e["md5"],
-          tags: tags.split(" ").map((e) => escaper.convert(e)).toList(),
-          width: e["image_width"],
-          fileUrl: e["file_url"],
-          previewUrl: e["preview_file_url"],
-          sampleUrl: e["large_file_url"],
-          ext: ".${e["file_ext"]}",
-          booru: booru,
-        );
-
-        list.add(post);
-      } catch (_) {
-        continue;
+  posts.removeWhere((e) {
+    for (final tag in exclude) {
+      if (e.tags.contains(tag.tag)) {
+        currentSkipped = e.id;
+        return true;
       }
     }
 
-    return (list, currentSkipped);
-  }
+    return false;
+  });
+
+  return (posts, currentSkipped);
 }

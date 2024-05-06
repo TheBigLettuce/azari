@@ -15,7 +15,7 @@ import "package:gallery/src/widgets/menu_wrapper.dart";
 
 class AnimeRelations extends StatelessWidget {
   const AnimeRelations({super.key, required this.entry});
-  final AnimeEntry entry;
+  final AnimeEntryData entry;
 
   @override
   Widget build(BuildContext context) {

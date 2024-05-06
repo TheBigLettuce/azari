@@ -10,7 +10,7 @@ import "package:flutter/services.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart";
 import "package:gallery/main.dart";
-import "package:gallery/src/db/base/grid_settings_base.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
@@ -38,10 +38,10 @@ class SegmentLayout<T extends CellBase>
   bool get isList => false;
 
   @override
-  final GridSettingsBase Function() defaultSettings;
+  final GridSettingsData Function() defaultSettings;
 
   @override
-  GridLayouter<J> makeFor<J extends CellBase>(GridSettingsBase settings) {
+  GridLayouter<J> makeFor<J extends CellBase>(GridSettingsData settings) {
     return SegmentLayout(
       segments,
       defaultSettings,
@@ -52,7 +52,7 @@ class SegmentLayout<T extends CellBase>
   @override
   List<Widget> call(
     BuildContext context,
-    GridSettingsBase settings,
+    GridSettingsData settings,
     GridFrameState<T> state,
   ) {
     if (segments.prebuiltSegments != null) {
@@ -659,7 +659,7 @@ class SegmentLayout<T extends CellBase>
                                 }
 
                                 HapticFeedback.vibrate();
-                                refreshingStatus.refresh(gridFunctionality);
+                                refreshingStatus.refresh();
                               },
                               child: Text(
                                 toSticky
@@ -695,7 +695,7 @@ class SegmentLayout<T extends CellBase>
                               }
 
                               HapticFeedback.vibrate();
-                              refreshingStatus.refresh(gridFunctionality);
+                              refreshingStatus.refresh();
                             },
                             child: Text(
                               toBlur
@@ -736,8 +736,7 @@ class SegmentLayout<T extends CellBase>
                                       }
 
                                       HapticFeedback.vibrate();
-                                      refreshingStatus
-                                          .refresh(gridFunctionality);
+                                      refreshingStatus.refresh();
                                     },
                               child: Text(
                                 toAuth

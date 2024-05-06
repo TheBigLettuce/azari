@@ -5,22 +5,15 @@
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
-import "dart:async";
-import "dart:io";
-
-import "package:file_picker/file_picker.dart";
-import "package:gallery/src/db/initalize_db.dart";
-import "package:gallery/src/db/schemas/settings/settings.dart";
-import "package:gallery/src/db/services/settings.dart";
-import "package:gallery/src/interfaces/booru/booru.dart";
-import "package:gallery/src/interfaces/booru/display_quality.dart";
-import "package:gallery/src/interfaces/booru/safe_mode.dart";
-import "package:gallery/src/plugs/platform_functions.dart";
-import "package:meta/meta.dart";
+part of "impl.dart";
 
 @immutable
 class IsarSettingsService implements SettingsService {
   const IsarSettingsService();
+
+  @override
+  void add(SettingsData data) => _Dbs.g.main.writeTxnSync(
+      () => _Dbs.g.main.isarSettings.putSync(this as IsarSettings));
 
   /// Pick an operating system directory.
   /// Calls [onError] in case of any error and resolves to false.
@@ -57,7 +50,7 @@ class IsarSettingsService implements SettingsService {
 
   @override
   SettingsData get current =>
-      Dbs.g.main.isarSettings.getSync(0) ??
+      _Dbs.g.main.isarSettings.getSync(0) ??
       const IsarSettings(
         showWelcomePage: true,
         path: IsarSettingsPath(),
@@ -70,9 +63,6 @@ class IsarSettingsService implements SettingsService {
   StreamSubscription<SettingsData?> watch(
     void Function(SettingsData? s) f, {
     bool fire = false,
-  }) {
-    return Dbs.g.main.isarSettings
-        .watchObject(0, fireImmediately: fire)
-        .listen(f);
-  }
+  }) =>
+      _Dbs.g.main.isarSettings.watchObject(0, fireImmediately: fire).listen(f);
 }

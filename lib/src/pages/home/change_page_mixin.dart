@@ -209,12 +209,14 @@ class PagingStateRegistry {
   }
 }
 
-abstract class PagingEntry {
+abstract class PagingEntry implements PageSaver {
   double get offset;
   void setOffset(double o);
 
-  int get page;
-  void setPage(int p);
+  bool get reachedEnd;
+  set reachedEnd(bool r);
+
+  void updateTime();
 
   void dispose();
 }

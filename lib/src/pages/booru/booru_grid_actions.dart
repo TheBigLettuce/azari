@@ -7,15 +7,13 @@
 
 import "package:flutter/material.dart";
 import "package:gallery/src/db/base/post_base.dart";
-import "package:gallery/src/db/schemas/booru/post.dart";
-import "package:gallery/src/db/schemas/downloader/download_file.dart";
-import "package:gallery/src/db/schemas/settings/hidden_booru_post.dart";
-import "package:gallery/src/db/schemas/settings/settings.dart";
-import "package:gallery/src/db/schemas/tags/local_tag_dictionary.dart";
-import "package:gallery/src/db/services/settings.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/downloader/download_file.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/settings/hidden_booru_post.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/settings/settings.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tag_dictionary.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
-import "package:gallery/src/net/downloader.dart";
+import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 
 class BooruGridActions {
@@ -49,7 +47,7 @@ class BooruGridActions {
     );
   }
 
-  static GridAction<T> download<T extends PostBase>(
+  static GridAction<T> download<T extends Post>(
     BuildContext context,
     Booru booru,
   ) {
@@ -78,7 +76,7 @@ class BooruGridActions {
     );
   }
 
-  static GridAction<T> favorites<T extends PostBase>(
+  static GridAction<T> favorites<T extends Post>(
     BuildContext context, {
     bool showDeleteSnackbar = false,
   }) {

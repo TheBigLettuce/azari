@@ -13,13 +13,9 @@ import "package:dynamic_color/dynamic_color.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/booru_post_functionality_mixin.dart";
-import "package:gallery/src/db/schemas/booru/favorite_booru.dart";
-import "package:gallery/src/db/schemas/booru/note_booru.dart";
-import "package:gallery/src/db/schemas/downloader/download_file.dart";
-import "package:gallery/src/db/schemas/settings/hidden_booru_post.dart";
-import "package:gallery/src/db/schemas/settings/settings.dart";
-import "package:gallery/src/db/schemas/tags/local_tag_dictionary.dart";
-import "package:gallery/src/db/schemas/tags/pinned_tag.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/settings/settings.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tag_dictionary.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/tags/pinned_tag.dart";
 import "package:gallery/src/db/services/settings.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
@@ -28,13 +24,14 @@ import "package:gallery/src/interfaces/booru/safe_mode.dart";
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/interfaces/cell/contentable.dart";
 import "package:gallery/src/interfaces/cell/sticker.dart";
-import "package:gallery/src/net/downloader.dart";
+import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/pages/more/favorite_booru_actions.dart";
+import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
 import "package:isar/isar.dart";
-import "package:mime/mime.dart";
+import "package:mime/mime.dart" as mime;
 import "package:path/path.dart" as path_util;
 import "package:transparent_image/transparent_image.dart";
 import "package:url_launcher/url_launcher.dart";
@@ -63,19 +60,8 @@ enum PostRating {
       };
 }
 
-class PostBase
-    with BooruPostFunctionalityMixin
-    implements
-        ContentableCell,
-        Thumbnailable,
-        ContentWidgets,
-        AppBarButtonable,
-        ImageViewActionable,
-        Infoable,
-        Stickerable,
-        Downloadable,
-        IsarEntryId {
-  PostBase({
+abstract class PostBase {
+  const PostBase({
     required this.id,
     required this.height,
     required this.md5,
@@ -85,16 +71,11 @@ class PostBase
     required this.booru,
     required this.previewUrl,
     required this.sampleUrl,
-    required this.ext,
     required this.sourceUrl,
     required this.rating,
     required this.score,
     required this.createdAt,
-    this.isarId,
   });
-
-  @override
-  Id? isarId;
 
   @Index(unique: true, replace: true, composite: [CompositeIndex("booru")])
   final int id;
@@ -113,8 +94,6 @@ class PostBase
   final String sampleUrl;
   final String sourceUrl;
 
-  final String ext;
-
   @Index()
   @enumerated
   final PostRating rating;
@@ -122,18 +101,55 @@ class PostBase
   final DateTime createdAt;
   @enumerated
   final Booru booru;
+}
 
-  List<ImageTag> imageViewTags(Contentable c) => (c.widgets as PostBase)
+mixin DefaultPostPressable implements Pressable<Post> {
+  @override
+  void onPress(
+    BuildContext context,
+    GridFunctionality<Post> functionality,
+    PostBase cell,
+    int idx,
+  ) =>
+      ImageView.defaultForGrid<Post>(
+        context,
+        functionality,
+        const ImageViewDescription(
+          ignoreOnNearEnd: false,
+          statistics: ImageViewStatistics(
+            swiped: StatisticsBooru.addSwiped,
+            viewed: StatisticsBooru.addViewed,
+          ),
+        ),
+        idx,
+        _imageViewTags,
+        _watchTags,
+      );
+
+  List<ImageTag> _imageViewTags(Contentable c) => (c.widgets as PostBase)
       .tags
       .map((e) => ImageTag(e, PinnedTag.isPinned(e)))
       .toList();
 
-  StreamSubscription<List<ImageTag>> watchTags(
+  StreamSubscription<List<ImageTag>> _watchTags(
     Contentable c,
     void Function(List<ImageTag> l) f,
   ) =>
-      PostTags.g.watchImagePinned(tags, f);
+      PostTags.g.watchImagePinned((c.widgets as PostBase).tags, f);
+}
 
+abstract mixin class Post
+    implements
+        PostBase,
+        ContentableCell,
+        Thumbnailable,
+        ContentWidgets,
+        AppBarButtonable,
+        ImageViewActionable,
+        Infoable,
+        Stickerable,
+        Downloadable,
+        Pressable<Post> {
   @override
   CellStaticData description() => const CellStaticData();
 
@@ -143,16 +159,22 @@ class PostBase
   @override
   List<Widget> appBarButtons(BuildContext context) {
     return [
-      openInBrowserButton(Uri.base, () {
-        launchUrl(
-          booru.browserLink(id),
-          mode: LaunchMode.externalApplication,
-        );
-      }),
+      OpenInBrowserButton(
+        Uri.base,
+        overrideOnPressed: () {
+          launchUrl(
+            booru.browserLink(id),
+            mode: LaunchMode.externalApplication,
+          );
+        },
+      ),
       if (Platform.isAndroid)
-        shareButton(context, fileUrl, () {
-          showQr(context, booru.prefix, id);
-        })
+        ShareButton(
+          fileUrl,
+          onLongPress: () {
+            showQr(context, booru.prefix, id);
+          },
+        )
       else
         IconButton(
           onPressed: () {
@@ -181,7 +203,7 @@ class PostBase
         animate: true,
       ),
       if (this is FavoriteBooru)
-        FavoritesActions.addToGroup<PostBase>(
+        FavoritesActions.addToGroup<CellBase>(
           context,
           (selected) {
             final g = (selected.first as FavoriteBooru).group;
@@ -209,13 +231,14 @@ class PostBase
         Icons.download,
         (_) {
           final settings = SettingsService.currentData;
+          final name = PostTags.g.filename(booru, fileDownloadUrl(), md5, id);
 
-          PostTags.g.addTagsPostAll([(filename(), tags)]);
+          PostTags.g.addTagsPostAll([(name, tags)]);
           Downloader.g.add(
             DownloadFile.d(
               url: fileUrl,
               site: booru.url,
-              name: filename(),
+              name: name,
               thumbUrl: previewUrl,
             ),
             settings,
@@ -262,7 +285,7 @@ class PostBase
       DisplayQuality.sample => sampleUrl
     };
 
-    final type = lookupMimeType(url);
+    final type = mime.lookupMimeType(url);
     if (type == null) {
       return EmptyContent(this);
     }
@@ -288,11 +311,10 @@ class PostBase
   @override
   Key uniqueKey() => ValueKey(fileUrl);
 
-  String filename() =>
-      "${booru.prefix}_$id - $md5${ext != '.zip' ? ext : path_util.extension(sampleUrl)}";
-
   @override
-  String alias(bool isList) => isList ? filename() : id.toString();
+  String alias(bool isList) => isList
+      ? PostTags.g.filename(booru, fileDownloadUrl(), md5, id)
+      : id.toString();
 
   @override
   String fileDownloadUrl() {
@@ -309,7 +331,7 @@ class PostBase
       DisplayQuality.sample => sampleUrl
     };
 
-    final type = lookupMimeType(url);
+    final type = mime.lookupMimeType(url);
     if (type == null) {
       return PostContentType.none;
     }
@@ -328,7 +350,7 @@ class PostBase
   @override
   List<Sticker> stickers(BuildContext context, bool excludeDuplicate) {
     if (excludeDuplicate) {
-      final icons = defaultStickers(
+      final icons = defaultStickersPost(
         _type(),
         context,
         tags,
@@ -345,9 +367,7 @@ class PostBase
       if (isHidden) const Sticker(Icons.hide_image_rounded),
       if (this is! FavoriteBooru && IsarSettings.isFavorite(id, booru))
         const Sticker(Icons.favorite_rounded, important: true),
-      if (NoteBooru.hasNotes(id, booru))
-        const Sticker(Icons.sticky_note_2_outlined),
-      ...defaultStickers(
+      ...defaultStickersPost(
         _type(),
         context,
         tags,

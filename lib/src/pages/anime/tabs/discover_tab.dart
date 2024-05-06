@@ -56,11 +56,10 @@ class DiscoverTab extends StatefulWidget {
 }
 
 class _DiscoverTabState extends State<DiscoverTab> {
-  late final StreamSubscription<GridSettingsAnimeDiscovery?>
-      gridSettingsWatcher;
+  late final StreamSubscription<GridSettingsData?> gridSettingsWatcher;
   late final GridSkeletonState<AnimeSearchEntry> state;
 
-  GridSettingsAnimeDiscovery gridSettings = GridSettingsAnimeDiscovery.current;
+  GridSettingsData gridSettings = GridSettingsAnimeDiscovery.current;
 
   PagingContainer<AnimeSearchEntry, DiscoverExtra> get container =>
       widget.pagingContainer;
@@ -70,8 +69,10 @@ class _DiscoverTabState extends State<DiscoverTab> {
   void initState() {
     super.initState();
 
-    state = GridSkeletonState<AnimeSearchEntry>(
+    state = GridSkeletonRefreshingState<AnimeSearchEntry>(
       initalCellCount: entries.length,
+      clearRefresh: AsyncGridRefresh(_refresh),
+      next: _loadNext,
     );
 
     gridSettingsWatcher = GridSettingsAnimeDiscovery.watch((e) {
@@ -177,11 +178,9 @@ class _DiscoverTabState extends State<DiscoverTab> {
         getCell: (i) => entries[i],
         initalScrollPosition: widget.pagingContainer.scrollPos,
         functionality: GridFunctionality(
-          loadNext: _loadNext,
           updateScrollPosition: widget.pagingContainer.updateScrollPos,
           selectionGlue: GlueProvider.generateOf(context)(),
           refreshingStatus: widget.pagingContainer.refreshingStatus,
-          refresh: AsyncGridRefresh(_refresh),
         ),
         mainFocus: state.mainFocus,
         description: GridDescription(
@@ -212,7 +211,7 @@ class _SearchBar extends StatefulWidget {
 class __SearchBarState extends State<_SearchBar> {
   late final TextEditingController controller;
 
-  PagingContainer<AnimeEntry, DiscoverExtra> get container =>
+  PagingContainer<AnimeEntryData, DiscoverExtra> get container =>
       widget.pagingContainer;
 
   @override
@@ -242,7 +241,7 @@ class __SearchBarState extends State<_SearchBar> {
     container.extra.searchText = value;
     gridState.refreshingStatus.updateProgress?.ignore();
     gridState.refreshingStatus.updateProgress = null;
-    gridState.refreshingStatus.refresh(gridState.widget.functionality);
+    gridState.refreshingStatus.refresh();
 
     Navigator.pop(context);
   }

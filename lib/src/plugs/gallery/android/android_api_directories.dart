@@ -7,14 +7,14 @@
 
 import "dart:developer";
 
-import "package:gallery/src/db/initalize_db.dart";
-import "package:gallery/src/db/isar_filter.dart";
-import "package:gallery/src/db/schemas/gallery/blacklisted_directory.dart";
-import "package:gallery/src/db/schemas/gallery/directory_metadata.dart";
-import "package:gallery/src/db/schemas/gallery/favorite_file.dart";
-import "package:gallery/src/db/schemas/gallery/system_gallery_directory.dart";
-import "package:gallery/src/db/schemas/gallery/system_gallery_directory_file.dart";
-import "package:gallery/src/db/schemas/gallery/thumbnail.dart";
+import "package:gallery/src/db/services/impl/isar/foundation/initalize_db.dart";
+import "package:gallery/src/db/services/impl/isar/foundation/isar_filter.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/blacklisted_directory.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/directory_metadata.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/favorite_file.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory_file.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/thumbnail.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/interfaces/filtering/filtering_interface.dart";
 import "package:gallery/src/interfaces/filtering/filtering_mode.dart";
@@ -126,8 +126,8 @@ class _GalleryExtra implements GalleryDirectoriesExtra {
 }
 
 class _AndroidGallery implements GalleryAPIDirectories {
-  _AndroidGallery({this.temporary});
-  final bool? temporary;
+  _AndroidGallery({required this.temporary});
+  final bool temporary;
   final time = DateTime.now();
 
   void Function(int i, bool inRefresh, bool empty)? callback;
@@ -139,7 +139,7 @@ class _AndroidGallery implements GalleryAPIDirectories {
   bool isThumbsLoading = false;
 
   final filter = IsarFilter<SystemGalleryDirectory>(
-      _global!.db, DbsOpen.androidGalleryDirectories(temporary: true),
+      _global!.db, DbsOpen.androidGalleryDirectories(),
       (offset, limit, v, _, __) {
     return _global!.db.systemGalleryDirectorys
         .filter()
@@ -154,7 +154,7 @@ class _AndroidGallery implements GalleryAPIDirectories {
   Isar get db => _global!.db;
 
   @override
-  GalleryDirectoriesExtra getExtra() => _GalleryExtra._(this);
+  GalleryDirectoriesExtra asExtra() => _GalleryExtra._(this);
 
   @override
   void close() {
@@ -164,7 +164,7 @@ class _AndroidGallery implements GalleryAPIDirectories {
     currentImages = null;
     if (temporary == false) {
       _global!._unsetCurrentApi();
-    } else if (temporary == true) {
+    } else if (temporary) {
       _global!._temporaryApis.removeWhere((element) => element.time == time);
     }
   }

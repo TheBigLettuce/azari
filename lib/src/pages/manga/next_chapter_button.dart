@@ -6,8 +6,8 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/material.dart";
-import "package:gallery/src/db/schemas/manga/read_manga_chapter.dart";
-import "package:gallery/src/db/schemas/manga/saved_manga_chapters.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/manga/read_manga_chapter.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/manga/saved_manga_chapters.dart";
 import "package:gallery/src/interfaces/manga/manga_api.dart";
 
 enum SkipDirection {

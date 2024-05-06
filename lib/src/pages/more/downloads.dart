@@ -10,11 +10,10 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/grid_settings_base.dart";
-import "package:gallery/src/db/initalize_db.dart";
 import "package:gallery/src/db/loaders/linear_isar_loader.dart";
-import "package:gallery/src/db/schemas/downloader/download_file.dart";
-import "package:gallery/src/db/schemas/grid_settings/booru.dart";
-import "package:gallery/src/net/downloader.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/downloader/download_file.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/grid_settings/booru.dart";
+import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_column.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
@@ -58,6 +57,7 @@ class _DownloadsState extends State<Downloads> {
   late final state = GridSkeletonStateFilter<DownloadFile>(
     filter: loader.filter,
     transform: (cell) => cell,
+    clearRefresh: SynchronousGridRefresh(() => loader.count()),
   );
 
   @override
@@ -159,7 +159,6 @@ class _DownloadsState extends State<Downloads> {
             ),
             selectionGlue: GlueProvider.generateOf(context)(),
             refreshingStatus: state.refreshingStatus,
-            refresh: SynchronousGridRefresh(() => loader.count()),
           ),
           mainFocus: state.mainFocus,
           description: GridDescription(

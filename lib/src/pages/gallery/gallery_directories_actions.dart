@@ -8,10 +8,10 @@
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/main.dart";
-import "package:gallery/src/db/schemas/gallery/blacklisted_directory.dart";
-import "package:gallery/src/db/schemas/gallery/directory_metadata.dart";
-import "package:gallery/src/db/schemas/gallery/system_gallery_directory.dart";
-import "package:gallery/src/db/schemas/statistics/statistics_gallery.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/blacklisted_directory.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/directory_metadata.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/system_gallery_directory.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/statistics/statistics_gallery.dart";
 import "package:gallery/src/interfaces/gallery/gallery_api_directories.dart";
 import "package:gallery/src/pages/gallery/callback_description_nested.dart";
 import "package:gallery/src/pages/gallery/files.dart";

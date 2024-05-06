@@ -33,7 +33,7 @@ class _ChapterBody extends StatefulWidget {
 
 class __ChapterBodyState extends State<_ChapterBody> {
   bool enabledScrolling = false;
-  ReadMangaChapter? _chapterStale;
+  ReadMangaChapterData? _chapterStale;
 
   void _enableBlurOnScroll() {
     if (enabledScrolling) {

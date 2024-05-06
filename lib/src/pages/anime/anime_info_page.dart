@@ -10,9 +10,10 @@ import "dart:async";
 import "package:dio/dio.dart";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/schemas/anime/saved_anime_entry.dart";
-import "package:gallery/src/db/schemas/anime/watched_anime_entry.dart";
-import "package:gallery/src/db/schemas/settings/misc_settings.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/anime/saved_anime_entry.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/anime/watched_anime_entry.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/settings/misc_settings.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_api.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
 import "package:gallery/src/pages/anime/info_base/always_loading_anime_mixin.dart";
@@ -33,8 +34,9 @@ class AnimeInfoPage extends StatefulWidget {
     required this.id,
     required this.apiFactory,
   });
+
   final int id;
-  final AnimeEntry? entry;
+  final AnimeEntryData? entry;
   final AnimeAPI Function(Dio) apiFactory;
 
   @override
@@ -66,7 +68,7 @@ class _AnimeInfoPageState extends State<AnimeInfoPage> {
     super.dispose();
   }
 
-  Future<AnimeEntry> _newStatus() {
+  Future<AnimeEntryData> _newStatus() {
     if (widget.entry != null && !alwaysLoading) {
       return Future.value(widget.entry!);
     }
@@ -100,7 +102,7 @@ class _AnimeInfoBody extends StatefulWidget {
     required this.api,
     required this.state,
   });
-  final AnimeEntry entry;
+  final AnimeEntryData entry;
   final AnimeAPI api;
   final SkeletonState state;
 
@@ -110,11 +112,11 @@ class _AnimeInfoBody extends StatefulWidget {
 
 class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
   late final StreamSubscription<void> entriesWatcher;
-  late final StreamSubscription<WatchedAnimeEntry?> watchedEntryWatcher;
+  late final StreamSubscription<WatchedAnimeEntryData?> watchedEntryWatcher;
 
   final scrollController = ScrollController();
 
-  late AnimeEntry entry = widget.entry;
+  late AnimeEntryData entry = widget.entry;
   AnimeAPI get api => widget.api;
 
   late bool _watching;
@@ -174,7 +176,7 @@ class __AnimeInfoBodyState extends State<_AnimeInfoBody> {
     WatchedAnimeEntry.moveAll([entry]);
   }
 
-  void _save(AnimeEntry e) {
+  void _save(AnimeEntryData e) {
     if (_watching) {
       SavedAnimeEntry.update(e);
     } else if (_watched) {

@@ -8,21 +8,24 @@
 import "package:gallery/src/interfaces/cell/cell.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_mutation_interface.dart";
-import "package:gallery/src/widgets/grid_frame/configuration/grid_refresh_behaviour.dart";
 import "package:gallery/src/widgets/grid_frame/grid_frame.dart";
 
 class GridRefreshingStatus<T extends CellBase> {
   GridRefreshingStatus(
     int initalCellCount,
-    this._reachedEnd,
-  ) : mutation = DefaultMutationInterface(initalCellCount);
-
-  void dispose() {
-    mutation.dispose();
-    updateProgress?.ignore();
-  }
+    this._reachedEnd, {
+    required this.clearRefresh,
+    this.next,
+  }) : mutation = DefaultMutationInterface(initalCellCount);
 
   final GridMutationInterface mutation;
+
+  /// [next] gets called when the grid is scrolled around the end of the viewport.
+  /// If this is null, then the grid is assumed to be not able to incrementally add posts
+  /// by scrolling at the near end of the viewport.
+  final Future<int> Function()? next;
+
+  final GridRefreshType clearRefresh;
 
   final bool Function() _reachedEnd;
 
@@ -31,12 +34,17 @@ class GridRefreshingStatus<T extends CellBase> {
 
   Object? refreshingError;
 
-  Future<int> refresh(GridFunctionality<T> functionality) {
+  void dispose() {
+    mutation.dispose();
+    updateProgress?.ignore();
+  }
+
+  Future<int> refresh() {
     if (updateProgress != null) {
       return Future.value(mutation.cellCount);
     }
 
-    final refresh = functionality.refresh;
+    final refresh = clearRefresh;
     switch (refresh) {
       case SynchronousGridRefresh():
         mutation.cellCount = refresh.refresh();
@@ -49,7 +57,7 @@ class GridRefreshingStatus<T extends CellBase> {
 
         updateProgress = refresh.refresh();
 
-        return _saveOrWait(updateProgress!, functionality);
+        return _saveOrWait(updateProgress!);
       case RetainedGridRefresh():
         refresh.refresh();
 
@@ -57,37 +65,30 @@ class GridRefreshingStatus<T extends CellBase> {
     }
   }
 
-  Future<int> onNearEnd(GridFunctionality<T> functionality) async {
+  Future<int> onNearEnd() {
     if (updateProgress != null ||
-        functionality.loadNext == null ||
+        next == null ||
         mutation.isRefreshing ||
         reachedEnd) {
       return Future.value(mutation.cellCount);
     }
 
-    updateProgress = functionality.loadNext!();
+    updateProgress = next!();
     mutation.isRefreshing = true;
 
-    return _saveOrWait(updateProgress!, functionality);
+    return _saveOrWait(updateProgress!);
   }
 
-  Future<int> _saveOrWait(
-    Future<int> f,
-    GridFunctionality<T> functionality,
-  ) async {
-    final refreshBehaviour = functionality.refreshBehaviour;
-    switch (refreshBehaviour) {
-      case DefaultGridRefreshBehaviour():
-        try {
-          mutation.cellCount = await f;
-        } catch (e) {
-          refreshingError = e;
-        }
-
-        mutation.isRefreshing = false;
-        updateProgress = null;
-
-        return mutation.cellCount;
+  Future<int> _saveOrWait(Future<int> f) async {
+    try {
+      mutation.cellCount = await f;
+    } catch (e) {
+      refreshingError = e;
     }
+
+    mutation.isRefreshing = false;
+    updateProgress = null;
+
+    return mutation.cellCount;
   }
 }

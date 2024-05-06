@@ -11,17 +11,17 @@ import "dart:io" as io;
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/initalize_db.dart";
-import "package:gallery/src/db/schemas/booru/post.dart";
-import "package:gallery/src/db/schemas/gallery/directory_tags.dart";
-import "package:gallery/src/db/schemas/tags/local_tag_dictionary.dart";
-import "package:gallery/src/db/schemas/tags/local_tags.dart";
-import "package:gallery/src/db/schemas/tags/pinned_tag.dart";
-import "package:gallery/src/db/schemas/tags/tags.dart";
+import "package:gallery/src/db/base/post_base.dart";
+import "package:gallery/src/db/services/impl/isar/foundation/initalize_db.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/directory_tags.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tag_dictionary.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/tags/local_tags.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/tags/pinned_tag.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/tags/tags.dart";
 import "package:gallery/src/db/services/settings.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/interfaces/booru/booru_api.dart";
-import "package:gallery/src/net/downloader.dart";
+import "package:gallery/src/net/download_manager/download_manager.dart";
 import "package:gallery/src/plugs/download_movers.dart";
 import "package:gallery/src/plugs/platform_functions.dart";
 import "package:gallery/src/widgets/image_view/wrappers/wrap_image_view_notifiers.dart";
@@ -93,6 +93,12 @@ class PostTags {
   }
 
   Isar tagsDb;
+
+  String filename(Booru booru, String url, String md5, int id) {
+    final ext = extension(url);
+
+    return "${booru.prefix}_$id - $md5$ext";
+  }
 
   /// Connects to the booru and downloads the tags from it.
   /// Resolves to an empty list in case of any error.

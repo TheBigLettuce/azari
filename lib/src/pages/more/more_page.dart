@@ -10,7 +10,7 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/main.dart";
-import "package:gallery/src/db/schemas/statistics/daily_statistics.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/statistics/daily_statistics.dart";
 import "package:gallery/src/pages/more/blacklisted_page.dart";
 import "package:gallery/src/pages/more/dashboard/dashboard.dart";
 import "package:gallery/src/pages/more/downloads.dart";

@@ -6,11 +6,7 @@
 // You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 import "package:flutter/material.dart";
-import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/schemas/statistics/statistics_booru.dart";
-import "package:gallery/src/db/schemas/statistics/statistics_gallery.dart";
-import "package:gallery/src/db/schemas/statistics/statistics_general.dart";
 import "package:gallery/src/db/tags/post_tags.dart";
 import "package:gallery/src/pages/more/dashboard/dashboard_card.dart";
 import "package:gallery/src/widgets/skeletons/settings.dart";

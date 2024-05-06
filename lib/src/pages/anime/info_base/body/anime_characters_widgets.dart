@@ -10,7 +10,7 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter_animate/flutter_animate.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/schemas/anime/saved_anime_characters.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_api.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
 import "package:gallery/src/pages/anime/info_base/body/body_segment_label.dart";
@@ -18,21 +18,28 @@ import "package:gallery/src/widgets/grid_frame/configuration/grid_aspect_ratio.d
 import "package:gallery/src/widgets/grid_frame/parts/grid_cell.dart";
 import "package:gallery/src/widgets/image_view/image_view.dart";
 
-class AnimeCharactersWidget extends StatefulWidget {
+class AnimeCharactersWidget extends StatefulWidget
+    with DbConnHandle<SavedAnimeCharactersService> {
   const AnimeCharactersWidget({
     super.key,
     required this.entry,
     required this.api,
+    required this.db,
   });
-  final AnimeEntry entry;
+
+  final AnimeEntryData entry;
   final AnimeAPI api;
+
+  @override
+  final SavedAnimeCharactersService db;
 
   @override
   State<AnimeCharactersWidget> createState() => _AnimeCharactersWidgetState();
 }
 
-class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
-  late final StreamSubscription<SavedAnimeCharacters?> watcher;
+class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget>
+    with AnimeCharacterDbScope<AnimeCharactersWidget> {
+  late final StreamSubscription<List<AnimeCharacter>?> watcher;
   bool _loading = false;
   List<AnimeCharacter> list = [];
 
@@ -40,17 +47,16 @@ class _AnimeCharactersWidgetState extends State<AnimeCharactersWidget> {
   void initState() {
     super.initState();
 
-    final l = SavedAnimeCharacters.load(widget.entry.id, widget.entry.site);
+    final l = load(widget.entry.id, widget.entry.site);
     if (l.isNotEmpty) {
       list.addAll(l);
     } else {
-      SavedAnimeCharacters.addAsync(widget.entry, widget.api);
+      addAsync(widget.entry, widget.api);
       _loading = true;
     }
 
-    watcher =
-        SavedAnimeCharacters.watch(widget.entry.id, widget.entry.site, (e) {
-      list = e!.characters;
+    watcher = watch(widget.entry.id, widget.entry.site, (e) {
+      list = e!;
       _loading = false;
 
       setState(() {});

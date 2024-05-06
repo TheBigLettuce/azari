@@ -24,10 +24,12 @@ class _FinishedTab extends StatefulWidget {
 class __FinishedTabState extends State<_FinishedTab> {
   late final StreamSubscription<void> watcher;
 
-  final List<WatchedAnimeEntry> _list = [];
-  final List<WatchedAnimeEntry> _filter = [];
+  final List<WatchedAnimeEntryData> _list = [];
+  final List<WatchedAnimeEntryData> _filter = [];
 
-  final state = GridSkeletonState<WatchedAnimeEntry>();
+  late final state = GridSkeletonRefreshingState<WatchedAnimeEntryData>(
+    clearRefresh: SynchronousGridRefresh(() => _list.length),
+  );
 
   String _filteringValue = "";
 
@@ -90,7 +92,7 @@ class __FinishedTabState extends State<_FinishedTab> {
     m.cellCount = _filter.length;
   }
 
-  WatchedAnimeEntry _getCell(int i) {
+  WatchedAnimeEntryData _getCell(int i) {
     if (_filter.isNotEmpty) {
       return _filter[_filter.length - 1 - i];
     }
@@ -107,19 +109,19 @@ class __FinishedTabState extends State<_FinishedTab> {
 
   @override
   Widget build(BuildContext context) {
-    return GridSkeleton<AnimeEntry>(
+    return GridSkeleton<AnimeEntryData>(
       state,
-      (context) => GridFrame<WatchedAnimeEntry>(
+      (context) => GridFrame<WatchedAnimeEntryData>(
         key: state.gridKey,
         layout: const GridSettingsLayoutBehaviour(_settings),
         getCell: _getCell,
         functionality: GridFunctionality(
           selectionGlue: GlueProvider.generateOf(context)(),
           refreshingStatus: state.refreshingStatus,
+
           // imageViewDescription: ImageViewDescription(
           //   imageViewKey: state.imageViewKey,
           // ),
-          refresh: SynchronousGridRefresh(() => _list.length),
           // onPressed: OverrideGridOnCellPressBehaviour(
           //   onPressed: (context, idx, _) {
           //     final cell =

@@ -7,8 +7,8 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/schemas/settings/misc_settings.dart";
-import "package:gallery/src/db/schemas/statistics/statistics_booru.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/settings/misc_settings.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/statistics/statistics_booru.dart";
 import "package:gallery/src/db/services/settings.dart";
 import "package:gallery/src/interfaces/booru/booru.dart";
 import "package:gallery/src/pages/more/settings/settings_list.dart";

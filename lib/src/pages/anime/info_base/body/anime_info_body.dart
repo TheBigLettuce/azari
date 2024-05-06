@@ -7,7 +7,7 @@
 
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
-import "package:gallery/src/db/schemas/anime/saved_anime_entry.dart";
+import "package:gallery/src/db/services/services.dart";
 import "package:gallery/src/interfaces/anime/anime_api.dart";
 import "package:gallery/src/interfaces/anime/anime_entry.dart";
 import "package:gallery/src/pages/anime/info_base/body/anime_characters_widgets.dart";
@@ -29,12 +29,14 @@ class AnimeInfoBody extends StatelessWidget {
     required this.viewPadding,
     required this.api,
   });
-  final AnimeEntry entry;
+  final AnimeEntryData entry;
   final AnimeAPI api;
   final EdgeInsets viewPadding;
 
   @override
   Widget build(BuildContext context) {
+    final db = DatabaseConnectionNotifier.of(context);
+
     return BodyPadding(
       viewPadding: viewPadding,
       child: Center(
@@ -74,6 +76,7 @@ class AnimeInfoBody extends StatelessWidget {
             AnimeCharactersWidget(
               entry: entry,
               api: api,
+              db: db.savedAnimeCharacters,
             ),
             AnimePicturesWidget(
               entry: entry,
@@ -90,7 +93,7 @@ class AnimeInfoBody extends StatelessWidget {
 
 class AnimeStaff extends StatelessWidget {
   const AnimeStaff({super.key, required this.entry});
-  final AnimeEntry entry;
+  final AnimeEntryData entry;
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +120,8 @@ class AnimePicturesWidget extends StatefulWidget {
     required this.entry,
     required this.api,
   });
-  final AnimeEntry entry;
+
+  final AnimeEntryData entry;
   final AnimeAPI api;
 
   @override

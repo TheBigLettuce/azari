@@ -10,9 +10,9 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter_gen/gen_l10n/app_localizations.dart";
 import "package:gallery/src/db/base/grid_settings_base.dart";
-import "package:gallery/src/db/initalize_db.dart";
+import "package:gallery/src/db/services/impl/isar/foundation/initalize_db.dart";
 import "package:gallery/src/db/loaders/linear_isar_loader.dart";
-import "package:gallery/src/db/schemas/gallery/blacklisted_directory.dart";
+import "package:gallery/src/db/services/impl/isar/schemas/gallery/blacklisted_directory.dart";
 import "package:gallery/src/pages/more/blacklisted_posts.dart";
 import "package:gallery/src/plugs/gallery.dart";
 import "package:gallery/src/widgets/grid_frame/configuration/grid_functionality.dart";
@@ -55,6 +55,7 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
   late final state = GridSkeletonStateFilter<BlacklistedDirectory>(
     filter: loader.filter,
     transform: (cell) => cell,
+    clearRefresh: SynchronousGridRefresh(loader.count),
   );
 
   late final SearchFilterGrid<BlacklistedDirectory> search;
@@ -107,10 +108,6 @@ class _BlacklistedPageState extends State<BlacklistedPage> {
             ),
             selectionGlue: GlueProvider.generateOf(context)(),
             refreshingStatus: state.refreshingStatus,
-            // imageViewDescription: ImageViewDescription(
-            //   imageViewKey: state.imageViewKey,
-            // ),
-            refresh: SynchronousGridRefresh(() => loader.count()),
           ),
           mainFocus: state.mainFocus,
           description: GridDescription(

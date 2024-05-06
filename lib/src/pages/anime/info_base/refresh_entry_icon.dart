@@ -16,9 +16,9 @@ class RefreshEntryIcon extends StatefulWidget {
     super.key,
     required this.api,
   });
-  final AnimeEntry entry;
+  final AnimeEntryData entry;
   final AnimeAPI api;
-  final void Function(AnimeEntry) save;
+  final void Function(AnimeEntryData) save;
 
   @override
   State<RefreshEntryIcon> createState() => _RefreshEntryIconState();
